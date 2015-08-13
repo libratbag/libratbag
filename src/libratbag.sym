@@ -1,0 +1,6 @@
+/* in alphabetical order! */
+
+LIBRATBAG_0.1.0 {
+local:
+	*;
+};

@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+datarootdir=@datarootdir@
+pkgdatadir=@datadir@/@PACKAGE@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Libratbag
+Description: Mouse configuration library
+Version: @LIBRATBAG_VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lratbag
+Libs.private: -lm -lrt

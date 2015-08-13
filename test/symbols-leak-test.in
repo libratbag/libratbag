@@ -1,0 +1,17 @@
+#!/bin/bash
+
+### simple check for exported symbols
+
+# make bash exit if any command will exit with non-0 return value
+set -e
+
+# make sure the paths are alright
+cd `dirname $0`
+
+diff -a -u \
+	<(cat @top_srcdir@/src/libratbag.sym | \
+		grep '^\s\+libratbag_.*' | \
+		sed -e 's/^\s\+\(.*\);/\1/' |  sort) \
+	<(cat @top_srcdir@/src/*.c | \
+		grep LIBRATBAG_EXPORT -A 1 | grep '^libratbag_.*' | \
+		sed -e 's/(.*//' | sort)

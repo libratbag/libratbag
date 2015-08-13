@@ -1,0 +1,26 @@
+PROJECT_NAME           = @PACKAGE_NAME@
+PROJECT_NUMBER         = @PACKAGE_VERSION@
+PROJECT_BRIEF          = "A mouse configuration library"
+JAVADOC_AUTOBRIEF      = YES
+TAB_SIZE               = 8
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+MAX_INITIALIZER_LINES  = 0
+QUIET                  = YES
+INPUT                  = @top_srcdir@/src/libratbag.h \
+			 @top_srcdir@/README.txt
+GENERATE_HTML          = YES
+HTML_TIMESTAMP         = YES
+USE_MATHJAX            = YES
+GENERATE_LATEX         = NO
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = LIBRATBAG_ATTRIBUTE_PRINTF(f, \
+                         a)= \
+                         LIBRATBAG_ATTRIBUTE_DEPRECATED
+
+HTML_HEADER = @top_srcdir@/doc/style/header.html
+HTML_FOOTER = @top_srcdir@/doc/style/footer.html
+HTML_EXTRA_STYLESHEET = @top_srcdir@/doc/style/customdoxygen.css \
+			@top_srcdir@/doc/style/bootstrap.css
