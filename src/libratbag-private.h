@@ -25,6 +25,23 @@
 #define LIBRATBAG_PRIVATE_H
 
 #include "libratbag.h"
+void ratbag_device_init(struct ratbag *rb, int fd);
+
+void
+log_msg_va(struct libratbag *libratbag,
+	   enum libratbag_log_priority priority,
+	   const char *format,
+	   va_list args);
+void log_msg(struct libratbag *libratbag,
+	enum libratbag_log_priority priority,
+	const char *format, ...);
+
+#define log_debug(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_DEBUG, __VA_ARGS__)
+#define log_info(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_INFO, __VA_ARGS__)
+#define log_error(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, __VA_ARGS__)
+#define log_bug_kernel(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
+#define log_bug_libratbag(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "libratbag bug: " __VA_ARGS__)
+#define log_bug_client(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "client bug: " __VA_ARGS__)
 
 #endif /* LIBRATBAG_PRIVATE_H */
 

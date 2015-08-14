@@ -36,6 +36,15 @@ extern "C" {
 #define LIBRATBAG_ATTRIBUTE_DEPRECATED __attribute__ ((deprecated))
 
 /**
+ * Log priority for internal logging messages.
+ */
+enum libratbag_log_priority {
+	LIBRATBAG_LOG_PRIORITY_DEBUG = 10,
+	LIBRATBAG_LOG_PRIORITY_INFO = 20,
+	LIBRATBAG_LOG_PRIORITY_ERROR = 30,
+};
+
+/**
  * @ingroup base
  * @struct libratbag
  *
@@ -43,6 +52,26 @@ extern "C" {
  * libratbag_ref() and libratbag_unref().
  */
 struct libratbag;
+
+/**
+ * @ingroup base
+ *
+ * Log handler type for custom logging.
+ *
+ * @param libratbag The libratbag context
+ * @param priority The priority of the current message
+ * @param format Message format in printf-style
+ * @param args Message arguments
+ *
+ * @see libratbag_log_set_priority
+ * @see libratbag_log_get_priority
+ * @see libratbag_log_set_handler
+ */
+typedef void (*libratbag_log_handler)(struct libratbag *libratbag,
+				      enum libratbag_log_priority priority,
+				      const char *format, va_list args)
+	   LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
+
 
 /**
  * @defgroup base Initialization and manipulation of libratbag contexts

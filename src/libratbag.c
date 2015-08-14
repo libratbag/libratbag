@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "libratbag-private.h"
@@ -30,7 +31,50 @@
 
 struct libratbag {
 	int refcount;
+	libratbag_log_handler log_handler;
+	enum libratbag_log_priority log_priority;
 };
+
+static void
+libratbag_default_log_func(struct libratbag *libratbag,
+			  enum libratbag_log_priority priority,
+			  const char *format, va_list args)
+{
+	const char *prefix;
+
+	switch(priority) {
+	case LIBRATBAG_LOG_PRIORITY_DEBUG: prefix = "debug"; break;
+	case LIBRATBAG_LOG_PRIORITY_INFO: prefix = "info"; break;
+	case LIBRATBAG_LOG_PRIORITY_ERROR: prefix = "error"; break;
+	default: prefix="<invalid priority>"; break;
+	}
+
+	fprintf(stderr, "libratbag %s: ", prefix);
+	vfprintf(stderr, format, args);
+}
+
+void
+log_msg_va(struct libratbag *libratbag,
+	   enum libratbag_log_priority priority,
+	   const char *format,
+	   va_list args)
+{
+	if (libratbag->log_handler &&
+	    libratbag->log_priority <= priority)
+		libratbag->log_handler(libratbag, priority, format, args);
+}
+
+void
+log_msg(struct libratbag *libratbag,
+	enum libratbag_log_priority priority,
+	const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	log_msg_va(libratbag, priority, format, args);
+	va_end(args);
+}
 
 LIBRATBAG_EXPORT struct libratbag *
 libratbag_create_context(void)
@@ -42,6 +86,9 @@ libratbag_create_context(void)
 		return NULL;
 
 	libratbag->refcount = 1;
+
+	libratbag->log_handler = libratbag_default_log_func;
+	libratbag->log_priority = LIBRATBAG_LOG_PRIORITY_DEBUG;
 
 	return libratbag;
 }
