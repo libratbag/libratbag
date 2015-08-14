@@ -176,6 +176,15 @@ struct ratbag*
 ratbag_new_from_fd(struct libratbag *libratbag, int fd);
 
 /**
+ * @ingroup base
+ *
+ * @param ratbag A previously initialized ratbag context
+ * @return The name of the device associated with the given ratbag.
+ */
+const char *
+ratbag_get_name(const struct ratbag* ratbag);
+
+/**
  * @ingroup device
  */
 enum ratbag_capability {

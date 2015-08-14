@@ -5,6 +5,7 @@ global:
 	libratbag_create_context;
 	libratbag_ref;
 	libratbag_unref;
+	ratbag_get_name;
 	ratbag_new_from_fd;
 	ratbag_unref;
 local:

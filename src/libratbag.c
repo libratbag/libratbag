@@ -127,6 +127,7 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 	struct input_id ids;
 	struct ratbag *ratbag = NULL;
 	struct ratbag_driver *driver;
+	char buf[256];
 
 	if (!libratbag) {
 		fprintf(stderr, "libratbag is NULL\n");
@@ -141,6 +142,18 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 	if (rc < 0)
 		goto out_err;
 
+	memset(buf, 0, sizeof(buf));
+	rc = ioctl(fd, EVIOCGNAME(sizeof(buf) - 1), buf);
+	if (rc < 0)
+		goto out_err;
+
+	free(ratbag->name);
+	ratbag->name = strdup(buf);
+	if (!ratbag->name) {
+		errno = ENOMEM;
+		goto out_err;
+	}
+
 	ratbag_device_init(ratbag, fd);
 
 	driver = ratbag_find_driver(libratbag, &ids);
@@ -154,6 +167,8 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 	return ratbag;
 
 out_err:
+	if (ratbag)
+		free(ratbag->name);
 	free(ratbag);
 	return NULL;
 }
@@ -169,8 +184,15 @@ ratbag_unref(struct ratbag *ratbag)
 	if (ratbag->refcount > 0)
 		return ratbag;
 
+	free(ratbag->name);
 	free(ratbag);
 	return NULL;
+}
+
+LIBRATBAG_EXPORT const char *
+ratbag_get_name(const struct ratbag* ratbag)
+{
+	return ratbag->name;
 }
 
 static void

@@ -40,6 +40,7 @@
 struct ratbag_driver;
 
 struct ratbag {
+	char *name;
 	int evdev_fd;
 	int refcount;
 	struct ratbag_driver *driver;
