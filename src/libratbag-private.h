@@ -57,6 +57,8 @@ struct ratbag_driver {
 	char *name;
 	const struct ratbag_id *table_ids;
 
+	int (*probe)(struct ratbag *ratbag, const struct ratbag_id id);
+
 	/* private */
 	struct list link;
 };

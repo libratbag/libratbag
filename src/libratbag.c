@@ -203,17 +203,28 @@ ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
 }
 
 static struct ratbag_driver *
-ratbag_find_driver(struct libratbag *libratbag, const struct input_id *dev_id)
+ratbag_find_driver(struct libratbag *libratbag, struct ratbag *ratbag,
+		const struct input_id *dev_id)
 {
 	struct ratbag_driver *driver;
 	const struct ratbag_id *matching_id;
+	struct ratbag_id matched_id;
+	int rc;
 
 	list_for_each(driver, &libratbag->drivers, link) {
 		log_debug(libratbag, "testing against %s\n", driver->name);
 		matching_id = driver->table_ids;
 		do {
 			if (ratbag_match_id(dev_id, &matching_id->id)) {
-				return driver;
+				assert(driver->probe);
+				matched_id.id = *dev_id;
+				matched_id.data = matching_id->data;
+				rc = driver->probe(ratbag, matched_id);
+				if (rc == 0)
+					return driver;
+
+				if (rc != -ENODEV)
+					return NULL;
 			}
 			matching_id++;
 		} while (matching_id->id.bustype != 0 ||
@@ -264,7 +275,7 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 	if (rc)
 		goto out_err;
 
-	driver = ratbag_find_driver(libratbag, &ids);
+	driver = ratbag_find_driver(libratbag, ratbag, &ids);
 	if (!driver) {
 		errno = ENOTSUP;
 		goto err_udev;

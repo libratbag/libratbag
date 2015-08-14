@@ -27,6 +27,12 @@
 
 #include "libratbag-private.h"
 
+static int
+etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
+{
+	return 0;
+}
+
 static const struct ratbag_id etekcity_table[] = {
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_ETEKCITY,
@@ -40,4 +46,5 @@ static const struct ratbag_id etekcity_table[] = {
 struct ratbag_driver etekcity_driver = {
 	.name = "EtekCity",
 	.table_ids = etekcity_table,
+	.probe = etekcity_probe,
 };
