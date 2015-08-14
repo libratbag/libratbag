@@ -194,6 +194,8 @@ libratbag_create_context(void)
 	libratbag->log_handler = libratbag_default_log_func;
 	libratbag->log_priority = LIBRATBAG_LOG_PRIORITY_DEBUG;
 
+	ratbag_register_driver(libratbag, &etekcity_driver);
+
 	return libratbag;
 }
 

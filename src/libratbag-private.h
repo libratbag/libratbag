@@ -29,6 +29,8 @@
 #include "libratbag.h"
 #include "libratbag-util.h"
 
+#define USB_VENDOR_ID_ETEKCITY			0x1ea7
+#define USB_DEVICE_ID_ETEKCITY_SCROLL_ALPHA	0x4011
 
 #define BUS_ANY					0xffff
 #define VENDOR_ANY				0xffff
@@ -73,6 +75,9 @@ void log_msg(struct libratbag *libratbag,
 #define log_bug_kernel(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
 #define log_bug_libratbag(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "libratbag bug: " __VA_ARGS__)
 #define log_bug_client(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "client bug: " __VA_ARGS__)
+
+/* list of all supported drivers */
+struct ratbag_driver etekcity_driver;
 
 #endif /* LIBRATBAG_PRIVATE_H */
 

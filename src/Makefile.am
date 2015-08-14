@@ -4,6 +4,7 @@ include_HEADERS =			\
 	libratbag.h
 
 libratbag_la_SOURCES =			\
+	etekcity.c			\
 	libratbag.c			\
 	libratbag.h			\
 	libratbag-util.c		\
