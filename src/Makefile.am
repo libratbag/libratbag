@@ -6,6 +6,7 @@ include_HEADERS =			\
 libratbag_la_SOURCES =			\
 	libratbag.c			\
 	libratbag.h			\
+	libratbag-util.c		\
 	libratbag-private.h		\
 	libratbag-util.h
 

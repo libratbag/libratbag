@@ -24,12 +24,97 @@
 #ifndef LIBRATBAG_UTIL_H
 #define LIBRATBAG_UTIL_H
 
+#include <unistd.h>
+
+/*
+ * This list data structure is a verbatim copy from wayland-util.h from the
+ * Wayland project; except that wl_ prefix has been removed.
+ */
+
+struct list {
+	struct list *prev;
+	struct list *next;
+};
+
+void list_init(struct list *list);
+void list_insert(struct list *list, struct list *elm);
+void list_remove(struct list *elm);
+int list_empty(const struct list *list);
+
+#ifdef __GNUC__
+#define container_of(ptr, sample, member)				\
+	(__typeof__(sample))((char *)(ptr)	-			\
+		 ((char *)&(sample)->member - (char *)(sample)))
+#else
+#define container_of(ptr, sample, member)				\
+	(void *)((char *)(ptr)	-				        \
+		 ((char *)&(sample)->member - (char *)(sample)))
+#endif
+
+#define list_for_each(pos, head, member)				\
+	for (pos = 0, pos = container_of((head)->next, pos, member);	\
+	     &pos->member != (head);					\
+	     pos = container_of(pos->member.next, pos, member))
+
+#define list_for_each_safe(pos, tmp, head, member)			\
+	for (pos = 0, tmp = 0, 						\
+	     pos = container_of((head)->next, pos, member),		\
+	     tmp = container_of((pos)->member.next, tmp, member);	\
+	     &pos->member != (head);					\
+	     pos = tmp,							\
+	     tmp = container_of(pos->member.next, tmp, member))
+
+#define LONG_BITS (sizeof(long) * 8)
+#define NLONGS(x) (((x) + LONG_BITS - 1) / LONG_BITS)
+#define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
+#define ARRAY_FOR_EACH(_arr, _elem) \
+	for (size_t _i = 0; _i < ARRAY_LENGTH(_arr) && (_elem = &_arr[_i]); _i++)
+#define AS_MASK(v) (1 << (v))
+
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#define streq(s1, s2) (strcmp((s1), (s2)) == 0)
+#define strneq(s1, s2, n) (strncmp((s1), (s2), (n)) == 0)
+
 #define LIBRATBAG_EXPORT __attribute__ ((visibility("default")))
 
 static inline void *
 zalloc(size_t size)
 {
 	return calloc(1, size);
+}
+
+static inline void
+msleep(unsigned int ms)
+{
+	usleep(ms * 1000);
+}
+
+static inline int
+long_bit_is_set(const unsigned long *array, int bit)
+{
+    return !!(array[bit / LONG_BITS] & (1LL << (bit % LONG_BITS)));
+}
+
+static inline void
+long_set_bit(unsigned long *array, int bit)
+{
+    array[bit / LONG_BITS] |= (1LL << (bit % LONG_BITS));
+}
+
+static inline void
+long_clear_bit(unsigned long *array, int bit)
+{
+    array[bit / LONG_BITS] &= ~(1LL << (bit % LONG_BITS));
+}
+
+static inline void
+long_set_bit_state(unsigned long *array, int bit, int state)
+{
+	if (state)
+		long_set_bit(array, bit);
+	else
+		long_clear_bit(array, bit);
 }
 
 #endif /* LIBRATBAG_UTIL_H */
