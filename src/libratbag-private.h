@@ -41,6 +41,8 @@ struct ratbag_driver;
 
 struct ratbag {
 	char *name;
+	struct udev_device *udev_device;
+	struct udev_device *udev_hidraw;
 	int evdev_fd;
 	int refcount;
 	struct ratbag_driver *driver;

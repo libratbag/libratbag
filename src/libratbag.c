@@ -24,6 +24,7 @@
 #include "config.h"
 #include <assert.h>
 #include <errno.h>
+#include <libudev.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,7 @@
 #include "libratbag-util.h"
 
 struct libratbag {
+	struct udev *udev;
 	struct list drivers;
 
 	int refcount;
@@ -79,6 +81,109 @@ log_msg(struct libratbag *libratbag,
 	va_start(args, format);
 	log_msg_va(libratbag, priority, format, args);
 	va_end(args);
+}
+
+static inline struct udev_device *
+udev_device_from_devnode(struct libratbag *libratbag,
+			 struct ratbag *ratbag,
+			 int fd)
+{
+	struct udev_device *dev;
+	struct stat st;
+	size_t count = 0;
+	struct udev *udev = libratbag->udev;
+
+	if (fstat(fd, &st) < 0)
+		return NULL;
+
+	dev = udev_device_new_from_devnum(libratbag->udev, 'c', st.st_rdev);
+
+	while (dev && !udev_device_get_is_initialized(dev)) {
+		udev_device_unref(dev);
+		msleep(10);
+		dev = udev_device_new_from_devnum(udev, 'c', st.st_rdev);
+
+		count++;
+		if (count > 50) {
+			log_bug_libratbag(libratbag,
+					  "udev device never initialized\n");
+			break;
+		}
+	}
+
+	return dev;
+}
+
+static struct udev_device *
+udev_find_hidraw(struct libratbag *libratbag, struct ratbag *ratbag)
+{
+	struct udev_enumerate *e;
+	struct udev_list_entry *entry;
+	struct udev_device *device;
+	const char *path, *sysname;
+	struct udev_device *hid_udev;
+	struct udev_device *hidraw_udev = NULL;
+	struct udev *udev = libratbag->udev;
+
+	hid_udev = udev_device_get_parent_with_subsystem_devtype(ratbag->udev_device, "hid", NULL);
+
+	e = udev_enumerate_new(udev);
+	udev_enumerate_add_match_subsystem(e, "hidraw");
+	udev_enumerate_add_match_parent(e, hid_udev);
+	udev_enumerate_scan_devices(e);
+	udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
+		path = udev_list_entry_get_name(entry);
+		device = udev_device_new_from_syspath(udev, path);
+		if (!device)
+			continue;
+
+		sysname = udev_device_get_sysname(device);
+		if (strncmp("hidraw", sysname, 6) != 0) {
+			udev_device_unref(device);
+			continue;
+		}
+
+		hidraw_udev = udev_device_ref(device);
+
+		udev_device_unref(device);
+		goto out;
+	}
+
+out:
+	udev_enumerate_unref(e);
+
+	return hidraw_udev;
+}
+
+static int
+ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag *ratbag, int fd)
+{
+	struct udev_device *udev_device;
+	struct udev_device *hidraw_udev;
+	int rc = -ENODEV;
+
+	udev_device = udev_device_from_devnode(libratbag, ratbag, fd);
+	if (!udev_device) {
+		log_bug_client(libratbag, "Invalid path %s\n", fd);
+		return -ENODEV;
+	}
+	ratbag->udev_device = udev_device_ref(udev_device);
+
+	hidraw_udev = udev_find_hidraw(libratbag, ratbag);
+	if (!hidraw_udev)
+		goto out;
+
+	ratbag->udev_hidraw = udev_device_ref(hidraw_udev);
+
+	log_debug(libratbag,
+		  "%s is associated to '%s'.\n",
+		  udev_device_get_devnode(ratbag->udev_hidraw), "the device");
+
+	rc = 0;
+	udev_device_unref(hidraw_udev);
+out:
+	udev_device_unref(udev_device);
+	return rc;
 }
 
 void
@@ -155,17 +260,23 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 	}
 
 	ratbag_device_init(ratbag, fd);
+	rc = ratbag_device_init_udev(libratbag, ratbag, fd);
+	if (rc)
+		goto out_err;
 
 	driver = ratbag_find_driver(libratbag, &ids);
 	if (!driver) {
 		errno = ENOTSUP;
-		goto out_err;
+		goto err_udev;
 	}
 
 	ratbag->driver = driver;
 
 	return ratbag;
 
+err_udev:
+	udev_device_unref(ratbag->udev_device);
+	udev_device_unref(ratbag->udev_hidraw);
 out_err:
 	if (ratbag)
 		free(ratbag->name);
@@ -183,6 +294,8 @@ ratbag_unref(struct ratbag *ratbag)
 	ratbag->refcount--;
 	if (ratbag->refcount > 0)
 		return ratbag;
+	udev_device_unref(ratbag->udev_device);
+	udev_device_unref(ratbag->udev_hidraw);
 
 	free(ratbag->name);
 	free(ratbag);
@@ -213,6 +326,12 @@ libratbag_create_context(void)
 	libratbag->refcount = 1;
 
 	list_init(&libratbag->drivers);
+	libratbag->udev = udev_new();
+	if (!libratbag->udev) {
+		free(libratbag);
+		return NULL;
+	}
+
 	libratbag->log_handler = libratbag_default_log_func;
 	libratbag->log_priority = LIBRATBAG_LOG_PRIORITY_DEBUG;
 
@@ -239,6 +358,7 @@ libratbag_unref(struct libratbag *libratbag)
 	if (libratbag->refcount > 0)
 		return libratbag;
 
+	libratbag->udev = udev_unref(libratbag->udev);
 	free(libratbag);
 
 	return NULL;
