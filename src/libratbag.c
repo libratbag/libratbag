@@ -23,8 +23,11 @@
 
 #include "config.h"
 #include <assert.h>
+#include <errno.h>
+#include <linux/input.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "libratbag-private.h"
 #include "libratbag-util.h"
@@ -74,6 +77,57 @@ log_msg(struct libratbag *libratbag,
 	va_start(args, format);
 	log_msg_va(libratbag, priority, format, args);
 	va_end(args);
+}
+
+void
+ratbag_device_init(struct ratbag *rb, int fd)
+{
+	rb->evdev_fd = fd;
+	rb->refcount = 1;
+}
+
+LIBRATBAG_EXPORT struct ratbag*
+ratbag_new_from_fd(struct libratbag *libratbag, int fd)
+{
+	int rc;
+	struct input_id ids;
+	struct ratbag *ratbag = NULL;
+
+	if (!libratbag) {
+		fprintf(stderr, "libratbag is NULL\n");
+		return NULL;
+	}
+
+	ratbag = zalloc(sizeof(*ratbag));
+	if (!ratbag)
+		return NULL;
+
+	rc = ioctl(fd, EVIOCGID, &ids);
+	if (rc < 0)
+		goto out_err;
+
+	ratbag_device_init(ratbag, fd);
+
+	return ratbag;
+
+out_err:
+	free(ratbag);
+	return NULL;
+}
+
+LIBRATBAG_EXPORT struct ratbag *
+ratbag_unref(struct ratbag *ratbag)
+{
+	if (ratbag == NULL)
+		return NULL;
+
+	assert(ratbag->refcount > 0);
+	ratbag->refcount--;
+	if (ratbag->refcount > 0)
+		return ratbag;
+
+	free(ratbag);
+	return NULL;
 }
 
 LIBRATBAG_EXPORT struct libratbag *

@@ -25,6 +25,12 @@
 #define LIBRATBAG_PRIVATE_H
 
 #include "libratbag.h"
+
+struct ratbag {
+	int evdev_fd;
+	int refcount;
+};
+
 void ratbag_device_init(struct ratbag *rb, int fd);
 
 void
