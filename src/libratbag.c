@@ -24,7 +24,7 @@
 #include "config.h"
 #include <assert.h>
 #include <errno.h>
-#include <linux/input.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +33,8 @@
 #include "libratbag-util.h"
 
 struct libratbag {
+	struct list drivers;
+
 	int refcount;
 	libratbag_log_handler log_handler;
 	enum libratbag_log_priority log_priority;
@@ -86,12 +88,45 @@ ratbag_device_init(struct ratbag *rb, int fd)
 	rb->refcount = 1;
 }
 
+static inline bool
+ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
+{
+	return (match_id->bustype == BUS_ANY || match_id->bustype == dev_id->bustype) &&
+		(match_id->vendor == VENDOR_ANY || match_id->vendor == dev_id->vendor) &&
+		(match_id->product == PRODUCT_ANY || match_id->product == dev_id->product) &&
+		(match_id->version == VERSION_ANY || match_id->version == dev_id->version);
+}
+
+static struct ratbag_driver *
+ratbag_find_driver(struct libratbag *libratbag, const struct input_id *dev_id)
+{
+	struct ratbag_driver *driver;
+	const struct ratbag_id *matching_id;
+
+	list_for_each(driver, &libratbag->drivers, link) {
+		log_debug(libratbag, "testing against %s\n", driver->name);
+		matching_id = driver->table_ids;
+		do {
+			if (ratbag_match_id(dev_id, &matching_id->id)) {
+				return driver;
+			}
+			matching_id++;
+		} while (matching_id->id.bustype != 0 ||
+			 matching_id->id.vendor != 0 ||
+			 matching_id->id.product != 0 ||
+			 matching_id->id.version != 0);
+	}
+
+	return NULL;
+}
+
 LIBRATBAG_EXPORT struct ratbag*
 ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 {
 	int rc;
 	struct input_id ids;
 	struct ratbag *ratbag = NULL;
+	struct ratbag_driver *driver;
 
 	if (!libratbag) {
 		fprintf(stderr, "libratbag is NULL\n");
@@ -107,6 +142,14 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 		goto out_err;
 
 	ratbag_device_init(ratbag, fd);
+
+	driver = ratbag_find_driver(libratbag, &ids);
+	if (!driver) {
+		errno = ENOTSUP;
+		goto out_err;
+	}
+
+	ratbag->driver = driver;
 
 	return ratbag;
 
@@ -130,6 +173,12 @@ ratbag_unref(struct ratbag *ratbag)
 	return NULL;
 }
 
+static void
+ratbag_register_driver(struct libratbag *libratbag, struct ratbag_driver *driver)
+{
+	list_insert(&libratbag->drivers, &driver->link);
+}
+
 LIBRATBAG_EXPORT struct libratbag *
 libratbag_create_context(void)
 {
@@ -141,6 +190,7 @@ libratbag_create_context(void)
 
 	libratbag->refcount = 1;
 
+	list_init(&libratbag->drivers);
 	libratbag->log_handler = libratbag_default_log_func;
 	libratbag->log_priority = LIBRATBAG_LOG_PRIORITY_DEBUG;
 

@@ -24,11 +24,36 @@
 #ifndef LIBRATBAG_PRIVATE_H
 #define LIBRATBAG_PRIVATE_H
 
+#include <linux/input.h>
+
 #include "libratbag.h"
+#include "libratbag-util.h"
+
+
+#define BUS_ANY					0xffff
+#define VENDOR_ANY				0xffff
+#define PRODUCT_ANY				0xffff
+#define VERSION_ANY				0xffff
+
+struct ratbag_driver;
 
 struct ratbag {
 	int evdev_fd;
 	int refcount;
+	struct ratbag_driver *driver;
+};
+
+struct ratbag_id {
+	struct input_id id;
+	unsigned long data;
+};
+
+struct ratbag_driver {
+	char *name;
+	const struct ratbag_id *table_ids;
+
+	/* private */
+	struct list link;
 };
 
 void ratbag_device_init(struct ratbag *rb, int fd);
