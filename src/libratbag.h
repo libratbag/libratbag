@@ -36,6 +36,15 @@ extern "C" {
 #define LIBRATBAG_ATTRIBUTE_DEPRECATED __attribute__ ((deprecated))
 
 /**
+ * @ingroup base
+ * @struct libratbag
+ *
+ * A handle for accessing libratbag. This struct is refcounted, use
+ * libratbag_ref() and libratbag_unref().
+ */
+struct libratbag;
+
+/**
  * @defgroup base Initialization and manipulation of libratbag contexts
  * @defgroup device Querying and manipulating devices
  *
@@ -96,11 +105,46 @@ struct ratbag_button;
 /**
  * @ingroup base
  *
+ * Create a new libratbag context.
+ *
+ * @return An initialized libratbag context or NULL on error
+ */
+struct libratbag *
+libratbag_create_context(void);
+
+/**
+ * @ingroup base
+ *
+ * Add a reference to the context. A context is destroyed whenever the
+ * reference count reaches 0. See @ref libratbag_unref.
+ *
+ * @param libratbag A previously initialized valid libratbag context
+ * @return The passed libratbag context
+ */
+struct libratbag *
+libratbag_ref(struct libratbag *libratbag);
+
+/**
+ * @ingroup base
+ *
+ * Dereference the libratbag context. After this, the context may have been
+ * destroyed, if the last reference was dereferenced. If so, the context is
+ * invalid and may not be interacted with.
+ *
+ * @param libratbag A previously initialized libratbag context
+ * @return NULL if context was destroyed otherwise the passed context
+ */
+struct libratbag *
+libratbag_unref(struct libratbag *libratbag);
+
+/**
+ * @ingroup base
+ *
  * Create a new ratbag context from the given fd. The file descriptor must
  * point to a /dev/input/eventX event node and be opened in O_RDWR.
  */
 struct ratbag*
-ratbag_new_from_fd(int fd);
+ratbag_new_from_fd(struct libratbag *libratbag, int fd);
 
 /**
  * @ingroup device

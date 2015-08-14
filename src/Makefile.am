@@ -6,7 +6,8 @@ include_HEADERS =			\
 libratbag_la_SOURCES =			\
 	libratbag.c			\
 	libratbag.h			\
-	libratbag-private.h
+	libratbag-private.h		\
+	libratbag-util.h
 
 libratbag_la_LIBADD = $(LIBEVDEV_LIBS)
 

@@ -1,6 +1,10 @@
 /* in alphabetical order! */
 
 LIBRATBAG_0.1.0 {
+global:
+	libratbag_create_context;
+	libratbag_ref;
+	libratbag_unref;
 local:
 	*;
 };
