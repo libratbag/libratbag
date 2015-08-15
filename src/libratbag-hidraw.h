@@ -21,47 +21,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "config.h"
-#include <errno.h>
-#include <linux/input.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef LIBRATBAG_HIDRAW_H
+#define LIBRATBAG_HIDRAW_H
 
-#include "libratbag-private.h"
-#include "libratbag-hidraw.h"
+#include "libratbag.h"
 
-static int
-etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
-{
-	int rc;
+int ratbag_open_hidraw(struct ratbag *ratbag);
 
-	log_debug(ratbag->libratbag, "data: %d\n", id.data);
-
-	rc = ratbag_open_hidraw(ratbag);
-	if (rc) {
-		log_error(ratbag->libratbag,
-			  "Can't open corresponding hidraw node: '%s' (%d)\n",
-			  strerror(-rc),
-			  rc);
-		return -ENODEV;
-	}
-
-	return 0;
-}
-
-static const struct ratbag_id etekcity_table[] = {
-	{.id = { .bustype = BUS_USB,
-		 .vendor = USB_VENDOR_ID_ETEKCITY,
-		 .product = USB_DEVICE_ID_ETEKCITY_SCROLL_ALPHA,
-		 .version = VERSION_ANY },
-	 .data = 1,
-	},
-
-	{ },
-};
-
-struct ratbag_driver etekcity_driver = {
-	.name = "EtekCity",
-	.table_ids = etekcity_table,
-	.probe = etekcity_probe,
-};
+#endif /* LIBRATBAG_HIDRAW_H */

@@ -24,7 +24,9 @@
 #include "config.h"
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <libudev.h>
+#include <linux/hidraw.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,6 +192,7 @@ void
 ratbag_device_init(struct ratbag *rb, int fd)
 {
 	rb->evdev_fd = fd;
+	rb->hidraw_fd = -1;
 	rb->refcount = 1;
 }
 
@@ -310,6 +313,9 @@ ratbag_unref(struct ratbag *ratbag)
 		return ratbag;
 	udev_device_unref(ratbag->udev_device);
 	udev_device_unref(ratbag->udev_hidraw);
+
+	if (ratbag->hidraw_fd >= 0)
+		close(ratbag->hidraw_fd);
 
 	ratbag->libratbag = libratbag_unref(ratbag->libratbag);
 	free(ratbag->name);

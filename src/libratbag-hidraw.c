@@ -21,47 +21,46 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "config.h"
 #include <errno.h>
-#include <linux/input.h>
-#include <stdlib.h>
-#include <string.h>
+#include <fcntl.h>
+#include <libudev.h>
+#include <linux/hidraw.h>
 
-#include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "libratbag-private.h"
 
-static int
-etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
+int
+ratbag_open_hidraw(struct ratbag *ratbag)
 {
-	int rc;
+	struct hidraw_devinfo info;
+	int fd, res;
 
-	log_debug(ratbag->libratbag, "data: %d\n", id.data);
+	if (!ratbag->udev_hidraw)
+		return -EINVAL;
 
-	rc = ratbag_open_hidraw(ratbag);
-	if (rc) {
+	fd = open(udev_device_get_devnode(ratbag->udev_hidraw), O_RDWR);
+	if (fd < 0)
+		goto err;
+
+	/* Get Raw Info */
+	res = ioctl(fd, HIDIOCGRAWINFO, &info);
+	if (res < 0) {
 		log_error(ratbag->libratbag,
-			  "Can't open corresponding hidraw node: '%s' (%d)\n",
-			  strerror(-rc),
-			  rc);
-		return -ENODEV;
+			  "error while getting info from device");
+		goto err;
 	}
+	/* Check if the device actually matches the input node */
+	if (info.bustype != ratbag->ids.bustype ||
+	    info.vendor != ratbag->ids.vendor ||
+	    info.product != ratbag->ids.product)
+		goto err;
+
+	ratbag->hidraw_fd = fd;
 
 	return 0;
+
+err:
+	if (fd >= 0)
+		close(fd);
+	return -errno;
 }
-
-static const struct ratbag_id etekcity_table[] = {
-	{.id = { .bustype = BUS_USB,
-		 .vendor = USB_VENDOR_ID_ETEKCITY,
-		 .product = USB_DEVICE_ID_ETEKCITY_SCROLL_ALPHA,
-		 .version = VERSION_ANY },
-	 .data = 1,
-	},
-
-	{ },
-};
-
-struct ratbag_driver etekcity_driver = {
-	.name = "EtekCity",
-	.table_ids = etekcity_table,
-	.probe = etekcity_probe,
-};

@@ -7,6 +7,8 @@ libratbag_la_SOURCES =			\
 	etekcity.c			\
 	libratbag.c			\
 	libratbag.h			\
+	libratbag-hidraw.c		\
+	libratbag-hidraw.h		\
 	libratbag-util.c		\
 	libratbag-private.h		\
 	libratbag-util.h
