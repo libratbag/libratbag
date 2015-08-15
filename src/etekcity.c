@@ -30,6 +30,8 @@
 static int
 etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 {
+	log_debug(ratbag->libratbag, "data: %d\n", id.data);
+
 	return 0;
 }
 
@@ -38,6 +40,7 @@ static const struct ratbag_id etekcity_table[] = {
 		 .vendor = USB_VENDOR_ID_ETEKCITY,
 		 .product = USB_DEVICE_ID_ETEKCITY_SCROLL_ALPHA,
 		 .version = VERSION_ANY },
+	 .data = 1,
 	},
 
 	{ },

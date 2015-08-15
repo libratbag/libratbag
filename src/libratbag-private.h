@@ -46,6 +46,7 @@ struct ratbag {
 	int evdev_fd;
 	int refcount;
 	struct ratbag_driver *driver;
+	struct libratbag *libratbag;
 };
 
 struct ratbag_id {

@@ -254,6 +254,8 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 	if (!ratbag)
 		return NULL;
 
+	ratbag->libratbag = libratbag_ref(libratbag);
+
 	rc = ioctl(fd, EVIOCGID, &ids);
 	if (rc < 0)
 		goto out_err;
@@ -308,6 +310,7 @@ ratbag_unref(struct ratbag *ratbag)
 	udev_device_unref(ratbag->udev_device);
 	udev_device_unref(ratbag->udev_hidraw);
 
+	ratbag->libratbag = libratbag_unref(ratbag->libratbag);
 	free(ratbag->name);
 	free(ratbag);
 	return NULL;
