@@ -31,9 +31,26 @@
 #include "libratbag-hidraw.h"
 
 static int
+etekcity_current_profile(struct ratbag *ratbag)
+{
+	__u8 buf[3];
+	int ret;
+
+	ret = ratbag_hidraw_raw_request(ratbag, 5, buf, sizeof(buf),
+				 HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	if (ret < 0)
+		return ret;
+
+	if (ret != 3)
+		return -EIO;
+
+	return buf[2];
+}
+
+static int
 etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 {
-	int rc;
+	int rc, current_profile;
 
 	log_debug(ratbag->libratbag, "data: %d\n", id.data);
 
@@ -45,6 +62,22 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 			  rc);
 		return -ENODEV;
 	}
+
+	rc = etekcity_current_profile(ratbag);
+	if (rc < 0) {
+		log_error(ratbag->libratbag,
+			  "Can't talk to the mouse: '%s' (%d)\n",
+			  strerror(-rc),
+			  rc);
+		return -ENODEV;
+	}
+
+	current_profile = rc;
+
+	log_info(ratbag->libratbag,
+		 "'%s' is in profile %d\n",
+		 ratbag_get_name(ratbag),
+		 current_profile);
 
 	return 0;
 }

@@ -24,8 +24,32 @@
 #ifndef LIBRATBAG_HIDRAW_H
 #define LIBRATBAG_HIDRAW_H
 
+#include <linux/hid.h>
+
 #include "libratbag.h"
 
+/* defined in the internal hid API in the kernel */
+#define HID_INPUT_REPORT	0
+#define HID_OUTPUT_REPORT	1
+#define HID_FEATURE_REPORT	2
+
 int ratbag_open_hidraw(struct ratbag *ratbag);
+
+/**
+ * ratbag_hidraw_raw_request - send report request to device
+ *
+ * @ratbag: ratbag device
+ * @reportnum: report ID
+ * @buf: in/out data to transfer
+ * @len: length of buf
+ * @rtype: HID report type
+ * @reqtype: HID_REQ_GET_REPORT or HID_REQ_SET_REPORT
+ *
+ * @return: count of data transfered, negative if error
+ *
+ * Same behavior as hid_hw_request, but with raw buffers instead.
+ */
+int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
+		__u8 *buf, size_t len, unsigned char rtype, int reqtype);
 
 #endif /* LIBRATBAG_HIDRAW_H */

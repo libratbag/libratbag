@@ -25,9 +25,15 @@
 #include <fcntl.h>
 #include <libudev.h>
 #include <linux/hidraw.h>
+#include <string.h>
 
 #include "libratbag-hidraw.h"
 #include "libratbag-private.h"
+
+/* defined in include/linux.hid.h in the kernel, but not exported */
+#ifndef HID_MAX_BUFFER_SIZE
+#define HID_MAX_BUFFER_SIZE	4096		/* 4kb */
+#endif
 
 int
 ratbag_open_hidraw(struct ratbag *ratbag)
@@ -63,4 +69,39 @@ err:
 	if (fd >= 0)
 		close(fd);
 	return -errno;
+}
+
+int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
+		__u8 *buf, size_t len, unsigned char rtype, int reqtype)
+{
+	char tmp_buf[HID_MAX_BUFFER_SIZE];
+	int rc;
+
+	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || ratbag->hidraw_fd < 0)
+		return -EINVAL;
+
+	if (rtype != HID_FEATURE_REPORT)
+		return -ENOTSUP;
+
+	switch (reqtype) {
+	case HID_REQ_GET_REPORT:
+		memset(tmp_buf, 0, len);
+		tmp_buf[0] = reportnum;
+
+		rc = ioctl(ratbag->hidraw_fd, HIDIOCGFEATURE(len), tmp_buf);
+		if (rc < 0)
+			return -errno;
+
+		memcpy(buf, tmp_buf, rc);
+		return rc;
+	case HID_REQ_SET_REPORT:
+		buf[0] = reportnum;
+		rc = ioctl(ratbag->hidraw_fd, HIDIOCSFEATURE(len), buf);
+		if (rc < 0)
+			return -errno;
+
+		return rc;
+	}
+
+	return -EINVAL;
 }
