@@ -7,6 +7,8 @@ global:
 	libratbag_unref;
 	ratbag_get_active_profile;
 	ratbag_get_name;
+	ratbag_get_num_profiles;
+	ratbag_get_num_buttons;
 	ratbag_get_profile_by_index;
 	ratbag_new_from_fd;
 	ratbag_profile_ref;

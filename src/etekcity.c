@@ -32,6 +32,7 @@
 #include "libratbag-hidraw.h"
 
 #define ETEKCITY_PROFILE_MAX			4
+#define ETEKCITY_BUTTON_MAX			10
 
 #define ETEKCITY_REPORT_ID_CONFIGURE_PROFILE	4
 #define ETEKCITY_REPORT_ID_PROFILE		5
@@ -130,7 +131,7 @@ static void
 etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag *ratbag = profile->ratbag;
-	int i, rc;
+	int i, rc, button;
 	__u8 buf[50];
 	__u8 data;
 
@@ -149,15 +150,19 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 		  buf[2],
 		  __FILE__, __LINE__);
 
+	button = 0;
+
 	for (i = 0; i < 16; i++) {
 		data = buf[3 + i * 3];
-		if (data)
+		if (data) {
 			log_debug(ratbag->libratbag,
 				  " - button%d: %s (%02x) %s:%d\n",
-				  i,
+				  button,
 				  print_key(data),
 				  data,
 				  __FILE__, __LINE__);
+			button++;
+		}
 	}
 }
 
@@ -179,6 +184,7 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 	}
 
 	ratbag->num_profiles = ETEKCITY_PROFILE_MAX;
+	ratbag->num_buttons = ETEKCITY_BUTTON_MAX;
 
 	profile = ratbag_get_active_profile(ratbag);
 

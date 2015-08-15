@@ -52,6 +52,8 @@ struct ratbag {
 
 	unsigned num_profiles;
 	struct list profiles;
+
+	unsigned num_buttons;
 };
 
 struct ratbag_id {

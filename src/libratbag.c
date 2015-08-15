@@ -462,3 +462,15 @@ ratbag_get_active_profile(struct ratbag *ratbag)
 
 	return ratbag_get_profile_by_index(ratbag, current_profile);
 }
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_get_num_profiles(struct ratbag *ratbag)
+{
+	return ratbag->num_profiles;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_get_num_buttons(struct ratbag *ratbag)
+{
+	return ratbag->num_buttons;
+}
