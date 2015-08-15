@@ -194,6 +194,7 @@ ratbag_device_init(struct ratbag *rb, int fd)
 	rb->evdev_fd = fd;
 	rb->hidraw_fd = -1;
 	rb->refcount = 1;
+	list_init(&rb->profiles);
 }
 
 static inline bool
@@ -222,9 +223,12 @@ ratbag_find_driver(struct libratbag *libratbag, struct ratbag *ratbag,
 				assert(driver->probe);
 				matched_id.id = *dev_id;
 				matched_id.data = matching_id->data;
+				ratbag->driver = driver;
 				rc = driver->probe(ratbag, matched_id);
 				if (rc == 0)
 					return driver;
+
+				ratbag->driver = NULL;
 
 				if (rc != -ENODEV)
 					return NULL;
@@ -284,8 +288,6 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 		errno = ENOTSUP;
 		goto err_udev;
 	}
-
-	ratbag->driver = driver;
 
 	return ratbag;
 
@@ -383,4 +385,80 @@ libratbag_unref(struct libratbag *libratbag)
 	free(libratbag);
 
 	return NULL;
+}
+
+static struct ratbag_profile *
+ratbag_create_profile(struct ratbag *ratbag, unsigned int index)
+{
+	struct ratbag_profile *profile;
+
+	profile = zalloc(sizeof(*profile));
+	if (!profile)
+		return NULL;
+
+	profile->refcount = 1;
+	profile->ratbag = ratbag;
+	profile->index = index;
+
+	list_insert(&ratbag->profiles, &profile->link);
+
+	assert(ratbag->driver->read_profile);
+	ratbag->driver->read_profile(profile, index);
+
+	return profile;
+}
+
+LIBRATBAG_EXPORT struct ratbag_profile *
+ratbag_profile_ref(struct ratbag_profile *profile)
+{
+	profile->refcount++;
+	return profile;
+}
+
+LIBRATBAG_EXPORT struct ratbag_profile *
+ratbag_profile_unref(struct ratbag_profile *profile)
+{
+	if (profile == NULL)
+		return NULL;
+
+	assert(profile->refcount > 0);
+	profile->refcount--;
+	if (profile->refcount > 0)
+		return profile;
+
+	list_remove(&profile->link);
+	free(profile);
+
+	return NULL;
+}
+
+LIBRATBAG_EXPORT struct ratbag_profile *
+ratbag_get_profile_by_index(struct ratbag *ratbag, unsigned int index)
+{
+	struct ratbag_profile *profile;
+
+	list_for_each(profile, &ratbag->profiles, link) {
+		if (profile->index == index) {
+			assert(ratbag->driver->read_profile);
+			ratbag->driver->read_profile(profile, index);
+			return ratbag_profile_ref(profile);
+		}
+	}
+
+	return ratbag_create_profile(ratbag, index);
+}
+
+LIBRATBAG_EXPORT struct ratbag_profile *
+ratbag_get_active_profile(struct ratbag *ratbag)
+{
+	int current_profile;
+
+	assert(ratbag->driver->get_active_profile);
+	current_profile = ratbag->driver->get_active_profile(ratbag);
+	if (current_profile < 0) {
+		errno = -current_profile;
+		return NULL;
+	}
+
+	return ratbag_get_profile_by_index(ratbag, current_profile);
 }

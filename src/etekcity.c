@@ -22,6 +22,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <errno.h>
 #include <linux/input.h>
 #include <stdlib.h>
@@ -29,6 +30,10 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+
+#define ETEKCITY_PROFILE_MAX			4
+
+#define ETEKCITY_REPORT_ID_KEY_MAPPING		7
 
 static char *
 print_key(__u8 key)
@@ -117,13 +122,44 @@ etekcity_set_config_profile(struct ratbag *ratbag, __u8 profile, __u8 type)
 	return ret == sizeof(buf) ? 0 : ret;
 }
 
+static void
+etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
+{
+	struct ratbag *ratbag = profile->ratbag;
+	int i, rc;
+	__u8 buf[50];
+	__u8 data;
+
+	assert(index <= ETEKCITY_PROFILE_MAX);
+
+	etekcity_set_config_profile(ratbag, index, 0x20);
+	rc = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_KEY_MAPPING,
+			buf, sizeof(buf), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+
+	if (rc < 50)
+		return;
+
+	log_debug(ratbag->libratbag, "profile: %d %s:%d\n",
+		  buf[2],
+		  __FILE__, __LINE__);
+
+	for (i = 0; i < 16; i++) {
+		data = buf[3 + i * 3];
+		if (data)
+			log_debug(ratbag->libratbag,
+				  " - button%d: %s (%02x) %s:%d\n",
+				  i,
+				  print_key(data),
+				  data,
+				  __FILE__, __LINE__);
+	}
+}
+
 static int
 etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 {
-	int rc, current_profile;
-	int i;
-	__u8 data;
-	__u8 buf[256];
+	int rc;
+	struct ratbag_profile *profile;
 
 	log_debug(ratbag->libratbag, "data: %d\n", id.data);
 
@@ -136,8 +172,11 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 		return -ENODEV;
 	}
 
-	rc = etekcity_current_profile(ratbag);
-	if (rc < 0) {
+	ratbag->num_profiles = ETEKCITY_PROFILE_MAX;
+
+	profile = ratbag_get_active_profile(ratbag);
+
+	if (!profile) {
 		log_error(ratbag->libratbag,
 			  "Can't talk to the mouse: '%s' (%d)\n",
 			  strerror(-rc),
@@ -145,32 +184,12 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 		return -ENODEV;
 	}
 
-	current_profile = rc;
-
 	log_info(ratbag->libratbag,
 		 "'%s' is in profile %d\n",
 		 ratbag_get_name(ratbag),
-		 current_profile);
+		 profile->index);
 
-	etekcity_set_config_profile(ratbag, current_profile, 0x20);
-	rc = ratbag_hidraw_raw_request(ratbag, 7, buf, sizeof(buf),
-				 HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
-	if (rc >= 40) {
-		log_debug(ratbag->libratbag, "profile: %d %s:%d\n",
-			  buf[2],
-			  __FILE__, __LINE__);
-
-		for (i = 0; i < 16; i++) {
-			data = buf[3 + i * 3];
-			if (data)
-				log_debug(ratbag->libratbag,
-					  " - button%d: %s (%02x) %s:%d\n",
-					  i,
-					  print_key(data),
-					  data,
-					  __FILE__, __LINE__);
-		}
-	}
+	profile = ratbag_profile_unref(profile);
 
 	return 0;
 }
@@ -190,4 +209,6 @@ struct ratbag_driver etekcity_driver = {
 	.name = "EtekCity",
 	.table_ids = etekcity_table,
 	.probe = etekcity_probe,
+	.read_profile = etekcity_read_profile,
+	.get_active_profile = etekcity_current_profile,
 };

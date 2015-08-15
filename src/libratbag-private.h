@@ -49,6 +49,9 @@ struct ratbag {
 	struct input_id ids;
 	struct ratbag_driver *driver;
 	struct libratbag *libratbag;
+
+	unsigned num_profiles;
+	struct list profiles;
 };
 
 struct ratbag_id {
@@ -61,9 +64,18 @@ struct ratbag_driver {
 	const struct ratbag_id *table_ids;
 
 	int (*probe)(struct ratbag *ratbag, const struct ratbag_id id);
+	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
+	int (*get_active_profile)(struct ratbag *ratbag);
 
 	/* private */
 	struct list link;
+};
+
+struct ratbag_profile {
+	int refcount;
+	struct list link;
+	unsigned index;
+	struct ratbag *ratbag;
 };
 
 void ratbag_device_init(struct ratbag *rb, int fd);

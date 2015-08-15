@@ -49,6 +49,7 @@ main(int argc, char **argv)
 {
 	struct ratbag *rb;
 	struct libratbag *libratbag;
+	struct ratbag_profile *profile;
 	char *path;
 	int fd;
 	int retval = 0;
@@ -81,7 +82,10 @@ main(int argc, char **argv)
 
 	fprintf(stderr, "Opened '%s' (%s).\n", ratbag_get_name(rb), path);
 
+	profile = ratbag_get_active_profile(rb);
+
 out:
+	profile = ratbag_profile_unref(profile);
 	rb = ratbag_unref(rb);
 	libratbag_unref(libratbag);
 	close(fd);
