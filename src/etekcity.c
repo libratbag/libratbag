@@ -33,7 +33,11 @@
 
 #define ETEKCITY_PROFILE_MAX			4
 
+#define ETEKCITY_REPORT_ID_CONFIGURE_PROFILE	4
+#define ETEKCITY_REPORT_ID_PROFILE		5
 #define ETEKCITY_REPORT_ID_KEY_MAPPING		7
+
+#define ETEKCITY_CONFIG_KEY_MAPPING		0x20
 
 static char *
 print_key(__u8 key)
@@ -94,8 +98,8 @@ etekcity_current_profile(struct ratbag *ratbag)
 	__u8 buf[3];
 	int ret;
 
-	ret = ratbag_hidraw_raw_request(ratbag, 5, buf, sizeof(buf),
-				 HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	ret = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_PROFILE, buf,
+			sizeof(buf), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 	if (ret < 0)
 		return ret;
 
@@ -108,10 +112,10 @@ etekcity_current_profile(struct ratbag *ratbag)
 static int
 etekcity_set_config_profile(struct ratbag *ratbag, __u8 profile, __u8 type)
 {
-	__u8 buf[] = {0x04, profile, type};
+	__u8 buf[] = {ETEKCITY_REPORT_ID_CONFIGURE_PROFILE, profile, type};
 	int ret;
 
-	if (profile > 5)
+	if (profile > ETEKCITY_PROFILE_MAX)
 		return -EINVAL;
 
 	ret = ratbag_hidraw_raw_request(ratbag, buf[0], buf, sizeof(buf),
@@ -132,7 +136,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	assert(index <= ETEKCITY_PROFILE_MAX);
 
-	etekcity_set_config_profile(ratbag, index, 0x20);
+	etekcity_set_config_profile(ratbag, index, ETEKCITY_CONFIG_KEY_MAPPING);
 	rc = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_KEY_MAPPING,
 			buf, sizeof(buf), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 
