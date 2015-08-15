@@ -291,8 +291,10 @@ err_udev:
 	udev_device_unref(ratbag->udev_device);
 	udev_device_unref(ratbag->udev_hidraw);
 out_err:
-	if (ratbag)
+	if (ratbag) {
 		free(ratbag->name);
+		ratbag->libratbag = libratbag_unref(ratbag->libratbag);
+	}
 	free(ratbag);
 	return NULL;
 }
