@@ -240,7 +240,6 @@ LIBRATBAG_EXPORT struct ratbag*
 ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 {
 	int rc;
-	struct input_id ids;
 	struct ratbag *ratbag = NULL;
 	struct ratbag_driver *driver;
 	char buf[256];
@@ -256,7 +255,7 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 
 	ratbag->libratbag = libratbag_ref(libratbag);
 
-	rc = ioctl(fd, EVIOCGID, &ids);
+	rc = ioctl(fd, EVIOCGID, &ratbag->ids);
 	if (rc < 0)
 		goto out_err;
 
@@ -277,7 +276,7 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 	if (rc)
 		goto out_err;
 
-	driver = ratbag_find_driver(libratbag, ratbag, &ids);
+	driver = ratbag_find_driver(libratbag, ratbag, &ratbag->ids);
 	if (!driver) {
 		errno = ENOTSUP;
 		goto err_udev;
