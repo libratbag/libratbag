@@ -94,6 +94,22 @@ print_key(__u8 key)
 }
 
 static int
+etekcity_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap)
+{
+	switch (cap) {
+	case RATBAG_CAP_NONE:
+		return 0;
+	case RATBAG_CAP_SWITCHABLE_RESOLUTION:
+	case RATBAG_CAP_SWITCHABLE_PROFILE:
+	case RATBAG_CAP_BUTTON_PROFILES:
+	case RATBAG_CAP_BUTTON_KEY:
+	case RATBAG_CAP_BUTTON_MACROS:
+		return 1;
+	}
+	return 0;
+}
+
+static int
 etekcity_current_profile(struct ratbag *ratbag)
 {
 	__u8 buf[3];
@@ -223,4 +239,5 @@ struct ratbag_driver etekcity_driver = {
 	.probe = etekcity_probe,
 	.read_profile = etekcity_read_profile,
 	.get_active_profile = etekcity_current_profile,
+	.has_capability = etekcity_has_capability,
 };

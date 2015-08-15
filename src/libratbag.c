@@ -474,3 +474,10 @@ ratbag_get_num_buttons(struct ratbag *ratbag)
 {
 	return ratbag->num_buttons;
 }
+
+LIBRATBAG_EXPORT int
+ratbag_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap)
+{
+	assert(ratbag->driver->has_capability);
+	return ratbag->driver->has_capability(ratbag, cap);
+}

@@ -10,6 +10,7 @@ global:
 	ratbag_get_num_profiles;
 	ratbag_get_num_buttons;
 	ratbag_get_profile_by_index;
+	ratbag_has_capability;
 	ratbag_new_from_fd;
 	ratbag_profile_ref;
 	ratbag_profile_unref;
