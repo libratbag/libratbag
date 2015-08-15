@@ -12,6 +12,7 @@ global:
 	ratbag_get_profile_by_index;
 	ratbag_has_capability;
 	ratbag_new_from_fd;
+	ratbag_set_active_profile;
 	ratbag_profile_ref;
 	ratbag_profile_unref;
 	ratbag_unref;

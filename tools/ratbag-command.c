@@ -82,10 +82,14 @@ main(int argc, char **argv)
 
 	fprintf(stderr, "Opened '%s' (%s).\n", ratbag_get_name(rb), path);
 
+	profile = ratbag_get_profile_by_index(rb, 0);
+	ratbag_set_active_profile(rb, profile);
+	profile = ratbag_profile_unref(profile);
+
 	profile = ratbag_get_active_profile(rb);
+	profile = ratbag_profile_unref(profile);
 
 out:
-	profile = ratbag_profile_unref(profile);
 	rb = ratbag_unref(rb);
 	libratbag_unref(libratbag);
 	close(fd);

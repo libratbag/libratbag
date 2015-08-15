@@ -481,3 +481,18 @@ ratbag_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap)
 	assert(ratbag->driver->has_capability);
 	return ratbag->driver->has_capability(ratbag, cap);
 }
+
+LIBRATBAG_EXPORT int
+ratbag_set_active_profile(struct ratbag *ratbag,
+			  struct ratbag_profile *profile)
+{
+	int rc;
+
+	assert(ratbag->driver->write_profile);
+	rc = ratbag->driver->write_profile(profile);
+	if (rc)
+		return rc;
+
+	assert(ratbag->driver->set_active_profile);
+	return ratbag->driver->set_active_profile(ratbag, profile->index);
+}

@@ -67,7 +67,9 @@ struct ratbag_driver {
 
 	int (*probe)(struct ratbag *ratbag, const struct ratbag_id id);
 	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
+	int (*write_profile)(struct ratbag_profile *profile);
 	int (*get_active_profile)(struct ratbag *ratbag);
+	int (*set_active_profile)(struct ratbag *ratbag, unsigned int index);
 	int (*has_capability)(const struct ratbag *ratbag, enum ratbag_capability cap);
 
 	/* private */

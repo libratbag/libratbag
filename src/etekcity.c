@@ -127,6 +127,23 @@ etekcity_current_profile(struct ratbag *ratbag)
 }
 
 static int
+etekcity_set_current_profile(struct ratbag *ratbag, unsigned int index)
+{
+	__u8 buf[] = {ETEKCITY_REPORT_ID_PROFILE, 0x03, index};
+	int ret;
+
+	if (index > ETEKCITY_PROFILE_MAX)
+		return -EINVAL;
+
+	ret = ratbag_hidraw_raw_request(ratbag, buf[0], buf, sizeof(buf),
+			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+
+	msleep(100);
+
+	return ret == sizeof(buf) ? 0 : ret;
+}
+
+static int
 etekcity_set_config_profile(struct ratbag *ratbag, __u8 profile, __u8 type)
 {
 	__u8 buf[] = {ETEKCITY_REPORT_ID_CONFIGURE_PROFILE, profile, type};
@@ -180,6 +197,12 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 			button++;
 		}
 	}
+}
+
+static int
+etekcity_write_profile(struct ratbag_profile *profile)
+{
+	return 0;
 }
 
 static int
@@ -238,6 +261,8 @@ struct ratbag_driver etekcity_driver = {
 	.table_ids = etekcity_table,
 	.probe = etekcity_probe,
 	.read_profile = etekcity_read_profile,
+	.write_profile = etekcity_write_profile,
 	.get_active_profile = etekcity_current_profile,
+	.set_active_profile = etekcity_set_current_profile,
 	.has_capability = etekcity_has_capability,
 };
