@@ -30,6 +30,59 @@
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 
+static char *
+print_key(__u8 key)
+{
+	switch (key) {
+	case 1: return "BTN_LEFT";
+	case 2: return "BTN_RIGHT";
+	case 3: return "BTN_MIDDLE";
+	case 4: return "2 x BTN_LEFT";
+	case 7: return "BTN_EXTRA";
+	case 8: return "BTN_SIDE";
+	case 9: return "REL_WHEEL 1";
+	case 10: return "REL_WHEEL -1";
+	case 11: return "REL_HWHEEL -1";
+	case 12: return "REL_HWHEEL 1";
+
+	/* DPI switch */
+	case 13: return "DPI cycle";
+	case 14: return "DPI++";
+	case 15: return "DPI--";
+
+	/* Profile */
+	case 18: return "profile cycle";
+	case 19: return "profile++";
+	case 20: return "profile--";
+
+	case 21: return "HOLD BTN_LEFT ON/OFF";
+
+	/* multimedia */
+	case 25: return "KEY_CONFIG";
+	case 26: return "KEY_PREVIOUSSONG";
+	case 27: return "KEY_NEXTSONG";
+	case 28: return "KEY_PLAYPAUSE";
+	case 29: return "KEY_STOPCD";
+	case 30: return "KEY_MUTE";
+	case 31: return "KEY_VOLUMEUP";
+	case 32: return "KEY_VOLUMEDOWN";
+
+	/* windows */
+	case 33: return "KEY_CALC";
+	case 34: return "KEY_MAIL";
+	case 35: return "KEY_BOOKMARKS";
+	case 36: return "KEY_FORWARD";
+	case 37: return "KEY_BACK";
+	case 38: return "KEY_STOP";
+	case 39: return "KEY_FILE";
+	case 40: return "KEY_REFRESH";
+	case 41: return "KEY_HOMEPAGE";
+	case 42: return "KEY_SEARCH";
+	}
+
+	return "UNKNOWN";
+}
+
 static int
 etekcity_current_profile(struct ratbag *ratbag)
 {
@@ -48,9 +101,29 @@ etekcity_current_profile(struct ratbag *ratbag)
 }
 
 static int
+etekcity_set_config_profile(struct ratbag *ratbag, __u8 profile, __u8 type)
+{
+	__u8 buf[] = {0x04, profile, type};
+	int ret;
+
+	if (profile > 5)
+		return -EINVAL;
+
+	ret = ratbag_hidraw_raw_request(ratbag, buf[0], buf, sizeof(buf),
+				 HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+
+	msleep(100);
+
+	return ret == sizeof(buf) ? 0 : ret;
+}
+
+static int
 etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 {
 	int rc, current_profile;
+	int i;
+	__u8 data;
+	__u8 buf[256];
 
 	log_debug(ratbag->libratbag, "data: %d\n", id.data);
 
@@ -78,6 +151,26 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 		 "'%s' is in profile %d\n",
 		 ratbag_get_name(ratbag),
 		 current_profile);
+
+	etekcity_set_config_profile(ratbag, current_profile, 0x20);
+	rc = ratbag_hidraw_raw_request(ratbag, 7, buf, sizeof(buf),
+				 HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	if (rc >= 40) {
+		log_debug(ratbag->libratbag, "profile: %d %s:%d\n",
+			  buf[2],
+			  __FILE__, __LINE__);
+
+		for (i = 0; i < 16; i++) {
+			data = buf[3 + i * 3];
+			if (data)
+				log_debug(ratbag->libratbag,
+					  " - button%d: %s (%02x) %s:%d\n",
+					  i,
+					  print_key(data),
+					  data,
+					  __FILE__, __LINE__);
+		}
+	}
 
 	return 0;
 }
