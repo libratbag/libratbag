@@ -140,6 +140,8 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	rc = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_KEY_MAPPING,
 			buf, sizeof(buf), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 
+	msleep(100);
+
 	if (rc < 50)
 		return;
 
