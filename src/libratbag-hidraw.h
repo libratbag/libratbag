@@ -52,4 +52,15 @@ int ratbag_open_hidraw(struct ratbag *ratbag);
 int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
 		__u8 *buf, size_t len, unsigned char rtype, int reqtype);
 
+/**
+ * ratbag_hidraw_output_report - send output report to device
+ *
+ * @hdev: hid device
+ * @buf: raw data to transfer
+ * @len: length of buf
+ *
+ * @return: count of data transfered, negative if error
+ */
+int ratbag_hidraw_output_report(struct ratbag *ratbag, __u8 *buf, size_t len);
+
 #endif /* LIBRATBAG_HIDRAW_H */

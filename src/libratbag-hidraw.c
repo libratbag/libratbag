@@ -105,3 +105,11 @@ int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
 
 	return -EINVAL;
 }
+
+int ratbag_hidraw_output_report(struct ratbag *ratbag, __u8 *buf, size_t len)
+{
+	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || ratbag->hidraw_fd < 0)
+		return -EINVAL;
+
+	return -ENOTSUP;
+}
