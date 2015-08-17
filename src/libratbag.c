@@ -313,6 +313,10 @@ ratbag_unref(struct ratbag *ratbag)
 	ratbag->refcount--;
 	if (ratbag->refcount > 0)
 		return ratbag;
+
+	if (ratbag->driver->remove)
+		ratbag->driver->remove(ratbag);
+
 	udev_device_unref(ratbag->udev_device);
 	udev_device_unref(ratbag->udev_hidraw);
 

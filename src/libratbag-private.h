@@ -66,6 +66,7 @@ struct ratbag_driver {
 	const struct ratbag_id *table_ids;
 
 	int (*probe)(struct ratbag *ratbag, const struct ratbag_id id);
+	void (*remove)(struct ratbag *ratbag);
 	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
 	int (*write_profile)(struct ratbag_profile *profile);
 	int (*get_active_profile)(struct ratbag *ratbag);
