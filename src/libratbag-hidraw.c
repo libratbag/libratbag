@@ -71,8 +71,9 @@ err:
 	return -errno;
 }
 
-int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
-		uint8_t *buf, size_t len, unsigned char rtype, int reqtype)
+int
+ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
+			  uint8_t *buf, size_t len, unsigned char rtype, int reqtype)
 {
 	char tmp_buf[HID_MAX_BUFFER_SIZE];
 	int rc;
@@ -106,7 +107,8 @@ int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
 	return -EINVAL;
 }
 
-int ratbag_hidraw_output_report(struct ratbag *ratbag, uint8_t *buf, size_t len)
+int
+ratbag_hidraw_output_report(struct ratbag *ratbag, uint8_t *buf, size_t len)
 {
 	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || ratbag->hidraw_fd < 0)
 		return -EINVAL;

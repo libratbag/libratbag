@@ -51,7 +51,8 @@ int ratbag_open_hidraw(struct ratbag *ratbag);
  * Same behavior as hid_hw_request, but with raw buffers instead.
  */
 int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
-		uint8_t *buf, size_t len, unsigned char rtype, int reqtype);
+			      uint8_t *buf, size_t len, unsigned char rtype,
+			      int reqtype);
 
 /**
  * ratbag_hidraw_output_report - send output report to device
