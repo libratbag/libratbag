@@ -33,7 +33,7 @@
 static void
 list_ratbags_usage(void)
 {
-	printf("Usage: %s [options] /dev/input/eventX]\n"
+	printf("Usage: %s [options] /dev/input/eventX\n"
 	       "/path/to/device .... open the given device only\n"
 	       "\n"
 	       "Features:\n"
