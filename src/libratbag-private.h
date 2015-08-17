@@ -71,6 +71,10 @@ struct ratbag_driver {
 	int (*get_active_profile)(struct ratbag *ratbag);
 	int (*set_active_profile)(struct ratbag *ratbag, unsigned int index);
 	int (*has_capability)(const struct ratbag *ratbag, enum ratbag_capability cap);
+	void (*read_button)(struct ratbag *ratbag, struct ratbag_profile *profile,
+			    struct ratbag_button *button);
+	int (*write_button)(struct ratbag *ratbag, struct ratbag_profile *profile,
+			    struct ratbag_button *button);
 
 	/* private */
 	struct list link;
@@ -81,9 +85,34 @@ struct ratbag_profile {
 	struct list link;
 	unsigned index;
 	struct ratbag *ratbag;
+	struct list buttons;
+	void *drv_data;
+	void *user_data;
+};
+
+struct ratbag_button {
+	int refcount;
+	struct list link;
+	struct ratbag *ratbag;
+	struct ratbag_profile *profile;
+	unsigned index;
+	enum ratbag_button_type type;
+	enum ratbag_button_action_type action_type;
 };
 
 void ratbag_device_init(struct ratbag *rb, int fd);
+
+static inline void
+ratbag_profile_set_drv_data(struct ratbag_profile *profile, void *drv_data)
+{
+	profile->drv_data = drv_data;
+}
+
+static inline void *
+ratbag_profile_get_drv_data(struct ratbag_profile *profile)
+{
+	return profile->drv_data;
+}
 
 void
 log_msg_va(struct libratbag *libratbag,

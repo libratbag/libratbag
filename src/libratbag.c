@@ -401,6 +401,7 @@ ratbag_create_profile(struct ratbag *ratbag, unsigned int index)
 	profile->index = index;
 
 	list_insert(&ratbag->profiles, &profile->link);
+	list_init(&profile->buttons);
 
 	assert(ratbag->driver->read_profile);
 	ratbag->driver->read_profile(profile, index);
@@ -495,4 +496,69 @@ ratbag_set_active_profile(struct ratbag *ratbag,
 
 	assert(ratbag->driver->set_active_profile);
 	return ratbag->driver->set_active_profile(ratbag, profile->index);
+}
+
+static struct ratbag_button *
+ratbag_create_button(struct ratbag *ratbag, struct ratbag_profile *profile,
+		unsigned int index)
+{
+	struct ratbag_button *button;
+
+	button = zalloc(sizeof(*button));
+	if (!button)
+		return NULL;
+
+	button->refcount = 1;
+	button->ratbag = ratbag;
+	button->profile = profile;
+	button->index = index;
+
+	if (profile)
+		list_insert(&profile->buttons, &button->link);
+
+	if (ratbag->driver->read_button)
+		ratbag->driver->read_button(ratbag, profile, button);
+
+	return button;
+}
+
+LIBRATBAG_EXPORT struct ratbag_button*
+ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
+				   unsigned int index)
+{
+	struct ratbag_button *button;
+
+	list_for_each(button, &profile->buttons, link) {
+		if (button->index == index) {
+			if (profile->ratbag->driver->read_button)
+				profile->ratbag->driver->read_button(profile->ratbag, profile, button);
+			return ratbag_button_ref(button);
+		}
+	}
+
+	return ratbag_create_button(profile->ratbag, profile, index);
+}
+
+LIBRATBAG_EXPORT struct ratbag_button *
+ratbag_button_ref(struct ratbag_button *button)
+{
+	button->refcount++;
+	return button;
+}
+
+LIBRATBAG_EXPORT struct ratbag_button *
+ratbag_button_unref(struct ratbag_button *button)
+{
+	if (button == NULL)
+		return NULL;
+
+	assert(button->refcount > 0);
+	button->refcount--;
+	if (button->refcount > 0)
+		return button;
+
+	list_remove(&button->link);
+	free(button);
+
+	return NULL;
 }

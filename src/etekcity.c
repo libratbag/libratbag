@@ -166,7 +166,6 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag *ratbag = profile->ratbag;
 	int i, rc, button;
 	__u8 buf[50];
-	__u8 data;
 
 	assert(index <= ETEKCITY_PROFILE_MAX);
 
@@ -179,6 +178,8 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	if (rc < 50)
 		return;
 
+	ratbag_profile_set_drv_data(profile, buf);
+
 	log_debug(ratbag->libratbag, "profile: %d %s:%d\n",
 		  buf[2],
 		  __FILE__, __LINE__);
@@ -186,21 +187,37 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	button = 0;
 
 	for (i = 0; i < 16; i++) {
-		data = buf[3 + i * 3];
-		if (data) {
-			log_debug(ratbag->libratbag,
-				  " - button%d: %s (%02x) %s:%d\n",
-				  button,
-				  print_key(data),
-				  data,
-				  __FILE__, __LINE__);
-			button++;
-		}
+		ratbag_profile_get_button_by_index(profile, i);
 	}
+	ratbag_profile_set_drv_data(profile, NULL);
 }
 
 static int
 etekcity_write_profile(struct ratbag_profile *profile)
+{
+	return 0;
+}
+
+static void
+etekcity_read_button(struct ratbag *ratbag, struct ratbag_profile *profile,
+		     struct ratbag_button *button)
+{
+	__u8 *raw_profile = ratbag_profile_get_drv_data(profile);
+	__u8 data;
+
+	if (!raw_profile)
+		return;
+
+	data = raw_profile[3 + button->index * 3];
+	if (data)
+		log_debug(ratbag->libratbag,
+			  " - button%d: %s (%02x) %s:%d\n",
+			  button->index, print_key(data), data, __FILE__, __LINE__);
+}
+
+static int
+etekcity_write_button(struct ratbag *ratbag, struct ratbag_profile *profile,
+		      struct ratbag_button *button)
 {
 	return 0;
 }
@@ -265,4 +282,6 @@ struct ratbag_driver etekcity_driver = {
 	.get_active_profile = etekcity_current_profile,
 	.set_active_profile = etekcity_set_current_profile,
 	.has_capability = etekcity_has_capability,
+	.read_button = etekcity_read_button,
+	.write_button = etekcity_write_button,
 };
