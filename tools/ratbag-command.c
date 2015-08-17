@@ -50,8 +50,10 @@ main(int argc, char **argv)
 	struct ratbag *rb;
 	struct libratbag *libratbag;
 	struct ratbag_profile *profile;
+	struct ratbag_button *button;
 	char *path;
 	int fd;
+	int i;
 	int retval = 0;
 
 	if (argc < 2) {
@@ -87,6 +89,10 @@ main(int argc, char **argv)
 	profile = ratbag_profile_unref(profile);
 
 	profile = ratbag_get_active_profile(rb);
+	for (i = 0; i < ratbag_get_num_buttons(rb); i++) {
+		button = ratbag_profile_get_button_by_index(profile, i);
+		button = ratbag_button_unref(button);
+	}
 	profile = ratbag_profile_unref(profile);
 
 out:

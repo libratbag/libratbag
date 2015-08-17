@@ -39,7 +39,13 @@
 #define ETEKCITY_REPORT_ID_PROFILE		5
 #define ETEKCITY_REPORT_ID_KEY_MAPPING		7
 
+#define ETEKCITY_REPORT_SIZE_PROFILE		50
+
 #define ETEKCITY_CONFIG_KEY_MAPPING		0x20
+
+struct etekcity_data {
+	uint8_t profiles[(ETEKCITY_PROFILE_MAX + 1)][ETEKCITY_REPORT_SIZE_PROFILE];
+};
 
 static char *
 print_key(uint8_t key)
@@ -165,32 +171,28 @@ static void
 etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag *ratbag = profile->ratbag;
-	int i, rc, button;
-	uint8_t buf[50];
+	struct etekcity_data *drv_data;
+	int rc;
+	uint8_t *buf;
 
 	assert(index <= ETEKCITY_PROFILE_MAX);
 
+	drv_data = ratbag_get_drv_data(ratbag);
+	buf = drv_data->profiles[index];
+
 	etekcity_set_config_profile(ratbag, index, ETEKCITY_CONFIG_KEY_MAPPING);
 	rc = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_KEY_MAPPING,
-			buf, sizeof(buf), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+			buf, ETEKCITY_REPORT_SIZE_PROFILE,
+			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 
 	msleep(100);
 
 	if (rc < 50)
 		return;
 
-	ratbag_profile_set_drv_data(profile, buf);
-
 	log_debug(ratbag->libratbag, "profile: %d %s:%d\n",
 		  buf[2],
 		  __FILE__, __LINE__);
-
-	button = 0;
-
-	for (i = 0; i < 16; i++) {
-		ratbag_profile_get_button_by_index(profile, i);
-	}
-	ratbag_profile_set_drv_data(profile, NULL);
 }
 
 static int
@@ -199,17 +201,21 @@ etekcity_write_profile(struct ratbag_profile *profile)
 	return 0;
 }
 
+static inline unsigned
+etekcity_button_to_index(unsigned button)
+{
+	return button < 8 ? button : button + 5;
+}
+
 static void
 etekcity_read_button(struct ratbag *ratbag, struct ratbag_profile *profile,
 		     struct ratbag_button *button)
 {
-	uint8_t *raw_profile = ratbag_profile_get_drv_data(profile);
+	struct etekcity_data *drv_data = ratbag_get_drv_data(ratbag);
 	uint8_t data;
+	unsigned index = etekcity_button_to_index(button->index);
 
-	if (!raw_profile)
-		return;
-
-	data = raw_profile[3 + button->index * 3];
+	data = drv_data->profiles[profile->index][3 + index * 3];
 	if (data)
 		log_debug(ratbag->libratbag,
 			  " - button%d: %s (%02x) %s:%d\n",
@@ -228,6 +234,7 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 {
 	int rc;
 	struct ratbag_profile *profile;
+	struct etekcity_data *drv_data;
 
 	log_debug(ratbag->libratbag, "data: %d\n", id.data);
 
@@ -240,6 +247,12 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 		return -ENODEV;
 	}
 
+	drv_data = zalloc(sizeof(*drv_data));
+	if (!drv_data)
+		return -ENODEV;
+
+	ratbag_set_drv_data(ratbag, drv_data);
+
 	ratbag->num_profiles = ETEKCITY_PROFILE_MAX;
 	ratbag->num_buttons = ETEKCITY_BUTTON_MAX;
 
@@ -250,7 +263,8 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 			  "Can't talk to the mouse: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
-		return -ENODEV;
+		rc = -ENODEV;
+		goto err;
 	}
 
 	log_info(ratbag->libratbag,
@@ -261,6 +275,17 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 	profile = ratbag_profile_unref(profile);
 
 	return 0;
+
+err:
+	free(drv_data);
+	ratbag_set_drv_data(ratbag, NULL);
+	return rc;
+}
+
+static void
+etekcity_remove(struct ratbag *ratbag)
+{
+	free(ratbag_get_drv_data(ratbag));
 }
 
 static const struct ratbag_id etekcity_table[] = {
@@ -278,6 +303,7 @@ struct ratbag_driver etekcity_driver = {
 	.name = "EtekCity",
 	.table_ids = etekcity_table,
 	.probe = etekcity_probe,
+	.remove = etekcity_remove,
 	.read_profile = etekcity_read_profile,
 	.write_profile = etekcity_write_profile,
 	.get_active_profile = etekcity_current_profile,
