@@ -5,6 +5,9 @@ global:
 	libratbag_create_context;
 	libratbag_ref;
 	libratbag_unref;
+	ratbag_button_ref;
+	ratbag_button_unref;
+	ratbag_profile_get_button_by_index;
 	ratbag_get_active_profile;
 	ratbag_get_name;
 	ratbag_get_num_profiles;
