@@ -54,6 +54,8 @@ struct ratbag {
 	struct list profiles;
 
 	unsigned num_buttons;
+
+	void *drv_data;
 };
 
 struct ratbag_id {
@@ -102,6 +104,18 @@ struct ratbag_button {
 };
 
 void ratbag_device_init(struct ratbag *rb, int fd);
+
+static inline void
+ratbag_set_drv_data(struct ratbag *ratbag, void *drv_data)
+{
+	ratbag->drv_data = drv_data;
+}
+
+static inline void *
+ratbag_get_drv_data(struct ratbag *ratbag)
+{
+	return ratbag->drv_data;
+}
 
 static inline void
 ratbag_profile_set_drv_data(struct ratbag_profile *profile, void *drv_data)
