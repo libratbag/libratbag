@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <linux/input.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "libratbag-private.h"
@@ -41,7 +42,7 @@
 #define ETEKCITY_CONFIG_KEY_MAPPING		0x20
 
 static char *
-print_key(__u8 key)
+print_key(uint8_t key)
 {
 	switch (key) {
 	case 1: return "BTN_LEFT";
@@ -112,7 +113,7 @@ etekcity_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap)
 static int
 etekcity_current_profile(struct ratbag *ratbag)
 {
-	__u8 buf[3];
+	uint8_t buf[3];
 	int ret;
 
 	ret = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_PROFILE, buf,
@@ -129,7 +130,7 @@ etekcity_current_profile(struct ratbag *ratbag)
 static int
 etekcity_set_current_profile(struct ratbag *ratbag, unsigned int index)
 {
-	__u8 buf[] = {ETEKCITY_REPORT_ID_PROFILE, 0x03, index};
+	uint8_t buf[] = {ETEKCITY_REPORT_ID_PROFILE, 0x03, index};
 	int ret;
 
 	if (index > ETEKCITY_PROFILE_MAX)
@@ -144,9 +145,9 @@ etekcity_set_current_profile(struct ratbag *ratbag, unsigned int index)
 }
 
 static int
-etekcity_set_config_profile(struct ratbag *ratbag, __u8 profile, __u8 type)
+etekcity_set_config_profile(struct ratbag *ratbag, uint8_t profile, uint8_t type)
 {
-	__u8 buf[] = {ETEKCITY_REPORT_ID_CONFIGURE_PROFILE, profile, type};
+	uint8_t buf[] = {ETEKCITY_REPORT_ID_CONFIGURE_PROFILE, profile, type};
 	int ret;
 
 	if (profile > ETEKCITY_PROFILE_MAX)
@@ -165,7 +166,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag *ratbag = profile->ratbag;
 	int i, rc, button;
-	__u8 buf[50];
+	uint8_t buf[50];
 
 	assert(index <= ETEKCITY_PROFILE_MAX);
 
@@ -202,8 +203,8 @@ static void
 etekcity_read_button(struct ratbag *ratbag, struct ratbag_profile *profile,
 		     struct ratbag_button *button)
 {
-	__u8 *raw_profile = ratbag_profile_get_drv_data(profile);
-	__u8 data;
+	uint8_t *raw_profile = ratbag_profile_get_drv_data(profile);
+	uint8_t data;
 
 	if (!raw_profile)
 		return;

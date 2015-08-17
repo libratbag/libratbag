@@ -25,6 +25,7 @@
 #define LIBRATBAG_HIDRAW_H
 
 #include <linux/hid.h>
+#include <stdint.h>
 
 #include "libratbag.h"
 
@@ -50,7 +51,7 @@ int ratbag_open_hidraw(struct ratbag *ratbag);
  * Same behavior as hid_hw_request, but with raw buffers instead.
  */
 int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
-		__u8 *buf, size_t len, unsigned char rtype, int reqtype);
+		uint8_t *buf, size_t len, unsigned char rtype, int reqtype);
 
 /**
  * ratbag_hidraw_output_report - send output report to device
@@ -61,6 +62,6 @@ int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
  *
  * @return: count of data transfered, negative if error
  */
-int ratbag_hidraw_output_report(struct ratbag *ratbag, __u8 *buf, size_t len);
+int ratbag_hidraw_output_report(struct ratbag *ratbag, uint8_t *buf, size_t len);
 
 #endif /* LIBRATBAG_HIDRAW_H */
