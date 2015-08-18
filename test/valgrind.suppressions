@@ -1,0 +1,9 @@
+{
+   srunner_run::timer_create-uninitialized-bytes
+   Memcheck:Param
+   timer_create(evp)
+   fun:timer_create@@GLIBC_2.3.3
+   fun:srunner_run
+   ...
+   fun:main
+}
