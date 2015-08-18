@@ -42,4 +42,5 @@ test-build-linker
 test-build-pedantic-c99
 test-build-std-gnuc90
 test-suite.log
+test-context
 ratbag-command

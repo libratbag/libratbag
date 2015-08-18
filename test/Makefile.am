@@ -9,7 +9,8 @@ AM_CXXFLAGS = $(GCC_CXXFLAGS)
 
 TEST_LIBS = $(CHECK_LIBS) $(LIBEVDEV_LIBS) $(top_builddir)/src/libratbag.la
 
-run_tests = 
+run_tests = \
+	test-context
 
 build_tests = \
 	test-build-cxx \
@@ -17,9 +18,13 @@ build_tests = \
 	test-build-pedantic-c99 \
 	test-build-std-gnuc90
 
-noinst_PROGRAMS = $(build_tests)
+noinst_PROGRAMS = $(build_tests) $(run_tests)
 noinst_SCRIPTS = symbols-leak-test
 TESTS = $(run_tests) symbols-leak-test
+
+test_context_SOURCES = test-context.c
+test_context_LDADD = $(TEST_LIBS)
+test_context_LDFLAGS = -no-install
 
 # build-test only
 test_build_pedantic_c99_SOURCES = build-pedantic.c
