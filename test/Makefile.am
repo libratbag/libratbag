@@ -19,7 +19,7 @@ build_tests = \
 
 noinst_PROGRAMS = $(build_tests)
 noinst_SCRIPTS = symbols-leak-test
-TESTS = $(run_tests)
+TESTS = $(run_tests) symbols-leak-test
 
 # build-test only
 test_build_pedantic_c99_SOURCES = build-pedantic.c
