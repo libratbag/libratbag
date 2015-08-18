@@ -27,8 +27,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include <libratbag.h>
+
+enum options {
+	OPT_VERBOSE,
+	OPT_HELP,
+};
 
 static void
 list_ratbags_usage(void)
@@ -45,24 +51,61 @@ list_ratbags_usage(void)
 }
 
 int
+parse_args(int argc, char **argv, const char **path, int *verbose)
+{
+	while (1) {
+		int c;
+		int option_index = 0;
+		static struct option opts[] = {
+			{ "verbose", 0, 0, OPT_VERBOSE },
+			{ "help", 0, 0, OPT_HELP },
+		};
+
+		c = getopt_long(argc, argv, "+h", opts, &option_index);
+		if (c == -1)
+			break;
+		switch(c) {
+		case 'h':
+		case OPT_HELP:
+			list_ratbags_usage();
+			exit(0);
+			break;
+		case OPT_VERBOSE:
+			*verbose = 1;
+			break;
+		default:
+			list_ratbags_usage();
+			return -1;
+		}
+	}
+
+	if (optind >= argc) {
+		list_ratbags_usage();
+		return -1;
+	}
+
+	*path = argv[optind++];
+
+	return 0;
+}
+
+int
 main(int argc, char **argv)
 {
 	struct ratbag *rb;
 	struct libratbag *libratbag;
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
-	char *path;
+	const char *path;
 	int i;
 	int retval = 0;
 	struct udev *udev;
 	struct udev_device *udev_device;
+	int verbose = 0;
 
-	if (argc < 2) {
-		list_ratbags_usage();
+	if (parse_args(argc, argv, &path, &verbose) == -1)
 		return 1;
-	}
 
-	path = argv[1];
 	udev = udev_new();
 	udev_device = udev_device_new_from_syspath(udev, path);
 	if (!udev_device) {
