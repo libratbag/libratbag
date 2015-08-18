@@ -138,7 +138,7 @@ main(int argc, char **argv)
 
 	libratbag = libratbag_create_context(&interface, NULL);
 	if (!libratbag) {
-		fprintf(stderr, "Can't initilize libratbag\n");
+		fprintf(stderr, "Can't initialize libratbag\n");
 		return 1;
 	}
 
