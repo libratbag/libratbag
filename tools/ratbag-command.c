@@ -89,6 +89,29 @@ parse_args(int argc, char **argv, const char **path, int *verbose)
 	return 0;
 }
 
+static int
+open_restricted(const char *path, int flags, void *user_data)
+{
+	int fd = open(path, flags);
+
+	if (fd < 0)
+		fprintf(stderr, "Failed to open %s (%s)\n",
+			path, strerror(errno));
+
+	return fd < 0 ? -errno : fd;
+}
+
+static void
+close_restricted(int fd, void *user_data)
+{
+	close(fd);
+}
+
+const struct libratbag_interface interface = {
+	.open_restricted = open_restricted,
+	.close_restricted = close_restricted,
+};
+
 int
 main(int argc, char **argv)
 {
@@ -113,7 +136,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	libratbag = libratbag_create_context();
+	libratbag = libratbag_create_context(&interface, NULL);
 	if (!libratbag) {
 		fprintf(stderr, "Can't initilize libratbag\n");
 		return 1;

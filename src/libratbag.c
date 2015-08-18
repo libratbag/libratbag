@@ -24,7 +24,6 @@
 #include "config.h"
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <libudev.h>
 #include <linux/hidraw.h>
 #include <stdbool.h>
@@ -34,15 +33,6 @@
 
 #include "libratbag-private.h"
 #include "libratbag-util.h"
-
-struct libratbag {
-	struct udev *udev;
-	struct list drivers;
-
-	int refcount;
-	libratbag_log_handler log_handler;
-	enum libratbag_log_priority log_priority;
-};
 
 static void
 libratbag_default_log_func(struct libratbag *libratbag,
@@ -362,15 +352,23 @@ ratbag_register_driver(struct libratbag *libratbag, struct ratbag_driver *driver
 }
 
 LIBRATBAG_EXPORT struct libratbag *
-libratbag_create_context(void)
+libratbag_create_context(const struct libratbag_interface *interface,
+			 void *userdata)
 {
 	struct libratbag *libratbag;
+
+	if (interface == NULL ||
+	    interface->open_restricted == NULL ||
+	    interface->close_restricted == NULL)
+		return NULL;
 
 	libratbag = zalloc(sizeof(*libratbag));
 	if (!libratbag)
 		return NULL;
 
 	libratbag->refcount = 1;
+	libratbag->interface = interface;
+	libratbag->userdata = userdata;
 
 	list_init(&libratbag->drivers);
 	libratbag->udev = udev_new();

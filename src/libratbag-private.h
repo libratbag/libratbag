@@ -39,6 +39,18 @@
 
 struct ratbag_driver;
 
+struct libratbag {
+	const struct libratbag_interface *interface;
+	void *userdata;
+
+	struct udev *udev;
+	struct list drivers;
+
+	int refcount;
+	libratbag_log_handler log_handler;
+	enum libratbag_log_priority log_priority;
+};
+
 struct ratbag {
 	char *name;
 	struct udev_device *udev_device;
@@ -102,6 +114,22 @@ struct ratbag_button {
 	enum ratbag_button_action_type action_type;
 };
 
+static inline int
+ratbag_open_path(struct ratbag *ratbag, const char *path, int flags)
+{
+	struct libratbag *libratbag = ratbag->libratbag;
+
+	return libratbag->interface->open_restricted(path, flags, libratbag->userdata);
+}
+
+static inline void
+ratbag_close_fd(struct ratbag *ratbag, int fd)
+{
+	struct libratbag *libratbag = ratbag->libratbag;
+
+	return libratbag->interface->close_restricted(fd, libratbag->userdata);
+}
+
 static inline void
 ratbag_set_drv_data(struct ratbag *ratbag, void *drv_data)
 {
@@ -125,6 +153,7 @@ ratbag_profile_get_drv_data(struct ratbag_profile *profile)
 {
 	return profile->drv_data;
 }
+
 
 void
 log_msg_va(struct libratbag *libratbag,

@@ -40,11 +40,13 @@ ratbag_open_hidraw(struct ratbag *ratbag)
 {
 	struct hidraw_devinfo info;
 	int fd, res;
+	const char *devnode;
 
 	if (!ratbag->udev_hidraw)
 		return -EINVAL;
 
-	fd = open(udev_device_get_devnode(ratbag->udev_hidraw), O_RDWR);
+	devnode = udev_device_get_devnode(ratbag->udev_hidraw);
+	fd = ratbag_open_path(ratbag, devnode, O_RDWR);
 	if (fd < 0)
 		goto err;
 
@@ -67,7 +69,7 @@ ratbag_open_hidraw(struct ratbag *ratbag)
 
 err:
 	if (fd >= 0)
-		close(fd);
+		ratbag_close_fd(ratbag, fd);
 	return -errno;
 }
 

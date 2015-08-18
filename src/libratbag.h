@@ -134,13 +134,47 @@ struct ratbag_button;
 
 /**
  * @ingroup base
+ * @struct libratbag_interface
+ *
+ * libratbag does not open file descriptors to devices directly, instead
+ * open_restricted() and close_restricted() are called for each path that
+ * must be opened.
+ *
+ * @see libratbag_create_context
+ */
+struct libratbag_interface {
+	/**
+	 * Open the device at the given path with the flags provided and
+	 * return the fd.
+	 *
+	 * @param path The device path to open
+	 * @param flags Flags as defined by open(2)
+	 * @param user_data The user_data provided in
+	 * libratbag_create_context()
+	 *
+	 * @return The file descriptor, or a negative errno on failure.
+	 */
+	int (*open_restricted)(const char *path, int flags, void *user_data);
+	/**
+	 * Close the file descriptor.
+	 *
+	 * @param fd The file descriptor to close
+	 * @param user_data The user_data provided in
+	 * libratbag_create_context()
+	 */
+	void (*close_restricted)(int fd, void *user_data);
+};
+
+/**
+ * @ingroup base
  *
  * Create a new libratbag context.
  *
  * @return An initialized libratbag context or NULL on error
  */
 struct libratbag *
-libratbag_create_context(void);
+libratbag_create_context(const struct libratbag_interface *interface,
+			 void *userdata);
 
 /**
  * @ingroup base
