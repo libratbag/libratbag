@@ -30,6 +30,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <libudev.h>
 
 #define LIBRATBAG_ATTRIBUTE_PRINTF(_format, _args) \
 	__attribute__ ((format (printf, _format, _args)))
@@ -169,11 +170,11 @@ libratbag_unref(struct libratbag *libratbag);
 /**
  * @ingroup base
  *
- * Create a new ratbag context from the given fd. The file descriptor must
- * point to a /dev/input/eventX event node and be opened in O_RDWR.
+ * Create a new ratbag context from the given udev device.
  */
 struct ratbag*
-ratbag_new_from_fd(struct libratbag *libratbag, int fd);
+ratbag_new_from_udev_device(struct libratbag *libratbag,
+			    struct udev_device *device);
 
 /**
  * @ingroup base

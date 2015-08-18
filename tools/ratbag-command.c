@@ -33,7 +33,7 @@
 static void
 list_ratbags_usage(void)
 {
-	printf("Usage: %s [options] /dev/input/eventX\n"
+	printf("Usage: %s [options] /sys/class/input/eventX\n"
 	       "/path/to/device .... open the given device only\n"
 	       "\n"
 	       "Features:\n"
@@ -52,9 +52,10 @@ main(int argc, char **argv)
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
 	char *path;
-	int fd;
 	int i;
 	int retval = 0;
+	struct udev *udev;
+	struct udev_device *udev_device;
 
 	if (argc < 2) {
 		list_ratbags_usage();
@@ -62,8 +63,9 @@ main(int argc, char **argv)
 	}
 
 	path = argv[1];
-	fd = open(path, O_RDWR);
-	if (fd <= 0) {
+	udev = udev_new();
+	udev_device = udev_device_new_from_syspath(udev, path);
+	if (!udev_device) {
 		fprintf(stderr, "Can't open '%s': %s\n", path, strerror(errno));
 		return 1;
 	}
@@ -74,7 +76,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	rb = ratbag_new_from_fd(libratbag, fd);
+	rb = ratbag_new_from_udev_device(libratbag, udev_device);
 
 	if (!rb) {
 		fprintf(stderr, "Looks like '%s' is not supported\n", path);
@@ -98,6 +100,6 @@ main(int argc, char **argv)
 out:
 	rb = ratbag_unref(rb);
 	libratbag_unref(libratbag);
-	close(fd);
+	udev_unref(udev);
 	return retval;
 }

@@ -158,17 +158,12 @@ out:
 }
 
 static int
-ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag *ratbag, int fd)
+ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag *ratbag,
+			struct udev_device *udev_device)
 {
-	struct udev_device *udev_device;
 	struct udev_device *hidraw_udev;
 	int rc = -ENODEV;
 
-	udev_device = udev_device_from_devnode(libratbag, ratbag, fd);
-	if (!udev_device) {
-		log_bug_client(libratbag, "Invalid path %s\n", fd);
-		return -ENODEV;
-	}
 	ratbag->udev_device = udev_device_ref(udev_device);
 
 	hidraw_udev = udev_find_hidraw(libratbag, ratbag);
@@ -188,10 +183,9 @@ out:
 	return rc;
 }
 
-void
-ratbag_device_init(struct ratbag *rb, int fd)
+static void
+ratbag_device_init(struct ratbag *rb)
 {
-	rb->evdev_fd = fd;
 	rb->hidraw_fd = -1;
 	rb->refcount = 1;
 	list_init(&rb->profiles);
@@ -243,13 +237,46 @@ ratbag_find_driver(struct libratbag *libratbag, struct ratbag *ratbag,
 	return NULL;
 }
 
+static inline char*
+get_device_name(struct udev_device *device)
+{
+	const char *prop;
+
+	prop = udev_prop_value(device, "NAME");
+	if (!prop)
+		return NULL;
+
+	/* udev name is inclosed by " */
+	return strndup(&prop[1], strlen(prop) - 2);
+}
+
+static inline int
+get_product_id(struct udev_device *device, struct input_id *id)
+{
+	const char *product;
+	struct input_id ids;
+	int rc;
+
+	product = udev_prop_value(device, "PRODUCT");
+	if (!product)
+		return -1;
+
+	rc = sscanf(product, "%hx/%hx/%hx/%hx", &ids.bustype,
+		    &ids.vendor, &ids.product, &ids.version);
+	if (rc != 4)
+		return -1;
+
+	*id = ids;
+	return 0;
+}
+
 LIBRATBAG_EXPORT struct ratbag*
-ratbag_new_from_fd(struct libratbag *libratbag, int fd)
+ratbag_new_from_udev_device(struct libratbag *libratbag,
+			    struct udev_device *device)
 {
 	int rc;
 	struct ratbag *ratbag = NULL;
 	struct ratbag_driver *driver;
-	char buf[256];
 
 	if (!libratbag) {
 		fprintf(stderr, "libratbag is NULL\n");
@@ -261,25 +288,17 @@ ratbag_new_from_fd(struct libratbag *libratbag, int fd)
 		return NULL;
 
 	ratbag->libratbag = libratbag_ref(libratbag);
-
-	rc = ioctl(fd, EVIOCGID, &ratbag->ids);
-	if (rc < 0)
+	if (get_product_id(device, &ratbag->ids) != 0)
 		goto out_err;
-
-	memset(buf, 0, sizeof(buf));
-	rc = ioctl(fd, EVIOCGNAME(sizeof(buf) - 1), buf);
-	if (rc < 0)
-		goto out_err;
-
 	free(ratbag->name);
-	ratbag->name = strdup(buf);
+	ratbag->name = get_device_name(device);
 	if (!ratbag->name) {
 		errno = ENOMEM;
 		goto out_err;
 	}
 
-	ratbag_device_init(ratbag, fd);
-	rc = ratbag_device_init_udev(libratbag, ratbag, fd);
+	ratbag_device_init(ratbag);
+	rc = ratbag_device_init_udev(libratbag, ratbag, device);
 	if (rc)
 		goto out_err;
 

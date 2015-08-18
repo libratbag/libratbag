@@ -43,7 +43,6 @@ struct ratbag {
 	char *name;
 	struct udev_device *udev_device;
 	struct udev_device *udev_hidraw;
-	int evdev_fd;
 	int hidraw_fd;
 	int refcount;
 	struct input_id ids;
@@ -102,8 +101,6 @@ struct ratbag_button {
 	enum ratbag_button_type type;
 	enum ratbag_button_action_type action_type;
 };
-
-void ratbag_device_init(struct ratbag *rb, int fd);
 
 static inline void
 ratbag_set_drv_data(struct ratbag *ratbag, void *drv_data)

@@ -69,3 +69,19 @@ list_empty(const struct list *list)
 {
 	return list->next == list;
 }
+
+const char *
+udev_prop_value(struct udev_device *device,
+		const char *prop_name)
+{
+	struct udev_device *parent;
+	const char *prop_value = NULL;
+
+	parent = device;
+	while (parent && !prop_value) {
+		prop_value = udev_device_get_property_value(parent, prop_name);
+		parent = udev_device_get_parent(parent);
+	}
+
+	return prop_value;
+}

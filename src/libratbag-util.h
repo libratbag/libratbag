@@ -25,6 +25,7 @@
 #define LIBRATBAG_UTIL_H
 
 #include <unistd.h>
+#include <libudev.h>
 
 /*
  * This list data structure is a verbatim copy from wayland-util.h from the
@@ -117,4 +118,7 @@ long_set_bit_state(unsigned long *array, int bit, int state)
 		long_clear_bit(array, bit);
 }
 
+const char *
+udev_prop_value(struct udev_device *device,
+		const char *property_name);
 #endif /* LIBRATBAG_UTIL_H */
