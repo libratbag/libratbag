@@ -174,7 +174,8 @@ ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag *ratbag,
 
 	log_debug(libratbag,
 		  "%s is associated to '%s'.\n",
-		  udev_device_get_devnode(ratbag->udev_hidraw), "the device");
+		  udev_device_get_devnode(ratbag->udev_hidraw),
+		  ratbag->name);
 
 	rc = 0;
 	udev_device_unref(hidraw_udev);
