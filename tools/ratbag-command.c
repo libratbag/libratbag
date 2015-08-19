@@ -451,6 +451,7 @@ ratbag_cmd_list_supported_devices(struct ratbag *ratbag, uint32_t flags, int arg
 	struct ratbag_device *device;
 	char path[256];
 	int n, i;
+	int supported = 0;
 
 	if (argc != 0) {
 		usage();
@@ -468,10 +469,14 @@ ratbag_cmd_list_supported_devices(struct ratbag *ratbag, uint32_t flags, int arg
 		if (device) {
 			printf("%s:\t%s\n", path, ratbag_device_get_name(device));
 			device = ratbag_device_unref(device);
+			supported++;
 		}
 		free(input_list[i]);
 	}
 	free(input_list);
+
+	if (!supported)
+		printf("No supported devices found\n");
 
 	return 0;
 }
