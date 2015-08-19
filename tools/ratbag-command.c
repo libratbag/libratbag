@@ -228,8 +228,12 @@ main(int argc, char **argv)
 		 * getopt(3) */
 		optind = 0;
 		rc = (*cmd)->cmd(ratbag, flags, argc, argv);
-		break;
+		goto out;
 	}
+
+	fprintf(stderr, "Invalid command '%s'\n", command);
+	usage();
+	rc = 1;
 
 out:
 	ratbag_unref(ratbag);
