@@ -229,6 +229,9 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	if (flags & FLAG_VERBOSE)
+		ratbag_log_set_priority(ratbag, RATBAG_LOG_PRIORITY_DEBUG);
+
 	command = argv[optind++];
 	ARRAY_FOR_EACH(ratbag_commands, cmd) {
 		if (!streq((*cmd)->name, command))
