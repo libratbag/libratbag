@@ -407,7 +407,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	}
 
 	ratbag->log_handler = ratbag_default_log_func;
-	ratbag->log_priority = RATBAG_LOG_PRIORITY_DEBUG;
+	ratbag->log_priority = RATBAG_LOG_PRIORITY_INFO;
 
 	ratbag_register_driver(ratbag, &etekcity_driver);
 
