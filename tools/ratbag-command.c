@@ -104,6 +104,8 @@ ratbag_cmd_info(struct libratbag *libratbag, uint32_t flags, int argc, char **ar
 
 	udev = udev_new();
 	udev_device = udev_device_from_path(udev, path);
+	if (!udev_device)
+		return 1;
 
 	rb = ratbag_new_from_udev_device(libratbag, udev_device);
 	if (!rb) {
