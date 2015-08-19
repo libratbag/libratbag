@@ -37,6 +37,8 @@ extern "C" {
 #define LIBRATBAG_ATTRIBUTE_DEPRECATED __attribute__ ((deprecated))
 
 /**
+ * @ingroup base
+ *
  * Log priority for internal logging messages.
  */
 enum libratbag_log_priority {
@@ -696,32 +698,21 @@ ratbag_unref(struct ratbag *ratbag);
 /**
  * @ingroup base
  *
- * Log priority for internal logging messages.
- */
-enum ratbag_log_priority {
-	RATBAG_LOG_PRIORITY_DEBUG = 10,
-	RATBAG_LOG_PRIORITY_INFO = 20,
-	RATBAG_LOG_PRIORITY_ERROR = 30,
-};
-
-/**
- * @ingroup base
- *
  * Set the log priority for the ratbag context. Messages with priorities
  * equal to or higher than the argument will be printed to the context's
  * log handler.
  *
- * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
+ * The default log priority is @ref LIBRATBAG_LOG_PRIORITY_ERROR.
  *
- * @param ratbag A previously initialized ratbag context
+ * @param libratbag A previously initialized ratbag context
  * @param priority The minimum priority of log messages to print.
  *
- * @see ratbag_log_set_handler
- * @see ratbag_log_get_priority
+ * @see libratbag_log_set_handler
+ * @see libratbag_log_get_priority
  */
 void
-ratbag_log_set_priority(struct ratbag *ratbag,
-			enum ratbag_log_priority priority);
+libratbag_log_set_priority(struct libratbag *libratbag,
+			   enum libratbag_log_priority priority);
 
 /**
  * @ingroup base
@@ -729,35 +720,16 @@ ratbag_log_set_priority(struct ratbag *ratbag,
  * Get the context's log priority. Messages with priorities equal to or
  * higher than the argument will be printed to the current log handler.
  *
- * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
+ * The default log priority is @ref LIBRATBAG_LOG_PRIORITY_ERROR.
  *
- * @param ratbag A previously initialized ratbag context
+ * @param libratbag A previously initialized libratbag context
  * @return The minimum priority of log messages to print.
  *
- * @see ratbag_log_set_handler
- * @see ratbag_log_set_priority
+ * @see libratbag_log_set_handler
+ * @see libratbag_log_set_priority
  */
-enum ratbag_log_priority
-ratbag_log_get_priority(const struct ratbag *ratbag);
-
-/**
- * @ingroup base
- *
- * Log handler type for custom logging.
- *
- * @param ratbag The ratbag context
- * @param priority The priority of the current message
- * @param format Message format in printf-style
- * @param args Message arguments
- *
- * @see ratbag_log_set_priority
- * @see ratbag_log_get_priority
- * @see ratbag_log_set_handler
- */
-typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
-				   enum ratbag_log_priority priority,
-				   const char *format, va_list args)
-		LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
+enum libratbag_log_priority
+libratbag_log_get_priority(const struct libratbag *libratbag);
 
 /**
  * @ingroup base
@@ -768,15 +740,15 @@ typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
  *
  * The default log handler prints to stderr.
  *
- * @param ratbag A previously initialized ratbag context
+ * @param libratbag A previously initialized libratbag context
  * @param log_handler The log handler for library messages.
  *
- * @see ratbag_log_set_priority
- * @see ratbag_log_get_priority
+ * @see libratbag_log_set_priority
+ * @see libratbag_log_get_priority
  */
 void
-ratbag_log_set_handler(struct ratbag *ratbag,
-		       ratbag_log_handler log_handler);
+libratbag_log_set_handler(struct libratbag *libratbag,
+			  libratbag_log_handler log_handler);
 
 #ifdef __cplusplus
 }

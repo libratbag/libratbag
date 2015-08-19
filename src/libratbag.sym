@@ -5,6 +5,9 @@ global:
 	libratbag_create_context;
 	libratbag_ref;
 	libratbag_unref;
+	libratbag_log_get_priority;
+	libratbag_log_set_handler;
+	libratbag_log_set_priority;
 	ratbag_button_ref;
 	ratbag_button_unref;
 	ratbag_profile_get_button_by_index;

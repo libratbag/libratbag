@@ -75,6 +75,27 @@ log_msg(struct libratbag *libratbag,
 	va_end(args);
 }
 
+LIBRATBAG_EXPORT void
+libratbag_log_set_priority(struct libratbag *libratbag,
+			   enum libratbag_log_priority priority)
+{
+	libratbag->log_priority = priority;
+}
+
+LIBRATBAG_EXPORT enum libratbag_log_priority
+libratbag_log_get_priority(const struct libratbag *libratbag)
+{
+	return libratbag->log_priority;
+}
+
+LIBRATBAG_EXPORT void
+libratbag_log_set_handler(struct libratbag *libratbag,
+			  libratbag_log_handler log_handler)
+{
+	libratbag->log_handler = log_handler;
+}
+
+
 static inline struct udev_device *
 udev_device_from_devnode(struct libratbag *libratbag,
 			 struct ratbag *ratbag,
