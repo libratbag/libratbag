@@ -43,6 +43,15 @@ enum cmd_flags {
 	FLAG_VERBOSE = 1 << 0,
 };
 
+struct ratbag_cmd {
+	const char *name;
+	int (*cmd)(struct ratbag *ratbag, uint32_t flags, int argc, char **argv);
+	const char *args;
+	const char *help;
+};
+
+static const struct ratbag_cmd *ratbag_commands[];
+
 LIBRATBAG_ATTRIBUTE_PRINTF(1, 2)
 static inline void
 error(const char *format, ...)
@@ -59,16 +68,34 @@ error(const char *format, ...)
 static void
 usage(void)
 {
+	unsigned i = 0;
+	int count;
+	const struct ratbag_cmd *cmd = ratbag_commands[0];
+
 	printf("Usage: %s [options] [command] /sys/class/input/eventX\n"
-	       "/path/to/device .... open the given device only\n"
+	       "/path/to/device ..... Open the given device only\n"
 	       "\n"
-	       "Commands:\n"
-	       "    info .... show information about the device's capabilities\n"
-	       "\n"
+	       "Commands:\n",
+		program_invocation_short_name);
+
+	while (cmd) {
+		count = 16 - strlen(cmd->name);
+		if (cmd->args)
+			count -= 1 + strlen(cmd->args);
+		if (count < 4)
+			count = 4;
+		printf("    %s%s%s %.*s %s\n",
+		       cmd->name,
+		       cmd->args ? " " : "",
+		       cmd->args ? cmd->args : "",
+		       count, "................", cmd->help);
+		cmd = ratbag_commands[++i];
+	}
+
+	printf("\n"
 	       "Options:\n"
 	       "    --verbose ....... Print debugging output.\n"
-	       "    --help .......... Print this help.\n",
-		program_invocation_short_name);
+	       "    --help .......... Print this help.\n");
 }
 
 static inline struct udev_device*
@@ -243,18 +270,16 @@ out:
 	return rc;
 }
 
-struct ratbag_cmd {
-	const char *name;
-	int (*cmd)(struct ratbag *ratbag, uint32_t flags, int argc, char **argv);
-};
-
-const struct ratbag_cmd cmd_info = {
+static const struct ratbag_cmd cmd_info = {
 	.name = "info",
 	.cmd = ratbag_cmd_info,
+	.args = NULL,
+	.help = "Show information about the device's capabilities",
 };
 
 static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_info,
+	NULL,
 };
 
 static int
@@ -330,7 +355,7 @@ main(int argc, char **argv)
 
 	command = argv[optind++];
 	ARRAY_FOR_EACH(ratbag_commands, cmd) {
-		if (!streq((*cmd)->name, command))
+		if (!*cmd || !streq((*cmd)->name, command))
 			continue;
 
 		argc -= optind;
