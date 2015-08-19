@@ -100,6 +100,68 @@ print_key(uint8_t key)
 	return "UNKNOWN";
 }
 
+static enum ratbag_button_action_type
+etekcity_raw_to_action(uint8_t data, enum ratbag_button_type button_type)
+{
+	if (button_type == RATBAG_BUTTON_TYPE_UNKNOWN)
+		return RATBAG_BUTTON_ACTION_TYPE_NONE;
+
+	return RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+}
+
+static enum ratbag_button_type
+etekcity_raw_to_button_type(uint8_t data)
+{
+	switch (data) {
+	case 1: return RATBAG_BUTTON_TYPE_LEFT;
+	case 2: return RATBAG_BUTTON_TYPE_RIGHT;
+	case 3: return RATBAG_BUTTON_TYPE_MIDDLE;
+//	case 4: return "2 x BTN_LEFT";
+	case 7: return RATBAG_BUTTON_TYPE_EXTRA;
+	case 8: return RATBAG_BUTTON_TYPE_SIDE;
+	case 9: return RATBAG_BUTTON_TYPE_WHEEL_UP;
+	case 10: return RATBAG_BUTTON_TYPE_WHEEL_DOWN;
+	case 11: return RATBAG_BUTTON_TYPE_WHEEL_LEFT;
+	case 12: return RATBAG_BUTTON_TYPE_WHEEL_RIGHT;
+
+	/* DPI switch */
+	case 13: return RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP;
+	case 14: return RATBAG_BUTTON_TYPE_RESOLUTION_UP;
+	case 15: return RATBAG_BUTTON_TYPE_RESOLUTION_DOWN;
+
+	/* Profile */
+	case 18: return RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP;
+	case 19: return RATBAG_BUTTON_TYPE_PROFILE_UP;
+	case 20: return RATBAG_BUTTON_TYPE_PROFILE_DOWN;
+
+//	case 21: return "HOLD BTN_LEFT ON/OFF";
+
+	/* multimedia */
+	case 25: return RATBAG_BUTTON_TYPE_KEY_CONFIG;
+	case 26: return RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG;
+	case 27: return RATBAG_BUTTON_TYPE_KEY_NEXTSONG;
+	case 28: return RATBAG_BUTTON_TYPE_KEY_PLAYPAUSE;
+	case 29: return RATBAG_BUTTON_TYPE_KEY_STOPCD;
+	case 30: return RATBAG_BUTTON_TYPE_KEY_MUTE;
+	case 31: return RATBAG_BUTTON_TYPE_KEY_VOLUMEUP;
+	case 32: return RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN;
+
+	/* windows */
+	case 33: return RATBAG_BUTTON_TYPE_KEY_CALC;
+	case 34: return RATBAG_BUTTON_TYPE_KEY_MAIL;
+	case 35: return RATBAG_BUTTON_TYPE_KEY_BOOKMARKS;
+	case 36: return RATBAG_BUTTON_TYPE_KEY_FORWARD;
+	case 37: return RATBAG_BUTTON_TYPE_KEY_BACK;
+	case 38: return RATBAG_BUTTON_TYPE_KEY_STOP;
+	case 39: return RATBAG_BUTTON_TYPE_KEY_FILE;
+	case 40: return RATBAG_BUTTON_TYPE_KEY_REFRESH;
+	case 41: return RATBAG_BUTTON_TYPE_KEY_HOMEPAGE;
+	case 42: return RATBAG_BUTTON_TYPE_KEY_SEARCH;
+	}
+
+	return RATBAG_BUTTON_TYPE_UNKNOWN;
+}
+
 static int
 etekcity_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
 {
@@ -216,10 +278,13 @@ etekcity_read_button(struct ratbag_device *device, struct ratbag_profile *profil
 	unsigned index = etekcity_button_to_index(button->index);
 
 	data = drv_data->profiles[profile->index][3 + index * 3];
-	if (data)
+	if (data) {
 		log_debug(device->ratbag,
 			  " - button%d: %s (%02x) %s:%d\n",
 			  button->index, print_key(data), data, __FILE__, __LINE__);
+		button->type = etekcity_raw_to_button_type(data);
+		button->action_type = etekcity_raw_to_action(data, button->type);
+	}
 }
 
 static int
