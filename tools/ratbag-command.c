@@ -25,69 +25,114 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
 
 #include <libratbag.h>
+#include <libratbag-util.h>
 
 enum options {
 	OPT_VERBOSE,
 	OPT_HELP,
 };
 
+enum cmd_flags {
+	FLAG_VERBOSE = 1 << 0,
+};
+
 static void
 list_ratbags_usage(void)
 {
-	printf("Usage: %s [options] /sys/class/input/eventX\n"
+	printf("Usage: %s [options] [command] /sys/class/input/eventX\n"
 	       "/path/to/device .... open the given device only\n"
 	       "\n"
-	       "Features:\n"
+	       "Commands:\n"
+	       "    info .... show information about the device's capabilities\n"
 	       "\n"
-	       "Other options:\n"
-	       "--verbose ....... Print debugging output.\n"
-	       "--help .......... Print this help.\n",
+	       "Options:\n"
+	       "    --verbose ....... Print debugging output.\n"
+	       "    --help .......... Print this help.\n",
 		program_invocation_short_name);
 }
 
-int
-parse_args(int argc, char **argv, const char **path, int *verbose)
+static inline struct udev_device*
+udev_device_from_path(struct udev *udev, const char *path)
 {
-	while (1) {
-		int c;
-		int option_index = 0;
-		static struct option opts[] = {
-			{ "verbose", 0, 0, OPT_VERBOSE },
-			{ "help", 0, 0, OPT_HELP },
-		};
+	struct udev_device *udev_device;
 
-		c = getopt_long(argc, argv, "+h", opts, &option_index);
-		if (c == -1)
-			break;
-		switch(c) {
-		case 'h':
-		case OPT_HELP:
-			list_ratbags_usage();
-			exit(0);
-			break;
-		case OPT_VERBOSE:
-			*verbose = 1;
-			break;
-		default:
-			list_ratbags_usage();
-			return -1;
-		}
+	udev_device = udev_device_new_from_syspath(udev, path);
+	if (!udev_device) {
+		fprintf(stderr, "Can't open '%s': %s\n", path, strerror(errno));
+		return NULL;
 	}
 
-	if (optind >= argc) {
-		list_ratbags_usage();
-		return -1;
-	}
-
-	*path = argv[optind++];
-
-	return 0;
+	return udev_device;
 }
+
+static int
+ratbag_cmd_info(struct libratbag *libratbag, uint32_t flags, int argc, char **argv)
+{
+	const char *path;
+	struct ratbag *rb;
+	struct ratbag_profile *profile;
+	struct ratbag_button *button;
+	int i;
+	int rc = 1;
+	struct udev *udev;
+	struct udev_device *udev_device;
+
+	if (argc != 1) {
+		list_ratbags_usage();
+		return 1;
+	}
+
+	path = argv[0];
+
+	udev = udev_new();
+	udev_device = udev_device_from_path(udev, path);
+
+	rb = ratbag_new_from_udev_device(libratbag, udev_device);
+	if (!rb) {
+		fprintf(stderr, "Looks like '%s' is not supported\n", path);
+		goto out;
+	}
+
+	fprintf(stderr, "Opened '%s' (%s).\n", ratbag_get_name(rb), path);
+
+	profile = ratbag_get_profile_by_index(rb, 0);
+	ratbag_set_active_profile(rb, profile);
+	profile = ratbag_profile_unref(profile);
+
+	profile = ratbag_get_active_profile(rb);
+	for (i = 0; i < ratbag_get_num_buttons(rb); i++) {
+		button = ratbag_profile_get_button_by_index(profile, i);
+		button = ratbag_button_unref(button);
+	}
+	profile = ratbag_profile_unref(profile);
+	rb = ratbag_unref(rb);
+
+	rc = 0;
+out:
+	udev_device_unref(udev_device);
+	udev_unref(udev);
+	return rc;
+}
+
+struct ratbag_cmd {
+	const char *name;
+	int (*cmd)(struct libratbag *libratbag, uint32_t flags, int argc, char **argv);
+};
+
+const struct ratbag_cmd cmd_info = {
+	.name = "info",
+	.cmd = ratbag_cmd_info,
+};
+
+static const struct ratbag_cmd *ratbag_commands[] = {
+	&cmd_info,
+};
 
 static int
 open_restricted(const char *path, int flags, void *user_data)
@@ -115,57 +160,65 @@ const struct libratbag_interface interface = {
 int
 main(int argc, char **argv)
 {
-	struct ratbag *rb;
 	struct libratbag *libratbag;
-	struct ratbag_profile *profile;
-	struct ratbag_button *button;
-	const char *path;
-	int i;
-	int retval = 0;
-	struct udev *udev;
-	struct udev_device *udev_device;
-	int verbose = 0;
-
-	if (parse_args(argc, argv, &path, &verbose) == -1)
-		return 1;
-
-	udev = udev_new();
-	udev_device = udev_device_new_from_syspath(udev, path);
-	if (!udev_device) {
-		fprintf(stderr, "Can't open '%s': %s\n", path, strerror(errno));
-		return 1;
-	}
+	const char *command;
+	int rc = 0;
+	const struct ratbag_cmd **cmd;
+	uint32_t flags = 0;
 
 	libratbag = libratbag_create_context(&interface, NULL);
 	if (!libratbag) {
 		fprintf(stderr, "Can't initialize libratbag\n");
-		return 1;
-	}
-
-	rb = ratbag_new_from_udev_device(libratbag, udev_device);
-
-	if (!rb) {
-		fprintf(stderr, "Looks like '%s' is not supported\n", path);
-		retval = 1;
 		goto out;
 	}
 
-	fprintf(stderr, "Opened '%s' (%s).\n", ratbag_get_name(rb), path);
+	while (1) {
+		int c;
+		int option_index = 0;
+		static struct option opts[] = {
+			{ "verbose", 0, 0, OPT_VERBOSE },
+			{ "help", 0, 0, OPT_HELP },
+		};
 
-	profile = ratbag_get_profile_by_index(rb, 0);
-	ratbag_set_active_profile(rb, profile);
-	profile = ratbag_profile_unref(profile);
-
-	profile = ratbag_get_active_profile(rb);
-	for (i = 0; i < ratbag_get_num_buttons(rb); i++) {
-		button = ratbag_profile_get_button_by_index(profile, i);
-		button = ratbag_button_unref(button);
+		c = getopt_long(argc, argv, "+h", opts, &option_index);
+		if (c == -1)
+			break;
+		switch(c) {
+		case 'h':
+		case OPT_HELP:
+			list_ratbags_usage();
+			goto out;
+		case OPT_VERBOSE:
+			flags |= FLAG_VERBOSE;
+			break;
+		default:
+			list_ratbags_usage();
+			return 1;
+		}
 	}
-	profile = ratbag_profile_unref(profile);
+
+	if (optind >= argc) {
+		list_ratbags_usage();
+		return 1;
+	}
+
+	command = argv[optind++];
+	ARRAY_FOR_EACH(ratbag_commands, cmd) {
+		if (!streq((*cmd)->name, command))
+			continue;
+
+		argc -= optind;
+		argv += optind;
+
+		/* reset optind to reset the internal state, see NOTES in
+		 * getopt(3) */
+		optind = 0;
+		rc = (*cmd)->cmd(libratbag, flags, argc, argv);
+		break;
+	}
 
 out:
-	rb = ratbag_unref(rb);
 	libratbag_unref(libratbag);
-	udev_unref(udev);
-	return retval;
+
+	return rc;
 }
