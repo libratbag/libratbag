@@ -23,6 +23,7 @@
 
 #define _GNU_SOURCE
 #include <errno.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -437,9 +438,55 @@ static const struct ratbag_cmd cmd_switch_etekcity = {
 	.help = "Switch the Etekcity mouse active profile",
 };
 
+static int
+filter_event_node(const struct dirent *input_entry)
+{
+	return !strncmp(input_entry->d_name, "event", 5);
+}
+
+static int
+ratbag_cmd_list_supported_devices(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+{
+	struct dirent **input_list;
+	struct ratbag_device *device;
+	char path[256];
+	int n, i;
+
+	if (argc != 0) {
+		usage();
+		return 1;
+	}
+
+	n = scandir("/dev/input", &input_list, filter_event_node, alphasort);
+	if (n < 0)
+		return 0;
+
+	i = -1;
+	while (++i < n) {
+		sprintf(path, "/dev/input/%s", input_list[i]->d_name);
+		device = ratbag_cmd_open_device(ratbag, path);
+		if (device) {
+			printf("%s:\t%s\n", path, ratbag_device_get_name(device));
+			device = ratbag_device_unref(device);
+		}
+		free(input_list[i]);
+	}
+	free(input_list);
+
+	return 0;
+}
+
+static const struct ratbag_cmd cmd_list = {
+	.name = "list",
+	.cmd = ratbag_cmd_list_supported_devices,
+	.args = NULL,
+	.help = "List the available devices",
+};
+
 static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_info,
 	&cmd_switch_etekcity,
+	&cmd_list,
 	&cmd_switch_profile,
 	NULL,
 };
@@ -509,6 +556,7 @@ main(int argc, char **argv)
 
 	if (optind >= argc) {
 		usage();
+		ratbag_unref(ratbag);
 		return 1;
 	}
 
