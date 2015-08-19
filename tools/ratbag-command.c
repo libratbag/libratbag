@@ -96,14 +96,37 @@ udev_device_from_path(struct udev *udev, const char *path)
 	return udev_device;
 }
 
+static inline const char*
+button_type_to_str(enum ratbag_button_type type)
+{
+	const char *str = "UNKNOWN";
+
+	switch(type) {
+	case RATBAG_BUTTON_TYPE_UNKNOWN:	str = "unknown"; break;
+	case RATBAG_BUTTON_TYPE_LEFT:		str = "left"; break;
+	case RATBAG_BUTTON_TYPE_MIDDLE:		str = "middle"; break;
+	case RATBAG_BUTTON_TYPE_RIGHT:		str = "right"; break;
+	case RATBAG_BUTTON_TYPE_THUMB:		str = "thumb"; break;
+	case RATBAG_BUTTON_TYPE_THUMB2:		str = "thumb2"; break;
+	case RATBAG_BUTTON_TYPE_RESOLUTION_UP:  str = "resolution up"; break;
+	case RATBAG_BUTTON_TYPE_RESOLUTION_DOWN:str = "resolution down"; break;
+	case RATBAG_BUTTON_TYPE_WHEEL_LEFT:	str = "wheel left"; break;
+	case RATBAG_BUTTON_TYPE_WHEEL_RIGHT:	str = "wheel right"; break;
+	case RATBAG_BUTTON_TYPE_WHEEL_CLICK:	str = "wheel click"; break;
+	}
+
+	return str;
+}
+
 static int
 ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 {
 	const char *path;
 	struct ratbag_device *device;
-	struct ratbag_profile *profile;
+	struct ratbag_profile *profile, *active_profile;
 	struct ratbag_button *button;
-	int i;
+	int num_profiles, num_buttons;
+	int i, b;
 	int rc = 1;
 	struct udev *udev;
 	struct udev_device *udev_device;
@@ -126,16 +149,54 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 		goto out;
 	}
 
-	error("Opened '%s' (%s).\n", ratbag_device_get_name(device), path);
+	printf("Device '%s' (%s)\n", ratbag_device_get_name(device), path);
+	active_profile = ratbag_device_get_active_profile(device);
 
-	profile = ratbag_device_get_profile_by_index(device, 0);
-	ratbag_device_set_active_profile(device, profile);
-	profile = ratbag_profile_unref(profile);
+	printf("Capabilities:");
+	if (ratbag_device_has_capability(device,
+					 RATBAG_CAP_SWITCHABLE_RESOLUTION))
+		printf(" res");
+	if (ratbag_device_has_capability(device,
+					 RATBAG_CAP_SWITCHABLE_PROFILE))
+		printf(" profile");
+	if (ratbag_device_has_capability(device,
+					 RATBAG_CAP_BUTTON_PROFILES))
+		printf(" btn-profile");
+	if (ratbag_device_has_capability(device,
+					 RATBAG_CAP_BUTTON_KEY))
+		printf(" btn-key");
+	if (ratbag_device_has_capability(device,
+					 RATBAG_CAP_BUTTON_MACROS))
+		printf(" btn-macros");
+	printf("\n");
 
-	profile = ratbag_device_get_active_profile(device);
-	for (i = 0; i < ratbag_device_get_num_buttons(device); i++) {
-		button = ratbag_profile_get_button_by_index(profile, i);
-		button = ratbag_button_unref(button);
+	num_buttons = ratbag_device_get_num_buttons(device);
+	printf("Number of buttons: %d\n", num_buttons);
+
+	num_profiles = ratbag_device_get_num_profiles(device);
+	printf("Profiles supported: %d\n", num_profiles);
+
+	for (i = 0; i < num_profiles; i++) {
+		int dpi, rate;
+		profile = ratbag_device_get_profile_by_index(device, i);
+
+		dpi = ratbag_profile_get_resolution_dpi(profile);
+		rate = ratbag_profile_get_report_rate_hz(profile);
+		printf("  Profile %d%s\n", i,
+		       profile == active_profile ? " (active)" : "");
+		printf("    Resolution: %ddpi\n", dpi);
+		printf("    Report rate: %dhz\n", rate);
+
+		ratbag_profile_unref(profile);
+
+		for (b = 0; b < num_buttons; b++) {
+			enum ratbag_button_type type;
+
+			button = ratbag_profile_get_button_by_index(profile, b);
+			type = ratbag_button_get_type(button);
+			printf("Button: %d type %s\n", b, button_type_to_str(type));
+			button = ratbag_button_unref(button);
+		}
 	}
 	profile = ratbag_profile_unref(profile);
 	device = ratbag_device_unref(device);
