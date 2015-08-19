@@ -334,6 +334,13 @@ out_err:
 }
 
 LIBRATBAG_EXPORT struct ratbag_device *
+ratbag_device_ref(struct ratbag_device *device)
+{
+	device->refcount++;
+	return device;
+}
+
+LIBRATBAG_EXPORT struct ratbag_device *
 ratbag_device_unref(struct ratbag_device *device)
 {
 	if (device == NULL)

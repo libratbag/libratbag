@@ -13,6 +13,7 @@ global:
 	ratbag_device_get_profile_by_index;
 	ratbag_device_has_capability;
 	ratbag_device_new_from_udev_device;
+	ratbag_device_ref;
 	ratbag_device_set_active_profile;
 	ratbag_log_get_priority;
 	ratbag_log_set_handler;
