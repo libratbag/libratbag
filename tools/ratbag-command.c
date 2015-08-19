@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <sys/stat.h>
 
 #include <libratbag.h>
 #include <libratbag-util.h>
@@ -61,8 +62,19 @@ static inline struct udev_device*
 udev_device_from_path(struct udev *udev, const char *path)
 {
 	struct udev_device *udev_device;
+	const char *event_node_prefix = "/dev/input/event";
 
-	udev_device = udev_device_new_from_syspath(udev, path);
+	if (strncmp(path, event_node_prefix, strlen(event_node_prefix)) == 0) {
+		struct stat st;
+		if (stat(path, &st) == -1) {
+			fprintf(stderr, "Failed to stat '%s': %s\n", path, strerror(errno));
+			return NULL;
+		}
+		udev_device = udev_device_new_from_devnum(udev, 'c', st.st_rdev);
+
+	} else {
+		udev_device = udev_device_new_from_syspath(udev, path);
+	}
 	if (!udev_device) {
 		fprintf(stderr, "Can't open '%s': %s\n", path, strerror(errno));
 		return NULL;
