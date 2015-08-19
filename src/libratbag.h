@@ -524,6 +524,21 @@ ratbag_button_get_type(struct ratbag_button *button);
 /**
  * @ingroup device
  *
+ * Change the type of the physical button. This function is intended to be
+ * used by configuration tools to configure devices.
+ *
+ * FIXME: if we do this with linux/input.h instead, we need to add things like
+ * BTN_RESOLUTION_UP/DOWN there. But this is supposed to describe the
+ * physical location of the button, so input.h is not a good match.
+ *
+ * @return The error code or 0 on success.
+ */
+int
+ratbag_button_set_type(struct ratbag_button *button, enum ratbag_button_type type);
+
+/**
+ * @ingroup device
+ *
  * Return the identifier of the physical button, if stored in the hardware.
  *
  * FIXME: does this even exist? this function is only here because I though

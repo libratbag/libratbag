@@ -5,6 +5,7 @@ global:
 	ratbag_create_context;
 	ratbag_button_ref;
 	ratbag_button_get_type;
+	ratbag_button_set_type;
 	ratbag_button_unref;
 	ratbag_device_unref;
 	ratbag_device_get_active_profile;

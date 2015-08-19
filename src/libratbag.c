@@ -609,6 +609,22 @@ ratbag_button_get_type(struct ratbag_button *button)
 	return button->type;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_button_set_type(struct ratbag_button *button, enum ratbag_button_type type)
+{
+	enum ratbag_button_type orig_type = button->type;
+	int rc;
+
+	if (!button->device->driver->write_button)
+		return -ENOTSUP;
+
+	button->type = type;
+	rc = button->device->driver->write_button(button->device, button->profile, button);
+	if (rc)
+		button->type = orig_type;
+	return rc;
+}
+
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_ref(struct ratbag_button *button)
 {
