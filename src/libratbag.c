@@ -98,7 +98,7 @@ libratbag_log_set_handler(struct libratbag *libratbag,
 
 static inline struct udev_device *
 udev_device_from_devnode(struct libratbag *libratbag,
-			 struct ratbag *ratbag,
+			 struct ratbag_device *device,
 			 int fd)
 {
 	struct udev_device *dev;
@@ -128,7 +128,7 @@ udev_device_from_devnode(struct libratbag *libratbag,
 }
 
 static struct udev_device *
-udev_find_hidraw(struct libratbag *libratbag, struct ratbag *ratbag)
+udev_find_hidraw(struct libratbag *libratbag, struct ratbag_device *device)
 {
 	struct udev_enumerate *e;
 	struct udev_list_entry *entry;
@@ -138,7 +138,7 @@ udev_find_hidraw(struct libratbag *libratbag, struct ratbag *ratbag)
 	struct udev_device *hidraw_udev = NULL;
 	struct udev *udev = libratbag->udev;
 
-	hid_udev = udev_device_get_parent_with_subsystem_devtype(ratbag->udev_device, "hid", NULL);
+	hid_udev = udev_device_get_parent_with_subsystem_devtype(device->udev_device, "hid", NULL);
 
 	e = udev_enumerate_new(udev);
 	udev_enumerate_add_match_subsystem(e, "hidraw");
@@ -169,24 +169,24 @@ out:
 }
 
 static int
-ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag *ratbag,
+ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag_device *device,
 			struct udev_device *udev_device)
 {
 	struct udev_device *hidraw_udev;
 	int rc = -ENODEV;
 
-	ratbag->udev_device = udev_device_ref(udev_device);
+	device->udev_device = udev_device_ref(udev_device);
 
-	hidraw_udev = udev_find_hidraw(libratbag, ratbag);
+	hidraw_udev = udev_find_hidraw(libratbag, device);
 	if (!hidraw_udev)
 		goto out;
 
-	ratbag->udev_hidraw = udev_device_ref(hidraw_udev);
+	device->udev_hidraw = udev_device_ref(hidraw_udev);
 
 	log_debug(libratbag,
 		  "%s is associated to '%s'.\n",
-		  udev_device_get_devnode(ratbag->udev_hidraw),
-		  ratbag->name);
+		  udev_device_get_devnode(device->udev_hidraw),
+		  device->name);
 
 	rc = 0;
 	udev_device_unref(hidraw_udev);
@@ -195,7 +195,7 @@ out:
 }
 
 static void
-ratbag_device_init(struct ratbag *rb)
+ratbag_device_init(struct ratbag_device *rb)
 {
 	rb->hidraw_fd = -1;
 	rb->refcount = 1;
@@ -212,7 +212,7 @@ ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
 }
 
 static struct ratbag_driver *
-ratbag_find_driver(struct libratbag *libratbag, struct ratbag *ratbag,
+ratbag_find_driver(struct libratbag *libratbag, struct ratbag_device *device,
 		const struct input_id *dev_id)
 {
 	struct ratbag_driver *driver;
@@ -228,12 +228,12 @@ ratbag_find_driver(struct libratbag *libratbag, struct ratbag *ratbag,
 				assert(driver->probe);
 				matched_id.id = *dev_id;
 				matched_id.data = matching_id->data;
-				ratbag->driver = driver;
-				rc = driver->probe(ratbag, matched_id);
+				device->driver = driver;
+				rc = driver->probe(device, matched_id);
 				if (rc == 0)
 					return driver;
 
-				ratbag->driver = NULL;
+				device->driver = NULL;
 
 				if (rc != -ENODEV)
 					return NULL;
@@ -281,12 +281,12 @@ get_product_id(struct udev_device *device, struct input_id *id)
 	return 0;
 }
 
-LIBRATBAG_EXPORT struct ratbag*
-ratbag_new_from_udev_device(struct libratbag *libratbag,
-			    struct udev_device *udev_device)
+LIBRATBAG_EXPORT struct ratbag_device*
+ratbag_device_new_from_udev_device(struct libratbag *libratbag,
+				   struct udev_device *udev_device)
 {
 	int rc;
-	struct ratbag *ratbag = NULL;
+	struct ratbag_device *device = NULL;
 	struct ratbag_driver *driver;
 
 	if (!libratbag) {
@@ -294,75 +294,75 @@ ratbag_new_from_udev_device(struct libratbag *libratbag,
 		return NULL;
 	}
 
-	ratbag = zalloc(sizeof(*ratbag));
-	if (!ratbag)
+	device = zalloc(sizeof(*device));
+	if (!device)
 		return NULL;
 
-	ratbag->libratbag = libratbag_ref(libratbag);
-	if (get_product_id(udev_device, &ratbag->ids) != 0)
+	device->libratbag = libratbag_ref(libratbag);
+	if (get_product_id(udev_device, &device->ids) != 0)
 		goto out_err;
-	free(ratbag->name);
-	ratbag->name = get_device_name(udev_device);
-	if (!ratbag->name) {
+	free(device->name);
+	device->name = get_device_name(udev_device);
+	if (!device->name) {
 		errno = ENOMEM;
 		goto out_err;
 	}
 
-	ratbag_device_init(ratbag);
-	rc = ratbag_device_init_udev(libratbag, ratbag, udev_device);
+	ratbag_device_init(device);
+	rc = ratbag_device_init_udev(libratbag, device, udev_device);
 	if (rc)
 		goto out_err;
 
-	driver = ratbag_find_driver(libratbag, ratbag, &ratbag->ids);
+	driver = ratbag_find_driver(libratbag, device, &device->ids);
 	if (!driver) {
 		errno = ENOTSUP;
 		goto err_udev;
 	}
 
-	return ratbag;
+	return device;
 
 err_udev:
-	udev_device_unref(ratbag->udev_device);
-	udev_device_unref(ratbag->udev_hidraw);
+	udev_device_unref(device->udev_device);
+	udev_device_unref(device->udev_hidraw);
 out_err:
-	if (ratbag) {
-		free(ratbag->name);
-		ratbag->libratbag = libratbag_unref(ratbag->libratbag);
+	if (device) {
+		free(device->name);
+		device->libratbag = libratbag_unref(device->libratbag);
 	}
-	free(ratbag);
+	free(device);
 	return NULL;
 }
 
-LIBRATBAG_EXPORT struct ratbag *
-ratbag_unref(struct ratbag *ratbag)
+LIBRATBAG_EXPORT struct ratbag_device *
+ratbag_device_unref(struct ratbag_device *device)
 {
-	if (ratbag == NULL)
+	if (device == NULL)
 		return NULL;
 
-	assert(ratbag->refcount > 0);
-	ratbag->refcount--;
-	if (ratbag->refcount > 0)
-		return ratbag;
+	assert(device->refcount > 0);
+	device->refcount--;
+	if (device->refcount > 0)
+		return device;
 
-	if (ratbag->driver->remove)
-		ratbag->driver->remove(ratbag);
+	if (device->driver->remove)
+		device->driver->remove(device);
 
-	udev_device_unref(ratbag->udev_device);
-	udev_device_unref(ratbag->udev_hidraw);
+	udev_device_unref(device->udev_device);
+	udev_device_unref(device->udev_hidraw);
 
-	if (ratbag->hidraw_fd >= 0)
-		close(ratbag->hidraw_fd);
+	if (device->hidraw_fd >= 0)
+		close(device->hidraw_fd);
 
-	ratbag->libratbag = libratbag_unref(ratbag->libratbag);
-	free(ratbag->name);
-	free(ratbag);
+	device->libratbag = libratbag_unref(device->libratbag);
+	free(device->name);
+	free(device);
 	return NULL;
 }
 
 LIBRATBAG_EXPORT const char *
-ratbag_get_name(const struct ratbag* ratbag)
+ratbag_device_get_name(const struct ratbag_device* device)
 {
-	return ratbag->name;
+	return device->name;
 }
 
 static void
@@ -430,7 +430,7 @@ libratbag_unref(struct libratbag *libratbag)
 }
 
 static struct ratbag_profile *
-ratbag_create_profile(struct ratbag *ratbag, unsigned int index)
+ratbag_create_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct ratbag_profile *profile;
 
@@ -439,14 +439,14 @@ ratbag_create_profile(struct ratbag *ratbag, unsigned int index)
 		return NULL;
 
 	profile->refcount = 1;
-	profile->ratbag = ratbag;
+	profile->device = device;
 	profile->index = index;
 
-	list_insert(&ratbag->profiles, &profile->link);
+	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
 
-	assert(ratbag->driver->read_profile);
-	ratbag->driver->read_profile(profile, index);
+	assert(device->driver->read_profile);
+	device->driver->read_profile(profile, index);
 
 	return profile;
 }
@@ -476,72 +476,73 @@ ratbag_profile_unref(struct ratbag_profile *profile)
 }
 
 LIBRATBAG_EXPORT struct ratbag_profile *
-ratbag_get_profile_by_index(struct ratbag *ratbag, unsigned int index)
+ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int index)
 {
 	struct ratbag_profile *profile;
 
-	list_for_each(profile, &ratbag->profiles, link) {
+	list_for_each(profile, &device->profiles, link) {
 		if (profile->index == index) {
-			assert(ratbag->driver->read_profile);
-			ratbag->driver->read_profile(profile, index);
+			assert(device->driver->read_profile);
+			device->driver->read_profile(profile, index);
 			return ratbag_profile_ref(profile);
 		}
 	}
 
-	return ratbag_create_profile(ratbag, index);
+	return ratbag_create_profile(device, index);
 }
 
 LIBRATBAG_EXPORT struct ratbag_profile *
-ratbag_get_active_profile(struct ratbag *ratbag)
+ratbag_device_get_active_profile(struct ratbag_device *device)
 {
 	int current_profile;
 
-	assert(ratbag->driver->get_active_profile);
-	current_profile = ratbag->driver->get_active_profile(ratbag);
+	assert(device->driver->get_active_profile);
+	current_profile = device->driver->get_active_profile(device);
 	if (current_profile < 0) {
 		errno = -current_profile;
 		return NULL;
 	}
 
-	return ratbag_get_profile_by_index(ratbag, current_profile);
+	return ratbag_device_get_profile_by_index(device, current_profile);
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_get_num_profiles(struct ratbag *ratbag)
+ratbag_device_get_num_profiles(struct ratbag_device *device)
 {
-	return ratbag->num_profiles;
+	return device->num_profiles;
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_get_num_buttons(struct ratbag *ratbag)
+ratbag_device_get_num_buttons(struct ratbag_device *device)
 {
-	return ratbag->num_buttons;
+	return device->num_buttons;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap)
+ratbag_device_has_capability(const struct ratbag_device *device,
+			     enum ratbag_capability cap)
 {
-	assert(ratbag->driver->has_capability);
-	return ratbag->driver->has_capability(ratbag, cap);
+	assert(device->driver->has_capability);
+	return device->driver->has_capability(device, cap);
 }
 
 LIBRATBAG_EXPORT int
-ratbag_set_active_profile(struct ratbag *ratbag,
-			  struct ratbag_profile *profile)
+ratbag_device_set_active_profile(struct ratbag_device *device,
+				 struct ratbag_profile *profile)
 {
 	int rc;
 
-	assert(ratbag->driver->write_profile);
-	rc = ratbag->driver->write_profile(profile);
+	assert(device->driver->write_profile);
+	rc = device->driver->write_profile(profile);
 	if (rc)
 		return rc;
 
-	assert(ratbag->driver->set_active_profile);
-	return ratbag->driver->set_active_profile(ratbag, profile->index);
+	assert(device->driver->set_active_profile);
+	return device->driver->set_active_profile(device, profile->index);
 }
 
 static struct ratbag_button *
-ratbag_create_button(struct ratbag *ratbag, struct ratbag_profile *profile,
+ratbag_create_button(struct ratbag_device *device, struct ratbag_profile *profile,
 		unsigned int index)
 {
 	struct ratbag_button *button;
@@ -551,15 +552,15 @@ ratbag_create_button(struct ratbag *ratbag, struct ratbag_profile *profile,
 		return NULL;
 
 	button->refcount = 1;
-	button->ratbag = ratbag;
+	button->device = device;
 	button->profile = profile;
 	button->index = index;
 
 	if (profile)
 		list_insert(&profile->buttons, &button->link);
 
-	if (ratbag->driver->read_button)
-		ratbag->driver->read_button(ratbag, profile, button);
+	if (device->driver->read_button)
+		device->driver->read_button(device, profile, button);
 
 	return button;
 }
@@ -572,13 +573,13 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 
 	list_for_each(button, &profile->buttons, link) {
 		if (button->index == index) {
-			if (profile->ratbag->driver->read_button)
-				profile->ratbag->driver->read_button(profile->ratbag, profile, button);
+			if (profile->device->driver->read_button)
+				profile->device->driver->read_button(profile->device, profile, button);
 			return ratbag_button_ref(button);
 		}
 	}
 
-	return ratbag_create_button(profile->ratbag, profile, index);
+	return ratbag_create_button(profile->device, profile, index);
 }
 
 LIBRATBAG_EXPORT struct ratbag_button *

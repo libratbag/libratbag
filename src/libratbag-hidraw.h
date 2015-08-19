@@ -34,7 +34,7 @@
 #define HID_OUTPUT_REPORT	1
 #define HID_FEATURE_REPORT	2
 
-int ratbag_open_hidraw(struct ratbag *ratbag);
+int ratbag_open_hidraw(struct ratbag_device *ratbag);
 
 /**
  * ratbag_hidraw_raw_request - send report request to device
@@ -50,7 +50,7 @@ int ratbag_open_hidraw(struct ratbag *ratbag);
  *
  * Same behavior as hid_hw_request, but with raw buffers instead.
  */
-int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
+int ratbag_hidraw_raw_request(struct ratbag_device *ratbag, unsigned char reportnum,
 			      uint8_t *buf, size_t len, unsigned char rtype,
 			      int reqtype);
 
@@ -63,6 +63,6 @@ int ratbag_hidraw_raw_request(struct ratbag *ratbag, unsigned char reportnum,
  *
  * @return: count of data transfered, negative if error
  */
-int ratbag_hidraw_output_report(struct ratbag *ratbag, uint8_t *buf, size_t len);
+int ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len);
 
 #endif /* LIBRATBAG_HIDRAW_H */

@@ -101,7 +101,7 @@ print_key(uint8_t key)
 }
 
 static int
-etekcity_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap)
+etekcity_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
 {
 	switch (cap) {
 	case RATBAG_CAP_NONE:
@@ -117,12 +117,12 @@ etekcity_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap)
 }
 
 static int
-etekcity_current_profile(struct ratbag *ratbag)
+etekcity_current_profile(struct ratbag_device *device)
 {
 	uint8_t buf[3];
 	int ret;
 
-	ret = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_PROFILE, buf,
+	ret = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_PROFILE, buf,
 			sizeof(buf), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 	if (ret < 0)
 		return ret;
@@ -134,7 +134,7 @@ etekcity_current_profile(struct ratbag *ratbag)
 }
 
 static int
-etekcity_set_current_profile(struct ratbag *ratbag, unsigned int index)
+etekcity_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 	uint8_t buf[] = {ETEKCITY_REPORT_ID_PROFILE, 0x03, index};
 	int ret;
@@ -142,7 +142,7 @@ etekcity_set_current_profile(struct ratbag *ratbag, unsigned int index)
 	if (index > ETEKCITY_PROFILE_MAX)
 		return -EINVAL;
 
-	ret = ratbag_hidraw_raw_request(ratbag, buf[0], buf, sizeof(buf),
+	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
 			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 
 	msleep(100);
@@ -151,7 +151,7 @@ etekcity_set_current_profile(struct ratbag *ratbag, unsigned int index)
 }
 
 static int
-etekcity_set_config_profile(struct ratbag *ratbag, uint8_t profile, uint8_t type)
+etekcity_set_config_profile(struct ratbag_device *device, uint8_t profile, uint8_t type)
 {
 	uint8_t buf[] = {ETEKCITY_REPORT_ID_CONFIGURE_PROFILE, profile, type};
 	int ret;
@@ -159,7 +159,7 @@ etekcity_set_config_profile(struct ratbag *ratbag, uint8_t profile, uint8_t type
 	if (profile > ETEKCITY_PROFILE_MAX)
 		return -EINVAL;
 
-	ret = ratbag_hidraw_raw_request(ratbag, buf[0], buf, sizeof(buf),
+	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
 				 HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 
 	msleep(100);
@@ -170,18 +170,18 @@ etekcity_set_config_profile(struct ratbag *ratbag, uint8_t profile, uint8_t type
 static void
 etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
-	struct ratbag *ratbag = profile->ratbag;
+	struct ratbag_device *device = profile->device;
 	struct etekcity_data *drv_data;
 	int rc;
 	uint8_t *buf;
 
 	assert(index <= ETEKCITY_PROFILE_MAX);
 
-	drv_data = ratbag_get_drv_data(ratbag);
+	drv_data = ratbag_get_drv_data(device);
 	buf = drv_data->profiles[index];
 
-	etekcity_set_config_profile(ratbag, index, ETEKCITY_CONFIG_KEY_MAPPING);
-	rc = ratbag_hidraw_raw_request(ratbag, ETEKCITY_REPORT_ID_KEY_MAPPING,
+	etekcity_set_config_profile(device, index, ETEKCITY_CONFIG_KEY_MAPPING);
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_KEY_MAPPING,
 			buf, ETEKCITY_REPORT_SIZE_PROFILE,
 			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 
@@ -190,7 +190,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	if (rc < 50)
 		return;
 
-	log_debug(ratbag->libratbag, "profile: %d %s:%d\n",
+	log_debug(device->libratbag, "profile: %d %s:%d\n",
 		  buf[2],
 		  __FILE__, __LINE__);
 }
@@ -208,39 +208,39 @@ etekcity_button_to_index(unsigned button)
 }
 
 static void
-etekcity_read_button(struct ratbag *ratbag, struct ratbag_profile *profile,
+etekcity_read_button(struct ratbag_device *device, struct ratbag_profile *profile,
 		     struct ratbag_button *button)
 {
-	struct etekcity_data *drv_data = ratbag_get_drv_data(ratbag);
+	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
 	uint8_t data;
 	unsigned index = etekcity_button_to_index(button->index);
 
 	data = drv_data->profiles[profile->index][3 + index * 3];
 	if (data)
-		log_debug(ratbag->libratbag,
+		log_debug(device->libratbag,
 			  " - button%d: %s (%02x) %s:%d\n",
 			  button->index, print_key(data), data, __FILE__, __LINE__);
 }
 
 static int
-etekcity_write_button(struct ratbag *ratbag, struct ratbag_profile *profile,
+etekcity_write_button(struct ratbag_device *device, struct ratbag_profile *profile,
 		      struct ratbag_button *button)
 {
 	return 0;
 }
 
 static int
-etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
+etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
 	struct ratbag_profile *profile;
 	struct etekcity_data *drv_data;
 
-	log_debug(ratbag->libratbag, "data: %d\n", id.data);
+	log_debug(device->libratbag, "data: %d\n", id.data);
 
-	rc = ratbag_open_hidraw(ratbag);
+	rc = ratbag_open_hidraw(device);
 	if (rc) {
-		log_error(ratbag->libratbag,
+		log_error(device->libratbag,
 			  "Can't open corresponding hidraw node: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
@@ -251,15 +251,15 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 	if (!drv_data)
 		return -ENODEV;
 
-	ratbag_set_drv_data(ratbag, drv_data);
+	ratbag_set_drv_data(device, drv_data);
 
-	ratbag->num_profiles = ETEKCITY_PROFILE_MAX;
-	ratbag->num_buttons = ETEKCITY_BUTTON_MAX;
+	device->num_profiles = ETEKCITY_PROFILE_MAX;
+	device->num_buttons = ETEKCITY_BUTTON_MAX;
 
-	profile = ratbag_get_active_profile(ratbag);
+	profile = ratbag_device_get_active_profile(device);
 
 	if (!profile) {
-		log_error(ratbag->libratbag,
+		log_error(device->libratbag,
 			  "Can't talk to the mouse: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
@@ -267,9 +267,9 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 		goto err;
 	}
 
-	log_info(ratbag->libratbag,
+	log_info(device->libratbag,
 		 "'%s' is in profile %d\n",
-		 ratbag_get_name(ratbag),
+		 ratbag_device_get_name(device),
 		 profile->index);
 
 	profile = ratbag_profile_unref(profile);
@@ -278,14 +278,14 @@ etekcity_probe(struct ratbag *ratbag, const struct ratbag_id id)
 
 err:
 	free(drv_data);
-	ratbag_set_drv_data(ratbag, NULL);
+	ratbag_set_drv_data(device, NULL);
 	return rc;
 }
 
 static void
-etekcity_remove(struct ratbag *ratbag)
+etekcity_remove(struct ratbag_device *device)
 {
-	free(ratbag_get_drv_data(ratbag));
+	free(ratbag_get_drv_data(device));
 }
 
 static const struct ratbag_id etekcity_table[] = {

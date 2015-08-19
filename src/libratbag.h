@@ -99,14 +99,14 @@ typedef void (*libratbag_log_handler)(struct libratbag *libratbag,
 
 /**
  * @ingroup base
- * @struct ratbag
+ * @struct ratbag_device
  *
  * A ratbag context represents one single device. This struct is
- * refcounted, use ratbag_ref() and ratbag_unref().
+ * refcounted, use ratbag_device_ref() and ratbag_device_unref().
  *
  * FIXME: missing: set/get_userdata
  */
-struct ratbag;
+struct ratbag_device;
 
 /**
  * @ingroup device
@@ -208,9 +208,9 @@ libratbag_unref(struct libratbag *libratbag);
  *
  * Create a new ratbag context from the given udev device.
  */
-struct ratbag*
-ratbag_new_from_udev_device(struct libratbag *libratbag,
-			    struct udev_device *device);
+struct ratbag_device*
+ratbag_device_new_from_udev_device(struct libratbag *libratbag,
+				   struct udev_device *device);
 
 /**
  * @ingroup base
@@ -219,7 +219,7 @@ ratbag_new_from_udev_device(struct libratbag *libratbag,
  * @return The name of the device associated with the given ratbag.
  */
 const char *
-ratbag_get_name(const struct ratbag* ratbag);
+ratbag_device_get_name(const struct ratbag_device* ratbag);
 
 /**
  * @ingroup device
@@ -270,7 +270,7 @@ enum ratbag_capability {
  * @retval 0 The context does not have the capability
  */
 int
-ratbag_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap);
+ratbag_device_has_capability(const struct ratbag_device *ratbag, enum ratbag_capability cap);
 
 /**
  * @ingroup device
@@ -288,7 +288,7 @@ ratbag_has_capability(const struct ratbag *ratbag, enum ratbag_capability cap);
  * @return The number of profiles available on this device.
  */
 unsigned int
-ratbag_get_num_profiles(struct ratbag *ratbag);
+ratbag_device_get_num_profiles(struct ratbag_device *ratbag);
 
 /**
  * @ingroup device
@@ -299,7 +299,7 @@ ratbag_get_num_profiles(struct ratbag *ratbag);
  * @return The number of buttons available on this device.
  */
 unsigned int
-ratbag_get_num_buttons(struct ratbag *ratbag);
+ratbag_device_get_num_buttons(struct ratbag_device *ratbag);
 
 /**
  * @ingroup device
@@ -320,7 +320,7 @@ ratbag_get_num_buttons(struct ratbag *ratbag);
  * @see ratbag_get_num_profiles
  */
 struct ratbag_profile *
-ratbag_get_profile_by_index(struct ratbag *ratbag, unsigned int index);
+ratbag_device_get_profile_by_index(struct ratbag_device *ratbag, unsigned int index);
 
 /**
  * @ingroup device
@@ -337,7 +337,7 @@ ratbag_get_profile_by_index(struct ratbag *ratbag, unsigned int index);
  * @return The profile currently active on the device.
  */
 struct ratbag_profile *
-ratbag_get_active_profile(struct ratbag *ratbag);
+ratbag_device_get_active_profile(struct ratbag_device *ratbag);
 
 /**
  * @ingroup device
@@ -350,8 +350,8 @@ ratbag_get_active_profile(struct ratbag *ratbag);
  * @return 0 on success or nonzero otherwise.
  */
 int
-ratbag_set_active_profile(struct ratbag *ratbag,
-			  struct ratbag_profile *profile);
+ratbag_device_set_active_profile(struct ratbag_device *ratbag,
+				 struct ratbag_profile *profile);
 
 /**
  * @ingroup device
@@ -450,7 +450,7 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
  * @see ratbag_get_num_buttons
  */
 struct ratbag_button*
-ratbag_get_button_by_index(struct ratbag *ratbag, unsigned int index);
+ratbag_get_button_by_index(struct ratbag_device *ratbag, unsigned int index);
 
 enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_UNKNOWN = 0,
@@ -674,13 +674,13 @@ ratbag_profile_unref(struct ratbag_profile *profile);
  * @ingroup base
  *
  * Add a reference to the context. A context is destroyed whenever the
- * reference count reaches 0. See @ref ratbag_unref.
+ * reference count reaches 0. See @ref ratbag_device_unref.
  *
  * @param ratbag A previously initialized valid ratbag context
  * @return The passed ratbag context
  */
-struct ratbag *
-ratbag_ref(struct ratbag *ratbag);
+struct ratbag_device *
+ratbag_device_ref(struct ratbag_device *ratbag);
 
 /**
  * @ingroup base
@@ -692,8 +692,8 @@ ratbag_ref(struct ratbag *ratbag);
  * @param ratbag A previously initialized ratbag context
  * @return NULL if context was destroyed otherwise the passed context
  */
-struct ratbag *
-ratbag_unref(struct ratbag *ratbag);
+struct ratbag_device *
+ratbag_device_unref(struct ratbag_device *ratbag);
 
 /**
  * @ingroup base

@@ -87,7 +87,7 @@ static int
 ratbag_cmd_info(struct libratbag *libratbag, uint32_t flags, int argc, char **argv)
 {
 	const char *path;
-	struct ratbag *rb;
+	struct ratbag_device *rb;
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
 	int i;
@@ -107,25 +107,25 @@ ratbag_cmd_info(struct libratbag *libratbag, uint32_t flags, int argc, char **ar
 	if (!udev_device)
 		return 1;
 
-	rb = ratbag_new_from_udev_device(libratbag, udev_device);
+	rb = ratbag_device_new_from_udev_device(libratbag, udev_device);
 	if (!rb) {
 		fprintf(stderr, "Looks like '%s' is not supported\n", path);
 		goto out;
 	}
 
-	fprintf(stderr, "Opened '%s' (%s).\n", ratbag_get_name(rb), path);
+	fprintf(stderr, "Opened '%s' (%s).\n", ratbag_device_get_name(rb), path);
 
-	profile = ratbag_get_profile_by_index(rb, 0);
-	ratbag_set_active_profile(rb, profile);
+	profile = ratbag_device_get_profile_by_index(rb, 0);
+	ratbag_device_set_active_profile(rb, profile);
 	profile = ratbag_profile_unref(profile);
 
-	profile = ratbag_get_active_profile(rb);
-	for (i = 0; i < ratbag_get_num_buttons(rb); i++) {
+	profile = ratbag_device_get_active_profile(rb);
+	for (i = 0; i < ratbag_device_get_num_buttons(rb); i++) {
 		button = ratbag_profile_get_button_by_index(profile, i);
 		button = ratbag_button_unref(button);
 	}
 	profile = ratbag_profile_unref(profile);
-	rb = ratbag_unref(rb);
+	rb = ratbag_device_unref(rb);
 
 	rc = 0;
 out:

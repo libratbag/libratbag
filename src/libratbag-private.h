@@ -51,7 +51,7 @@ struct libratbag {
 	enum libratbag_log_priority log_priority;
 };
 
-struct ratbag {
+struct ratbag_device {
 	char *name;
 	struct udev_device *udev_device;
 	struct udev_device *udev_hidraw;
@@ -78,16 +78,16 @@ struct ratbag_driver {
 	char *name;
 	const struct ratbag_id *table_ids;
 
-	int (*probe)(struct ratbag *ratbag, const struct ratbag_id id);
-	void (*remove)(struct ratbag *ratbag);
+	int (*probe)(struct ratbag_device *device, const struct ratbag_id id);
+	void (*remove)(struct ratbag_device *device);
 	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
 	int (*write_profile)(struct ratbag_profile *profile);
-	int (*get_active_profile)(struct ratbag *ratbag);
-	int (*set_active_profile)(struct ratbag *ratbag, unsigned int index);
-	int (*has_capability)(const struct ratbag *ratbag, enum ratbag_capability cap);
-	void (*read_button)(struct ratbag *ratbag, struct ratbag_profile *profile,
+	int (*get_active_profile)(struct ratbag_device *device);
+	int (*set_active_profile)(struct ratbag_device *device, unsigned int index);
+	int (*has_capability)(const struct ratbag_device *device, enum ratbag_capability cap);
+	void (*read_button)(struct ratbag_device *device, struct ratbag_profile *profile,
 			    struct ratbag_button *button);
-	int (*write_button)(struct ratbag *ratbag, struct ratbag_profile *profile,
+	int (*write_button)(struct ratbag_device *device, struct ratbag_profile *profile,
 			    struct ratbag_button *button);
 
 	/* private */
@@ -98,7 +98,7 @@ struct ratbag_profile {
 	int refcount;
 	struct list link;
 	unsigned index;
-	struct ratbag *ratbag;
+	struct ratbag_device *device;
 	struct list buttons;
 	void *drv_data;
 	void *user_data;
@@ -107,7 +107,7 @@ struct ratbag_profile {
 struct ratbag_button {
 	int refcount;
 	struct list link;
-	struct ratbag *ratbag;
+	struct ratbag_device *device;
 	struct ratbag_profile *profile;
 	unsigned index;
 	enum ratbag_button_type type;
@@ -115,31 +115,31 @@ struct ratbag_button {
 };
 
 static inline int
-ratbag_open_path(struct ratbag *ratbag, const char *path, int flags)
+ratbag_open_path(struct ratbag_device *device, const char *path, int flags)
 {
-	struct libratbag *libratbag = ratbag->libratbag;
+	struct libratbag *libratbag = device->libratbag;
 
 	return libratbag->interface->open_restricted(path, flags, libratbag->userdata);
 }
 
 static inline void
-ratbag_close_fd(struct ratbag *ratbag, int fd)
+ratbag_close_fd(struct ratbag_device *device, int fd)
 {
-	struct libratbag *libratbag = ratbag->libratbag;
+	struct libratbag *libratbag = device->libratbag;
 
 	return libratbag->interface->close_restricted(fd, libratbag->userdata);
 }
 
 static inline void
-ratbag_set_drv_data(struct ratbag *ratbag, void *drv_data)
+ratbag_set_drv_data(struct ratbag_device *device, void *drv_data)
 {
-	ratbag->drv_data = drv_data;
+	device->drv_data = drv_data;
 }
 
 static inline void *
-ratbag_get_drv_data(struct ratbag *ratbag)
+ratbag_get_drv_data(struct ratbag_device *device)
 {
-	return ratbag->drv_data;
+	return device->drv_data;
 }
 
 static inline void

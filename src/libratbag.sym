@@ -11,17 +11,17 @@ global:
 	ratbag_button_ref;
 	ratbag_button_unref;
 	ratbag_profile_get_button_by_index;
-	ratbag_get_active_profile;
-	ratbag_get_name;
-	ratbag_get_num_profiles;
-	ratbag_get_num_buttons;
-	ratbag_get_profile_by_index;
-	ratbag_has_capability;
-	ratbag_new_from_udev_device;
-	ratbag_set_active_profile;
+	ratbag_device_get_active_profile;
+	ratbag_device_get_name;
+	ratbag_device_get_num_profiles;
+	ratbag_device_get_num_buttons;
+	ratbag_device_get_profile_by_index;
+	ratbag_device_has_capability;
+	ratbag_device_new_from_udev_device;
+	ratbag_device_set_active_profile;
 	ratbag_profile_ref;
 	ratbag_profile_unref;
-	ratbag_unref;
+	ratbag_device_unref;
 local:
 	*;
 };
