@@ -221,8 +221,6 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 		printf("    Resolution: %ddpi\n", dpi);
 		printf("    Report rate: %dhz\n", rate);
 
-		ratbag_profile_unref(profile);
-
 		for (b = 0; b < num_buttons; b++) {
 			enum ratbag_button_type type;
 
@@ -231,8 +229,11 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 			printf("Button: %d type %s\n", b, button_type_to_str(type));
 			button = ratbag_button_unref(button);
 		}
+
+		profile = ratbag_profile_unref(profile);
 	}
-	profile = ratbag_profile_unref(profile);
+
+	active_profile = ratbag_profile_unref(active_profile);
 	device = ratbag_device_unref(device);
 
 	rc = 0;
