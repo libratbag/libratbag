@@ -43,7 +43,7 @@ enum cmd_flags {
 };
 
 static void
-list_ratbags_usage(void)
+usage(void)
 {
 	printf("Usage: %s [options] [command] /sys/class/input/eventX\n"
 	       "/path/to/device .... open the given device only\n"
@@ -84,7 +84,7 @@ ratbag_cmd_info(struct libratbag *libratbag, uint32_t flags, int argc, char **ar
 	struct udev_device *udev_device;
 
 	if (argc != 1) {
-		list_ratbags_usage();
+		usage();
 		return 1;
 	}
 
@@ -186,19 +186,19 @@ main(int argc, char **argv)
 		switch(c) {
 		case 'h':
 		case OPT_HELP:
-			list_ratbags_usage();
+			usage();
 			goto out;
 		case OPT_VERBOSE:
 			flags |= FLAG_VERBOSE;
 			break;
 		default:
-			list_ratbags_usage();
+			usage();
 			return 1;
 		}
 	}
 
 	if (optind >= argc) {
-		list_ratbags_usage();
+		usage();
 		return 1;
 	}
 
