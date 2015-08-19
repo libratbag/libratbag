@@ -79,7 +79,7 @@ usage(void)
 		program_invocation_short_name);
 
 	while (cmd) {
-		count = 16 - strlen(cmd->name);
+		count = 20 - strlen(cmd->name);
 		if (cmd->args)
 			count -= 1 + strlen(cmd->args);
 		if (count < 4)
@@ -88,7 +88,7 @@ usage(void)
 		       cmd->name,
 		       cmd->args ? " " : "",
 		       cmd->args ? cmd->args : "",
-		       count, "................", cmd->help);
+		       count, "....................", cmd->help);
 		cmd = ratbag_commands[++i];
 	}
 
@@ -291,8 +291,70 @@ static const struct ratbag_cmd cmd_info = {
 	.help = "Show information about the device's capabilities",
 };
 
+static int
+ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+{
+	const char *path;
+	struct ratbag_device *device;
+	struct ratbag_profile *profile;
+	int num_profiles, index;
+	int rc = 1;
+
+	if (argc != 2) {
+		usage();
+		return 1;
+	}
+
+	path = argv[1];
+	index = atoi(argv[0]);
+
+	device = ratbag_cmd_open_device(ratbag, path);
+	if (!device) {
+		error("Looks like '%s' is not supported\n", path);
+		return 1;
+	}
+
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_CAP_SWITCHABLE_PROFILE)) {
+		error("Looks like '%s' has no switchable profiles\n", path);
+		goto out;
+	}
+
+	num_profiles = ratbag_device_get_num_profiles(device);
+	if (index > num_profiles) {
+		error("'%s' is not a valid profile\n", argv[0]);
+		goto out;
+	}
+
+	profile = ratbag_device_get_profile_by_index(device, index);
+	if (!profile) {
+		error("Huh hoh, something bad happened, unable to retrieve the profile '%d' \n",
+		      index);
+		goto out;
+	}
+
+	rc = ratbag_device_set_active_profile(device, profile);
+	if (!rc)
+		printf("Switched '%s' to profile '%d'\n",
+		       ratbag_device_get_name(device), index);
+
+	profile = ratbag_profile_unref(profile);
+
+out:
+	device = ratbag_device_unref(device);
+	return rc;
+}
+
+static const struct ratbag_cmd cmd_switch_profile = {
+	.name = "switch_profile",
+	.cmd = ratbag_cmd_switch_profile,
+	.args = "N",
+	.help = "Set the current active profile to N",
+};
+
 static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_info,
+	&cmd_switch_profile,
 	NULL,
 };
 
