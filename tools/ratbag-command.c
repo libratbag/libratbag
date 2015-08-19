@@ -299,7 +299,7 @@ ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char 
 {
 	const char *path;
 	struct ratbag_device *device;
-	struct ratbag_profile *profile;
+	struct ratbag_profile *profile, *active_profile;
 	int num_profiles, index;
 	int rc = 1;
 
@@ -329,19 +329,26 @@ ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char 
 		goto out;
 	}
 
+	active_profile = ratbag_device_get_active_profile(device);
 	profile = ratbag_device_get_profile_by_index(device, index);
-	if (!profile) {
+	if (!profile || !active_profile) {
 		error("Huh hoh, something bad happened, unable to retrieve the profile '%d' \n",
 		      index);
 		goto out;
 	}
 
-	rc = ratbag_device_set_active_profile(device, profile);
-	if (!rc)
-		printf("Switched '%s' to profile '%d'\n",
+	if (active_profile != profile) {
+		rc = ratbag_device_set_active_profile(device, profile);
+		if (!rc)
+			printf("Switched '%s' to profile '%d'\n",
+			       ratbag_device_get_name(device), index);
+	} else {
+		printf("'%s' is already in profile '%d'\n",
 		       ratbag_device_get_name(device), index);
+	}
 
 	profile = ratbag_profile_unref(profile);
+	active_profile = ratbag_profile_unref(active_profile);
 
 out:
 	device = ratbag_device_unref(device);
