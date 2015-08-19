@@ -184,9 +184,9 @@ ratbag_device_init_udev(struct ratbag *ratbag, struct ratbag_device *device,
 	device->udev_hidraw = udev_device_ref(hidraw_udev);
 
 	log_debug(ratbag,
-		  "%s is associated to '%s'.\n",
-		  udev_device_get_devnode(device->udev_hidraw),
-		  device->name);
+		  "%s is device '%s'.\n",
+		  device->name,
+		  udev_device_get_devnode(device->udev_hidraw));
 
 	rc = 0;
 	udev_device_unref(hidraw_udev);
@@ -221,7 +221,7 @@ ratbag_find_driver(struct ratbag *ratbag, struct ratbag_device *device,
 	int rc;
 
 	list_for_each(driver, &ratbag->drivers, link) {
-		log_debug(ratbag, "testing against %s\n", driver->name);
+		log_debug(ratbag, "trying driver '%s'\n", driver->name);
 		matching_id = driver->table_ids;
 		do {
 			if (ratbag_match_id(dev_id, &matching_id->id)) {
@@ -230,8 +230,10 @@ ratbag_find_driver(struct ratbag *ratbag, struct ratbag_device *device,
 				matched_id.data = matching_id->data;
 				device->driver = driver;
 				rc = driver->probe(device, matched_id);
-				if (rc == 0)
+				if (rc == 0) {
+					log_debug(ratbag, "driver match found\n");
 					return driver;
+				}
 
 				device->driver = NULL;
 
