@@ -43,6 +43,19 @@ enum cmd_flags {
 	FLAG_VERBOSE = 1 << 0,
 };
 
+LIBRATBAG_ATTRIBUTE_PRINTF(1, 2)
+static inline void
+error(const char *format, ...)
+{
+	va_list args;
+
+	fprintf(stderr, "Error: ");
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+}
+
 static void
 usage(void)
 {
@@ -67,7 +80,7 @@ udev_device_from_path(struct udev *udev, const char *path)
 	if (strncmp(path, event_node_prefix, strlen(event_node_prefix)) == 0) {
 		struct stat st;
 		if (stat(path, &st) == -1) {
-			fprintf(stderr, "Failed to stat '%s': %s\n", path, strerror(errno));
+			error("Failed to stat '%s': %s\n", path, strerror(errno));
 			return NULL;
 		}
 		udev_device = udev_device_new_from_devnum(udev, 'c', st.st_rdev);
@@ -76,7 +89,7 @@ udev_device_from_path(struct udev *udev, const char *path)
 		udev_device = udev_device_new_from_syspath(udev, path);
 	}
 	if (!udev_device) {
-		fprintf(stderr, "Can't open '%s': %s\n", path, strerror(errno));
+		error("Can't open '%s': %s\n", path, strerror(errno));
 		return NULL;
 	}
 
@@ -109,11 +122,11 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 
 	rb = ratbag_device_new_from_udev_device(ratbag, udev_device);
 	if (!rb) {
-		fprintf(stderr, "Looks like '%s' is not supported\n", path);
+		error("Looks like '%s' is not supported\n", path);
 		goto out;
 	}
 
-	fprintf(stderr, "Opened '%s' (%s).\n", ratbag_device_get_name(rb), path);
+	error("Opened '%s' (%s).\n", ratbag_device_get_name(rb), path);
 
 	profile = ratbag_device_get_profile_by_index(rb, 0);
 	ratbag_device_set_active_profile(rb, profile);
@@ -154,7 +167,7 @@ open_restricted(const char *path, int flags, void *user_data)
 	int fd = open(path, flags);
 
 	if (fd < 0)
-		fprintf(stderr, "Failed to open %s (%s)\n",
+		error("Failed to open %s (%s)\n",
 			path, strerror(errno));
 
 	return fd < 0 ? -errno : fd;
@@ -182,7 +195,7 @@ main(int argc, char **argv)
 
 	ratbag = ratbag_create_context(&interface, NULL);
 	if (!ratbag) {
-		fprintf(stderr, "Can't initialize ratbag\n");
+		error("Can't initialize ratbag\n");
 		goto out;
 	}
 
@@ -231,7 +244,7 @@ main(int argc, char **argv)
 		goto out;
 	}
 
-	fprintf(stderr, "Invalid command '%s'\n", command);
+	error("Invalid command '%s'\n", command);
 	usage();
 	rc = 1;
 
