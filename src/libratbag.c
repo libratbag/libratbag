@@ -170,7 +170,6 @@ ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag *ratbag,
 	rc = 0;
 	udev_device_unref(hidraw_udev);
 out:
-	udev_device_unref(udev_device);
 	return rc;
 }
 
