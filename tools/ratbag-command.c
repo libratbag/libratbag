@@ -357,7 +357,7 @@ out:
 }
 
 static const struct ratbag_cmd cmd_switch_profile = {
-	.name = "switch_profile",
+	.name = "switch-profile",
 	.cmd = ratbag_cmd_switch_profile,
 	.args = "N",
 	.help = "Set the current active profile to N",
@@ -432,7 +432,7 @@ out:
 }
 
 static const struct ratbag_cmd cmd_switch_etekcity = {
-	.name = "switch_etekcity",
+	.name = "switch-etekcity",
 	.cmd = ratbag_cmd_switch_etekcity,
 	.args = NULL,
 	.help = "Switch the Etekcity mouse active profile",
