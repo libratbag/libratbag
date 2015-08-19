@@ -362,8 +362,84 @@ static const struct ratbag_cmd cmd_switch_profile = {
 	.help = "Set the current active profile to N",
 };
 
+static int
+ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+{
+	const char *path;
+	struct ratbag_device *device;
+	struct ratbag_button *button_6, *button_7;
+	struct ratbag_profile *profile = NULL;
+	int rc = 1, commit = 0;
+
+	if (argc != 1) {
+		usage();
+		return 1;
+	}
+
+	path = argv[0];
+
+	device = ratbag_cmd_open_device(ratbag, path);
+	if (!device) {
+		error("Looks like '%s' is not supported\n", path);
+		return 1;
+	}
+
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_CAP_SWITCHABLE_PROFILE)) {
+		error("Looks like '%s' has no switchable profiles\n", path);
+		goto out;
+	}
+
+	profile = ratbag_device_get_active_profile(device);
+	if (!profile) {
+		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
+		goto out;
+	}
+
+	button_6 = ratbag_profile_get_button_by_index(profile, 6);
+	button_7 = ratbag_profile_get_button_by_index(profile, 7);
+
+	if (ratbag_button_get_type(button_6) == RATBAG_BUTTON_TYPE_KEY_VOLUMEUP &&
+	    ratbag_button_get_type(button_7) == RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN) {
+		ratbag_button_set_type(button_6, RATBAG_BUTTON_TYPE_NONE);
+		ratbag_button_set_type(button_7, RATBAG_BUTTON_TYPE_NONE);
+		commit = 1;
+	} else if (ratbag_button_get_type(button_6) == RATBAG_BUTTON_TYPE_NONE &&
+		   ratbag_button_get_type(button_7) == RATBAG_BUTTON_TYPE_NONE) {
+		ratbag_button_set_type(button_6, RATBAG_BUTTON_TYPE_KEY_VOLUMEUP);
+		ratbag_button_set_type(button_7, RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN);
+		commit = 2;
+	}
+
+	button_6 = ratbag_button_unref(button_6);
+	button_7 = ratbag_button_unref(button_7);
+
+	if (!commit)
+		goto out;
+
+	rc = ratbag_device_set_active_profile(device, profile);
+	if (!rc)
+		printf("Switched the current profile of '%s' to %sreport the volume keys\n",
+		       ratbag_device_get_name(device),
+		       commit == 1 ? "not " : "");
+
+out:
+	profile = ratbag_profile_unref(profile);
+
+	device = ratbag_device_unref(device);
+	return rc;
+}
+
+static const struct ratbag_cmd cmd_switch_etekcity = {
+	.name = "switch_etekcity",
+	.cmd = ratbag_cmd_switch_etekcity,
+	.args = NULL,
+	.help = "Switch the Etekcity mouse active profile",
+};
+
 static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_info,
+	&cmd_switch_etekcity,
 	&cmd_switch_profile,
 	NULL,
 };
