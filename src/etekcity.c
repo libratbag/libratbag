@@ -175,6 +175,19 @@ etekcity_raw_to_button_type(uint8_t data)
 	return RATBAG_BUTTON_TYPE_UNKNOWN;
 }
 
+static uint8_t
+etekcity_button_type_to_raw(enum ratbag_button_type type)
+{
+	struct etekcity_button_mapping *mapping;
+
+	ARRAY_FOR_EACH(etekcity_button_mapping, mapping) {
+		if (mapping->type == type)
+			return mapping->raw;
+	}
+
+	return 0;
+}
+
 static int
 etekcity_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
 {
@@ -273,6 +286,30 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 static int
 etekcity_write_profile(struct ratbag_profile *profile)
 {
+	struct ratbag_device *device = profile->device;
+	unsigned int index = profile->index;
+	struct etekcity_data *drv_data;
+	int rc;
+	uint8_t *buf;
+
+	assert(index <= ETEKCITY_PROFILE_MAX);
+
+	drv_data = ratbag_get_drv_data(device);
+	buf = drv_data->profiles[index];
+
+	etekcity_set_config_profile(device, index, ETEKCITY_CONFIG_KEY_MAPPING);
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_KEY_MAPPING,
+			buf, ETEKCITY_REPORT_SIZE_PROFILE,
+			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+
+	msleep(100);
+
+	if (rc < 50)
+		return -EIO;
+
+	log_debug(device->ratbag, "profile: %d written %s:%d\n",
+		  buf[2],
+		  __FILE__, __LINE__);
 	return 0;
 }
 
@@ -302,6 +339,16 @@ static int
 etekcity_write_button(struct ratbag_device *device, struct ratbag_profile *profile,
 		      struct ratbag_button *button)
 {
+	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
+	uint8_t *data;
+	unsigned index = etekcity_button_to_index(button->index);
+
+	data = &drv_data->profiles[profile->index][3 + index * 3];
+
+	if (button->action_type == RATBAG_BUTTON_ACTION_TYPE_BUTTON) {
+		*data = etekcity_button_type_to_raw(button->type);
+	}
+
 	return 0;
 }
 
