@@ -132,7 +132,7 @@ udev_find_hidraw(struct libratbag *libratbag, struct ratbag *ratbag)
 {
 	struct udev_enumerate *e;
 	struct udev_list_entry *entry;
-	struct udev_device *device;
+	struct udev_device *udev_device;
 	const char *path, *sysname;
 	struct udev_device *hid_udev;
 	struct udev_device *hidraw_udev = NULL;
@@ -146,19 +146,19 @@ udev_find_hidraw(struct libratbag *libratbag, struct ratbag *ratbag)
 	udev_enumerate_scan_devices(e);
 	udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
 		path = udev_list_entry_get_name(entry);
-		device = udev_device_new_from_syspath(udev, path);
-		if (!device)
+		udev_device = udev_device_new_from_syspath(udev, path);
+		if (!udev_device)
 			continue;
 
-		sysname = udev_device_get_sysname(device);
+		sysname = udev_device_get_sysname(udev_device);
 		if (strncmp("hidraw", sysname, 6) != 0) {
-			udev_device_unref(device);
+			udev_device_unref(udev_device);
 			continue;
 		}
 
-		hidraw_udev = udev_device_ref(device);
+		hidraw_udev = udev_device_ref(udev_device);
 
-		udev_device_unref(device);
+		udev_device_unref(udev_device);
 		goto out;
 	}
 
@@ -283,7 +283,7 @@ get_product_id(struct udev_device *device, struct input_id *id)
 
 LIBRATBAG_EXPORT struct ratbag*
 ratbag_new_from_udev_device(struct libratbag *libratbag,
-			    struct udev_device *device)
+			    struct udev_device *udev_device)
 {
 	int rc;
 	struct ratbag *ratbag = NULL;
@@ -299,17 +299,17 @@ ratbag_new_from_udev_device(struct libratbag *libratbag,
 		return NULL;
 
 	ratbag->libratbag = libratbag_ref(libratbag);
-	if (get_product_id(device, &ratbag->ids) != 0)
+	if (get_product_id(udev_device, &ratbag->ids) != 0)
 		goto out_err;
 	free(ratbag->name);
-	ratbag->name = get_device_name(device);
+	ratbag->name = get_device_name(udev_device);
 	if (!ratbag->name) {
 		errno = ENOMEM;
 		goto out_err;
 	}
 
 	ratbag_device_init(ratbag);
-	rc = ratbag_device_init_udev(libratbag, ratbag, device);
+	rc = ratbag_device_init_udev(libratbag, ratbag, udev_device);
 	if (rc)
 		goto out_err;
 
