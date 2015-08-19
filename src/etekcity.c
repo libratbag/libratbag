@@ -115,6 +115,7 @@ struct etekcity_button_mapping {
 };
 
 static struct etekcity_button_mapping etekcity_button_mapping[] = {
+	{ 0, RATBAG_BUTTON_TYPE_NONE },
 	{ 1, RATBAG_BUTTON_TYPE_LEFT },
 	{ 2, RATBAG_BUTTON_TYPE_RIGHT },
 	{ 3, RATBAG_BUTTON_TYPE_MIDDLE },
@@ -290,13 +291,11 @@ etekcity_read_button(struct ratbag_device *device, struct ratbag_profile *profil
 	unsigned index = etekcity_button_to_index(button->index);
 
 	data = drv_data->profiles[profile->index][3 + index * 3];
-	if (data) {
-		log_debug(device->ratbag,
-			  " - button%d: %s (%02x) %s:%d\n",
-			  button->index, print_key(data), data, __FILE__, __LINE__);
-		button->type = etekcity_raw_to_button_type(data);
-		button->action_type = etekcity_raw_to_action(data, button->type);
-	}
+	log_debug(device->ratbag,
+		  " - button%d: %s (%02x) %s:%d\n",
+		  button->index, print_key(data), data, __FILE__, __LINE__);
+	button->type = etekcity_raw_to_button_type(data);
+	button->action_type = etekcity_raw_to_action(data, button->type);
 }
 
 static int

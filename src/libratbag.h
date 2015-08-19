@@ -500,6 +500,9 @@ enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_KEY_REFRESH,
 	RATBAG_BUTTON_TYPE_KEY_HOMEPAGE,
 	RATBAG_BUTTON_TYPE_KEY_SEARCH,
+
+	/* disabled button */
+	RATBAG_BUTTON_TYPE_NONE,
 };
 
 /**

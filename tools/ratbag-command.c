@@ -174,6 +174,9 @@ button_type_to_str(enum ratbag_button_type type)
 	case RATBAG_BUTTON_TYPE_KEY_REFRESH:	str = "key refresh"; break;
 	case RATBAG_BUTTON_TYPE_KEY_HOMEPAGE:	str = "key homepage"; break;
 	case RATBAG_BUTTON_TYPE_KEY_SEARCH:	str = "key search"; break;
+
+	/* disabled button */
+	case RATBAG_BUTTON_TYPE_NONE:		str = "none"; break;
 	}
 
 	return str;
