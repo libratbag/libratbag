@@ -391,10 +391,10 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 		goto err;
 	}
 
-	log_info(device->ratbag,
-		 "'%s' is in profile %d\n",
-		 ratbag_device_get_name(device),
-		 profile->index);
+	log_debug(device->ratbag,
+		  "'%s' is in profile %d\n",
+		  ratbag_device_get_name(device),
+		  profile->index);
 
 	profile = ratbag_profile_unref(profile);
 
