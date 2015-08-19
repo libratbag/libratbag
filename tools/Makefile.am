@@ -1,5 +1,5 @@
-noinst_PROGRAMS = ratbag-command
-bin_PROGRAMS = 
+noinst_PROGRAMS =
+bin_PROGRAMS = ratbag-command
 noinst_LTLIBRARIES =
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
