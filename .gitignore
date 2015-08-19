@@ -37,10 +37,12 @@ test-driver
 compile
 m4
 symbols-leak-test
+symbols-leak-test.log
 test-build-cxx
 test-build-linker
 test-build-pedantic-c99
 test-build-std-gnuc90
 test-suite.log
 test-context
+test-*.log
 ratbag-command
