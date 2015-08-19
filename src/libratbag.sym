@@ -4,6 +4,7 @@ LIBRATBAG_0.1.0 {
 global:
 	ratbag_create_context;
 	ratbag_button_ref;
+	ratbag_button_get_type;
 	ratbag_button_unref;
 	ratbag_device_unref;
 	ratbag_device_get_active_profile;
@@ -19,6 +20,8 @@ global:
 	ratbag_log_set_handler;
 	ratbag_log_set_priority;
 	ratbag_profile_get_button_by_index;
+	ratbag_profile_get_report_rate_hz;
+	ratbag_profile_get_resolution_dpi;
 	ratbag_profile_ref;
 	ratbag_profile_unref;
 	ratbag_ref;

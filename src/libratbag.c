@@ -548,6 +548,18 @@ ratbag_device_set_active_profile(struct ratbag_device *device,
 	return device->driver->set_active_profile(device, profile->index);
 }
 
+LIBRATBAG_EXPORT int
+ratbag_profile_get_resolution_dpi(const struct ratbag_profile *profile)
+{
+	return 0;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile)
+{
+	return 0;
+}
+
 static struct ratbag_button *
 ratbag_create_button(struct ratbag_device *device, struct ratbag_profile *profile,
 		unsigned int index)
@@ -587,6 +599,12 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 	}
 
 	return ratbag_create_button(profile->device, profile, index);
+}
+
+LIBRATBAG_EXPORT enum ratbag_button_type
+ratbag_button_get_type(struct ratbag_button *button)
+{
+	return RATBAG_BUTTON_TYPE_UNKNOWN;
 }
 
 LIBRATBAG_EXPORT struct ratbag_button *
