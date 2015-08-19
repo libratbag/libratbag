@@ -53,7 +53,7 @@ ratbag_open_hidraw(struct ratbag_device *ratbag)
 	/* Get Raw Info */
 	res = ioctl(fd, HIDIOCGRAWINFO, &info);
 	if (res < 0) {
-		log_error(ratbag->libratbag,
+		log_error(ratbag->ratbag,
 			  "error while getting info from device");
 		goto err;
 	}

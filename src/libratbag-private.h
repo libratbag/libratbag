@@ -39,16 +39,16 @@
 
 struct ratbag_driver;
 
-struct libratbag {
-	const struct libratbag_interface *interface;
+struct ratbag {
+	const struct ratbag_interface *interface;
 	void *userdata;
 
 	struct udev *udev;
 	struct list drivers;
 
 	int refcount;
-	libratbag_log_handler log_handler;
-	enum libratbag_log_priority log_priority;
+	ratbag_log_handler log_handler;
+	enum ratbag_log_priority log_priority;
 };
 
 struct ratbag_device {
@@ -59,7 +59,7 @@ struct ratbag_device {
 	int refcount;
 	struct input_id ids;
 	struct ratbag_driver *driver;
-	struct libratbag *libratbag;
+	struct ratbag *ratbag;
 
 	unsigned num_profiles;
 	struct list profiles;
@@ -117,17 +117,17 @@ struct ratbag_button {
 static inline int
 ratbag_open_path(struct ratbag_device *device, const char *path, int flags)
 {
-	struct libratbag *libratbag = device->libratbag;
+	struct ratbag *ratbag = device->ratbag;
 
-	return libratbag->interface->open_restricted(path, flags, libratbag->userdata);
+	return ratbag->interface->open_restricted(path, flags, ratbag->userdata);
 }
 
 static inline void
 ratbag_close_fd(struct ratbag_device *device, int fd)
 {
-	struct libratbag *libratbag = device->libratbag;
+	struct ratbag *ratbag = device->ratbag;
 
-	return libratbag->interface->close_restricted(fd, libratbag->userdata);
+	return ratbag->interface->close_restricted(fd, ratbag->userdata);
 }
 
 static inline void
@@ -156,19 +156,19 @@ ratbag_profile_get_drv_data(struct ratbag_profile *profile)
 
 
 void
-log_msg_va(struct libratbag *libratbag,
-	   enum libratbag_log_priority priority,
+log_msg_va(struct ratbag *ratbag,
+	   enum ratbag_log_priority priority,
 	   const char *format,
 	   va_list args);
-void log_msg(struct libratbag *libratbag,
-	enum libratbag_log_priority priority,
+void log_msg(struct ratbag *ratbag,
+	enum ratbag_log_priority priority,
 	const char *format, ...);
 
-#define log_debug(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_DEBUG, __VA_ARGS__)
-#define log_info(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_INFO, __VA_ARGS__)
-#define log_error(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, __VA_ARGS__)
-#define log_bug_kernel(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
-#define log_bug_libratbag(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "libratbag bug: " __VA_ARGS__)
+#define log_debug(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_DEBUG, __VA_ARGS__)
+#define log_info(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_INFO, __VA_ARGS__)
+#define log_error(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, __VA_ARGS__)
+#define log_bug_kernel(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
+#define log_bug_libratbag(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "libratbag bug: " __VA_ARGS__)
 #define log_bug_client(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "client bug: " __VA_ARGS__)
 
 /* list of all supported drivers */

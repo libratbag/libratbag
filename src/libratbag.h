@@ -41,43 +41,43 @@ extern "C" {
  *
  * Log priority for internal logging messages.
  */
-enum libratbag_log_priority {
-	LIBRATBAG_LOG_PRIORITY_DEBUG = 10,
-	LIBRATBAG_LOG_PRIORITY_INFO = 20,
-	LIBRATBAG_LOG_PRIORITY_ERROR = 30,
+enum ratbag_log_priority {
+	RATBAG_LOG_PRIORITY_DEBUG = 10,
+	RATBAG_LOG_PRIORITY_INFO = 20,
+	RATBAG_LOG_PRIORITY_ERROR = 30,
 };
 
 /**
  * @ingroup base
- * @struct libratbag
+ * @struct ratbag
  *
- * A handle for accessing libratbag. This struct is refcounted, use
- * libratbag_ref() and libratbag_unref().
+ * A handle for accessing ratbag contexts. This struct is refcounted, use
+ * ratbag_ref() and ratbag_unref().
  */
-struct libratbag;
+struct ratbag;
 
 /**
  * @ingroup base
  *
  * Log handler type for custom logging.
  *
- * @param libratbag The libratbag context
+ * @param ratbag The ratbag context
  * @param priority The priority of the current message
  * @param format Message format in printf-style
  * @param args Message arguments
  *
- * @see libratbag_log_set_priority
- * @see libratbag_log_get_priority
- * @see libratbag_log_set_handler
+ * @see ratbag_log_set_priority
+ * @see ratbag_log_get_priority
+ * @see ratbag_log_set_handler
  */
-typedef void (*libratbag_log_handler)(struct libratbag *libratbag,
-				      enum libratbag_log_priority priority,
+typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
+				      enum ratbag_log_priority priority,
 				      const char *format, va_list args)
 	   LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
 
 
 /**
- * @defgroup base Initialization and manipulation of libratbag contexts
+ * @defgroup base Initialization and manipulation of ratbag contexts
  * @defgroup device Querying and manipulating devices
  *
  * Device configuration is managed by "profiles" (see @ref ratbag_profile).
@@ -136,15 +136,15 @@ struct ratbag_button;
 
 /**
  * @ingroup base
- * @struct libratbag_interface
+ * @struct ratbag_interface
  *
  * libratbag does not open file descriptors to devices directly, instead
  * open_restricted() and close_restricted() are called for each path that
  * must be opened.
  *
- * @see libratbag_create_context
+ * @see ratbag_create_context
  */
-struct libratbag_interface {
+struct ratbag_interface {
 	/**
 	 * Open the device at the given path with the flags provided and
 	 * return the fd.
@@ -152,7 +152,7 @@ struct libratbag_interface {
 	 * @param path The device path to open
 	 * @param flags Flags as defined by open(2)
 	 * @param user_data The user_data provided in
-	 * libratbag_create_context()
+	 * ratbag_create_context()
 	 *
 	 * @return The file descriptor, or a negative errno on failure.
 	 */
@@ -162,7 +162,7 @@ struct libratbag_interface {
 	 *
 	 * @param fd The file descriptor to close
 	 * @param user_data The user_data provided in
-	 * libratbag_create_context()
+	 * ratbag_create_context()
 	 */
 	void (*close_restricted)(int fd, void *user_data);
 };
@@ -170,38 +170,38 @@ struct libratbag_interface {
 /**
  * @ingroup base
  *
- * Create a new libratbag context.
+ * Create a new ratbag context.
  *
- * @return An initialized libratbag context or NULL on error
+ * @return An initialized ratbag context or NULL on error
  */
-struct libratbag *
-libratbag_create_context(const struct libratbag_interface *interface,
+struct ratbag *
+ratbag_create_context(const struct ratbag_interface *interface,
 			 void *userdata);
 
 /**
  * @ingroup base
  *
  * Add a reference to the context. A context is destroyed whenever the
- * reference count reaches 0. See @ref libratbag_unref.
+ * reference count reaches 0. See @ref ratbag_unref.
  *
- * @param libratbag A previously initialized valid libratbag context
- * @return The passed libratbag context
+ * @param ratbag A previously initialized valid ratbag context
+ * @return The passed ratbag context
  */
-struct libratbag *
-libratbag_ref(struct libratbag *libratbag);
+struct ratbag *
+ratbag_ref(struct ratbag *ratbag);
 
 /**
  * @ingroup base
  *
- * Dereference the libratbag context. After this, the context may have been
+ * Dereference the ratbag context. After this, the context may have been
  * destroyed, if the last reference was dereferenced. If so, the context is
  * invalid and may not be interacted with.
  *
- * @param libratbag A previously initialized libratbag context
+ * @param ratbag A previously initialized ratbag context
  * @return NULL if context was destroyed otherwise the passed context
  */
-struct libratbag *
-libratbag_unref(struct libratbag *libratbag);
+struct ratbag *
+ratbag_unref(struct ratbag *ratbag);
 
 /**
  * @ingroup base
@@ -209,7 +209,7 @@ libratbag_unref(struct libratbag *libratbag);
  * Create a new ratbag context from the given udev device.
  */
 struct ratbag_device*
-ratbag_device_new_from_udev_device(struct libratbag *libratbag,
+ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 				   struct udev_device *device);
 
 /**
@@ -702,17 +702,17 @@ ratbag_device_unref(struct ratbag_device *ratbag);
  * equal to or higher than the argument will be printed to the context's
  * log handler.
  *
- * The default log priority is @ref LIBRATBAG_LOG_PRIORITY_ERROR.
+ * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
  *
- * @param libratbag A previously initialized ratbag context
+ * @param ratbag A previously initialized ratbag context
  * @param priority The minimum priority of log messages to print.
  *
- * @see libratbag_log_set_handler
- * @see libratbag_log_get_priority
+ * @see ratbag_log_set_handler
+ * @see ratbag_log_get_priority
  */
 void
-libratbag_log_set_priority(struct libratbag *libratbag,
-			   enum libratbag_log_priority priority);
+ratbag_log_set_priority(struct ratbag *ratbag,
+			enum ratbag_log_priority priority);
 
 /**
  * @ingroup base
@@ -720,16 +720,16 @@ libratbag_log_set_priority(struct libratbag *libratbag,
  * Get the context's log priority. Messages with priorities equal to or
  * higher than the argument will be printed to the current log handler.
  *
- * The default log priority is @ref LIBRATBAG_LOG_PRIORITY_ERROR.
+ * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
  *
- * @param libratbag A previously initialized libratbag context
+ * @param ratbag A previously initialized ratbag context
  * @return The minimum priority of log messages to print.
  *
- * @see libratbag_log_set_handler
- * @see libratbag_log_set_priority
+ * @see ratbag_log_set_handler
+ * @see ratbag_log_set_priority
  */
-enum libratbag_log_priority
-libratbag_log_get_priority(const struct libratbag *libratbag);
+enum ratbag_log_priority
+ratbag_log_get_priority(const struct ratbag *ratbag);
 
 /**
  * @ingroup base
@@ -740,15 +740,15 @@ libratbag_log_get_priority(const struct libratbag *libratbag);
  *
  * The default log handler prints to stderr.
  *
- * @param libratbag A previously initialized libratbag context
+ * @param ratbag A previously initialized ratbag context
  * @param log_handler The log handler for library messages.
  *
- * @see libratbag_log_set_priority
- * @see libratbag_log_get_priority
+ * @see ratbag_log_set_priority
+ * @see ratbag_log_get_priority
  */
 void
-libratbag_log_set_handler(struct libratbag *libratbag,
-			  libratbag_log_handler log_handler);
+ratbag_log_set_handler(struct ratbag *ratbag,
+		       ratbag_log_handler log_handler);
 
 #ifdef __cplusplus
 }

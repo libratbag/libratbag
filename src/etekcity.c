@@ -190,7 +190,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	if (rc < 50)
 		return;
 
-	log_debug(device->libratbag, "profile: %d %s:%d\n",
+	log_debug(device->ratbag, "profile: %d %s:%d\n",
 		  buf[2],
 		  __FILE__, __LINE__);
 }
@@ -217,7 +217,7 @@ etekcity_read_button(struct ratbag_device *device, struct ratbag_profile *profil
 
 	data = drv_data->profiles[profile->index][3 + index * 3];
 	if (data)
-		log_debug(device->libratbag,
+		log_debug(device->ratbag,
 			  " - button%d: %s (%02x) %s:%d\n",
 			  button->index, print_key(data), data, __FILE__, __LINE__);
 }
@@ -236,11 +236,11 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 	struct ratbag_profile *profile;
 	struct etekcity_data *drv_data;
 
-	log_debug(device->libratbag, "data: %d\n", id.data);
+	log_debug(device->ratbag, "data: %d\n", id.data);
 
 	rc = ratbag_open_hidraw(device);
 	if (rc) {
-		log_error(device->libratbag,
+		log_error(device->ratbag,
 			  "Can't open corresponding hidraw node: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
@@ -259,7 +259,7 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 	profile = ratbag_device_get_active_profile(device);
 
 	if (!profile) {
-		log_error(device->libratbag,
+		log_error(device->ratbag,
 			  "Can't talk to the mouse: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
@@ -267,7 +267,7 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 		goto err;
 	}
 
-	log_info(device->libratbag,
+	log_info(device->ratbag,
 		 "'%s' is in profile %d\n",
 		 ratbag_device_get_name(device),
 		 profile->index);

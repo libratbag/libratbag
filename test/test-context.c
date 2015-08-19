@@ -50,66 +50,66 @@ close_restricted(int fd, void *user_data)
 	close(fd);
 }
 
-struct libratbag_interface simple_iface = {
+struct ratbag_interface simple_iface = {
 	.open_restricted = open_restricted,
 	.close_restricted = close_restricted,
 };
 
 START_TEST(context_init_NULL)
 {
-	struct libratbag *lr;
-	lr = libratbag_create_context(NULL, NULL);
+	struct ratbag *lr;
+	lr = ratbag_create_context(NULL, NULL);
 	ck_assert(lr == NULL);
 }
 END_TEST
 
 START_TEST(context_init_bad_iface)
 {
-	struct libratbag *lr;
-	struct libratbag_interface iface = {
+	struct ratbag *lr;
+	struct ratbag_interface iface = {
 		.open_restricted = NULL,
 		.close_restricted = NULL,
 	};
 
-	lr = libratbag_create_context(&iface, NULL);
+	lr = ratbag_create_context(&iface, NULL);
 	ck_assert(lr == NULL);
 
 	iface.open_restricted = open_restricted;
-	lr = libratbag_create_context(&iface, NULL);
+	lr = ratbag_create_context(&iface, NULL);
 	ck_assert(lr == NULL);
 
 	iface.open_restricted = NULL;
 	iface.close_restricted = close_restricted;
-	lr = libratbag_create_context(&iface, NULL);
+	lr = ratbag_create_context(&iface, NULL);
 	ck_assert(lr == NULL);
 }
 END_TEST
 
 START_TEST(context_init)
 {
-	struct libratbag *lr;
+	struct ratbag *lr;
 
-	lr = libratbag_create_context(&simple_iface, NULL);
+	lr = ratbag_create_context(&simple_iface, NULL);
 	ck_assert(lr != NULL);
-	libratbag_unref(lr);
+	ratbag_unref(lr);
 }
 END_TEST
 
 START_TEST(context_ref)
 {
-	struct libratbag *lr;
-	struct libratbag *lr2;
+	struct ratbag *lr;
+	struct ratbag *lr2;
 
-	lr = libratbag_create_context(&simple_iface, NULL);
+	lr = ratbag_create_context(&simple_iface, NULL);
 	ck_assert(lr != NULL);
 
-	lr2 = libratbag_ref(lr);
+	lr2 = ratbag_ref(lr);
 	ck_assert_ptr_eq(lr, lr2);
 
-	lr2 = libratbag_unref(lr2);
+	lr2 = ratbag_unref(lr2);
 	ck_assert_ptr_eq(lr2, lr);
 
-	lr2 = libratbag_unref(lr2);
+	lr2 = ratbag_unref(lr2);
 	ck_assert_ptr_eq(lr2, NULL);
 }
 END_TEST

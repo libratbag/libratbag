@@ -35,81 +35,81 @@
 #include "libratbag-util.h"
 
 static void
-libratbag_default_log_func(struct libratbag *libratbag,
-			  enum libratbag_log_priority priority,
-			  const char *format, va_list args)
+ratbag_default_log_func(struct ratbag *ratbag,
+			enum ratbag_log_priority priority,
+			const char *format, va_list args)
 {
 	const char *prefix;
 
 	switch(priority) {
-	case LIBRATBAG_LOG_PRIORITY_DEBUG: prefix = "debug"; break;
-	case LIBRATBAG_LOG_PRIORITY_INFO: prefix = "info"; break;
-	case LIBRATBAG_LOG_PRIORITY_ERROR: prefix = "error"; break;
+	case RATBAG_LOG_PRIORITY_DEBUG: prefix = "debug"; break;
+	case RATBAG_LOG_PRIORITY_INFO: prefix = "info"; break;
+	case RATBAG_LOG_PRIORITY_ERROR: prefix = "error"; break;
 	default: prefix="<invalid priority>"; break;
 	}
 
-	fprintf(stderr, "libratbag %s: ", prefix);
+	fprintf(stderr, "ratbag %s: ", prefix);
 	vfprintf(stderr, format, args);
 }
 
 void
-log_msg_va(struct libratbag *libratbag,
-	   enum libratbag_log_priority priority,
+log_msg_va(struct ratbag *ratbag,
+	   enum ratbag_log_priority priority,
 	   const char *format,
 	   va_list args)
 {
-	if (libratbag->log_handler &&
-	    libratbag->log_priority <= priority)
-		libratbag->log_handler(libratbag, priority, format, args);
+	if (ratbag->log_handler &&
+	    ratbag->log_priority <= priority)
+		ratbag->log_handler(ratbag, priority, format, args);
 }
 
 void
-log_msg(struct libratbag *libratbag,
-	enum libratbag_log_priority priority,
+log_msg(struct ratbag *ratbag,
+	enum ratbag_log_priority priority,
 	const char *format, ...)
 {
 	va_list args;
 
 	va_start(args, format);
-	log_msg_va(libratbag, priority, format, args);
+	log_msg_va(ratbag, priority, format, args);
 	va_end(args);
 }
 
 LIBRATBAG_EXPORT void
-libratbag_log_set_priority(struct libratbag *libratbag,
-			   enum libratbag_log_priority priority)
+ratbag_log_set_priority(struct ratbag *ratbag,
+			enum ratbag_log_priority priority)
 {
-	libratbag->log_priority = priority;
+	ratbag->log_priority = priority;
 }
 
-LIBRATBAG_EXPORT enum libratbag_log_priority
-libratbag_log_get_priority(const struct libratbag *libratbag)
+LIBRATBAG_EXPORT enum ratbag_log_priority
+ratbag_log_get_priority(const struct ratbag *ratbag)
 {
-	return libratbag->log_priority;
+	return ratbag->log_priority;
 }
 
 LIBRATBAG_EXPORT void
-libratbag_log_set_handler(struct libratbag *libratbag,
-			  libratbag_log_handler log_handler)
+ratbag_log_set_handler(struct ratbag *ratbag,
+		       ratbag_log_handler log_handler)
 {
-	libratbag->log_handler = log_handler;
+	ratbag->log_handler = log_handler;
 }
 
 
 static inline struct udev_device *
-udev_device_from_devnode(struct libratbag *libratbag,
+udev_device_from_devnode(struct ratbag *ratbag,
 			 struct ratbag_device *device,
 			 int fd)
 {
 	struct udev_device *dev;
 	struct stat st;
 	size_t count = 0;
-	struct udev *udev = libratbag->udev;
+	struct udev *udev = ratbag->udev;
 
 	if (fstat(fd, &st) < 0)
 		return NULL;
 
-	dev = udev_device_new_from_devnum(libratbag->udev, 'c', st.st_rdev);
+	dev = udev_device_new_from_devnum(ratbag->udev, 'c', st.st_rdev);
 
 	while (dev && !udev_device_get_is_initialized(dev)) {
 		udev_device_unref(dev);
@@ -118,7 +118,7 @@ udev_device_from_devnode(struct libratbag *libratbag,
 
 		count++;
 		if (count > 50) {
-			log_bug_libratbag(libratbag,
+			log_bug_libratbag(ratbag,
 					  "udev device never initialized\n");
 			break;
 		}
@@ -128,7 +128,7 @@ udev_device_from_devnode(struct libratbag *libratbag,
 }
 
 static struct udev_device *
-udev_find_hidraw(struct libratbag *libratbag, struct ratbag_device *device)
+udev_find_hidraw(struct ratbag *ratbag, struct ratbag_device *device)
 {
 	struct udev_enumerate *e;
 	struct udev_list_entry *entry;
@@ -136,7 +136,7 @@ udev_find_hidraw(struct libratbag *libratbag, struct ratbag_device *device)
 	const char *path, *sysname;
 	struct udev_device *hid_udev;
 	struct udev_device *hidraw_udev = NULL;
-	struct udev *udev = libratbag->udev;
+	struct udev *udev = ratbag->udev;
 
 	hid_udev = udev_device_get_parent_with_subsystem_devtype(device->udev_device, "hid", NULL);
 
@@ -169,7 +169,7 @@ out:
 }
 
 static int
-ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag_device *device,
+ratbag_device_init_udev(struct ratbag *ratbag, struct ratbag_device *device,
 			struct udev_device *udev_device)
 {
 	struct udev_device *hidraw_udev;
@@ -177,13 +177,13 @@ ratbag_device_init_udev(struct libratbag *libratbag, struct ratbag_device *devic
 
 	device->udev_device = udev_device_ref(udev_device);
 
-	hidraw_udev = udev_find_hidraw(libratbag, device);
+	hidraw_udev = udev_find_hidraw(ratbag, device);
 	if (!hidraw_udev)
 		goto out;
 
 	device->udev_hidraw = udev_device_ref(hidraw_udev);
 
-	log_debug(libratbag,
+	log_debug(ratbag,
 		  "%s is associated to '%s'.\n",
 		  udev_device_get_devnode(device->udev_hidraw),
 		  device->name);
@@ -212,7 +212,7 @@ ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
 }
 
 static struct ratbag_driver *
-ratbag_find_driver(struct libratbag *libratbag, struct ratbag_device *device,
+ratbag_find_driver(struct ratbag *ratbag, struct ratbag_device *device,
 		const struct input_id *dev_id)
 {
 	struct ratbag_driver *driver;
@@ -220,8 +220,8 @@ ratbag_find_driver(struct libratbag *libratbag, struct ratbag_device *device,
 	struct ratbag_id matched_id;
 	int rc;
 
-	list_for_each(driver, &libratbag->drivers, link) {
-		log_debug(libratbag, "testing against %s\n", driver->name);
+	list_for_each(driver, &ratbag->drivers, link) {
+		log_debug(ratbag, "testing against %s\n", driver->name);
 		matching_id = driver->table_ids;
 		do {
 			if (ratbag_match_id(dev_id, &matching_id->id)) {
@@ -282,15 +282,15 @@ get_product_id(struct udev_device *device, struct input_id *id)
 }
 
 LIBRATBAG_EXPORT struct ratbag_device*
-ratbag_device_new_from_udev_device(struct libratbag *libratbag,
+ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 				   struct udev_device *udev_device)
 {
 	int rc;
 	struct ratbag_device *device = NULL;
 	struct ratbag_driver *driver;
 
-	if (!libratbag) {
-		fprintf(stderr, "libratbag is NULL\n");
+	if (!ratbag) {
+		fprintf(stderr, "ratbag is NULL\n");
 		return NULL;
 	}
 
@@ -298,7 +298,7 @@ ratbag_device_new_from_udev_device(struct libratbag *libratbag,
 	if (!device)
 		return NULL;
 
-	device->libratbag = libratbag_ref(libratbag);
+	device->ratbag = ratbag_ref(ratbag);
 	if (get_product_id(udev_device, &device->ids) != 0)
 		goto out_err;
 	free(device->name);
@@ -309,11 +309,11 @@ ratbag_device_new_from_udev_device(struct libratbag *libratbag,
 	}
 
 	ratbag_device_init(device);
-	rc = ratbag_device_init_udev(libratbag, device, udev_device);
+	rc = ratbag_device_init_udev(ratbag, device, udev_device);
 	if (rc)
 		goto out_err;
 
-	driver = ratbag_find_driver(libratbag, device, &device->ids);
+	driver = ratbag_find_driver(ratbag, device, &device->ids);
 	if (!driver) {
 		errno = ENOTSUP;
 		goto err_udev;
@@ -327,7 +327,7 @@ err_udev:
 out_err:
 	if (device) {
 		free(device->name);
-		device->libratbag = libratbag_unref(device->libratbag);
+		device->ratbag = ratbag_unref(device->ratbag);
 	}
 	free(device);
 	return NULL;
@@ -353,7 +353,7 @@ ratbag_device_unref(struct ratbag_device *device)
 	if (device->hidraw_fd >= 0)
 		close(device->hidraw_fd);
 
-	device->libratbag = libratbag_unref(device->libratbag);
+	device->ratbag = ratbag_unref(device->ratbag);
 	free(device->name);
 	free(device);
 	return NULL;
@@ -366,65 +366,65 @@ ratbag_device_get_name(const struct ratbag_device* device)
 }
 
 static void
-ratbag_register_driver(struct libratbag *libratbag, struct ratbag_driver *driver)
+ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 {
-	list_insert(&libratbag->drivers, &driver->link);
+	list_insert(&ratbag->drivers, &driver->link);
 }
 
-LIBRATBAG_EXPORT struct libratbag *
-libratbag_create_context(const struct libratbag_interface *interface,
+LIBRATBAG_EXPORT struct ratbag *
+ratbag_create_context(const struct ratbag_interface *interface,
 			 void *userdata)
 {
-	struct libratbag *libratbag;
+	struct ratbag *ratbag;
 
 	if (interface == NULL ||
 	    interface->open_restricted == NULL ||
 	    interface->close_restricted == NULL)
 		return NULL;
 
-	libratbag = zalloc(sizeof(*libratbag));
-	if (!libratbag)
+	ratbag = zalloc(sizeof(*ratbag));
+	if (!ratbag)
 		return NULL;
 
-	libratbag->refcount = 1;
-	libratbag->interface = interface;
-	libratbag->userdata = userdata;
+	ratbag->refcount = 1;
+	ratbag->interface = interface;
+	ratbag->userdata = userdata;
 
-	list_init(&libratbag->drivers);
-	libratbag->udev = udev_new();
-	if (!libratbag->udev) {
-		free(libratbag);
+	list_init(&ratbag->drivers);
+	ratbag->udev = udev_new();
+	if (!ratbag->udev) {
+		free(ratbag);
 		return NULL;
 	}
 
-	libratbag->log_handler = libratbag_default_log_func;
-	libratbag->log_priority = LIBRATBAG_LOG_PRIORITY_DEBUG;
+	ratbag->log_handler = ratbag_default_log_func;
+	ratbag->log_priority = RATBAG_LOG_PRIORITY_DEBUG;
 
-	ratbag_register_driver(libratbag, &etekcity_driver);
+	ratbag_register_driver(ratbag, &etekcity_driver);
 
-	return libratbag;
+	return ratbag;
 }
 
-LIBRATBAG_EXPORT struct libratbag *
-libratbag_ref(struct libratbag *libratbag)
+LIBRATBAG_EXPORT struct ratbag *
+ratbag_ref(struct ratbag *ratbag)
 {
-	libratbag->refcount++;
-	return libratbag;
+	ratbag->refcount++;
+	return ratbag;
 }
 
-LIBRATBAG_EXPORT struct libratbag *
-libratbag_unref(struct libratbag *libratbag)
+LIBRATBAG_EXPORT struct ratbag *
+ratbag_unref(struct ratbag *ratbag)
 {
-	if (libratbag == NULL)
+	if (ratbag == NULL)
 		return NULL;
 
-	assert(libratbag->refcount > 0);
-	libratbag->refcount--;
-	if (libratbag->refcount > 0)
-		return libratbag;
+	assert(ratbag->refcount > 0);
+	ratbag->refcount--;
+	if (ratbag->refcount > 0)
+		return ratbag;
 
-	libratbag->udev = udev_unref(libratbag->udev);
-	free(libratbag);
+	ratbag->udev = udev_unref(ratbag->udev);
+	free(ratbag);
 
 	return NULL;
 }

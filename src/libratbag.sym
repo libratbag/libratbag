@@ -2,15 +2,10 @@
 
 LIBRATBAG_0.1.0 {
 global:
-	libratbag_create_context;
-	libratbag_ref;
-	libratbag_unref;
-	libratbag_log_get_priority;
-	libratbag_log_set_handler;
-	libratbag_log_set_priority;
+	ratbag_create_context;
 	ratbag_button_ref;
 	ratbag_button_unref;
-	ratbag_profile_get_button_by_index;
+	ratbag_device_unref;
 	ratbag_device_get_active_profile;
 	ratbag_device_get_name;
 	ratbag_device_get_num_profiles;
@@ -19,9 +14,14 @@ global:
 	ratbag_device_has_capability;
 	ratbag_device_new_from_udev_device;
 	ratbag_device_set_active_profile;
+	ratbag_log_get_priority;
+	ratbag_log_set_handler;
+	ratbag_log_set_priority;
+	ratbag_profile_get_button_by_index;
 	ratbag_profile_ref;
 	ratbag_profile_unref;
-	ratbag_device_unref;
+	ratbag_ref;
+	ratbag_unref;
 local:
 	*;
 };

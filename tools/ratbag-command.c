@@ -84,7 +84,7 @@ udev_device_from_path(struct udev *udev, const char *path)
 }
 
 static int
-ratbag_cmd_info(struct libratbag *libratbag, uint32_t flags, int argc, char **argv)
+ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 {
 	const char *path;
 	struct ratbag_device *rb;
@@ -107,7 +107,7 @@ ratbag_cmd_info(struct libratbag *libratbag, uint32_t flags, int argc, char **ar
 	if (!udev_device)
 		return 1;
 
-	rb = ratbag_device_new_from_udev_device(libratbag, udev_device);
+	rb = ratbag_device_new_from_udev_device(ratbag, udev_device);
 	if (!rb) {
 		fprintf(stderr, "Looks like '%s' is not supported\n", path);
 		goto out;
@@ -136,7 +136,7 @@ out:
 
 struct ratbag_cmd {
 	const char *name;
-	int (*cmd)(struct libratbag *libratbag, uint32_t flags, int argc, char **argv);
+	int (*cmd)(struct ratbag *ratbag, uint32_t flags, int argc, char **argv);
 };
 
 const struct ratbag_cmd cmd_info = {
@@ -166,7 +166,7 @@ close_restricted(int fd, void *user_data)
 	close(fd);
 }
 
-const struct libratbag_interface interface = {
+const struct ratbag_interface interface = {
 	.open_restricted = open_restricted,
 	.close_restricted = close_restricted,
 };
@@ -174,15 +174,15 @@ const struct libratbag_interface interface = {
 int
 main(int argc, char **argv)
 {
-	struct libratbag *libratbag;
+	struct ratbag *ratbag;
 	const char *command;
 	int rc = 0;
 	const struct ratbag_cmd **cmd;
 	uint32_t flags = 0;
 
-	libratbag = libratbag_create_context(&interface, NULL);
-	if (!libratbag) {
-		fprintf(stderr, "Can't initialize libratbag\n");
+	ratbag = ratbag_create_context(&interface, NULL);
+	if (!ratbag) {
+		fprintf(stderr, "Can't initialize ratbag\n");
 		goto out;
 	}
 
@@ -227,12 +227,12 @@ main(int argc, char **argv)
 		/* reset optind to reset the internal state, see NOTES in
 		 * getopt(3) */
 		optind = 0;
-		rc = (*cmd)->cmd(libratbag, flags, argc, argv);
+		rc = (*cmd)->cmd(ratbag, flags, argc, argv);
 		break;
 	}
 
 out:
-	libratbag_unref(libratbag);
+	ratbag_unref(ratbag);
 
 	return rc;
 }
