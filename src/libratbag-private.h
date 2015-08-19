@@ -74,21 +74,98 @@ struct ratbag_id {
 	unsigned long data;
 };
 
+/**
+ * struct ratbag_driver - user space driver for a ratbag device
+ */
 struct ratbag_driver {
 	char *name;
+		/** the name of the driver */
+
 	const struct ratbag_id *table_ids;
+		/** a list of devices supported by this driver. The last element
+		 * must be empty to mark the end. */
 
 	int (*probe)(struct ratbag_device *device, const struct ratbag_id id);
+		/** callback called while trying to open a device by libratbag.
+		 * This function should decide whether or not this driver will
+		 * handle the given device.
+		 *
+		 * Return -ENODEV to ignore the device and let other drivers
+		 * probe the device. Any other error code will stop the probing.
+		 */
+
 	void (*remove)(struct ratbag_device *device);
+		/** callback called right before the struct ratbag_device is
+		 * unref-ed.
+		 *
+		 * In this callback, the extra memory allocated in probe should
+		 * be freed.
+		 */
+
 	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
+		/** callback called when a read profile is requested by the
+		 * caller of the library.
+		 *
+		 * The driver should probe here the device for the requested
+		 * profile and populate the related information.
+		 * There is no need to populate the various struct ratbag_button
+		 * as they are allocated when the user needs it.
+		 */
+
 	int (*write_profile)(struct ratbag_profile *profile);
+		/** here, the driver should actually write the profile to the
+		 * device.
+		 */
+
 	int (*get_active_profile)(struct ratbag_device *device);
+		/** called when the user of libratbag wants to know which
+		 * current profile is in use.
+		 *
+		 * It is fundamentally racy.
+		 */
+
 	int (*set_active_profile)(struct ratbag_device *device, unsigned int index);
+		/** called to mark a previously writen profile as active.
+		 *
+		 * There should be no need to write the profile here, a
+		 * .write_profile() call is issued before calling this.
+		 */
+
 	int (*has_capability)(const struct ratbag_device *device, enum ratbag_capability cap);
+		/** This should return a boolean whether or not the device
+		 * supports the given capability.
+		 *
+		 * In most cases, the .probe() should store a list of capabilities
+		 * for each device, but most of the time, it can be statically
+		 * stored.
+		 */
+
 	void (*read_button)(struct ratbag_device *device, struct ratbag_profile *profile,
 			    struct ratbag_button *button);
+		/** For the given button, fill in the struct ratbag_button
+		 * with the available information.
+		 *
+		 * For devices with profiles, profile will not be NULL. For
+		 * device without, profile will be set to NULL.
+		 *
+		 * For devices with profile, there should not be the need to
+		 * actually read the profile from the device. The caller
+		 * should make sure that the profile is up to date.
+		 */
+
 	int (*write_button)(struct ratbag_device *device, struct ratbag_profile *profile,
 			    struct ratbag_button *button);
+		/** For the given button, store in the profile or in the device
+		 * the given struct ratbag_button.
+		 *
+		 * For devices with profiles, profile will not be NULL. For
+		 * device without, profile will be set to NULL.
+		 *
+		 * For devices with profile, there should not be the need to
+		 * actually write the button to the device. The caller
+		 * should later on write the profile in one call to
+		 * .write_profile().
+		 */
 
 	/* private */
 	struct list link;
