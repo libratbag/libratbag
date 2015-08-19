@@ -606,7 +606,7 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 LIBRATBAG_EXPORT enum ratbag_button_type
 ratbag_button_get_type(struct ratbag_button *button)
 {
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
+	return button->type;
 }
 
 LIBRATBAG_EXPORT struct ratbag_button *
