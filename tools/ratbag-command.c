@@ -108,11 +108,45 @@ button_type_to_str(enum ratbag_button_type type)
 	case RATBAG_BUTTON_TYPE_RIGHT:		str = "right"; break;
 	case RATBAG_BUTTON_TYPE_THUMB:		str = "thumb"; break;
 	case RATBAG_BUTTON_TYPE_THUMB2:		str = "thumb2"; break;
-	case RATBAG_BUTTON_TYPE_RESOLUTION_UP:  str = "resolution up"; break;
-	case RATBAG_BUTTON_TYPE_RESOLUTION_DOWN:str = "resolution down"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_LEFT:	str = "wheel left"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_RIGHT:	str = "wheel right"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_CLICK:	str = "wheel click"; break;
+	case RATBAG_BUTTON_TYPE_WHEEL_UP:	str = "wheel up"; break;
+	case RATBAG_BUTTON_TYPE_WHEEL_DOWN:	str = "wheel down"; break;
+	case RATBAG_BUTTON_TYPE_EXTRA:		str = "extra (forward)"; break;
+	case RATBAG_BUTTON_TYPE_SIDE:		str = "side (backward)"; break;
+
+	/* DPI switch */
+	case RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP:	str = "resolution cycle up"; break;
+	case RATBAG_BUTTON_TYPE_RESOLUTION_UP:		str = "resolution up"; break;
+	case RATBAG_BUTTON_TYPE_RESOLUTION_DOWN:	str = "resolution down"; break;
+
+	/* Profile */
+	case RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP:	str = "profile cycle up"; break;
+	case RATBAG_BUTTON_TYPE_PROFILE_UP:		str = "profile up"; break;
+	case RATBAG_BUTTON_TYPE_PROFILE_DOWN:		str = "profile down"; break;
+
+	/* multimedia */
+	case RATBAG_BUTTON_TYPE_KEY_CONFIG:		str = "key config"; break;
+	case RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG:	str = "key previous song"; break;
+	case RATBAG_BUTTON_TYPE_KEY_NEXTSONG:		str = "key next song"; break;
+	case RATBAG_BUTTON_TYPE_KEY_PLAYPAUSE:		str = "key play/pause"; break;
+	case RATBAG_BUTTON_TYPE_KEY_STOPCD:		str = "key stop"; break;
+	case RATBAG_BUTTON_TYPE_KEY_MUTE:		str = "key mute"; break;
+	case RATBAG_BUTTON_TYPE_KEY_VOLUMEUP:		str = "key volume up"; break;
+	case RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN:		str = "key volume down"; break;
+
+	/* desktop */
+	case RATBAG_BUTTON_TYPE_KEY_CALC:	str = "key calc"; break;
+	case RATBAG_BUTTON_TYPE_KEY_MAIL:	str = "key mail"; break;
+	case RATBAG_BUTTON_TYPE_KEY_BOOKMARKS:	str = "key bookmarks"; break;
+	case RATBAG_BUTTON_TYPE_KEY_FORWARD:	str = "key forward"; break;
+	case RATBAG_BUTTON_TYPE_KEY_BACK:	str = "key back"; break;
+	case RATBAG_BUTTON_TYPE_KEY_STOP:	str = "key stop"; break;
+	case RATBAG_BUTTON_TYPE_KEY_FILE:	str = "key file"; break;
+	case RATBAG_BUTTON_TYPE_KEY_REFRESH:	str = "key refresh"; break;
+	case RATBAG_BUTTON_TYPE_KEY_HOMEPAGE:	str = "key homepage"; break;
+	case RATBAG_BUTTON_TYPE_KEY_SEARCH:	str = "key search"; break;
 	}
 
 	return str;
