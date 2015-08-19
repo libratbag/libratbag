@@ -179,6 +179,29 @@ button_type_to_str(enum ratbag_button_type type)
 	return str;
 }
 
+static struct ratbag_device *
+ratbag_cmd_open_device(struct ratbag *ratbag, const char *path)
+{
+	struct ratbag_device *device;
+	struct udev *udev;
+	struct udev_device *udev_device;
+
+	udev = udev_new();
+	udev_device = udev_device_from_path(udev, path);
+	if (!udev_device) {
+		udev_unref(udev);
+		return NULL;
+	}
+
+	device = ratbag_device_new_from_udev_device(ratbag, udev_device);
+
+	udev_device_unref(udev_device);
+	udev_unref(udev);
+
+	return device;
+}
+
+
 static int
 ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 {
@@ -189,8 +212,6 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 	int num_profiles, num_buttons;
 	int i, b;
 	int rc = 1;
-	struct udev *udev;
-	struct udev_device *udev_device;
 
 	if (argc != 1) {
 		usage();
@@ -199,12 +220,7 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 
 	path = argv[0];
 
-	udev = udev_new();
-	udev_device = udev_device_from_path(udev, path);
-	if (!udev_device)
-		return 1;
-
-	device = ratbag_device_new_from_udev_device(ratbag, udev_device);
+	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
 		error("Looks like '%s' is not supported\n", path);
 		goto out;
@@ -265,8 +281,6 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 
 	rc = 0;
 out:
-	udev_device_unref(udev_device);
-	udev_unref(udev);
 	return rc;
 }
 
