@@ -109,54 +109,66 @@ etekcity_raw_to_action(uint8_t data, enum ratbag_button_type button_type)
 	return RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 }
 
+struct etekcity_button_mapping {
+	uint8_t raw;
+	enum ratbag_button_type type;
+};
+
+static struct etekcity_button_mapping etekcity_button_mapping[] = {
+	{ 1, RATBAG_BUTTON_TYPE_LEFT },
+	{ 2, RATBAG_BUTTON_TYPE_RIGHT },
+	{ 3, RATBAG_BUTTON_TYPE_MIDDLE },
+//	{ 4, "2 x BTN_LEFT" },
+	{ 7, RATBAG_BUTTON_TYPE_EXTRA },
+	{ 8, RATBAG_BUTTON_TYPE_SIDE },
+	{ 9, RATBAG_BUTTON_TYPE_WHEEL_UP },
+	{ 10, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+	{ 11, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+	{ 12, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+
+	/* DPI switch */
+	{ 13, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP },
+	{ 14, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+	{ 15, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+
+	/* Profile */
+	{ 18, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP },
+	{ 19, RATBAG_BUTTON_TYPE_PROFILE_UP },
+	{ 20, RATBAG_BUTTON_TYPE_PROFILE_DOWN },
+
+//	{ 21, "HOLD BTN_LEFT ON/OFF" },
+
+	/* multimedia */
+	{ 25, RATBAG_BUTTON_TYPE_KEY_CONFIG },
+	{ 26, RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG },
+	{ 27, RATBAG_BUTTON_TYPE_KEY_NEXTSONG },
+	{ 28, RATBAG_BUTTON_TYPE_KEY_PLAYPAUSE },
+	{ 29, RATBAG_BUTTON_TYPE_KEY_STOPCD },
+	{ 30, RATBAG_BUTTON_TYPE_KEY_MUTE },
+	{ 31, RATBAG_BUTTON_TYPE_KEY_VOLUMEUP },
+	{ 32, RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN },
+
+	/* windows */
+	{ 33, RATBAG_BUTTON_TYPE_KEY_CALC },
+	{ 34, RATBAG_BUTTON_TYPE_KEY_MAIL },
+	{ 35, RATBAG_BUTTON_TYPE_KEY_BOOKMARKS },
+	{ 36, RATBAG_BUTTON_TYPE_KEY_FORWARD },
+	{ 37, RATBAG_BUTTON_TYPE_KEY_BACK },
+	{ 38, RATBAG_BUTTON_TYPE_KEY_STOP },
+	{ 39, RATBAG_BUTTON_TYPE_KEY_FILE },
+	{ 40, RATBAG_BUTTON_TYPE_KEY_REFRESH },
+	{ 41, RATBAG_BUTTON_TYPE_KEY_HOMEPAGE },
+	{ 42, RATBAG_BUTTON_TYPE_KEY_SEARCH },
+};
+
 static enum ratbag_button_type
 etekcity_raw_to_button_type(uint8_t data)
 {
-	switch (data) {
-	case 1: return RATBAG_BUTTON_TYPE_LEFT;
-	case 2: return RATBAG_BUTTON_TYPE_RIGHT;
-	case 3: return RATBAG_BUTTON_TYPE_MIDDLE;
-//	case 4: return "2 x BTN_LEFT";
-	case 7: return RATBAG_BUTTON_TYPE_EXTRA;
-	case 8: return RATBAG_BUTTON_TYPE_SIDE;
-	case 9: return RATBAG_BUTTON_TYPE_WHEEL_UP;
-	case 10: return RATBAG_BUTTON_TYPE_WHEEL_DOWN;
-	case 11: return RATBAG_BUTTON_TYPE_WHEEL_LEFT;
-	case 12: return RATBAG_BUTTON_TYPE_WHEEL_RIGHT;
+	struct etekcity_button_mapping *mapping;
 
-	/* DPI switch */
-	case 13: return RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP;
-	case 14: return RATBAG_BUTTON_TYPE_RESOLUTION_UP;
-	case 15: return RATBAG_BUTTON_TYPE_RESOLUTION_DOWN;
-
-	/* Profile */
-	case 18: return RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP;
-	case 19: return RATBAG_BUTTON_TYPE_PROFILE_UP;
-	case 20: return RATBAG_BUTTON_TYPE_PROFILE_DOWN;
-
-//	case 21: return "HOLD BTN_LEFT ON/OFF";
-
-	/* multimedia */
-	case 25: return RATBAG_BUTTON_TYPE_KEY_CONFIG;
-	case 26: return RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG;
-	case 27: return RATBAG_BUTTON_TYPE_KEY_NEXTSONG;
-	case 28: return RATBAG_BUTTON_TYPE_KEY_PLAYPAUSE;
-	case 29: return RATBAG_BUTTON_TYPE_KEY_STOPCD;
-	case 30: return RATBAG_BUTTON_TYPE_KEY_MUTE;
-	case 31: return RATBAG_BUTTON_TYPE_KEY_VOLUMEUP;
-	case 32: return RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN;
-
-	/* windows */
-	case 33: return RATBAG_BUTTON_TYPE_KEY_CALC;
-	case 34: return RATBAG_BUTTON_TYPE_KEY_MAIL;
-	case 35: return RATBAG_BUTTON_TYPE_KEY_BOOKMARKS;
-	case 36: return RATBAG_BUTTON_TYPE_KEY_FORWARD;
-	case 37: return RATBAG_BUTTON_TYPE_KEY_BACK;
-	case 38: return RATBAG_BUTTON_TYPE_KEY_STOP;
-	case 39: return RATBAG_BUTTON_TYPE_KEY_FILE;
-	case 40: return RATBAG_BUTTON_TYPE_KEY_REFRESH;
-	case 41: return RATBAG_BUTTON_TYPE_KEY_HOMEPAGE;
-	case 42: return RATBAG_BUTTON_TYPE_KEY_SEARCH;
+	ARRAY_FOR_EACH(etekcity_button_mapping, mapping) {
+		if (mapping->raw == data)
+			return mapping->type;
 	}
 
 	return RATBAG_BUTTON_TYPE_UNKNOWN;
