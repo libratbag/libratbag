@@ -82,7 +82,7 @@ static int hidpp10_write_command(struct ratbag_device *device, __u8 *cmd, int si
 		return 0;
 
 	if (res < 0)
-		log_error(device->ratbag, "Error: %d\n", -res);
+		log_error(device->ratbag, "Error: %s (%d)\n", strerror(-res), -res);
 
 	return res;
 }
@@ -149,7 +149,7 @@ int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message 
 	} while (ret > 0);
 
 	if (ret < 0) {
-		log_error(ratbag, "    USB error: %d\n", -ret);
+		log_error(ratbag, "    USB error: %s (%d)\n", strerror(-ret), -ret);
 		perror("write");
 		goto out_err;
 	}
