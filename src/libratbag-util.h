@@ -24,6 +24,7 @@
 #ifndef LIBRATBAG_UTIL_H
 #define LIBRATBAG_UTIL_H
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <libudev.h>
 
