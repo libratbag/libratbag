@@ -140,6 +140,9 @@ udev_find_hidraw(struct ratbag *ratbag, struct ratbag_device *device)
 
 	hid_udev = udev_device_get_parent_with_subsystem_devtype(device->udev_device, "hid", NULL);
 
+	if (!hid_udev)
+		return NULL;
+
 	e = udev_enumerate_new(udev);
 	udev_enumerate_add_match_subsystem(e, "hidraw");
 	udev_enumerate_add_match_parent(e, hid_udev);
