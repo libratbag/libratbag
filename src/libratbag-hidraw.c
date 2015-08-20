@@ -65,18 +65,9 @@ ratbag_open_hidraw(struct ratbag_device *ratbag)
 
 	/* Check if the device actually matches the input node */
 	if (hid_id.bustype != ratbag->ids.bustype ||
-	    hid_id.vendor != ratbag->ids.vendor) {
-		errno -EINVAL;
-		goto err;
-	}
-
-	/* On the Logitech receiver, the hid device has the pid of the
-	 * receiver, not of the actual device */
-	if (hid_id.product != ratbag->ids.product &&
-	    (hid_id.vendor == USB_VENDOR_ID_LOGITECH &&
-	     hid_id.product != USB_DEVICE_ID_UNIFYING_RECEIVER &&
-	     hid_id.product != USB_DEVICE_ID_UNIFYING_RECEIVER2)) {
-		errno = -EINVAL;
+	    hid_id.vendor != ratbag->ids.vendor ||
+	    hid_id.product != ratbag->ids.product) {
+		errno = EINVAL;
 		goto err;
 	}
 
