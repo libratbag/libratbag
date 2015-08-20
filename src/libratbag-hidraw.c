@@ -129,8 +129,27 @@ ratbag_hidraw_raw_request(struct ratbag_device *ratbag, unsigned char reportnum,
 int
 ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len)
 {
+	int rc;
+
 	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || ratbag->hidraw_fd < 0)
 		return -EINVAL;
 
-	return -ENOTSUP;
+	rc = write(ratbag->hidraw_fd, buf, len);
+
+	if (rc < 0)
+		return rc;
+
+	if (rc != (int)len)
+		return -EIO;
+
+	return 0;
+}
+
+int
+ratbag_hidraw_read_input_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len)
+{
+	if (len < 1 || !buf || ratbag->hidraw_fd < 0)
+		return -EINVAL;
+
+	return read(ratbag->hidraw_fd, buf, len);
 }
