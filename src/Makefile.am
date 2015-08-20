@@ -5,7 +5,7 @@ include_HEADERS =			\
 
 libratbag_la_SOURCES =			\
 	debug.h				\
-	etekcity.c			\
+	driver-etekcity.c		\
 	hidpp10.c			\
 	hidpp10.h			\
 	libratbag.c			\
