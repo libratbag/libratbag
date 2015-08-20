@@ -230,7 +230,7 @@ static int hidpp10_get_device_info(int fd, struct unifying_device *dev) {
 	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
 	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
 	union hidpp10_message build_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(1));
-	int name_size;
+	size_t name_size;
 	int res;
 
 	res = hidpp10_request_command(fd, &pairing_information);
