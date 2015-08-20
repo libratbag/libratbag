@@ -167,9 +167,12 @@ out_err:
 }
 
 int hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2) {
-	unsigned idx = dev->index;
+	unsigned idx = RECEIVER_IDX;
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
+
+	if (dev)
+		mode.msg.device_idx = dev->index;
 
 	/* first read the current values */
 	res = hidpp10_request_command(device, &mode);
