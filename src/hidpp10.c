@@ -224,6 +224,7 @@ static int hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_
 	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
 	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
 	union hidpp10_message build_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(1));
+	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
 	size_t name_size;
 	int res;
 
@@ -249,18 +250,20 @@ static int hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_
 	 * => we can not retrieve their FW version through HID++ 1.0.
 	 */
 	res = hidpp10_request_command(device, &firmware_information);
-	if (res)
-		return 0;
-
-	dev->fw_major = firmware_information.msg.string[1];
-	dev->fw_minor = firmware_information.msg.string[2];
+	if (res == 0) {
+		dev->fw_major = firmware_information.msg.string[1];
+		dev->fw_minor = firmware_information.msg.string[2];
+	}
 
 	res = hidpp10_request_command(device, &build_information);
+	if (res == 0) {
+		dev->build = (build_information.msg.string[1] << 8) |
+				build_information.msg.string[2];
+	}
+
+	res = hidpp10_request_command(device, &notifications);
 	if (res)
 		return 0;
-
-	dev->build = (build_information.msg.string[1] << 8) |
-			build_information.msg.string[2];
 
 	return 0;
 }

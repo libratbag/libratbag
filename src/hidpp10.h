@@ -50,6 +50,17 @@
 #define GET_LONG_REGISTER_RSP			0x83
 #define __ERROR_MSG				0x8F
 
+#define __CMD_HIDPP_NOTIFICATIONS		0x00
+#define FEATURE_BIT_R0_CONSUMER_SPECIFIC_CONTROL	0
+#define FEATURE_BIT_R0_POWER_KEYS			1
+#define FEATURE_BIT_R0_VERTICAL_SCROLL			2
+#define FEATURE_BIT_R0_MOUSE_EXTRA_BUTTONS		3
+#define FEATURE_BIT_R0_BATTERY_STATUS			4
+#define FEATURE_BIT_R0_HORIZONTAL_SCROLL		5
+#define FEATURE_BIT_R0_F_LOCK_STATUS			6
+#define FEATURE_BIT_R0_NUMPAD_NUMERIC_KEYS		7
+#define FEATURE_BIT_R2_3D_GESTURES			0
+
 #define __CMD_ENABLE_INDIVIDUAL_FEATURES	0x01
 #define FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION		1
 #define FEATURE_BIT_R0_ENHANCED_KEY_USAGE		2
@@ -93,6 +104,16 @@
 		.sub_id = GET_REGISTER_REQ, \
 		.address = __CMD_DEVICE_FIRMWARE_INFORMATION, \
 		.parameters = {fw_info_item, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx + 1, \
+		.sub_id = sub, \
+		.address = __CMD_HIDPP_NOTIFICATIONS, \
+		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
 
