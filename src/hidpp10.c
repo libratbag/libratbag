@@ -262,7 +262,7 @@ static int hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_
 	return 0;
 }
 
-int hidpp10_get_device_from_wpid(struct ratbag_device *device, __u16 wpid, struct hidpp10_device *dev) {
+int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct hidpp10_device *dev) {
 	int i, res;
 
 	for (i = 0; i < 6; i++) {

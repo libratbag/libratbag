@@ -29,6 +29,7 @@
 #ifndef HIDPP_10_H
 #define HIDPP_10_H
 
+#include <stdint.h>
 #include "libratbag.h"
 
 #define RECEIVER_IDX				0xFF
@@ -142,28 +143,28 @@
 struct hidpp10_device  {
 	unsigned index;
 	char name[15];
-	__u16 wpid;
-	__u8 report_interval;
-	__u8 device_type;
-	__u8 fw_major;
-	__u8 fw_minor;
-	__u16 build;
+	uint16_t wpid;
+	uint8_t report_interval;
+	uint8_t device_type;
+	uint8_t fw_major;
+	uint8_t fw_minor;
+	uint8_t build;
 };
 
 struct _hidpp10_message {
-	__u8 report_id;
-	__u8 device_idx;
-	__u8 sub_id;
-	__u8 address;
+	uint8_t report_id;
+	uint8_t device_idx;
+	uint8_t sub_id;
+	uint8_t address;
 	union {
-		__u8 parameters[3];
-		__u8 string[16];
+		uint8_t parameters[3];
+		uint8_t string[16];
 	};
 };
 
 union hidpp10_message {
 	struct _hidpp10_message msg;
-	__u8 data[LONG_MESSAGE_LENGTH];
+	uint8_t data[LONG_MESSAGE_LENGTH];
 };
 
 
@@ -172,6 +173,6 @@ int hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp
 int hidpp10_open_lock(struct ratbag_device *device);
 int hidpp10_disconnect(struct ratbag_device *device, int idx);
 void hidpp10_list_devices(struct ratbag_device *device);
-int hidpp10_get_device_from_wpid(struct ratbag_device *device, __u16 wpid, struct hidpp10_device *dev);
+int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct hidpp10_device *dev);
 int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev);
 #endif /* HIDPP_10_H */
