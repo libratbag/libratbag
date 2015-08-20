@@ -34,17 +34,24 @@
 #define HID_OUTPUT_REPORT	1
 #define HID_FEATURE_REPORT	2
 
+/**
+ * Open the hidraw device associated with the device.
+ *
+ * @param ratbag the ratbag device
+ *
+ * @return 0 on success or a negative errno on error
+ */
 int ratbag_open_hidraw(struct ratbag_device *ratbag);
 
 /**
- * ratbag_hidraw_raw_request - send report request to device
+ * Send report request to device
  *
- * @ratbag: ratbag device
- * @reportnum: report ID
- * @buf: in/out data to transfer
- * @len: length of buf
- * @rtype: HID report type
- * @reqtype: HID_REQ_GET_REPORT or HID_REQ_SET_REPORT
+ * @param ratbag ratbag device
+ * @param reportnum report ID
+ * @param buf in/out data to transfer
+ * @param len length of buf
+ * @param rtype HID report type
+ * @param reqtype HID_REQ_GET_REPORT or HID_REQ_SET_REPORT
  *
  * @return count of data transfered, or a negative errno on error
  *
@@ -55,22 +62,22 @@ int ratbag_hidraw_raw_request(struct ratbag_device *ratbag, unsigned char report
 			      int reqtype);
 
 /**
- * ratbag_hidraw_output_report - send output report to device
+ * Send output report to device
  *
- * @hdev: hid device
- * @buf: raw data to transfer
- * @len: length of buf
+ * @param ratbag the ratbag device
+ * @param buf raw data to transfer
+ * @param len length of buf
  *
  * @return count of data transfered, or a negative errno on error
  */
 int ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len);
 
 /**
- * ratbag_hidraw_read_input_report - read an input report from the device
+ * Read an input report from the device
  *
- * @hdev: hid device
- * @buf: resulting raw data
- * @len: length of buf
+ * @param ratbag the ratbag device
+ * @param[out] buf resulting raw data
+ * @param len length of buf
  *
  * @return count of data transfered, or a negative errno on error
  */
