@@ -78,6 +78,48 @@ log_msg(struct ratbag *ratbag,
 	va_end(args);
 }
 
+void
+log_buffer(struct ratbag *ratbag,
+	enum ratbag_log_priority priority,
+	const char *header,
+	uint8_t *buf, size_t len)
+{
+	char *output_buf;
+	char *sep = "";
+	unsigned int i, n;
+	unsigned int buf_len;
+
+	if (ratbag->log_handler &&
+	    ratbag->log_priority > priority)
+		return;
+
+	buf_len = header ? strlen(header) : 0;
+	buf_len += len * 3;
+	buf_len += 1; /* terminating '\0' */
+
+	output_buf = zalloc(buf_len);
+	if (!output_buf) {
+		if (header)
+			log_msg(ratbag, priority, "%s ......", header);
+		else
+			log_msg(ratbag, priority, " ......");
+		return;
+	}
+
+	n = 0;
+	if (header)
+		n += sprintf(output_buf, "%s", header);
+
+	for (i = 0; i < len; ++i) {
+		n += sprintf(&output_buf[n], "%s%02x", sep, buf[i] & 0xFF);
+		sep = " ";
+	}
+
+	log_msg(ratbag, priority, "%s\n", output_buf);
+
+	free(output_buf);
+}
+
 LIBRATBAG_EXPORT void
 ratbag_log_set_priority(struct ratbag *ratbag,
 			enum ratbag_log_priority priority)
