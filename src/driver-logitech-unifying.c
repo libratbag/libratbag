@@ -277,7 +277,13 @@ static const struct ratbag_id unifying_table[] = {
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},
-
+	/* G500s */
+	{.id = { .bustype = BUS_USB,
+		 .vendor = USB_VENDOR_ID_LOGITECH,
+		 .product = 0xc24e,
+		 .version = VERSION_ANY },
+	 .data = 1,
+	},
 	{ },
 };
 
