@@ -8,6 +8,8 @@ libratbag_la_SOURCES =			\
 	driver-logitech-unifying.c	\
 	hidpp10.c			\
 	hidpp10.h			\
+	hidpp20.c			\
+	hidpp20.h			\
 	libratbag.c			\
 	libratbag.h			\
 	libratbag-hidraw.c		\

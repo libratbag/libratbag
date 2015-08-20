@@ -29,6 +29,12 @@
  *   https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28&usp=sharing
  */
 
+/*
+ * for this driver to work, you need a kernel >= v3.19 or one which contains
+ * 925f0f3ed24f98b40c28627e74ff3e7f9d1e28bc ("HID: logitech-dj: allow transfer
+ * of HID++ reports from/to the correct dj device")
+ */
+
 #include "config.h"
 
 #include <linux/types.h>
@@ -37,6 +43,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "hidpp20.h"
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
@@ -107,6 +114,15 @@ unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
 
 	drv_data->proto_major = 1;
 	drv_data->proto_minor = 0;
+
+	rc = hidpp20_root_get_protocol_version(device, &drv_data->proto_major, &drv_data->proto_minor);
+	if (rc) {
+		/* communication error, best to ignore the device */
+		rc = -EINVAL;
+		goto err;
+	}
+
+	log_info(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), drv_data->proto_major, drv_data->proto_minor);
 
 	ratbag_set_drv_data(device, drv_data);
 
