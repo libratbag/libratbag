@@ -49,7 +49,7 @@ hidpp20_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
 		return 0;
 
 	if (res < 0)
-		log_error(device->ratbag, "Error: %d\n", errno);
+		log_error(device->ratbag, "Error: %d\n", -res);
 
 	return res;
 }
@@ -104,7 +104,7 @@ hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg
 	} while (ret > 0);
 
 	if (ret < 0) {
-		log_error(ratbag, "    USB error: %d\n", errno);
+		log_error(ratbag, "    USB error: %d\n", -ret);
 		perror("write");
 		goto out_err;
 	}

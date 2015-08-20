@@ -128,7 +128,7 @@ ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size_t l
 	rc = write(ratbag->hidraw_fd, buf, len);
 
 	if (rc < 0)
-		return rc;
+		return -errno;
 
 	if (rc != (int)len)
 		return -EIO;
@@ -139,8 +139,11 @@ ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size_t l
 int
 ratbag_hidraw_read_input_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len)
 {
+	int rc;
+
 	if (len < 1 || !buf || ratbag->hidraw_fd < 0)
 		return -EINVAL;
 
-	return read(ratbag->hidraw_fd, buf, len);
+	rc = read(ratbag->hidraw_fd, buf, len);
+	return rc >= 0 ? rc : -errno;
 }

@@ -46,7 +46,7 @@ int ratbag_open_hidraw(struct ratbag_device *ratbag);
  * @rtype: HID report type
  * @reqtype: HID_REQ_GET_REPORT or HID_REQ_SET_REPORT
  *
- * @return: count of data transfered, negative if error
+ * @return count of data transfered, or a negative errno on error
  *
  * Same behavior as hid_hw_request, but with raw buffers instead.
  */
@@ -61,7 +61,7 @@ int ratbag_hidraw_raw_request(struct ratbag_device *ratbag, unsigned char report
  * @buf: raw data to transfer
  * @len: length of buf
  *
- * @return: count of data transfered, negative if error
+ * @return count of data transfered, or a negative errno on error
  */
 int ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len);
 
@@ -72,7 +72,7 @@ int ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size
  * @buf: resulting raw data
  * @len: length of buf
  *
- * @return: count of data transfered, negative if error
+ * @return count of data transfered, or a negative errno on error
  */
 int ratbag_hidraw_read_input_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len);
 
