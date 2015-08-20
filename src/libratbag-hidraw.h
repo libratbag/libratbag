@@ -37,16 +37,16 @@
 /**
  * Open the hidraw device associated with the device.
  *
- * @param ratbag the ratbag device
+ * @param device the ratbag device
  *
  * @return 0 on success or a negative errno on error
  */
-int ratbag_open_hidraw(struct ratbag_device *ratbag);
+int ratbag_open_hidraw(struct ratbag_device *device);
 
 /**
  * Send report request to device
  *
- * @param ratbag ratbag device
+ * @param device the ratbag device
  * @param reportnum report ID
  * @param buf in/out data to transfer
  * @param len length of buf
@@ -57,30 +57,30 @@ int ratbag_open_hidraw(struct ratbag_device *ratbag);
  *
  * Same behavior as hid_hw_request, but with raw buffers instead.
  */
-int ratbag_hidraw_raw_request(struct ratbag_device *ratbag, unsigned char reportnum,
+int ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 			      uint8_t *buf, size_t len, unsigned char rtype,
 			      int reqtype);
 
 /**
  * Send output report to device
  *
- * @param ratbag the ratbag device
+ * @param device the ratbag device
  * @param buf raw data to transfer
  * @param len length of buf
  *
  * @return count of data transfered, or a negative errno on error
  */
-int ratbag_hidraw_output_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len);
+int ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t len);
 
 /**
  * Read an input report from the device
  *
- * @param ratbag the ratbag device
+ * @param device the ratbag device
  * @param[out] buf resulting raw data
  * @param len length of buf
  *
  * @return count of data transfered, or a negative errno on error
  */
-int ratbag_hidraw_read_input_report(struct ratbag_device *ratbag, uint8_t *buf, size_t len);
+int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len);
 
 #endif /* LIBRATBAG_HIDRAW_H */
