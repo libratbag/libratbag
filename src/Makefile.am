@@ -6,6 +6,7 @@ include_HEADERS =			\
 libratbag_la_SOURCES =			\
 	debug.h				\
 	driver-etekcity.c		\
+	driver-logitech-unifying.c	\
 	hidpp10.c			\
 	hidpp10.h			\
 	libratbag.c			\

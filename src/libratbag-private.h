@@ -33,6 +33,7 @@
 #define USB_DEVICE_ID_ETEKCITY_SCROLL_ALPHA	0x4011
 #define USB_VENDOR_ID_LOGITECH			0x046d
 #define USB_DEVICE_ID_LOGITECH_M705		0x101b
+#define USB_DEVICE_ID_LOGITECH_M570		0x1028
 #define USB_DEVICE_ID_UNIFYING_RECEIVER		0xc52b
 #define USB_DEVICE_ID_UNIFYING_RECEIVER2	0xc532
 
@@ -252,6 +253,7 @@ void log_msg(struct ratbag *ratbag,
 
 /* list of all supported drivers */
 struct ratbag_driver etekcity_driver;
+struct ratbag_driver logitech_unifying_driver;
 
 #endif /* LIBRATBAG_PRIVATE_H */
 
