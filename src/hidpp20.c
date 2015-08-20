@@ -241,7 +241,7 @@ hidpp20_feature_set_get_feature_id(struct ratbag_device *device,
 	if (rc)
 		return rc;
 
-	*feature = (msg.msg.parameters[0] << 8) | msg.msg.parameters[1];
+	*feature = hidpp20_get_unaligned_u16(msg.msg.parameters);
 	*type = msg.msg.parameters[2];
 
 	return 0;
@@ -332,7 +332,7 @@ hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 	if (rc)
 		return rc;
 
-	*resolution = (msg.msg.parameters[0] << 8) | msg.msg.parameters[1];
+	*resolution = hidpp20_get_unaligned_u16(msg.msg.parameters);
 	*flags = msg.msg.parameters[2];
 
 	return 0;
