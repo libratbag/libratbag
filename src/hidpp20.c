@@ -91,7 +91,8 @@ hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg
 
 		/* error */
 		if (read_buffer.msg.sub_id == __ERROR_MSG &&
-		    (read_buffer.msg.parameters[0] & 0x0f) == (read_buffer.msg.address & 0x0f)) {
+		    read_buffer.msg.address == msg->msg.sub_id &&
+		    read_buffer.msg.parameters[0] == msg->msg.address) {
 			hidpp_err = read_buffer.msg.parameters[1];
 			log_error(ratbag,
 				"    HID++ error from the device (%d): %s (%02x)\n",
