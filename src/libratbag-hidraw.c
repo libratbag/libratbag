@@ -60,8 +60,10 @@ ratbag_open_hidraw(struct ratbag_device *ratbag)
 	/* Check if the device actually matches the input node */
 	if (info.bustype != ratbag->ids.bustype ||
 	    info.vendor != ratbag->ids.vendor ||
-	    info.product != ratbag->ids.product)
+	    info.product != ratbag->ids.product) {
+		errno = EINVAL;
 		goto err;
+	}
 
 	ratbag->hidraw_fd = fd;
 
