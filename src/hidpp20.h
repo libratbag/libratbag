@@ -52,9 +52,29 @@ int hidpp20_request_command(struct ratbag_device *device, union hidpp20_message 
 /* 0x0000: Root                                                               */
 /* -------------------------------------------------------------------------- */
 
+int hidpp_root_get_feature(struct ratbag_device *device,
+			   uint16_t feature,
+			   uint8_t *feature_index,
+			   uint8_t *feature_type,
+			   uint8_t *feature_version);
 int hidpp20_root_get_protocol_version(struct ratbag_device *device,
 				      unsigned *major,
 				      unsigned *minor);
+/* -------------------------------------------------------------------------- */
+/* 0x0001: Feature Set                                                        */
+/* -------------------------------------------------------------------------- */
 
+struct hidpp20_feature {
+	uint16_t feature;
+	uint8_t type;
+};
+
+/**
+ * allocates a list of features that has to be freed by the caller.
+ *
+ * returns the elements in the list or a negative error
+ */
+int hidpp20_feature_set_get(struct ratbag_device *device,
+			    struct hidpp20_feature **feature_list);
 
 #endif /* HIDPP_20_H */

@@ -94,6 +94,29 @@ unifying_write_profile(struct ratbag_profile *profile)
 }
 
 static int
+unifying_20_probe(struct ratbag_device *device, const struct ratbag_id id)
+{
+	struct hidpp20_feature *feature_list;
+	int rc, i;
+
+	rc = hidpp20_feature_set_get(device, &feature_list);
+	if (rc < 0)
+		return rc;
+
+	if (rc > 0) {
+		log_info(device->ratbag, "'%s' has %d features:\n", ratbag_device_get_name(device), rc);
+		for (i = 0; i < rc; i++) {
+			log_info(device->ratbag, "0x%04x\n", feature_list[i].feature);
+		}
+	}
+
+	free(feature_list);
+
+	return 0;
+
+}
+
+static int
 unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
@@ -122,9 +145,15 @@ unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
 		goto err;
 	}
 
-	log_info(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), drv_data->proto_major, drv_data->proto_minor);
+	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), drv_data->proto_major, drv_data->proto_minor);
 
 	ratbag_set_drv_data(device, drv_data);
+
+	if (drv_data->proto_major >= 2) {
+		rc = unifying_20_probe(device, id);
+		if (rc)
+			goto err;
+	}
 
 	device->num_profiles = 1;
 	device->num_buttons = 8;

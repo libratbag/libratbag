@@ -130,6 +130,35 @@ out_err:
 #define CMD_ROOT_GET_PROTOCOL_VERSION			0x18
 
 int
+hidpp_root_get_feature(struct ratbag_device *device,
+		       uint16_t feature,
+		       uint8_t *feature_index,
+		       uint8_t *feature_type,
+		       uint8_t *feature_version)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
+		.msg.address = CMD_ROOT_GET_FEATURE,
+		.msg.parameters[0] = feature >> 8,
+		.msg.parameters[1] = feature & 0xff,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*feature_index = msg.msg.parameters[0];
+	*feature_type = msg.msg.parameters[1];
+	*feature_version = msg.msg.parameters[2];
+
+	log_debug(device->ratbag, "feature 0x%04x is at 0x%02x\n", feature, *feature_index);
+	return 0;
+}
+
+int
 hidpp20_root_get_protocol_version(struct ratbag_device *device,
 				  unsigned *major,
 				  unsigned *minor)
@@ -158,3 +187,104 @@ hidpp20_root_get_protocol_version(struct ratbag_device *device,
 	return rc;
 }
 
+/* -------------------------------------------------------------------------- */
+/* 0x0001: Feature Set                                                        */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_FEATURE_SET				0x0001
+
+#define CMD_FEATURE_SET_GET_COUNT			0x08
+#define CMD_FEATURE_SET_GET_FEATURE_ID			0x18
+
+static int
+hidpp20_feature_set_get_count(struct ratbag_device *device, uint8_t reg)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_FEATURE_SET_GET_COUNT,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return msg.msg.parameters[0];
+}
+
+static int
+hidpp20_feature_set_get_feature_id(struct ratbag_device *device,
+				   uint8_t reg,
+				   uint8_t feature_index,
+				   uint16_t *feature,
+				   uint8_t *type)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_FEATURE_SET_GET_FEATURE_ID,
+		.msg.parameters[0] = feature_index,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*feature = (msg.msg.parameters[0] << 8) | msg.msg.parameters[1];
+	*type = msg.msg.parameters[2];
+
+	return 0;
+}
+
+int hidpp20_feature_set_get(struct ratbag_device *device,
+			    struct hidpp20_feature **feature_list)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	struct hidpp20_feature *flist;
+	int rc;
+	uint8_t feature_count;
+	unsigned int i;
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_FEATURE_SET,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	rc = hidpp20_feature_set_get_count(device, feature_index);
+	if (rc < 0)
+		return rc;
+
+	feature_count = (uint8_t)rc;
+
+	if (!feature_count) {
+		*feature_list = NULL;
+		return 0;
+	}
+
+	flist = zalloc(feature_count * sizeof(struct hidpp20_feature));
+	if (!flist)
+		return -ENOMEM;
+
+	for (i = 0; i < feature_count; i++) {
+		rc = hidpp20_feature_set_get_feature_id(device,
+							feature_index,
+							i,
+							&flist[i].feature,
+							&flist[i].type);
+		if (rc)
+			goto err;
+	}
+
+	*feature_list = flist;
+	return feature_count;
+err:
+	free(flist);
+	return rc;
+}
