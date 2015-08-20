@@ -37,13 +37,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "hidpp10.h"
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 
 struct unifying_data {
-	struct hidpp10_device *dev;
+	unsigned proto_major;
+	unsigned proto_minor;
 };
 
 static void
@@ -54,20 +54,6 @@ unifying_read_button(struct ratbag_button *button)
 static int
 unifying_write_button(struct ratbag_button *button)
 {
-	struct ratbag_device *device = button->device;
-	struct unifying_data *data = ratbag_get_drv_data(device);
-	struct hidpp10_device *dev = data->dev;
-
-	/* FIXME: this only toggles button 6 */
-
-	/* M705 with FW RR 17.01 - build 0017 */
-	if (dev->fw_major == 0x17 &&
-	    dev->fw_minor == 0x01 &&
-	    dev->build == 0x0015)
-		hidpp10_toggle_individual_feature(device,
-						  dev,
-						  FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION,
-						  -1);
 	return -1;
 }
 
@@ -105,7 +91,6 @@ unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
 	struct unifying_data *drv_data;
-	struct hidpp10_device dev;
 
 	rc = ratbag_open_hidraw(device);
 	if (rc) {
@@ -120,15 +105,8 @@ unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
 	if (!drv_data)
 		return -ENODEV;
 
-	rc = hidpp10_get_device_from_wpid(device,
-					  id.id.product,
-					  &dev);
-	if (rc) {
-		log_error(device->ratbag,
-			  "Failed to get HID++1.0 device for %s\n",
-			  device->name);
-		goto err;
-	}
+	drv_data->proto_major = 1;
+	drv_data->proto_minor = 0;
 
 	ratbag_set_drv_data(device, drv_data);
 
