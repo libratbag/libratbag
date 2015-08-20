@@ -414,10 +414,12 @@ etekcity_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
+#define USB_VENDOR_ID_ETEKCITY			0x1ea7
+
 static const struct ratbag_id etekcity_table[] = {
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_ETEKCITY,
-		 .product = USB_DEVICE_ID_ETEKCITY_SCROLL_ALPHA,
+		 .product = 0x4011,
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},

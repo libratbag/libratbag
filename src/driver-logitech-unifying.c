@@ -140,11 +140,19 @@ unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
 		struct hidpp20_control_id *controls;
+//		int i;
 
 		log_info(ratbag, "device has programmable keys/buttons\n");
 		rc = hidpp20_special_key_mouse_get_controls(device, &controls);
 		if (rc < 0)
 			return rc;
+//		for (i = 0; i < rc; i++) {
+//			log_info(ratbag,
+//				 "device is at %d dpi (variable between %d and %d).\n",
+//				 sensors[0].dpi,
+//				 sensors[0].dpi_min,
+//				 sensors[0].dpi_max);
+//		}
 
 		free(controls);
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
@@ -235,22 +243,37 @@ unifying_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
+#define USB_VENDOR_ID_LOGITECH			0x046d
+
 static const struct ratbag_id unifying_table[] = {
+	/* M705 */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = USB_DEVICE_ID_LOGITECH_M705,
+		 .product = 0x101b,
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},
+
+	/* M570 */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = USB_DEVICE_ID_LOGITECH_M570,
+		 .product = 0x1028,
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},
+
+	/* MX Master over unifying */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = USB_DEVICE_ID_LOGITECH_MX_MASTER,
+		 .product = 0x4041,
+		 .version = VERSION_ANY },
+	 .data = 1,
+	},
+
+	/* MX Master over bluetooth */
+	{.id = { .bustype = BUS_BLUETOOTH,
+		 .vendor = USB_VENDOR_ID_LOGITECH,
+		 .product = 0xb012,
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},
