@@ -64,7 +64,7 @@ unifying_write_button(struct ratbag_button *button)
 	if (dev->fw_major == 0x17 &&
 	    dev->fw_minor == 0x01 &&
 	    dev->build == 0x0015)
-		hidpp10_toggle_individual_feature(device->hidraw_fd,
+		hidpp10_toggle_individual_feature(device,
 						  dev,
 						  FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION,
 						  -1);
@@ -120,7 +120,7 @@ unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
 	if (!drv_data)
 		return -ENODEV;
 
-	rc = hidpp10_get_device_from_wpid(device->hidraw_fd,
+	rc = hidpp10_get_device_from_wpid(device,
 					  id.id.product,
 					  &dev);
 	if (rc) {

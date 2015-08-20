@@ -41,6 +41,7 @@
 #include <hidpp10.h>
 
 #include <libratbag-util.h>
+#include <libratbag-hidraw.h>
 
 #if DEBUG_LVL > 0
 const char *hidpp_errors[0xFF] = {
@@ -76,25 +77,21 @@ const char *device_types[0xFF] = {
 };
 
 
-static int hidpp10_write_command(int fd, __u8 *cmd, int size) {
-	int res = write(fd, cmd, size);
+static int hidpp10_write_command(struct ratbag_device *device, __u8 *cmd, int size) {
+	int res = ratbag_hidraw_output_report(device, cmd, size);
 
-	if (res == size)
+	if (res == 0)
 		return 0;
 
 	if (res < 0) {
 		printf("Error: %d\n", errno);
-		perror("write");
-	} else {
-		errno = ENOMEM;
-		printf("write: %d were written instead of %d.\n", res, size);
 		perror("write");
 	}
 
 	return res;
 }
 
-int hidpp10_request_command(int fd, union hidpp10_message *msg) {
+int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg) {
 	union hidpp10_message read_buffer;
 	union hidpp10_message expected_header;
 	union hidpp10_message expected_error_recv = ERROR_MSG(msg, RECEIVER_IDX);
@@ -127,7 +124,7 @@ int hidpp10_request_command(int fd, union hidpp10_message *msg) {
 #endif
 
 	/* Send the message to the Device */
-	ret = hidpp10_write_command(fd, msg->data, SHORT_MESSAGE_LENGTH);
+	ret = hidpp10_write_command(device, msg->data, SHORT_MESSAGE_LENGTH);
 	if (ret)
 		goto out_err;
 
@@ -136,7 +133,7 @@ int hidpp10_request_command(int fd, union hidpp10_message *msg) {
 	 * loop until we get the actual answer or an error code.
 	 */
 	do {
-		ret = read(fd, read_buffer.data, LONG_MESSAGE_LENGTH);
+		ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
 #if DEBUG_LVL > 2
 		printf(" *** received: "); pr_buffer(read_buffer.data, ret);
 #endif
@@ -175,13 +172,13 @@ out_err:
 	return ret;
 }
 
-int hidpp10_toggle_individual_feature(int fd, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2) {
+int hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2) {
 	unsigned idx = dev->index;
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
 
 	/* first read the current values */
-	res = hidpp10_request_command(fd, &mode);
+	res = hidpp10_request_command(device, &mode);
 	if (res)
 		return -1;
 
@@ -195,28 +192,28 @@ int hidpp10_toggle_individual_feature(int fd, struct hidpp10_device *dev, int fe
 
 	/* now write back the change */
 	mode.msg.sub_id = SET_REGISTER_REQ;
-	res = hidpp10_request_command(fd, &mode);
+	res = hidpp10_request_command(device, &mode);
 	return res;
 }
 
-int hidpp10_open_lock(int fd) {
+int hidpp10_open_lock(struct ratbag_device *device) {
 	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00, CONNECT_DEVICES_OPEN_LOCK, 0x08);
 
-	return hidpp10_request_command(fd, &open_lock);
+	return hidpp10_request_command(device, &open_lock);
 }
 
-int hidpp10_disconnect(int fd, int idx) {
+int hidpp10_disconnect(struct ratbag_device *device, int idx) {
 	union hidpp10_message disconnect = CMD_DEVICE_CONNECTION_DISCONNECTION(idx + 1, CONNECT_DEVICES_DISCONNECT, 0x00);
 
-	return hidpp10_request_command(fd, &disconnect);
+	return hidpp10_request_command(device, &disconnect);
 }
 
-void hidpp10_list_devices(int fd) {
+void hidpp10_list_devices(struct ratbag_device *device) {
 	struct hidpp10_device dev;
 	int i, res;
 
 	for (i = 0; i < 6; ++i) {
-		res = hidpp10_get_device_from_idx(fd, i, &dev);
+		res = hidpp10_get_device_from_idx(device, i, &dev);
 		if (res)
 			continue;
 
@@ -224,7 +221,7 @@ void hidpp10_list_devices(int fd) {
 	}
 }
 
-static int hidpp10_get_device_info(int fd, struct hidpp10_device *dev) {
+static int hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev) {
 	unsigned idx = dev->index;
 	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
 	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
@@ -233,7 +230,7 @@ static int hidpp10_get_device_info(int fd, struct hidpp10_device *dev) {
 	size_t name_size;
 	int res;
 
-	res = hidpp10_request_command(fd, &pairing_information);
+	res = hidpp10_request_command(device, &pairing_information);
 	if (res)
 		return -1;
 
@@ -242,7 +239,7 @@ static int hidpp10_get_device_info(int fd, struct hidpp10_device *dev) {
 			pairing_information.msg.string[4];
 	dev->device_type = pairing_information.msg.string[7];
 
-	res = hidpp10_request_command(fd, &device_name);
+	res = hidpp10_request_command(device, &device_name);
 	if (res)
 		return -1;
 
@@ -254,14 +251,14 @@ static int hidpp10_get_device_info(int fd, struct hidpp10_device *dev) {
 	 * This may fail on some devices
 	 * => we can not retrieve their FW version through HID++ 1.0.
 	 */
-	res = hidpp10_request_command(fd, &firmware_information);
+	res = hidpp10_request_command(device, &firmware_information);
 	if (res)
 		return 0;
 
 	dev->fw_major = firmware_information.msg.string[1];
 	dev->fw_minor = firmware_information.msg.string[2];
 
-	res = hidpp10_request_command(fd, &build_information);
+	res = hidpp10_request_command(device, &build_information);
 	if (res)
 		return 0;
 
@@ -271,11 +268,11 @@ static int hidpp10_get_device_info(int fd, struct hidpp10_device *dev) {
 	return 0;
 }
 
-int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct hidpp10_device *dev) {
+int hidpp10_get_device_from_wpid(struct ratbag_device *device, __u16 wpid, struct hidpp10_device *dev) {
 	int i, res;
 
 	for (i = 0; i < 6; i++) {
-		res = hidpp10_get_device_from_idx(fd, i, dev);
+		res = hidpp10_get_device_from_idx(device, i, dev);
 		if (res)
 			continue;
 
@@ -288,7 +285,7 @@ int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct hidpp10_device *dev)
 	return res;
 }
 
-int hidpp10_get_device_from_idx(int fd, int idx, struct hidpp10_device *dev) {
+int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev) {
 	dev->index = idx;
-	return hidpp10_get_device_info(fd, dev);
+	return hidpp10_get_device_info(device, dev);
 }

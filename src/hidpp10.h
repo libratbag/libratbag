@@ -31,6 +31,8 @@
 #ifndef HIDPP_10_H
 #define HIDPP_10_H
 
+#include "libratbag.h"
+
 #define RECEIVER_IDX				0xFF
 
 #define REPORT_ID_SHORT				0x10
@@ -167,11 +169,11 @@ union hidpp10_message {
 };
 
 
-int hidpp10_request_command(int fd, union hidpp10_message *msg);
-int hidpp10_toggle_individual_feature(int fd, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2);
-int hidpp10_open_lock(int fd);
-int hidpp10_disconnect(int fd, int idx);
-void hidpp10_list_devices(int fd);
-int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct hidpp10_device *dev);
-int hidpp10_get_device_from_idx(int fd, int idx, struct hidpp10_device *dev);
+int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg);
+int hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2);
+int hidpp10_open_lock(struct ratbag_device *device);
+int hidpp10_disconnect(struct ratbag_device *device, int idx);
+void hidpp10_list_devices(struct ratbag_device *device);
+int hidpp10_get_device_from_wpid(struct ratbag_device *device, __u16 wpid, struct hidpp10_device *dev);
+int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev);
 #endif /* HIDPP_10_H */
