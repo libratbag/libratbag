@@ -48,9 +48,12 @@
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 
+#define HIDPP_CAP_RESOLUTION_2200			(1 << 0)
+
 struct unifying_data {
 	unsigned proto_major;
 	unsigned proto_minor;
+	unsigned long capabilities;
 };
 
 static void
@@ -94,6 +97,34 @@ unifying_write_profile(struct ratbag_profile *profile)
 }
 
 static int
+unifying_init_feature(struct ratbag_device *device, uint16_t feature)
+{
+	struct unifying_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+
+	switch (feature) {
+	case 0x0000:
+	case 0x0001:
+		/* these features are mandatory and already handled */
+		break;
+	case 0x2200: {
+		uint16_t resolution;
+		uint8_t flags;
+
+		drv_data->capabilities |= HIDPP_CAP_RESOLUTION_2200;
+		rc = hidpp20_mousepointer_get_mousepointer_info(device, &resolution, &flags);
+		if (rc)
+			return rc;
+		log_info(device->ratbag, "device is at %d dpi\n", resolution);
+		break;
+	}
+	default:
+		log_info(device->ratbag, "unknown feature 0x%04x\n", feature);
+	}
+	return 0;
+}
+
+static int
 unifying_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	struct hidpp20_feature *feature_list;
@@ -104,9 +135,10 @@ unifying_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 		return rc;
 
 	if (rc > 0) {
-		log_info(device->ratbag, "'%s' has %d features:\n", ratbag_device_get_name(device), rc);
+		log_debug(device->ratbag, "'%s' has %d features\n", ratbag_device_get_name(device), rc);
 		for (i = 0; i < rc; i++) {
-			log_info(device->ratbag, "0x%04x\n", feature_list[i].feature);
+			log_debug(device->ratbag, "0x%04x\n", feature_list[i].feature);
+			unifying_init_feature(device, feature_list[i].feature);
 		}
 	}
 

@@ -77,4 +77,21 @@ struct hidpp20_feature {
 int hidpp20_feature_set_get(struct ratbag_device *device,
 			    struct hidpp20_feature **feature_list);
 
+/* -------------------------------------------------------------------------- */
+/* 0x2200: Mouse Pointer Basic Optical Sensors                                */
+/* -------------------------------------------------------------------------- */
+
+#define HIDDP20_MOUSE_POINTER_FLAGS_VERTICAL_TUNING	(1 << 4)
+#define HIDDP20_MOUSE_POINTER_FLAGS_OS_BALLISTICS	(1 << 3)
+
+#define HIDDP20_MOUSE_POINTER_FLAGS_ACCELERATION_MASK	0x03
+#define HIDDP20_MOUSE_POINTER_ACCELERATION_NONE		0x00
+#define HIDDP20_MOUSE_POINTER_ACCELERATION_LOW		0x01
+#define HIDDP20_MOUSE_POINTER_ACCELERATION_MEDIUM	0x02
+#define HIDDP20_MOUSE_POINTER_ACCELERATION_HIGH		0x03
+
+int hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
+					       uint16_t *resolution,
+					       uint8_t *flags);
+
 #endif /* HIDPP_20_H */

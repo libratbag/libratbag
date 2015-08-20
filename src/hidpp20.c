@@ -288,3 +288,45 @@ err:
 	free(flist);
 	return rc;
 }
+
+/* -------------------------------------------------------------------------- */
+/* 0x2200: Mouse Pointer Basic Optical Sensors                                */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_MOUSE_POINTER_BASIC			0x2200
+
+#define CMD_MOUSE_POINTER_BASIC_GET_INFO		0x08
+int
+hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
+					   uint16_t *resolution,
+					   uint8_t *flags)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.address = CMD_FEATURE_SET_GET_FEATURE_ID,
+		.msg.parameters[0] = feature_index,
+	};
+	int rc;
+
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_MOUSE_POINTER_BASIC,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*resolution = (msg.msg.parameters[0] << 8) | msg.msg.parameters[1];
+	*flags = msg.msg.parameters[2];
+
+	return 0;
+}
