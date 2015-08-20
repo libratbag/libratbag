@@ -130,7 +130,6 @@ hidpp20_get_unaligned_u16(uint8_t *buf)
 /* 0x0000: Root                                                               */
 /* -------------------------------------------------------------------------- */
 
-#define HIDPP_PAGE_ROOT					0x0000
 #define HIDPP_PAGE_ROOT_IDX				0x00
 
 #define CMD_ROOT_GET_FEATURE				0x08
@@ -197,8 +196,6 @@ hidpp20_root_get_protocol_version(struct ratbag_device *device,
 /* -------------------------------------------------------------------------- */
 /* 0x0001: Feature Set                                                        */
 /* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_FEATURE_SET				0x0001
 
 #define CMD_FEATURE_SET_GET_COUNT			0x08
 #define CMD_FEATURE_SET_GET_FEATURE_ID			0x18
@@ -300,9 +297,8 @@ err:
 /* 0x2200: Mouse Pointer Basic Optical Sensors                                */
 /* -------------------------------------------------------------------------- */
 
-#define HIDPP_PAGE_MOUSE_POINTER_BASIC			0x2200
-
 #define CMD_MOUSE_POINTER_BASIC_GET_INFO		0x08
+
 int
 hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 					   uint16_t *resolution,
@@ -341,8 +337,6 @@ hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 /* -------------------------------------------------------------------------- */
 /* 0x2201: Adjustable DPI                                                     */
 /* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_ADJUSTABLE_DPI			0x2201
 
 #define CMD_ADJUSTABLE_DPI_GET_SENSOR_COUNT		0x08
 #define CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST		0x18

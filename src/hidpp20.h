@@ -52,6 +52,8 @@ int hidpp20_request_command(struct ratbag_device *device, union hidpp20_message 
 /* 0x0000: Root                                                               */
 /* -------------------------------------------------------------------------- */
 
+#define HIDPP_PAGE_ROOT					0x0000
+
 int hidpp_root_get_feature(struct ratbag_device *device,
 			   uint16_t feature,
 			   uint8_t *feature_index,
@@ -63,6 +65,8 @@ int hidpp20_root_get_protocol_version(struct ratbag_device *device,
 /* -------------------------------------------------------------------------- */
 /* 0x0001: Feature Set                                                        */
 /* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_FEATURE_SET				0x0001
 
 struct hidpp20_feature {
 	uint16_t feature;
@@ -81,6 +85,8 @@ int hidpp20_feature_set_get(struct ratbag_device *device,
 /* 0x2200: Mouse Pointer Basic Optical Sensors                                */
 /* -------------------------------------------------------------------------- */
 
+#define HIDPP_PAGE_MOUSE_POINTER_BASIC			0x2200
+
 #define HIDDP20_MOUSE_POINTER_FLAGS_VERTICAL_TUNING	(1 << 4)
 #define HIDDP20_MOUSE_POINTER_FLAGS_OS_BALLISTICS	(1 << 3)
 
@@ -97,6 +103,8 @@ int hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 /* -------------------------------------------------------------------------- */
 /* 0x2201: Adjustable DPI                                                     */
 /* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_ADJUSTABLE_DPI			0x2201
 
 /**
  * either dpi_steps is not null or the values are stored in the null terminated

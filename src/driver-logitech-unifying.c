@@ -50,6 +50,7 @@
 
 #define HIDPP_CAP_RESOLUTION_2200			(1 << 0)
 #define HIDPP_CAP_SWITCHABLE_RESOLUTION_2201		(1 << 1)
+#define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
 
 struct unifying_data {
 	unsigned proto_major;
@@ -105,11 +106,11 @@ unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 	int rc;
 
 	switch (feature) {
-	case 0x0000:
-	case 0x0001:
+	case HIDPP_PAGE_ROOT:
+	case HIDPP_PAGE_FEATURE_SET:
 		/* these features are mandatory and already handled */
 		break;
-	case 0x2200: {
+	case HIDPP_PAGE_MOUSE_POINTER_BASIC: {
 		uint16_t resolution;
 		uint8_t flags;
 
@@ -120,7 +121,7 @@ unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 		log_info(ratbag, "device is at %d dpi\n", resolution);
 		break;
 	}
-	case 0x2201: {
+	case HIDPP_PAGE_ADJUSTABLE_DPI: {
 		struct hidpp20_sensor *sensors;
 
 		log_info(ratbag, "device has adjustable dpi\n");
