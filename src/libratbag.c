@@ -581,7 +581,7 @@ ratbag_create_button(struct ratbag_device *device, struct ratbag_profile *profil
 		list_insert(&profile->buttons, &button->link);
 
 	if (device->driver->read_button)
-		device->driver->read_button(device, profile, button);
+		device->driver->read_button(button);
 
 	return button;
 }
@@ -595,7 +595,7 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 	list_for_each(button, &profile->buttons, link) {
 		if (button->index == index) {
 			if (profile->device->driver->read_button)
-				profile->device->driver->read_button(profile->device, profile, button);
+				profile->device->driver->read_button(button);
 			return ratbag_button_ref(button);
 		}
 	}
@@ -619,7 +619,7 @@ ratbag_button_set_type(struct ratbag_button *button, enum ratbag_button_type typ
 		return -ENOTSUP;
 
 	button->type = type;
-	rc = button->device->driver->write_button(button->device, button->profile, button);
+	rc = button->device->driver->write_button(button);
 	if (rc)
 		button->type = orig_type;
 	return rc;

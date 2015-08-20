@@ -150,8 +150,7 @@ struct ratbag_driver {
 	 * actually read the profile from the device. The caller
 	 * should make sure that the profile is up to date.
 	 */
-	void (*read_button)(struct ratbag_device *device, struct ratbag_profile *profile,
-			    struct ratbag_button *button);
+	void (*read_button)(struct ratbag_button *button);
 
 	/** For the given button, store in the profile or in the device
 	 * the given struct ratbag_button.
@@ -164,8 +163,7 @@ struct ratbag_driver {
 	 * should later on write the profile in one call to
 	 * .write_profile().
 	 */
-	int (*write_button)(struct ratbag_device *device, struct ratbag_profile *profile,
-			    struct ratbag_button *button);
+	int (*write_button)(struct ratbag_button *button);
 
 	/* private */
 	struct list link;
