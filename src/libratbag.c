@@ -179,21 +179,14 @@ udev_find_hidraw(struct ratbag *ratbag, struct ratbag_device *device)
 	struct udev_list_entry *entry;
 	struct udev_device *udev_device;
 	const char *path, *sysname;
-	struct udev_device *hid_udev, *hid_udev2;
+	struct udev_device *hid_udev;
 	struct udev_device *hidraw_udev = NULL;
 	struct udev *udev = ratbag->udev;
-	struct udev_device *dummy;
 
 	hid_udev = udev_device_get_parent_with_subsystem_devtype(device->udev_device, "hid", NULL);
 
 	if (!hid_udev)
 		return NULL;
-
-	/* FIXME: hack for logitech devices where the true hidraw device is two
-	 * parents up */
-	hid_udev2 = udev_device_get_parent_with_subsystem_devtype(hid_udev, "hid", NULL);
-	if (hid_udev2)
-		hid_udev = hid_udev2;
 
 	e = udev_enumerate_new(udev);
 	udev_enumerate_add_match_subsystem(e, "hidraw");
@@ -211,13 +204,6 @@ udev_find_hidraw(struct ratbag *ratbag, struct ratbag_device *device)
 			continue;
 		}
 
-		/* FIXME: second part of the hack. the enumerate gives us
-		 * multiple hidraw devices but only the one directly below
-		 * our parent is the one we want */
-		dummy = udev_device_get_parent_with_subsystem_devtype(udev_device, "hid", NULL);
-		if (!streq(udev_device_get_syspath(dummy), udev_device_get_syspath(hid_udev)))
-			continue;
-
 		hidraw_udev = udev_device_ref(udev_device);
 
 		udev_device_unref(udev_device);
@@ -226,9 +212,6 @@ udev_find_hidraw(struct ratbag *ratbag, struct ratbag_device *device)
 
 out:
 	udev_enumerate_unref(e);
-
-	if (hidraw_udev)
-		log_debug(ratbag, "hidraw device is %s\n", udev_device_get_syspath(hidraw_udev));
 
 	return hidraw_udev;
 }
