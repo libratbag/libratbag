@@ -94,4 +94,30 @@ int hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 					       uint16_t *resolution,
 					       uint8_t *flags);
 
+/* -------------------------------------------------------------------------- */
+/* 0x2201: Adjustable DPI                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * either dpi_steps is not null or the values are stored in the null terminated
+ * array dpi_list.
+ */
+struct hidpp20_sensor {
+	uint8_t index;
+	uint16_t dpi;
+	uint16_t dpi_min;
+	uint16_t dpi_max;
+	uint16_t dpi_steps;
+	uint16_t default_dpi;
+	uint16_t dpi_list[LONG_MESSAGE_LENGTH / 2 + 1];
+};
+
+/**
+ * allocates a list of sensors that has to be freed by the caller.
+ *
+ * returns the elements in the list or a negative error
+ */
+int hidpp20_adjustable_dpi_get_sensors(struct ratbag_device *device,
+				       struct hidpp20_sensor **sensors_list);
+
 #endif /* HIDPP_20_H */

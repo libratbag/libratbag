@@ -49,6 +49,7 @@
 #include "libratbag-hidraw.h"
 
 #define HIDPP_CAP_RESOLUTION_2200			(1 << 0)
+#define HIDPP_CAP_SWITCHABLE_RESOLUTION_2201		(1 << 1)
 
 struct unifying_data {
 	unsigned proto_major;
@@ -100,6 +101,7 @@ static int
 unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 {
 	struct unifying_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag *ratbag = device->ratbag;
 	int rc;
 
 	switch (feature) {
@@ -115,11 +117,28 @@ unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 		rc = hidpp20_mousepointer_get_mousepointer_info(device, &resolution, &flags);
 		if (rc)
 			return rc;
-		log_info(device->ratbag, "device is at %d dpi\n", resolution);
+		log_info(ratbag, "device is at %d dpi\n", resolution);
+		break;
+	}
+	case 0x2201: {
+		struct hidpp20_sensor *sensors;
+
+		log_info(ratbag, "device has adjustable dpi\n");
+		rc = hidpp20_adjustable_dpi_get_sensors(device, &sensors);
+		if (rc < 0)
+			return rc;
+		if (rc > 0)
+			log_info(ratbag,
+				 "device is at %d dpi (variable between %d and %d).\n",
+				 sensors[0].dpi,
+				 sensors[0].dpi_min,
+				 sensors[0].dpi_max);
+		free(sensors);
+		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
 	default:
-		log_info(device->ratbag, "unknown feature 0x%04x\n", feature);
+		log_debug(device->ratbag, "unknown feature 0x%04x\n", feature);
 	}
 	return 0;
 }
