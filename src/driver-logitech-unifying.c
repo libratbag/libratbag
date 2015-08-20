@@ -284,6 +284,13 @@ static const struct ratbag_id unifying_table[] = {
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},
+	/* T650 over unifying */
+	{.id = { .bustype = BUS_USB,
+		 .vendor = USB_VENDOR_ID_LOGITECH,
+		 .product = 0x4101,
+		 .version = VERSION_ANY },
+	 .data = 1,
+	},
 	{ },
 };
 
