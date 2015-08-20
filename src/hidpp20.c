@@ -487,3 +487,211 @@ err:
 	free(s_list);
 	return rc;
 }
+
+/* -------------------------------------------------------------------------- */
+/* 0x1b04: Special keys and mouse buttons                                     */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT		0x08
+#define CMD_SPECIAL_KEYS_BUTTONS_GET_INFO		0x18
+#define CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING		0x28
+#define CMD_SPECIAL_KEYS_BUTTONS_SET_SET_REPORTING	0x38
+
+static const struct hidpp20_1b04_mapping hidpp20_1b04_physical_mapping[] =
+{
+	{ 80, "Left"},
+	{ 81, "Right"},
+	{ 82, "Middle"},
+	{ 83, "Back"},
+	{ 86, "Forward"},
+	{ 195, "AppSwitchGesture"},
+	{ 196, "SmartShift"},
+	{ 315, "LedToggle"},
+};
+
+static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
+{
+	{ 56, "Left Click"},
+	{ 57, "Right Click"},
+	{ 58, "Middle Click"},
+	{ 60, "Back Click"},
+	{ 62, "Forward Click"},
+	{ 156, "Gesture Button"},
+	{ 157, "SmartShift"},
+	{ 221, "LedToggle"},
+};
+
+const char *
+hidpp20_1b04_get_logical_mapping(uint16_t value)
+{
+	const struct hidpp20_1b04_mapping *map;
+
+	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, map) {
+		if (map->value == value)
+			return map->name;
+	}
+
+	return "UNKNOWN";
+}
+
+const char *
+hidpp20_1b04_get_physical_mapping(uint16_t value)
+{
+	const struct hidpp20_1b04_mapping *map;
+
+	ARRAY_FOR_EACH(hidpp20_1b04_physical_mapping, map) {
+		if (map->value == value)
+			return map->name;
+	}
+
+	return "UNKNOWN";
+}
+
+static int
+hidpp20_special_keys_buttons_get_count(struct ratbag_device *device, uint8_t reg)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return msg.msg.parameters[0];
+}
+
+static int
+hidpp20_special_keys_buttons_get_info(struct ratbag_device *device,
+				    uint8_t reg,
+				    struct hidpp20_control_id *control)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_INFO,
+		.msg.parameters[0] = control->index,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	control->control_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[0]);
+	control->task_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[2]);
+	control->flags = msg.msg.parameters[4];
+	control->position = msg.msg.parameters[5];
+	control->group = msg.msg.parameters[6];
+	control->group_mask = msg.msg.parameters[7];
+	control->raw_XY = msg.msg.parameters[8] & 0x01;
+
+	return 0;
+}
+
+
+static int
+hidpp20_special_keys_buttons_get_reporting(struct ratbag_device *device,
+					   uint8_t reg,
+					   struct hidpp20_control_id *control)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING,
+		.msg.parameters[0] = control->control_id >> 8,
+		.msg.parameters[1] = control->control_id & 0xff,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	control->reporting.remapped = hidpp20_get_unaligned_u16(&msg.msg.parameters[3]);
+	control->reporting.raw_XY = !!(msg.msg.parameters[2] & 0x10);
+	control->reporting.persist = !!(msg.msg.parameters[2] & 0x04);
+	control->reporting.divert = !!(msg.msg.parameters[2] & 0x01);
+
+	return 0;
+}
+
+int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
+					   struct hidpp20_control_id **controls_list)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	struct hidpp20_control_id *c_list, *control;
+	uint8_t num_controls;
+	unsigned i;
+	int rc;
+
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_SPECIAL_KEYS_BUTTONS,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	rc = hidpp20_special_keys_buttons_get_count(device, feature_index);
+	if (rc < 0)
+		return rc;
+
+	num_controls = rc;
+	if (num_controls == 0) {
+		*controls_list = NULL;
+		return 0;
+	}
+
+	c_list = zalloc(num_controls * sizeof(struct hidpp20_control_id));
+	if (!c_list)
+		return -ENOMEM;
+
+	for (i = 0; i < num_controls; i++) {
+		control = &c_list[i];
+		control->index = i;
+		rc = hidpp20_special_keys_buttons_get_info(device,
+							   feature_index,
+							   control);
+		if (rc)
+			goto err;
+
+		rc = hidpp20_special_keys_buttons_get_reporting(device,
+								feature_index,
+								control);
+		if (rc)
+			goto err;
+
+		log_info(device->ratbag,
+			  "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x pos: %d group: %d gmask: 0x%02x raw_XY: %s\n"
+			  "      reporting: raw_xy: %s persist: %s divert: %s remapped: '%s' (%d)\n",
+			  control->index,
+			  hidpp20_1b04_get_physical_mapping(control->control_id),
+			  control->control_id,
+			  hidpp20_1b04_get_logical_mapping(control->task_id),
+			  control->task_id,
+			  control->flags,
+			  control->position,
+			  control->group,
+			  control->group_mask,
+			  control->raw_XY ? "yes" : "no",
+			  control->reporting.raw_XY ? "yes" : "no",
+			  control->reporting.persist ? "yes" : "no",
+			  control->reporting.divert ? "yes" : "no",
+			  hidpp20_1b04_get_logical_mapping(control->reporting.remapped),
+			  control->reporting.remapped);
+	}
+
+	*controls_list = c_list;
+	return num_controls;
+err:
+	free(c_list);
+	return rc;
+}

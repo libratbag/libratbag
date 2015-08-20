@@ -138,6 +138,18 @@ unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
+	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
+		struct hidpp20_control_id *controls;
+
+		log_info(ratbag, "device has programmable keys/buttons\n");
+		rc = hidpp20_special_key_mouse_get_controls(device, &controls);
+		if (rc < 0)
+			return rc;
+
+		free(controls);
+		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
+		break;
+	}
 	default:
 		log_debug(device->ratbag, "unknown feature 0x%04x\n", feature);
 	}

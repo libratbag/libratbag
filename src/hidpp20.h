@@ -128,4 +128,43 @@ struct hidpp20_sensor {
 int hidpp20_adjustable_dpi_get_sensors(struct ratbag_device *device,
 				       struct hidpp20_sensor **sensors_list);
 
+/* -------------------------------------------------------------------------- */
+/* 0x1b04: Special keys and mouse buttons                                     */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_SPECIAL_KEYS_BUTTONS			0x1b04
+
+struct hidpp20_control_id {
+	uint8_t index;
+	uint16_t control_id;
+	uint16_t task_id;
+	uint8_t flags;
+	uint8_t position;
+	uint8_t group;
+	uint8_t group_mask;
+	uint8_t raw_XY;
+	struct {
+		uint8_t raw_XY;
+		uint8_t persist;
+		uint8_t divert;
+		uint16_t remapped;
+	} reporting;
+};
+
+struct hidpp20_1b04_mapping {
+	uint16_t value;
+	const char *name;
+};
+
+/**
+ * allocates a list of controls that has to be freed by the caller.
+ *
+ * returns the elements in the list or a negative error
+ */
+int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
+					   struct hidpp20_control_id **controls_list);
+
+const char *hidpp20_1b04_get_logical_mapping(uint16_t value);
+const char *hidpp20_1b04_get_physical_mapping(uint16_t value);
+
 #endif /* HIDPP_20_H */
