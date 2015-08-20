@@ -14,9 +14,7 @@ libratbag_la_SOURCES =			\
 	libratbag-hidraw.h		\
 	libratbag-util.c		\
 	libratbag-private.h		\
-	libratbag-util.h		\
-	unifying.h			\
-	unifying.c
+	libratbag-util.h
 
 libratbag_la_LIBADD = $(LIBUDEV_LIBS)
 

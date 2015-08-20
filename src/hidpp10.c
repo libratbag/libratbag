@@ -175,7 +175,7 @@ out_err:
 	return ret;
 }
 
-int hidpp10_toggle_individual_feature(int fd, struct unifying_device *dev, int feature_bit_r0, int feature_bit_r2) {
+int hidpp10_toggle_individual_feature(int fd, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2) {
 	unsigned idx = dev->index;
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
@@ -212,7 +212,7 @@ int hidpp10_disconnect(int fd, int idx) {
 }
 
 void hidpp10_list_devices(int fd) {
-	struct unifying_device dev;
+	struct hidpp10_device dev;
 	int i, res;
 
 	for (i = 0; i < 6; ++i) {
@@ -224,7 +224,7 @@ void hidpp10_list_devices(int fd) {
 	}
 }
 
-static int hidpp10_get_device_info(int fd, struct unifying_device *dev) {
+static int hidpp10_get_device_info(int fd, struct hidpp10_device *dev) {
 	unsigned idx = dev->index;
 	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
 	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
@@ -271,7 +271,7 @@ static int hidpp10_get_device_info(int fd, struct unifying_device *dev) {
 	return 0;
 }
 
-int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct unifying_device *dev) {
+int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct hidpp10_device *dev) {
 	int i, res;
 
 	for (i = 0; i < 6; i++) {
@@ -288,7 +288,7 @@ int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct unifying_device *dev
 	return res;
 }
 
-int hidpp10_get_device_from_idx(int fd, int idx, struct unifying_device *dev) {
+int hidpp10_get_device_from_idx(int fd, int idx, struct hidpp10_device *dev) {
 	dev->index = idx;
 	return hidpp10_get_device_info(fd, dev);
 }

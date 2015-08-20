@@ -27,7 +27,6 @@
  */
 
 #include <debug.h>
-#include <unifying.h>
 
 #ifndef HIDPP_10_H
 #define HIDPP_10_H
@@ -140,6 +139,17 @@
 	} \
 }
 
+struct hidpp10_device  {
+	unsigned index;
+	char name[15];
+	__u16 wpid;
+	__u8 report_interval;
+	__u8 device_type;
+	__u8 fw_major;
+	__u8 fw_minor;
+	__u16 build;
+};
+
 struct _hidpp10_message {
 	__u8 report_id;
 	__u8 device_idx;
@@ -158,10 +168,10 @@ union hidpp10_message {
 
 
 int hidpp10_request_command(int fd, union hidpp10_message *msg);
-int hidpp10_toggle_individual_feature(int fd, struct unifying_device *dev, int feature_bit_r0, int feature_bit_r2);
+int hidpp10_toggle_individual_feature(int fd, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2);
 int hidpp10_open_lock(int fd);
 int hidpp10_disconnect(int fd, int idx);
 void hidpp10_list_devices(int fd);
-int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct unifying_device *dev);
-int hidpp10_get_device_from_idx(int fd, int idx, struct unifying_device *dev);
+int hidpp10_get_device_from_wpid(int fd, __u16 wpid, struct hidpp10_device *dev);
+int hidpp10_get_device_from_idx(int fd, int idx, struct hidpp10_device *dev);
 #endif /* HIDPP_10_H */
