@@ -4,14 +4,19 @@ include_HEADERS =			\
 	libratbag.h
 
 libratbag_la_SOURCES =			\
+	debug.h				\
 	etekcity.c			\
+	hidpp10.c			\
+	hidpp10.h			\
 	libratbag.c			\
 	libratbag.h			\
 	libratbag-hidraw.c		\
 	libratbag-hidraw.h		\
 	libratbag-util.c		\
 	libratbag-private.h		\
-	libratbag-util.h
+	libratbag-util.h		\
+	unifying.h			\
+	unifying.c
 
 libratbag_la_LIBADD = $(LIBUDEV_LIBS)
 
