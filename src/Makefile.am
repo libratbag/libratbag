@@ -4,7 +4,6 @@ include_HEADERS =			\
 	libratbag.h
 
 libratbag_la_SOURCES =			\
-	debug.h				\
 	driver-etekcity.c		\
 	driver-logitech-unifying.c	\
 	hidpp10.c			\

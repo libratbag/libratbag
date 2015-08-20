@@ -26,8 +26,6 @@
  *   https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28&usp=sharing
  */
 
-#include <debug.h>
-
 #ifndef HIDPP_10_H
 #define HIDPP_10_H
 

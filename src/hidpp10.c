@@ -1,8 +1,8 @@
 /*
  * HID++ 1.0 library.
  *
- * Copyright 2013 Benjamin Tissoires <benjamin.tissoires@gmail.com>
- * Copyright 2013 Red Hat, Inc
+ * Copyright 2013-2015 Benjamin Tissoires <benjamin.tissoires@gmail.com>
+ * Copyright 2013-2015 Red Hat, Inc
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -37,13 +37,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <debug.h>
 #include <hidpp10.h>
 
 #include <libratbag-util.h>
 #include <libratbag-hidraw.h>
+#include <libratbag-private.h>
 
-#if DEBUG_LVL > 0
 const char *hidpp_errors[0xFF] = {
 	[0x00] = "ERR_SUCCESS",
 	[0x01] = "ERR_INVALID_SUBID",
@@ -60,7 +59,6 @@ const char *hidpp_errors[0xFF] = {
 	[0x0C] = "ERR_WRONG_PIN_CODE",
 	[0x0D ... 0xFE] = NULL,
 };
-#endif
 
 const char *device_types[0xFF] = {
 	[0x00] = "Unknown",
@@ -83,15 +81,14 @@ static int hidpp10_write_command(struct ratbag_device *device, __u8 *cmd, int si
 	if (res == 0)
 		return 0;
 
-	if (res < 0) {
-		printf("Error: %d\n", errno);
-		perror("write");
-	}
+	if (res < 0)
+		log_error(device->ratbag, "Error: %d\n", errno);
 
 	return res;
 }
 
 int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg) {
+	struct ratbag *ratbag = device->ratbag;
 	union hidpp10_message read_buffer;
 	union hidpp10_message expected_header;
 	union hidpp10_message expected_error_recv = ERROR_MSG(msg, RECEIVER_IDX);
@@ -116,12 +113,10 @@ int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message 
 		break;
 	}
 
-	pr_dbg("sending: "); pr_buffer(msg->data, SHORT_MESSAGE_LENGTH);
-#if DEBUG_LVL > 1
-	pr_dbg("  expected_header:	"); pr_buffer(expected_header.data, SHORT_MESSAGE_LENGTH);
-	pr_dbg("  expected_error_recv:	"); pr_buffer(expected_error_recv.data, SHORT_MESSAGE_LENGTH);
-	pr_dbg("  expected_error_dev:	"); pr_buffer(expected_error_dev.data, SHORT_MESSAGE_LENGTH);
-#endif
+	log_buf_debug(ratbag, "sending: ", msg->data, SHORT_MESSAGE_LENGTH);
+	log_buf_debug(ratbag, "  expected_header:	", expected_header.data, SHORT_MESSAGE_LENGTH);
+	log_buf_debug(ratbag, "  expected_error_recv:	", expected_error_recv.data, SHORT_MESSAGE_LENGTH);
+	log_buf_debug(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
 	ret = hidpp10_write_command(device, msg->data, SHORT_MESSAGE_LENGTH);
@@ -134,9 +129,7 @@ int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message 
 	 */
 	do {
 		ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
-#if DEBUG_LVL > 2
-		printf(" *** received: "); pr_buffer(read_buffer.data, ret);
-#endif
+		log_buf_debug(ratbag, " *** received: ", read_buffer.data, ret);
 		/* actual answer */
 		if (!memcmp(read_buffer.data, expected_header.data, 4))
 			break;
@@ -145,7 +138,8 @@ int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message 
 		if (!memcmp(read_buffer.data, expected_error_recv.data, 5) ||
 		    !memcmp(read_buffer.data, expected_error_dev.data, 5)) {
 			hidpp_err = read_buffer.msg.parameters[1];
-			pr_dbg("    HID++ error from the %s (%d): %s (%02x)\n",
+			log_error(ratbag,
+				"    HID++ error from the %s (%d): %s (%02x)\n",
 				read_buffer.msg.device_idx == RECEIVER_IDX ? "receiver" : "device",
 				read_buffer.msg.device_idx,
 				hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
@@ -155,13 +149,13 @@ int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message 
 	} while (ret > 0);
 
 	if (ret < 0) {
-		printf("    USB error: %d\n", errno);
+		log_error(ratbag, "    USB error: %d\n", errno);
 		perror("write");
 		goto out_err;
 	}
 
 	if (!hidpp_err) {
-		pr_dbg("    received: "); pr_buffer(read_buffer.data, ret);
+		log_buf_debug(ratbag, "    received: ", read_buffer.data, ret);
 		/* copy the answer for the caller */
 		*msg = read_buffer;
 	}
@@ -217,7 +211,7 @@ void hidpp10_list_devices(struct ratbag_device *device) {
 		if (res)
 			continue;
 
-		printf("[%d] %s	%s (Wireless PID: %04x)\n", i, device_types[dev.device_type] ? device_types[dev.device_type] : "", dev.name, dev.wpid);
+		log_info(device->ratbag, "[%d] %s	%s (Wireless PID: %04x)\n", i, device_types[dev.device_type] ? device_types[dev.device_type] : "", dev.name, dev.wpid);
 	}
 }
 
