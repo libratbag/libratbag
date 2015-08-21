@@ -82,7 +82,7 @@ hidpp20drv_read_button(struct ratbag_button *button)
 		return;
 
 	control = &drv_data->controls[button->index];
-	mapping = control->task_id;
+	mapping = control->control_id;
 	if (control->reporting.divert || control->reporting.persist)
 		mapping = control->reporting.remapped;
 	log_debug(device->ratbag,
