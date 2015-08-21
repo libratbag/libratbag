@@ -333,7 +333,7 @@ hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = 0xff,
-		.msg.address = CMD_FEATURE_SET_GET_FEATURE_ID,
+		.msg.address = CMD_MOUSE_POINTER_BASIC_GET_INFO,
 		.msg.parameters[0] = feature_index,
 	};
 	int rc;
