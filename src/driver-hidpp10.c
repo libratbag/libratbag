@@ -49,14 +49,8 @@
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 
-#define HIDPP_CAP_RESOLUTION_2200			(1 << 0)
-#define HIDPP_CAP_SWITCHABLE_RESOLUTION_2201		(1 << 1)
-#define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
-
 struct hidpp10drv_data {
-	unsigned proto_major;
-	unsigned proto_minor;
-	unsigned long capabilities;
+	struct hidpp10_device *dev;
 };
 
 static void
@@ -180,6 +174,7 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
 	struct hidpp10drv_data *drv_data;
+	struct hidpp10_device dev;
 
 	/* check if the device is a unifying receiver first so we can update
 	 * the hidraw path before we open it */
@@ -199,13 +194,24 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	if (!drv_data)
 		return -ENODEV;
 
-	drv_data->proto_major = 1;
-	drv_data->proto_minor = 0;
+	rc = hidpp10_get_device_from_wpid(device,
+					  id.id.product,
+					  &dev);
+	if (rc) {
+		log_error(device->ratbag,
+			  "Failed to get HID++1.0 device for %s\n",
+			  device->name);
+		goto err;
+	}
 
 	ratbag_set_drv_data(device, drv_data);
 
 	device->num_profiles = 1;
 	device->num_buttons = 8;
+
+err:
+	free(drv_data);
+	ratbag_set_drv_data(device, NULL);
 
 	return rc;
 }
