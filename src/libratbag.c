@@ -603,7 +603,8 @@ ratbag_device_set_active_profile(struct ratbag_device *device,
 LIBRATBAG_EXPORT int
 ratbag_profile_get_resolution_dpi(const struct ratbag_profile *profile)
 {
-	return 0;
+	assert(profile);
+	return profile->current_dpi;
 }
 
 LIBRATBAG_EXPORT int

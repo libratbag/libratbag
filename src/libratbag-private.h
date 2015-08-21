@@ -175,6 +175,7 @@ struct ratbag_profile {
 	struct list buttons;
 	void *drv_data;
 	void *user_data;
+	int current_dpi;
 };
 
 struct ratbag_button {

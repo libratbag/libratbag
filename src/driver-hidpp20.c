@@ -79,7 +79,7 @@ hidpp20drv_has_capability(const struct ratbag_device *device, enum ratbag_capabi
 static int
 hidpp20drv_current_profile(struct ratbag_device *device)
 {
-	return -1;
+	return 0;
 }
 
 static int
@@ -88,9 +88,62 @@ hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 	return -1;
 }
 
+static int
+hidpp20drv_read_resolution_dpi(struct ratbag_device *device)
+{
+	struct ratbag *ratbag = device->ratbag;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc, dpi;
+
+	if (drv_data->capabilities & HIDPP_CAP_RESOLUTION_2200) {
+		uint16_t resolution;
+		uint8_t flags;
+
+		rc = hidpp20_mousepointer_get_mousepointer_info(device, &resolution, &flags);
+		if (rc) {
+			log_error(ratbag,
+				  "Error while requesting resolution: %s (%d)\n",
+				  strerror(-rc), rc);
+			return 0;
+		}
+
+		return resolution;
+	}
+
+	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
+		struct hidpp20_sensor *sensors;
+
+		dpi = 0;
+		rc = hidpp20_adjustable_dpi_get_sensors(device, &sensors);
+		if (rc < 0) {
+			log_error(ratbag,
+				  "Error while requesting resolution: %s (%d)\n",
+				  strerror(-rc), rc);
+		} else if (rc == 0) {
+			log_error(ratbag, "Error, no compatible sensors found.\n");
+		} else {
+			log_info(ratbag,
+				 "device is at %d dpi (variable between %d and %d).\n",
+				 sensors[0].dpi,
+				 sensors[0].dpi_min,
+				 sensors[0].dpi_max);
+			dpi = sensors[0].dpi;
+		}
+		free(sensors);
+		return dpi;
+	}
+
+	return 0;
+}
+
 static void
 hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
+	int dpi;
+
+	dpi = hidpp20drv_read_resolution_dpi(profile->device);
+	if (dpi > 0)
+		profile->current_dpi = dpi;
 }
 
 static int
@@ -112,30 +165,11 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		/* these features are mandatory and already handled */
 		break;
 	case HIDPP_PAGE_MOUSE_POINTER_BASIC: {
-		uint16_t resolution;
-		uint8_t flags;
-
 		drv_data->capabilities |= HIDPP_CAP_RESOLUTION_2200;
-		rc = hidpp20_mousepointer_get_mousepointer_info(device, &resolution, &flags);
-		if (rc)
-			return rc;
-		log_info(ratbag, "device resolution is %d dpi\n", resolution);
 		break;
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {
-		struct hidpp20_sensor *sensors;
-
 		log_info(ratbag, "device has adjustable dpi\n");
-		rc = hidpp20_adjustable_dpi_get_sensors(device, &sensors);
-		if (rc < 0)
-			return rc;
-		if (rc > 0)
-			log_info(ratbag,
-				 "device is at %d dpi (variable between %d and %d).\n",
-				 sensors[0].dpi,
-				 sensors[0].dpi_min,
-				 sensors[0].dpi_max);
-		free(sensors);
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
