@@ -458,7 +458,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag->log_priority = RATBAG_LOG_PRIORITY_INFO;
 
 	ratbag_register_driver(ratbag, &etekcity_driver);
-	ratbag_register_driver(ratbag, &logitech_unifying_driver);
+	ratbag_register_driver(ratbag, &hidpp20_driver);
 
 	return ratbag;
 }

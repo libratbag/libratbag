@@ -52,56 +52,56 @@
 #define HIDPP_CAP_SWITCHABLE_RESOLUTION_2201		(1 << 1)
 #define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
 
-struct unifying_data {
+struct hidpp20drv_data {
 	unsigned proto_major;
 	unsigned proto_minor;
 	unsigned long capabilities;
 };
 
 static void
-unifying_read_button(struct ratbag_button *button)
+hidpp20drv_read_button(struct ratbag_button *button)
 {
 }
 
 static int
-unifying_write_button(struct ratbag_button *button)
+hidpp20drv_write_button(struct ratbag_button *button)
 {
 	return -1;
 }
 
 static int
-unifying_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
+hidpp20drv_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
 {
 	return 0;
 }
 
 static int
-unifying_current_profile(struct ratbag_device *device)
+hidpp20drv_current_profile(struct ratbag_device *device)
 {
 	return -1;
 }
 
 static int
-unifying_set_current_profile(struct ratbag_device *device, unsigned int index)
+hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 	return -1;
 }
 
 static void
-unifying_read_profile(struct ratbag_profile *profile, unsigned int index)
+hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 }
 
 static int
-unifying_write_profile(struct ratbag_profile *profile)
+hidpp20drv_write_profile(struct ratbag_profile *profile)
 {
 	return -1;
 }
 
 static int
-unifying_init_feature(struct ratbag_device *device, uint16_t feature)
+hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 {
-	struct unifying_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag *ratbag = device->ratbag;
 	int rc;
 
@@ -165,7 +165,7 @@ unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 }
 
 static int
-unifying_20_probe(struct ratbag_device *device, const struct ratbag_id id)
+hidpp20drv_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	struct hidpp20_feature *feature_list;
 	int rc, i;
@@ -180,7 +180,7 @@ unifying_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 			log_debug(device->ratbag, "Init feature %s (0x%04x) \n",
 				  hidpp20_feature_get_name(feature_list[i].feature),
 				  feature_list[i].feature);
-			unifying_init_feature(device, feature_list[i].feature);
+			hidpp20drv_init_feature(device, feature_list[i].feature);
 		}
 	}
 
@@ -191,10 +191,10 @@ unifying_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 }
 
 static int
-unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
+hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
-	struct unifying_data *drv_data;
+	struct hidpp20drv_data *drv_data;
 
 	rc = ratbag_open_hidraw(device);
 	if (rc) {
@@ -224,7 +224,7 @@ unifying_probe(struct ratbag_device *device, const struct ratbag_id id)
 	ratbag_set_drv_data(device, drv_data);
 
 	if (drv_data->proto_major >= 2) {
-		rc = unifying_20_probe(device, id);
+		rc = hidpp20drv_20_probe(device, id);
 		if (rc)
 			goto err;
 	}
@@ -240,14 +240,14 @@ err:
 }
 
 static void
-unifying_remove(struct ratbag_device *device)
+hidpp20drv_remove(struct ratbag_device *device)
 {
 	free(ratbag_get_drv_data(device));
 }
 
 #define USB_VENDOR_ID_LOGITECH			0x046d
 
-static const struct ratbag_id unifying_table[] = {
+static const struct ratbag_id hidpp20drv_table[] = {
 	/* M705 */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
@@ -264,7 +264,7 @@ static const struct ratbag_id unifying_table[] = {
 	 .data = 1,
 	},
 
-	/* MX Master over unifying */
+	/* MX Master over hidpp20drv */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
 		 .product = 0x4041,
@@ -286,7 +286,7 @@ static const struct ratbag_id unifying_table[] = {
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},
-	/* T650 over unifying */
+	/* T650 over hidpp20drv */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
 		 .product = 0x4101,
@@ -296,16 +296,16 @@ static const struct ratbag_id unifying_table[] = {
 	{ },
 };
 
-struct ratbag_driver logitech_unifying_driver = {
-	.name = "Logitech Unifying Receiver",
-	.table_ids = unifying_table,
-	.probe = unifying_probe,
-	.remove = unifying_remove,
-	.read_profile = unifying_read_profile,
-	.write_profile = unifying_write_profile,
-	.get_active_profile = unifying_current_profile,
-	.set_active_profile = unifying_set_current_profile,
-	.has_capability = unifying_has_capability,
-	.read_button = unifying_read_button,
-	.write_button = unifying_write_button,
+struct ratbag_driver hidpp20_driver = {
+	.name = "Logitech HID++2.0",
+	.table_ids = hidpp20drv_table,
+	.probe = hidpp20drv_probe,
+	.remove = hidpp20drv_remove,
+	.read_profile = hidpp20drv_read_profile,
+	.write_profile = hidpp20drv_write_profile,
+	.get_active_profile = hidpp20drv_current_profile,
+	.set_active_profile = hidpp20drv_set_current_profile,
+	.has_capability = hidpp20drv_has_capability,
+	.read_button = hidpp20drv_read_button,
+	.write_button = hidpp20drv_write_button,
 };

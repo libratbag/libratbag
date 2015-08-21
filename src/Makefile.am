@@ -5,7 +5,7 @@ include_HEADERS =			\
 
 libratbag_la_SOURCES =			\
 	driver-etekcity.c		\
-	driver-logitech-unifying.c	\
+	driver-hidpp20.c		\
 	hidpp10.c			\
 	hidpp10.h			\
 	hidpp20.c			\
