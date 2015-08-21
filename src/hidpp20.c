@@ -399,7 +399,7 @@ struct hidpp20_1b04_mapping {
 	enum ratbag_button_type type;
 };
 
-static const struct hidpp20_1b04_mapping hidpp20_1b04_physical_mapping[] =
+static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
 {
 	{ 0, "None"			, RATBAG_BUTTON_TYPE_NONE},
 	{ 80, "Left"			, RATBAG_BUTTON_TYPE_LEFT},
@@ -412,7 +412,7 @@ static const struct hidpp20_1b04_mapping hidpp20_1b04_physical_mapping[] =
 	{ 315, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN},
 };
 
-static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
+static const struct hidpp20_1b04_mapping hidpp20_1b04_physical_mapping[] =
 {
 	{ 0, "None"			, RATBAG_BUTTON_TYPE_NONE},
 	{ 56, "Left Click"		, RATBAG_BUTTON_TYPE_LEFT},
@@ -603,9 +603,9 @@ int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 			  "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x pos: %d group: %d gmask: 0x%02x raw_XY: %s\n"
 			  "      reporting: raw_xy: %s persist: %s divert: %s remapped: '%s' (%d)\n",
 			  control->index,
-			  hidpp20_1b04_get_physical_mapping_name(control->control_id),
+			  hidpp20_1b04_get_logical_mapping_name(control->control_id),
 			  control->control_id,
-			  hidpp20_1b04_get_logical_mapping_name(control->task_id),
+			  hidpp20_1b04_get_physical_mapping_name(control->task_id),
 			  control->task_id,
 			  control->flags,
 			  control->position,
