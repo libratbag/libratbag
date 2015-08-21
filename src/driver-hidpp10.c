@@ -137,12 +137,18 @@ hidpp10drv_remove(struct ratbag_device *device)
 #define USB_VENDOR_ID_LOGITECH			0x046d
 
 static const struct ratbag_id hidpp10drv_table[] = {
+	/* M705 */
+	{.id = { .bustype = BUS_USB,
+		 .vendor = USB_VENDOR_ID_LOGITECH,
+		 .product = 0x101b,
+		 .version = VERSION_ANY },
+	},
+
 	/* M570 */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
 		 .product = 0x1028,
 		 .version = VERSION_ANY },
-	 .data = 1,
 	},
 
 	/* G500s */
@@ -150,8 +156,8 @@ static const struct ratbag_id hidpp10drv_table[] = {
 		 .vendor = USB_VENDOR_ID_LOGITECH,
 		 .product = 0xc24e,
 		 .version = VERSION_ANY },
-	 .data = 1,
 	},
+
 	{ },
 };
 
