@@ -372,28 +372,21 @@ hidpp20drv_remove(struct ratbag_device *device)
 }
 
 #define USB_VENDOR_ID_LOGITECH			0x046d
+#define LOGITECH_DEVICE(_bus, _pid)		\
+	{ .bustype = (_bus),			\
+	  .vendor = USB_VENDOR_ID_LOGITECH,	\
+	  .product = (_pid),			\
+	  .version = VERSION_ANY },
 
 static const struct ratbag_id hidpp20drv_table[] = {
 	/* MX Master over unifying */
-	{.id = { .bustype = BUS_USB,
-		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = 0x4041,
-		 .version = VERSION_ANY },
-	},
+	{ .id = LOGITECH_DEVICE(BUS_USB, 0x4041) },
 
 	/* MX Master over bluetooth */
-	{.id = { .bustype = BUS_BLUETOOTH,
-		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = 0xb012,
-		 .version = VERSION_ANY },
-	},
+	{ .id = LOGITECH_DEVICE(BUS_BLUETOOTH, 0xb012) },
 
 	/* T650 over unifying */
-	{.id = { .bustype = BUS_USB,
-		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = 0x4101,
-		 .version = VERSION_ANY },
-	},
+	{ .id = LOGITECH_DEVICE(BUS_USB, 0x4101) },
 
 	{ },
 };
