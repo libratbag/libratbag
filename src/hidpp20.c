@@ -127,7 +127,8 @@ hidpp20_request_command_allow_error(struct ratbag_device *device, union hidpp20_
 			break;
 
 		/* error */
-		if (read_buffer.msg.sub_id == __ERROR_MSG &&
+		if ((read_buffer.msg.sub_id == __ERROR_MSG ||
+		     read_buffer.msg.sub_id == 0xff) &&
 		    read_buffer.msg.address == msg->msg.sub_id &&
 		    read_buffer.msg.parameters[0] == msg->msg.address) {
 			hidpp_err = read_buffer.msg.parameters[1];
