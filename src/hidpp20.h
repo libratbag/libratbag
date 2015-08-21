@@ -84,6 +84,71 @@ int hidpp20_feature_set_get(struct ratbag_device *device,
 			    struct hidpp20_feature **feature_list);
 
 /* -------------------------------------------------------------------------- */
+/* 0x1000: Battery level status                                               */
+/* -------------------------------------------------------------------------- */
+#define HIDPP_PAGE_BATTERY_LEVEL_STATUS			0x1000
+
+enum hidpp20_battery_status {
+	BATTERY_STATUS_DISCHARGING = 0,
+	BATTERY_STATUS_RECHARGING,
+	BATTERY_STATUS_CHARGING_IN_FINAL_STATE,
+	BATTERY_STATUS_CHARGE_COMPLETE,
+	BATTERY_STATUS_RECHARGING_BELOW_OPTIMAL_SPEED,
+	BATTERY_STATUS_INVALID_BATTERY_TYPE,
+	BATTERY_STATUS_THERMAL_ERROR,
+	BATTERY_STATUS_OTHER_CHARGING_ERROR,
+	BATTERY_STATUS_INVALID,
+};
+
+/**
+ * Retrieves the battery level status.
+ *
+ * @return the battery status or a negative errno on error
+ */
+int hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
+					   uint16_t *level,
+					   uint16_t *next_level);
+
+/* -------------------------------------------------------------------------- */
+/* 0x1b04: Special keys and mouse buttons                                     */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_SPECIAL_KEYS_BUTTONS			0x1b04
+
+struct hidpp20_control_id {
+	uint8_t index;
+	uint16_t control_id;
+	uint16_t task_id;
+	uint8_t flags;
+	uint8_t position;
+	uint8_t group;
+	uint8_t group_mask;
+	uint8_t raw_XY;
+	struct {
+		uint8_t raw_XY;
+		uint8_t persist;
+		uint8_t divert;
+		uint16_t remapped;
+	} reporting;
+};
+
+struct hidpp20_1b04_mapping {
+	uint16_t value;
+	const char *name;
+};
+
+/**
+ * allocates a list of controls that has to be freed by the caller.
+ *
+ * returns the elements in the list or a negative error
+ */
+int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
+					   struct hidpp20_control_id **controls_list);
+
+const char *hidpp20_1b04_get_logical_mapping(uint16_t value);
+const char *hidpp20_1b04_get_physical_mapping(uint16_t value);
+
+/* -------------------------------------------------------------------------- */
 /* 0x2200: Mouse Pointer Basic Optical Sensors                                */
 /* -------------------------------------------------------------------------- */
 
@@ -136,70 +201,5 @@ int hidpp20_adjustable_dpi_get_sensors(struct ratbag_device *device,
  */
 int hidpp20_adjustable_dpi_set_sensor_dpi(struct ratbag_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi);
-
-/* -------------------------------------------------------------------------- */
-/* 0x1b04: Special keys and mouse buttons                                     */
-/* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_SPECIAL_KEYS_BUTTONS			0x1b04
-
-struct hidpp20_control_id {
-	uint8_t index;
-	uint16_t control_id;
-	uint16_t task_id;
-	uint8_t flags;
-	uint8_t position;
-	uint8_t group;
-	uint8_t group_mask;
-	uint8_t raw_XY;
-	struct {
-		uint8_t raw_XY;
-		uint8_t persist;
-		uint8_t divert;
-		uint16_t remapped;
-	} reporting;
-};
-
-struct hidpp20_1b04_mapping {
-	uint16_t value;
-	const char *name;
-};
-
-/**
- * allocates a list of controls that has to be freed by the caller.
- *
- * returns the elements in the list or a negative error
- */
-int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
-					   struct hidpp20_control_id **controls_list);
-
-const char *hidpp20_1b04_get_logical_mapping(uint16_t value);
-const char *hidpp20_1b04_get_physical_mapping(uint16_t value);
-
-/* -------------------------------------------------------------------------- */
-/* 0x1000: Battery level status                                               */
-/* -------------------------------------------------------------------------- */
-#define HIDPP_PAGE_BATTERY_LEVEL_STATUS			0x1000
-
-enum hidpp20_battery_status {
-	BATTERY_STATUS_DISCHARGING = 0,
-	BATTERY_STATUS_RECHARGING,
-	BATTERY_STATUS_CHARGING_IN_FINAL_STATE,
-	BATTERY_STATUS_CHARGE_COMPLETE,
-	BATTERY_STATUS_RECHARGING_BELOW_OPTIMAL_SPEED,
-	BATTERY_STATUS_INVALID_BATTERY_TYPE,
-	BATTERY_STATUS_THERMAL_ERROR,
-	BATTERY_STATUS_OTHER_CHARGING_ERROR,
-	BATTERY_STATUS_INVALID,
-};
-
-/**
- * Retrieves the battery level status.
- *
- * @return the battery status or a negative errno on error
- */
-int hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
-					   uint16_t *level,
-					   uint16_t *next_level);
 
 #endif /* HIDPP_20_H */
