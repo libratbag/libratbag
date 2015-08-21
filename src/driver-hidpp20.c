@@ -259,6 +259,10 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
 		log_info(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
+		/* we read the profile once to get the correct number of
+		 * supported buttons. */
+		if (!hidpp20drv_read_special_key_mouse(device))
+			device->num_buttons = drv_data->num_controls;
 		break;
 	}
 	case HIDPP_PAGE_BATTERY_LEVEL_STATUS: {
@@ -327,6 +331,9 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	if (!drv_data)
 		return -ENODEV;
 
+	device->num_profiles = 1;
+	device->num_buttons = 8;
+
 	drv_data->proto_major = 1;
 	drv_data->proto_minor = 0;
 
@@ -346,9 +353,6 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 		if (rc)
 			goto err;
 	}
-
-	device->num_profiles = 1;
-	device->num_buttons = 8;
 
 	return rc;
 err:
