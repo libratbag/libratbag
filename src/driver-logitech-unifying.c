@@ -118,7 +118,7 @@ unifying_init_feature(struct ratbag_device *device, uint16_t feature)
 		rc = hidpp20_mousepointer_get_mousepointer_info(device, &resolution, &flags);
 		if (rc)
 			return rc;
-		log_info(ratbag, "device is at %d dpi\n", resolution);
+		log_info(ratbag, "device resolution is %d dpi\n", resolution);
 		break;
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {
