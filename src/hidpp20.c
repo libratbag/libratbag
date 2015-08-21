@@ -87,6 +87,16 @@ hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg
 	uint8_t hidpp_err = 0;
 	size_t msg_len;
 
+	/* msg->address is 4 MSB: subcommand, 4 LSB: 4-bit SW identifier so
+	 * the device knows who to respond to. kernel uses 0x1 */
+	const int DEVICE_SW_ID = 0x8;
+
+	if (msg->msg.address & 0xf) {
+		log_bug_libratbag(ratbag, "hidpp20 error: sw address is already set\n");
+		return -EINVAL;
+	}
+	msg->msg.address |= DEVICE_SW_ID;
+
 	msg_len = msg->msg.report_id == REPORT_ID_SHORT ? SHORT_MESSAGE_LENGTH : LONG_MESSAGE_LENGTH;
 
 	log_buf_debug(ratbag, "sending: ", msg->data, msg_len);
@@ -157,8 +167,8 @@ hidpp20_get_unaligned_u16(uint8_t *buf)
 
 #define HIDPP_PAGE_ROOT_IDX				0x00
 
-#define CMD_ROOT_GET_FEATURE				0x08
-#define CMD_ROOT_GET_PROTOCOL_VERSION			0x18
+#define CMD_ROOT_GET_FEATURE				0x00
+#define CMD_ROOT_GET_PROTOCOL_VERSION			0x10
 
 int
 hidpp_root_get_feature(struct ratbag_device *device,
@@ -222,8 +232,8 @@ hidpp20_root_get_protocol_version(struct ratbag_device *device,
 /* 0x0001: Feature Set                                                        */
 /* -------------------------------------------------------------------------- */
 
-#define CMD_FEATURE_SET_GET_COUNT			0x08
-#define CMD_FEATURE_SET_GET_FEATURE_ID			0x18
+#define CMD_FEATURE_SET_GET_COUNT			0x00
+#define CMD_FEATURE_SET_GET_FEATURE_ID			0x10
 
 static int
 hidpp20_feature_set_get_count(struct ratbag_device *device, uint8_t reg)
@@ -322,7 +332,7 @@ err:
 /* 0x2200: Mouse Pointer Basic Optical Sensors                                */
 /* -------------------------------------------------------------------------- */
 
-#define CMD_MOUSE_POINTER_BASIC_GET_INFO		0x08
+#define CMD_MOUSE_POINTER_BASIC_GET_INFO		0x00
 
 int
 hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
@@ -337,7 +347,6 @@ hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 		.msg.parameters[0] = feature_index,
 	};
 	int rc;
-
 
 	rc = hidpp_root_get_feature(device,
 				    HIDPP_PAGE_MOUSE_POINTER_BASIC,
@@ -363,10 +372,10 @@ hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 /* 0x2201: Adjustable DPI                                                     */
 /* -------------------------------------------------------------------------- */
 
-#define CMD_ADJUSTABLE_DPI_GET_SENSOR_COUNT		0x08
-#define CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST		0x18
-#define CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI		0x28
-#define CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI		0x38
+#define CMD_ADJUSTABLE_DPI_GET_SENSOR_COUNT		0x00
+#define CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST		0x10
+#define CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI		0x20
+#define CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI		0x30
 
 static int
 hidpp20_adjustable_dpi_get_count(struct ratbag_device *device, uint8_t reg)
@@ -517,10 +526,10 @@ err:
 /* 0x1b04: Special keys and mouse buttons                                     */
 /* -------------------------------------------------------------------------- */
 
-#define CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT		0x08
-#define CMD_SPECIAL_KEYS_BUTTONS_GET_INFO		0x18
-#define CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING		0x28
-#define CMD_SPECIAL_KEYS_BUTTONS_SET_SET_REPORTING	0x38
+#define CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT		0x00
+#define CMD_SPECIAL_KEYS_BUTTONS_GET_INFO		0x10
+#define CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING		0x20
+#define CMD_SPECIAL_KEYS_BUTTONS_SET_SET_REPORTING	0x30
 
 static const struct hidpp20_1b04_mapping hidpp20_1b04_physical_mapping[] =
 {
