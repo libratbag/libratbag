@@ -438,6 +438,19 @@ hidpp20_1b04_get_logical_mapping(uint16_t value)
 	return RATBAG_BUTTON_TYPE_UNKNOWN;
 }
 
+uint16_t
+hidpp20_1b04_get_logical_control_id(enum ratbag_button_type type)
+{
+	const struct hidpp20_1b04_mapping *map;
+
+	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, map) {
+		if (map->type == type)
+			return map->value;
+	}
+
+	return 0;
+}
+
 const char *
 hidpp20_1b04_get_logical_mapping_name(uint16_t value)
 {
@@ -624,6 +637,43 @@ int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 err:
 	free(c_list);
 	return rc;
+}
+
+int
+hidpp20_special_key_mouse_set_control(struct ratbag_device *device,
+				      struct hidpp20_control_id *control)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_SET_REPORTING,
+		.msg.parameters[0] = control->control_id >> 8,
+		.msg.parameters[1] = control->control_id & 0xff,
+		.msg.parameters[2] = 0x00,
+		.msg.parameters[3] = control->reporting.remapped >> 8,
+		.msg.parameters[4] = control->reporting.remapped & 0xff,
+	};
+	int rc;
+
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_SPECIAL_KEYS_BUTTONS,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	msg.msg.sub_id = feature_index;
+	if (control->reporting.divert)
+		msg.msg.parameters[2] |= 0x03;
+	if (control->reporting.persist)
+		msg.msg.parameters[2] |= 0x0c;
+	if (control->reporting.raw_XY)
+		msg.msg.parameters[2] |= 0x20;
+
+	return hidpp20_request_command(device, &msg);
 }
 
 /* -------------------------------------------------------------------------- */

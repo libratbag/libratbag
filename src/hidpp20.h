@@ -141,7 +141,17 @@ struct hidpp20_control_id {
 int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 					   struct hidpp20_control_id **controls_list);
 
+/**
+ * commit a control previously allocated by
+ * hidpp20_special_key_mouse_get_controls().
+ *
+ * returns 0 or a negative error
+ */
+int hidpp20_special_key_mouse_set_control(struct ratbag_device *device,
+					  struct hidpp20_control_id *control);
+
 enum ratbag_button_type hidpp20_1b04_get_logical_mapping(uint16_t value);
+uint16_t hidpp20_1b04_get_logical_control_id(enum ratbag_button_type type);
 const char *hidpp20_1b04_get_logical_mapping_name(uint16_t value);
 enum ratbag_button_type hidpp20_1b04_get_physical_mapping(uint16_t value);
 const char *hidpp20_1b04_get_physical_mapping_name(uint16_t value);

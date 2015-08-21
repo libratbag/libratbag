@@ -596,8 +596,12 @@ ratbag_device_set_active_profile(struct ratbag_device *device,
 	if (rc)
 		return rc;
 
-	assert(device->driver->set_active_profile);
-	return device->driver->set_active_profile(device, profile->index);
+	if (ratbag_device_has_capability(device, RATBAG_CAP_SWITCHABLE_PROFILE)) {
+		assert(device->driver->set_active_profile);
+		return device->driver->set_active_profile(device, profile->index);
+	}
+
+	return rc;
 }
 
 LIBRATBAG_EXPORT int

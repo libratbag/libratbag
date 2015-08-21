@@ -439,6 +439,90 @@ static const struct ratbag_cmd cmd_switch_etekcity = {
 };
 
 static int
+ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+{
+	const char *path;
+	struct ratbag_device *device;
+	struct ratbag_button *button = NULL;
+	struct ratbag_profile *profile = NULL;
+	int button_index, type_index;
+	int rc = 1, commit = 0;
+
+	if (argc != 3) {
+		usage();
+		return 1;
+	}
+
+	button_index = atoi(argv[0]);
+	type_index = atoi(argv[1]);
+	path = argv[2];
+
+	device = ratbag_cmd_open_device(ratbag, path);
+	if (!device) {
+		error("Looks like '%s' is not supported\n", path);
+		return 1;
+	}
+
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_CAP_BUTTON_KEY)) {
+		error("Looks like '%s' has no programmable buttons\n", path);
+		goto out;
+	}
+
+	profile = ratbag_device_get_active_profile(device);
+	if (!profile) {
+		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
+		goto out;
+	}
+
+	button = ratbag_profile_get_button_by_index(profile, button_index);
+
+	if (ratbag_button_get_type(button) != type_index) {
+		rc = ratbag_button_set_type(button, type_index);
+		if (rc) {
+			error("Unable to map button %d to '%s' (%d): %s (%d)\n",
+			      button_index,
+			      button_type_to_str(type_index),
+			      button_index,
+			      strerror(-rc),
+			      rc);
+			goto out;
+		}
+
+		rc = ratbag_device_set_active_profile(device, profile);
+		if (rc) {
+			error("Unable to apply the current profile: %s (%d)\n",
+			      strerror(-rc),
+			      rc);
+			goto out;
+		}
+		printf("Switched the current profile of '%s' to report '%s' when button %d is pressed\n",
+		       ratbag_device_get_name(device),
+		       button_type_to_str(type_index),
+		       button_index);
+	} else {
+		printf("The current profile of '%s' alread reports '%s' when button %d is pressed\n",
+		       ratbag_device_get_name(device),
+		       button_type_to_str(type_index),
+		       button_index);
+	}
+
+out:
+	button = ratbag_button_unref(button);
+	profile = ratbag_profile_unref(profile);
+
+	device = ratbag_device_unref(device);
+	return rc;
+}
+
+static const struct ratbag_cmd cmd_change_button = {
+	.name = "change-button",
+	.cmd = ratbag_cmd_change_button,
+	.args = "X Y",
+	.help = "Remap button X to Y in the active profile",
+};
+
+static int
 filter_event_node(const struct dirent *input_entry)
 {
 	return !strncmp(input_entry->d_name, "event", 5);
@@ -551,6 +635,7 @@ static const struct ratbag_cmd cmd_switch_dpi = {
 static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_info,
 	&cmd_list,
+	&cmd_change_button,
 	&cmd_switch_etekcity,
 	&cmd_switch_dpi,
 	&cmd_switch_profile,

@@ -99,7 +99,35 @@ hidpp20drv_read_button(struct ratbag_button *button)
 static int
 hidpp20drv_write_button(struct ratbag_button *button)
 {
-	return -1;
+	struct ratbag_device *device = button->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_control_id *control;
+	uint16_t mapping;
+	int rc;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04))
+		return -ENOTSUP;
+
+	control = &drv_data->controls[button->index];
+	mapping = hidpp20_1b04_get_logical_control_id(button->type);
+	if (!mapping)
+		return -EINVAL;
+
+	control->reporting.divert = 1;
+	control->reporting.remapped = mapping;
+	control->reporting.updated = 1;
+
+	rc = hidpp20_special_key_mouse_set_control(device, control);
+	if (rc == ERR_INVALID_ADDRESS)
+		return -EINVAL;
+
+	if (rc)
+		log_error(device->ratbag,
+			  "Error while writing profile: '%s' (%d)\n",
+			  strerror(-rc),
+			  rc);
+
+	return rc;
 }
 
 static int
@@ -262,7 +290,7 @@ hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 static int
 hidpp20drv_write_profile(struct ratbag_profile *profile)
 {
-	return -1;
+	return 0;
 }
 
 static int
