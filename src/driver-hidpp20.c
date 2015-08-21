@@ -59,6 +59,8 @@ struct hidpp20drv_data {
 	unsigned long capabilities;
 	unsigned num_sensors;
 	struct hidpp20_sensor *sensors;
+	unsigned num_controls;
+	struct hidpp20_control_id *controls;
 };
 
 static void
@@ -193,14 +195,38 @@ out:
 	return rc;
 }
 
+static int
+hidpp20drv_read_special_key_mouse(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04))
+		return 0;
+
+	free(drv_data->controls);
+	drv_data->controls = NULL;
+	drv_data->num_controls = 0;
+	rc = hidpp20_special_key_mouse_get_controls(device, &drv_data->controls);
+	if (rc > 0) {
+		drv_data->num_controls = rc;
+		rc = 0;
+	}
+
+	return rc;
+}
+
 static void
 hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
+	struct ratbag_device *device = profile->device;
 	int dpi;
 
-	dpi = hidpp20drv_read_resolution_dpi(profile->device);
+	dpi = hidpp20drv_read_resolution_dpi(device);
 	if (dpi > 0)
 		profile->current_dpi = dpi;
+
+	hidpp20drv_read_special_key_mouse(device);
 }
 
 static int
@@ -231,14 +257,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		break;
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
-		struct hidpp20_control_id *controls;
-
 		log_info(ratbag, "device has programmable keys/buttons\n");
-		rc = hidpp20_special_key_mouse_get_controls(device, &controls);
-		if (rc < 0)
-			return rc;
-
-		free(controls);
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
 		break;
 	}
@@ -343,6 +362,7 @@ hidpp20drv_remove(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 
+	free(drv_data->controls);
 	free(drv_data->sensors);
 	free(drv_data);
 }
