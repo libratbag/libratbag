@@ -31,6 +31,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -78,8 +79,9 @@ hidpp20_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
 	return res;
 }
 
-int
-hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg)
+static int
+hidpp20_request_command_allow_error(struct ratbag_device *device, union hidpp20_message *msg,
+				    bool allow_error)
 {
 	struct ratbag *ratbag = device->ratbag;
 	union hidpp20_message read_buffer;
@@ -128,11 +130,18 @@ hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg
 		    read_buffer.msg.address == msg->msg.sub_id &&
 		    read_buffer.msg.parameters[0] == msg->msg.address) {
 			hidpp_err = read_buffer.msg.parameters[1];
-			log_error(ratbag,
-				"    HID++ error from the device (%d): %s (%02x)\n",
-				read_buffer.msg.device_idx,
-				hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
-				hidpp_err);
+			if (allow_error)
+				log_debug(ratbag,
+					"    HID++ error from the device (%d): %s (%02x)\n",
+					read_buffer.msg.device_idx,
+					hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
+					hidpp_err);
+			else
+				log_error(ratbag,
+					"    HID++ error from the device (%d): %s (%02x)\n",
+					read_buffer.msg.device_idx,
+					hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
+					hidpp_err);
 			break;
 		}
 	} while (ret > 0);
@@ -153,6 +162,12 @@ hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg
 
 out_err:
 	return ret;
+}
+
+int
+hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg)
+{
+	return hidpp20_request_command_allow_error(device, msg, false);
 }
 
 static inline uint16_t
@@ -212,7 +227,7 @@ hidpp20_root_get_protocol_version(struct ratbag_device *device,
 		.msg.address = CMD_ROOT_GET_PROTOCOL_VERSION,
 	};
 
-	rc = hidpp20_request_command(device, &msg);
+	rc = hidpp20_request_command_allow_error(device, &msg, true);
 
 	if (rc == ERR_INVALID_SUBID) {
 		*major = 1;
