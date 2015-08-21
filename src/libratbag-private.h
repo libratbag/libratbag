@@ -255,6 +255,7 @@ log_buffer(struct ratbag *ratbag,
 /* list of all supported drivers */
 struct ratbag_driver etekcity_driver;
 struct ratbag_driver hidpp20_driver;
+struct ratbag_driver hidpp10_driver;
 
 #endif /* LIBRATBAG_PRIVATE_H */
 

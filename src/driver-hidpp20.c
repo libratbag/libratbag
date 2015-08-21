@@ -272,14 +272,6 @@ static const struct ratbag_id hidpp20drv_table[] = {
 	 .data = 1,
 	},
 
-	/* M570 */
-	{.id = { .bustype = BUS_USB,
-		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = 0x1028,
-		 .version = VERSION_ANY },
-	 .data = 1,
-	},
-
 	/* MX Master over hidpp20drv */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
@@ -295,13 +287,7 @@ static const struct ratbag_id hidpp20drv_table[] = {
 		 .version = VERSION_ANY },
 	 .data = 1,
 	},
-	/* G500s */
-	{.id = { .bustype = BUS_USB,
-		 .vendor = USB_VENDOR_ID_LOGITECH,
-		 .product = 0xc24e,
-		 .version = VERSION_ANY },
-	 .data = 1,
-	},
+
 	/* T650 over hidpp20drv */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
