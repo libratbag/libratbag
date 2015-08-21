@@ -51,6 +51,7 @@
 #define HIDPP_CAP_RESOLUTION_2200			(1 << 0)
 #define HIDPP_CAP_SWITCHABLE_RESOLUTION_2201		(1 << 1)
 #define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
+#define HIDPP_CAP_BATTERY_LEVEL_1000			(1 << 3)
 
 struct hidpp20drv_data {
 	unsigned proto_major;
@@ -156,6 +157,21 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 
 		free(controls);
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
+		break;
+	}
+	case HIDPP_PAGE_BATTERY_LEVEL_STATUS: {
+		uint16_t level, next_level;
+		enum hidpp20_battery_status status;
+
+		rc = hidpp20_batterylevel_get_battery_level(device, &level, &next_level);
+		if (rc < 0)
+			return rc;
+		status = rc;
+
+		log_info(ratbag, "device battery level is %d%% (next %d%%), status %d \n",
+			 level, next_level, status);
+
+		drv_data->capabilities |= HIDPP_CAP_BATTERY_LEVEL_1000;
 		break;
 	}
 	default:

@@ -55,6 +55,7 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_MOUSE_POINTER_BASIC);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_DPI);
 	CASE_RETURN_STRING(HIDPP_PAGE_SPECIAL_KEYS_BUTTONS);
+	CASE_RETURN_STRING(HIDPP_PAGE_BATTERY_LEVEL_STATUS);
 	default:
 		sprintf(numeric, "%#4x", feature);
 		str = numeric;
@@ -381,6 +382,47 @@ hidpp20_mousepointer_get_mousepointer_info(struct ratbag_device *device,
 	*flags = msg.msg.parameters[2];
 
 	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x1000: Battery level status                                               */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_LEVEL_STATUS	0x00
+#define CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_CAPABILITY		0x10
+
+int
+hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
+				       uint16_t *level,
+				       uint16_t *next_level)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.address = CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_LEVEL_STATUS,
+		.msg.parameters[0] = feature_index,
+	};
+	int rc;
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_BATTERY_LEVEL_STATUS,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*level = msg.msg.parameters[0];
+	*next_level = msg.msg.parameters[1];
+
+	return msg.msg.parameters[2];
 }
 
 /* -------------------------------------------------------------------------- */

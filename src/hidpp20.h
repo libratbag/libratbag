@@ -169,4 +169,30 @@ int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 const char *hidpp20_1b04_get_logical_mapping(uint16_t value);
 const char *hidpp20_1b04_get_physical_mapping(uint16_t value);
 
+/* -------------------------------------------------------------------------- */
+/* 0x1000: Battery level status                                               */
+/* -------------------------------------------------------------------------- */
+#define HIDPP_PAGE_BATTERY_LEVEL_STATUS			0x1000
+
+enum hidpp20_battery_status {
+	BATTERY_STATUS_DISCHARGING = 0,
+	BATTERY_STATUS_RECHARGING,
+	BATTERY_STATUS_CHARGING_IN_FINAL_STATE,
+	BATTERY_STATUS_CHARGE_COMPLETE,
+	BATTERY_STATUS_RECHARGING_BELOW_OPTIMAL_SPEED,
+	BATTERY_STATUS_INVALID_BATTERY_TYPE,
+	BATTERY_STATUS_THERMAL_ERROR,
+	BATTERY_STATUS_OTHER_CHARGING_ERROR,
+	BATTERY_STATUS_INVALID,
+};
+
+/**
+ * Retrieves the battery level status.
+ *
+ * @return the battery status or a negative errno on error
+ */
+int hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
+					   uint16_t *level,
+					   uint16_t *next_level);
+
 #endif /* HIDPP_20_H */
