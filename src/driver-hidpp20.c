@@ -141,19 +141,11 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
 		struct hidpp20_control_id *controls;
-//		int i;
 
 		log_info(ratbag, "device has programmable keys/buttons\n");
 		rc = hidpp20_special_key_mouse_get_controls(device, &controls);
 		if (rc < 0)
 			return rc;
-//		for (i = 0; i < rc; i++) {
-//			log_info(ratbag,
-//				 "device is at %d dpi (variable between %d and %d).\n",
-//				 sensors[0].dpi,
-//				 sensors[0].dpi_min,
-//				 sensors[0].dpi_max);
-//		}
 
 		free(controls);
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
@@ -272,12 +264,11 @@ static const struct ratbag_id hidpp20drv_table[] = {
 	 .data = 1,
 	},
 
-	/* MX Master over hidpp20drv */
+	/* MX Master over unifying */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
 		 .product = 0x4041,
 		 .version = VERSION_ANY },
-	 .data = 1,
 	},
 
 	/* MX Master over bluetooth */
@@ -285,16 +276,15 @@ static const struct ratbag_id hidpp20drv_table[] = {
 		 .vendor = USB_VENDOR_ID_LOGITECH,
 		 .product = 0xb012,
 		 .version = VERSION_ANY },
-	 .data = 1,
 	},
 
-	/* T650 over hidpp20drv */
+	/* T650 over unifying */
 	{.id = { .bustype = BUS_USB,
 		 .vendor = USB_VENDOR_ID_LOGITECH,
 		 .product = 0x4101,
 		 .version = VERSION_ANY },
-	 .data = 1,
 	},
+
 	{ },
 };
 
