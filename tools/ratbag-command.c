@@ -488,10 +488,71 @@ static const struct ratbag_cmd cmd_list = {
 	.help = "List the available devices",
 };
 
+static int
+ratbag_cmd_switch_dpi(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+{
+	const char *path;
+	struct ratbag_device *device;
+	struct ratbag_button *button_6, *button_7;
+	struct ratbag_profile *profile = NULL;
+	int rc = 1, commit = 0;
+	int dpi;
+
+	if (argc != 2) {
+		usage();
+		return 1;
+	}
+
+	dpi = atoi(argv[0]);
+	path = argv[1];
+
+	device = ratbag_cmd_open_device(ratbag, path);
+	if (!device) {
+		error("Looks like '%s' is not supported\n", path);
+		return 1;
+	}
+
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_CAP_SWITCHABLE_RESOLUTION)) {
+		error("Looks like '%s' has no switchable resolution\n", path);
+		goto out;
+	}
+
+	profile = ratbag_device_get_active_profile(device);
+	if (!profile) {
+		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
+		goto out;
+	}
+
+	rc = ratbag_profile_set_resolution_dpi(profile, dpi);
+	if (!rc)
+		printf("Switched the current resolution profile of '%s' to %d dpi\n",
+		       ratbag_device_get_name(device),
+		       dpi);
+	else
+		error("can't seem to be able to change the dpi: %s (%d)\n",
+		      strerror(-rc),
+		      rc);
+
+out:
+	profile = ratbag_profile_unref(profile);
+
+	device = ratbag_device_unref(device);
+	return rc;
+}
+
+static const struct ratbag_cmd cmd_switch_dpi = {
+	.name = "switch-dpi",
+	.cmd = ratbag_cmd_switch_dpi,
+	.args = "N",
+	.help = "Switch the resolution of the mouse in the active profile",
+};
+
 static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_info,
-	&cmd_switch_etekcity,
 	&cmd_list,
+	&cmd_switch_etekcity,
+	&cmd_switch_dpi,
 	&cmd_switch_profile,
 	NULL,
 };

@@ -130,6 +130,13 @@ struct hidpp20_sensor {
 int hidpp20_adjustable_dpi_get_sensors(struct ratbag_device *device,
 				       struct hidpp20_sensor **sensors_list);
 
+/**
+ * set the current dpi of the provided sensor. sensor must have been
+ * allocated by  hidpp20_adjustable_dpi_get_sensors()
+ */
+int hidpp20_adjustable_dpi_set_sensor_dpi(struct ratbag_device *device,
+					  struct hidpp20_sensor *sensor, uint16_t dpi);
+
 /* -------------------------------------------------------------------------- */
 /* 0x1b04: Special keys and mouse buttons                                     */
 /* -------------------------------------------------------------------------- */

@@ -163,6 +163,13 @@ struct ratbag_driver {
 	 */
 	int (*write_button)(struct ratbag_button *button);
 
+	/** For the given profile, overwrite the current resolution
+	 * of the sensor expressed in DPI, and commit it to the hardware.
+	 *
+	 * Mandatory if the driver exports RATBAG_CAP_SWITCHABLE_RESOLUTION.
+	 */
+	int (*write_resolution_dpi)(struct ratbag_profile *profile, int dpi);
+
 	/* private */
 	struct list link;
 };

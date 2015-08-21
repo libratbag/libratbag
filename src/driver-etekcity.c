@@ -355,6 +355,12 @@ etekcity_write_button(struct ratbag_button *button)
 }
 
 static int
+etekcity_write_resolution_dpi(struct ratbag_profile *profile, int dpi)
+{
+	return -ENOTSUP;
+}
+
+static int
 etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
@@ -439,4 +445,5 @@ struct ratbag_driver etekcity_driver = {
 	.has_capability = etekcity_has_capability,
 	.read_button = etekcity_read_button,
 	.write_button = etekcity_write_button,
+	.write_resolution_dpi = etekcity_write_resolution_dpi,
 };

@@ -23,6 +23,7 @@ global:
 	ratbag_profile_get_button_by_index;
 	ratbag_profile_get_report_rate_hz;
 	ratbag_profile_get_resolution_dpi;
+	ratbag_profile_set_resolution_dpi;
 	ratbag_profile_ref;
 	ratbag_profile_unref;
 	ratbag_ref;

@@ -578,6 +578,40 @@ err:
 	return rc;
 }
 
+int hidpp20_adjustable_dpi_set_sensor_dpi(struct ratbag_device *device,
+					  struct hidpp20_sensor *sensor, uint16_t dpi)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.address = CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI,
+		.msg.parameters[0] = sensor->index,
+		.msg.parameters[1] = dpi >> 8,
+		.msg.parameters[2] = dpi & 0xff,
+	};
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_ADJUSTABLE_DPI,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	if (hidpp20_get_unaligned_u16(&msg.msg.parameters[1]) != dpi)
+		return -EIO;
+
+	return 0;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 0x1b04: Special keys and mouse buttons                                     */
 /* -------------------------------------------------------------------------- */

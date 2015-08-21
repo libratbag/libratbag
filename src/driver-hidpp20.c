@@ -73,6 +73,18 @@ hidpp20drv_write_button(struct ratbag_button *button)
 static int
 hidpp20drv_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
 {
+	/*
+	 * We need to force the non const, but we will not change anything,
+	 * promise!
+	 */
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
+
+	switch (cap) {
+	case RATBAG_CAP_SWITCHABLE_RESOLUTION:
+		return !!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201);
+	default:
+		return 0;
+	}
 	return 0;
 }
 
@@ -85,7 +97,7 @@ hidpp20drv_current_profile(struct ratbag_device *device)
 static int
 hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
-	return -1;
+	return -ENOTSUP;
 }
 
 static int
@@ -134,6 +146,58 @@ hidpp20drv_read_resolution_dpi(struct ratbag_device *device)
 	}
 
 	return 0;
+}
+
+static int
+hidpp20drv_write_resolution_dpi(struct ratbag_profile *profile, int dpi)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag *ratbag = device->ratbag;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_sensor *sensors, *sensor;
+	int rc, i;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201))
+		return -ENOTSUP;
+
+	rc = hidpp20_adjustable_dpi_get_sensors(device, &sensors);
+	if (rc < 0) {
+		log_error(ratbag,
+			  "Error while requesting resolution: %s (%d)\n",
+			  strerror(-rc), rc);
+		return 0;
+	} else if (rc == 0) {
+		log_error(ratbag, "Error, no compatible sensors found.\n");
+		return 0;
+	}
+
+	/* just for clarity, we use the first available sensor only */
+	sensor = &sensors[0];
+
+	/* validate that the sensor accepts the given DPI */
+	rc = -EINVAL;
+	if (dpi < sensor->dpi_min || dpi > sensor->dpi_max)
+		goto out;
+	if (sensor->dpi_steps) {
+		for (i = sensor->dpi_min; i < dpi; i += sensor->dpi_steps) {
+		}
+		if (i != dpi)
+			goto out;
+	} else {
+		i = 0;
+		while (sensor->dpi_list[i]) {
+			if (sensor->dpi_list[i] == dpi)
+				break;
+		}
+		if (sensor->dpi_list[i] != dpi)
+			goto out;
+	}
+
+	rc = hidpp20_adjustable_dpi_set_sensor_dpi(device, sensor, dpi);
+
+out:
+	free(sensors);
+	return rc;
 }
 
 static void
@@ -334,4 +398,5 @@ struct ratbag_driver hidpp20_driver = {
 	.has_capability = hidpp20drv_has_capability,
 	.read_button = hidpp20drv_read_button,
 	.write_button = hidpp20drv_write_button,
+	.write_resolution_dpi = hidpp20drv_write_resolution_dpi,
 };

@@ -608,6 +608,17 @@ ratbag_profile_get_resolution_dpi(const struct ratbag_profile *profile)
 }
 
 LIBRATBAG_EXPORT int
+ratbag_profile_set_resolution_dpi(struct ratbag_profile *profile, int dpi)
+{
+	if (!ratbag_device_has_capability(profile->device,
+					  RATBAG_CAP_SWITCHABLE_RESOLUTION))
+		return -ENOTSUP;
+
+	assert(profile->device->driver->write_resolution_dpi);
+	return profile->device->driver->write_resolution_dpi(profile, dpi);
+}
+
+LIBRATBAG_EXPORT int
 ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile)
 {
 	return 0;
