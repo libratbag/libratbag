@@ -57,6 +57,8 @@ struct hidpp20drv_data {
 	unsigned proto_major;
 	unsigned proto_minor;
 	unsigned long capabilities;
+	unsigned num_sensors;
+	struct hidpp20_sensor *sensors;
 };
 
 static void
@@ -123,10 +125,11 @@ hidpp20drv_read_resolution_dpi(struct ratbag_device *device)
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
-		struct hidpp20_sensor *sensors;
-
 		dpi = 0;
-		rc = hidpp20_adjustable_dpi_get_sensors(device, &sensors);
+		free(drv_data->sensors);
+		drv_data->sensors = NULL;
+		drv_data->num_sensors = 0;
+		rc = hidpp20_adjustable_dpi_get_sensors(device, &drv_data->sensors);
 		if (rc < 0) {
 			log_error(ratbag,
 				  "Error while requesting resolution: %s (%d)\n",
@@ -136,12 +139,12 @@ hidpp20drv_read_resolution_dpi(struct ratbag_device *device)
 		} else {
 			log_info(ratbag,
 				 "device is at %d dpi (variable between %d and %d).\n",
-				 sensors[0].dpi,
-				 sensors[0].dpi_min,
-				 sensors[0].dpi_max);
-			dpi = sensors[0].dpi;
+				 drv_data->sensors[0].dpi,
+				 drv_data->sensors[0].dpi_min,
+				 drv_data->sensors[0].dpi_max);
+			dpi = drv_data->sensors[0].dpi;
+			drv_data->num_sensors = rc;
 		}
-		free(sensors);
 		return dpi;
 	}
 
@@ -152,27 +155,18 @@ static int
 hidpp20drv_write_resolution_dpi(struct ratbag_profile *profile, int dpi)
 {
 	struct ratbag_device *device = profile->device;
-	struct ratbag *ratbag = device->ratbag;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
-	struct hidpp20_sensor *sensors, *sensor;
+	struct hidpp20_sensor *sensor;
 	int rc, i;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201))
 		return -ENOTSUP;
 
-	rc = hidpp20_adjustable_dpi_get_sensors(device, &sensors);
-	if (rc < 0) {
-		log_error(ratbag,
-			  "Error while requesting resolution: %s (%d)\n",
-			  strerror(-rc), rc);
-		return 0;
-	} else if (rc == 0) {
-		log_error(ratbag, "Error, no compatible sensors found.\n");
-		return 0;
-	}
+	if (!drv_data->num_sensors)
+		return -ENOTSUP;
 
 	/* just for clarity, we use the first available sensor only */
-	sensor = &sensors[0];
+	sensor = &drv_data->sensors[0];
 
 	/* validate that the sensor accepts the given DPI */
 	rc = -EINVAL;
@@ -196,7 +190,6 @@ hidpp20drv_write_resolution_dpi(struct ratbag_profile *profile, int dpi)
 	rc = hidpp20_adjustable_dpi_set_sensor_dpi(device, sensor, dpi);
 
 out:
-	free(sensors);
 	return rc;
 }
 
@@ -348,7 +341,10 @@ err:
 static void
 hidpp20drv_remove(struct ratbag_device *device)
 {
-	free(ratbag_get_drv_data(device));
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+
+	free(drv_data->sensors);
+	free(drv_data);
 }
 
 #define USB_VENDOR_ID_LOGITECH			0x046d
