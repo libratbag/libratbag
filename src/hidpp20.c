@@ -40,6 +40,30 @@
 #include "libratbag-util.h"
 #include "libratbag-private.h"
 
+const char*
+hidpp20_feature_get_name(uint16_t feature)
+{
+	static char numeric[8];
+	const char *str;
+#define CASE_RETURN_STRING(a) case a: return #a; break
+
+	switch(feature)
+	{
+	CASE_RETURN_STRING(HIDPP_PAGE_ROOT);
+	CASE_RETURN_STRING(HIDPP_PAGE_FEATURE_SET);
+	CASE_RETURN_STRING(HIDPP_PAGE_MOUSE_POINTER_BASIC);
+	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_DPI);
+	CASE_RETURN_STRING(HIDPP_PAGE_SPECIAL_KEYS_BUTTONS);
+	default:
+		sprintf(numeric, "%#4x", feature);
+		str = numeric;
+		break;
+	}
+
+#undef CASE_RETURN_STRING
+	return str;
+}
+
 static int
 hidpp20_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
 {

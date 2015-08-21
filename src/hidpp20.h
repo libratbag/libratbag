@@ -48,6 +48,8 @@ union hidpp20_message {
 
 int hidpp20_request_command(struct ratbag_device *device, union hidpp20_message *msg);
 
+const char *hidpp20_feature_get_name(uint16_t feature);
+
 /* -------------------------------------------------------------------------- */
 /* 0x0000: Root                                                               */
 /* -------------------------------------------------------------------------- */

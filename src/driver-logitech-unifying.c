@@ -177,7 +177,9 @@ unifying_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 	if (rc > 0) {
 		log_debug(device->ratbag, "'%s' has %d features\n", ratbag_device_get_name(device), rc);
 		for (i = 0; i < rc; i++) {
-			log_debug(device->ratbag, "Init feature 0x%04x\n", feature_list[i].feature);
+			log_debug(device->ratbag, "Init feature %s (0x%04x) \n",
+				  hidpp20_feature_get_name(feature_list[i].feature),
+				  feature_list[i].feature);
 			unifying_init_feature(device, feature_list[i].feature);
 		}
 	}
