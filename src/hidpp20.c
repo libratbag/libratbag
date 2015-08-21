@@ -155,7 +155,6 @@ hidpp20_request_command_allow_error(struct ratbag_device *device, union hidpp20_
 	}
 
 	if (!hidpp_err) {
-		log_buf_debug(ratbag, "    received: ", read_buffer.data, ret);
 		/* copy the answer for the caller */
 		*msg = read_buffer;
 	}
