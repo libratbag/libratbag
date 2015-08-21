@@ -391,34 +391,55 @@ hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
 #define CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT		0x00
 #define CMD_SPECIAL_KEYS_BUTTONS_GET_INFO		0x10
 #define CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING		0x20
-#define CMD_SPECIAL_KEYS_BUTTONS_SET_SET_REPORTING	0x30
+#define CMD_SPECIAL_KEYS_BUTTONS_SET_REPORTING		0x30
+
+struct hidpp20_1b04_mapping {
+	uint16_t value;
+	const char *name;
+	enum ratbag_button_type type;
+};
 
 static const struct hidpp20_1b04_mapping hidpp20_1b04_physical_mapping[] =
 {
-	{ 80, "Left"},
-	{ 81, "Right"},
-	{ 82, "Middle"},
-	{ 83, "Back"},
-	{ 86, "Forward"},
-	{ 195, "AppSwitchGesture"},
-	{ 196, "SmartShift"},
-	{ 315, "LedToggle"},
+	{ 0, "None"			, RATBAG_BUTTON_TYPE_NONE},
+	{ 80, "Left"			, RATBAG_BUTTON_TYPE_LEFT},
+	{ 81, "Right"			, RATBAG_BUTTON_TYPE_RIGHT},
+	{ 82, "Middle"			, RATBAG_BUTTON_TYPE_MIDDLE},
+	{ 83, "Back"			, RATBAG_BUTTON_TYPE_SIDE},
+	{ 86, "Forward"			, RATBAG_BUTTON_TYPE_EXTRA},
+	{ 195, "AppSwitchGesture"	, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 196, "SmartShift"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 315, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN},
 };
 
 static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
 {
-	{ 56, "Left Click"},
-	{ 57, "Right Click"},
-	{ 58, "Middle Click"},
-	{ 60, "Back Click"},
-	{ 62, "Forward Click"},
-	{ 156, "Gesture Button"},
-	{ 157, "SmartShift"},
-	{ 221, "LedToggle"},
+	{ 0, "None"			, RATBAG_BUTTON_TYPE_NONE},
+	{ 56, "Left Click"		, RATBAG_BUTTON_TYPE_LEFT},
+	{ 57, "Right Click"		, RATBAG_BUTTON_TYPE_RIGHT},
+	{ 58, "Middle Click"		, RATBAG_BUTTON_TYPE_MIDDLE},
+	{ 60, "Back Click"		, RATBAG_BUTTON_TYPE_SIDE},
+	{ 62, "Forward Click"		, RATBAG_BUTTON_TYPE_EXTRA},
+	{ 156, "Gesture Button"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 157, "SmartShift"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 221, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN},
 };
 
-const char *
+enum ratbag_button_type
 hidpp20_1b04_get_logical_mapping(uint16_t value)
+{
+	const struct hidpp20_1b04_mapping *map;
+
+	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, map) {
+		if (map->value == value)
+			return map->type;
+	}
+
+	return RATBAG_BUTTON_TYPE_UNKNOWN;
+}
+
+const char *
+hidpp20_1b04_get_logical_mapping_name(uint16_t value)
 {
 	const struct hidpp20_1b04_mapping *map;
 
@@ -430,8 +451,21 @@ hidpp20_1b04_get_logical_mapping(uint16_t value)
 	return "UNKNOWN";
 }
 
-const char *
+enum ratbag_button_type
 hidpp20_1b04_get_physical_mapping(uint16_t value)
+{
+	const struct hidpp20_1b04_mapping *map;
+
+	ARRAY_FOR_EACH(hidpp20_1b04_physical_mapping, map) {
+		if (map->value == value)
+			return map->type;
+	}
+
+	return RATBAG_BUTTON_TYPE_UNKNOWN;
+}
+
+const char *
+hidpp20_1b04_get_physical_mapping_name(uint16_t value)
 {
 	const struct hidpp20_1b04_mapping *map;
 
@@ -565,13 +599,13 @@ int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 		if (rc)
 			goto err;
 
-		log_info(device->ratbag,
+		log_debug(device->ratbag,
 			  "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x pos: %d group: %d gmask: 0x%02x raw_XY: %s\n"
 			  "      reporting: raw_xy: %s persist: %s divert: %s remapped: '%s' (%d)\n",
 			  control->index,
-			  hidpp20_1b04_get_physical_mapping(control->control_id),
+			  hidpp20_1b04_get_physical_mapping_name(control->control_id),
 			  control->control_id,
-			  hidpp20_1b04_get_logical_mapping(control->task_id),
+			  hidpp20_1b04_get_logical_mapping_name(control->task_id),
 			  control->task_id,
 			  control->flags,
 			  control->position,
@@ -581,7 +615,7 @@ int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 			  control->reporting.raw_XY ? "yes" : "no",
 			  control->reporting.persist ? "yes" : "no",
 			  control->reporting.divert ? "yes" : "no",
-			  hidpp20_1b04_get_logical_mapping(control->reporting.remapped),
+			  hidpp20_1b04_get_logical_mapping_name(control->reporting.remapped),
 			  control->reporting.remapped);
 	}
 

@@ -61,9 +61,39 @@ struct hidpp20drv_data {
 	struct hidpp20_control_id *controls;
 };
 
+static enum ratbag_button_action_type
+hidpp20drv_raw_to_action(enum ratbag_button_type button_type)
+{
+	if (button_type == RATBAG_BUTTON_TYPE_UNKNOWN)
+		return RATBAG_BUTTON_ACTION_TYPE_NONE;
+
+	return RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+}
+
 static void
 hidpp20drv_read_button(struct ratbag_button *button)
 {
+	struct ratbag_device *device = button->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_control_id *control;
+	uint16_t mapping;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04))
+		return;
+
+	control = &drv_data->controls[button->index];
+	mapping = control->task_id;
+	if (control->reporting.divert || control->reporting.persist)
+		mapping = control->reporting.remapped;
+	log_debug(device->ratbag,
+		  " - button%d: %s (%02x) %s%s:%d\n",
+		  button->index,
+		  hidpp20_1b04_get_logical_mapping_name(mapping),
+		  mapping,
+		  control->reporting.divert || control->reporting.persist ? "(redirected) " : "",
+		  __FILE__, __LINE__);
+	button->type = hidpp20_1b04_get_logical_mapping(mapping);
+	button->action_type = hidpp20drv_raw_to_action(button->type);
 }
 
 static int
@@ -84,6 +114,8 @@ hidpp20drv_has_capability(const struct ratbag_device *device, enum ratbag_capabi
 	switch (cap) {
 	case RATBAG_CAP_SWITCHABLE_RESOLUTION:
 		return !!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201);
+	case RATBAG_CAP_BUTTON_KEY:
+		return !!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04);
 	default:
 		return 0;
 	}
