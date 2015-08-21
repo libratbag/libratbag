@@ -401,7 +401,6 @@ hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = 0xff,
 		.msg.address = CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_LEVEL_STATUS,
-		.msg.parameters[0] = feature_index,
 	};
 	int rc;
 
