@@ -56,6 +56,7 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_DPI);
 	CASE_RETURN_STRING(HIDPP_PAGE_SPECIAL_KEYS_BUTTONS);
 	CASE_RETURN_STRING(HIDPP_PAGE_BATTERY_LEVEL_STATUS);
+	CASE_RETURN_STRING(HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS);
 	default:
 		sprintf(numeric, "%#4x", feature);
 		str = numeric;
@@ -382,6 +383,116 @@ hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
 	*next_level = msg.msg.parameters[1];
 
 	return msg.msg.parameters[2];
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x1b00: KBD reprogrammable keys and mouse buttons                          */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_KBD_REPROGRAMMABLE_KEYS_GET_COUNT		0x00
+#define CMD_KBD_REPROGRAMMABLE_KEYS_GET_CTRL_ID_INFO	0x10
+
+static int
+hidpp20_kbd_reprogrammable_keys_get_count(struct ratbag_device *device, uint8_t reg)
+{
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_COUNT,
+	};
+	int rc;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return msg.msg.parameters[0];
+}
+
+static int
+hidpp20_kbd_reprogrammable_keys_get_info(struct ratbag_device *device,
+					 uint8_t reg,
+					 struct hidpp20_control_id *control)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_CTRL_ID_INFO,
+		.msg.parameters[0] = control->index,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	control->control_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[0]);
+	control->task_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[2]);
+	control->flags = msg.msg.parameters[4];
+
+	return 0;
+}
+
+int
+hidpp20_kbd_reprogrammable_keys_get_controls(struct ratbag_device *device,
+					     struct hidpp20_control_id **controls_list)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	struct hidpp20_control_id *c_list, *control;
+	uint8_t num_controls;
+	unsigned i;
+	int rc;
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	rc = hidpp20_kbd_reprogrammable_keys_get_count(device, feature_index);
+	if (rc < 0)
+		return rc;
+
+	num_controls = rc;
+	if (num_controls == 0) {
+		*controls_list = NULL;
+		return 0;
+	}
+
+	c_list = zalloc(num_controls * sizeof(struct hidpp20_control_id));
+	if (!c_list)
+		return -ENOMEM;
+
+	for (i = 0; i < num_controls; i++) {
+		control = &c_list[i];
+		control->index = i;
+		rc = hidpp20_kbd_reprogrammable_keys_get_info(device,
+							      feature_index,
+							      control);
+		if (rc)
+			goto err;
+
+		/* 0x1b00 and 0x1b04 have the same control/task id mappings.
+		 * I hope */
+		log_debug(device->ratbag,
+			  "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x\n",
+			  control->index,
+			  hidpp20_1b04_get_logical_mapping_name(control->control_id),
+			  control->control_id,
+			  hidpp20_1b04_get_physical_mapping_name(control->task_id),
+			  control->task_id,
+			  control->flags);
+	}
+
+	*controls_list = c_list;
+	return num_controls;
+err:
+	free(c_list);
+	return rc;
 }
 
 /* -------------------------------------------------------------------------- */

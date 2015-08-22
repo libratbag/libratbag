@@ -50,6 +50,7 @@
 #define HIDPP_CAP_SWITCHABLE_RESOLUTION_2201		(1 << 1)
 #define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
 #define HIDPP_CAP_BATTERY_LEVEL_1000			(1 << 3)
+#define HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00		(1 << 4)
 
 struct hidpp20drv_data {
 	unsigned proto_major;
@@ -274,6 +275,27 @@ hidpp20drv_read_special_key_mouse(struct ratbag_device *device)
 	return rc;
 }
 
+static int
+hidpp20drv_read_kbd_reprogrammable_key(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00))
+		return 0;
+
+	free(drv_data->controls);
+	drv_data->controls = NULL;
+	drv_data->num_controls = 0;
+	rc = hidpp20_kbd_reprogrammable_keys_get_controls(device, &drv_data->controls);
+	if (rc > 0) {
+		drv_data->num_controls = rc;
+		rc = 0;
+	}
+
+	return rc;
+}
+
 static void
 hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
@@ -337,6 +359,16 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 
 		drv_data->capabilities |= HIDPP_CAP_BATTERY_LEVEL_1000;
 		break;
+	}
+	case HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS: {
+		 log_info(ratbag, "device has programmable keys/buttons\n");
+		 drv_data->capabilities |= HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00;
+
+		/* we read the profile once to get the correct number of
+		 * supported buttons. */
+		if (!hidpp20drv_read_kbd_reprogrammable_key(device))
+			device->num_buttons = drv_data->num_controls;
+		 break;
 	}
 	default:
 		log_debug(device->ratbag, "unknown feature 0x%04x\n", feature);

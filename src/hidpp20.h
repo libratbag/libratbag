@@ -110,16 +110,26 @@ int hidpp20_batterylevel_get_battery_level(struct ratbag_device *device,
 					   uint16_t *next_level);
 
 /* -------------------------------------------------------------------------- */
-/* 0x1b04: Special keys and mouse buttons                                     */
+/* 0x1b00: KBD reprogrammable keys and mouse buttons                          */
 /* -------------------------------------------------------------------------- */
 
-#define HIDPP_PAGE_SPECIAL_KEYS_BUTTONS			0x1b04
+#define HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS		0x1b00
+
+enum hidpp2_controL_id_flags {
+	HIDPP20_CONTROL_ID_FLAG_NONE = 0,
+	HIDPP20_CONTROL_ID_FLAG_MOUSE_BUTTON = (1 << 0), /**< Is a mouse button */
+	HIDPP20_CONTROL_ID_FLAG_FN_KEY = (1 << 1), /**< Is a fn button */
+	HIDPP20_CONTROL_ID_FLAG_HOTKEY = (1 << 2), /**< Is a Hot key, not a standard kbd key */
+	HIDPP20_CONTROL_ID_FLAG_FN_TOGGLE_AFFECTED = (1 << 3), /**< Fn toggle affects this key */
+	HIDPP20_CONTROL_ID_FLAG_REPROGRAMMABLE = (1 << 4), /**< Key can be reprogrammed */
+};
 
 struct hidpp20_control_id {
 	uint8_t index;
 	uint16_t control_id;
 	uint16_t task_id;
 	uint8_t flags;
+	/* fields below are only set for 0x1b04, not for 0x1b00 */
 	uint8_t position;
 	uint8_t group;
 	uint8_t group_mask;
@@ -132,6 +142,15 @@ struct hidpp20_control_id {
 		int updated;
 	} reporting;
 };
+
+int hidpp20_kbd_reprogrammable_keys_get_controls(struct ratbag_device *device,
+						 struct hidpp20_control_id **controls_list);
+
+/* -------------------------------------------------------------------------- */
+/* 0x1b04: Special keys and mouse buttons                                     */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_SPECIAL_KEYS_BUTTONS			0x1b04
 
 /**
  * allocates a list of controls that has to be freed by the caller.
