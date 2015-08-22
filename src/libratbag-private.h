@@ -188,7 +188,6 @@ struct ratbag_profile {
 struct ratbag_button {
 	int refcount;
 	struct list link;
-	struct ratbag_device *device;
 	struct ratbag_profile *profile;
 	unsigned index;
 	enum ratbag_button_type type;

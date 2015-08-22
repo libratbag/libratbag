@@ -639,7 +639,6 @@ ratbag_create_button(struct ratbag_device *device, struct ratbag_profile *profil
 		return NULL;
 
 	button->refcount = 1;
-	button->device = device;
 	button->profile = profile;
 	button->index = index;
 
@@ -681,11 +680,11 @@ ratbag_button_set_type(struct ratbag_button *button, enum ratbag_button_type typ
 	enum ratbag_button_type orig_type = button->type;
 	int rc;
 
-	if (!button->device->driver->write_button)
+	if (!button->profile->device->driver->write_button)
 		return -ENOTSUP;
 
 	button->type = type;
-	rc = button->device->driver->write_button(button);
+	rc = button->profile->device->driver->write_button(button);
 	if (rc)
 		button->type = orig_type;
 	return rc;

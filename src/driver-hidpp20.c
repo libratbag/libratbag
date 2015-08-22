@@ -73,7 +73,7 @@ hidpp20drv_raw_to_action(enum ratbag_button_type button_type)
 static void
 hidpp20drv_read_button(struct ratbag_button *button)
 {
-	struct ratbag_device *device = button->device;
+	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_control_id *control;
 	uint16_t mapping;
@@ -99,7 +99,7 @@ hidpp20drv_read_button(struct ratbag_button *button)
 static int
 hidpp20drv_write_button(struct ratbag_button *button)
 {
-	struct ratbag_device *device = button->device;
+	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_control_id *control;
 	uint16_t mapping;

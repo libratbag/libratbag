@@ -322,8 +322,8 @@ etekcity_button_to_index(unsigned button)
 static void
 etekcity_read_button(struct ratbag_button *button)
 {
-	struct ratbag_device *device = button->device;
 	struct ratbag_profile *profile = button->profile;
+	struct ratbag_device *device = profile->device;
 	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
 	uint8_t data;
 	unsigned index = etekcity_button_to_index(button->index);
@@ -339,8 +339,8 @@ etekcity_read_button(struct ratbag_button *button)
 static int
 etekcity_write_button(struct ratbag_button *button)
 {
-	struct ratbag_device *device = button->device;
 	struct ratbag_profile *profile = button->profile;
+	struct ratbag_device *device = profile->device;
 	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
 	uint8_t *data;
 	unsigned index = etekcity_button_to_index(button->index);
