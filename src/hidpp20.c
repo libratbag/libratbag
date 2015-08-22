@@ -402,6 +402,13 @@ struct hidpp20_1b04_mapping {
 static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
 {
 	{ 0, "None"			, RATBAG_BUTTON_TYPE_NONE},
+	{ 1, "Volume Up"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 2, "Volume Down"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 3, "Mute"			, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 4, "Play/Pause"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 5, "Next"			, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 6, "Previous"			, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 7, "Stop"			, RATBAG_BUTTON_TYPE_UNKNOWN},
 	{ 80, "Left"			, RATBAG_BUTTON_TYPE_LEFT},
 	{ 81, "Right"			, RATBAG_BUTTON_TYPE_RIGHT},
 	{ 82, "Middle"			, RATBAG_BUTTON_TYPE_MIDDLE},
@@ -415,6 +422,13 @@ static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
 static const struct hidpp20_1b04_mapping hidpp20_1b04_physical_mapping[] =
 {
 	{ 0, "None"			, RATBAG_BUTTON_TYPE_NONE},
+	{ 1, "Volume Up"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 2, "Volume Down"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 3, "Mute"			, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 4, "Play/Pause"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 5, "Next"			, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 6, "Previous"			, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 7, "Stop"			, RATBAG_BUTTON_TYPE_UNKNOWN},
 	{ 56, "Left Click"		, RATBAG_BUTTON_TYPE_LEFT},
 	{ 57, "Right Click"		, RATBAG_BUTTON_TYPE_RIGHT},
 	{ 58, "Middle Click"		, RATBAG_BUTTON_TYPE_MIDDLE},
