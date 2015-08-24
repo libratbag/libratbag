@@ -636,7 +636,8 @@ ratbag_profile_set_resolution_dpi(struct ratbag_profile *profile, int dpi)
 LIBRATBAG_EXPORT int
 ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile)
 {
-	return 0;
+	assert(profile);
+	return profile->report_rate;
 }
 
 static struct ratbag_button *

@@ -94,6 +94,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	/* FIXME: read this from device */
 	profile->current_dpi = hidpp10->xres;
+	profile->report_rate = hidpp10->refresh_rate;
 }
 
 static int

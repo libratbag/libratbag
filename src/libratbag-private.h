@@ -183,6 +183,7 @@ struct ratbag_profile {
 	void *drv_data;
 	void *user_data;
 	int current_dpi;
+	int report_rate;
 };
 
 struct ratbag_button {
