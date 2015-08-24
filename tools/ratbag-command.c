@@ -525,7 +525,7 @@ static const struct ratbag_cmd cmd_change_button = {
 static int
 filter_event_node(const struct dirent *input_entry)
 {
-	return !strncmp(input_entry->d_name, "event", 5);
+	return strneq(input_entry->d_name, "event", 5);
 }
 
 static int

@@ -199,7 +199,7 @@ udev_find_hidraw(struct ratbag *ratbag, struct ratbag_device *device)
 			continue;
 
 		sysname = udev_device_get_sysname(udev_device);
-		if (strncmp("hidraw", sysname, 6) != 0) {
+		if (!strneq("hidraw", sysname, 6)) {
 			udev_device_unref(udev_device);
 			continue;
 		}
