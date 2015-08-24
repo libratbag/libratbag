@@ -41,7 +41,6 @@ ratbag_open_hidraw(struct ratbag_device *device)
 	struct hidraw_devinfo info;
 	int fd, res;
 	const char *devnode;
-	struct input_id hid_id;
 
 	if (!device->udev_hidraw)
 		return -EINVAL;
@@ -56,18 +55,6 @@ ratbag_open_hidraw(struct ratbag_device *device)
 	if (res < 0) {
 		log_error(device->ratbag,
 			  "error while getting info from device");
-		goto err;
-	}
-
-	hid_id.bustype = info.bustype;
-	hid_id.vendor = info.vendor;
-	hid_id.product = info.product;
-
-	/* Check if the device actually matches the input node */
-	if (hid_id.bustype != device->ids.bustype ||
-	    hid_id.vendor != device->ids.vendor ||
-	    hid_id.product != device->ids.product) {
-		errno = EINVAL;
 		goto err;
 	}
 
