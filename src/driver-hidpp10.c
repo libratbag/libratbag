@@ -35,8 +35,11 @@
 
 #include "config.h"
 
+#define USB_VENDOR_ID_LOGITECH			0x046d
+
 #include <linux/types.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -96,11 +99,92 @@ hidpp10drv_write_profile(struct ratbag_profile *profile)
 	return -1;
 }
 
+static bool
+hidpp10drv_is_unifying_receiver(struct ratbag_device *device)
+{
+	struct udev_device *hidraw;
+	struct input_id id;
+	const char *product;
+	int rc;
+
+	hidraw = device->udev_hidraw;
+	/* Note: PRODUCT on the hid device is missing the bustype! */
+	product = udev_prop_value(hidraw, "PRODUCT");
+	rc = sscanf(product, "%hx/%hx/%hx", &id.vendor, &id.product, &id.version);
+	if (rc != 3)
+		return false;
+
+	if (id.vendor == USB_VENDOR_ID_LOGITECH &&
+	    (id.product == 0xc52b || id.product == 0xc532))
+		return true;
+
+	return false;
+}
+
+static int
+hidpp10drv_find_unifying_hidraw(struct ratbag_device *device)
+{
+	struct udev_device *receiver, *hid, *hidraw;
+	struct udev *udev;
+	struct udev_enumerate *e;
+	struct udev_list_entry *entry;
+
+	hidraw = device->udev_hidraw;
+
+	/* the receiver device is two up */
+	hid = udev_device_get_parent_with_subsystem_devtype(hidraw, "hid", NULL);
+	receiver = udev_device_get_parent_with_subsystem_devtype(hid, "hid", NULL);
+	if (!receiver)
+		return -1; /* should not happen */
+
+	udev = udev_device_get_udev(hidraw);
+	e = udev_enumerate_new(udev);
+	udev_enumerate_add_match_subsystem(e, "hidraw");
+	udev_enumerate_add_match_parent(e, receiver);
+	udev_enumerate_scan_devices(e);
+
+	udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
+		const char *path, *sysname;
+
+		path = udev_list_entry_get_name(entry);
+		hidraw = udev_device_new_from_syspath(udev, path);
+		if (!hidraw)
+			continue;
+
+		sysname = udev_device_get_sysname(hidraw);
+		if (!strneq("hidraw", sysname, 6)) {
+			udev_device_unref(hidraw);
+			continue;
+		}
+
+		/* The receiver has multiple hidraw devices, we only want
+		 * the one where the direct parent is the receiver */
+		hid = udev_device_get_parent_with_subsystem_devtype(hidraw, "hid", NULL);
+		if (!streq(udev_device_get_syspath(hid), udev_device_get_syspath(receiver)))
+			continue;
+
+		ratbag_device_set_hidraw_device(device, hidraw);
+
+		udev_device_unref(hidraw);
+		goto out;
+	}
+
+out:
+	udev_enumerate_unref(e);
+
+	return 0;
+}
+
 static int
 hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
 	struct hidpp10drv_data *drv_data;
+
+	/* check if the device is a unifying receiver first so we can update
+	 * the hidraw path before we open it */
+	if (hidpp10drv_is_unifying_receiver(device))
+		hidpp10drv_find_unifying_hidraw(device);
 
 	rc = ratbag_open_hidraw(device);
 	if (rc) {
@@ -132,7 +216,6 @@ hidpp10drv_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
-#define USB_VENDOR_ID_LOGITECH			0x046d
 #define LOGITECH_DEVICE(_bus, _pid)		\
 	{ .bustype = (_bus),			\
 	  .vendor = USB_VENDOR_ID_LOGITECH,	\

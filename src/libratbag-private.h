@@ -234,6 +234,12 @@ ratbag_profile_get_drv_data(struct ratbag_profile *profile)
 	return profile->drv_data;
 }
 
+/**
+ * Override the auto-picked hidraw device.
+ */
+void
+ratbag_device_set_hidraw_device(struct ratbag_device *device,
+				struct udev_device *hidraw);
 
 void
 log_msg_va(struct ratbag *ratbag,
