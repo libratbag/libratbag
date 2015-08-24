@@ -43,6 +43,8 @@ struct hidpp10_device  {
 	uint8_t fw_major;
 	uint8_t fw_minor;
 	uint8_t build;
+	uint16_t xres, yres;
+	uint16_t refresh_rate;
 };
 
 struct _hidpp10_message {

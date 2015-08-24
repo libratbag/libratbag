@@ -392,6 +392,9 @@ hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_devi
 	log_debug(device->ratbag,
 		  "Resolution is %dx%ddpi\n", xres, yres);
 
+	dev->xres = xres;
+	dev->yres = yres;
+
 	return 0;
 }
 
@@ -425,6 +428,8 @@ hidpp10_get_usb_refresh_rate(struct ratbag_device *device, struct hidpp10_device
 	rate = 1000/refresh.msg.parameters[0];
 
 	log_debug(device->ratbag, "Refresh rate: %dHz\n", rate);
+
+	dev->refresh_rate = rate;
 
 	return 0;
 }
