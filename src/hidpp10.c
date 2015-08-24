@@ -74,6 +74,11 @@ const char *device_types[0xFF] = {
 	[0x0A ... 0xFE] = NULL,
 };
 
+static inline uint16_t
+hidpp10_get_unaligned_u16le(uint8_t *buf)
+{
+	return (buf[1] << 8) | buf[0];
+}
 
 static int
 hidpp10_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
@@ -313,12 +318,66 @@ hidpp10_get_hidpp_notifications(struct ratbag_device *device, struct hidpp10_dev
 }
 
 static int
+hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
+	int res;
+	int xres, yres;
+
+	res = hidpp10_request_command(device, &resolution);
+	if (res)
+		return res;
+
+	/* resolution is in 50dpi multiples */
+	xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
+	yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
+
+	log_debug(device->ratbag,
+		  "Resolution is %dx%ddpi\n", xres, yres);
+
+	return 0;
+}
+
+static int
+hidpp10_get_led_status(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_status = CMD_LED_STATUS(idx, GET_REGISTER_REQ);
+	int res;
+	int led[4];
+
+	res = hidpp10_request_command(device, &led_status);
+	if (res)
+		return res;
+
+	/* each led is 4-bits, 0x1 == off, 0x2 == on */
+	led[0] = !!(led_status.msg.parameters[0] & 0x02); /* running man logo */
+	led[1] = !!(led_status.msg.parameters[0] & 0x20); /* lowest */
+	led[2] = !!(led_status.msg.parameters[1] & 0x02); /* middle */
+	led[3] = !!(led_status.msg.parameters[1] & 0x20); /* highest */
+
+	log_debug(device->ratbag,
+		  "LED status: 1:%s 2:%s 3:%s 4:%s\n",
+		  led[0] ? "on" : "off",
+		  led[1] ? "on" : "off",
+		  led[2] ? "on" : "off",
+		  led[3] ? "on" : "off");
+
+	return 0;
+}
+
+static int
 hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
 {
 	hidpp10_get_pairing_information(device, dev);
 	hidpp10_get_firmare_information(device, dev);
+
 	hidpp10_get_individual_features(device, dev);
 	hidpp10_get_hidpp_notifications(device, dev);
+
+	hidpp10_get_current_resolution(device, dev);
+	hidpp10_get_led_status(device, dev);
 
 	return 0;
 }
