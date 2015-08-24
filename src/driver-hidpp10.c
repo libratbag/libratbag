@@ -175,10 +175,12 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	int rc;
 	struct hidpp10drv_data *drv_data;
 	struct hidpp10_device dev;
+	bool is_unifying_receiver;
 
 	/* check if the device is a unifying receiver first so we can update
 	 * the hidraw path before we open it */
-	if (hidpp10drv_is_unifying_receiver(device))
+	is_unifying_receiver = hidpp10drv_is_unifying_receiver(device);
+	if (is_unifying_receiver)
 		hidpp10drv_find_unifying_hidraw(device);
 
 	rc = ratbag_open_hidraw(device);
@@ -194,9 +196,13 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	if (!drv_data)
 		return -ENODEV;
 
-	rc = hidpp10_get_device_from_wpid(device,
-					  id.id.product,
-					  &dev);
+	if (is_unifying_receiver)
+		rc = hidpp10_get_device_from_wpid(device,
+						  id.id.product,
+						  &dev);
+	else /* wired devices are 0 */
+		rc = hidpp10_get_device_from_idx(device, 0, &dev);
+
 	if (rc) {
 		log_error(device->ratbag,
 			  "Failed to get HID++1.0 device for %s\n",
