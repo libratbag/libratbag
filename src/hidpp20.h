@@ -29,9 +29,11 @@
 #ifndef HIDPP_20_H
 #define HIDPP_20_H
 
-#include "hidpp10.h"
+#include <stdint.h>
 
-extern const char *hidpp_errors[0xFF];
+#include "libratbag.h"
+
+#include "hidpp-generic.h"
 
 struct _hidpp20_message {
 	uint8_t report_id;

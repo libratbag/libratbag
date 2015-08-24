@@ -43,23 +43,6 @@
 #include "libratbag-hidraw.h"
 #include "libratbag-private.h"
 
-const char *hidpp_errors[0xFF] = {
-	[0x00] = "ERR_SUCCESS",
-	[0x01] = "ERR_INVALID_SUBID",
-	[0x02] = "ERR_INVALID_ADDRESS",
-	[0x03] = "ERR_INVALID_VALUE",
-	[0x04] = "ERR_CONNECT_FAIL",
-	[0x05] = "ERR_TOO_MANY_DEVICES",
-	[0x06] = "ERR_ALREADY_EXISTS",
-	[0x07] = "ERR_BUSY",
-	[0x08] = "ERR_UNKNOWN_DEVICE",
-	[0x09] = "ERR_RESOURCE_ERROR",
-	[0x0A] = "ERR_REQUEST_UNAVAILABLE",
-	[0x0B] = "ERR_INVALID_PARAM_VALUE",
-	[0x0C] = "ERR_WRONG_PIN_CODE",
-	[0x0D ... 0xFE] = NULL,
-};
-
 const char *device_types[0xFF] = {
 	[0x00] = "Unknown",
 	[0x01] = "Keyboard",
