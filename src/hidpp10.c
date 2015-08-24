@@ -76,7 +76,7 @@ const char *device_types[0xFF] = {
 
 
 static int
-hidpp10_write_command(struct ratbag_device *device, __u8 *cmd, int size)
+hidpp10_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
 {
 	int res = ratbag_hidraw_output_report(device, cmd, size);
 
@@ -98,7 +98,7 @@ hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg
 	union hidpp10_message expected_error_recv = ERROR_MSG(msg, RECEIVER_IDX);
 	union hidpp10_message expected_error_dev = ERROR_MSG(msg, msg->msg.device_idx);
 	int ret;
-	__u8 hidpp_err = 0;
+	uint8_t hidpp_err = 0;
 
 	/* create the expected header */
 	expected_header = *msg;
