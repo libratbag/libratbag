@@ -75,7 +75,9 @@ const char *device_types[0xFF] = {
 };
 
 
-static int hidpp10_write_command(struct ratbag_device *device, __u8 *cmd, int size) {
+static int
+hidpp10_write_command(struct ratbag_device *device, __u8 *cmd, int size)
+{
 	int res = ratbag_hidraw_output_report(device, cmd, size);
 
 	if (res == 0)
@@ -87,7 +89,9 @@ static int hidpp10_write_command(struct ratbag_device *device, __u8 *cmd, int si
 	return res;
 }
 
-int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg) {
+int
+hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg)
+{
 	struct ratbag *ratbag = device->ratbag;
 	union hidpp10_message read_buffer;
 	union hidpp10_message expected_header;
@@ -166,7 +170,10 @@ out_err:
 	return ret;
 }
 
-int hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev, int feature_bit_r0, int feature_bit_r2) {
+int
+hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev,
+				  int feature_bit_r0, int feature_bit_r2)
+{
 	unsigned idx = RECEIVER_IDX;
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
@@ -193,7 +200,9 @@ int hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp
 	return res;
 }
 
-int hidpp10_open_lock(struct ratbag_device *device) {
+int
+hidpp10_open_lock(struct ratbag_device *device)
+{
 	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00, CONNECT_DEVICES_OPEN_LOCK, 0x08);
 
 	return hidpp10_request_command(device, &open_lock);
@@ -218,7 +227,9 @@ void hidpp10_list_devices(struct ratbag_device *device) {
 	}
 }
 
-static int hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev) {
+static int
+hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
+{
 	unsigned idx = dev->index;
 	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
 	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
@@ -273,7 +284,9 @@ static int hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_
 	return 0;
 }
 
-int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct hidpp10_device *dev) {
+int
+hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct hidpp10_device *dev)
+{
 	int i, res;
 
 	for (i = 0; i < 6; i++) {
@@ -290,7 +303,9 @@ int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, st
 	return res;
 }
 
-int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev) {
+int
+hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev)
+{
 	dev->index = idx;
 	return hidpp10_get_device_info(device, dev);
 }
