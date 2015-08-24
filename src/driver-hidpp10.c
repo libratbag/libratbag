@@ -50,7 +50,7 @@
 #include "libratbag-hidraw.h"
 
 struct hidpp10drv_data {
-	struct hidpp10_device *dev;
+	struct hidpp10_device dev;
 };
 
 static void
@@ -210,11 +210,13 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 		goto err;
 	}
 
+	drv_data->dev = dev;
 	ratbag_set_drv_data(device, drv_data);
 
 	device->num_profiles = 1;
 	device->num_buttons = 8;
 
+	return 0;
 err:
 	free(drv_data);
 	ratbag_set_drv_data(device, NULL);
