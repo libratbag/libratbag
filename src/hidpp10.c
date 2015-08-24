@@ -228,32 +228,40 @@ void hidpp10_list_devices(struct ratbag_device *device) {
 }
 
 static int
-hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
+hidpp10_get_pairing_information(struct ratbag_device *device, struct hidpp10_device *dev)
 {
-	unsigned idx = dev->index;
+	unsigned int idx = dev->index;
 	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
 	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
-	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
-	union hidpp10_message build_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(1));
-	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
-	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	size_t name_size;
 	int res;
 
 	res = hidpp10_request_command(device, &pairing_information);
-	if (res == 0) {
-		dev->report_interval = pairing_information.msg.string[2];
-		dev->wpid = (pairing_information.msg.string[3] << 8) |
-				pairing_information.msg.string[4];
-		dev->device_type = pairing_information.msg.string[7];
+	if (res)
+		return -1;
 
-		res = hidpp10_request_command(device, &device_name);
-		if (res)
-			return -1;
-		name_size = device_name.msg.string[1];
-		memcpy(dev->name, &device_name.msg.string[2], sizeof(device_name.msg.string));
-		dev->name[min(name_size, sizeof(dev->name) - 1)] = '\0';
-	}
+	dev->report_interval = pairing_information.msg.string[2];
+	dev->wpid = (pairing_information.msg.string[3] << 8) |
+			pairing_information.msg.string[4];
+	dev->device_type = pairing_information.msg.string[7];
+
+	res = hidpp10_request_command(device, &device_name);
+	if (res)
+		return -1;
+	name_size = device_name.msg.string[1];
+	memcpy(dev->name, &device_name.msg.string[2], sizeof(device_name.msg.string));
+	dev->name[min(name_size, sizeof(dev->name) - 1)] = '\0';
+
+	return 0;
+}
+
+static int
+hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
+	union hidpp10_message build_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(1));
+	int res;
 
 	/*
 	 * This may fail on some devices
@@ -271,13 +279,46 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 				build_information.msg.string[2];
 	}
 
-	res = hidpp10_request_command(device, &notifications);
-	if (res)
-		return 0;
+	return 0;
+}
+
+static int
+hidpp10_get_individual_features(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
+	int res;
 
 	res = hidpp10_request_command(device, &features);
-	if (res)
-		return 0;
+	if (res == 0) {
+		/* do something */
+	}
+
+	return res;
+}
+
+static int
+hidpp10_get_hidpp_notifications(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
+	int res;
+
+	res = hidpp10_request_command(device, &notifications);
+	if (res == 0) {
+		/* do something */
+	}
+
+	return res;
+}
+
+static int
+hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	hidpp10_get_pairing_information(device, dev);
+	hidpp10_get_firmare_information(device, dev);
+	hidpp10_get_individual_features(device, dev);
+	hidpp10_get_hidpp_notifications(device, dev);
 
 	return 0;
 }
