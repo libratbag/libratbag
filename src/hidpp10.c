@@ -43,6 +43,151 @@
 #include "libratbag-hidraw.h"
 #include "libratbag-private.h"
 
+#define __CMD_HIDPP_NOTIFICATIONS		0x00
+#define FEATURE_BIT_R0_CONSUMER_SPECIFIC_CONTROL	0
+#define FEATURE_BIT_R0_POWER_KEYS			1
+#define FEATURE_BIT_R0_VERTICAL_SCROLL			2
+#define FEATURE_BIT_R0_MOUSE_EXTRA_BUTTONS		3
+#define FEATURE_BIT_R0_BATTERY_STATUS			4
+#define FEATURE_BIT_R0_HORIZONTAL_SCROLL		5
+#define FEATURE_BIT_R0_F_LOCK_STATUS			6
+#define FEATURE_BIT_R0_NUMPAD_NUMERIC_KEYS		7
+#define FEATURE_BIT_R2_3D_GESTURES			0
+
+#define __CMD_ENABLE_INDIVIDUAL_FEATURES	0x01
+#define FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION		1
+#define FEATURE_BIT_R0_ENHANCED_KEY_USAGE		2
+#define FEATURE_BIT_R0_FAST_FORWARD_REWIND		3
+#define FEATURE_BIT_R0_SCROLLING_ACCELERATION		6
+#define FEATURE_BIT_R0_BUTTONS_CONTROL_THE_RESOLUTION	7
+#define FEATURE_BIT_R2_INHIBIT_LOCK_KEY_SOUND		0
+#define FEATURE_BIT_R2_3D_ENGINE			2
+#define FEATURE_BIT_R2_HOST_SW_CONTROLS_LEDS		3
+
+#define __CMD_DEVICE_CONNECTION_DISCONNECTION	0xB2
+#define CONNECT_DEVICES_OPEN_LOCK			1
+#define CONNECT_DEVICES_CLOSE_LOCK			2
+#define CONNECT_DEVICES_DISCONNECT			3
+
+#define __CMD_PAIRING_INFORMATION		0xB5
+#define DEVICE_PAIRING_INFORMATION			0x20
+#define DEVICE_EXTENDED_PAIRING_INFORMATION		0x30
+#define DEVICE_NAME					0x40
+
+#define __CMD_DEVICE_FIRMWARE_INFORMATION	0xF1
+#define FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(MCU)	((MCU - 1) << 4 | 0x01)
+#define FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(MCU)		((MCU - 1) << 4 | 0x02)
+#define FIRMWARE_INFO_ITEM_HW_VERSION(MCU)		((MCU - 1) << 4 | 0x03)
+#define FIRMWARE_INFO_ITEM_BOOTLOADER_VERSION(MCU)	((MCU - 1) << 4 | 0x04)
+
+#define __CMD_LED_STATUS			0x51
+
+#define __CMD_CURRENT_RESOLUTION		0x63
+
+#define __CMD_OPTICAL_SENSOR_SETTINGS		0x61
+
+#define __CMD_USB_REFRESH_RATE			0x64
+
+#define CMD_PAIRING_INFORMATION(idx, type)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = RECEIVER_IDX, \
+		.sub_id = GET_LONG_REGISTER_REQ, \
+		.address = __CMD_PAIRING_INFORMATION, \
+		.parameters = {type + idx - 1, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_DEVICE_FIRMWARE_INFORMATION(idx, fw_info_item)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = GET_REGISTER_REQ, \
+		.address = __CMD_DEVICE_FIRMWARE_INFORMATION, \
+		.parameters = {fw_info_item, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_HIDPP_NOTIFICATIONS, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_ENABLE_INDIVIDUAL_FEATURES(idx, sub)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_ENABLE_INDIVIDUAL_FEATURES, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_DEVICE_CONNECTION_DISCONNECTION(idx, cmd, timeout)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = RECEIVER_IDX, \
+		.sub_id = SET_REGISTER_REQ, \
+		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
+		.parameters = {cmd, idx - 1, timeout }, \
+	} \
+}
+
+#define CMD_LED_STATUS(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_LED_STATUS, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_CURRENT_RESOLUTION(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_CURRENT_RESOLUTION, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_USB_REFRESH_RATE(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_USB_REFRESH_RATE, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_OPTICAL_SENSOR_SETTINGS(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_OPTICAL_SENSOR_SETTINGS, \
+		.parameters = {0x00, 0x00, 0x00}, \
+	} \
+}
+
+#define ERROR_MSG(__hidpp_msg, idx)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = __ERROR_MSG, \
+		.address = __hidpp_msg->msg.sub_id, \
+		.parameters = {__hidpp_msg->msg.address, 0x00, 0x00 }, \
+	} \
+}
+
 const char *device_types[0xFF] = {
 	[0x00] = "Unknown",
 	[0x01] = "Keyboard",
