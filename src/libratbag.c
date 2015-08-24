@@ -243,11 +243,11 @@ out:
 }
 
 static void
-ratbag_device_init(struct ratbag_device *rb)
+ratbag_device_init(struct ratbag_device *device)
 {
-	rb->hidraw_fd = -1;
-	rb->refcount = 1;
-	list_init(&rb->profiles);
+	device->hidraw_fd = -1;
+	device->refcount = 1;
+	list_init(&device->profiles);
 }
 
 static inline bool
