@@ -344,14 +344,12 @@ ratbag_device_get_active_profile(struct ratbag_device *ratbag);
  *
  * This function sets the currently active profile to the one provided.
  *
- * @param ratbag A previously initialized ratbag context
  * @param profile The profile to make the active profile.
  *
  * @return 0 on success or nonzero otherwise.
  */
 int
-ratbag_device_set_active_profile(struct ratbag_device *ratbag,
-				 struct ratbag_profile *profile);
+ratbag_device_set_active_profile(struct ratbag_profile *profile);
 
 /**
  * @ingroup device

@@ -585,9 +585,9 @@ ratbag_device_has_capability(const struct ratbag_device *device,
 }
 
 LIBRATBAG_EXPORT int
-ratbag_device_set_active_profile(struct ratbag_device *device,
-				 struct ratbag_profile *profile)
+ratbag_device_set_active_profile(struct ratbag_profile *profile)
 {
+	struct ratbag_device *device = profile->device;
 	int rc;
 
 	assert(device->driver->write_profile);

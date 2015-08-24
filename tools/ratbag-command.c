@@ -339,7 +339,7 @@ ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char 
 	}
 
 	if (active_profile != profile) {
-		rc = ratbag_device_set_active_profile(device, profile);
+		rc = ratbag_device_set_active_profile(profile);
 		if (!rc)
 			printf("Switched '%s' to profile '%d'\n",
 			       ratbag_device_get_name(device), index);
@@ -418,7 +418,7 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 	if (!commit)
 		goto out;
 
-	rc = ratbag_device_set_active_profile(device, profile);
+	rc = ratbag_device_set_active_profile(profile);
 	if (!rc)
 		printf("Switched the current profile of '%s' to %sreport the volume keys\n",
 		       ratbag_device_get_name(device),
@@ -489,7 +489,7 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 			goto out;
 		}
 
-		rc = ratbag_device_set_active_profile(device, profile);
+		rc = ratbag_device_set_active_profile(profile);
 		if (rc) {
 			error("Unable to apply the current profile: %s (%d)\n",
 			      strerror(-rc),
