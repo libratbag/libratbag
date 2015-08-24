@@ -54,7 +54,7 @@ struct _hidpp10_message {
 		uint8_t parameters[3];
 		uint8_t string[16];
 	};
-};
+} __attribute__((packed));
 
 union hidpp10_message {
 	struct _hidpp10_message msg;
