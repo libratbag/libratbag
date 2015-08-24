@@ -37,11 +37,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <hidpp10.h>
+#include "hidpp10.h"
 
-#include <libratbag-util.h>
-#include <libratbag-hidraw.h>
-#include <libratbag-private.h>
+#include "libratbag-util.h"
+#include "libratbag-hidraw.h"
+#include "libratbag-private.h"
 
 const char *hidpp_errors[0xFF] = {
 	[0x00] = "ERR_SUCCESS",
