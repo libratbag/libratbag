@@ -85,6 +85,15 @@ hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 static void
 hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
+	struct ratbag_device *device = profile->device;
+	struct hidpp10drv_data *drv_data;
+	struct hidpp10_device *hidpp10;
+
+	drv_data = ratbag_get_drv_data(device);
+	hidpp10 = &drv_data->dev;
+
+	/* FIXME: read this from device */
+	profile->current_dpi = hidpp10->xres;
 }
 
 static int
