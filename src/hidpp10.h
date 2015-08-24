@@ -93,14 +93,14 @@
 		.device_idx = RECEIVER_IDX, \
 		.sub_id = GET_LONG_REGISTER_REQ, \
 		.address = __CMD_PAIRING_INFORMATION, \
-		.parameters = {type + idx, 0x00, 0x00 }, \
+		.parameters = {type + idx - 1, 0x00, 0x00 }, \
 	} \
 }
 
 #define CMD_DEVICE_FIRMWARE_INFORMATION(idx, fw_info_item)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx + 1, \
+		.device_idx = idx, \
 		.sub_id = GET_REGISTER_REQ, \
 		.address = __CMD_DEVICE_FIRMWARE_INFORMATION, \
 		.parameters = {fw_info_item, 0x00, 0x00 }, \
@@ -110,7 +110,7 @@
 #define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx + 1, \
+		.device_idx = idx, \
 		.sub_id = sub, \
 		.address = __CMD_HIDPP_NOTIFICATIONS, \
 		.parameters = {0x00, 0x00, 0x00 }, \
@@ -120,7 +120,7 @@
 #define CMD_ENABLE_INDIVIDUAL_FEATURES(idx, sub)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx + 1, \
+		.device_idx = idx, \
 		.sub_id = sub, \
 		.address = __CMD_ENABLE_INDIVIDUAL_FEATURES, \
 		.parameters = {0x00, 0x00, 0x00 }, \
@@ -133,7 +133,7 @@
 		.device_idx = RECEIVER_IDX, \
 		.sub_id = SET_REGISTER_REQ, \
 		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
-		.parameters = {cmd, idx, timeout }, \
+		.parameters = {cmd, idx - 1, timeout }, \
 	} \
 }
 

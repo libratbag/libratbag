@@ -328,7 +328,7 @@ hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct
 {
 	int i, res;
 
-	for (i = 0; i < 6; i++) {
+	for (i = 1; i < 7; i++) {
 		res = hidpp10_get_device_from_idx(device, i, dev);
 		if (res)
 			continue;
