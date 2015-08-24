@@ -61,12 +61,6 @@ union hidpp10_message {
 	uint8_t data[LONG_MESSAGE_LENGTH];
 };
 
-/* Note:
- * for all of these functions that takes a struct hidpp10_device * as parameter,
- * if you are already talking to the hidraw node associated to the actual device,
- * you can pass NULL instead (there is no need to retrieve it through
- * hidpp10_get_device_from_wpid first)
- */
 int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg);
 int hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev,
 				      int feature_bit_r0, int feature_bit_r2);
