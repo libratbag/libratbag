@@ -93,6 +93,8 @@
 
 #define __CMD_OPTICAL_SENSOR_SETTINGS		0x61
 
+#define __CMD_USB_REFRESH_RATE			0x64
+
 #define CMD_PAIRING_INFORMATION(idx, type)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
@@ -159,6 +161,16 @@
 		.device_idx = idx, \
 		.sub_id = sub, \
 		.address = __CMD_CURRENT_RESOLUTION, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+#define CMD_USB_REFRESH_RATE(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_USB_REFRESH_RATE, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
