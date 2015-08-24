@@ -59,6 +59,12 @@ hidpp10_get_unaligned_u16le(uint8_t *buf)
 	return (buf[1] << 8) | buf[0];
 }
 
+static inline uint16_t
+hidpp10_get_unaligned_u16(uint8_t *buf)
+{
+	return (buf[0] << 8) | buf[1];
+}
+
 const char *device_types[0xFF] = {
 	[0x00] = "Unknown",
 	[0x01] = "Keyboard",
@@ -489,8 +495,7 @@ hidpp10_get_pairing_information(struct ratbag_device *device, struct hidpp10_dev
 		return -1;
 
 	dev->report_interval = pairing_information.msg.string[2];
-	dev->wpid = (pairing_information.msg.string[3] << 8) |
-			pairing_information.msg.string[4];
+	dev->wpid = hidpp10_get_unaligned_u16(&pairing_information.msg.string[3]);
 	dev->device_type = pairing_information.msg.string[7];
 
 	res = hidpp10_request_command(device, &device_name);
@@ -543,8 +548,7 @@ hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_dev
 
 	res = hidpp10_request_command(device, &build_information);
 	if (res == 0) {
-		dev->build = (build_information.msg.string[1] << 8) |
-				build_information.msg.string[2];
+		dev->build = hidpp10_get_unaligned_u16(&build_information.msg.string[1]);
 	}
 
 	return 0;
