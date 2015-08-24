@@ -43,141 +43,6 @@
 #include "libratbag-hidraw.h"
 #include "libratbag-private.h"
 
-#define __CMD_HIDPP_NOTIFICATIONS		0x00
-#define FEATURE_BIT_R0_CONSUMER_SPECIFIC_CONTROL	0
-#define FEATURE_BIT_R0_POWER_KEYS			1
-#define FEATURE_BIT_R0_VERTICAL_SCROLL			2
-#define FEATURE_BIT_R0_MOUSE_EXTRA_BUTTONS		3
-#define FEATURE_BIT_R0_BATTERY_STATUS			4
-#define FEATURE_BIT_R0_HORIZONTAL_SCROLL		5
-#define FEATURE_BIT_R0_F_LOCK_STATUS			6
-#define FEATURE_BIT_R0_NUMPAD_NUMERIC_KEYS		7
-#define FEATURE_BIT_R2_3D_GESTURES			0
-
-#define __CMD_ENABLE_INDIVIDUAL_FEATURES	0x01
-#define FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION		1
-#define FEATURE_BIT_R0_ENHANCED_KEY_USAGE		2
-#define FEATURE_BIT_R0_FAST_FORWARD_REWIND		3
-#define FEATURE_BIT_R0_SCROLLING_ACCELERATION		6
-#define FEATURE_BIT_R0_BUTTONS_CONTROL_THE_RESOLUTION	7
-#define FEATURE_BIT_R2_INHIBIT_LOCK_KEY_SOUND		0
-#define FEATURE_BIT_R2_3D_ENGINE			2
-#define FEATURE_BIT_R2_HOST_SW_CONTROLS_LEDS		3
-
-#define __CMD_DEVICE_CONNECTION_DISCONNECTION	0xB2
-#define CONNECT_DEVICES_OPEN_LOCK			1
-#define CONNECT_DEVICES_CLOSE_LOCK			2
-#define CONNECT_DEVICES_DISCONNECT			3
-
-#define __CMD_PAIRING_INFORMATION		0xB5
-#define DEVICE_PAIRING_INFORMATION			0x20
-#define DEVICE_EXTENDED_PAIRING_INFORMATION		0x30
-#define DEVICE_NAME					0x40
-
-#define __CMD_DEVICE_FIRMWARE_INFORMATION	0xF1
-#define FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(MCU)	((MCU - 1) << 4 | 0x01)
-#define FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(MCU)		((MCU - 1) << 4 | 0x02)
-#define FIRMWARE_INFO_ITEM_HW_VERSION(MCU)		((MCU - 1) << 4 | 0x03)
-#define FIRMWARE_INFO_ITEM_BOOTLOADER_VERSION(MCU)	((MCU - 1) << 4 | 0x04)
-
-#define __CMD_LED_STATUS			0x51
-
-#define __CMD_CURRENT_RESOLUTION		0x63
-
-#define __CMD_OPTICAL_SENSOR_SETTINGS		0x61
-
-#define __CMD_USB_REFRESH_RATE			0x64
-
-#define CMD_PAIRING_INFORMATION(idx, type)	{ \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = RECEIVER_IDX, \
-		.sub_id = GET_LONG_REGISTER_REQ, \
-		.address = __CMD_PAIRING_INFORMATION, \
-		.parameters = {type + idx - 1, 0x00, 0x00 }, \
-	} \
-}
-
-#define CMD_DEVICE_FIRMWARE_INFORMATION(idx, fw_info_item)	{ \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx, \
-		.sub_id = GET_REGISTER_REQ, \
-		.address = __CMD_DEVICE_FIRMWARE_INFORMATION, \
-		.parameters = {fw_info_item, 0x00, 0x00 }, \
-	} \
-}
-
-#define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx, \
-		.sub_id = sub, \
-		.address = __CMD_HIDPP_NOTIFICATIONS, \
-		.parameters = {0x00, 0x00, 0x00 }, \
-	} \
-}
-
-#define CMD_ENABLE_INDIVIDUAL_FEATURES(idx, sub)	{ \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx, \
-		.sub_id = sub, \
-		.address = __CMD_ENABLE_INDIVIDUAL_FEATURES, \
-		.parameters = {0x00, 0x00, 0x00 }, \
-	} \
-}
-
-#define CMD_DEVICE_CONNECTION_DISCONNECTION(idx, cmd, timeout)	{ \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = RECEIVER_IDX, \
-		.sub_id = SET_REGISTER_REQ, \
-		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
-		.parameters = {cmd, idx - 1, timeout }, \
-	} \
-}
-
-#define CMD_LED_STATUS(idx, sub) { \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx, \
-		.sub_id = sub, \
-		.address = __CMD_LED_STATUS, \
-		.parameters = {0x00, 0x00, 0x00 }, \
-	} \
-}
-
-#define CMD_CURRENT_RESOLUTION(idx, sub) { \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx, \
-		.sub_id = sub, \
-		.address = __CMD_CURRENT_RESOLUTION, \
-		.parameters = {0x00, 0x00, 0x00 }, \
-	} \
-}
-
-#define CMD_USB_REFRESH_RATE(idx, sub) { \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx, \
-		.sub_id = sub, \
-		.address = __CMD_USB_REFRESH_RATE, \
-		.parameters = {0x00, 0x00, 0x00 }, \
-	} \
-}
-
-#define CMD_OPTICAL_SENSOR_SETTINGS(idx, sub) { \
-	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
-		.device_idx = idx, \
-		.sub_id = sub, \
-		.address = __CMD_OPTICAL_SENSOR_SETTINGS, \
-		.parameters = {0x00, 0x00, 0x00}, \
-	} \
-}
-
 #define ERROR_MSG(__hidpp_msg, idx)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
@@ -186,6 +51,12 @@
 		.address = __hidpp_msg->msg.sub_id, \
 		.parameters = {__hidpp_msg->msg.address, 0x00, 0x00 }, \
 	} \
+}
+
+static inline uint16_t
+hidpp10_get_unaligned_u16le(uint8_t *buf)
+{
+	return (buf[1] << 8) | buf[0];
 }
 
 const char *device_types[0xFF] = {
@@ -201,12 +72,6 @@ const char *device_types[0xFF] = {
 	[0x09] = "Touchpad",
 	[0x0A ... 0xFE] = NULL,
 };
-
-static inline uint16_t
-hidpp10_get_unaligned_u16le(uint8_t *buf)
-{
-	return (buf[1] << 8) | buf[0];
-}
 
 static int
 hidpp10_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
@@ -303,6 +168,85 @@ out_err:
 	return ret;
 }
 
+/* -------------------------------------------------------------------------- */
+/* 0x00: Enable HID++ Notifications                                           */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_HIDPP_NOTIFICATIONS		0x00
+#define FEATURE_BIT_R0_CONSUMER_SPECIFIC_CONTROL	0
+#define FEATURE_BIT_R0_POWER_KEYS			1
+#define FEATURE_BIT_R0_VERTICAL_SCROLL			2
+#define FEATURE_BIT_R0_MOUSE_EXTRA_BUTTONS		3
+#define FEATURE_BIT_R0_BATTERY_STATUS			4
+#define FEATURE_BIT_R0_HORIZONTAL_SCROLL		5
+#define FEATURE_BIT_R0_F_LOCK_STATUS			6
+#define FEATURE_BIT_R0_NUMPAD_NUMERIC_KEYS		7
+#define FEATURE_BIT_R2_3D_GESTURES			0
+
+#define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_HIDPP_NOTIFICATIONS, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+static int
+hidpp10_get_hidpp_notifications(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
+	int res;
+
+	res = hidpp10_request_command(device, &notifications);
+	if (res == 0) {
+		/* do something */
+	}
+
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x01: Enable Individual Features                                           */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_ENABLE_INDIVIDUAL_FEATURES	0x01
+#define FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION		1
+#define FEATURE_BIT_R0_ENHANCED_KEY_USAGE		2
+#define FEATURE_BIT_R0_FAST_FORWARD_REWIND		3
+#define FEATURE_BIT_R0_SCROLLING_ACCELERATION		6
+#define FEATURE_BIT_R0_BUTTONS_CONTROL_THE_RESOLUTION	7
+#define FEATURE_BIT_R2_INHIBIT_LOCK_KEY_SOUND		0
+#define FEATURE_BIT_R2_3D_ENGINE			2
+#define FEATURE_BIT_R2_HOST_SW_CONTROLS_LEDS		3
+
+#define CMD_ENABLE_INDIVIDUAL_FEATURES(idx, sub)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_ENABLE_INDIVIDUAL_FEATURES, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+static int
+hidpp10_get_individual_features(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
+	int res;
+
+	res = hidpp10_request_command(device, &features);
+	if (res == 0) {
+		/* do something */
+	}
+
+	return res;
+}
+
 int
 hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev,
 				  int feature_bit_r0, int feature_bit_r2)
@@ -333,138 +277,20 @@ hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_d
 	return res;
 }
 
-int
-hidpp10_open_lock(struct ratbag_device *device)
-{
-	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00, CONNECT_DEVICES_OPEN_LOCK, 0x08);
+/* -------------------------------------------------------------------------- */
+/* 0x51: LED Status                                                           */
+/* -------------------------------------------------------------------------- */
 
-	return hidpp10_request_command(device, &open_lock);
-}
+#define __CMD_LED_STATUS			0x51
 
-int hidpp10_disconnect(struct ratbag_device *device, int idx) {
-	union hidpp10_message disconnect = CMD_DEVICE_CONNECTION_DISCONNECTION(idx + 1, CONNECT_DEVICES_DISCONNECT, 0x00);
-
-	return hidpp10_request_command(device, &disconnect);
-}
-
-void hidpp10_list_devices(struct ratbag_device *device) {
-	struct hidpp10_device dev;
-	int i, res;
-
-	for (i = 0; i < 6; ++i) {
-		res = hidpp10_get_device_from_idx(device, i, &dev);
-		if (res)
-			continue;
-
-		log_info(device->ratbag, "[%d] %s	%s (Wireless PID: %04x)\n", i, device_types[dev.device_type] ? device_types[dev.device_type] : "", dev.name, dev.wpid);
-	}
-}
-
-static int
-hidpp10_get_pairing_information(struct ratbag_device *device, struct hidpp10_device *dev)
-{
-	unsigned int idx = dev->index;
-	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
-	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
-	size_t name_size;
-	int res;
-
-	res = hidpp10_request_command(device, &pairing_information);
-	if (res)
-		return -1;
-
-	dev->report_interval = pairing_information.msg.string[2];
-	dev->wpid = (pairing_information.msg.string[3] << 8) |
-			pairing_information.msg.string[4];
-	dev->device_type = pairing_information.msg.string[7];
-
-	res = hidpp10_request_command(device, &device_name);
-	if (res)
-		return -1;
-	name_size = device_name.msg.string[1];
-	memcpy(dev->name, &device_name.msg.string[2], sizeof(device_name.msg.string));
-	dev->name[min(name_size, sizeof(dev->name) - 1)] = '\0';
-
-	return 0;
-}
-
-static int
-hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_device *dev)
-{
-	unsigned idx = dev->index;
-	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
-	union hidpp10_message build_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(1));
-	int res;
-
-	/*
-	 * This may fail on some devices
-	 * => we can not retrieve their FW version through HID++ 1.0.
-	 */
-	res = hidpp10_request_command(device, &firmware_information);
-	if (res == 0) {
-		dev->fw_major = firmware_information.msg.string[1];
-		dev->fw_minor = firmware_information.msg.string[2];
-	}
-
-	res = hidpp10_request_command(device, &build_information);
-	if (res == 0) {
-		dev->build = (build_information.msg.string[1] << 8) |
-				build_information.msg.string[2];
-	}
-
-	return 0;
-}
-
-static int
-hidpp10_get_individual_features(struct ratbag_device *device, struct hidpp10_device *dev)
-{
-	unsigned idx = dev->index;
-	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
-	int res;
-
-	res = hidpp10_request_command(device, &features);
-	if (res == 0) {
-		/* do something */
-	}
-
-	return res;
-}
-
-static int
-hidpp10_get_hidpp_notifications(struct ratbag_device *device, struct hidpp10_device *dev)
-{
-	unsigned idx = dev->index;
-	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
-	int res;
-
-	res = hidpp10_request_command(device, &notifications);
-	if (res == 0) {
-		/* do something */
-	}
-
-	return res;
-}
-
-static int
-hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_device *dev)
-{
-	unsigned idx = dev->index;
-	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
-	int res;
-	int xres, yres;
-
-	res = hidpp10_request_command(device, &resolution);
-	if (res)
-		return res;
-
-	/* resolution is in 50dpi multiples */
-	xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
-	yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
-
-	log_debug(device->ratbag,
-		  "Resolution is %dx%ddpi\n", xres, yres);
-
-	return 0;
+#define CMD_LED_STATUS(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_LED_STATUS, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
 }
 
 static int
@@ -495,6 +321,21 @@ hidpp10_get_led_status(struct ratbag_device *device, struct hidpp10_device *dev)
 	return 0;
 }
 
+/* -------------------------------------------------------------------------- */
+/* 0x61: Optical Sensor Settings                                              */
+/* -------------------------------------------------------------------------- */
+#define __CMD_OPTICAL_SENSOR_SETTINGS		0x61
+
+#define CMD_OPTICAL_SENSOR_SETTINGS(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_OPTICAL_SENSOR_SETTINGS, \
+		.parameters = {0x00, 0x00, 0x00}, \
+	} \
+}
+
 static int
 hidpp10_get_optical_sensor_settings(struct ratbag_device *device, struct hidpp10_device *dev)
 {
@@ -509,6 +350,58 @@ hidpp10_get_optical_sensor_settings(struct ratbag_device *device, struct hidpp10
 	/* Don't know what the return value is here */
 
 	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x63: Current Resolution                                                   */
+/* -------------------------------------------------------------------------- */
+#define __CMD_CURRENT_RESOLUTION		0x63
+
+#define CMD_CURRENT_RESOLUTION(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_CURRENT_RESOLUTION, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+static int
+hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
+	int res;
+	int xres, yres;
+
+	res = hidpp10_request_command(device, &resolution);
+	if (res)
+		return res;
+
+	/* resolution is in 50dpi multiples */
+	xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
+	yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
+
+	log_debug(device->ratbag,
+		  "Resolution is %dx%ddpi\n", xres, yres);
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x64: Device Firmware Information                                          */
+/* -------------------------------------------------------------------------- */
+#define __CMD_USB_REFRESH_RATE			0x64
+
+#define CMD_USB_REFRESH_RATE(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_USB_REFRESH_RATE, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
 }
 
 static int
@@ -530,6 +423,149 @@ hidpp10_get_usb_refresh_rate(struct ratbag_device *device, struct hidpp10_device
 	return 0;
 }
 
+/* -------------------------------------------------------------------------- */
+/* 0xB2: Device Connection and Disconnection (Pairing)                        */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_DEVICE_CONNECTION_DISCONNECTION	0xB2
+#define CONNECT_DEVICES_OPEN_LOCK			1
+#define CONNECT_DEVICES_CLOSE_LOCK			2
+#define CONNECT_DEVICES_DISCONNECT			3
+
+#define CMD_DEVICE_CONNECTION_DISCONNECTION(idx, cmd, timeout)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = RECEIVER_IDX, \
+		.sub_id = SET_REGISTER_REQ, \
+		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
+		.parameters = {cmd, idx - 1, timeout }, \
+	} \
+}
+
+int
+hidpp10_open_lock(struct ratbag_device *device)
+{
+	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00, CONNECT_DEVICES_OPEN_LOCK, 0x08);
+
+	return hidpp10_request_command(device, &open_lock);
+}
+
+int hidpp10_disconnect(struct ratbag_device *device, int idx) {
+	union hidpp10_message disconnect = CMD_DEVICE_CONNECTION_DISCONNECTION(idx + 1, CONNECT_DEVICES_DISCONNECT, 0x00);
+
+	return hidpp10_request_command(device, &disconnect);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0xB5: Pairing Information                                                  */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_PAIRING_INFORMATION		0xB5
+#define DEVICE_PAIRING_INFORMATION			0x20
+#define DEVICE_EXTENDED_PAIRING_INFORMATION		0x30
+#define DEVICE_NAME					0x40
+
+#define CMD_PAIRING_INFORMATION(idx, type)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = RECEIVER_IDX, \
+		.sub_id = GET_LONG_REGISTER_REQ, \
+		.address = __CMD_PAIRING_INFORMATION, \
+		.parameters = {type + idx - 1, 0x00, 0x00 }, \
+	} \
+}
+
+static int
+hidpp10_get_pairing_information(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned int idx = dev->index;
+	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
+	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
+	size_t name_size;
+	int res;
+
+	res = hidpp10_request_command(device, &pairing_information);
+	if (res)
+		return -1;
+
+	dev->report_interval = pairing_information.msg.string[2];
+	dev->wpid = (pairing_information.msg.string[3] << 8) |
+			pairing_information.msg.string[4];
+	dev->device_type = pairing_information.msg.string[7];
+
+	res = hidpp10_request_command(device, &device_name);
+	if (res)
+		return -1;
+	name_size = device_name.msg.string[1];
+	memcpy(dev->name, &device_name.msg.string[2], sizeof(device_name.msg.string));
+	dev->name[min(name_size, sizeof(dev->name) - 1)] = '\0';
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0xF1: Device Firmware Information                                          */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_DEVICE_FIRMWARE_INFORMATION	0xF1
+#define FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(MCU)	((MCU - 1) << 4 | 0x01)
+#define FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(MCU)		((MCU - 1) << 4 | 0x02)
+#define FIRMWARE_INFO_ITEM_HW_VERSION(MCU)		((MCU - 1) << 4 | 0x03)
+#define FIRMWARE_INFO_ITEM_BOOTLOADER_VERSION(MCU)	((MCU - 1) << 4 | 0x04)
+
+#define CMD_DEVICE_FIRMWARE_INFORMATION(idx, fw_info_item)	{ \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = GET_REGISTER_REQ, \
+		.address = __CMD_DEVICE_FIRMWARE_INFORMATION, \
+		.parameters = {fw_info_item, 0x00, 0x00 }, \
+	} \
+}
+
+static int
+hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
+	union hidpp10_message build_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(1));
+	int res;
+
+	/*
+	 * This may fail on some devices
+	 * => we can not retrieve their FW version through HID++ 1.0.
+	 */
+	res = hidpp10_request_command(device, &firmware_information);
+	if (res == 0) {
+		dev->fw_major = firmware_information.msg.string[1];
+		dev->fw_minor = firmware_information.msg.string[2];
+	}
+
+	res = hidpp10_request_command(device, &build_information);
+	if (res == 0) {
+		dev->build = (build_information.msg.string[1] << 8) |
+				build_information.msg.string[2];
+	}
+
+	return 0;
+}
+
+void hidpp10_list_devices(struct ratbag_device *device) {
+	struct hidpp10_device dev;
+	int i, res;
+
+	for (i = 0; i < 6; ++i) {
+		res = hidpp10_get_device_from_idx(device, i, &dev);
+		if (res)
+			continue;
+
+		log_info(device->ratbag, "[%d] %s	%s (Wireless PID: %04x)\n", i, device_types[dev.device_type] ? device_types[dev.device_type] : "", dev.name, dev.wpid);
+	}
+}
+
+/* -------------------------------------------------------------------------- */
+/* general device handling                                                    */
+/* -------------------------------------------------------------------------- */
 static int
 hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
 {
@@ -572,3 +608,4 @@ hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp1
 	dev->index = idx;
 	return hidpp10_get_device_info(device, dev);
 }
+
