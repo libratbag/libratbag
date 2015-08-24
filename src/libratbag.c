@@ -142,9 +142,7 @@ ratbag_log_set_handler(struct ratbag *ratbag,
 
 
 static inline struct udev_device *
-udev_device_from_devnode(struct ratbag *ratbag,
-			 struct ratbag_device *device,
-			 int fd)
+udev_device_from_devnode(struct ratbag *ratbag, int fd)
 {
 	struct udev_device *dev;
 	struct stat st;
@@ -173,8 +171,9 @@ udev_device_from_devnode(struct ratbag *ratbag,
 }
 
 static struct udev_device *
-udev_find_hidraw(struct ratbag *ratbag, struct ratbag_device *device)
+udev_find_hidraw(struct ratbag_device *device)
 {
+	struct ratbag *ratbag = device->ratbag;
 	struct udev_enumerate *e;
 	struct udev_list_entry *entry;
 	struct udev_device *udev_device;
@@ -217,7 +216,7 @@ out:
 }
 
 static int
-ratbag_device_init_udev(struct ratbag *ratbag, struct ratbag_device *device,
+ratbag_device_init_udev(struct ratbag_device *device,
 			struct udev_device *udev_device)
 {
 	struct udev_device *hidraw_udev;
@@ -225,13 +224,13 @@ ratbag_device_init_udev(struct ratbag *ratbag, struct ratbag_device *device,
 
 	device->udev_device = udev_device_ref(udev_device);
 
-	hidraw_udev = udev_find_hidraw(ratbag, device);
+	hidraw_udev = udev_find_hidraw(device);
 	if (!hidraw_udev)
 		goto out;
 
 	device->udev_hidraw = udev_device_ref(hidraw_udev);
 
-	log_debug(ratbag,
+	log_debug(device->ratbag,
 		  "%s is device '%s'.\n",
 		  device->name,
 		  udev_device_get_devnode(device->udev_hidraw));
@@ -260,9 +259,9 @@ ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
 }
 
 static struct ratbag_driver *
-ratbag_find_driver(struct ratbag *ratbag, struct ratbag_device *device,
-		const struct input_id *dev_id)
+ratbag_find_driver(struct ratbag_device *device, const struct input_id *dev_id)
 {
+	struct ratbag *ratbag = device->ratbag;
 	struct ratbag_driver *driver;
 	const struct ratbag_id *matching_id;
 	struct ratbag_id matched_id;
@@ -359,11 +358,11 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	}
 
 	ratbag_device_init(device);
-	rc = ratbag_device_init_udev(ratbag, device, udev_device);
+	rc = ratbag_device_init_udev(device, udev_device);
 	if (rc)
 		goto out_err;
 
-	driver = ratbag_find_driver(ratbag, device, &device->ids);
+	driver = ratbag_find_driver(device, &device->ids);
 	if (!driver) {
 		errno = ENOTSUP;
 		goto err_udev;
