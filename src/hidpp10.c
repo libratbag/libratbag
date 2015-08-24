@@ -241,21 +241,19 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 	int res;
 
 	res = hidpp10_request_command(device, &pairing_information);
-	if (res)
-		return -1;
+	if (res == 0) {
+		dev->report_interval = pairing_information.msg.string[2];
+		dev->wpid = (pairing_information.msg.string[3] << 8) |
+				pairing_information.msg.string[4];
+		dev->device_type = pairing_information.msg.string[7];
 
-	dev->report_interval = pairing_information.msg.string[2];
-	dev->wpid = (pairing_information.msg.string[3] << 8) |
-			pairing_information.msg.string[4];
-	dev->device_type = pairing_information.msg.string[7];
-
-	res = hidpp10_request_command(device, &device_name);
-	if (res)
-		return -1;
-
-	name_size = device_name.msg.string[1];
-	memcpy(dev->name, &device_name.msg.string[2], sizeof(device_name.msg.string));
-	dev->name[min(name_size, sizeof(dev->name) - 1)] = '\0';
+		res = hidpp10_request_command(device, &device_name);
+		if (res)
+			return -1;
+		name_size = device_name.msg.string[1];
+		memcpy(dev->name, &device_name.msg.string[2], sizeof(device_name.msg.string));
+		dev->name[min(name_size, sizeof(dev->name) - 1)] = '\0';
+	}
 
 	/*
 	 * This may fail on some devices
