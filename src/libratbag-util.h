@@ -25,6 +25,7 @@
 #define LIBRATBAG_UTIL_H
 
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <libudev.h>
 
@@ -77,6 +78,14 @@ int list_empty(const struct list *list);
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define streq(s1, s2) (strcmp((s1), (s2)) == 0)
 #define strneq(s1, s2, n) (strncmp((s1), (s2), (n)) == 0)
+
+static inline char*
+strncpy_safe(char *dest, const char *src, size_t n)
+{
+	strncpy(dest, src, n);
+	dest[n - 1] = '\0';
+	return dest;
+}
 
 #define LIBRATBAG_EXPORT __attribute__ ((visibility("default")))
 
