@@ -299,13 +299,14 @@ hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_d
 	} \
 }
 
-static int
-hidpp10_get_led_status(struct ratbag_device *device, struct hidpp10_device *dev)
+int
+hidpp10_get_led_status(struct ratbag_device *device,
+		       struct hidpp10_device *dev,
+		       bool led[4])
 {
 	unsigned idx = dev->index;
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, GET_REGISTER_REQ);
 	int res;
-	int led[4];
 
 	res = hidpp10_request_command(device, &led_status);
 	if (res)
@@ -611,7 +612,7 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 	hidpp10_get_hidpp_notifications(device, dev);
 
 	hidpp10_get_current_resolution(device, dev, &dev->xres, &dev->yres);
-	hidpp10_get_led_status(device, dev);
+	hidpp10_get_led_status(device, dev, dev->led);
 	hidpp10_get_optical_sensor_settings(device, dev);
 	hidpp10_get_usb_refresh_rate(device, dev);
 
