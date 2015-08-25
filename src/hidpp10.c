@@ -409,7 +409,7 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 }
 
 /* -------------------------------------------------------------------------- */
-/* 0x64: Device Firmware Information                                          */
+/* 0x64: USB Refresh Rate                                                     */
 /* -------------------------------------------------------------------------- */
 #define __CMD_USB_REFRESH_RATE			0x64
 

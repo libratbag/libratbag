@@ -145,7 +145,7 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 			       uint16_t *xres, uint16_t *yres);
 
 /* -------------------------------------------------------------------------- */
-/* 0x64: Device Firmware Information                                          */
+/* 0x64: USB Refresh Rate                                                     */
 /* -------------------------------------------------------------------------- */
 int
 hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
