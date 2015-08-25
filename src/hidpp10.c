@@ -486,29 +486,44 @@ int hidpp10_disconnect(struct ratbag_device *device, int idx) {
 	} \
 }
 
-static int
-hidpp10_get_pairing_information(struct ratbag_device *device, struct hidpp10_device *dev)
+int
+hidpp10_get_pairing_information(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t *report_interval,
+				uint16_t *wpid,
+				uint8_t *device_type)
 {
 	unsigned int idx = dev->index;
 	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
-	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
-	size_t name_size;
 	int res;
 
 	res = hidpp10_request_command(device, &pairing_information);
 	if (res)
 		return -1;
 
-	dev->report_interval = pairing_information.msg.string[2];
-	dev->wpid = hidpp10_get_unaligned_u16(&pairing_information.msg.string[3]);
-	dev->device_type = pairing_information.msg.string[7];
+	*report_interval = pairing_information.msg.string[2];
+	*wpid = hidpp10_get_unaligned_u16(&pairing_information.msg.string[3]);
+	*device_type = pairing_information.msg.string[7];
+
+	return 0;
+}
+
+int
+hidpp10_get_pairing_information_device_name(struct ratbag_device *device,
+					    struct hidpp10_device *dev,
+					    char *name,
+					    size_t *name_size)
+{
+	unsigned int idx = dev->index;
+	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
+	int res;
+
 
 	res = hidpp10_request_command(device, &device_name);
 	if (res)
 		return -1;
-	name_size = device_name.msg.string[1];
-	memcpy(dev->name, &device_name.msg.string[2], sizeof(device_name.msg.string));
-	dev->name[min(name_size, sizeof(dev->name) - 1)] = '\0';
+	*name_size = min(*name_size, device_name.msg.string[1]);
+	strncpy_safe(name, (char*)&device_name.msg.string[2], *name_size);
 
 	return 0;
 }
@@ -584,7 +599,15 @@ void hidpp10_list_devices(struct ratbag_device *device) {
 static int
 hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
 {
-	hidpp10_get_pairing_information(device, dev);
+	size_t name_size = sizeof(dev->name);
+
+	hidpp10_get_pairing_information(device, dev,
+					&dev->report_interval,
+					&dev->wpid,
+					&dev->device_type);
+	hidpp10_get_pairing_information_device_name(device, dev,
+						    dev->name,
+						    &name_size);
 	hidpp10_get_firmare_information(device, dev, &dev->fw_major, &dev->fw_minor, &dev->build);
 
 	hidpp10_get_individual_features(device, dev);

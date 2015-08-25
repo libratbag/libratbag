@@ -80,4 +80,18 @@ hidpp10_get_firmare_information(struct ratbag_device *device,
 				struct hidpp10_device *dev,
 				uint8_t *major, uint8_t *minor, uint8_t *build_number);
 
+/* -------------------------------------------------------------------------- */
+/* 0xB5: Pairing Information                                                  */
+/* -------------------------------------------------------------------------- */
+int
+hidpp10_get_pairing_information(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t *report_interval,
+				uint16_t *wpid,
+				uint8_t *device_type);
+int
+hidpp10_get_pairing_information_device_name(struct ratbag_device *device,
+					    struct hidpp10_device *dev,
+					    char *name,
+					    size_t *name_sz);
 #endif /* HIDPP_10_H */
