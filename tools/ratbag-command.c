@@ -276,7 +276,7 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 
 			button = ratbag_profile_get_button_by_index(profile, b);
 			type = ratbag_button_get_type(button);
-			printf("Button: %d type %s\n", b, button_type_to_str(type));
+			printf("    Button: %d type %s\n", b, button_type_to_str(type));
 			button = ratbag_button_unref(button);
 		}
 
