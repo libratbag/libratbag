@@ -328,6 +328,26 @@ hidpp10_get_led_status(struct ratbag_device *device,
 	return 0;
 }
 
+int
+hidpp10_set_led_status(struct ratbag_device *device,
+		       struct hidpp10_device *dev,
+		       const bool led[4])
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_status = CMD_LED_STATUS(idx, SET_REGISTER_REQ);
+	int res;
+
+
+	/* each led is 4-bits, 0x1 == off, 0x2 == on */
+	led_status.msg.parameters[0] |= led[0] ? 0x02 : 0x01; /* running man logo */
+	led_status.msg.parameters[0] |= led[1] ? 0x20 : 0x10; /* lowest */
+	led_status.msg.parameters[1] |= led[2] ? 0x02 : 0x01; /* middle */
+	led_status.msg.parameters[1] |= led[3] ? 0x20 : 0x10; /* highest */
+
+	res = hidpp10_request_command(device, &led_status);
+	return res;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 0x61: Optical Sensor Settings                                              */
 /* -------------------------------------------------------------------------- */

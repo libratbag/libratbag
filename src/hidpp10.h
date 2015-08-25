@@ -80,6 +80,10 @@ int
 hidpp10_get_led_status(struct ratbag_device *device,
 		       struct hidpp10_device *dev,
 		       bool led[4]);
+int
+hidpp10_set_led_status(struct ratbag_device *device,
+		       struct hidpp10_device *dev,
+		       const bool led[4]);
 
 /* -------------------------------------------------------------------------- */
 /* 0x63: Current Resolution                                                   */
