@@ -186,6 +186,26 @@ out:
 }
 
 static int
+hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	int rc;
+	struct hidpp10_profile profile;
+
+	/* We don't know the HID++1.0 requests to query for buttons, etc.
+	 * and the get_current_profile request is garbage. So get profile 1
+	 * and fill the device information in from that.
+	 */
+	rc = hidpp10_get_profile(dev, 0, &profile);
+	if (rc)
+		return rc;
+
+	device->num_buttons = profile.num_buttons;
+	device->num_profiles = HIDPP10_NUM_PROFILES;
+
+	return 0;
+}
+
+static int
 hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
@@ -230,8 +250,11 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	drv_data->dev = dev;
 	ratbag_set_drv_data(device, drv_data);
 
-	device->num_profiles = 1;
-	device->num_buttons = 8;
+	if (hidpp10drv_fill_from_profile(device, dev)) {
+		/* Fall back to something that every mouse has */
+		device->num_profiles = 1;
+		device->num_buttons = 3;
+	}
 
 	return 0;
 err:
