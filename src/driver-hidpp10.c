@@ -88,13 +88,15 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag_device *device = profile->device;
 	struct hidpp10drv_data *drv_data;
 	struct hidpp10_device *hidpp10;
+	uint16_t xres, yres, refresh;
 
 	drv_data = ratbag_get_drv_data(device);
 	hidpp10 = &drv_data->dev;
 
-	/* FIXME: read this from device */
-	profile->current_dpi = hidpp10->xres;
-	profile->report_rate = hidpp10->refresh_rate;
+	hidpp10_get_current_resolution(device, hidpp10, &xres, &yres);
+	hidpp10_get_usb_refresh_rate(device, hidpp10, &refresh);
+	profile->current_dpi = xres;
+	profile->report_rate = refresh;
 }
 
 static int
