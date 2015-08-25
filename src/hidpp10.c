@@ -219,14 +219,6 @@ hidpp10_get_hidpp_notifications(struct ratbag_device *device, struct hidpp10_dev
 /* -------------------------------------------------------------------------- */
 
 #define __CMD_ENABLE_INDIVIDUAL_FEATURES	0x01
-#define FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION		1
-#define FEATURE_BIT_R0_ENHANCED_KEY_USAGE		2
-#define FEATURE_BIT_R0_FAST_FORWARD_REWIND		3
-#define FEATURE_BIT_R0_SCROLLING_ACCELERATION		6
-#define FEATURE_BIT_R0_BUTTONS_CONTROL_THE_RESOLUTION	7
-#define FEATURE_BIT_R2_INHIBIT_LOCK_KEY_SOUND		0
-#define FEATURE_BIT_R2_3D_ENGINE			2
-#define FEATURE_BIT_R2_HOST_SW_CONTROLS_LEDS		3
 
 #define CMD_ENABLE_INDIVIDUAL_FEATURES(idx, sub)	{ \
 	.msg = { \
@@ -238,48 +230,44 @@ hidpp10_get_hidpp_notifications(struct ratbag_device *device, struct hidpp10_dev
 	} \
 }
 
-static int
-hidpp10_get_individual_features(struct ratbag_device *device, struct hidpp10_device *dev)
+int
+hidpp10_get_individual_features(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t *feature_bit_r0,
+				uint8_t *feature_bit_r2)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
 
 	res = hidpp10_request_command(device, &features);
-	if (res == 0) {
-		/* do something */
-	}
+	if (res)
+		return res;
 
-	return res;
+	*feature_bit_r0 = features.msg.parameters[0];
+	*feature_bit_r2 = features.msg.parameters[2];
+
+	return 0;
 }
 
 int
-hidpp10_toggle_individual_feature(struct ratbag_device *device, struct hidpp10_device *dev,
-				  int feature_bit_r0, int feature_bit_r2)
+hidpp10_set_individual_feature(struct ratbag_device *device,
+			       struct hidpp10_device *dev,
+			       uint8_t feature_bit_r0,
+			       uint8_t feature_bit_r2)
 {
 	unsigned idx = RECEIVER_IDX;
-	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
+	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, SET_REGISTER_REQ);
 	int res;
 
 	if (dev)
 		mode.msg.device_idx = dev->index;
 
-	/* first read the current values */
+	mode.msg.parameters[0] = feature_bit_r0;
+	mode.msg.parameters[1] = feature_bit_r2;
+
 	res = hidpp10_request_command(device, &mode);
-	if (res)
-		return -1;
 
-	/* toggle bits of r0 */
-	if (feature_bit_r0 >= 0)
-		mode.msg.parameters[0] ^= 1U << feature_bit_r0;
-
-	/* toggle bits of r2 */
-	if (feature_bit_r2 >= 0)
-		mode.msg.parameters[2] ^= 1U << feature_bit_r2;
-
-	/* now write back the change */
-	mode.msg.sub_id = SET_REGISTER_REQ;
-	res = hidpp10_request_command(device, &mode);
 	return res;
 }
 
@@ -618,6 +606,7 @@ static int
 hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
 {
 	size_t name_size = sizeof(dev->name);
+	uint8_t f1, f2;
 
 	hidpp10_get_pairing_information(device, dev,
 					&dev->report_interval,
@@ -628,7 +617,7 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 						    &name_size);
 	hidpp10_get_firmare_information(device, dev, &dev->fw_major, &dev->fw_minor, &dev->build);
 
-	hidpp10_get_individual_features(device, dev);
+	hidpp10_get_individual_features(device, dev, &f1, &f2);
 	hidpp10_get_hidpp_notifications(device, dev);
 
 	hidpp10_get_current_resolution(device, dev, &dev->xres, &dev->yres);
