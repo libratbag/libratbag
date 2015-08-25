@@ -213,8 +213,8 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 
 	if (is_unifying_receiver)
 		dev = hidpp10_device_new_from_wpid(device, id.id.product);
-	else /* wired devices are 0 */
-		dev = hidpp10_device_new_from_idx(device, 0);
+	else
+		dev = hidpp10_device_new_from_idx(device, WIRED_DEVICE_IDX);
 
 	if (!dev) {
 		log_error(device->ratbag,
