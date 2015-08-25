@@ -136,6 +136,8 @@ button_type_to_str(enum ratbag_button_type type)
 	case RATBAG_BUTTON_TYPE_RIGHT:		str = "right"; break;
 	case RATBAG_BUTTON_TYPE_THUMB:		str = "thumb"; break;
 	case RATBAG_BUTTON_TYPE_THUMB2:		str = "thumb2"; break;
+	case RATBAG_BUTTON_TYPE_THUMB3:		str = "thumb3"; break;
+	case RATBAG_BUTTON_TYPE_THUMB4:		str = "thumb4"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_LEFT:	str = "wheel left"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_RIGHT:	str = "wheel right"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_CLICK:	str = "wheel click"; break;
