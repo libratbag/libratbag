@@ -587,20 +587,21 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 }
 
 void hidpp10_list_devices(struct ratbag_device *device) {
-	struct hidpp10_device dev;
-	int i, res;
-
-	hidpp10_device_init(device, &dev);
+	struct hidpp10_device *dev;
+	int i;
 
 	for (i = 0; i < 6; ++i) {
-		res = hidpp10_get_device_from_idx(&dev, i);
-		if (res)
+		dev = hidpp10_device_new_from_idx(device, i);
+		if (!dev)
 			continue;
 
-		log_info(device->ratbag, "[%d] %s	%s (Wireless PID: %04x)\n", i, device_types[dev.device_type] ? device_types[dev.device_type] : "", dev.name, dev.wpid);
+		log_info(device->ratbag, "[%d] %s	%s (Wireless PID: %04x)\n",
+			 i,
+			 device_types[dev->device_type] ? device_types[dev->device_type] : "",
+			 dev->name, dev->wpid);
+		hidpp10_device_destroy(dev);
 	}
 
-	hidpp10_device_cleanup(&dev);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -633,41 +634,62 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	return 0;
 }
 
-int
-hidpp10_get_device_from_wpid(struct hidpp10_device* dev, uint16_t wpid)
+static struct hidpp10_device*
+hidpp10_device_new(struct ratbag_device *device, int index)
 {
-	int i, res;
+	struct hidpp10_device *dev;
+
+	dev = zalloc(sizeof(*dev));
+	if (!dev)
+		return NULL;
+
+	dev->index = index;
+	dev->ratbag_device = ratbag_device_ref(device);
+
+	return dev;
+}
+
+struct hidpp10_device*
+hidpp10_device_new_from_wpid(struct ratbag_device* device, uint16_t wpid)
+{
+	struct hidpp10_device *dev;
+	int i;
 
 	for (i = 1; i < 7; i++) {
-		res = hidpp10_get_device_from_idx(dev, i);
-		if (res)
+		dev = hidpp10_device_new_from_idx(device, i);
+		if (!dev)
 			continue;
 
 		if (dev->wpid == wpid)
-			break;
+			return dev;
 
-		res = -1;
+		hidpp10_device_destroy(dev);
 	}
 
-	return res;
+	return NULL;
 }
 
-int
-hidpp10_get_device_from_idx(struct hidpp10_device *dev, int idx)
+struct hidpp10_device*
+hidpp10_device_new_from_idx(struct ratbag_device *device, int idx)
 {
+	struct hidpp10_device *dev;
+
+	dev = hidpp10_device_new(device, idx);
+	if (!dev)
+		return NULL;
+
 	dev->index = idx;
-	return hidpp10_get_device_info(dev);
+	if (hidpp10_get_device_info(dev) != 0) {
+		hidpp10_device_destroy(dev);
+		dev = NULL;
+	}
+
+	return dev;
 }
 
 void
-hidpp10_device_init(struct ratbag_device *device, struct hidpp10_device *dev)
-{
-	dev->index = 0x00; /* default for wired */
-	dev->ratbag_device = ratbag_device_ref(device);
-}
-
-void
-hidpp10_device_cleanup(struct hidpp10_device *dev)
+hidpp10_device_destroy(struct hidpp10_device *dev)
 {
 	ratbag_device_unref(dev->ratbag_device);
+	free(dev);
 }
