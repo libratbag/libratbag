@@ -533,28 +533,34 @@ hidpp10_get_pairing_information(struct ratbag_device *device, struct hidpp10_dev
 	} \
 }
 
-static int
-hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_device *dev)
+int
+hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_device *dev,
+				uint8_t *major_out, uint8_t *minor_out, uint8_t *build_out)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
 	union hidpp10_message build_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(1));
 	int res;
+	uint8_t maj, min, build;
 
 	/*
 	 * This may fail on some devices
 	 * => we can not retrieve their FW version through HID++ 1.0.
 	 */
 	res = hidpp10_request_command(device, &firmware_information);
-	if (res == 0) {
-		dev->fw_major = firmware_information.msg.string[1];
-		dev->fw_minor = firmware_information.msg.string[2];
-	}
+	if (res)
+		return res;
+	maj = firmware_information.msg.string[1];
+	min = firmware_information.msg.string[2];
 
 	res = hidpp10_request_command(device, &build_information);
-	if (res == 0) {
-		dev->build = hidpp10_get_unaligned_u16(&build_information.msg.string[1]);
-	}
+	if (res)
+		return res;
+	build = hidpp10_get_unaligned_u16(&build_information.msg.string[1]);
+
+	*major_out = maj;
+	*minor_out = min;
+	*build_out = build;
 
 	return 0;
 }
@@ -579,7 +585,7 @@ static int
 hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
 {
 	hidpp10_get_pairing_information(device, dev);
-	hidpp10_get_firmare_information(device, dev);
+	hidpp10_get_firmare_information(device, dev, &dev->fw_major, &dev->fw_minor, &dev->build);
 
 	hidpp10_get_individual_features(device, dev);
 	hidpp10_get_hidpp_notifications(device, dev);

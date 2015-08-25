@@ -71,4 +71,13 @@ int hidpp10_disconnect(struct ratbag_device *device, int idx);
 void hidpp10_list_devices(struct ratbag_device *device);
 int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct hidpp10_device *dev);
 int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev);
+
+/* -------------------------------------------------------------------------- */
+/* 0xF1: Device Firmware Information                                          */
+/* -------------------------------------------------------------------------- */
+int
+hidpp10_get_firmare_information(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t *major, uint8_t *minor, uint8_t *build_number);
+
 #endif /* HIDPP_10_H */
