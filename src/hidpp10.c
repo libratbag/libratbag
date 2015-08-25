@@ -523,6 +523,8 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		}
 	}
 
+	*profile_return = profile;
+
 	return 0;
 }
 
