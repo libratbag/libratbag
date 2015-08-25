@@ -140,6 +140,15 @@ int
 hidpp10_get_current_resolution(struct ratbag_device *device,
 			       struct hidpp10_device *dev,
 			       uint16_t *xres, uint16_t *yres);
+
+/* -------------------------------------------------------------------------- */
+/* 0x64: Device Firmware Information                                          */
+/* -------------------------------------------------------------------------- */
+int
+hidpp10_get_usb_refresh_rate(struct ratbag_device *device,
+			     struct hidpp10_device *dev,
+			     uint16_t *rate);
+
 /* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */
