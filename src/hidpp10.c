@@ -179,15 +179,6 @@ out_err:
 /* -------------------------------------------------------------------------- */
 
 #define __CMD_HIDPP_NOTIFICATIONS		0x00
-#define FEATURE_BIT_R0_CONSUMER_SPECIFIC_CONTROL	0
-#define FEATURE_BIT_R0_POWER_KEYS			1
-#define FEATURE_BIT_R0_VERTICAL_SCROLL			2
-#define FEATURE_BIT_R0_MOUSE_EXTRA_BUTTONS		3
-#define FEATURE_BIT_R0_BATTERY_STATUS			4
-#define FEATURE_BIT_R0_HORIZONTAL_SCROLL		5
-#define FEATURE_BIT_R0_F_LOCK_STATUS			6
-#define FEATURE_BIT_R0_NUMPAD_NUMERIC_KEYS		7
-#define FEATURE_BIT_R2_3D_GESTURES			0
 
 #define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
 	.msg = { \
@@ -199,17 +190,40 @@ out_err:
 	} \
 }
 
-static int
-hidpp10_get_hidpp_notifications(struct ratbag_device *device, struct hidpp10_device *dev)
+int
+hidpp10_get_hidpp_notifications(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t *reporting_flags_r0,
+				uint8_t *reporting_flags_r2)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
 	int res;
 
 	res = hidpp10_request_command(device, &notifications);
-	if (res == 0) {
-		/* do something */
-	}
+	if (res)
+		return res;
+
+	*reporting_flags_r0 = notifications.msg.parameters[0];
+	*reporting_flags_r2 = notifications.msg.parameters[2];
+
+	return res;
+}
+
+int
+hidpp10_set_hidpp_notifications(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t reporting_flags_r0,
+				uint8_t reporting_flags_r2)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, SET_REGISTER_REQ);
+	int res;
+
+	notifications.msg.parameters[0] = reporting_flags_r0;
+	notifications.msg.parameters[2] = reporting_flags_r2;
+
+	res = hidpp10_request_command(device, &notifications);
 
 	return res;
 }
@@ -618,7 +632,7 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 	hidpp10_get_firmare_information(device, dev, &dev->fw_major, &dev->fw_minor, &dev->build);
 
 	hidpp10_get_individual_features(device, dev, &f1, &f2);
-	hidpp10_get_hidpp_notifications(device, dev);
+	hidpp10_get_hidpp_notifications(device, dev, &f1, &f2);
 
 	hidpp10_get_current_resolution(device, dev, &dev->xres, &dev->yres);
 	hidpp10_get_led_status(device, dev, dev->led);

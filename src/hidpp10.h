@@ -73,6 +73,31 @@ int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, st
 int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev);
 
 /* -------------------------------------------------------------------------- */
+/* 0x00: Enable HID++ Notifications                                           */
+/* -------------------------------------------------------------------------- */
+#define REPORING_FLAGS_R0_CONSUMER_SPECIFIC_CONTROL	0
+#define REPORING_FLAGS_R0_POWER_KEYS			1
+#define REPORING_FLAGS_R0_VERTICAL_SCROLL			2
+#define REPORING_FLAGS_R0_MOUSE_EXTRA_BUTTONS		3
+#define REPORING_FLAGS_R0_BATTERY_STATUS			4
+#define REPORING_FLAGS_R0_HORIZONTAL_SCROLL		5
+#define REPORING_FLAGS_R0_F_LOCK_STATUS			6
+#define REPORING_FLAGS_R0_NUMPAD_NUMERIC_KEYS		7
+#define REPORING_FLAGS_R2_3D_GESTURES			0
+
+int
+hidpp10_get_hidpp_notifications(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t *reporting_flags_r0,
+				uint8_t *reporting_flags_r2);
+
+int
+hidpp10_set_hidpp_notifications(struct ratbag_device *device,
+				struct hidpp10_device *dev,
+				uint8_t reporting_flags_r0,
+				uint8_t reporting_flags_r2);
+
+/* -------------------------------------------------------------------------- */
 /* 0x01: Enable Individual Features                                           */
 /* -------------------------------------------------------------------------- */
 #define FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION		1
