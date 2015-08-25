@@ -73,6 +73,13 @@ int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, st
 int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev);
 
 /* -------------------------------------------------------------------------- */
+/* 0x63: Current Resolution                                                   */
+/* -------------------------------------------------------------------------- */
+int
+hidpp10_get_current_resolution(struct ratbag_device *device,
+			       struct hidpp10_device *dev,
+			       uint16_t *xres, uint16_t *yres);
+/* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */
 int

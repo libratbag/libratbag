@@ -373,27 +373,24 @@ hidpp10_get_optical_sensor_settings(struct ratbag_device *device, struct hidpp10
 	} \
 }
 
-static int
-hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_device *dev)
+int
+hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_device *dev,
+			       uint16_t *xres, uint16_t *yres)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
 	int res;
-	int xres, yres;
 
 	res = hidpp10_request_command(device, &resolution);
 	if (res)
 		return res;
 
 	/* resolution is in 50dpi multiples */
-	xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
-	yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
+	*xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
+	*yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
 
 	log_debug(device->ratbag,
 		  "Resolution is %dx%ddpi\n", xres, yres);
-
-	dev->xres = xres;
-	dev->yres = yres;
 
 	return 0;
 }
@@ -613,7 +610,7 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 	hidpp10_get_individual_features(device, dev);
 	hidpp10_get_hidpp_notifications(device, dev);
 
-	hidpp10_get_current_resolution(device, dev);
+	hidpp10_get_current_resolution(device, dev, &dev->xres, &dev->yres);
 	hidpp10_get_led_status(device, dev);
 	hidpp10_get_optical_sensor_settings(device, dev);
 	hidpp10_get_usb_refresh_rate(device, dev);
