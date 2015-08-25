@@ -80,15 +80,15 @@ int hidpp10_get_device_from_idx(struct hidpp10_device *dev, int idx);
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
 /* -------------------------------------------------------------------------- */
-#define REPORING_FLAGS_R0_CONSUMER_SPECIFIC_CONTROL	0
-#define REPORING_FLAGS_R0_POWER_KEYS			1
-#define REPORING_FLAGS_R0_VERTICAL_SCROLL			2
-#define REPORING_FLAGS_R0_MOUSE_EXTRA_BUTTONS		3
-#define REPORING_FLAGS_R0_BATTERY_STATUS			4
-#define REPORING_FLAGS_R0_HORIZONTAL_SCROLL		5
-#define REPORING_FLAGS_R0_F_LOCK_STATUS			6
-#define REPORING_FLAGS_R0_NUMPAD_NUMERIC_KEYS		7
-#define REPORING_FLAGS_R2_3D_GESTURES			0
+#define REPORTING_FLAGS_R0_CONSUMER_SPECIFIC_CONTROL	0
+#define REPORTING_FLAGS_R0_POWER_KEYS			1
+#define REPORTING_FLAGS_R0_VERTICAL_SCROLL		2
+#define REPORTING_FLAGS_R0_MOUSE_EXTRA_BUTTONS		3
+#define REPORTING_FLAGS_R0_BATTERY_STATUS		4
+#define REPORTING_FLAGS_R0_HORIZONTAL_SCROLL		5
+#define REPORTING_FLAGS_R0_F_LOCK_STATUS		6
+#define REPORTING_FLAGS_R0_NUMPAD_NUMERIC_KEYS		7
+#define REPORTING_FLAGS_R2_3D_GESTURES			0
 
 int
 hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
