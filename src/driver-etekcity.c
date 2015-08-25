@@ -115,11 +115,12 @@ struct etekcity_button_mapping {
 };
 
 static struct etekcity_button_mapping etekcity_button_mapping[] = {
-	{ 0, RATBAG_BUTTON_TYPE_NONE },
 	{ 1, RATBAG_BUTTON_TYPE_LEFT },
 	{ 2, RATBAG_BUTTON_TYPE_RIGHT },
 	{ 3, RATBAG_BUTTON_TYPE_MIDDLE },
 //	{ 4, "2 x BTN_LEFT" },
+	{ 6, RATBAG_BUTTON_TYPE_NONE },
+	{ 0, RATBAG_BUTTON_TYPE_NONE },
 	{ 7, RATBAG_BUTTON_TYPE_EXTRA },
 	{ 8, RATBAG_BUTTON_TYPE_SIDE },
 	{ 9, RATBAG_BUTTON_TYPE_WHEEL_UP },
@@ -131,6 +132,9 @@ static struct etekcity_button_mapping etekcity_button_mapping[] = {
 	{ 13, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP },
 	{ 14, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
 	{ 15, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+
+	/* Macro */
+	{ 16, RATBAG_BUTTON_TYPE_MACRO },
 
 	/* Profile */
 	{ 18, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP },

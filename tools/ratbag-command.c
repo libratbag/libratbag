@@ -154,6 +154,9 @@ button_type_to_str(enum ratbag_button_type type)
 	case RATBAG_BUTTON_TYPE_PROFILE_UP:		str = "profile up"; break;
 	case RATBAG_BUTTON_TYPE_PROFILE_DOWN:		str = "profile down"; break;
 
+	/* Macro */
+	case RATBAG_BUTTON_TYPE_MACRO:			str = "macro"; break;
+
 	/* multimedia */
 	case RATBAG_BUTTON_TYPE_KEY_CONFIG:		str = "key config"; break;
 	case RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG:	str = "key previous song"; break;
