@@ -284,7 +284,6 @@ ratbag_find_driver(struct ratbag_device *device, const struct input_id *dev_id)
 		matching_id = driver->table_ids;
 		do {
 			if (ratbag_match_id(dev_id, &matching_id->id)) {
-				assert(driver->probe);
 				matched_id.id = *dev_id;
 				matched_id.data = matching_id->data;
 				device->driver = driver;
@@ -436,6 +435,15 @@ ratbag_device_get_name(const struct ratbag_device* device)
 static void
 ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 {
+	if (!driver->name) {
+		log_bug_libratbag(ratbag, "Driver is missing name\n");
+		return;
+	}
+
+	if (!driver->probe || !driver->remove || !driver->table_ids) {
+		log_bug_libratbag(ratbag, "Driver %s is incomplete.\n");
+		return;
+	}
 	list_insert(&ratbag->drivers, &driver->link);
 }
 
