@@ -148,7 +148,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		if (!memcmp(read_buffer.data, expected_error_recv.data, 5) ||
 		    !memcmp(read_buffer.data, expected_error_dev.data, 5)) {
 			hidpp_err = read_buffer.msg.parameters[1];
-			log_error(ratbag,
+			log_debug(ratbag,
 				"    HID++ error from the %s (%d): %s (%02x)\n",
 				read_buffer.msg.device_idx == RECEIVER_IDX ? "receiver" : "device",
 				read_buffer.msg.device_idx,
