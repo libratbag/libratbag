@@ -36,20 +36,7 @@
 #include "libratbag-private.h"
 #include "libratbag.h"
 
-struct hidpp10_device  {
-	struct ratbag_device *ratbag_device;
-	unsigned index;
-	char name[15];
-	uint16_t wpid;
-	uint8_t report_interval;
-	uint8_t device_type;
-	uint8_t fw_major;
-	uint8_t fw_minor;
-	uint8_t build;
-	uint16_t xres, yres;
-	uint16_t refresh_rate;
-	bool led[4];
-};
+struct hidpp10_device;
 
 struct _hidpp10_message {
 	uint8_t report_id;
@@ -122,6 +109,62 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 			       uint8_t feature_bit_r2);
 
 /* -------------------------------------------------------------------------- */
+/* 0x0F: Profile queries                                                      */
+/* -------------------------------------------------------------------------- */
+#define PROFILE_NUM_BUTTONS				13
+#define PROFILE_NUM_DPI_MODES				5
+#define PROFILE_BUTTON_TYPE_BUTTON			0x81
+#define PROFILE_BUTTON_TYPE_KEYS			0x82
+#define PROFILE_BUTTON_TYPE_SPECIAL			0x83
+#define PROFILE_BUTTON_TYPE_CONSUMER_CONTROL		0x84
+#define PROFILE_BUTTON_TYPE_DISABLED			0x8F
+
+#define PROFILE_BUTTON_SPECIAL_PAN_LEFT			0x1
+#define PROFILE_BUTTON_SPECIAL_PAN_RIGHT		0x2
+#define PROFILE_BUTTON_SPECIAL_DPI_NEXT			0x4
+#define PROFILE_BUTTON_SPECIAL_DPI_PREV			0x8
+
+struct hidpp10_profile {
+	struct {
+		uint16_t xres;
+		uint16_t yres;
+		bool led[4];
+	} dpi_modes[5];
+	bool angle_correction;
+	uint8_t default_dpi_mode;
+	uint16_t refresh_rate;
+	union hidpp10_buttons {
+		struct { uint8_t type; } any;
+		struct {
+			uint8_t type;
+			uint16_t button;
+		} button;
+		struct {
+			uint8_t type;
+			uint8_t modifier_flags;
+			uint8_t key;
+		} keys;
+		struct {
+			uint8_t type;
+			uint16_t special;
+		} special;
+		struct {
+			uint8_t type;
+			uint16_t consumer_control;
+		} consumer_control;
+		struct {
+			uint8_t type;
+		} disabled;
+	} buttons[PROFILE_NUM_BUTTONS];
+};
+
+int
+hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile);
+
+int
+hidpp10_get_profile(struct hidpp10_device *dev, int8_t number,
+		    struct hidpp10_profile *profile);
+/* -------------------------------------------------------------------------- */
 /* 0x51: LED Status                                                           */
 /* -------------------------------------------------------------------------- */
 int
@@ -172,4 +215,24 @@ int
 hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 					    char *name,
 					    size_t *name_sz);
+
+/* FIXME: that's what my G500s supports, but only pages 3-5 are valid.
+ * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
+#define HIDPP10_NUM_PROFILES 3
+struct hidpp10_device  {
+	struct ratbag_device *ratbag_device;
+	unsigned index;
+	char name[15];
+	uint16_t wpid;
+	uint8_t report_interval;
+	uint8_t device_type;
+	uint8_t fw_major;
+	uint8_t fw_minor;
+	uint8_t build;
+	uint16_t xres, yres;
+	uint16_t refresh_rate;
+	bool led[4];
+	int8_t current_profile;
+	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
+};
 #endif /* HIDPP_10_H */

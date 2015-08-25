@@ -175,6 +175,13 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 out_err:
 	return ret;
 }
+/* -------------------------------------------------------------------------- */
+/* HID++ 1.0 commands 10                                                      */
+/* -------------------------------------------------------------------------- */
+
+static int
+hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
+		    uint8_t bytes[16]);
 
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
@@ -281,6 +288,230 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 	res = hidpp10_request_command(dev, &mode);
 
 	return res;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x0F: Profile queries                                                      */
+/* -------------------------------------------------------------------------- */
+#define __CMD_PROFILE				0x0F
+
+#define CMD_PROFILE(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_PROFILE, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+struct _hidpp10_dpi_mode {
+	uint16_t xres;
+	uint16_t yres;
+	uint8_t led1:4;
+	uint8_t led2:4;
+	uint8_t led3:4;
+	uint8_t led4:4;
+} __attribute__((packed));
+_Static_assert(sizeof(struct _hidpp10_dpi_mode) == 6, "Invalid size");
+
+union _hidpp10_button_binding {
+	struct {
+		uint8_t type;
+		uint8_t pad;
+		uint8_t pad1;
+	} any;
+	struct {
+		uint8_t type; /* 0x81 */
+		uint8_t button_flags_lsb;
+		uint8_t button_flags_msb;
+	} button;
+	struct {
+		uint8_t type; /* 0x82 */
+		uint8_t modifier_flags;
+		uint8_t key;
+	} keyboard_keys;
+	struct {
+		uint8_t type; /* 0x83 */
+		uint8_t flags1;
+		uint8_t flags2;
+	} special;
+	struct {
+		uint8_t type; /* 0x84 */
+		uint8_t consumer_control1;
+		uint8_t consumer_control2;
+	} consumer_control;
+	struct {
+		uint8_t type; /* 0x8F */
+		uint8_t zero0;
+		uint8_t zero1;
+	} disabled;
+} __attribute__((packed));
+_Static_assert(sizeof(union _hidpp10_button_binding) == 3, "Invalid size");
+
+struct _hidpp10_profile {
+	uint8_t unknown[4];
+	struct _hidpp10_dpi_mode dpi_modes[PROFILE_NUM_DPI_MODES];
+	uint8_t angle_correction;
+	uint8_t default_dpi_mode;
+	uint8_t unknown2[2];
+	uint8_t usb_refresh_rate;
+	union _hidpp10_button_binding buttons[PROFILE_NUM_BUTTONS];
+} __attribute__((packed));
+_Static_assert(sizeof(struct _hidpp10_profile) == 78, "Invalid size");
+
+union _hidpp10_profile_data {
+	struct _hidpp10_profile profile;
+	uint8_t data[((sizeof(struct _hidpp10_profile) + 15)/16)*16];
+};
+_Static_assert((sizeof(union _hidpp10_profile_data) % 16) == 0, "Invalid size");
+
+int
+hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message profile = CMD_PROFILE(idx, GET_REGISTER_REQ);
+	int res;
+	int8_t page;
+
+	res = hidpp10_request_command(dev, &profile);
+	if (res)
+		return res;
+
+	page = profile.msg.parameters[0]; /* FIXME: my mouse is always 0 */
+	*current_profile = page;
+
+	/* FIXME: my mouse appears to be on profile 5, not sure how to
+	 * change this */
+
+	return 0;
+}
+
+int
+hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile_return)
+{
+	struct ratbag *ratbag = dev->ratbag_device->ratbag;
+	union _hidpp10_profile_data data;
+	struct _hidpp10_profile *p = &data.profile;
+	size_t i;
+	int res;
+	struct hidpp10_profile profile;
+
+	/* FIXME: profile offset appears to be 3, 1 and 2 are garbage */
+	number += 3;
+
+	for (i = 0; i < sizeof(data); i += 16) {
+		res = hidpp10_read_memory(dev, number, i,  &data.data[i]);
+		if (res)
+			return res;
+	}
+
+	profile.angle_correction = p->angle_correction;
+	profile.default_dpi_mode = p->default_dpi_mode;
+	profile.refresh_rate = p->usb_refresh_rate ? 1000/p->usb_refresh_rate : 0;
+
+	for (i = 0; i < PROFILE_NUM_DPI_MODES; i++) {
+		uint8_t *be; /* in big endian */
+		struct _hidpp10_dpi_mode *dpi = &p->dpi_modes[i];
+
+		be = (uint8_t*)&dpi->xres;
+		profile.dpi_modes[i].xres = hidpp10_get_unaligned_u16(be) * 50;
+		be = (uint8_t*)&dpi->yres;
+		profile.dpi_modes[i].yres = hidpp10_get_unaligned_u16(be) * 50;
+
+		profile.dpi_modes[i].led[0] = dpi->led1 == 0x2;
+		profile.dpi_modes[i].led[1] = dpi->led2 == 0x2;
+		profile.dpi_modes[i].led[2] = dpi->led3 == 0x2;
+		profile.dpi_modes[i].led[3] = dpi->led4 == 0x2;
+	}
+
+	for (i = 0; i < PROFILE_NUM_BUTTONS; i++) {
+		union _hidpp10_button_binding *b = &p->buttons[i];
+		union hidpp10_buttons *button = &profile.buttons[i];
+
+		button->any.type = b->any.type;
+
+		switch (b->any.type) {
+		case PROFILE_BUTTON_TYPE_BUTTON:
+			button->button.button =
+				ffs(hidpp10_get_unaligned_u16le(&b->button.button_flags_lsb));
+			break;
+		case PROFILE_BUTTON_TYPE_KEYS:
+			button->keys.modifier_flags = b->keyboard_keys.modifier_flags;
+			button->keys.key = b->keyboard_keys.key;
+			break;
+		case PROFILE_BUTTON_TYPE_SPECIAL:
+			button->special.special = ffs(hidpp10_get_unaligned_u16le(&b->special.flags1));
+			break;
+		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
+			button->consumer_control.consumer_control =
+				  hidpp10_get_unaligned_u16(&b->consumer_control.consumer_control1);
+			break;
+		case PROFILE_BUTTON_TYPE_DISABLED:
+			break;
+		}
+
+	}
+
+	log_buf_debug(ratbag,
+		      "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
+		      data.data, 78);
+
+	log_debug(ratbag, "Profile %d:\n", number);
+	for (i = 0; i < 5; i++) {
+		log_debug(ratbag,
+			  "DPI mode: %dx%d dpi\n",
+			  profile.dpi_modes[i].xres,
+			  profile.dpi_modes[i].yres);
+	        log_debug(ratbag,
+			  "LED status: 1:%s 2:%s 3:%s 4:%s\n",
+			  (p->dpi_modes[i].led1 & 0x2) ? "on" : "off",
+			  (p->dpi_modes[i].led2 & 0x2) ? "on" : "off",
+			  (p->dpi_modes[i].led3 & 0x2) ? "on" : "off",
+			  (p->dpi_modes[i].led4 & 0x2) ? "on" : "off");
+	}
+	log_debug(ratbag, "Angle correction: %d\n", profile.angle_correction);
+	log_debug(ratbag, "Default DPI mode: %d\n", profile.default_dpi_mode);
+	log_debug(ratbag, "Refresh rate: %d\n", profile.refresh_rate);
+	for (i = 0; i < 13; i++) {
+		union _hidpp10_button_binding *button = &p->buttons[i];
+		switch (button->any.type) {
+		case 0x81:
+			log_debug(ratbag,
+				  "Button %d: button %d\n",
+				  i,
+				  ffs(hidpp10_get_unaligned_u16le(&button->button.button_flags_lsb)));
+			break;
+		case 0x82:
+			log_debug(ratbag,
+				  "Button %d: key %d modifier %x\n",
+				  i,
+				  button->keyboard_keys.key,
+				  button->keyboard_keys.modifier_flags);
+			break;
+		case 0x83:
+			log_debug(ratbag,
+				  "Button %d: special %x\n",
+				  i,
+				  ffs(hidpp10_get_unaligned_u16le(&button->special.flags1)));
+			break;
+		case 0x84:
+			log_debug(ratbag,
+				  "Button %d: consumer: %x\n",
+				  i,
+				  hidpp10_get_unaligned_u16(&button->consumer_control.consumer_control1));
+			break;
+		case 0x8F:
+			log_debug(ratbag, "Button %d: disabled\n", i);
+			break;
+		default:
+			/* FIXME: this is the page number for the macro,
+			 * followed by a 1-byte offset */
+			break ;
+		}
+	}
+
+	return 0;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -436,6 +667,38 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 		return res;
 
 	*rate = 1000/refresh.msg.parameters[0];
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0xA2: Reading memory                                                       */
+/* -------------------------------------------------------------------------- */
+#define __CMD_READ_MEMORY			0xA2
+
+#define CMD_READ_MEMORY(idx, page, offset) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = GET_LONG_REGISTER_REQ, \
+		.address = __CMD_READ_MEMORY, \
+		.parameters = {page, offset & 0xff, offset >> 8 }, \
+	} \
+}
+
+static int
+hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
+		    uint8_t bytes[16])
+{
+	unsigned idx = dev->index;
+	union hidpp10_message readmem = CMD_READ_MEMORY(idx, page, offset/2);
+	int res;
+
+	res = hidpp10_request_command(dev, &readmem);
+	if (res)
+		return res;
+
+	memcpy(bytes, readmem.msg.string, sizeof(readmem.msg.string));
 
 	return 0;
 }
@@ -613,6 +876,7 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	size_t name_size = sizeof(dev->name);
 	uint8_t f1, f2;
 	uint8_t reflect;
+	int i;
 
 	hidpp10_get_pairing_information(dev,
 					&dev->report_interval,
@@ -631,6 +895,12 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	hidpp10_get_usb_refresh_rate(dev, &dev->refresh_rate);
 
 	hidpp10_get_optical_sensor_settings(dev, &reflect);
+
+	hidpp10_get_current_profile(dev, &dev->current_profile);
+
+	for (i = 0; i < HIDPP10_NUM_PROFILES; i++)
+		hidpp10_get_profile(dev, i, &dev->profiles[i]);
+
 	return 0;
 }
 
