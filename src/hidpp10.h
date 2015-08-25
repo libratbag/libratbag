@@ -134,6 +134,13 @@ hidpp10_set_led_status(struct ratbag_device *device,
 		       const bool led[4]);
 
 /* -------------------------------------------------------------------------- */
+/* 0x61: Optical Sensor Settings                                              */
+/* -------------------------------------------------------------------------- */
+int
+hidpp10_get_optical_sensor_settings(struct ratbag_device *device,
+				    struct hidpp10_device *dev,
+				    uint8_t *surface_reflectivity);
+/* -------------------------------------------------------------------------- */
 /* 0x63: Current Resolution                                                   */
 /* -------------------------------------------------------------------------- */
 int

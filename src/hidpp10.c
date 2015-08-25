@@ -365,8 +365,10 @@ hidpp10_set_led_status(struct ratbag_device *device,
 	} \
 }
 
-static int
-hidpp10_get_optical_sensor_settings(struct ratbag_device *device, struct hidpp10_device *dev)
+int
+hidpp10_get_optical_sensor_settings(struct ratbag_device *device,
+				    struct hidpp10_device *dev,
+				    uint8_t *surface_reflectivity)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message sensor = CMD_OPTICAL_SENSOR_SETTINGS(idx, GET_REGISTER_REQ);
@@ -376,7 +378,9 @@ hidpp10_get_optical_sensor_settings(struct ratbag_device *device, struct hidpp10
 	if (res)
 		return res;
 
-	/* Don't know what the return value is here */
+	*surface_reflectivity = sensor.msg.parameters[0];
+
+	/* Don't know what the other values are */
 
 	return 0;
 }
@@ -620,6 +624,7 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 {
 	size_t name_size = sizeof(dev->name);
 	uint8_t f1, f2;
+	uint8_t reflect;
 
 	hidpp10_get_pairing_information(device, dev,
 					&dev->report_interval,
@@ -635,9 +640,9 @@ hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev
 
 	hidpp10_get_current_resolution(device, dev, &dev->xres, &dev->yres);
 	hidpp10_get_led_status(device, dev, dev->led);
-	hidpp10_get_optical_sensor_settings(device, dev);
 	hidpp10_get_usb_refresh_rate(device, dev, &dev->refresh_rate);
 
+	hidpp10_get_optical_sensor_settings(device, dev, &reflect);
 	return 0;
 }
 
