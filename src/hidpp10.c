@@ -672,3 +672,15 @@ hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp1
 	return hidpp10_get_device_info(device, dev);
 }
 
+void
+hidpp10_device_init(struct ratbag_device *device, struct hidpp10_device *dev)
+{
+	dev->index = 0x00; /* default for wired */
+	dev->ratbag_device = ratbag_device_ref(device);
+}
+
+void
+hidpp10_device_cleanup(struct hidpp10_device *dev)
+{
+	ratbag_device_unref(dev->ratbag_device);
+}

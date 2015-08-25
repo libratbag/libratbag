@@ -33,9 +33,11 @@
 #include <stdbool.h>
 
 #include "hidpp-generic.h"
+#include "libratbag-private.h"
 #include "libratbag.h"
 
 struct hidpp10_device  {
+	struct ratbag_device *ratbag_device;
 	unsigned index;
 	char name[15];
 	uint16_t wpid;
@@ -64,6 +66,9 @@ union hidpp10_message {
 	struct _hidpp10_message msg;
 	uint8_t data[LONG_MESSAGE_LENGTH];
 };
+
+void hidpp10_device_init(struct ratbag_device *device, struct hidpp10_device *dev);
+void hidpp10_device_cleanup(struct hidpp10_device *dev);
 
 int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg);
 int hidpp10_open_lock(struct ratbag_device *device);

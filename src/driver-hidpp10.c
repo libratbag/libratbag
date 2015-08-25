@@ -189,6 +189,8 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	struct hidpp10_device dev;
 	bool is_unifying_receiver;
 
+	hidpp10_device_init(device, &dev);
+
 	/* check if the device is a unifying receiver first so we can update
 	 * the hidraw path before we open it */
 	is_unifying_receiver = hidpp10drv_is_unifying_receiver(device);
@@ -201,12 +203,15 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 			  "Can't open corresponding hidraw node: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
-		return -ENODEV;
+		rc = -ENODEV;
+		goto err;
 	}
 
 	drv_data = zalloc(sizeof(*drv_data));
-	if (!drv_data)
-		return -ENODEV;
+	if (!drv_data) {
+		rc = -ENODEV;
+		goto err;
+	}
 
 	if (is_unifying_receiver)
 		rc = hidpp10_get_device_from_wpid(device,
@@ -232,6 +237,7 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 err:
 	free(drv_data);
 	ratbag_set_drv_data(device, NULL);
+	hidpp10_device_cleanup(&dev);
 
 	return rc;
 }
@@ -239,7 +245,15 @@ err:
 static void
 hidpp10drv_remove(struct ratbag_device *device)
 {
-	free(ratbag_get_drv_data(device));
+	struct hidpp10drv_data *drv_data;
+	struct hidpp10_device *dev;
+
+	drv_data = ratbag_get_drv_data(device);
+	dev = &drv_data->dev;
+
+	hidpp10_device_cleanup(dev);
+
+	free(drv_data);
 }
 
 #define LOGITECH_DEVICE(_bus, _pid)		\
