@@ -56,6 +56,29 @@ struct hidpp10drv_data {
 static void
 hidpp10drv_read_button(struct ratbag_button *button)
 {
+	enum ratbag_button_type type = RATBAG_BUTTON_TYPE_UNKNOWN;
+
+	/* FIXME: this is valid for the G500s only */
+	switch (button->index) {
+	case 0: type = RATBAG_BUTTON_TYPE_LEFT; break;
+	case 1: type = RATBAG_BUTTON_TYPE_MIDDLE; break;
+	case 2: type = RATBAG_BUTTON_TYPE_RIGHT; break;
+	case 3: type = RATBAG_BUTTON_TYPE_THUMB; break;
+	case 4: type = RATBAG_BUTTON_TYPE_THUMB2; break;
+	case 5: type = RATBAG_BUTTON_TYPE_THUMB3; break;
+	case 6: type = RATBAG_BUTTON_TYPE_WHEEL_LEFT; break;
+	case 7: type = RATBAG_BUTTON_TYPE_WHEEL_RIGHT; break;
+	case 8: type = RATBAG_BUTTON_TYPE_RESOLUTION_UP; break;
+	case 9: type = RATBAG_BUTTON_TYPE_RESOLUTION_DOWN; break;
+	case 10:
+	case 11:
+	case 12: /* these don't actually exist on the device */
+		type = RATBAG_BUTTON_TYPE_NONE; break;
+	default:
+		break;
+	}
+
+	button->type = type;
 }
 
 static int
