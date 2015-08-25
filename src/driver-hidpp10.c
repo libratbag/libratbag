@@ -93,8 +93,8 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	drv_data = ratbag_get_drv_data(device);
 	hidpp10 = &drv_data->dev;
 
-	hidpp10_get_current_resolution(device, hidpp10, &xres, &yres);
-	hidpp10_get_usb_refresh_rate(device, hidpp10, &refresh);
+	hidpp10_get_current_resolution(hidpp10, &xres, &yres);
+	hidpp10_get_usb_refresh_rate(hidpp10, &refresh);
 	profile->current_dpi = xres;
 	profile->report_rate = refresh;
 }
@@ -214,11 +214,10 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	}
 
 	if (is_unifying_receiver)
-		rc = hidpp10_get_device_from_wpid(device,
-						  id.id.product,
-						  &dev);
+		rc = hidpp10_get_device_from_wpid(&dev,
+						  id.id.product);
 	else /* wired devices are 0 */
-		rc = hidpp10_get_device_from_idx(device, 0, &dev);
+		rc = hidpp10_get_device_from_idx(&dev, 0);
 
 	if (rc) {
 		log_error(device->ratbag,

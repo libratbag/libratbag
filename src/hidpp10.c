@@ -80,8 +80,9 @@ const char *device_types[0xFF] = {
 };
 
 static int
-hidpp10_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
+hidpp10_write_command(struct hidpp10_device *dev, uint8_t *cmd, int size)
 {
+	struct ratbag_device *device = dev->ratbag_device;
 	int res = ratbag_hidraw_output_report(device, cmd, size);
 
 	if (res == 0)
@@ -94,8 +95,9 @@ hidpp10_write_command(struct ratbag_device *device, uint8_t *cmd, int size)
 }
 
 int
-hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg)
+hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 {
+	struct ratbag_device *device = dev->ratbag_device;
 	struct ratbag *ratbag = device->ratbag;
 	union hidpp10_message read_buffer;
 	union hidpp10_message expected_header;
@@ -127,7 +129,7 @@ hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg
 	log_buf_debug(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
-	ret = hidpp10_write_command(device, msg->data, SHORT_MESSAGE_LENGTH);
+	ret = hidpp10_write_command(dev, msg->data, SHORT_MESSAGE_LENGTH);
 	if (ret)
 		goto out_err;
 
@@ -191,8 +193,7 @@ out_err:
 }
 
 int
-hidpp10_get_hidpp_notifications(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
 				uint8_t *reporting_flags_r0,
 				uint8_t *reporting_flags_r2)
 {
@@ -200,7 +201,7 @@ hidpp10_get_hidpp_notifications(struct ratbag_device *device,
 	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
 	int res;
 
-	res = hidpp10_request_command(device, &notifications);
+	res = hidpp10_request_command(dev, &notifications);
 	if (res)
 		return res;
 
@@ -211,8 +212,7 @@ hidpp10_get_hidpp_notifications(struct ratbag_device *device,
 }
 
 int
-hidpp10_set_hidpp_notifications(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 				uint8_t reporting_flags_r0,
 				uint8_t reporting_flags_r2)
 {
@@ -223,7 +223,7 @@ hidpp10_set_hidpp_notifications(struct ratbag_device *device,
 	notifications.msg.parameters[0] = reporting_flags_r0;
 	notifications.msg.parameters[2] = reporting_flags_r2;
 
-	res = hidpp10_request_command(device, &notifications);
+	res = hidpp10_request_command(dev, &notifications);
 
 	return res;
 }
@@ -245,8 +245,7 @@ hidpp10_set_hidpp_notifications(struct ratbag_device *device,
 }
 
 int
-hidpp10_get_individual_features(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_get_individual_features(struct hidpp10_device *dev,
 				uint8_t *feature_bit_r0,
 				uint8_t *feature_bit_r2)
 {
@@ -254,7 +253,7 @@ hidpp10_get_individual_features(struct ratbag_device *device,
 	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
 
-	res = hidpp10_request_command(device, &features);
+	res = hidpp10_request_command(dev, &features);
 	if (res)
 		return res;
 
@@ -265,8 +264,7 @@ hidpp10_get_individual_features(struct ratbag_device *device,
 }
 
 int
-hidpp10_set_individual_feature(struct ratbag_device *device,
-			       struct hidpp10_device *dev,
+hidpp10_set_individual_feature(struct hidpp10_device *dev,
 			       uint8_t feature_bit_r0,
 			       uint8_t feature_bit_r2)
 {
@@ -280,7 +278,7 @@ hidpp10_set_individual_feature(struct ratbag_device *device,
 	mode.msg.parameters[0] = feature_bit_r0;
 	mode.msg.parameters[1] = feature_bit_r2;
 
-	res = hidpp10_request_command(device, &mode);
+	res = hidpp10_request_command(dev, &mode);
 
 	return res;
 }
@@ -302,15 +300,14 @@ hidpp10_set_individual_feature(struct ratbag_device *device,
 }
 
 int
-hidpp10_get_led_status(struct ratbag_device *device,
-		       struct hidpp10_device *dev,
+hidpp10_get_led_status(struct hidpp10_device *dev,
 		       bool led[4])
 {
 	unsigned idx = dev->index;
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, GET_REGISTER_REQ);
 	int res;
 
-	res = hidpp10_request_command(device, &led_status);
+	res = hidpp10_request_command(dev, &led_status);
 	if (res)
 		return res;
 
@@ -320,19 +317,11 @@ hidpp10_get_led_status(struct ratbag_device *device,
 	led[2] = !!(led_status.msg.parameters[1] & 0x02); /* middle */
 	led[3] = !!(led_status.msg.parameters[1] & 0x20); /* highest */
 
-	log_debug(device->ratbag,
-		  "LED status: 1:%s 2:%s 3:%s 4:%s\n",
-		  led[0] ? "on" : "off",
-		  led[1] ? "on" : "off",
-		  led[2] ? "on" : "off",
-		  led[3] ? "on" : "off");
-
 	return 0;
 }
 
 int
-hidpp10_set_led_status(struct ratbag_device *device,
-		       struct hidpp10_device *dev,
+hidpp10_set_led_status(struct hidpp10_device *dev,
 		       const bool led[4])
 {
 	unsigned idx = dev->index;
@@ -346,7 +335,7 @@ hidpp10_set_led_status(struct ratbag_device *device,
 	led_status.msg.parameters[1] |= led[2] ? 0x02 : 0x01; /* middle */
 	led_status.msg.parameters[1] |= led[3] ? 0x20 : 0x10; /* highest */
 
-	res = hidpp10_request_command(device, &led_status);
+	res = hidpp10_request_command(dev, &led_status);
 	return res;
 }
 
@@ -366,15 +355,14 @@ hidpp10_set_led_status(struct ratbag_device *device,
 }
 
 int
-hidpp10_get_optical_sensor_settings(struct ratbag_device *device,
-				    struct hidpp10_device *dev,
+hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 				    uint8_t *surface_reflectivity)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message sensor = CMD_OPTICAL_SENSOR_SETTINGS(idx, GET_REGISTER_REQ);
 	int res;
 
-	res = hidpp10_request_command(device, &sensor);
+	res = hidpp10_request_command(dev, &sensor);
 	if (res)
 		return res;
 
@@ -401,23 +389,21 @@ hidpp10_get_optical_sensor_settings(struct ratbag_device *device,
 }
 
 int
-hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_device *dev,
-			       uint16_t *xres, uint16_t *yres)
+hidpp10_get_current_resolution(struct hidpp10_device *dev,
+			       uint16_t *xres,
+			       uint16_t *yres)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
 	int res;
 
-	res = hidpp10_request_command(device, &resolution);
+	res = hidpp10_request_command(dev, &resolution);
 	if (res)
 		return res;
 
 	/* resolution is in 50dpi multiples */
 	*xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
 	*yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
-
-	log_debug(device->ratbag,
-		  "Resolution is %dx%ddpi\n", xres, yres);
 
 	return 0;
 }
@@ -438,21 +424,18 @@ hidpp10_get_current_resolution(struct ratbag_device *device, struct hidpp10_devi
 }
 
 int
-hidpp10_get_usb_refresh_rate(struct ratbag_device *device,
-			     struct hidpp10_device *dev,
+hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t *rate)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
 	int res;
 
-	res = hidpp10_request_command(device, &refresh);
+	res = hidpp10_request_command(dev, &refresh);
 	if (res)
 		return res;
 
 	*rate = 1000/refresh.msg.parameters[0];
-
-	log_debug(device->ratbag, "Refresh rate: %dHz\n", *rate);
 
 	return 0;
 }
@@ -477,14 +460,14 @@ hidpp10_get_usb_refresh_rate(struct ratbag_device *device,
 }
 
 int
-hidpp10_open_lock(struct ratbag_device *device)
+hidpp10_open_lock(struct hidpp10_device *device)
 {
 	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00, CONNECT_DEVICES_OPEN_LOCK, 0x08);
 
 	return hidpp10_request_command(device, &open_lock);
 }
 
-int hidpp10_disconnect(struct ratbag_device *device, int idx) {
+int hidpp10_disconnect(struct hidpp10_device *device, int idx) {
 	union hidpp10_message disconnect = CMD_DEVICE_CONNECTION_DISCONNECTION(idx + 1, CONNECT_DEVICES_DISCONNECT, 0x00);
 
 	return hidpp10_request_command(device, &disconnect);
@@ -510,8 +493,7 @@ int hidpp10_disconnect(struct ratbag_device *device, int idx) {
 }
 
 int
-hidpp10_get_pairing_information(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_get_pairing_information(struct hidpp10_device *dev,
 				uint8_t *report_interval,
 				uint16_t *wpid,
 				uint8_t *device_type)
@@ -520,7 +502,7 @@ hidpp10_get_pairing_information(struct ratbag_device *device,
 	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
 	int res;
 
-	res = hidpp10_request_command(device, &pairing_information);
+	res = hidpp10_request_command(dev, &pairing_information);
 	if (res)
 		return -1;
 
@@ -532,8 +514,7 @@ hidpp10_get_pairing_information(struct ratbag_device *device,
 }
 
 int
-hidpp10_get_pairing_information_device_name(struct ratbag_device *device,
-					    struct hidpp10_device *dev,
+hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 					    char *name,
 					    size_t *name_size)
 {
@@ -542,7 +523,7 @@ hidpp10_get_pairing_information_device_name(struct ratbag_device *device,
 	int res;
 
 
-	res = hidpp10_request_command(device, &device_name);
+	res = hidpp10_request_command(dev, &device_name);
 	if (res)
 		return -1;
 	*name_size = min(*name_size, device_name.msg.string[1]);
@@ -572,8 +553,10 @@ hidpp10_get_pairing_information_device_name(struct ratbag_device *device,
 }
 
 int
-hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_device *dev,
-				uint8_t *major_out, uint8_t *minor_out, uint8_t *build_out)
+hidpp10_get_firmare_information(struct hidpp10_device *dev,
+				uint8_t *major_out,
+				uint8_t *minor_out,
+				uint8_t *build_out)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message firmware_information = CMD_DEVICE_FIRMWARE_INFORMATION(idx, FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(1));
@@ -585,13 +568,13 @@ hidpp10_get_firmare_information(struct ratbag_device *device, struct hidpp10_dev
 	 * This may fail on some devices
 	 * => we can not retrieve their FW version through HID++ 1.0.
 	 */
-	res = hidpp10_request_command(device, &firmware_information);
+	res = hidpp10_request_command(dev, &firmware_information);
 	if (res)
 		return res;
 	maj = firmware_information.msg.string[1];
 	min = firmware_information.msg.string[2];
 
-	res = hidpp10_request_command(device, &build_information);
+	res = hidpp10_request_command(dev, &build_information);
 	if (res)
 		return res;
 	build = hidpp10_get_unaligned_u16(&build_information.msg.string[1]);
@@ -607,52 +590,56 @@ void hidpp10_list_devices(struct ratbag_device *device) {
 	struct hidpp10_device dev;
 	int i, res;
 
+	hidpp10_device_init(device, &dev);
+
 	for (i = 0; i < 6; ++i) {
-		res = hidpp10_get_device_from_idx(device, i, &dev);
+		res = hidpp10_get_device_from_idx(&dev, i);
 		if (res)
 			continue;
 
 		log_info(device->ratbag, "[%d] %s	%s (Wireless PID: %04x)\n", i, device_types[dev.device_type] ? device_types[dev.device_type] : "", dev.name, dev.wpid);
 	}
+
+	hidpp10_device_cleanup(&dev);
 }
 
 /* -------------------------------------------------------------------------- */
 /* general device handling                                                    */
 /* -------------------------------------------------------------------------- */
 static int
-hidpp10_get_device_info(struct ratbag_device *device, struct hidpp10_device *dev)
+hidpp10_get_device_info(struct hidpp10_device *dev)
 {
 	size_t name_size = sizeof(dev->name);
 	uint8_t f1, f2;
 	uint8_t reflect;
 
-	hidpp10_get_pairing_information(device, dev,
+	hidpp10_get_pairing_information(dev,
 					&dev->report_interval,
 					&dev->wpid,
 					&dev->device_type);
-	hidpp10_get_pairing_information_device_name(device, dev,
+	hidpp10_get_pairing_information_device_name(dev,
 						    dev->name,
 						    &name_size);
-	hidpp10_get_firmare_information(device, dev, &dev->fw_major, &dev->fw_minor, &dev->build);
+	hidpp10_get_firmare_information(dev, &dev->fw_major, &dev->fw_minor, &dev->build);
 
-	hidpp10_get_individual_features(device, dev, &f1, &f2);
-	hidpp10_get_hidpp_notifications(device, dev, &f1, &f2);
+	hidpp10_get_individual_features(dev, &f1, &f2);
+	hidpp10_get_hidpp_notifications(dev, &f1, &f2);
 
-	hidpp10_get_current_resolution(device, dev, &dev->xres, &dev->yres);
-	hidpp10_get_led_status(device, dev, dev->led);
-	hidpp10_get_usb_refresh_rate(device, dev, &dev->refresh_rate);
+	hidpp10_get_current_resolution(dev, &dev->xres, &dev->yres);
+	hidpp10_get_led_status(dev, dev->led);
+	hidpp10_get_usb_refresh_rate(dev, &dev->refresh_rate);
 
-	hidpp10_get_optical_sensor_settings(device, dev, &reflect);
+	hidpp10_get_optical_sensor_settings(dev, &reflect);
 	return 0;
 }
 
 int
-hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct hidpp10_device *dev)
+hidpp10_get_device_from_wpid(struct hidpp10_device* dev, uint16_t wpid)
 {
 	int i, res;
 
 	for (i = 1; i < 7; i++) {
-		res = hidpp10_get_device_from_idx(device, i, dev);
+		res = hidpp10_get_device_from_idx(dev, i);
 		if (res)
 			continue;
 
@@ -666,10 +653,10 @@ hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct
 }
 
 int
-hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev)
+hidpp10_get_device_from_idx(struct hidpp10_device *dev, int idx)
 {
 	dev->index = idx;
-	return hidpp10_get_device_info(device, dev);
+	return hidpp10_get_device_info(dev);
 }
 
 void

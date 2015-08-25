@@ -70,12 +70,12 @@ union hidpp10_message {
 void hidpp10_device_init(struct ratbag_device *device, struct hidpp10_device *dev);
 void hidpp10_device_cleanup(struct hidpp10_device *dev);
 
-int hidpp10_request_command(struct ratbag_device *device, union hidpp10_message *msg);
-int hidpp10_open_lock(struct ratbag_device *device);
-int hidpp10_disconnect(struct ratbag_device *device, int idx);
+int hidpp10_request_command(struct hidpp10_device *device, union hidpp10_message *msg);
+int hidpp10_open_lock(struct hidpp10_device *device);
+int hidpp10_disconnect(struct hidpp10_device *device, int idx);
 void hidpp10_list_devices(struct ratbag_device *device);
-int hidpp10_get_device_from_wpid(struct ratbag_device *device, uint16_t wpid, struct hidpp10_device *dev);
-int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hidpp10_device *dev);
+int hidpp10_get_device_from_wpid(struct hidpp10_device *dev, uint16_t wpid);
+int hidpp10_get_device_from_idx(struct hidpp10_device *dev, int idx);
 
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
@@ -91,14 +91,12 @@ int hidpp10_get_device_from_idx(struct ratbag_device *device, int idx, struct hi
 #define REPORING_FLAGS_R2_3D_GESTURES			0
 
 int
-hidpp10_get_hidpp_notifications(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
 				uint8_t *reporting_flags_r0,
 				uint8_t *reporting_flags_r2);
 
 int
-hidpp10_set_hidpp_notifications(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 				uint8_t reporting_flags_r0,
 				uint8_t reporting_flags_r2);
 
@@ -115,14 +113,12 @@ hidpp10_set_hidpp_notifications(struct ratbag_device *device,
 #define FEATURE_BIT_R2_HOST_SW_CONTROLS_LEDS		3
 
 int
-hidpp10_get_individual_features(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_get_individual_features(struct hidpp10_device *dev,
 				uint8_t *feature_bit_r0,
 				uint8_t *feature_bit_r2);
 
 int
-hidpp10_set_individual_feature(struct ratbag_device *device,
-			       struct hidpp10_device *dev,
+hidpp10_set_individual_feature(struct hidpp10_device *dev,
 			       uint8_t feature_bit_r0,
 			       uint8_t feature_bit_r2);
 
@@ -130,57 +126,51 @@ hidpp10_set_individual_feature(struct ratbag_device *device,
 /* 0x51: LED Status                                                           */
 /* -------------------------------------------------------------------------- */
 int
-hidpp10_get_led_status(struct ratbag_device *device,
-		       struct hidpp10_device *dev,
+hidpp10_get_led_status(struct hidpp10_device *dev,
 		       bool led[4]);
 int
-hidpp10_set_led_status(struct ratbag_device *device,
-		       struct hidpp10_device *dev,
+hidpp10_set_led_status(struct hidpp10_device *dev,
 		       const bool led[4]);
 
 /* -------------------------------------------------------------------------- */
 /* 0x61: Optical Sensor Settings                                              */
 /* -------------------------------------------------------------------------- */
 int
-hidpp10_get_optical_sensor_settings(struct ratbag_device *device,
-				    struct hidpp10_device *dev,
+hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 				    uint8_t *surface_reflectivity);
 /* -------------------------------------------------------------------------- */
 /* 0x63: Current Resolution                                                   */
 /* -------------------------------------------------------------------------- */
 int
-hidpp10_get_current_resolution(struct ratbag_device *device,
-			       struct hidpp10_device *dev,
+hidpp10_get_current_resolution(struct hidpp10_device *dev,
 			       uint16_t *xres, uint16_t *yres);
 
 /* -------------------------------------------------------------------------- */
 /* 0x64: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */
 int
-hidpp10_get_usb_refresh_rate(struct ratbag_device *device,
-			     struct hidpp10_device *dev,
+hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t *rate);
 
 /* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */
 int
-hidpp10_get_firmare_information(struct ratbag_device *device,
-				struct hidpp10_device *dev,
-				uint8_t *major, uint8_t *minor, uint8_t *build_number);
+hidpp10_get_firmare_information(struct hidpp10_device *dev,
+				uint8_t *major,
+				uint8_t *minor,
+				uint8_t *build_number);
 
 /* -------------------------------------------------------------------------- */
 /* 0xB5: Pairing Information                                                  */
 /* -------------------------------------------------------------------------- */
 int
-hidpp10_get_pairing_information(struct ratbag_device *device,
-				struct hidpp10_device *dev,
+hidpp10_get_pairing_information(struct hidpp10_device *dev,
 				uint8_t *report_interval,
 				uint16_t *wpid,
 				uint8_t *device_type);
 int
-hidpp10_get_pairing_information_device_name(struct ratbag_device *device,
-					    struct hidpp10_device *dev,
+hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 					    char *name,
 					    size_t *name_sz);
 #endif /* HIDPP_10_H */
