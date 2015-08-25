@@ -417,26 +417,6 @@ struct ratbag_button*
 ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 				   unsigned int index);
 
-/**
- * @ingroup device
- *
- * Return a reference to the button given by the index. The order of the
- * buttons is device-specific though indices 0, 1 and 2 should always refer
- * to left, middle, right buttons.
- *
- * The button is refcounted with an initial value of at least 1.
- * Use ratbag_button_unref() to release the button.
- *
- * @param ratbag A previously initialized ratbag context
- * @param index The index of the button
- *
- * @return A button context, or NULL if the button does not exist.
- *
- * @see ratbag_get_num_buttons
- */
-struct ratbag_button*
-ratbag_get_button_by_index(struct ratbag_device *ratbag, unsigned int index);
-
 enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_UNKNOWN = 0,
 
