@@ -441,7 +441,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	profile.num_buttons = PROFILE_NUM_BUTTONS;
 	for (i = 0; i < PROFILE_NUM_BUTTONS; i++) {
 		union _hidpp10_button_binding *b = &p->buttons[i];
-		union hidpp10_buttons *button = &profile.buttons[i];
+		union hidpp10_button *button = &profile.buttons[i];
 
 		button->any.type = b->any.type;
 

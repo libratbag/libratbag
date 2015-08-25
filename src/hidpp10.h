@@ -135,7 +135,7 @@ struct hidpp10_profile {
 	bool angle_correction;
 	uint8_t default_dpi_mode;
 	uint16_t refresh_rate;
-	union hidpp10_buttons {
+	union hidpp10_button {
 		struct { uint8_t type; } any;
 		struct {
 			uint8_t type;
