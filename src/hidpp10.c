@@ -422,6 +422,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	profile.default_dpi_mode = p->default_dpi_mode;
 	profile.refresh_rate = p->usb_refresh_rate ? 1000/p->usb_refresh_rate : 0;
 
+	profile.num_dpi_modes = PROFILE_NUM_DPI_MODES;
 	for (i = 0; i < PROFILE_NUM_DPI_MODES; i++) {
 		uint8_t *be; /* in big endian */
 		struct _hidpp10_dpi_mode *dpi = &p->dpi_modes[i];
@@ -437,6 +438,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		profile.dpi_modes[i].led[3] = dpi->led4 == 0x2;
 	}
 
+	profile.num_buttons = PROFILE_NUM_BUTTONS;
 	for (i = 0; i < PROFILE_NUM_BUTTONS; i++) {
 		union _hidpp10_button_binding *b = &p->buttons[i];
 		union hidpp10_buttons *button = &profile.buttons[i];

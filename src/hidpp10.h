@@ -130,6 +130,8 @@ struct hidpp10_profile {
 		uint16_t yres;
 		bool led[4];
 	} dpi_modes[5];
+	size_t num_dpi_modes;
+
 	bool angle_correction;
 	uint8_t default_dpi_mode;
 	uint16_t refresh_rate;
@@ -156,6 +158,7 @@ struct hidpp10_profile {
 			uint8_t type;
 		} disabled;
 	} buttons[PROFILE_NUM_BUTTONS];
+	size_t num_buttons;
 };
 
 int
