@@ -244,9 +244,6 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 					 RATBAG_CAP_SWITCHABLE_PROFILE))
 		printf(" profile");
 	if (ratbag_device_has_capability(device,
-					 RATBAG_CAP_BUTTON_PROFILES))
-		printf(" btn-profile");
-	if (ratbag_device_has_capability(device,
 					 RATBAG_CAP_BUTTON_KEY))
 		printf(" btn-key");
 	if (ratbag_device_has_capability(device,

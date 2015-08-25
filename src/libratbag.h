@@ -245,13 +245,6 @@ enum ratbag_capability {
 	RATBAG_CAP_SWITCHABLE_PROFILE,
 
 	/**
-	 * The device's button layout can be configured per-profile rather
-	 * than once per device.
-	 * FIXME: how do we handle a single button profile?
-	 */
-	RATBAG_CAP_BUTTON_PROFILES,
-
-	/**
 	 * The device supports assigning button numbers, key events or key +
 	 * modifier combinations.
 	 */
@@ -413,9 +406,6 @@ ratbag_profile_set_report_rate_hz(struct ratbag_profile *profile, int hz);
  * The button is refcounted with an initial value of at least 1.
  * Use ratbag_button_unref() to release the button.
  *
- * @note If the device does not have @ref RATBAG_CAP_BUTTON_PROFILES, this
- * function always returns NULL. Use ratbag_get_button_by_index() instead.
- *
  * @param profile A previously initialized ratbag profile
  * @param index The index of the button
  *
@@ -436,9 +426,6 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
  *
  * The button is refcounted with an initial value of at least 1.
  * Use ratbag_button_unref() to release the button.
- *
- * @note If the device has @ref RATBAG_CAP_BUTTON_PROFILES, this function
- * always returns NULL. Use ratbag_profile_get_button_by_index() instead.
  *
  * @param ratbag A previously initialized ratbag context
  * @param index The index of the button

@@ -200,7 +200,6 @@ etekcity_has_capability(const struct ratbag_device *device, enum ratbag_capabili
 		return 0;
 	case RATBAG_CAP_SWITCHABLE_RESOLUTION:
 	case RATBAG_CAP_SWITCHABLE_PROFILE:
-	case RATBAG_CAP_BUTTON_PROFILES:
 	case RATBAG_CAP_BUTTON_KEY:
 	case RATBAG_CAP_BUTTON_MACROS:
 		return 1;
