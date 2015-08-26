@@ -787,7 +787,7 @@ ratbag_button_get_special(struct ratbag_button *button)
 	if (!button->profile->device->driver->read_button)
 		return -ENOTSUP;
 
-	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_BUTTON)
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_SPECIAL)
 		return 0;
 
 	return button->action.action.button;
