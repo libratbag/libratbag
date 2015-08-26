@@ -509,20 +509,6 @@ ratbag_button_set_type(struct ratbag_button *button, enum ratbag_button_type typ
 /**
  * @ingroup device
  *
- * Return the identifier of the physical button, if stored in the hardware.
- *
- * FIXME: does this even exist? this function is only here because I though
- * of get_type second :)
- * FIXME: do we need to handle UTF8 here?
- *
- * @return The identifier of the button.
- */
-const char *
-ratbag_button_get_identifier(struct ratbag_button *button);
-
-/**
- * @ingroup device
- *
  * The type assigned to a button.
  */
 enum ratbag_button_action_type {
