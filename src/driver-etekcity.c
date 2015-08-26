@@ -56,6 +56,7 @@ print_key(uint8_t key)
 	case 3: return "BTN_MIDDLE";
 	case 4: return "2 x BTN_LEFT";
 	case 7: return "BTN_EXTRA";
+	case 6: return "NONE";
 	case 8: return "BTN_SIDE";
 	case 9: return "REL_WHEEL 1";
 	case 10: return "REL_WHEEL -1";
@@ -66,6 +67,8 @@ print_key(uint8_t key)
 	case 13: return "DPI cycle";
 	case 14: return "DPI++";
 	case 15: return "DPI--";
+
+	case 16: return "Macro";
 
 	/* Profile */
 	case 18: return "profile cycle";
@@ -151,7 +154,7 @@ static struct etekcity_button_mapping etekcity_button_mapping[] = {
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
 	{ 15, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
-	{ 16, BUTTON_ACTION_NONE },
+	{ 16, BUTTON_ACTION_MACRO },
 	{ 17, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
 	{ 18, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 	{ 19, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN) },

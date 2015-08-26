@@ -199,6 +199,9 @@ struct ratbag_profile {
 #define BUTTON_ACTION_KEY(k_) \
  { .type = RATBAG_BUTTON_ACTION_TYPE_KEY, \
 	.action.key.key = k_ }
+#define BUTTON_ACTION_MACRO \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_MACRO, \
+	/* FIXME: add the macro keys */ }
 
 struct ratbag_button_action {
 	enum ratbag_button_action_type type;
@@ -209,6 +212,7 @@ struct ratbag_button_action {
 			unsigned int key; /* action_type == key */
 			/* FIXME: modifiers */
 		} key;
+		/* FIXME: MACRO */
 	} action;
 };
 
