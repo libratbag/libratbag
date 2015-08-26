@@ -403,6 +403,7 @@ ratbag_device_ref(struct ratbag_device *device)
 LIBRATBAG_EXPORT struct ratbag_device *
 ratbag_device_unref(struct ratbag_device *device)
 {
+	struct ratbag_profile *profile, *next;
 	if (device == NULL)
 		return NULL;
 
@@ -413,6 +414,10 @@ ratbag_device_unref(struct ratbag_device *device)
 
 	if (device->driver->remove)
 		device->driver->remove(device);
+
+	/* the profiles are created during probe(), we should unref them */
+	list_for_each_safe(profile, next, &device->profiles, link)
+		ratbag_profile_unref(profile);
 
 	udev_device_unref(device->udev_device);
 	udev_device_unref(device->udev_hidraw);
@@ -597,6 +602,8 @@ ratbag_profile_ref(struct ratbag_profile *profile)
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile)
 {
+	struct ratbag_button *button, *next;
+
 	if (profile == NULL)
 		return NULL;
 
@@ -604,6 +611,10 @@ ratbag_profile_unref(struct ratbag_profile *profile)
 	profile->refcount--;
 	if (profile->refcount > 0)
 		return profile;
+
+	/* the buttons are created by the profile, so we clean them up */
+	list_for_each_safe(button, next, &profile->buttons, link)
+		ratbag_button_unref(button);
 
 	list_remove(&profile->link);
 	free(profile);
