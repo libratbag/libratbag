@@ -307,10 +307,10 @@ etekcity_read_button(struct ratbag_button *button)
 	struct ratbag_device *device = profile->device;
 	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
 	uint8_t data;
-	unsigned index = etekcity_button_to_index(button->index);
+	unsigned raw_index = etekcity_button_to_index(button->index);
 	const struct ratbag_button_action *action;
 
-	data = drv_data->profiles[profile->index][3 + index * 3];
+	data = drv_data->profiles[profile->index][3 + raw_index * 3];
 	log_debug(device->ratbag,
 		  " - button%d: %s (%02x) %s:%d\n",
 		  button->index, print_key(data), data, __FILE__, __LINE__);
