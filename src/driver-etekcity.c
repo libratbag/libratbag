@@ -197,25 +197,8 @@ etekcity_button_action_to_raw(const struct ratbag_button_action *action)
 	struct etekcity_button_mapping *mapping;
 
 	ARRAY_FOR_EACH(etekcity_button_mapping, mapping) {
-		if (mapping->action.type == action->type) {
-			switch (action->type) {
-			case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-				if (mapping->action.action.button != action->action.button)
-					continue;
-				break;
-			case RATBAG_BUTTON_ACTION_TYPE_KEY:
-				if (mapping->action.action.key.key != action->action.key.key)
-					continue;
-			case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
-				if (mapping->action.action.special != action->action.special)
-					continue;
-			case RATBAG_BUTTON_ACTION_TYPE_MACRO:
-				/* FIXME: currently, do nothing */
-			default: /* do nothing, we are good */
-				break;
-			}
+		if (ratbag_button_action_match(&mapping->action, action))
 			return mapping->raw;
-		}
 	}
 
 	return 0;

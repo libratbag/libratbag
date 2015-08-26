@@ -270,6 +270,29 @@ ratbag_profile_get_drv_data(struct ratbag_profile *profile)
 	return profile->drv_data;
 }
 
+static inline int
+ratbag_button_action_match(const struct ratbag_button_action *action,
+			   const struct ratbag_button_action *match)
+{
+	if (action->type != match->type)
+		return 0;
+
+	switch (action->type) {
+	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+		return match->action.button == action->action.button;
+	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+		return match->action.key.key == action->action.key.key;
+	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+		return match->action.special != action->action.special;
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		/* FIXME: currently, do nothing */
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 /**
  * Override the auto-picked hidraw device.
  */

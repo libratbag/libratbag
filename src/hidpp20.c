@@ -577,25 +577,8 @@ hidpp20_1b04_get_logical_control_id(const struct ratbag_button_action *action)
 	const struct hidpp20_1b04_action_mapping *mapping;
 
 	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, mapping) {
-		if (mapping->action.type == action->type) {
-			switch (action->type) {
-			case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-				if (mapping->action.action.button != action->action.button)
-					continue;
-				break;
-			case RATBAG_BUTTON_ACTION_TYPE_KEY:
-				if (mapping->action.action.key.key != action->action.key.key)
-					continue;
-			case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
-				if (mapping->action.action.special != action->action.special)
-					continue;
-			case RATBAG_BUTTON_ACTION_TYPE_MACRO:
-				/* FIXME: currently, do nothing */
-			default: /* do nothing, we are good */
-				break;
-			}
+		if (ratbag_button_action_match(&mapping->action, action))
 			return mapping->value;
-		}
 	}
 
 	return 0;
