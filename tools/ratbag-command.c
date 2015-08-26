@@ -465,11 +465,11 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 
 	if (ratbag_button_get_key(button_6, modifiers, &modifiers_sz) == KEY_VOLUMEUP &&
 	    ratbag_button_get_key(button_7, modifiers, &modifiers_sz) == KEY_VOLUMEDOWN) {
-		ratbag_button_set_button(button_6, 0);
-		ratbag_button_set_button(button_7, 0);
+		ratbag_button_disable(button_6);
+		ratbag_button_disable(button_7);
 		commit = 1;
-	} else if (ratbag_button_get_button(button_6) == 0 &&
-		   ratbag_button_get_button(button_7) == 0) {
+	} else if (ratbag_button_get_action_type(button_6) == RATBAG_BUTTON_ACTION_TYPE_NONE &&
+		   ratbag_button_get_action_type(button_7) == RATBAG_BUTTON_ACTION_TYPE_NONE) {
 		ratbag_button_set_key(button_6, KEY_VOLUMEUP, modifiers, 0);
 		ratbag_button_set_key(button_7, KEY_VOLUMEDOWN, modifiers, 0);
 		commit = 2;
