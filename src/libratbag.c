@@ -858,6 +858,21 @@ ratbag_button_set_key(struct ratbag_button *button,
 	return rc;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_button_disable(struct ratbag_button *button)
+{
+	struct ratbag_button_action action;
+	int rc;
+
+	if (!button->profile->device->driver->write_button)
+		return -1;
+
+	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+	rc = button->profile->device->driver->write_button(button, &action);
+
+	return rc;
+}
+
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_ref(struct ratbag_button *button)
 {

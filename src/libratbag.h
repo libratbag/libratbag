@@ -651,6 +651,17 @@ ratbag_button_set_key(struct ratbag_button *button,
 /**
  * @ingroup device
  *
+ * @param button A previously initialized ratbag button
+ *
+ * @return 0 on success or nonzero otherwise. On success, the button's
+ * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_NONE.
+ */
+int
+ratbag_button_disable(struct ratbag_button *button);
+
+/**
+ * @ingroup device
+ *
  * FIXME: no idea at this point
  */
 unsigned int

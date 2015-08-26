@@ -4,6 +4,7 @@ LIBRATBAG_0.1.0 {
 global:
 	ratbag_create_context;
 	ratbag_button_ref;
+	ratbag_button_disable;
 	ratbag_button_get_action_type;
 	ratbag_button_get_type;
 	ratbag_button_get_button;
