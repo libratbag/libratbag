@@ -85,15 +85,6 @@ typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
  * queried and manipulated and then re-applied to the device. Other devices
  * may have multiple profiles, each of which can be queried and managed
  * independently.
- *
- * FIXME: Logitech G500s software on the Mac: profiles are DPI+report rate,
- * but buttons are independent of the profiles. There are buttons to switch
- * the DPI/report rate but not the buttons at the same time.
- * Could be handled in software by updating all profiles when a button is
- * reassigned but that potentially changes the data from underneath the
- * client that already has a profile handle.
- * Possible solution: see ratbag_profile_get_button_by_index() vs
- * ratbag_get_button_by_index()
  */
 
 
