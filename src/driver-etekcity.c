@@ -367,7 +367,7 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 	ratbag_set_drv_data(device, drv_data);
 
 	/* profiles are 0-indexed */
-	ratbag_device_init_profiles(device, ETEKCITY_PROFILE_MAX + 1, ETEKCITY_BUTTON_MAX);
+	ratbag_device_init_profiles(device, ETEKCITY_PROFILE_MAX + 1, ETEKCITY_BUTTON_MAX + 1);
 
 	profile = ratbag_device_get_active_profile(device);
 
