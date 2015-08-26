@@ -366,7 +366,8 @@ etekcity_read_button(struct ratbag_button *button)
 		  " - button%d: %s (%02x) %s:%d\n",
 		  button->index, print_key(data), data, __FILE__, __LINE__);
 	action = etekcity_raw_to_button_action(data);
-	button->action = *action;
+	if (action)
+		button->action = *action;
 	button->type = etekcity_raw_to_button_type(button->index);
 }
 
@@ -377,12 +378,16 @@ etekcity_write_button(struct ratbag_button *button,
 	struct ratbag_profile *profile = button->profile;
 	struct ratbag_device *device = profile->device;
 	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
-	uint8_t *data;
+	uint8_t rc, *data;
 	unsigned index = etekcity_button_to_index(button->index);
 
 	data = &drv_data->profiles[profile->index][3 + index * 3];
 
-	*data = etekcity_button_action_to_raw(action);
+	rc = etekcity_button_action_to_raw(action);
+	if (!rc)
+		return -EINVAL;
+
+	*data = rc;
 
 	return 0;
 }
