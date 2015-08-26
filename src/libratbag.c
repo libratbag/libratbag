@@ -689,6 +689,17 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 	return button;
 }
 
+int
+ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++)
+		ratbag_create_button(profile, i);
+
+	return 0;
+}
+
 LIBRATBAG_EXPORT struct ratbag_button*
 ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 				   unsigned int index)
