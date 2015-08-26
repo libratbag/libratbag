@@ -526,7 +526,7 @@ static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
 	{ 83, "Back"			, RATBAG_BUTTON_TYPE_SIDE},
 	{ 86, "Forward"			, RATBAG_BUTTON_TYPE_EXTRA},
 	{ 195, "AppSwitchGesture"	, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 196, "SmartShift"		, RATBAG_BUTTON_TYPE_UNKNOWN},
+	{ 196, "SmartShift"		, RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT},
 	{ 315, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN},
 };
 
@@ -554,7 +554,7 @@ static const struct hidpp20_1b04_action_mapping hidpp20_1b04_physical_mapping[] 
 	{ 61, "Wheel Side Click Right"	, BUTTON_ACTION_BUTTON(11)}, /* FIXME */
 	{ 62, "Forward Click"		, BUTTON_ACTION_BUTTON(5) },
 	{ 156, "Gesture Button"		, BUTTON_ACTION_NONE },
-	{ 157, "SmartShift"		, BUTTON_ACTION_NONE },
+	{ 157, "SmartShift"		, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH) },
 	{ 221, "LedToggle"		, BUTTON_ACTION_NONE },
 };
 
