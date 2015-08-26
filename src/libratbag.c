@@ -667,9 +667,9 @@ ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile)
 }
 
 static struct ratbag_button *
-ratbag_create_button(struct ratbag_device *device, struct ratbag_profile *profile,
-		unsigned int index)
+ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 {
+	struct ratbag_device *device = profile->device;
 	struct ratbag_button *button;
 
 	button = zalloc(sizeof(*button));
@@ -703,7 +703,7 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 		}
 	}
 
-	return ratbag_create_button(profile->device, profile, index);
+	return ratbag_create_button(profile, index);
 }
 
 LIBRATBAG_EXPORT enum ratbag_button_type
