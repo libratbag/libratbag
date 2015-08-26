@@ -507,10 +507,49 @@ ratbag_unref(struct ratbag *ratbag)
 	return NULL;
 }
 
+static struct ratbag_button *
+ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag_button *button;
+
+	button = zalloc(sizeof(*button));
+	if (!button)
+		return NULL;
+
+	button->refcount = 1;
+	button->profile = profile;
+	button->index = index;
+
+	if (profile)
+		list_insert(&profile->buttons, &button->link);
+
+	if (device->driver->read_button)
+		device->driver->read_button(button);
+
+	return button;
+}
+
+static int
+ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++)
+		ratbag_create_button(profile, i);
+
+	profile->device->num_buttons = count;
+
+	return 0;
+}
+
 static struct ratbag_profile *
-ratbag_create_profile(struct ratbag_device *device, unsigned int index)
+ratbag_create_profile(struct ratbag_device *device,
+		      unsigned int index,
+		      unsigned int num_buttons)
 {
 	struct ratbag_profile *profile;
+	unsigned int i;
 
 	profile = zalloc(sizeof(*profile));
 	if (!profile)
@@ -526,18 +565,24 @@ ratbag_create_profile(struct ratbag_device *device, unsigned int index)
 	assert(device->driver->read_profile);
 	device->driver->read_profile(profile, index);
 
+	for (i = 0; i < num_buttons; i++)
+		ratbag_profile_init_buttons(profile, i);
+
 	return profile;
 }
 
 int
-ratbag_device_init_profiles(struct ratbag_device *device, unsigned int count)
+ratbag_device_init_profiles(struct ratbag_device *device,
+			    unsigned int num_profiles,
+			    unsigned int num_buttons)
 {
 	unsigned int i;
 
-	for (i = 0; i < count; i++)
-		ratbag_create_profile(device, i);
+	for (i = 0; i < num_profiles; i++) {
+		ratbag_create_profile(device, i, num_buttons);
+	}
 
-	device->num_profiles = count;
+	device->num_profiles = num_profiles;
 
 	return 0;
 }
@@ -664,40 +709,6 @@ ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile)
 {
 	assert(profile);
 	return profile->report_rate;
-}
-
-static struct ratbag_button *
-ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
-{
-	struct ratbag_device *device = profile->device;
-	struct ratbag_button *button;
-
-	button = zalloc(sizeof(*button));
-	if (!button)
-		return NULL;
-
-	button->refcount = 1;
-	button->profile = profile;
-	button->index = index;
-
-	if (profile)
-		list_insert(&profile->buttons, &button->link);
-
-	if (device->driver->read_button)
-		device->driver->read_button(button);
-
-	return button;
-}
-
-int
-ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
-{
-	unsigned int i;
-
-	for (i = 0; i < count; i++)
-		ratbag_create_button(profile, i);
-
-	return 0;
 }
 
 LIBRATBAG_EXPORT struct ratbag_button*

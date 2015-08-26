@@ -423,9 +423,7 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 
 	ratbag_set_drv_data(device, drv_data);
 
-	ratbag_device_init_profiles(device, 1);
-
-	device->num_buttons = 8;
+	ratbag_device_init_profiles(device, 1, 8);
 
 	drv_data->proto_major = 1;
 	drv_data->proto_minor = 0;

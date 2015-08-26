@@ -224,7 +224,9 @@ ratbag_get_drv_data(struct ratbag_device *device)
 }
 
 int
-ratbag_device_init_profiles(struct ratbag_device *device, unsigned int count);
+ratbag_device_init_profiles(struct ratbag_device *device,
+			    unsigned int num_profiles,
+			    unsigned int num_buttons);
 
 static inline void
 ratbag_profile_set_drv_data(struct ratbag_profile *profile, void *drv_data)
@@ -237,9 +239,6 @@ ratbag_profile_get_drv_data(struct ratbag_profile *profile)
 {
 	return profile->drv_data;
 }
-
-int
-ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count);
 
 /**
  * Override the auto-picked hidraw device.

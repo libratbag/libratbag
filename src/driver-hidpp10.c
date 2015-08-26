@@ -232,9 +232,7 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 	if (rc)
 		return rc;
 
-	device->num_buttons = profile.num_buttons;
-
-	ratbag_device_init_profiles(device, HIDPP10_NUM_PROFILES);
+	ratbag_device_init_profiles(device, HIDPP10_NUM_PROFILES, profile.num_buttons);
 
 	return 0;
 }
@@ -286,8 +284,7 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 
 	if (hidpp10drv_fill_from_profile(device, dev)) {
 		/* Fall back to something that every mouse has */
-		ratbag_device_init_profiles(device, 1);
-		device->num_buttons = 3;
+		ratbag_device_init_profiles(device, 1, 3);
 	}
 
 	return 0;
