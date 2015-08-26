@@ -504,39 +504,13 @@ err:
 #define CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING		0x20
 #define CMD_SPECIAL_KEYS_BUTTONS_SET_REPORTING		0x30
 
-struct hidpp20_1b04_mapping {
-	uint16_t value;
-	const char *name;
-	enum ratbag_button_type type;
-};
-
-static const struct hidpp20_1b04_mapping hidpp20_1b04_logical_mapping[] =
-{
-	{ 0, "None"			, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 1, "Volume Up"		, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 2, "Volume Down"		, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 3, "Mute"			, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 4, "Play/Pause"		, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 5, "Next"			, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 6, "Previous"			, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 7, "Stop"			, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 80, "Left"			, RATBAG_BUTTON_TYPE_LEFT},
-	{ 81, "Right"			, RATBAG_BUTTON_TYPE_RIGHT},
-	{ 82, "Middle"			, RATBAG_BUTTON_TYPE_MIDDLE},
-	{ 83, "Back"			, RATBAG_BUTTON_TYPE_SIDE},
-	{ 86, "Forward"			, RATBAG_BUTTON_TYPE_EXTRA},
-	{ 195, "AppSwitchGesture"	, RATBAG_BUTTON_TYPE_UNKNOWN},
-	{ 196, "SmartShift"		, RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT},
-	{ 315, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN},
-};
-
 struct hidpp20_1b04_action_mapping {
 	uint16_t value;
 	const char *name;
 	struct ratbag_button_action action;
 };
 
-static const struct hidpp20_1b04_action_mapping hidpp20_1b04_physical_mapping[] =
+static const struct hidpp20_1b04_action_mapping hidpp20_1b04_logical_mapping[] =
 {
 	{ 0, "None"			, BUTTON_ACTION_NONE },
 	{ 1, "Volume Up"		, BUTTON_ACTION_KEY(KEY_VOLUMEUP) },
@@ -546,39 +520,82 @@ static const struct hidpp20_1b04_action_mapping hidpp20_1b04_physical_mapping[] 
 	{ 5, "Next"			, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
 	{ 6, "Previous"			, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
 	{ 7, "Stop"			, BUTTON_ACTION_KEY(KEY_STOPCD) },
-	{ 56, "Left Click"		, BUTTON_ACTION_BUTTON(1) },
-	{ 57, "Right Click"		, BUTTON_ACTION_BUTTON(2) },
-	{ 58, "Middle Click"		, BUTTON_ACTION_BUTTON(3) },
-	{ 59, "Wheel Side Click Left"	, BUTTON_ACTION_BUTTON(10) }, /* FIXME */
-	{ 60, "Back Click"		, BUTTON_ACTION_BUTTON(4) },
-	{ 61, "Wheel Side Click Right"	, BUTTON_ACTION_BUTTON(11)}, /* FIXME */
-	{ 62, "Forward Click"		, BUTTON_ACTION_BUTTON(5) },
-	{ 156, "Gesture Button"		, BUTTON_ACTION_NONE },
-	{ 157, "SmartShift"		, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH) },
-	{ 221, "LedToggle"		, BUTTON_ACTION_NONE },
+	{ 80, "Left"			, BUTTON_ACTION_BUTTON(1) },
+	{ 81, "Right"			, BUTTON_ACTION_BUTTON(2) },
+	{ 82, "Middle"			, BUTTON_ACTION_BUTTON(3) },
+	{ 83, "Back"			, BUTTON_ACTION_BUTTON(4) },
+	{ 86, "Forward"			, BUTTON_ACTION_BUTTON(5) },
+	{ 195, "AppSwitchGesture"	, BUTTON_ACTION_NONE },
+	{ 196, "SmartShift"		, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH) },
+	{ 315, "LedToggle"		, BUTTON_ACTION_NONE },
 };
 
-enum ratbag_button_type
+struct hidpp20_1b04_physical_mapping {
+	uint16_t value;
+	const char *name;
+	enum ratbag_button_type type;
+};
+
+static const struct hidpp20_1b04_physical_mapping hidpp20_1b04_physical_mapping[] =
+{
+	{ 0, "None"			, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 1, "Volume Up"		, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 2, "Volume Down"		, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 3, "Mute"			, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 4, "Play/Pause"		, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 5, "Next"			, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 6, "Previous"			, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 7, "Stop"			, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 56, "Left Click"		, RATBAG_BUTTON_TYPE_LEFT },
+	{ 57, "Right Click"		, RATBAG_BUTTON_TYPE_RIGHT },
+	{ 58, "Middle Click"		, RATBAG_BUTTON_TYPE_MIDDLE },
+	{ 59, "Wheel Side Click Left"	, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 60, "Back Click"		, RATBAG_BUTTON_TYPE_SIDE },
+	{ 61, "Wheel Side Click Right"	, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 62, "Forward Click"		, RATBAG_BUTTON_TYPE_EXTRA },
+	{ 156, "Gesture Button"		, RATBAG_BUTTON_TYPE_UNKNOWN },
+	{ 157, "SmartShift"		, RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT },
+	{ 221, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN },
+};
+
+const struct ratbag_button_action *
 hidpp20_1b04_get_logical_mapping(uint16_t value)
 {
-	const struct hidpp20_1b04_mapping *map;
+	const struct hidpp20_1b04_action_mapping *map;
 
 	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, map) {
 		if (map->value == value)
-			return map->type;
+			return &map->action;
 	}
 
 	return RATBAG_BUTTON_TYPE_UNKNOWN;
 }
 
 uint16_t
-hidpp20_1b04_get_logical_control_id(enum ratbag_button_type type)
+hidpp20_1b04_get_logical_control_id(const struct ratbag_button_action *action)
 {
-	const struct hidpp20_1b04_mapping *map;
+	const struct hidpp20_1b04_action_mapping *mapping;
 
-	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, map) {
-		if (map->type == type)
-			return map->value;
+	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, mapping) {
+		if (mapping->action.type == action->type) {
+			switch (action->type) {
+			case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+				if (mapping->action.action.button != action->action.button)
+					continue;
+				break;
+			case RATBAG_BUTTON_ACTION_TYPE_KEY:
+				if (mapping->action.action.key.key != action->action.key.key)
+					continue;
+			case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+				if (mapping->action.action.special != action->action.special)
+					continue;
+			case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+				/* FIXME: currently, do nothing */
+			default: /* do nothing, we are good */
+				break;
+			}
+			return mapping->value;
+		}
 	}
 
 	return 0;
@@ -587,33 +604,33 @@ hidpp20_1b04_get_logical_control_id(enum ratbag_button_type type)
 const char *
 hidpp20_1b04_get_logical_mapping_name(uint16_t value)
 {
-	const struct hidpp20_1b04_mapping *map;
+	const struct hidpp20_1b04_action_mapping *mapping;
 
-	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, map) {
-		if (map->value == value)
-			return map->name;
+	ARRAY_FOR_EACH(hidpp20_1b04_logical_mapping, mapping) {
+		if (mapping->value == value)
+			return mapping->name;
 	}
 
 	return "UNKNOWN";
 }
 
-const struct ratbag_button_action*
+enum ratbag_button_type
 hidpp20_1b04_get_physical_mapping(uint16_t value)
 {
-	const struct hidpp20_1b04_action_mapping *map;
+	const struct hidpp20_1b04_physical_mapping *map;
 
 	ARRAY_FOR_EACH(hidpp20_1b04_physical_mapping, map) {
 		if (map->value == value)
-			return &map->action;
+			return map->type;
 	}
 
-	return NULL;
+	return RATBAG_BUTTON_TYPE_UNKNOWN;
 }
 
 const char *
 hidpp20_1b04_get_physical_mapping_name(uint16_t value)
 {
-	const struct hidpp20_1b04_action_mapping *map;
+	const struct hidpp20_1b04_physical_mapping *map;
 
 	ARRAY_FOR_EACH(hidpp20_1b04_physical_mapping, map) {
 		if (map->value == value)

@@ -62,21 +62,13 @@ struct hidpp20drv_data {
 	struct hidpp20_control_id *controls;
 };
 
-static enum ratbag_button_action_type
-hidpp20drv_raw_to_action(enum ratbag_button_type button_type)
-{
-	if (button_type == RATBAG_BUTTON_TYPE_UNKNOWN)
-		return RATBAG_BUTTON_ACTION_TYPE_NONE;
-
-	return RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-}
-
 static void
 hidpp20drv_read_button(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_control_id *control;
+	const struct ratbag_button_action *action;
 	uint16_t mapping;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04))
@@ -93,8 +85,10 @@ hidpp20drv_read_button(struct ratbag_button *button)
 		  mapping,
 		  control->reporting.divert || control->reporting.persist ? "(redirected) " : "",
 		  __FILE__, __LINE__);
-	button->type = hidpp20_1b04_get_logical_mapping(mapping);
-	button->action.type = hidpp20drv_raw_to_action(button->type);
+	button->type = hidpp20_1b04_get_physical_mapping(control->task_id);
+	action = hidpp20_1b04_get_logical_mapping(mapping);
+	if (action)
+		button->action = *action;
 }
 
 static int
@@ -111,7 +105,7 @@ hidpp20drv_write_button(struct ratbag_button *button,
 		return -ENOTSUP;
 
 	control = &drv_data->controls[button->index];
-	mapping = hidpp20_1b04_get_logical_control_id(button->type);
+	mapping = hidpp20_1b04_get_logical_control_id(action);
 	if (!mapping)
 		return -EINVAL;
 
