@@ -480,11 +480,11 @@ enum ratbag_button_type {
  *
  * Return the type of the physical button. This function is intended to be
  * used by configuration tools to provide a generic list of button names or
- * handles to configure devices.
+ * handles to configure devices. The type describes the physical location of
+ * the button and remains constant for the lifetime of the device.
  *
- * FIXME: if we do this with linux/input.h instead, we need to add things like
- * BTN_RESOLUTION_UP/DOWN there. But this is supposed to describe the
- * physical location of the button, so input.h is not a good match.
+ * For the button currently mapped to this physical button, see
+ * ratbag_button_get_button()
  *
  * @return The type of the button
  */
