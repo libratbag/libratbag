@@ -36,6 +36,7 @@
 #define VERSION_ANY				0xffff
 
 struct ratbag_driver;
+struct ratbag_button_action;
 
 struct ratbag {
 	const struct ratbag_interface *interface;
@@ -161,7 +162,8 @@ struct ratbag_driver {
 	 * should later on write the profile in one call to
 	 * .write_profile().
 	 */
-	int (*write_button)(struct ratbag_button *button);
+	int (*write_button)(struct ratbag_button *button,
+			    const struct ratbag_button_action *action);
 
 	/** For the given profile, overwrite the current resolution
 	 * of the sensor expressed in DPI, and commit it to the hardware.
@@ -186,13 +188,37 @@ struct ratbag_profile {
 	int report_rate;
 };
 
+#define BUTTON_ACTION_NONE \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_NONE }
+#define BUTTON_ACTION_BUTTON(num_) \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON, \
+	.action.button = num_ }
+#define BUTTON_ACTION_SPECIAL(sp_) \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL, \
+	.action.special = sp_ }
+#define BUTTON_ACTION_KEY(k_) \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_KEY, \
+	.action.key.key = k_ }
+
+struct ratbag_button_action {
+	enum ratbag_button_action_type type;
+	union ratbag_btn_action {
+		unsigned int button; /* action_type == button */
+		enum ratbag_button_action_special special; /* action_type == special */
+		struct {
+			unsigned int key; /* action_type == key */
+			/* FIXME: modifiers */
+		} key;
+	} action;
+};
+
 struct ratbag_button {
 	int refcount;
 	struct list link;
 	struct ratbag_profile *profile;
 	unsigned index;
 	enum ratbag_button_type type;
-	enum ratbag_button_action_type action_type;
+	struct ratbag_button_action action;
 };
 
 static inline int

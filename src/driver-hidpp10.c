@@ -73,7 +73,7 @@ hidpp10drv_read_button(struct ratbag_button *button)
 	case 10:
 	case 11:
 	case 12: /* these don't actually exist on the device */
-		type = RATBAG_BUTTON_TYPE_NONE; break;
+		type = RATBAG_BUTTON_TYPE_UNKNOWN; break;
 	default:
 		break;
 	}
@@ -82,7 +82,8 @@ hidpp10drv_read_button(struct ratbag_button *button)
 }
 
 static int
-hidpp10drv_write_button(struct ratbag_button *button)
+hidpp10drv_write_button(struct ratbag_button *button,
+			const struct ratbag_button_action *action)
 {
 	return -1;
 }

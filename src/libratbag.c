@@ -741,19 +741,103 @@ ratbag_button_get_type(struct ratbag_button *button)
 	return button->type;
 }
 
-LIBRATBAG_EXPORT int
-ratbag_button_set_type(struct ratbag_button *button, enum ratbag_button_type type)
+LIBRATBAG_EXPORT unsigned int
+ratbag_button_get_button(struct ratbag_button *button)
 {
-	enum ratbag_button_type orig_type = button->type;
+	if (!button->profile->device->driver->read_button)
+		return 0; /* FIXME */
+
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_BUTTON)
+		return 0;
+
+	return button->action.action.button;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
+{
+	struct ratbag_button_action action;
 	int rc;
 
 	if (!button->profile->device->driver->write_button)
 		return -ENOTSUP;
 
-	button->type = type;
-	rc = button->profile->device->driver->write_button(button);
-	if (rc)
-		button->type = orig_type;
+	action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+	action.action.button = btn;
+
+	rc = button->profile->device->driver->write_button(button, &action);
+
+	return rc;
+}
+
+LIBRATBAG_EXPORT enum ratbag_button_action_special
+ratbag_button_get_special(struct ratbag_button *button)
+{
+	if (!button->profile->device->driver->read_button)
+		return -ENOTSUP;
+
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_BUTTON)
+		return 0;
+
+	return button->action.action.button;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_button_set_special(struct ratbag_button *button,
+			  enum ratbag_button_action_special act)
+{
+	struct ratbag_button_action action;
+	int rc;
+
+	/* FIXME: range checks */
+
+	if (!button->profile->device->driver->write_button)
+		return -1;
+
+	action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+	action.action.special = act;
+
+	rc = button->profile->device->driver->write_button(button, &action);
+
+	return rc;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_button_get_key(struct ratbag_button *button,
+		      unsigned int *modifiers,
+		      size_t *sz)
+{
+	if (!button->profile->device->driver->read_button)
+		return 0;
+
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
+		return 0;
+
+	/* FIXME: modifiers */
+	*sz = 0;
+	return button->action.action.key.key;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_button_set_key(struct ratbag_button *button,
+		      unsigned int key,
+		      unsigned int *modifiers,
+		      size_t sz)
+{
+	struct ratbag_button_action action;
+	int rc;
+
+	/* FIXME: range checks */
+
+	if (!button->profile->device->driver->write_button)
+		return -1;
+
+	/* FIXME: modifiers */
+
+	action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+	action.action.key.key = key;
+	rc = button->profile->device->driver->write_button(button, &action);
+
 	return rc;
 }
 

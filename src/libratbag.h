@@ -445,34 +445,6 @@ enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP,
 	RATBAG_BUTTON_TYPE_PROFILE_UP,
 	RATBAG_BUTTON_TYPE_PROFILE_DOWN,
-
-	/* Macro */
-	RATBAG_BUTTON_TYPE_MACRO,
-
-	/* multimedia */
-	RATBAG_BUTTON_TYPE_KEY_CONFIG,
-	RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG,
-	RATBAG_BUTTON_TYPE_KEY_NEXTSONG,
-	RATBAG_BUTTON_TYPE_KEY_PLAYPAUSE,
-	RATBAG_BUTTON_TYPE_KEY_STOPCD,
-	RATBAG_BUTTON_TYPE_KEY_MUTE,
-	RATBAG_BUTTON_TYPE_KEY_VOLUMEUP,
-	RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN,
-
-	/* desktop */
-	RATBAG_BUTTON_TYPE_KEY_CALC,
-	RATBAG_BUTTON_TYPE_KEY_MAIL,
-	RATBAG_BUTTON_TYPE_KEY_BOOKMARKS,
-	RATBAG_BUTTON_TYPE_KEY_FORWARD,
-	RATBAG_BUTTON_TYPE_KEY_BACK,
-	RATBAG_BUTTON_TYPE_KEY_STOP,
-	RATBAG_BUTTON_TYPE_KEY_FILE,
-	RATBAG_BUTTON_TYPE_KEY_REFRESH,
-	RATBAG_BUTTON_TYPE_KEY_HOMEPAGE,
-	RATBAG_BUTTON_TYPE_KEY_SEARCH,
-
-	/* disabled button */
-	RATBAG_BUTTON_TYPE_NONE,
 };
 
 /**
@@ -494,21 +466,6 @@ ratbag_button_get_type(struct ratbag_button *button);
 /**
  * @ingroup device
  *
- * Change the type of the physical button. This function is intended to be
- * used by configuration tools to configure devices.
- *
- * FIXME: if we do this with linux/input.h instead, we need to add things like
- * BTN_RESOLUTION_UP/DOWN there. But this is supposed to describe the
- * physical location of the button, so input.h is not a good match.
- *
- * @return The error code or 0 on success.
- */
-int
-ratbag_button_set_type(struct ratbag_button *button, enum ratbag_button_type type);
-
-/**
- * @ingroup device
- *
  * The type assigned to a button.
  */
 enum ratbag_button_action_type {
@@ -524,6 +481,11 @@ enum ratbag_button_action_type {
 	 * Button sends numeric button events
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+	/**
+	 * Button triggers a mouse-specific special function. This includes
+	 * resolution changes and profile changes.
+	 */
+	RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 	/**
 	 * Button sends a key or key + modifier combination
 	 */
@@ -542,16 +504,50 @@ enum ratbag_button_action_type {
 enum ratbag_button_action_type
 ratbag_button_get_action_type(struct ratbag_button *button);
 
+enum ratbag_button_action_special {
+	/**
+	 * This button is not set up for a special action
+	 */
+	RATBAG_BUTTON_ACTION_SPECIAL_INVALID = -1,
+	RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN = (1 << 30),
+
+	RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK,
+
+	/* Wheel mappings */
+	RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT,
+	RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT,
+	RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP,
+	RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN,
+
+	/* DPI switch */
+	RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,
+	RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,
+	RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,
+
+	/* Profile */
+	RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,
+	RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP,
+	RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN,
+
+};
+
 /**
  * @ingroup device
+ *
+ * This function returns the logical button number this button is mapped to,
+ * starting at 1. The button numbers are in sequence and do not correspond
+ * to any meaning other than its numeric value. It is up to the input stack
+ * how to map that logical button number, but usually buttons 1, 2 and 3 are
+ * mapped into left, middle, right.
  *
  * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_BUTTON,
  * this function returns 0.
  *
- * @return The button number this button sends, in one of BTN_*, as defined
- * in linux/input.h.
+ * @return The logical button number this button sends.
  * @retval 0 This button is disabled or its action type is not @ref
  * RATBAG_BUTTON_ACTION_TYPE_BUTTON.
+ *
+ * @see ratbag_button_set_button
  */
 unsigned int
 ratbag_button_get_button(struct ratbag_button *button);
@@ -559,15 +555,49 @@ ratbag_button_get_button(struct ratbag_button *button);
 /**
  * @ingroup device
  *
+ * See ratbag_button_get_button() for a description of the button number.
+ *
  * @param button A previously initialized ratbag button
- * @param btn The button number to assign to this button, one of BTN_* as
- * defined in linux/input.h
+ * @param btn The logical button number to assign to this button.
  * @return 0 on success or nonzero otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_BUTTON.
+ *
+ * @see ratbag_button_get_button
  */
 int
 ratbag_button_set_button(struct ratbag_button *button,
 			 unsigned int btn);
+
+/**
+ * @ingroup device
+ *
+ * This function returns the special function assigned to this button.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+ * this function returns @ref RATBAG_BUTTON_ACTION_SPECIAL_INVALID.
+ *
+ * @return The special function assigned to this button
+ *
+ * @see ratbag_button_set_button
+ */
+enum ratbag_button_action_special
+ratbag_button_get_special(struct ratbag_button *button);
+
+/**
+ * @ingroup device
+ *
+ * This function sets the special function assigned to this button.
+ *
+ * @param button A previously initialized ratbag button
+ * @param action The special action to assign to this button.
+ * @return 0 on success or nonzero otherwise. On success, the button's
+ * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_SPECIAL.
+ *
+ * @see ratbag_button_get_button
+ */
+int
+ratbag_button_set_special(struct ratbag_button *button,
+			  enum ratbag_button_action_special action);
 
 /**
  * @ingroup device
@@ -597,7 +627,7 @@ ratbag_button_get_key(struct ratbag_button *button,
  * @ingroup device
  *
  * @param button A previously initialized ratbag button
- * @param btn The button number to assign to this button, one of BTN_* as
+ * @param key The button number to assign to this button, one of BTN_* as
  * defined in linux/input.h
  * @param modifiers The modifiers required for this action. The
  * modifiers are as defined in linux/input.h, in the order they should be
@@ -610,7 +640,7 @@ ratbag_button_get_key(struct ratbag_button *button,
  */
 int
 ratbag_button_set_key(struct ratbag_button *button,
-		      unsigned int btn,
+		      unsigned int key,
 		      unsigned int *modifiers,
 		      size_t sz);
 

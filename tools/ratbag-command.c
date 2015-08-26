@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/stat.h>
+#include <linux/input.h>
 
 #include <libratbag.h>
 #include <libratbag-util.h>
@@ -155,34 +156,6 @@ button_type_to_str(enum ratbag_button_type type)
 	case RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP:	str = "profile cycle up"; break;
 	case RATBAG_BUTTON_TYPE_PROFILE_UP:		str = "profile up"; break;
 	case RATBAG_BUTTON_TYPE_PROFILE_DOWN:		str = "profile down"; break;
-
-	/* Macro */
-	case RATBAG_BUTTON_TYPE_MACRO:			str = "macro"; break;
-
-	/* multimedia */
-	case RATBAG_BUTTON_TYPE_KEY_CONFIG:		str = "key config"; break;
-	case RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG:	str = "key previous song"; break;
-	case RATBAG_BUTTON_TYPE_KEY_NEXTSONG:		str = "key next song"; break;
-	case RATBAG_BUTTON_TYPE_KEY_PLAYPAUSE:		str = "key play/pause"; break;
-	case RATBAG_BUTTON_TYPE_KEY_STOPCD:		str = "key stop"; break;
-	case RATBAG_BUTTON_TYPE_KEY_MUTE:		str = "key mute"; break;
-	case RATBAG_BUTTON_TYPE_KEY_VOLUMEUP:		str = "key volume up"; break;
-	case RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN:		str = "key volume down"; break;
-
-	/* desktop */
-	case RATBAG_BUTTON_TYPE_KEY_CALC:	str = "key calc"; break;
-	case RATBAG_BUTTON_TYPE_KEY_MAIL:	str = "key mail"; break;
-	case RATBAG_BUTTON_TYPE_KEY_BOOKMARKS:	str = "key bookmarks"; break;
-	case RATBAG_BUTTON_TYPE_KEY_FORWARD:	str = "key forward"; break;
-	case RATBAG_BUTTON_TYPE_KEY_BACK:	str = "key back"; break;
-	case RATBAG_BUTTON_TYPE_KEY_STOP:	str = "key stop"; break;
-	case RATBAG_BUTTON_TYPE_KEY_FILE:	str = "key file"; break;
-	case RATBAG_BUTTON_TYPE_KEY_REFRESH:	str = "key refresh"; break;
-	case RATBAG_BUTTON_TYPE_KEY_HOMEPAGE:	str = "key homepage"; break;
-	case RATBAG_BUTTON_TYPE_KEY_SEARCH:	str = "key search"; break;
-
-	/* disabled button */
-	case RATBAG_BUTTON_TYPE_NONE:		str = "none"; break;
 	}
 
 	return str;
@@ -373,6 +346,8 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 	struct ratbag_button *button_6, *button_7;
 	struct ratbag_profile *profile = NULL;
 	int rc = 1, commit = 0;
+	unsigned int modifiers[10];
+	size_t modifiers_sz = 10;
 
 	if (argc != 1) {
 		usage();
@@ -402,15 +377,15 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 	button_6 = ratbag_profile_get_button_by_index(profile, 6);
 	button_7 = ratbag_profile_get_button_by_index(profile, 7);
 
-	if (ratbag_button_get_type(button_6) == RATBAG_BUTTON_TYPE_KEY_VOLUMEUP &&
-	    ratbag_button_get_type(button_7) == RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN) {
-		ratbag_button_set_type(button_6, RATBAG_BUTTON_TYPE_NONE);
-		ratbag_button_set_type(button_7, RATBAG_BUTTON_TYPE_NONE);
+	if (ratbag_button_get_key(button_6, modifiers, &modifiers_sz) == KEY_VOLUMEUP &&
+	    ratbag_button_get_key(button_7, modifiers, &modifiers_sz) == KEY_VOLUMEDOWN) {
+		ratbag_button_set_button(button_6, 0);
+		ratbag_button_set_button(button_7, 0);
 		commit = 1;
-	} else if (ratbag_button_get_type(button_6) == RATBAG_BUTTON_TYPE_NONE &&
-		   ratbag_button_get_type(button_7) == RATBAG_BUTTON_TYPE_NONE) {
-		ratbag_button_set_type(button_6, RATBAG_BUTTON_TYPE_KEY_VOLUMEUP);
-		ratbag_button_set_type(button_7, RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN);
+	} else if (ratbag_button_get_button(button_6) == 0 &&
+		   ratbag_button_get_button(button_7) == 0) {
+		ratbag_button_set_key(button_6, KEY_VOLUMEUP, modifiers, 0);
+		ratbag_button_set_key(button_7, KEY_VOLUMEDOWN, modifiers, 0);
 		commit = 2;
 	}
 
@@ -459,6 +434,7 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 	type_index = atoi(argv[1]);
 	path = argv[2];
 
+#if 0 /* FIXME */
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
 		error("Looks like '%s' is not supported\n", path);
@@ -514,6 +490,7 @@ out:
 	profile = ratbag_profile_unref(profile);
 
 	device = ratbag_device_unref(device);
+#endif
 	return rc;
 }
 

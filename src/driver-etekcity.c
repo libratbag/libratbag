@@ -100,92 +100,70 @@ print_key(uint8_t key)
 	return "UNKNOWN";
 }
 
-static enum ratbag_button_action_type
-etekcity_raw_to_action(uint8_t data, enum ratbag_button_type button_type)
-{
-	if (button_type == RATBAG_BUTTON_TYPE_UNKNOWN)
-		return RATBAG_BUTTON_ACTION_TYPE_NONE;
-
-	return RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-}
-
 struct etekcity_button_mapping {
 	uint8_t raw;
-	enum ratbag_button_type type;
+	struct ratbag_button_action action;
 };
 
 static struct etekcity_button_mapping etekcity_button_mapping[] = {
-	{ 1, RATBAG_BUTTON_TYPE_LEFT },
-	{ 2, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 3, RATBAG_BUTTON_TYPE_MIDDLE },
-//	{ 4, "2 x BTN_LEFT" },
-	{ 6, RATBAG_BUTTON_TYPE_NONE },
-	{ 0, RATBAG_BUTTON_TYPE_NONE },
-	{ 7, RATBAG_BUTTON_TYPE_EXTRA },
-	{ 8, RATBAG_BUTTON_TYPE_SIDE },
-	{ 9, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 10, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 11, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 12, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-
-	/* DPI switch */
-	{ 13, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP },
-	{ 14, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 15, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
-
-	/* Macro */
-	{ 16, RATBAG_BUTTON_TYPE_MACRO },
-
-	/* Profile */
-	{ 18, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP },
-	{ 19, RATBAG_BUTTON_TYPE_PROFILE_UP },
-	{ 20, RATBAG_BUTTON_TYPE_PROFILE_DOWN },
-
-//	{ 21, "HOLD BTN_LEFT ON/OFF" },
-
-	/* multimedia */
-	{ 25, RATBAG_BUTTON_TYPE_KEY_CONFIG },
-	{ 26, RATBAG_BUTTON_TYPE_KEY_PREVIOUSSONG },
-	{ 27, RATBAG_BUTTON_TYPE_KEY_NEXTSONG },
-	{ 28, RATBAG_BUTTON_TYPE_KEY_PLAYPAUSE },
-	{ 29, RATBAG_BUTTON_TYPE_KEY_STOPCD },
-	{ 30, RATBAG_BUTTON_TYPE_KEY_MUTE },
-	{ 31, RATBAG_BUTTON_TYPE_KEY_VOLUMEUP },
-	{ 32, RATBAG_BUTTON_TYPE_KEY_VOLUMEDOWN },
-
-	/* windows */
-	{ 33, RATBAG_BUTTON_TYPE_KEY_CALC },
-	{ 34, RATBAG_BUTTON_TYPE_KEY_MAIL },
-	{ 35, RATBAG_BUTTON_TYPE_KEY_BOOKMARKS },
-	{ 36, RATBAG_BUTTON_TYPE_KEY_FORWARD },
-	{ 37, RATBAG_BUTTON_TYPE_KEY_BACK },
-	{ 38, RATBAG_BUTTON_TYPE_KEY_STOP },
-	{ 39, RATBAG_BUTTON_TYPE_KEY_FILE },
-	{ 40, RATBAG_BUTTON_TYPE_KEY_REFRESH },
-	{ 41, RATBAG_BUTTON_TYPE_KEY_HOMEPAGE },
-	{ 42, RATBAG_BUTTON_TYPE_KEY_SEARCH },
+	{ 1, BUTTON_ACTION_BUTTON(1) },
+	{ 2, BUTTON_ACTION_BUTTON(2) },
+	{ 3, BUTTON_ACTION_BUTTON(3) },
+	{ 4, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK) },
+	{ 6, BUTTON_ACTION_NONE },
+	{ 7, BUTTON_ACTION_BUTTON(4) },
+	{ 8, BUTTON_ACTION_BUTTON(5) },
+	{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
+	{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
+	{ 11, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
+	{ 12, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
+	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) },
+	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
+	{ 15, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
+	{ 16, BUTTON_ACTION_NONE },
+	{ 17, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
+	{ 18, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
+	{ 19, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN) },
+	{ 25, BUTTON_ACTION_KEY(KEY_CONFIG) },
+	{ 26, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
+	{ 27, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
+	{ 28, BUTTON_ACTION_KEY(KEY_PLAYPAUSE) },
+	{ 29, BUTTON_ACTION_KEY(KEY_STOPCD) },
+	{ 30, BUTTON_ACTION_KEY(KEY_MUTE) },
+	{ 31, BUTTON_ACTION_KEY(KEY_VOLUMEUP) },
+	{ 32, BUTTON_ACTION_KEY(KEY_VOLUMEDOWN) },
+	{ 33, BUTTON_ACTION_KEY(KEY_CALC) },
+	{ 34, BUTTON_ACTION_KEY(KEY_MAIL) },
+	{ 35, BUTTON_ACTION_KEY(KEY_BOOKMARKS) },
+	{ 36, BUTTON_ACTION_KEY(KEY_FORWARD) },
+	{ 37, BUTTON_ACTION_KEY(KEY_BACK) },
+	{ 38, BUTTON_ACTION_KEY(KEY_STOP) },
+	{ 39, BUTTON_ACTION_KEY(KEY_FILE) },
+	{ 40, BUTTON_ACTION_KEY(KEY_REFRESH) },
+	{ 41, BUTTON_ACTION_KEY(KEY_HOMEPAGE) },
+	{ 42, BUTTON_ACTION_KEY(KEY_SEARCH) },
 };
 
-static enum ratbag_button_type
-etekcity_raw_to_button_type(uint8_t data)
+static const struct ratbag_button_action*
+etekcity_raw_to_button_action(uint8_t data)
 {
 	struct etekcity_button_mapping *mapping;
 
 	ARRAY_FOR_EACH(etekcity_button_mapping, mapping) {
 		if (mapping->raw == data)
-			return mapping->type;
+			return &mapping->action;
 	}
 
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
+	return NULL;
 }
 
 static uint8_t
-etekcity_button_type_to_raw(enum ratbag_button_type type)
+etekcity_button_action_to_raw(const struct ratbag_button_action *action)
 {
 	struct etekcity_button_mapping *mapping;
 
 	ARRAY_FOR_EACH(etekcity_button_mapping, mapping) {
-		if (mapping->type == type)
+		if (mapping->action.type == action->type)
 			return mapping->raw;
 	}
 
@@ -330,17 +308,20 @@ etekcity_read_button(struct ratbag_button *button)
 	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
 	uint8_t data;
 	unsigned index = etekcity_button_to_index(button->index);
+	const struct ratbag_button_action *action;
 
 	data = drv_data->profiles[profile->index][3 + index * 3];
 	log_debug(device->ratbag,
 		  " - button%d: %s (%02x) %s:%d\n",
 		  button->index, print_key(data), data, __FILE__, __LINE__);
-	button->type = etekcity_raw_to_button_type(data);
-	button->action_type = etekcity_raw_to_action(data, button->type);
+	action = etekcity_raw_to_button_action(data);
+	button->action = *action;
+	/* FIXME: button->type needs a separate lookup table */
 }
 
 static int
-etekcity_write_button(struct ratbag_button *button)
+etekcity_write_button(struct ratbag_button *button,
+		      const struct ratbag_button_action *action)
 {
 	struct ratbag_profile *profile = button->profile;
 	struct ratbag_device *device = profile->device;
@@ -350,9 +331,7 @@ etekcity_write_button(struct ratbag_button *button)
 
 	data = &drv_data->profiles[profile->index][3 + index * 3];
 
-	if (button->action_type == RATBAG_BUTTON_ACTION_TYPE_BUTTON) {
-		*data = etekcity_button_type_to_raw(button->type);
-	}
+	*data = etekcity_button_action_to_raw(action);
 
 	return 0;
 }

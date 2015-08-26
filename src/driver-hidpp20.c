@@ -94,11 +94,12 @@ hidpp20drv_read_button(struct ratbag_button *button)
 		  control->reporting.divert || control->reporting.persist ? "(redirected) " : "",
 		  __FILE__, __LINE__);
 	button->type = hidpp20_1b04_get_logical_mapping(mapping);
-	button->action_type = hidpp20drv_raw_to_action(button->type);
+	button->action.type = hidpp20drv_raw_to_action(button->type);
 }
 
 static int
-hidpp20drv_write_button(struct ratbag_button *button)
+hidpp20drv_write_button(struct ratbag_button *button,
+			const struct ratbag_button_action *action)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
