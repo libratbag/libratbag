@@ -147,6 +147,8 @@ button_type_to_str(enum ratbag_button_type type)
 	case RATBAG_BUTTON_TYPE_WHEEL_DOWN:	str = "wheel down"; break;
 	case RATBAG_BUTTON_TYPE_EXTRA:		str = "extra (forward)"; break;
 	case RATBAG_BUTTON_TYPE_SIDE:		str = "side (backward)"; break;
+	case RATBAG_BUTTON_TYPE_PINKIE:		str = "pinkie"; break;
+	case RATBAG_BUTTON_TYPE_PINKIE2:	str = "pinkie2"; break;
 
 	/* DPI switch */
 	case RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP:	str = "resolution cycle up"; break;
