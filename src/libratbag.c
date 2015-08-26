@@ -529,6 +529,19 @@ ratbag_create_profile(struct ratbag_device *device, unsigned int index)
 	return profile;
 }
 
+int
+ratbag_device_init_profiles(struct ratbag_device *device, unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++)
+		ratbag_create_profile(device, i);
+
+	device->num_profiles = count;
+
+	return 0;
+}
+
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_ref(struct ratbag_profile *profile)
 {

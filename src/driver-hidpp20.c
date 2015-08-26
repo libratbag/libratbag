@@ -421,7 +421,10 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	if (!drv_data)
 		return -ENODEV;
 
-	device->num_profiles = 1;
+	ratbag_set_drv_data(device, drv_data);
+
+	ratbag_device_init_profiles(device, 1);
+
 	device->num_buttons = 8;
 
 	drv_data->proto_major = 1;
@@ -435,8 +438,6 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	}
 
 	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), drv_data->proto_major, drv_data->proto_minor);
-
-	ratbag_set_drv_data(device, drv_data);
 
 	if (drv_data->proto_major >= 2) {
 		rc = hidpp20drv_20_probe(device, id);

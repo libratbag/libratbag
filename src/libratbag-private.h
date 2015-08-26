@@ -223,6 +223,9 @@ ratbag_get_drv_data(struct ratbag_device *device)
 	return device->drv_data;
 }
 
+int
+ratbag_device_init_profiles(struct ratbag_device *device, unsigned int count);
+
 static inline void
 ratbag_profile_set_drv_data(struct ratbag_profile *profile, void *drv_data)
 {
