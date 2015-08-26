@@ -570,8 +570,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	assert(device->driver->read_profile);
 	device->driver->read_profile(profile, index);
 
-	for (i = 0; i < num_buttons; i++)
-		ratbag_profile_init_buttons(profile, i);
+	ratbag_profile_init_buttons(profile, num_buttons);
 
 	return profile;
 }
