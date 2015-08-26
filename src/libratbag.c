@@ -752,6 +752,12 @@ ratbag_button_get_type(struct ratbag_button *button)
 	return button->type;
 }
 
+LIBRATBAG_EXPORT enum ratbag_button_action_type
+ratbag_button_get_action_type(struct ratbag_button *button)
+{
+	return button->action.type;
+}
+
 LIBRATBAG_EXPORT unsigned int
 ratbag_button_get_button(struct ratbag_button *button)
 {

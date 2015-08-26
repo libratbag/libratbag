@@ -164,6 +164,85 @@ button_type_to_str(enum ratbag_button_type type)
 	return str;
 }
 
+static inline const char *
+button_action_special_to_str(struct ratbag_button *button)
+{
+	enum ratbag_button_action_special special;
+	const char *str = "UNKNOWN";
+
+	special = ratbag_button_get_special(button);
+
+	switch (special) {
+	case RATBAG_BUTTON_ACTION_SPECIAL_INVALID:		str = "invalid"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK:		str = "double click"; break;
+
+	/* Wheel mappings */
+	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT:		str = "wheel left"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT:		str = "wheel right"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:		str = "wheel up"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:		str = "wheel down"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH:	str = "ratchet mode switch"; break;
+
+	/* DPI switch */
+	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP:	str = "resolution cycle up"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP:	str = "resolution up"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN:	str = "resolution down"; break;
+
+	/* Profile */
+	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP:	str = "profile cycle up"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP:		str = "profile up"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN:		str = "profile down"; break;
+	}
+
+	return str;
+}
+
+static inline char *
+button_action_button_to_str(struct ratbag_button *button)
+{
+	char str[96];
+
+	sprintf(str, "button %d", ratbag_button_get_button(button));
+
+	return strdup(str);
+}
+
+static inline char *
+button_action_key_to_str(struct ratbag_button *button)
+{
+	const char *str;
+	unsigned int modifiers[10];
+	size_t m_size = 10;
+
+	str = libevdev_event_code_get_name(EV_KEY, ratbag_button_get_key(button, modifiers, &m_size));
+	if (!str)
+		str = "UNKNOWN";
+
+	return strdup(str);
+}
+
+static inline char *
+button_action_to_str(struct ratbag_button *button)
+{
+	enum ratbag_button_action_type type;
+	char *str;
+
+	type = ratbag_button_get_action_type(button);
+
+	switch (type) {
+	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:	str = button_action_button_to_str(button); break;
+	case RATBAG_BUTTON_ACTION_TYPE_KEY:	str = button_action_key_to_str(button); break;
+	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:	str = strdup(button_action_special_to_str(button)); break;
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:	str = strdup("macro"); break;
+	case RATBAG_BUTTON_ACTION_TYPE_NONE:	str = strdup("none"); break;
+	default:
+		error("type %d unknown\n", type);
+		str = strdup("UNKNOWN");
+	}
+
+	return str;
+}
+
 static struct ratbag_device *
 ratbag_cmd_open_device(struct ratbag *ratbag, const char *path)
 {
@@ -194,6 +273,7 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 	struct ratbag_device *device;
 	struct ratbag_profile *profile, *active_profile;
 	struct ratbag_button *button;
+	char *action;
 	int num_profiles, num_buttons;
 	int i, b;
 	int rc = 1;
@@ -251,7 +331,10 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 
 			button = ratbag_profile_get_button_by_index(profile, b);
 			type = ratbag_button_get_type(button);
-			printf("    Button: %d type %s\n", b, button_type_to_str(type));
+			action = button_action_to_str(button);
+			printf("    Button: %d type %s is mapped to '%s'\n",
+			       b, button_type_to_str(type), action);
+			free(action);
 			button = ratbag_button_unref(button);
 		}
 
