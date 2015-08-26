@@ -715,17 +715,24 @@ LIBRATBAG_EXPORT struct ratbag_button*
 ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 				   unsigned int index)
 {
+	struct ratbag_device *device = profile->device;
 	struct ratbag_button *button;
+
+	if (index >= ratbag_device_get_num_buttons(device))
+		return NULL;
 
 	list_for_each(button, &profile->buttons, link) {
 		if (button->index == index) {
-			if (profile->device->driver->read_button)
-				profile->device->driver->read_button(button);
+			if (device->driver->read_button)
+				device->driver->read_button(button);
 			return ratbag_button_ref(button);
 		}
 	}
 
-	return ratbag_create_button(profile, index);
+	log_bug_libratbag(device->ratbag, "Button %d, profile %d not found\n",
+			  index, profile->index);
+
+	return NULL;
 }
 
 LIBRATBAG_EXPORT enum ratbag_button_type
