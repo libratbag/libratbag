@@ -558,6 +558,9 @@ ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int in
 {
 	struct ratbag_profile *profile;
 
+	if (index >= ratbag_device_get_num_profiles(device))
+		return NULL;
+
 	list_for_each(profile, &device->profiles, link) {
 		if (profile->index == index) {
 			assert(device->driver->read_profile);
@@ -566,7 +569,9 @@ ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int in
 		}
 	}
 
-	return ratbag_create_profile(device, index);
+	log_bug_libratbag(device->ratbag, "Profile %d not found\n", index);
+
+	return NULL;
 }
 
 LIBRATBAG_EXPORT struct ratbag_profile *
