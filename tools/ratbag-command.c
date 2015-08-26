@@ -35,6 +35,7 @@
 
 #include <libratbag.h>
 #include <libratbag-util.h>
+#include <libevdev/libevdev.h>
 
 enum options {
 	OPT_VERBOSE,
@@ -415,26 +416,80 @@ static const struct ratbag_cmd cmd_switch_etekcity = {
 	.help = "Switch the Etekcity mouse active profile",
 };
 
+enum ratbag_button_action_special
+str_to_special_action(const char *str) {
+	struct map {
+		enum ratbag_button_action_special special;
+		const char *str;
+	} map[] =  {
+	{ RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK,		"doubleclick" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT,		"wheel left" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT,		"wheel right" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP,		"wheel up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN,		"wheel down" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,	"resolution cycle up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,		"resolution up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,		"resolution down" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,	"profile cycle up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP,		"profile up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN,		"profile down" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_INVALID,		NULL },
+	};
+	struct map *m = map;
+
+	while (m->str) {
+		if (streq(m->str, str))
+			return m->special;
+		m++;
+	}
+	return RATBAG_BUTTON_ACTION_SPECIAL_INVALID;
+}
+
 static int
 ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 {
-	const char *path;
+	const char *path, *action_str, *action_arg;
 	struct ratbag_device *device;
 	struct ratbag_button *button = NULL;
 	struct ratbag_profile *profile = NULL;
-	int button_index, type_index;
+	int button_index;
+	enum ratbag_button_action_type action_type;
 	int rc = 1, commit = 0;
+	unsigned int btnkey;
+	enum ratbag_button_action_special special;
 
-	if (argc != 3) {
+	if (argc != 4) {
 		usage();
 		return 1;
 	}
 
 	button_index = atoi(argv[0]);
-	type_index = atoi(argv[1]);
-	path = argv[2];
+	action_str = argv[1];
+	action_arg = argv[2];
+	path = argv[3];
+	if (streq(action_str, "button")) {
+		action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+		btnkey = atoi(action_arg);
+	} else if (streq(action_str, "key")) {
+		action_type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+		btnkey = libevdev_event_code_from_name(EV_KEY, action_arg);
+		if (!btnkey) {
+			error("Failed to resolve key %s\n", action_arg);
+			return 1;
+		}
+	} else if (streq(action_str, "special")) {
+		action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+		special = str_to_special_action(action_arg);
+		if (special == RATBAG_BUTTON_ACTION_SPECIAL_INVALID) {
+			error("Invalid special command '%s'\n", action_arg);
+			return 1;
+		}
+	} else {
+		usage();
+		return 1;
+	}
 
-#if 0 /* FIXME */
+
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
 		error("Looks like '%s' is not supported\n", path);
@@ -454,35 +509,40 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 	}
 
 	button = ratbag_profile_get_button_by_index(profile, button_index);
+	if (!button) {
+		error("Invalid button number %d\n", button_index);
+		goto out;
+	}
 
-	if (ratbag_button_get_type(button) != type_index) {
-		rc = ratbag_button_set_type(button, type_index);
-		if (rc) {
-			error("Unable to map button %d to '%s' (%d): %s (%d)\n",
-			      button_index,
-			      button_type_to_str(type_index),
-			      button_index,
-			      strerror(-rc),
-			      rc);
-			goto out;
-		}
+	switch (action_type) {
+	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+		rc = ratbag_button_set_button(button, btnkey);
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+		rc = ratbag_button_set_key(button, btnkey, NULL, 0);
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+		rc = ratbag_button_set_special(button, special);
+		break;
+	default:
+		error("well, that shouldn't have happened\n");
+		abort();
+		break;
+	}
+	if (rc) {
+		error("Unable to perform button %d mapping %s %s\n",
+		      button_index,
+		      action_str,
+		      action_arg);
+		goto out;
+	}
 
-		rc = ratbag_device_set_active_profile(profile);
-		if (rc) {
-			error("Unable to apply the current profile: %s (%d)\n",
-			      strerror(-rc),
-			      rc);
-			goto out;
-		}
-		printf("Switched the current profile of '%s' to report '%s' when button %d is pressed\n",
-		       ratbag_device_get_name(device),
-		       button_type_to_str(type_index),
-		       button_index);
-	} else {
-		printf("The current profile of '%s' alread reports '%s' when button %d is pressed\n",
-		       ratbag_device_get_name(device),
-		       button_type_to_str(type_index),
-		       button_index);
+	rc = ratbag_device_set_active_profile(profile);
+	if (rc) {
+		error("Unable to apply the current profile: %s (%d)\n",
+		      strerror(-rc),
+		      rc);
+		goto out;
 	}
 
 out:
@@ -490,15 +550,14 @@ out:
 	profile = ratbag_profile_unref(profile);
 
 	device = ratbag_device_unref(device);
-#endif
 	return rc;
 }
 
 static const struct ratbag_cmd cmd_change_button = {
 	.name = "change-button",
 	.cmd = ratbag_cmd_change_button,
-	.args = "X Y",
-	.help = "Remap button X to Y in the active profile",
+	.args = "X <button|key|special> <number|KEY_FOO|special>",
+	.help = "Remap button X to the given action in the active profile",
 };
 
 static int

@@ -7,6 +7,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
               -I$(top_builddir)/src  # for libratbag-version.h
 
 ratbag_command_SOURCES = ratbag-command.c
-ratbag_command_LDADD = ../src/libratbag.la $(LIBUDEV_LIBS)
+ratbag_command_LDADD = ../src/libratbag.la $(LIBUDEV_LIBS) $(LIBEVDEV_LIBS)
 ratbag_command_LDFLAGS = -no-install
-ratbag_command_CFLAGS = $(LIBUDEV_CFLAGS)
+ratbag_command_CFLAGS = $(LIBUDEV_CFLAGS) $(LIBEVDEV_CFLAGS)

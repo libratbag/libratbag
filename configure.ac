@@ -47,6 +47,7 @@ LT_INIT
 
 PKG_PROG_PKG_CONFIG()
 PKG_CHECK_MODULES(LIBUDEV, [libudev])
+PKG_CHECK_MODULES(LIBEVDEV, [libevdev])
 
 if test "x$GCC" = "xyes"; then
 	GCC_CXXFLAGS="-Wall -Wextra -Wno-unused-parameter -g -fvisibility=hidden"
