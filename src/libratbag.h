@@ -94,8 +94,6 @@ typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
  *
  * A ratbag context represents one single device. This struct is
  * refcounted, use ratbag_device_ref() and ratbag_device_unref().
- *
- * FIXME: missing: set/get_userdata
  */
 struct ratbag_device;
 
@@ -107,8 +105,6 @@ struct ratbag_device;
  * RATBAG_CAP_SWITCHABLE_PROFILE capability.
  * This struct is refcounted, use ratbag_profile_ref() and
  * ratbag_profile_unref().
- *
- * FIXME: missing: set/get_userdata
  */
 struct ratbag_profile;
 
@@ -120,8 +116,6 @@ struct ratbag_profile;
  *
  * This struct is refcounted, use ratbag_button_ref() and
  * ratbag_button_unref().
- *
- * FIXME: missing: set/get_userdata
  */
 struct ratbag_button;
 
@@ -172,6 +166,34 @@ ratbag_create_context(const struct ratbag_interface *interface,
 /**
  * @ingroup base
  *
+ * Set caller-specific data associated with this context. libratbag does
+ * not manage, look at, or modify this data. The caller must ensure the
+ * data is valid.
+ *
+ * Setting userdata overrides the one provided to ratbag_create_context().
+ *
+ * @param ratbag A previously initialized ratbag context
+ * @param userdata Caller-specific data passed to the various callback
+ * interfaces.
+ */
+void
+ratbag_set_user_data(struct ratbag *ratbag, void *userdata);
+
+/**
+ * @ingroup base
+ *
+ * Get the caller-specific data associated with this context, if any.
+ *
+ * @param ratbag A previously initialized ratbag context
+ * @return The caller-specific data previously assigned in
+ * ratbag_create_context (or ratbag_set_user_data()).
+ */
+void*
+ratbag_get_user_data(const struct ratbag *ratbag);
+
+/**
+ * @ingroup base
+ *
  * Add a reference to the context. A context is destroyed whenever the
  * reference count reaches 0. See @ref ratbag_unref.
  *
@@ -202,6 +224,32 @@ ratbag_unref(struct ratbag *ratbag);
 struct ratbag_device*
 ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 				   struct udev_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Set caller-specific data associated with this device. libratbag does
+ * not manage, look at, or modify this data. The caller must ensure the
+ * data is valid.
+ *
+ * @param device A previously initialized device
+ * @param userdata Caller-specific data passed to the various callback
+ * interfaces.
+ */
+void
+ratbag_device_set_user_data(struct ratbag_device *device, void *userdata);
+
+/**
+ * @ingroup device
+ *
+ * Get the caller-specific data associated with this device, if any.
+ *
+ * @param device A previously initialized ratbag device
+ * @return The caller-specific data previously assigned in
+ * ratbag_device_set_user_data().
+ */
+void*
+ratbag_device_get_user_data(const struct ratbag_device *device);
 
 /**
  * @ingroup device
@@ -284,6 +332,32 @@ ratbag_device_get_num_profiles(struct ratbag_device *ratbag);
  */
 unsigned int
 ratbag_device_get_num_buttons(struct ratbag_device *ratbag);
+
+/**
+ * @ingroup device
+ *
+ * Set caller-specific data associated with this profile. libratbag does
+ * not manage, look at, or modify this data. The caller must ensure the
+ * data is valid.
+ *
+ * @param profile A previously initialized profile
+ * @param userdata Caller-specific data passed to the various callback
+ * interfaces.
+ */
+void
+ratbag_profile_set_user_data(struct ratbag_profile *profile, void *userdata);
+
+/**
+ * @ingroup device
+ *
+ * Get the caller-specific data associated with this profile, if any.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @return The caller-specific data previously assigned in
+ * ratbag_profile_set_user_data().
+ */
+void*
+ratbag_profile_get_user_data(const struct ratbag_profile *profile);
 
 /**
  * @ingroup device
@@ -407,6 +481,32 @@ ratbag_profile_set_report_rate_hz(struct ratbag_profile *profile, int hz);
 struct ratbag_button*
 ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 				   unsigned int index);
+
+/**
+ * @ingroup device
+ *
+ * Set caller-specific data associated with this button. libratbag does
+ * not manage, look at, or modify this data. The caller must ensure the
+ * data is valid.
+ *
+ * @param button A previously initialized button
+ * @param userdata Caller-specific data passed to the various callback
+ * interfaces.
+ */
+void
+ratbag_button_set_user_data(struct ratbag_button *button, void *userdata);
+
+/**
+ * @ingroup device
+ *
+ * Get the caller-specific data associated with this button, if any.
+ *
+ * @param button A previously initialized ratbag button
+ * @return The caller-specific data previously assigned in
+ * ratbag_button_set_user_data().
+ */
+void*
+ratbag_button_get_user_data(const struct ratbag_button *button);
 
 enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_UNKNOWN = 0,

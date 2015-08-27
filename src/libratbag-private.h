@@ -52,6 +52,8 @@ struct ratbag {
 
 struct ratbag_device {
 	char *name;
+	void *userdata;
+
 	struct udev_device *udev_device;
 	struct udev_device *udev_hidraw;
 	int hidraw_fd;
@@ -178,6 +180,8 @@ struct ratbag_driver {
 
 struct ratbag_profile {
 	int refcount;
+	void *userdata;
+
 	struct list link;
 	unsigned index;
 	struct ratbag_device *device;
@@ -218,6 +222,7 @@ struct ratbag_button_action {
 
 struct ratbag_button {
 	int refcount;
+	void *userdata;
 	struct list link;
 	struct ratbag_profile *profile;
 	unsigned index;

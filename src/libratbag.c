@@ -895,3 +895,22 @@ ratbag_button_unref(struct ratbag_button *button)
 
 	return NULL;
 }
+
+
+#define func_userdata(T) \
+LIBRATBAG_EXPORT void \
+T##_set_user_data(struct T *ptr, void *userdata) \
+{ \
+	ptr->userdata = userdata; \
+} \
+\
+LIBRATBAG_EXPORT void * \
+T##_get_user_data(const struct T *ptr) \
+{ \
+	return ptr->userdata; \
+} \
+
+func_userdata(ratbag)
+func_userdata(ratbag_device)
+func_userdata(ratbag_profile)
+func_userdata(ratbag_button)
