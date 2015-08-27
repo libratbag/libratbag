@@ -633,11 +633,8 @@ ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int in
 		return NULL;
 
 	list_for_each(profile, &device->profiles, link) {
-		if (profile->index == index) {
-			assert(device->driver->read_profile);
-			device->driver->read_profile(profile, index);
+		if (profile->index == index)
 			return ratbag_profile_ref(profile);
-		}
 	}
 
 	log_bug_libratbag(device->ratbag, "Profile %d not found\n", index);
@@ -801,11 +798,8 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 		return NULL;
 
 	list_for_each(button, &profile->buttons, link) {
-		if (button->index == index) {
-			if (device->driver->read_button)
-				device->driver->read_button(button);
+		if (button->index == index)
 			return ratbag_button_ref(button);
-		}
 	}
 
 	log_bug_libratbag(device->ratbag, "Button %d, profile %d not found\n",
@@ -829,9 +823,6 @@ ratbag_button_get_action_type(struct ratbag_button *button)
 LIBRATBAG_EXPORT unsigned int
 ratbag_button_get_button(struct ratbag_button *button)
 {
-	if (!button->profile->device->driver->read_button)
-		return 0; /* FIXME */
-
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_BUTTON)
 		return 0;
 
@@ -858,9 +849,6 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 LIBRATBAG_EXPORT enum ratbag_button_action_special
 ratbag_button_get_special(struct ratbag_button *button)
 {
-	if (!button->profile->device->driver->read_button)
-		return -ENOTSUP;
-
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_SPECIAL)
 		return 0;
 
@@ -892,9 +880,6 @@ ratbag_button_get_key(struct ratbag_button *button,
 		      unsigned int *modifiers,
 		      size_t *sz)
 {
-	if (!button->profile->device->driver->read_button)
-		return 0;
-
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
 		return 0;
 
