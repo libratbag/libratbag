@@ -159,29 +159,31 @@ hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 }
 
 static int
-hidpp20drv_read_resolution_dpi(struct ratbag_device *device)
+hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 {
+	struct ratbag_device *device = profile->device;
 	struct ratbag *ratbag = device->ratbag;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
-	int rc, dpi;
+	int rc;
+	unsigned int i;
 
 	if (drv_data->capabilities & HIDPP_CAP_RESOLUTION_2200) {
 		uint16_t resolution;
 		uint8_t flags;
 
+		profile->resolution.num_modes = 1;
 		rc = hidpp20_mousepointer_get_mousepointer_info(device, &resolution, &flags);
 		if (rc) {
 			log_error(ratbag,
 				  "Error while requesting resolution: %s (%d)\n",
 				  strerror(-rc), rc);
-			return 0;
+			return rc;
 		}
 
-		return resolution;
+		return 0;
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
-		dpi = 0;
 		free(drv_data->sensors);
 		drv_data->sensors = NULL;
 		drv_data->num_sensors = 0;
@@ -190,18 +192,30 @@ hidpp20drv_read_resolution_dpi(struct ratbag_device *device)
 			log_error(ratbag,
 				  "Error while requesting resolution: %s (%d)\n",
 				  strerror(-rc), rc);
+			return rc;
 		} else if (rc == 0) {
 			log_error(ratbag, "Error, no compatible sensors found.\n");
-		} else {
-			log_info(ratbag,
-				 "device is at %d dpi (variable between %d and %d).\n",
-				 drv_data->sensors[0].dpi,
-				 drv_data->sensors[0].dpi_min,
-				 drv_data->sensors[0].dpi_max);
-			dpi = drv_data->sensors[0].dpi;
-			drv_data->num_sensors = rc;
+			return -ENODEV;
 		}
-		return dpi;
+		log_info(ratbag,
+			 "device is at %d dpi (variable between %d and %d).\n",
+			 drv_data->sensors[0].dpi,
+			 drv_data->sensors[0].dpi_min,
+			 drv_data->sensors[0].dpi_max);
+		drv_data->num_sensors = rc;
+		if (drv_data->num_sensors > MAX_RESOLUTIONS)
+			drv_data->num_sensors = MAX_RESOLUTIONS;
+		profile->resolution.num_modes = drv_data->num_sensors;
+		for (i = 0; i < profile->resolution.num_modes; i++) {
+			profile->resolution.modes[i].dpi = drv_data->sensors[i].dpi;
+			/* FIXME: retrieve the refresh rate */
+			profile->resolution.modes[i].hz = 0;
+			/* FIXME: we mark all resolutions as active because
+			 * they are from different sensors */
+			profile->resolution.modes[i].is_active = true;
+		}
+
+		return 0;
 	}
 
 	return 0;
@@ -295,16 +309,8 @@ static void
 hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag_device *device = profile->device;
-	int dpi;
 
-
-	/* FIXME */
-#if 0
-	dpi = hidpp20drv_read_resolution_dpi(device);
-	if (dpi > 0)
-		profile->current_dpi = dpi;
-#endif
-
+	hidpp20drv_read_resolution_dpi(profile);
 	hidpp20drv_read_special_key_mouse(device);
 }
 

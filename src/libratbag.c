@@ -554,6 +554,7 @@ ratbag_create_profile(struct ratbag_device *device,
 		      unsigned int num_buttons)
 {
 	struct ratbag_profile *profile;
+	unsigned i;
 
 	profile = zalloc(sizeof(*profile));
 	if (!profile)
@@ -565,6 +566,9 @@ ratbag_create_profile(struct ratbag_device *device,
 
 	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
+
+	for (i = 0; i < MAX_RESOLUTIONS; i++)
+		profile->resolution.modes[i].profile = profile;
 
 	assert(device->driver->read_profile);
 	device->driver->read_profile(profile, index);
@@ -743,9 +747,11 @@ LIBRATBAG_EXPORT int
 ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 			  unsigned int dpi)
 {
+	struct ratbag_profile *profile = resolution->profile;
 	resolution->dpi = dpi;
-	/* FIXME: call into the driver */
-	return 0;
+
+	assert(profile->device->driver->write_resolution_dpi);
+	return profile->device->driver->write_resolution_dpi(profile, dpi);
 }
 
 LIBRATBAG_EXPORT int

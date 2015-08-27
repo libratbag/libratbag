@@ -181,6 +181,7 @@ struct ratbag_driver {
 
 #define MAX_RESOLUTIONS 10
 struct ratbag_resolution{
+	struct ratbag_profile *profile;
 	int refcount;
 	void *userdata;
 	unsigned int dpi;	/**< resolution on dpi */
