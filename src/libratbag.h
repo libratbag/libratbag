@@ -598,6 +598,27 @@ enum ratbag_button_action_type {
 enum ratbag_button_action_type
 ratbag_button_get_action_type(struct ratbag_button *button);
 
+/**
+ * @ingroup device
+ *
+ * Check if a button supports a specific action type. Not all devices allow
+ * all buttons to be assigned any action. Ability to change a button to a
+ * given action type does not guarantee that any specific action can be
+ * configured.
+ *
+ * @note It is a client bug to pass in @ref
+ * RATBAG_BUTTON_ACTION_TYPE_UNKNOWN or @ref
+ * RATBAG_BUTTON_ACTION_TYPE_UNKNOWN.
+ *
+ * @param button A previously initialized button
+ * @param action_type An action type
+ *
+ * @return non-zero if the action type is supported, zero otherwise.
+ */
+int
+ratbag_button_has_action_type(struct ratbag_button *button,
+			      enum ratbag_button_action_type action_type);
+
 enum ratbag_button_action_special {
 	/**
 	 * This button is not set up for a special action
