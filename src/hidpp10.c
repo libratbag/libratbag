@@ -101,7 +101,6 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	struct ratbag *ratbag = device->ratbag;
 	union hidpp10_message read_buffer;
 	union hidpp10_message expected_header;
-	union hidpp10_message expected_error_recv = ERROR_MSG(msg, RECEIVER_IDX);
 	union hidpp10_message expected_error_dev = ERROR_MSG(msg, msg->msg.device_idx);
 	int ret;
 	uint8_t hidpp_err = 0;
@@ -125,7 +124,6 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 
 	log_buf_debug(ratbag, "sending: ", msg->data, SHORT_MESSAGE_LENGTH);
 	log_buf_debug(ratbag, "  expected_header:	", expected_header.data, SHORT_MESSAGE_LENGTH);
-	log_buf_debug(ratbag, "  expected_error_recv:	", expected_error_recv.data, SHORT_MESSAGE_LENGTH);
 	log_buf_debug(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
@@ -139,14 +137,23 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	 */
 	do {
 		ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
+
+		/* Overwrite the return device index with ours. The kernel
+		 * sets our device index on write, but gives us the real
+		 * device index on reply. Overwrite it with our index so the
+		 * messages are easier to check and compare.
+		 */
+		read_buffer.msg.device_idx = msg->msg.device_idx;
+
 		log_buf_debug(ratbag, " *** received: ", read_buffer.data, ret);
+
+
 		/* actual answer */
 		if (!memcmp(read_buffer.data, expected_header.data, 4))
 			break;
 
 		/* error */
-		if (!memcmp(read_buffer.data, expected_error_recv.data, 5) ||
-		    !memcmp(read_buffer.data, expected_error_dev.data, 5)) {
+		if (!memcmp(read_buffer.data, expected_error_dev.data, 5)) {
 			hidpp_err = read_buffer.msg.parameters[1];
 			log_debug(ratbag,
 				"    HID++ error from the %s (%d): %s (%02x)\n",
@@ -907,19 +914,9 @@ void hidpp10_list_devices(struct ratbag_device *device) {
 static int
 hidpp10_get_device_info(struct hidpp10_device *dev)
 {
-	size_t name_size = sizeof(dev->name);
 	uint8_t f1, f2;
 	uint8_t reflect;
 	int i;
-
-	hidpp10_get_pairing_information(dev,
-					&dev->report_interval,
-					&dev->wpid,
-					&dev->device_type);
-	hidpp10_get_pairing_information_device_name(dev,
-						    dev->name,
-						    &name_size);
-	hidpp10_get_firmare_information(dev, &dev->fw_major, &dev->fw_minor, &dev->build);
 
 	hidpp10_get_individual_features(dev, &f1, &f2);
 	hidpp10_get_hidpp_notifications(dev, &f1, &f2);
