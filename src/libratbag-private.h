@@ -26,6 +26,7 @@
 
 #include <linux/input.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "libratbag.h"
 #include "libratbag-util.h"
@@ -178,6 +179,15 @@ struct ratbag_driver {
 	struct list link;
 };
 
+#define MAX_RESOLUTIONS 10
+struct ratbag_resolution{
+	int refcount;
+	void *userdata;
+	unsigned int dpi;	/**< resolution on dpi */
+	unsigned int hz;	/**< report rate in Hz */
+	bool is_active;
+};
+
 struct ratbag_profile {
 	int refcount;
 	void *userdata;
@@ -188,8 +198,10 @@ struct ratbag_profile {
 	struct list buttons;
 	void *drv_data;
 	void *user_data;
-	int current_dpi;
-	int report_rate;
+	struct {
+		struct ratbag_resolution modes[MAX_RESOLUTIONS];
+		unsigned int num_modes;
+	} resolution;
 };
 
 #define BUTTON_ACTION_NONE \

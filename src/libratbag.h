@@ -127,6 +127,18 @@ struct ratbag_profile;
 struct ratbag_button;
 
 /**
+ * @ingroup resolution
+ * @struct ratbag_resolution
+ *
+ * Represents a resolution setting on the device. Most devices have multiple
+ * resolutions per profile, one of which is active at a time.
+ *
+ * This struct is refcounted, use ratbag_resolution_ref() and
+ * ratbag_resolution_unref().
+ */
+struct ratbag_resolution;
+
+/**
  * @ingroup base
  * @struct ratbag_interface
  *
@@ -419,10 +431,204 @@ ratbag_device_set_active_profile(struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
+ * Get the number of @ref ratbag_resolution available in this profile. A
+ * resolution mode is a tuple of (resolution, report rate), each mode can be
+ * fetched with ratbag_profile_get_resolution_by_idx().
+ *
+ * The returned value is the maximum number of modes available and thus
+ * identical for all profiles. However, some of the modes may not be
+ * configured.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return The number of profiles available.
+ */
+int
+ratbag_profile_get_num_resolutions(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Return the resolution in DPI and the report rate in Hz for the resolution
+ * mode identified by the given index. The index must be between 0 and
+ * ratbag_profile_get_num_resolution_modes().
+ *
+ * See ratbag_profile_get_num_resolution_modes() for a description of
+ * resolution_modes.
+ *
+ * Profiles available but not currently configured on the device return
+ * success but set dpi and hz to 0.
+ *
+ * The returned struct has a refcount of at least 1, use
+ * ratbag_resolution_unref() to release the resources associated.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param idx The index of the resolution mode to get
+ *
+ * @return zero on success, non-zero otherwise. On error, dpi and hz are
+ * unmodified.
+ */
+struct ratbag_resolution *
+ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx);
+
+/**
+ * @ingroup resolution
+ *
+ * Add a reference to the resolution. A resolution is destroyed whenever the
+ * reference count reaches 0. See @ref ratbag_resolution_unref.
+ *
+ * @param resolution A previously initialized valid ratbag resolution
+ * @return The passed ratbag resolution
+ */
+struct ratbag_resolution *
+ratbag_resolution_ref(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Dereference the ratbag resolution. After this, the resolution may have been
+ * destroyed, if the last reference was dereferenced. If so, the resolution is
+ * invalid and may not be interacted with.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ * @return NULL if context was destroyed otherwise the passed resolution
+ */
+struct ratbag_resolution *
+ratbag_resolution_unref(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Set caller-specific data associated with this resolution. libratbag does
+ * not manage, look at, or modify this data. The caller must ensure the
+ * data is valid.
+ *
+ * @param resolution A previously initialized resolution
+ * @param userdata Caller-specific data passed to the various callback
+ * interfaces.
+ */
+void
+ratbag_resolution_set_user_data(struct ratbag_resolution *resolution, void *userdata);
+
+/**
+ * @ingroup resolution
+ *
+ * Get the caller-specific data associated with this resolution, if any.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ * @return The caller-specific data previously assigned in
+ * ratbag_resolution_set_user_data().
+ */
+void*
+ratbag_resolution_get_user_data(const struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Set the resolution in DPI for the resolution mode.
+ *
+ * A value of 0 for dpi disables the mode.
+ *
+ * If the resolution mode is the currently active mode and the profile is
+ * the currently active profile, the change takes effect immediately.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ * @param dpi Set to the resolution in dpi, 0 to disable
+ *
+ * @return zero on success, non-zero otherwise
+ */
+int
+ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
+			  unsigned int dpi);
+/**
+ * @ingroup resolution
+ *
+ * Get the resolution in DPI for the resolution mode.
+ *
+ * A value of 0 for dpi indicates the mode is disabled.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return zero on success, non-zero otherwise
+ */
+int
+ratbag_resolution_get_dpi(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Set the the report rate in Hz for the resolution mode.
+ *
+ * A value of 0 hz disables the mode.
+ *
+ * If the resolution mode is the currently active mode and the profile is
+ * the currently active profile, the change takes effect immediately.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ * @param hz Set to the report rate in Hz, may be 0
+ *
+ * @return zero on success, non-zero otherwise
+ */
+int
+ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
+				  unsigned int hz);
+
+/**
+ * @ingroup resolution
+ *
+ * Get the the report rate in Hz for the resolution mode.
+ *
+ * A value of 0 hz indicates the mode is disabled.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return zero on success, non-zero otherwise
+ */
+int
+ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Activate the given resolution mode. If the mode is not configured, this
+ * function returns an error and the result is undefined.
+ *
+ * If the profile is the currently active profile, the change takes effect
+ * immediately. Otherwise, the resolution mode will be the active mode when
+ * the device switches to the profile next.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return zero on success, non-zero otherwise
+ */
+int
+ratbag_resolution_set_active(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Check if the resolution mode is the currently active one.
+ *
+ * If the profile is the currently active profile, the mode is the one
+ * currently active. Otherwise, the resolution mode is the one used when
+ * the device switches to the profile next.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return Non-zero if the resolution mode is the active one, zero
+ * otherwise.
+ */
+int
+ratbag_resolution_is_active(const struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup profile
+ *
  * @param profile A previously initialized ratbag profile
  * @return The current resolution in dots-per-inch.
  * @retval 0 The resolution is unknown
  */
+/* FIXME: remove me */
 int
 ratbag_profile_get_resolution_dpi(const struct ratbag_profile *profile);
 
@@ -439,6 +645,7 @@ ratbag_profile_get_resolution_dpi(const struct ratbag_profile *profile);
  *
  * @return 0 on success or -1 on failure
  */
+/* FIXME: remove me */
 int
 ratbag_profile_set_resolution_dpi(struct ratbag_profile *profile, int dpi);
 
@@ -449,6 +656,7 @@ ratbag_profile_set_resolution_dpi(struct ratbag_profile *profile, int dpi);
  * @return The current report rate in Hz
  * @retval 0 The report rate is unknown
  */
+/* FIXME: remove me */
 int
 ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile);
 
@@ -465,6 +673,7 @@ ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile);
  *
  * @return 0 on success or -1 on failure
  */
+/* FIXME: remove me */
 int
 ratbag_profile_set_report_rate_hz(struct ratbag_profile *profile, int hz);
 

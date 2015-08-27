@@ -297,9 +297,13 @@ hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag_device *device = profile->device;
 	int dpi;
 
+
+	/* FIXME */
+#if 0
 	dpi = hidpp20drv_read_resolution_dpi(device);
 	if (dpi > 0)
 		profile->current_dpi = dpi;
+#endif
 
 	hidpp20drv_read_special_key_mouse(device);
 }

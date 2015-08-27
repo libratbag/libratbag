@@ -122,19 +122,33 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag_device *device = profile->device;
 	struct hidpp10drv_data *drv_data;
 	struct hidpp10_device *hidpp10;
-	uint16_t xres, yres, refresh;
+	struct hidpp10_profile p;
 	int rc;
+	unsigned int i;
+	uint16_t xres, yres;
 
 	drv_data = ratbag_get_drv_data(device);
 	hidpp10 = drv_data->dev;
+	rc = hidpp10_get_profile(hidpp10, index, &p);
+	if (rc)
+		return;
 
 	rc = hidpp10_get_current_resolution(hidpp10, &xres, &yres);
-	if (rc == 0)
-		profile->current_dpi = xres;
+	if (rc)
+		xres = 0xffff;
 
-	rc = hidpp10_get_usb_refresh_rate(hidpp10, &refresh);
-	if (rc == 0)
-		profile->report_rate = refresh;
+	profile->resolution.num_modes = p.num_dpi_modes;
+	for (i = 0; i < p.num_dpi_modes; i++) {
+		/* FIXME: we should expose x/y res separately */
+		profile->resolution.modes[i].dpi = p.dpi_modes[i].xres;
+		profile->resolution.modes[i].hz = p.refresh_rate;
+		profile->resolution.modes[i].is_active = false;
+		/* FIXME: active != default. p.default_dpi_mode is the
+		 * default, we can only tick the active in the currently
+		 * active profile */
+		if (profile->resolution.modes[i].dpi == xres)
+			profile->resolution.modes[i].is_active = true;
+	}
 }
 
 static int

@@ -695,30 +695,94 @@ ratbag_device_set_active_profile(struct ratbag_profile *profile)
 	return rc;
 }
 
+
 LIBRATBAG_EXPORT int
-ratbag_profile_get_resolution_dpi(const struct ratbag_profile *profile)
+ratbag_profile_get_num_resolutions(struct ratbag_profile *profile)
 {
-	assert(profile);
-	return profile->current_dpi;
+	return profile->resolution.num_modes;
+}
+
+LIBRATBAG_EXPORT struct ratbag_resolution *
+ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
+{
+	struct ratbag_resolution *res;
+	int max = ratbag_profile_get_num_resolutions(profile);
+
+	if (max < 0 || idx >= (unsigned int)max)
+		return NULL;
+
+	res = &profile->resolution.modes[idx];
+
+	return ratbag_resolution_ref(res);
+}
+
+LIBRATBAG_EXPORT struct ratbag_resolution *
+ratbag_resolution_ref(struct ratbag_resolution *resolution)
+{
+	resolution->refcount++;
+	return resolution;
+}
+
+LIBRATBAG_EXPORT struct ratbag_resolution *
+ratbag_resolution_unref(struct ratbag_resolution *resolution)
+{
+	if (resolution == NULL)
+		return NULL;
+
+	assert(resolution->refcount > 0);
+	resolution->refcount--;
+	if (resolution->refcount > 0)
+		return resolution;
+
+	/* Resolution is a fixed list of structs, no freeing required */
+
+	return NULL;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_profile_set_resolution_dpi(struct ratbag_profile *profile, int dpi)
+ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
+			  unsigned int dpi)
 {
-	if (!ratbag_device_has_capability(profile->device,
-					  RATBAG_CAP_SWITCHABLE_RESOLUTION))
-		return -ENOTSUP;
-
-	assert(profile->device->driver->write_resolution_dpi);
-	return profile->device->driver->write_resolution_dpi(profile, dpi);
+	resolution->dpi = dpi;
+	/* FIXME: call into the driver */
+	return 0;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile)
+ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
+				  unsigned int hz)
 {
-	assert(profile);
-	return profile->report_rate;
+	resolution->hz = hz;
+	/* FIXME: call into the driver */
+	return 0;
 }
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_get_dpi(struct ratbag_resolution *resolution)
+{
+	return resolution->dpi;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution)
+{
+	return resolution->hz;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_is_active(const struct ratbag_resolution *resolution)
+{
+	return resolution->is_active;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_set_active(struct ratbag_resolution *resolution)
+{
+	resolution->is_active = true;
+	/* FIXME: call into the driver */
+	return 0;
+}
+
 
 LIBRATBAG_EXPORT struct ratbag_button*
 ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
@@ -895,7 +959,6 @@ ratbag_button_unref(struct ratbag_button *button)
 	return NULL;
 }
 
-
 #define func_userdata(T) \
 LIBRATBAG_EXPORT void \
 T##_set_user_data(struct T *ptr, void *userdata) \
@@ -913,3 +976,4 @@ func_userdata(ratbag)
 func_userdata(ratbag_device)
 func_userdata(ratbag_profile)
 func_userdata(ratbag_button)
+func_userdata(ratbag_resolution)

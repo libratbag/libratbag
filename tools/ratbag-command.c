@@ -277,7 +277,7 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 	struct ratbag_button *button;
 	char *action;
 	int num_profiles, num_buttons;
-	int i, b;
+	int i, j, b;
 	int rc = 1;
 
 	if (argc != 1) {
@@ -321,12 +321,20 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 		int dpi, rate;
 		profile = ratbag_device_get_profile_by_index(device, i);
 
-		dpi = ratbag_profile_get_resolution_dpi(profile);
-		rate = ratbag_profile_get_report_rate_hz(profile);
 		printf("  Profile %d%s\n", i,
 		       profile == active_profile ? " (active)" : "");
-		printf("    Resolution: %ddpi\n", dpi);
-		printf("    Report rate: %dhz\n", rate);
+		printf("    Resolutions:\n");
+		for (j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
+			struct ratbag_resolution *res;
+
+			res = ratbag_profile_get_resolution(profile, j);
+			dpi = ratbag_resolution_get_dpi(res);
+			rate = ratbag_resolution_get_report_rate(res);
+			printf("      %d: %ddpi @ %dHz%s\n", i+1, dpi, rate,
+			       ratbag_resolution_is_active(res) ? " (active)" : "");
+
+			ratbag_resolution_unref(res);
+		}
 
 		for (b = 0; b < num_buttons; b++) {
 			enum ratbag_button_type type;
@@ -705,6 +713,7 @@ ratbag_cmd_switch_dpi(struct ratbag *ratbag, uint32_t flags, int argc, char **ar
 	struct ratbag_profile *profile = NULL;
 	int rc = 1;
 	int dpi;
+	int i;
 
 	if (argc != 2) {
 		usage();
@@ -732,15 +741,23 @@ ratbag_cmd_switch_dpi(struct ratbag *ratbag, uint32_t flags, int argc, char **ar
 		goto out;
 	}
 
-	rc = ratbag_profile_set_resolution_dpi(profile, dpi);
-	if (!rc)
-		printf("Switched the current resolution profile of '%s' to %d dpi\n",
-		       ratbag_device_get_name(device),
-		       dpi);
-	else
-		error("can't seem to be able to change the dpi: %s (%d)\n",
-		      strerror(-rc),
-		      rc);
+	for (i = 0; i < ratbag_profile_get_num_resolutions(profile); i++) {
+		struct ratbag_resolution *res;
+
+		res = ratbag_profile_get_resolution(profile, i);
+		if (ratbag_resolution_is_active(res)) {
+			rc = ratbag_resolution_set_dpi(res, dpi);
+			if (!rc)
+				printf("Switched the current resolution profile of '%s' to %d dpi\n",
+				       ratbag_device_get_name(device),
+				       dpi);
+			else
+				error("can't seem to be able to change the dpi: %s (%d)\n",
+				      strerror(-rc),
+				      rc);
+		}
+		ratbag_resolution_unref(res);
+	}
 
 out:
 	profile = ratbag_profile_unref(profile);
