@@ -12,3 +12,8 @@ changing x/y separately.
 
 buttons need a couple of has_capability() functions to check which action
 types and actions are possible
+
+light support:
+- on/off
+- color
+- patterns
