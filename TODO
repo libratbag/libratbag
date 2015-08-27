@@ -1,0 +1,14 @@
+get_active_profile should be a profile_is_active() instead. Better than
+comparing pointers for equality.
+
+resolutions have a "default" and an "active" setting, we currently treat
+them the same.
+
+resolution is currently a single value, some mice have x/y resolution
+separate.
+
+resolution bits need a has_capability() for changing report rate and
+changing x/y separately.
+
+buttons need a couple of has_capability() functions to check which action
+types and actions are possible
