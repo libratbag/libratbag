@@ -222,8 +222,9 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 }
 
 static int
-hidpp20drv_write_resolution_dpi(struct ratbag_profile *profile, int dpi)
+hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution, int dpi)
 {
+	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_sensor *sensor;

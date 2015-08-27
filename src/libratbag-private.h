@@ -173,7 +173,7 @@ struct ratbag_driver {
 	 *
 	 * Mandatory if the driver exports RATBAG_CAP_SWITCHABLE_RESOLUTION.
 	 */
-	int (*write_resolution_dpi)(struct ratbag_profile *profile, int dpi);
+	int (*write_resolution_dpi)(struct ratbag_resolution *resolution, int dpi);
 
 	/* private */
 	struct list link;

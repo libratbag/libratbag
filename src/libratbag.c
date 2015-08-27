@@ -751,7 +751,7 @@ ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 	resolution->dpi = dpi;
 
 	assert(profile->device->driver->write_resolution_dpi);
-	return profile->device->driver->write_resolution_dpi(profile, dpi);
+	return profile->device->driver->write_resolution_dpi(resolution, dpi);
 }
 
 LIBRATBAG_EXPORT int
