@@ -3,7 +3,6 @@
 LIBRATBAG_0.1.0 {
 global:
 	ratbag_create_context;
-	ratbag_button_ref;
 	ratbag_button_disable;
 	ratbag_button_get_action_type;
 	ratbag_button_get_type;
@@ -11,23 +10,24 @@ global:
 	ratbag_button_get_key;
 	ratbag_button_get_special;
 	ratbag_button_get_user_data;
+	ratbag_button_ref;
 	ratbag_button_set_button;
 	ratbag_button_set_key;
 	ratbag_button_set_special;
 	ratbag_button_set_user_data;
 	ratbag_button_unref;
-	ratbag_device_unref;
 	ratbag_device_get_active_profile;
 	ratbag_device_get_name;
-	ratbag_device_get_num_profiles;
 	ratbag_device_get_num_buttons;
+	ratbag_device_get_num_profiles;
 	ratbag_device_get_profile_by_index;
 	ratbag_device_get_user_data;
 	ratbag_device_has_capability;
 	ratbag_device_new_from_udev_device;
 	ratbag_device_ref;
-	ratbag_device_set_user_data;
 	ratbag_device_set_active_profile;
+	ratbag_device_set_user_data;
+	ratbag_device_unref;
 	ratbag_get_user_data;
 	ratbag_log_get_priority;
 	ratbag_log_set_handler;
@@ -37,8 +37,8 @@ global:
 	ratbag_profile_get_resolution_dpi;
 	ratbag_profile_get_user_data;
 	ratbag_profile_set_resolution_dpi;
-	ratbag_profile_set_user_data;
 	ratbag_profile_ref;
+	ratbag_profile_set_user_data;
 	ratbag_profile_unref;
 	ratbag_ref;
 	ratbag_set_user_data;
