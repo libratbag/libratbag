@@ -330,7 +330,7 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 			res = ratbag_profile_get_resolution(profile, j);
 			dpi = ratbag_resolution_get_dpi(res);
 			rate = ratbag_resolution_get_report_rate(res);
-			printf("      %d: %ddpi @ %dHz%s%s\n", i, dpi, rate,
+			printf("      %d: %ddpi @ %dHz%s%s\n", j, dpi, rate,
 			       ratbag_resolution_is_active(res) ? " (active)" : "",
 			       ratbag_resolution_is_default(res) ? " (default)" : "");
 
