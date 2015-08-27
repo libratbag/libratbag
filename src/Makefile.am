@@ -21,10 +21,11 @@ libratbag_la_SOURCES =			\
 	libratbag-private.h		\
 	libratbag-util.h
 
-libratbag_la_LIBADD = $(LIBUDEV_LIBS)
+libratbag_la_LIBADD = $(LIBUDEV_LIBS) $(LIBEVDEV_LIBS)
 
 libratbag_la_CFLAGS = -I$(top_srcdir)/include \
 		      $(LIBUDEV_CFLAGS)		\
+		      $(LIBEVDEV_CFLAGS)	\
 		      $(GCC_CFLAGS)
 EXTRA_libratbag_la_DEPENDENCIES = $(srcdir)/libratbag.sym
 
