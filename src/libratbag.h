@@ -80,13 +80,20 @@ typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
  * @defgroup base Initialization and manipulation of ratbag contexts
  * @defgroup device Querying and manipulating devices
  *
- * Device configuration is managed by "profiles" (see @ref ratbag_profile).
+ * Device configuration is managed by "profiles" (see @ref profile).
  * In the simplest case, a device has a single profile that can be fetched,
  * queried and manipulated and then re-applied to the device. Other devices
  * may have multiple profiles, each of which can be queried and managed
  * independently.
+ *
+ * @defgroup profile Device profiles
+ *
+ * A profile on a device consists of a set of button functions and, where
+ * applicable, a range of resolution settings, one of which is currently
+ * active.
+ *
+ * @defgroup button Button configuration
  */
-
 
 /**
  * @ingroup base
@@ -98,7 +105,7 @@ typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
 struct ratbag_device;
 
 /**
- * @ingroup device
+ * @ingroup profile
  * @struct ratbag_profile
  *
  * A handle to a profile context on devices with the @ref
@@ -109,7 +116,7 @@ struct ratbag_device;
 struct ratbag_profile;
 
 /**
- * @ingroup device
+ * @ingroup button
  * @struct ratbag_button
  *
  * Represents a button on the device.
@@ -334,7 +341,7 @@ unsigned int
 ratbag_device_get_num_buttons(struct ratbag_device *ratbag);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * Set caller-specific data associated with this profile. libratbag does
  * not manage, look at, or modify this data. The caller must ensure the
@@ -348,7 +355,7 @@ void
 ratbag_profile_set_user_data(struct ratbag_profile *profile, void *userdata);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * Get the caller-specific data associated with this profile, if any.
  *
@@ -360,7 +367,7 @@ void*
 ratbag_profile_get_user_data(const struct ratbag_profile *profile);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * This function creates if necessary and returns a profile for the given
  * index. The index must be less than the number returned by
@@ -381,7 +388,7 @@ struct ratbag_profile *
 ratbag_device_get_profile_by_index(struct ratbag_device *ratbag, unsigned int index);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * This function returns the currently active profile. Note that some
  * devices allow switching profiles with hardware buttons thus making the
@@ -398,7 +405,7 @@ struct ratbag_profile *
 ratbag_device_get_active_profile(struct ratbag_device *ratbag);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * This function sets the currently active profile to the one provided.
  *
@@ -410,7 +417,7 @@ int
 ratbag_device_set_active_profile(struct ratbag_profile *profile);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * @param profile A previously initialized ratbag profile
  * @return The current resolution in dots-per-inch.
@@ -436,7 +443,7 @@ int
 ratbag_profile_set_resolution_dpi(struct ratbag_profile *profile, int dpi);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * @param profile A previously initialized ratbag profile
  * @return The current report rate in Hz
@@ -446,7 +453,7 @@ int
 ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * Sets the current report rate to the given frequency in Hz.
  *
@@ -462,7 +469,7 @@ int
 ratbag_profile_set_report_rate_hz(struct ratbag_profile *profile, int hz);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * Return a reference to the button given by the index. The order of the
  * buttons is device-specific though indices 0, 1 and 2 should always refer
@@ -483,7 +490,7 @@ ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 				   unsigned int index);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * Set caller-specific data associated with this button. libratbag does
  * not manage, look at, or modify this data. The caller must ensure the
@@ -497,7 +504,7 @@ void
 ratbag_button_set_user_data(struct ratbag_button *button, void *userdata);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * Get the caller-specific data associated with this button, if any.
  *
@@ -508,6 +515,11 @@ ratbag_button_set_user_data(struct ratbag_button *button, void *userdata);
 void*
 ratbag_button_get_user_data(const struct ratbag_button *button);
 
+/**
+ * @ingroup button
+ *
+ * Button types describing the physical button.
+ */
 enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_UNKNOWN = 0,
 
@@ -542,7 +554,7 @@ enum ratbag_button_type {
 };
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * Return the type of the physical button. This function is intended to be
  * used by configuration tools to provide a generic list of button names or
@@ -558,7 +570,7 @@ enum ratbag_button_type
 ratbag_button_get_type(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * The type assigned to a button.
  */
@@ -591,7 +603,7 @@ enum ratbag_button_action_type {
 };
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * @return The type of the action currently configured for this button
  */
@@ -599,7 +611,7 @@ enum ratbag_button_action_type
 ratbag_button_get_action_type(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * Check if a button supports a specific action type. Not all devices allow
  * all buttons to be assigned any action. Ability to change a button to a
@@ -619,6 +631,9 @@ int
 ratbag_button_has_action_type(struct ratbag_button *button,
 			      enum ratbag_button_action_type action_type);
 
+/**
+ * @ingroup button
+ */
 enum ratbag_button_action_special {
 	/**
 	 * This button is not set up for a special action
@@ -648,7 +663,7 @@ enum ratbag_button_action_special {
 };
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * This function returns the logical button number this button is mapped to,
  * starting at 1. The button numbers are in sequence and do not correspond
@@ -669,7 +684,7 @@ unsigned int
 ratbag_button_get_button(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * See ratbag_button_get_button() for a description of the button number.
  *
@@ -685,7 +700,7 @@ ratbag_button_set_button(struct ratbag_button *button,
 			 unsigned int btn);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * This function returns the special function assigned to this button.
  *
@@ -700,7 +715,7 @@ enum ratbag_button_action_special
 ratbag_button_get_special(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * This function sets the special function assigned to this button.
  *
@@ -716,7 +731,7 @@ ratbag_button_set_special(struct ratbag_button *button,
 			  enum ratbag_button_action_special action);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * Return the key or button configured for this button.
  *
@@ -740,7 +755,7 @@ ratbag_button_get_key(struct ratbag_button *button,
 		      size_t *sz);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * @param button A previously initialized ratbag button
  * @param key The button number to assign to this button, one of BTN_* as
@@ -761,7 +776,7 @@ ratbag_button_set_key(struct ratbag_button *button,
 		      size_t sz);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * @param button A previously initialized ratbag button
  *
@@ -772,7 +787,7 @@ int
 ratbag_button_disable(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * FIXME: no idea at this point
  */
@@ -780,7 +795,7 @@ unsigned int
 ratbag_button_get_macro(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * FIXME: no idea at this point
  */
@@ -788,7 +803,7 @@ unsigned int
 ratbag_button_set_macro(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * Add a reference to the button. A button is destroyed whenever the
  * reference count reaches 0. See @ref ratbag_button_unref.
@@ -800,7 +815,7 @@ struct ratbag_button *
 ratbag_button_ref(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup button
  *
  * Dereference the ratbag button. After this, the button may have been
  * destroyed, if the last reference was dereferenced. If so, the button is
@@ -813,7 +828,7 @@ struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * Add a reference to the profile. A profile is destroyed whenever the
  * reference count reaches 0. See @ref ratbag_profile_unref.
@@ -825,7 +840,7 @@ struct ratbag_profile *
 ratbag_profile_ref(struct ratbag_profile *profile);
 
 /**
- * @ingroup device
+ * @ingroup profile
  *
  * Dereference the ratbag profile. After this, the profile may have been
  * destroyed, if the last reference was dereferenced. If so, the profile is
@@ -838,7 +853,7 @@ struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile);
 
 /**
- * @ingroup base
+ * @ingroup device
  *
  * Add a reference to the context. A context is destroyed whenever the
  * reference count reaches 0. See @ref ratbag_device_unref.
@@ -850,7 +865,7 @@ struct ratbag_device *
 ratbag_device_ref(struct ratbag_device *ratbag);
 
 /**
- * @ingroup base
+ * @ingroup device
  *
  * Dereference the ratbag context. After this, the context may have been
  * destroyed, if the last reference was dereferenced. If so, the context is
