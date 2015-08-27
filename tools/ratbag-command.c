@@ -145,6 +145,7 @@ button_type_to_str(enum ratbag_button_type type)
 	case RATBAG_BUTTON_TYPE_WHEEL_CLICK:	str = "wheel click"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_UP:	str = "wheel up"; break;
 	case RATBAG_BUTTON_TYPE_WHEEL_DOWN:	str = "wheel down"; break;
+	case RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT: str = "wheel ratchet mode switch"; break;
 	case RATBAG_BUTTON_TYPE_EXTRA:		str = "extra (forward)"; break;
 	case RATBAG_BUTTON_TYPE_SIDE:		str = "side (backward)"; break;
 	case RATBAG_BUTTON_TYPE_PINKIE:		str = "pinkie"; break;
@@ -174,6 +175,7 @@ button_action_special_to_str(struct ratbag_button *button)
 
 	switch (special) {
 	case RATBAG_BUTTON_ACTION_SPECIAL_INVALID:		str = "invalid"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN:		str = "unknown"; break;
 	case RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK:		str = "double click"; break;
 
 	/* Wheel mappings */
@@ -539,7 +541,7 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 	struct ratbag_profile *profile = NULL;
 	int button_index;
 	enum ratbag_button_action_type action_type;
-	int rc = 1, commit = 0;
+	int rc = 1;
 	unsigned int btnkey;
 	enum ratbag_button_action_special special;
 
@@ -700,9 +702,8 @@ ratbag_cmd_switch_dpi(struct ratbag *ratbag, uint32_t flags, int argc, char **ar
 {
 	const char *path;
 	struct ratbag_device *device;
-	struct ratbag_button *button_6, *button_7;
 	struct ratbag_profile *profile = NULL;
-	int rc = 1, commit = 0;
+	int rc = 1;
 	int dpi;
 
 	if (argc != 2) {

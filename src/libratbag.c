@@ -554,7 +554,6 @@ ratbag_create_profile(struct ratbag_device *device,
 		      unsigned int num_buttons)
 {
 	struct ratbag_profile *profile;
-	unsigned int i;
 
 	profile = zalloc(sizeof(*profile));
 	if (!profile)
