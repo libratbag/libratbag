@@ -23,6 +23,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <libudev.h>
 #include <linux/hidraw.h>
 #include <string.h>
@@ -127,9 +128,16 @@ int
 ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len)
 {
 	int rc;
+	struct pollfd fds;
 
 	if (len < 1 || !buf || device->hidraw_fd < 0)
 		return -EINVAL;
+
+	fds.fd = device->hidraw_fd;
+	fds.events = POLLIN;
+
+	if (poll(&fds, 1, 1000) == -1)
+		return -errno;
 
 	rc = read(device->hidraw_fd, buf, len);
 	return rc >= 0 ? rc : -errno;
