@@ -455,7 +455,37 @@ etekcity_write_button(struct ratbag_button *button,
 static int
 etekcity_write_resolution_dpi(struct ratbag_profile *profile, int dpi)
 {
-	return -ENOTSUP;
+	struct ratbag_device *device = profile->device;
+	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
+	struct etekcity_settings_report *settings_report;
+	uint8_t *buf;
+	int rc;
+
+	if (dpi < 50 || dpi > 8200 || dpi % 50)
+		return -EINVAL;
+
+	settings_report = &drv_data->settings[profile->index];
+
+	/* FIXME: we should be able to say which dpi setting we change */
+	/* FIXME: allow both x and y dpi to be set */
+	settings_report->x_sensitivity = 0x0a;
+	settings_report->y_sensitivity = 0x0a;
+	settings_report->xres[settings_report->current_dpi] = dpi / 50;
+	settings_report->yres[settings_report->current_dpi] = dpi / 50;
+
+	buf = (uint8_t*)settings_report;
+	etekcity_set_config_profile(device, profile->index, ETEKCITY_CONFIG_SETTINGS);
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_SETTINGS,
+				       buf, ETEKCITY_REPORT_SIZE_SETTINGS,
+				       HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+
+	if (rc < 0)
+		return rc;
+
+	if (rc != ETEKCITY_REPORT_SIZE_SETTINGS)
+		return -EIO;
+
+	return 0;
 }
 
 static int
