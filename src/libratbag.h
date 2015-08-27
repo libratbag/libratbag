@@ -593,9 +593,8 @@ ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
  * Activate the given resolution mode. If the mode is not configured, this
  * function returns an error and the result is undefined.
  *
- * If the profile is the currently active profile, the change takes effect
- * immediately. Otherwise, the resolution mode will be the active mode when
- * the device switches to the profile next.
+ * The mode must be one of the current profile, otherwise an error is
+ * returned.
  *
  * @param resolution A previously initialized ratbag resolution
  *
@@ -610,8 +609,7 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution);
  * Check if the resolution mode is the currently active one.
  *
  * If the profile is the currently active profile, the mode is the one
- * currently active. Otherwise, the resolution mode is the one used when
- * the device switches to the profile next.
+ * currently active. For profiles not currently active, this always returns 0.
  *
  * @param resolution A previously initialized ratbag resolution
  *
@@ -620,6 +618,41 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution);
  */
 int
 ratbag_resolution_is_active(const struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Set the default resolution mode for the associated profile. When the
+ * device switches to the profile next, this mode will be the active
+ * resolution. If the mode is not configured, this function returns an error
+ * and the result is undefined.
+ *
+ * This only switches the default resolution, not the currently active
+ * resolution. Use ratbag_resolution_set_active() instead.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return zero on success, non-zero otherwise
+ */
+int
+ratbag_resolution_set_default(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Check if the resolution mode is the default one in this profile.
+ *
+ * The default resolution is the one the device selects when switching to
+ * the corresponding profile. It may not be the currently active resolution,
+ * use ratbag_resolution_is_active() instead.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return Non-zero if the resolution mode is the default one, zero
+ * otherwise.
+ */
+int
+ratbag_resolution_is_default(const struct ratbag_resolution *resolution);
 
 /**
  * @ingroup profile

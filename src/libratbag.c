@@ -787,6 +787,20 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 }
 
 
+LIBRATBAG_EXPORT int
+ratbag_resolution_is_default(const struct ratbag_resolution *resolution)
+{
+	return resolution->is_default;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_set_default(struct ratbag_resolution *resolution)
+{
+	resolution->is_default = true;
+	/* FIXME: call into the driver */
+	return 0;
+}
+
 LIBRATBAG_EXPORT struct ratbag_button*
 ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
 				   unsigned int index)

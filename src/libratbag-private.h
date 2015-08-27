@@ -187,6 +187,7 @@ struct ratbag_resolution{
 	unsigned int dpi;	/**< resolution on dpi */
 	unsigned int hz;	/**< report rate in Hz */
 	bool is_active;
+	bool is_default;
 };
 
 struct ratbag_profile {

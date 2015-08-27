@@ -148,6 +148,8 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 		 * active profile */
 		if (profile->resolution.modes[i].dpi == xres)
 			profile->resolution.modes[i].is_active = true;
+		if (i == p.default_dpi_mode)
+			profile->resolution.modes[i].is_default = true;
 	}
 }
 
