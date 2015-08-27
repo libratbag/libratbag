@@ -17,3 +17,7 @@ light support:
 - on/off
 - color
 - patterns
+
+some epollfd-like thing for the caller to check if events are available.
+Needed for notification when the mouse changes through someone else
+manipulating settings.
