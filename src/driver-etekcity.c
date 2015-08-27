@@ -34,17 +34,40 @@
 
 #define ETEKCITY_PROFILE_MAX			4
 #define ETEKCITY_BUTTON_MAX			10
+#define ETEKCITY_NUM_DPI			6
 
 #define ETEKCITY_REPORT_ID_CONFIGURE_PROFILE	4
 #define ETEKCITY_REPORT_ID_PROFILE		5
+#define ETEKCITY_REPORT_ID_SETTINGS		6
 #define ETEKCITY_REPORT_ID_KEY_MAPPING		7
 
 #define ETEKCITY_REPORT_SIZE_PROFILE		50
+#define ETEKCITY_REPORT_SIZE_SETTINGS		40
 
+#define ETEKCITY_CONFIG_SETTINGS		0x10
 #define ETEKCITY_CONFIG_KEY_MAPPING		0x20
+
+struct etekcity_settings_report {
+	uint8_t reportID;
+	uint8_t twentyHeight;
+	uint8_t profileID;
+	uint8_t x_sensitivity; /* 0x0a means 0 */
+	uint8_t y_sensitivity; /* 0x0a means 0 */
+	uint8_t dpi_mask;
+	uint8_t xres[6];
+	uint8_t yres[6];
+	uint8_t current_dpi;
+	uint8_t padding1[7];
+	uint8_t report_rate;
+	uint8_t padding2[4];
+	uint8_t light;
+	uint8_t light_heartbit;
+	uint8_t padding3[5];
+} __attribute__((packed));
 
 struct etekcity_data {
 	uint8_t profiles[(ETEKCITY_PROFILE_MAX + 1)][ETEKCITY_REPORT_SIZE_PROFILE];
+	struct etekcity_settings_report settings[(ETEKCITY_PROFILE_MAX + 1)];
 };
 
 static char *
@@ -275,14 +298,68 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag_device *device = profile->device;
 	struct etekcity_data *drv_data;
+	struct ratbag_resolution *resolution;
+	struct etekcity_settings_report *setting_report;
 	int rc;
-	uint8_t *buf;
+	uint8_t *buf, *dpi_list;
+	unsigned int report_rate;
+	unsigned int i;
 
 	assert(index <= ETEKCITY_PROFILE_MAX);
 
 	drv_data = ratbag_get_drv_data(device);
-	buf = drv_data->profiles[index];
 
+	setting_report = &drv_data->settings[index];
+	buf = (uint8_t*)setting_report;
+	etekcity_set_config_profile(device, index, ETEKCITY_CONFIG_SETTINGS);
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_SETTINGS,
+			buf, ETEKCITY_REPORT_SIZE_SETTINGS,
+			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+
+	if (rc < ETEKCITY_REPORT_SIZE_SETTINGS)
+		return;
+
+	/* first retrieve the report rate, it is set per profile */
+	switch (setting_report->report_rate) {
+	case 0x00: report_rate = 125; break;
+	case 0x01: report_rate = 250; break;
+	case 0x02: report_rate = 500; break;
+	case 0x03: report_rate = 1000; break;
+	default:
+		log_error(device->ratbag,
+			  "error while reading the report rate of the mouse (0x%02x)\n",
+			  buf[26]);
+		report_rate = 0;
+	}
+
+	profile->resolution.num_modes = ETEKCITY_NUM_DPI;
+
+	/* this will be optimized out by the compiler, but:
+	 * - if one of the 2 X or Y sensitivity is set to 0 (0x0a), we read the
+	 *   dpi settings from here
+	 * - if not, then we take the ones from X and pray they have a meaning
+	 */
+	/* FIXME: yeah, xres and yres would be even better */
+	if (setting_report->x_sensitivity == 0x0a)
+		dpi_list = setting_report->xres;
+	else if (setting_report->x_sensitivity == 0x0a)
+		dpi_list = setting_report->yres;
+	else
+		dpi_list = setting_report->xres;
+
+	for (i = 0; i < ETEKCITY_NUM_DPI; i++) {
+		resolution = &profile->resolution.modes[i];
+		resolution->dpi = dpi_list[i] * 50;
+		resolution->hz = report_rate;
+		if (!(setting_report->dpi_mask & (1 << i))) {
+			/* the profile is disabled, overwrite it */
+			resolution->dpi = 0;
+			resolution->hz = 0;
+		}
+		resolution->is_active = (i == setting_report->current_dpi);
+	}
+
+	buf = drv_data->profiles[index];
 	etekcity_set_config_profile(device, index, ETEKCITY_CONFIG_KEY_MAPPING);
 	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_KEY_MAPPING,
 			buf, ETEKCITY_REPORT_SIZE_PROFILE,
@@ -290,7 +367,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	msleep(10);
 
-	if (rc < 50)
+	if (rc < ETEKCITY_REPORT_SIZE_PROFILE)
 		return;
 
 	log_debug(device->ratbag, "profile: %d %s:%d\n",
