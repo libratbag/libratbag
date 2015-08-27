@@ -288,7 +288,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 			buf, ETEKCITY_REPORT_SIZE_PROFILE,
 			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 
-	msleep(100);
+	msleep(10);
 
 	if (rc < 50)
 		return;
