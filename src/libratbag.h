@@ -204,13 +204,13 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 				   struct udev_device *device);
 
 /**
- * @ingroup base
+ * @ingroup device
  *
- * @param ratbag A previously initialized ratbag context
+ * @param device A previously initialized ratbag device
  * @return The name of the device associated with the given ratbag.
  */
 const char *
-ratbag_device_get_name(const struct ratbag_device* ratbag);
+ratbag_device_get_name(const struct ratbag_device* device);
 
 /**
  * @ingroup device
