@@ -398,8 +398,9 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 	page = profile.msg.parameters[0]; /* FIXME: my mouse is always 0 */
 	*current_profile = page;
 
-	/* FIXME: my mouse appears to be on profile 5, not sure how to
-	 * change this */
+	/* FIXME: my mouse appears to be on page 5, but with the offset of
+	 * 3, it's actually profile 2. not sure how to  change this */
+	*current_profile = 2;
 
 	return 0;
 }

@@ -136,12 +136,17 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	int rc;
 	unsigned int i;
 	uint16_t xres, yres;
+	int8_t idx;
 
 	drv_data = ratbag_get_drv_data(device);
 	hidpp10 = drv_data->dev;
 	rc = hidpp10_get_profile(hidpp10, index, &p);
 	if (rc)
 		return;
+
+	rc = hidpp10_get_current_profile(hidpp10, &idx);
+	if (rc == 0 && (unsigned int)idx == profile->index)
+		profile->is_active = true;
 
 	rc = hidpp10_get_current_resolution(hidpp10, &xres, &yres);
 	if (rc)
@@ -153,10 +158,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 		profile->resolution.modes[i].dpi = p.dpi_modes[i].xres;
 		profile->resolution.modes[i].hz = p.refresh_rate;
 		profile->resolution.modes[i].is_active = false;
-		/* FIXME: active != default. p.default_dpi_mode is the
-		 * default, we can only tick the active in the currently
-		 * active profile */
-		if (profile->resolution.modes[i].dpi == xres)
+		if (profile->is_active && profile->resolution.modes[i].dpi == xres)
 			profile->resolution.modes[i].is_active = true;
 		if (i == p.default_dpi_mode)
 			profile->resolution.modes[i].is_default = true;
