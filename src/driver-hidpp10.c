@@ -85,7 +85,7 @@ static int
 hidpp10drv_write_button(struct ratbag_button *button,
 			const struct ratbag_button_action *action)
 {
-	return -1;
+	return -ENOTSUP;
 }
 
 static int
@@ -107,7 +107,7 @@ hidpp10drv_has_capability(const struct ratbag_device *device, enum ratbag_capabi
 static int
 hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
-	return -1;
+	return -ENOTSUP;
 }
 
 static void
@@ -152,7 +152,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 static int
 hidpp10drv_write_profile(struct ratbag_profile *profile)
 {
-	return -1;
+	return -ENOTSUP;
 }
 
 static int
