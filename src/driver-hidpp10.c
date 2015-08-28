@@ -105,22 +105,6 @@ hidpp10drv_has_capability(const struct ratbag_device *device, enum ratbag_capabi
 }
 
 static int
-hidpp10drv_current_profile(struct ratbag_device *device)
-{
-	struct hidpp10drv_data *drv_data;
-	struct hidpp10_device *hidpp10;
-	int8_t profile;
-	int rc;
-
-	drv_data = ratbag_get_drv_data(device);
-	hidpp10 = drv_data->dev;
-
-	rc = hidpp10_get_current_profile(hidpp10, &profile);
-
-	return rc >= 0 ? profile : rc;
-}
-
-static int
 hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 	return -1;
@@ -284,7 +268,6 @@ struct ratbag_driver hidpp10_driver = {
 	.remove = hidpp10drv_remove,
 	.read_profile = hidpp10drv_read_profile,
 	.write_profile = hidpp10drv_write_profile,
-	.get_active_profile = hidpp10drv_current_profile,
 	.set_active_profile = hidpp10drv_set_current_profile,
 	.has_capability = hidpp10drv_has_capability,
 	.read_button = hidpp10drv_read_button,

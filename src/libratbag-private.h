@@ -119,13 +119,6 @@ struct ratbag_driver {
 	 */
 	int (*write_profile)(struct ratbag_profile *profile);
 
-	/** called when the user of libratbag wants to know which
-	 * current profile is in use.
-	 *
-	 * It is fundamentally racy.
-	 */
-	int (*get_active_profile)(struct ratbag_device *device);
-
 	/** called to mark a previously writen profile as active.
 	 *
 	 * There should be no need to write the profile here, a

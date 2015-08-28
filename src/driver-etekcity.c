@@ -744,7 +744,6 @@ struct ratbag_driver etekcity_driver = {
 	.remove = etekcity_remove,
 	.read_profile = etekcity_read_profile,
 	.write_profile = etekcity_write_profile,
-	.get_active_profile = etekcity_current_profile,
 	.set_active_profile = etekcity_set_current_profile,
 	.has_capability = etekcity_has_capability,
 	.read_button = etekcity_read_button,

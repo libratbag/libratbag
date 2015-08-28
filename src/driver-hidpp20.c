@@ -313,6 +313,10 @@ hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	hidpp20drv_read_resolution_dpi(profile);
 	hidpp20drv_read_special_key_mouse(device);
+
+	profile->is_active = false;
+	if ((int)index == hidpp20drv_current_profile(device))
+		profile->is_active = true;
 }
 
 static int
@@ -496,7 +500,6 @@ struct ratbag_driver hidpp20_driver = {
 	.remove = hidpp20drv_remove,
 	.read_profile = hidpp20drv_read_profile,
 	.write_profile = hidpp20drv_write_profile,
-	.get_active_profile = hidpp20drv_current_profile,
 	.set_active_profile = hidpp20drv_set_current_profile,
 	.has_capability = hidpp20drv_has_capability,
 	.read_button = hidpp20drv_read_button,
