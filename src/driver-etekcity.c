@@ -500,14 +500,16 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 		dpi_list = setting_report->xres;
 
 	for (i = 0; i < ETEKCITY_NUM_DPI; i++) {
+		int dpi, hz;
 		resolution = &profile->resolution.modes[i];
-		resolution->dpi = dpi_list[i] * 50;
-		resolution->hz = report_rate;
+		dpi = dpi_list[i] * 50;
+		hz = report_rate;
 		if (!(setting_report->dpi_mask & (1 << i))) {
 			/* the profile is disabled, overwrite it */
 			resolution->dpi = 0;
 			resolution->hz = 0;
 		}
+		ratbag_resolution_init(profile, i, dpi,hz);
 		resolution->is_active = (i == setting_report->current_dpi);
 	}
 

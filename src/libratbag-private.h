@@ -307,6 +307,18 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	return 0;
 }
 
+static inline void
+ratbag_resolution_init(struct ratbag_profile *profile, int index, int dpi, int hz)
+{
+	struct ratbag_resolution *res = &profile->resolution.modes[index];
+
+	res->profile = profile;
+	res->dpi = dpi;
+	res->hz = hz;
+	res->is_active = false;
+	res->is_default = false;
+}
+
 /**
  * Override the auto-picked hidraw device.
  */

@@ -568,7 +568,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	list_init(&profile->buttons);
 
 	for (i = 0; i < MAX_RESOLUTIONS; i++)
-		profile->resolution.modes[i].profile = profile;
+		ratbag_resolution_init(profile, i, 0, 0);
 
 	assert(device->driver->read_profile);
 	device->driver->read_profile(profile, index);
