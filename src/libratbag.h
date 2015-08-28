@@ -257,6 +257,9 @@ ratbag_unref(struct ratbag *ratbag);
  * @ingroup base
  *
  * Create a new ratbag context from the given udev device.
+ *
+ * @return A new device based on the udev device, or NULL in case of
+ * failure.
  */
 struct ratbag_device*
 ratbag_device_new_from_udev_device(struct ratbag *ratbag,
@@ -335,8 +338,14 @@ enum ratbag_capability {
 /**
  * @ingroup device
  *
- * @retval 1 The context has the capability
- * @retval 0 The context does not have the capability
+ * Note that a device may not support any of the capabilities but still
+ * initialize fine otherwise. This is the case for devices that have no
+ * configurable options set, or for devices that have some configuration
+ * options but none that are currently exposed by libratbag. A client is
+ * expected to handle this situation.
+ *
+ * @retval 1 The device has the capability
+ * @retval 0 The device does not have the capability
  */
 int
 ratbag_device_has_capability(const struct ratbag_device *device, enum ratbag_capability cap);
