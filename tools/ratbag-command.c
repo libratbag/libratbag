@@ -273,7 +273,7 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 {
 	const char *path;
 	struct ratbag_device *device;
-	struct ratbag_profile *profile, *active_profile;
+	struct ratbag_profile *profile;
 	struct ratbag_button *button;
 	char *action;
 	int num_profiles, num_buttons;
@@ -294,7 +294,6 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 	}
 
 	printf("Device '%s' (%s)\n", ratbag_device_get_name(device), path);
-	active_profile = ratbag_device_get_active_profile(device);
 
 	printf("Capabilities:");
 	if (ratbag_device_has_capability(device,
@@ -322,7 +321,7 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 		profile = ratbag_device_get_profile_by_index(device, i);
 
 		printf("  Profile %d%s\n", i,
-		       profile == active_profile ? " (active)" : "");
+		       ratbag_profile_is_active(profile) ? " (active)" : "");
 		printf("    Resolutions:\n");
 		for (j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
 			struct ratbag_resolution *res;
@@ -355,7 +354,6 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 		profile = ratbag_profile_unref(profile);
 	}
 
-	active_profile = ratbag_profile_unref(active_profile);
 	device = ratbag_device_unref(device);
 
 	rc = 0;
@@ -375,9 +373,10 @@ ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char 
 {
 	const char *path;
 	struct ratbag_device *device;
-	struct ratbag_profile *profile, *active_profile;
+	struct ratbag_profile *profile = NULL, *active_profile = NULL;
 	int num_profiles, index;
 	int rc = 1;
+	int i;
 
 	if (argc != 2) {
 		usage();
@@ -405,28 +404,37 @@ ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char 
 		goto out;
 	}
 
-	active_profile = ratbag_device_get_active_profile(device);
 	profile = ratbag_device_get_profile_by_index(device, index);
-	if (!profile || !active_profile) {
+	if (ratbag_profile_is_active(profile)) {
+		printf("'%s' is already in profile '%d'\n",
+		       ratbag_device_get_name(device), index);
+		goto out;
+	}
+
+	for (i = 0; i < num_profiles; i++) {
+		active_profile = ratbag_device_get_profile_by_index(device, i);
+		if (ratbag_profile_is_active(active_profile))
+			break;
+		ratbag_profile_unref(active_profile);
+		active_profile = NULL;
+	}
+
+	if (!active_profile) {
 		error("Huh hoh, something bad happened, unable to retrieve the profile '%d' \n",
 		      index);
 		goto out;
 	}
 
-	if (active_profile != profile) {
-		rc = ratbag_device_set_active_profile(profile);
-		if (!rc)
-			printf("Switched '%s' to profile '%d'\n",
-			       ratbag_device_get_name(device), index);
-	} else {
-		printf("'%s' is already in profile '%d'\n",
+	rc = ratbag_profile_set_active(profile);
+	if (!rc) {
+		printf("Switched '%s' to profile '%d'\n",
 		       ratbag_device_get_name(device), index);
 	}
 
+out:
 	profile = ratbag_profile_unref(profile);
 	active_profile = ratbag_profile_unref(active_profile);
 
-out:
 	device = ratbag_device_unref(device);
 	return rc;
 }
@@ -448,6 +456,7 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 	int rc = 1, commit = 0;
 	unsigned int modifiers[10];
 	size_t modifiers_sz = 10;
+	int i;
 
 	if (argc != 1) {
 		usage();
@@ -468,7 +477,15 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 		goto out;
 	}
 
-	profile = ratbag_device_get_active_profile(device);
+	for (i = 0; i < ratbag_device_get_num_profiles(device); i++) {
+		profile = ratbag_device_get_profile_by_index(device, i);
+		if (ratbag_profile_is_active(profile))
+			break;
+
+		ratbag_profile_unref(profile);
+		profile = NULL;
+	}
+
 	if (!profile) {
 		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
 		goto out;
@@ -495,7 +512,7 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 	if (!commit)
 		goto out;
 
-	rc = ratbag_device_set_active_profile(profile);
+	rc = ratbag_profile_set_active(profile);
 	if (!rc)
 		printf("Switched the current profile of '%s' to %sreport the volume keys\n",
 		       ratbag_device_get_name(device),
@@ -556,6 +573,7 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 	int rc = 1;
 	unsigned int btnkey;
 	enum ratbag_button_action_special special;
+	int i;
 
 	if (argc != 4) {
 		usage();
@@ -601,7 +619,14 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 		goto out;
 	}
 
-	profile = ratbag_device_get_active_profile(device);
+	for (i = 0; i < ratbag_device_get_num_profiles(device); i++) {
+		profile = ratbag_device_get_profile_by_index(device, i);
+		if (ratbag_profile_is_active(profile))
+			break;
+		ratbag_profile_unref(profile);
+		profile = NULL;
+	}
+
 	if (!profile) {
 		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
 		goto out;
@@ -636,7 +661,7 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 		goto out;
 	}
 
-	rc = ratbag_device_set_active_profile(profile);
+	rc = ratbag_profile_set_active(profile);
 	if (rc) {
 		error("Unable to apply the current profile: %s (%d)\n",
 		      strerror(-rc),
@@ -739,7 +764,15 @@ ratbag_cmd_switch_dpi(struct ratbag *ratbag, uint32_t flags, int argc, char **ar
 		goto out;
 	}
 
-	profile = ratbag_device_get_active_profile(device);
+	for (i = 0; i < ratbag_device_get_num_profiles(device); i++) {
+		profile = ratbag_device_get_profile_by_index(device, i);
+		if (ratbag_profile_is_active(profile))
+			break;
+
+		ratbag_profile_unref(profile);
+		profile = NULL;
+	}
+
 	if (!profile) {
 		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
 		goto out;

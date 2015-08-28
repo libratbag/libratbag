@@ -204,6 +204,8 @@ struct ratbag_profile {
 		struct ratbag_resolution modes[MAX_RESOLUTIONS];
 		unsigned int num_modes;
 	} resolution;
+
+	bool is_active;		/**< profile is the currently active one */
 };
 
 #define BUTTON_ACTION_NONE \

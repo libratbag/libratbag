@@ -402,31 +402,28 @@ ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int in
 /**
  * @ingroup profile
  *
- * This function returns the currently active profile. Note that some
+ * Check if the given profile is the currently active one. Note that some
  * devices allow switching profiles with hardware buttons thus making the
  * use of this function racy.
  *
- * The profile is refcounted with an initial value of at least 1.
- * Use ratbag_profile_unref() to release the profile.
+ * @param profile A previously initialized ratbag profile
  *
- * @param ratbag A previously initialized ratbag context
- *
- * @return The profile currently active on the device.
+ * @return non-zero if the profile is currently active, zero otherwise
  */
-struct ratbag_profile *
-ratbag_device_get_active_profile(struct ratbag_device *device);
+int
+ratbag_profile_is_active(struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
  *
- * This function sets the currently active profile to the one provided.
+ * Make the given profile the currently active profile
  *
  * @param profile The profile to make the active profile.
  *
  * @return 0 on success or nonzero otherwise.
  */
 int
-ratbag_device_set_active_profile(struct ratbag_profile *profile);
+ratbag_profile_set_active(struct ratbag_profile *profile);
 
 /**
  * @ingroup profile

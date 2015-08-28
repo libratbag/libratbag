@@ -642,9 +642,13 @@ ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int in
 	return NULL;
 }
 
-LIBRATBAG_EXPORT struct ratbag_profile *
-ratbag_device_get_active_profile(struct ratbag_device *device)
+LIBRATBAG_EXPORT int
+ratbag_profile_is_active(struct ratbag_profile *profile)
 {
+	return profile->is_active;
+
+	/* FIXME: should be read on startup so we can just do the above */
+#if 0
 	int current_profile;
 
 	assert(device->driver->get_active_profile);
@@ -655,6 +659,7 @@ ratbag_device_get_active_profile(struct ratbag_device *device)
 	}
 
 	return ratbag_device_get_profile_by_index(device, current_profile);
+#endif
 }
 
 LIBRATBAG_EXPORT unsigned int
@@ -678,9 +683,10 @@ ratbag_device_has_capability(const struct ratbag_device *device,
 }
 
 LIBRATBAG_EXPORT int
-ratbag_device_set_active_profile(struct ratbag_profile *profile)
+ratbag_profile_set_active(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
+	struct ratbag_profile *p;
 	int rc;
 
 	assert(device->driver->write_profile);
@@ -690,9 +696,16 @@ ratbag_device_set_active_profile(struct ratbag_profile *profile)
 
 	if (ratbag_device_has_capability(device, RATBAG_CAP_SWITCHABLE_PROFILE)) {
 		assert(device->driver->set_active_profile);
-		return device->driver->set_active_profile(device, profile->index);
+		rc = device->driver->set_active_profile(device, profile->index);
 	}
 
+	if (rc)
+		return rc;
+
+	list_for_each(p, &device->profiles, link) {
+		p->is_active = false;
+	}
+	profile->is_active = true;
 	return rc;
 }
 

@@ -16,7 +16,6 @@ global:
 	ratbag_button_set_special;
 	ratbag_button_set_user_data;
 	ratbag_button_unref;
-	ratbag_device_get_active_profile;
 	ratbag_device_get_name;
 	ratbag_device_get_num_buttons;
 	ratbag_device_get_num_profiles;
@@ -25,7 +24,6 @@ global:
 	ratbag_device_has_capability;
 	ratbag_device_new_from_udev_device;
 	ratbag_device_ref;
-	ratbag_device_set_active_profile;
 	ratbag_device_set_user_data;
 	ratbag_device_unref;
 	ratbag_get_user_data;
@@ -36,8 +34,10 @@ global:
 	ratbag_profile_get_num_resolutions;
 	ratbag_profile_get_resolution;
 	ratbag_profile_get_user_data;
+	ratbag_profile_is_active;
 	ratbag_profile_ref;
 	ratbag_profile_set_user_data;
+	ratbag_profile_set_active;
 	ratbag_profile_unref;
 	ratbag_resolution_get_dpi;
 	ratbag_resolution_get_report_rate;

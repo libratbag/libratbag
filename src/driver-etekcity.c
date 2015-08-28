@@ -664,6 +664,7 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 	int rc;
 	struct ratbag_profile *profile;
 	struct etekcity_data *drv_data;
+	int active_idx;
 
 	log_debug(device->ratbag, "data: %d\n", id.data);
 
@@ -685,15 +686,21 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 	/* profiles are 0-indexed */
 	ratbag_device_init_profiles(device, ETEKCITY_PROFILE_MAX + 1, ETEKCITY_BUTTON_MAX + 1);
 
-	profile = ratbag_device_get_active_profile(device);
-
-	if (!profile) {
+	active_idx = etekcity_current_profile(device);
+	if (active_idx < 0) {
 		log_error(device->ratbag,
 			  "Can't talk to the mouse: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
 		rc = -ENODEV;
 		goto err;
+	}
+
+	list_for_each(profile, &device->profiles, link) {
+		if (profile->index == (unsigned int)active_idx) {
+			profile->is_active = true;
+			break;
+		}
 	}
 
 	log_debug(device->ratbag,
