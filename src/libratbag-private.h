@@ -340,12 +340,14 @@ log_buffer(struct ratbag *ratbag,
 	const char *header,
 	uint8_t *buf, size_t len);
 
+#define log_raw(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_RAW, __VA_ARGS__)
 #define log_debug(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_DEBUG, __VA_ARGS__)
 #define log_info(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_INFO, __VA_ARGS__)
 #define log_error(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, __VA_ARGS__)
 #define log_bug_kernel(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
 #define log_bug_libratbag(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "libratbag bug: " __VA_ARGS__)
 #define log_bug_client(li_, ...) log_msg((li_), LIBRATBAG_LOG_PRIORITY_ERROR, "client bug: " __VA_ARGS__)
+#define log_buf_raw(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_RAW, h_, buf_, len_)
 #define log_buf_debug(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_DEBUG, h_, buf_, len_)
 #define log_buf_info(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_INFO, h_, buf_, len_)
 #define log_buf_error(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_ERROR, h_, buf_, len_)

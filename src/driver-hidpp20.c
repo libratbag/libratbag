@@ -78,7 +78,7 @@ hidpp20drv_read_button(struct ratbag_button *button)
 	mapping = control->control_id;
 	if (control->reporting.divert || control->reporting.persist)
 		mapping = control->reporting.remapped;
-	log_debug(device->ratbag,
+	log_raw(device->ratbag,
 		  " - button%d: %s (%02x) %s%s:%d\n",
 		  button->index,
 		  hidpp20_1b04_get_logical_mapping_name(mapping),
@@ -342,12 +342,12 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		break;
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {
-		log_info(ratbag, "device has adjustable dpi\n");
+		log_debug(ratbag, "device has adjustable dpi\n");
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
-		log_info(ratbag, "device has programmable keys/buttons\n");
+		log_debug(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
@@ -364,14 +364,14 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 			return rc;
 		status = rc;
 
-		log_info(ratbag, "device battery level is %d%% (next %d%%), status %d \n",
-			 level, next_level, status);
+		log_debug(ratbag, "device battery level is %d%% (next %d%%), status %d \n",
+			  level, next_level, status);
 
 		drv_data->capabilities |= HIDPP_CAP_BATTERY_LEVEL_1000;
 		break;
 	}
 	case HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS: {
-		 log_info(ratbag, "device has programmable keys/buttons\n");
+		 log_debug(ratbag, "device has programmable keys/buttons\n");
 		 drv_data->capabilities |= HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00;
 
 		/* we read the profile once to get the correct number of
@@ -381,7 +381,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		 break;
 	}
 	default:
-		log_debug(device->ratbag, "unknown feature 0x%04x\n", feature);
+		log_raw(device->ratbag, "unknown feature 0x%04x\n", feature);
 	}
 	return 0;
 }
@@ -397,11 +397,11 @@ hidpp20drv_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 		return rc;
 
 	if (rc > 0) {
-		log_debug(device->ratbag, "'%s' has %d features\n", ratbag_device_get_name(device), rc);
+		log_raw(device->ratbag, "'%s' has %d features\n", ratbag_device_get_name(device), rc);
 		for (i = 0; i < rc; i++) {
-			log_debug(device->ratbag, "Init feature %s (0x%04x) \n",
-				  hidpp20_feature_get_name(feature_list[i].feature),
-				  feature_list[i].feature);
+			log_raw(device->ratbag, "Init feature %s (0x%04x) \n",
+				hidpp20_feature_get_name(feature_list[i].feature),
+				feature_list[i].feature);
 			hidpp20drv_init_feature(device, feature_list[i].feature);
 		}
 	}

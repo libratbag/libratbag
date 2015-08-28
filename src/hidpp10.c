@@ -122,9 +122,9 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		break;
 	}
 
-	log_buf_debug(ratbag, "sending: ", msg->data, SHORT_MESSAGE_LENGTH);
-	log_buf_debug(ratbag, "  expected_header:	", expected_header.data, SHORT_MESSAGE_LENGTH);
-	log_buf_debug(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
+	log_buf_raw(ratbag, "sending: ", msg->data, SHORT_MESSAGE_LENGTH);
+	log_buf_raw(ratbag, "  expected_header:	", expected_header.data, SHORT_MESSAGE_LENGTH);
+	log_buf_raw(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
 	ret = hidpp10_write_command(dev, msg->data, SHORT_MESSAGE_LENGTH);
@@ -145,7 +145,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		 */
 		read_buffer.msg.device_idx = msg->msg.device_idx;
 
-		log_buf_debug(ratbag, " *** received: ", read_buffer.data, ret);
+		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret);
 
 
 		/* actual answer */
@@ -155,7 +155,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		/* error */
 		if (!memcmp(read_buffer.data, expected_error_dev.data, 5)) {
 			hidpp_err = read_buffer.msg.parameters[1];
-			log_debug(ratbag,
+			log_raw(ratbag,
 				"    HID++ error from the %s (%d): %s (%02x)\n",
 				read_buffer.msg.device_idx == RECEIVER_IDX ? "receiver" : "device",
 				read_buffer.msg.device_idx,
@@ -172,7 +172,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	}
 
 	if (!hidpp_err) {
-		log_buf_debug(ratbag, "    received: ", read_buffer.data, ret);
+		log_buf_raw(ratbag, "    received: ", read_buffer.data, ret);
 		/* copy the answer for the caller */
 		*msg = read_buffer;
 	}
@@ -215,7 +215,7 @@ hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
 	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching HID++ notifications\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching HID++ notifications\n");
 
 	res = hidpp10_request_command(dev, &notifications);
 	if (res)
@@ -236,7 +236,7 @@ hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, SET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Setting HID++ notifications\n");
+	log_raw(dev->ratbag_device->ratbag, "Setting HID++ notifications\n");
 
 	notifications.msg.parameters[0] = reporting_flags_r0;
 	notifications.msg.parameters[2] = reporting_flags_r2;
@@ -271,7 +271,7 @@ hidpp10_get_individual_features(struct hidpp10_device *dev,
 	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching individual features\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching individual features\n");
 
 	res = hidpp10_request_command(dev, &features);
 	if (res)
@@ -292,7 +292,7 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, SET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Setting individual features\n");
+	log_raw(dev->ratbag_device->ratbag, "Setting individual features\n");
 
 	if (dev)
 		mode.msg.device_idx = dev->index;
@@ -389,7 +389,7 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 	int res;
 	int8_t page;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching current profile\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching current profile\n");
 
 	res = hidpp10_request_command(dev, &profile);
 	if (res)
@@ -418,7 +418,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	/* FIXME: profile offset appears to be 3, 1 and 2 are garbage */
 	number += 3;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching profile %d\n", number);
+	log_raw(dev->ratbag_device->ratbag, "Fetching profile %d\n", number);
 
 	for (i = 0; i < sizeof(data); i += 16) {
 		res = hidpp10_read_memory(dev, number, i,  &data.data[i]);
@@ -475,56 +475,56 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 	}
 
-	log_buf_debug(ratbag,
-		      "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
-		      data.data, 78);
+	log_buf_raw(ratbag,
+		    "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
+		    data.data, 78);
 
-	log_debug(ratbag, "Profile %d:\n", number);
+	log_raw(ratbag, "Profile %d:\n", number);
 	for (i = 0; i < 5; i++) {
-		log_debug(ratbag,
-			  "DPI mode: %dx%d dpi\n",
-			  profile.dpi_modes[i].xres,
-			  profile.dpi_modes[i].yres);
-	        log_debug(ratbag,
-			  "LED status: 1:%s 2:%s 3:%s 4:%s\n",
-			  (p->dpi_modes[i].led1 & 0x2) ? "on" : "off",
-			  (p->dpi_modes[i].led2 & 0x2) ? "on" : "off",
-			  (p->dpi_modes[i].led3 & 0x2) ? "on" : "off",
-			  (p->dpi_modes[i].led4 & 0x2) ? "on" : "off");
+		log_raw(ratbag,
+			"DPI mode: %dx%d dpi\n",
+			profile.dpi_modes[i].xres,
+			profile.dpi_modes[i].yres);
+	        log_raw(ratbag,
+			"LED status: 1:%s 2:%s 3:%s 4:%s\n",
+			(p->dpi_modes[i].led1 & 0x2) ? "on" : "off",
+			(p->dpi_modes[i].led2 & 0x2) ? "on" : "off",
+			(p->dpi_modes[i].led3 & 0x2) ? "on" : "off",
+			(p->dpi_modes[i].led4 & 0x2) ? "on" : "off");
 	}
-	log_debug(ratbag, "Angle correction: %d\n", profile.angle_correction);
-	log_debug(ratbag, "Default DPI mode: %d\n", profile.default_dpi_mode);
-	log_debug(ratbag, "Refresh rate: %d\n", profile.refresh_rate);
+	log_raw(ratbag, "Angle correction: %d\n", profile.angle_correction);
+	log_raw(ratbag, "Default DPI mode: %d\n", profile.default_dpi_mode);
+	log_raw(ratbag, "Refresh rate: %d\n", profile.refresh_rate);
 	for (i = 0; i < 13; i++) {
 		union _hidpp10_button_binding *button = &p->buttons[i];
 		switch (button->any.type) {
 		case 0x81:
-			log_debug(ratbag,
-				  "Button %d: button %d\n",
-				  i,
-				  ffs(hidpp10_get_unaligned_u16le(&button->button.button_flags_lsb)));
+			log_raw(ratbag,
+				"Button %d: button %d\n",
+				i,
+				ffs(hidpp10_get_unaligned_u16le(&button->button.button_flags_lsb)));
 			break;
 		case 0x82:
-			log_debug(ratbag,
-				  "Button %d: key %d modifier %x\n",
-				  i,
-				  button->keyboard_keys.key,
-				  button->keyboard_keys.modifier_flags);
+			log_raw(ratbag,
+				"Button %d: key %d modifier %x\n",
+				i,
+				button->keyboard_keys.key,
+				button->keyboard_keys.modifier_flags);
 			break;
 		case 0x83:
-			log_debug(ratbag,
-				  "Button %d: special %x\n",
-				  i,
-				  ffs(hidpp10_get_unaligned_u16le(&button->special.flags1)));
+			log_raw(ratbag,
+				"Button %d: special %x\n",
+				i,
+				ffs(hidpp10_get_unaligned_u16le(&button->special.flags1)));
 			break;
 		case 0x84:
-			log_debug(ratbag,
-				  "Button %d: consumer: %x\n",
-				  i,
-				  hidpp10_get_unaligned_u16(&button->consumer_control.consumer_control1));
+			log_raw(ratbag,
+				"Button %d: consumer: %x\n",
+				i,
+				hidpp10_get_unaligned_u16(&button->consumer_control.consumer_control1));
 			break;
 		case 0x8F:
-			log_debug(ratbag, "Button %d: disabled\n", i);
+			log_raw(ratbag, "Button %d: disabled\n", i);
 			break;
 		default:
 			/* FIXME: this is the page number for the macro,
@@ -562,7 +562,7 @@ hidpp10_get_led_status(struct hidpp10_device *dev,
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, GET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching LED status\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching LED status\n");
 
 	res = hidpp10_request_command(dev, &led_status);
 	if (res)
@@ -585,7 +585,7 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, SET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Setting LED status\n");
+	log_raw(dev->ratbag_device->ratbag, "Setting LED status\n");
 
 	/* each led is 4-bits, 0x1 == off, 0x2 == on */
 	led_status.msg.parameters[0] |= led[0] ? 0x02 : 0x01; /* running man logo */
@@ -620,7 +620,7 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 	union hidpp10_message sensor = CMD_OPTICAL_SENSOR_SETTINGS(idx, GET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching optical sensor settings\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching optical sensor settings\n");
 
 	res = hidpp10_request_command(dev, &sensor);
 	if (res)
@@ -657,7 +657,7 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching current resolution\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching current resolution\n");
 
 	res = hidpp10_request_command(dev, &resolution);
 	if (res)
@@ -693,7 +693,7 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching USB refresh rate\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching USB refresh rate\n");
 
 	res = hidpp10_request_command(dev, &refresh);
 	if (res)
@@ -727,9 +727,9 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
 	union hidpp10_message readmem = CMD_READ_MEMORY(idx, page, offset/2);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag,
-		  "Reading memory page %d, offset %#x\n",
-		  page, offset);
+	log_raw(dev->ratbag_device->ratbag,
+		"Reading memory page %d, offset %#x\n",
+		page, offset);
 
 	res = hidpp10_request_command(dev, &readmem);
 	if (res)
@@ -802,7 +802,7 @@ hidpp10_get_pairing_information(struct hidpp10_device *dev,
 	union hidpp10_message pairing_information = CMD_PAIRING_INFORMATION(idx, DEVICE_PAIRING_INFORMATION);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching pairing information\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching pairing information\n");
 
 	res = hidpp10_request_command(dev, &pairing_information);
 	if (res)
@@ -824,7 +824,7 @@ hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 	union hidpp10_message device_name = CMD_PAIRING_INFORMATION(idx, DEVICE_NAME);
 	int res;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching device name\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching device name\n");
 
 	res = hidpp10_request_command(dev, &device_name);
 	if (res)
@@ -867,7 +867,7 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 	int res;
 	uint8_t maj, min, build;
 
-	log_debug(dev->ratbag_device->ratbag, "Fetching firmware information\n");
+	log_raw(dev->ratbag_device->ratbag, "Fetching firmware information\n");
 
 	/*
 	 * This may fail on some devices

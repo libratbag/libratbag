@@ -45,6 +45,7 @@ ratbag_default_log_func(struct ratbag *ratbag,
 	const char *prefix;
 
 	switch(priority) {
+	case RATBAG_LOG_PRIORITY_RAW: prefix = "raw"; break;
 	case RATBAG_LOG_PRIORITY_DEBUG: prefix = "debug"; break;
 	case RATBAG_LOG_PRIORITY_INFO: prefix = "info"; break;
 	case RATBAG_LOG_PRIORITY_ERROR: prefix = "error"; break;

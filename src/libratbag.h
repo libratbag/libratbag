@@ -42,9 +42,14 @@ extern "C" {
  * Log priority for internal logging messages.
  */
 enum ratbag_log_priority {
-	RATBAG_LOG_PRIORITY_DEBUG = 10,
-	RATBAG_LOG_PRIORITY_INFO = 20,
-	RATBAG_LOG_PRIORITY_ERROR = 30,
+	/**
+	 * Raw protocol messages. Using this log level results in *a lot* of
+	 * output.
+	 */
+	RATBAG_LOG_PRIORITY_RAW = 10,
+	RATBAG_LOG_PRIORITY_DEBUG = 20,
+	RATBAG_LOG_PRIORITY_INFO = 30,
+	RATBAG_LOG_PRIORITY_ERROR = 40,
 };
 
 /**

@@ -327,7 +327,7 @@ etekcity_button_to_action(struct ratbag_profile *profile,
 	unsigned raw_index = etekcity_button_to_index(button_index);
 
 	data = drv_data->profiles[profile->index][3 + raw_index * 3];
-	log_debug(device->ratbag,
+	log_raw(device->ratbag,
 		  " - button%d: %s (%02x) %s:%d\n",
 		  button_index, print_key(data), data, __FILE__, __LINE__);
 	return etekcity_raw_to_button_action(data);
@@ -553,9 +553,9 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	if (rc < ETEKCITY_REPORT_SIZE_PROFILE)
 		return;
 
-	log_debug(device->ratbag, "profile: %d %s:%d\n",
-		  buf[2],
-		  __FILE__, __LINE__);
+	log_raw(device->ratbag, "profile: %d %s:%d\n",
+		buf[2],
+		__FILE__, __LINE__);
 }
 
 static int
@@ -582,9 +582,9 @@ etekcity_write_profile(struct ratbag_profile *profile)
 	if (rc < 50)
 		return -EIO;
 
-	log_debug(device->ratbag, "profile: %d written %s:%d\n",
-		  buf[2],
-		  __FILE__, __LINE__);
+	log_raw(device->ratbag, "profile: %d written %s:%d\n",
+		buf[2],
+		__FILE__, __LINE__);
 	return 0;
 }
 
@@ -668,7 +668,7 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 	struct etekcity_data *drv_data;
 	int active_idx;
 
-	log_debug(device->ratbag, "data: %d\n", id.data);
+	log_raw(device->ratbag, "data: %d\n", id.data);
 
 	rc = ratbag_open_hidraw(device);
 	if (rc) {
@@ -705,10 +705,10 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 		}
 	}
 
-	log_debug(device->ratbag,
-		  "'%s' is in profile %d\n",
-		  ratbag_device_get_name(device),
-		  profile->index);
+	log_raw(device->ratbag,
+		"'%s' is in profile %d\n",
+		ratbag_device_get_name(device),
+		profile->index);
 
 	profile = ratbag_profile_unref(profile);
 

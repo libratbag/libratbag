@@ -44,6 +44,7 @@ enum options {
 
 enum cmd_flags {
 	FLAG_VERBOSE = 1 << 0,
+	FLAG_VERBOSE_RAW = 1 << 1,
 };
 
 struct ratbag_cmd {
@@ -97,7 +98,7 @@ usage(void)
 
 	printf("\n"
 	       "Options:\n"
-	       "    --verbose ....... Print debugging output.\n"
+	       "    --verbose[=raw] ....... Print debugging output, with protocol output if requested.\n"
 	       "    --help .......... Print this help.\n");
 }
 
@@ -862,7 +863,7 @@ main(int argc, char **argv)
 		int c;
 		int option_index = 0;
 		static struct option opts[] = {
-			{ "verbose", 0, 0, OPT_VERBOSE },
+			{ "verbose", 2, 0, OPT_VERBOSE },
 			{ "help", 0, 0, OPT_HELP },
 		};
 
@@ -875,7 +876,10 @@ main(int argc, char **argv)
 			usage();
 			goto out;
 		case OPT_VERBOSE:
-			flags |= FLAG_VERBOSE;
+			if (optarg && streq(optarg, "raw"))
+				flags |= FLAG_VERBOSE_RAW;
+			else
+				flags |= FLAG_VERBOSE;
 			break;
 		default:
 			usage();
@@ -889,7 +893,9 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	if (flags & FLAG_VERBOSE)
+	if (flags & FLAG_VERBOSE_RAW)
+		ratbag_log_set_priority(ratbag, RATBAG_LOG_PRIORITY_RAW);
+	else if (flags & FLAG_VERBOSE)
 		ratbag_log_set_priority(ratbag, RATBAG_LOG_PRIORITY_DEBUG);
 
 	command = argv[optind++];

@@ -103,7 +103,7 @@ hidpp20_request_command_allow_error(struct ratbag_device *device, union hidpp20_
 
 	msg_len = msg->msg.report_id == REPORT_ID_SHORT ? SHORT_MESSAGE_LENGTH : LONG_MESSAGE_LENGTH;
 
-	log_buf_debug(ratbag, "sending: ", msg->data, msg_len);
+	log_buf_raw(ratbag, "sending: ", msg->data, msg_len);
 
 	/* Send the message to the Device */
 	ret = hidpp20_write_command(device, msg->data, msg_len);
@@ -116,7 +116,7 @@ hidpp20_request_command_allow_error(struct ratbag_device *device, union hidpp20_
 	 */
 	do {
 		ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
-		log_buf_debug(ratbag, " *** received: ", read_buffer.data, ret);
+		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret);
 
 		if (read_buffer.msg.report_id != REPORT_ID_SHORT &&
 		    read_buffer.msg.report_id != REPORT_ID_LONG)
@@ -212,7 +212,7 @@ hidpp_root_get_feature(struct ratbag_device *device,
 	*feature_type = msg.msg.parameters[1];
 	*feature_version = msg.msg.parameters[2];
 
-	log_debug(device->ratbag, "feature 0x%04x is at 0x%02x\n", feature, *feature_index);
+	log_raw(device->ratbag, "feature 0x%04x is at 0x%02x\n", feature, *feature_index);
 	return 0;
 }
 
@@ -478,14 +478,14 @@ hidpp20_kbd_reprogrammable_keys_get_controls(struct ratbag_device *device,
 
 		/* 0x1b00 and 0x1b04 have the same control/task id mappings.
 		 * I hope */
-		log_debug(device->ratbag,
-			  "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x\n",
-			  control->index,
-			  hidpp20_1b04_get_logical_mapping_name(control->control_id),
-			  control->control_id,
-			  hidpp20_1b04_get_physical_mapping_name(control->task_id),
-			  control->task_id,
-			  control->flags);
+		log_raw(device->ratbag,
+			"control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x\n",
+			control->index,
+			hidpp20_1b04_get_logical_mapping_name(control->control_id),
+			control->control_id,
+			hidpp20_1b04_get_physical_mapping_name(control->task_id),
+			control->task_id,
+			control->flags);
 	}
 
 	*controls_list = c_list;
@@ -745,24 +745,24 @@ int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 		if (rc)
 			goto err;
 
-		log_debug(device->ratbag,
-			  "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x pos: %d group: %d gmask: 0x%02x raw_XY: %s\n"
-			  "      reporting: raw_xy: %s persist: %s divert: %s remapped: '%s' (%d)\n",
-			  control->index,
-			  hidpp20_1b04_get_logical_mapping_name(control->control_id),
-			  control->control_id,
-			  hidpp20_1b04_get_physical_mapping_name(control->task_id),
-			  control->task_id,
-			  control->flags,
-			  control->position,
-			  control->group,
-			  control->group_mask,
-			  control->raw_XY ? "yes" : "no",
-			  control->reporting.raw_XY ? "yes" : "no",
-			  control->reporting.persist ? "yes" : "no",
-			  control->reporting.divert ? "yes" : "no",
-			  hidpp20_1b04_get_logical_mapping_name(control->reporting.remapped),
-			  control->reporting.remapped);
+		log_raw(device->ratbag,
+			"control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x pos: %d group: %d gmask: 0x%02x raw_XY: %s\n"
+			"      reporting: raw_xy: %s persist: %s divert: %s remapped: '%s' (%d)\n",
+			control->index,
+			hidpp20_1b04_get_logical_mapping_name(control->control_id),
+			control->control_id,
+			hidpp20_1b04_get_physical_mapping_name(control->task_id),
+			control->task_id,
+			control->flags,
+			control->position,
+			control->group,
+			control->group_mask,
+			control->raw_XY ? "yes" : "no",
+			control->reporting.raw_XY ? "yes" : "no",
+			control->reporting.persist ? "yes" : "no",
+			control->reporting.divert ? "yes" : "no",
+			hidpp20_1b04_get_logical_mapping_name(control->reporting.remapped),
+			control->reporting.remapped);
 	}
 
 	*controls_list = c_list;
@@ -986,14 +986,14 @@ int hidpp20_adjustable_dpi_get_sensors(struct ratbag_device *device,
 		if (rc)
 			goto err;
 
-		log_debug(device->ratbag,
-			  "sensor %d: current dpi: %d (default: %d) min: %d max: %d steps: %d\n",
-			  sensor->index,
-			  sensor->dpi,
-			  sensor->default_dpi,
-			  sensor->dpi_min,
-			  sensor->dpi_max,
-			  sensor->dpi_steps);
+		log_raw(device->ratbag,
+			"sensor %d: current dpi: %d (default: %d) min: %d max: %d steps: %d\n",
+			sensor->index,
+			sensor->dpi,
+			sensor->default_dpi,
+			sensor->dpi_min,
+			sensor->dpi_max,
+			sensor->dpi_steps);
 	}
 
 	*sensors_list = s_list;
