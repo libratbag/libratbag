@@ -93,6 +93,24 @@ typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
  * active.
  *
  * @defgroup button Button configuration
+ *
+ * @defgroup resolution Resolution and frequency mappings
+ *
+ * A device's sensor resolution and report rate can be configured per
+ * profile, with each profile reporting a number of resolution modes (see
+ * @ref ratbag_resolution). The number depends on the hardware, but at least
+ * one is provided by libratbag.
+ *
+ * Each resolution mode is a tuple of a resolution and report rate and
+ * represents the modes that the mouse can switch through, usually with the
+ * use of a button on the mouse to cycle through the preconfigured
+ * resolutions.
+ *
+ * The resolutions have a default resolution and a currently active
+ * resolution. The currently active one is the one used by the device now
+ * and only applies if the profile is currently active too. The default
+ * resolution is the one the device will chose when the profile is selected
+ * next.
  */
 
 /**
