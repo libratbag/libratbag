@@ -107,7 +107,17 @@ hidpp10drv_has_capability(const struct ratbag_device *device, enum ratbag_capabi
 static int
 hidpp10drv_current_profile(struct ratbag_device *device)
 {
-	return -1;
+	struct hidpp10drv_data *drv_data;
+	struct hidpp10_device *hidpp10;
+	int8_t profile;
+	int rc;
+
+	drv_data = ratbag_get_drv_data(device);
+	hidpp10 = drv_data->dev;
+
+	rc = hidpp10_get_current_profile(hidpp10, &profile);
+
+	return rc >= 0 ? profile : rc;
 }
 
 static int
