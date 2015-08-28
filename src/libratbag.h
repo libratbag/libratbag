@@ -321,7 +321,7 @@ enum ratbag_capability {
  * @retval 0 The context does not have the capability
  */
 int
-ratbag_device_has_capability(const struct ratbag_device *ratbag, enum ratbag_capability cap);
+ratbag_device_has_capability(const struct ratbag_device *device, enum ratbag_capability cap);
 
 /**
  * @ingroup device
@@ -335,22 +335,22 @@ ratbag_device_has_capability(const struct ratbag_device *ratbag, enum ratbag_cap
  * A device that does not support profiles in hardware provides a single
  * profile that reflects the current settings of the device.
  *
- * @param ratbag A previously initialized ratbag context
+ * @param device A previously initialized ratbag device
  * @return The number of profiles available on this device.
  */
 unsigned int
-ratbag_device_get_num_profiles(struct ratbag_device *ratbag);
+ratbag_device_get_num_profiles(struct ratbag_device *device);
 
 /**
  * @ingroup device
  *
  * Return the number of buttons available on this device.
  *
- * @param ratbag A previously initialized ratbag context
+ * @param device A previously initialized ratbag device
  * @return The number of buttons available on this device.
  */
 unsigned int
-ratbag_device_get_num_buttons(struct ratbag_device *ratbag);
+ratbag_device_get_num_buttons(struct ratbag_device *device);
 
 /**
  * @ingroup profile
@@ -388,7 +388,7 @@ ratbag_profile_get_user_data(const struct ratbag_profile *profile);
  * The profile is refcounted with an initial value of at least 1.
  * Use ratbag_profile_unref() to release the profile.
  *
- * @param ratbag A previously initialized ratbag context
+ * @param device A previously initialized ratbag device
  * @param index The index of the profile
  *
  * @return The profile at the given index, or NULL if the profile does not
@@ -397,7 +397,7 @@ ratbag_profile_get_user_data(const struct ratbag_profile *profile);
  * @see ratbag_get_num_profiles
  */
 struct ratbag_profile *
-ratbag_device_get_profile_by_index(struct ratbag_device *ratbag, unsigned int index);
+ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int index);
 
 /**
  * @ingroup profile
@@ -414,7 +414,7 @@ ratbag_device_get_profile_by_index(struct ratbag_device *ratbag, unsigned int in
  * @return The profile currently active on the device.
  */
 struct ratbag_profile *
-ratbag_device_get_active_profile(struct ratbag_device *ratbag);
+ratbag_device_get_active_profile(struct ratbag_device *device);
 
 /**
  * @ingroup profile
@@ -1100,11 +1100,11 @@ ratbag_profile_unref(struct ratbag_profile *profile);
  * Add a reference to the context. A context is destroyed whenever the
  * reference count reaches 0. See @ref ratbag_device_unref.
  *
- * @param ratbag A previously initialized valid ratbag context
+ * @param device A previously initialized valid ratbag device
  * @return The passed ratbag context
  */
 struct ratbag_device *
-ratbag_device_ref(struct ratbag_device *ratbag);
+ratbag_device_ref(struct ratbag_device *device);
 
 /**
  * @ingroup device
@@ -1113,11 +1113,11 @@ ratbag_device_ref(struct ratbag_device *ratbag);
  * destroyed, if the last reference was dereferenced. If so, the context is
  * invalid and may not be interacted with.
  *
- * @param ratbag A previously initialized ratbag context
+ * @param device A previously initialized ratbag device
  * @return NULL if context was destroyed otherwise the passed context
  */
 struct ratbag_device *
-ratbag_device_unref(struct ratbag_device *ratbag);
+ratbag_device_unref(struct ratbag_device *device);
 
 /**
  * @ingroup base
