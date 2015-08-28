@@ -672,62 +672,6 @@ ratbag_resolution_is_default(const struct ratbag_resolution *resolution);
 /**
  * @ingroup profile
  *
- * @param profile A previously initialized ratbag profile
- * @return The current resolution in dots-per-inch.
- * @retval 0 The resolution is unknown
- */
-/* FIXME: remove me */
-int
-ratbag_profile_get_resolution_dpi(const struct ratbag_profile *profile);
-
-/**
- * @ingroup device
- *
- * Sets the current resolution to the given dpi.
- *
- * @note If the profile is the currently active profile, this may change the
- * devices' behavior immediately.
- *
- * @param profile A previously initialized ratbag profile
- * @param dpi The new resolution in dots-per-inch
- *
- * @return 0 on success or -1 on failure
- */
-/* FIXME: remove me */
-int
-ratbag_profile_set_resolution_dpi(struct ratbag_profile *profile, int dpi);
-
-/**
- * @ingroup profile
- *
- * @param profile A previously initialized ratbag profile
- * @return The current report rate in Hz
- * @retval 0 The report rate is unknown
- */
-/* FIXME: remove me */
-int
-ratbag_profile_get_report_rate_hz(const struct ratbag_profile *profile);
-
-/**
- * @ingroup profile
- *
- * Sets the current report rate to the given frequency in Hz.
- *
- * @note If the profile is the currently active profile, this may change the
- * devices' behavior immediately.
- *
- * @param profile A previously initialized ratbag profile
- * @param hz The new report rate in Hz
- *
- * @return 0 on success or -1 on failure
- */
-/* FIXME: remove me */
-int
-ratbag_profile_set_report_rate_hz(struct ratbag_profile *profile, int hz);
-
-/**
- * @ingroup profile
- *
  * Return a reference to the button given by the index. The order of the
  * buttons is device-specific though indices 0, 1 and 2 should always refer
  * to left, middle, right buttons.
