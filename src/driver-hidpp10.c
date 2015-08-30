@@ -184,8 +184,8 @@ static int
 hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
-	struct hidpp10drv_data *drv_data;
-	struct hidpp10_device *dev;
+	struct hidpp10drv_data *drv_data = NULL;
+	struct hidpp10_device *dev = NULL;
 
 	rc = ratbag_open_hidraw(device);
 	if (rc) {
@@ -229,7 +229,8 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 err:
 	free(drv_data);
 	ratbag_set_drv_data(device, NULL);
-	hidpp10_device_destroy(dev);
+	if (dev)
+		hidpp10_device_destroy(dev);
 
 	return rc;
 }
