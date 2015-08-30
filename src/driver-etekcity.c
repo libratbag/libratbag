@@ -494,7 +494,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	/* FIXME: yeah, xres and yres would be even better */
 	if (setting_report->x_sensitivity == 0x0a)
 		dpi_list = setting_report->xres;
-	else if (setting_report->x_sensitivity == 0x0a)
+	else if (setting_report->y_sensitivity == 0x0a)
 		dpi_list = setting_report->yres;
 	else
 		dpi_list = setting_report->xres;
