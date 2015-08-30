@@ -527,8 +527,7 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 	button->profile = profile;
 	button->index = index;
 
-	if (profile)
-		list_insert(&profile->buttons, &button->link);
+	list_insert(&profile->buttons, &button->link);
 
 	if (device->driver->read_button)
 		device->driver->read_button(button);
