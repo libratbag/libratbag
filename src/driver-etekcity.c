@@ -710,8 +710,6 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 		ratbag_device_get_name(device),
 		profile->index);
 
-	profile = ratbag_profile_unref(profile);
-
 	return 0;
 
 err:
