@@ -37,51 +37,6 @@ extern "C" {
 #define LIBRATBAG_ATTRIBUTE_DEPRECATED __attribute__ ((deprecated))
 
 /**
- * @ingroup base
- *
- * Log priority for internal logging messages.
- */
-enum ratbag_log_priority {
-	/**
-	 * Raw protocol messages. Using this log level results in *a lot* of
-	 * output.
-	 */
-	RATBAG_LOG_PRIORITY_RAW = 10,
-	RATBAG_LOG_PRIORITY_DEBUG = 20,
-	RATBAG_LOG_PRIORITY_INFO = 30,
-	RATBAG_LOG_PRIORITY_ERROR = 40,
-};
-
-/**
- * @ingroup base
- * @struct ratbag
- *
- * A handle for accessing ratbag contexts. This struct is refcounted, use
- * ratbag_ref() and ratbag_unref().
- */
-struct ratbag;
-
-/**
- * @ingroup base
- *
- * Log handler type for custom logging.
- *
- * @param ratbag The ratbag context
- * @param priority The priority of the current message
- * @param format Message format in printf-style
- * @param args Message arguments
- *
- * @see ratbag_log_set_priority
- * @see ratbag_log_get_priority
- * @see ratbag_log_set_handler
- */
-typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
-				      enum ratbag_log_priority priority,
-				      const char *format, va_list args)
-	   LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
-
-
-/**
  * @defgroup base Initialization and manipulation of ratbag contexts
  * @defgroup device Querying and manipulating devices
  *
@@ -120,6 +75,15 @@ typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
 
 /**
  * @ingroup base
+ * @struct ratbag
+ *
+ * A handle for accessing ratbag contexts. This struct is refcounted, use
+ * ratbag_ref() and ratbag_unref().
+ */
+struct ratbag;
+
+/**
+ * @ingroup device
  * @struct ratbag_device
  *
  * A ratbag context represents one single device. This struct is
@@ -160,6 +124,98 @@ struct ratbag_button;
  * ratbag_resolution_unref().
  */
 struct ratbag_resolution;
+
+
+/**
+ * @ingroup base
+ *
+ * Log priority for internal logging messages.
+ */
+enum ratbag_log_priority {
+	/**
+	 * Raw protocol messages. Using this log level results in *a lot* of
+	 * output.
+	 */
+	RATBAG_LOG_PRIORITY_RAW = 10,
+	RATBAG_LOG_PRIORITY_DEBUG = 20,
+	RATBAG_LOG_PRIORITY_INFO = 30,
+	RATBAG_LOG_PRIORITY_ERROR = 40,
+};
+
+/**
+ * @ingroup base
+ *
+ * Log handler type for custom logging.
+ *
+ * @param ratbag The ratbag context
+ * @param priority The priority of the current message
+ * @param format Message format in printf-style
+ * @param args Message arguments
+ *
+ * @see ratbag_log_set_priority
+ * @see ratbag_log_get_priority
+ * @see ratbag_log_set_handler
+ */
+typedef void (*ratbag_log_handler)(struct ratbag *ratbag,
+				      enum ratbag_log_priority priority,
+				      const char *format, va_list args)
+	   LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
+
+/**
+ * @ingroup base
+ *
+ * Set the log priority for the ratbag context. Messages with priorities
+ * equal to or higher than the argument will be printed to the context's
+ * log handler.
+ *
+ * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
+ *
+ * @param ratbag A previously initialized ratbag context
+ * @param priority The minimum priority of log messages to print.
+ *
+ * @see ratbag_log_set_handler
+ * @see ratbag_log_get_priority
+ */
+void
+ratbag_log_set_priority(struct ratbag *ratbag,
+			enum ratbag_log_priority priority);
+
+/**
+ * @ingroup base
+ *
+ * Get the context's log priority. Messages with priorities equal to or
+ * higher than the argument will be printed to the current log handler.
+ *
+ * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
+ *
+ * @param ratbag A previously initialized ratbag context
+ * @return The minimum priority of log messages to print.
+ *
+ * @see ratbag_log_set_handler
+ * @see ratbag_log_set_priority
+ */
+enum ratbag_log_priority
+ratbag_log_get_priority(const struct ratbag *ratbag);
+
+/**
+ * @ingroup base
+ *
+ * Set the context's log handler. Messages with priorities equal to or
+ * higher than the context's log priority will be passed to the given
+ * log handler.
+ *
+ * The default log handler prints to stderr.
+ *
+ * @param ratbag A previously initialized ratbag context
+ * @param log_handler The log handler for library messages.
+ *
+ * @see ratbag_log_set_priority
+ * @see ratbag_log_get_priority
+ */
+void
+ratbag_log_set_handler(struct ratbag *ratbag,
+		       ratbag_log_handler log_handler);
+
 
 /**
  * @ingroup base
@@ -269,6 +325,31 @@ ratbag_unref(struct ratbag *ratbag);
 struct ratbag_device*
 ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 				   struct udev_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Add a reference to the device. A device is destroyed whenever the
+ * reference count reaches 0. See @ref ratbag_device_unref.
+ *
+ * @param device A previously initialized valid ratbag device
+ * @return The passed ratbag device
+ */
+struct ratbag_device *
+ratbag_device_ref(struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Dereference the ratbag device. After this, the device may have been
+ * destroyed, if the last reference was dereferenced. If so, the device is
+ * invalid and may not be interacted with.
+ *
+ * @param device A previously initialized ratbag device
+ * @return NULL if device was destroyed otherwise the passed device
+ */
+struct ratbag_device *
+ratbag_device_unref(struct ratbag_device *device);
 
 /**
  * @ingroup device
@@ -384,6 +465,31 @@ ratbag_device_get_num_profiles(struct ratbag_device *device);
  */
 unsigned int
 ratbag_device_get_num_buttons(struct ratbag_device *device);
+
+/**
+ * @ingroup profile
+ *
+ * Add a reference to the profile. A profile is destroyed whenever the
+ * reference count reaches 0. See @ref ratbag_profile_unref.
+ *
+ * @param profile A previously initialized valid ratbag profile
+ * @return The passed ratbag profile
+ */
+struct ratbag_profile *
+ratbag_profile_ref(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Dereference the ratbag profile. After this, the profile may have been
+ * destroyed, if the last reference was dereferenced. If so, the profile is
+ * invalid and may not be interacted with.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @return NULL if context was destroyed otherwise the passed profile
+ */
+struct ratbag_profile *
+ratbag_profile_unref(struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
@@ -1134,111 +1240,6 @@ ratbag_button_ref(struct ratbag_button *button);
  */
 struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button);
-
-/**
- * @ingroup profile
- *
- * Add a reference to the profile. A profile is destroyed whenever the
- * reference count reaches 0. See @ref ratbag_profile_unref.
- *
- * @param profile A previously initialized valid ratbag profile
- * @return The passed ratbag profile
- */
-struct ratbag_profile *
-ratbag_profile_ref(struct ratbag_profile *profile);
-
-/**
- * @ingroup profile
- *
- * Dereference the ratbag profile. After this, the profile may have been
- * destroyed, if the last reference was dereferenced. If so, the profile is
- * invalid and may not be interacted with.
- *
- * @param profile A previously initialized ratbag profile
- * @return NULL if context was destroyed otherwise the passed profile
- */
-struct ratbag_profile *
-ratbag_profile_unref(struct ratbag_profile *profile);
-
-/**
- * @ingroup device
- *
- * Add a reference to the context. A context is destroyed whenever the
- * reference count reaches 0. See @ref ratbag_device_unref.
- *
- * @param device A previously initialized valid ratbag device
- * @return The passed ratbag context
- */
-struct ratbag_device *
-ratbag_device_ref(struct ratbag_device *device);
-
-/**
- * @ingroup device
- *
- * Dereference the ratbag context. After this, the context may have been
- * destroyed, if the last reference was dereferenced. If so, the context is
- * invalid and may not be interacted with.
- *
- * @param device A previously initialized ratbag device
- * @return NULL if context was destroyed otherwise the passed context
- */
-struct ratbag_device *
-ratbag_device_unref(struct ratbag_device *device);
-
-/**
- * @ingroup base
- *
- * Set the log priority for the ratbag context. Messages with priorities
- * equal to or higher than the argument will be printed to the context's
- * log handler.
- *
- * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
- *
- * @param ratbag A previously initialized ratbag context
- * @param priority The minimum priority of log messages to print.
- *
- * @see ratbag_log_set_handler
- * @see ratbag_log_get_priority
- */
-void
-ratbag_log_set_priority(struct ratbag *ratbag,
-			enum ratbag_log_priority priority);
-
-/**
- * @ingroup base
- *
- * Get the context's log priority. Messages with priorities equal to or
- * higher than the argument will be printed to the current log handler.
- *
- * The default log priority is @ref RATBAG_LOG_PRIORITY_ERROR.
- *
- * @param ratbag A previously initialized ratbag context
- * @return The minimum priority of log messages to print.
- *
- * @see ratbag_log_set_handler
- * @see ratbag_log_set_priority
- */
-enum ratbag_log_priority
-ratbag_log_get_priority(const struct ratbag *ratbag);
-
-/**
- * @ingroup base
- *
- * Set the context's log handler. Messages with priorities equal to or
- * higher than the context's log priority will be passed to the given
- * log handler.
- *
- * The default log handler prints to stderr.
- *
- * @param ratbag A previously initialized ratbag context
- * @param log_handler The log handler for library messages.
- *
- * @see ratbag_log_set_priority
- * @see ratbag_log_get_priority
- */
-void
-ratbag_log_set_handler(struct ratbag *ratbag,
-		       ratbag_log_handler log_handler);
 
 #ifdef __cplusplus
 }
