@@ -320,6 +320,8 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 	for (i = 0; i < num_profiles; i++) {
 		int dpi, rate;
 		profile = ratbag_device_get_profile_by_index(device, i);
+		if (!profile)
+			continue;
 
 		printf("  Profile %d%s\n", i,
 		       ratbag_profile_is_active(profile) ? " (active)" : "");
