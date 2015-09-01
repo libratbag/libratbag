@@ -627,7 +627,7 @@ ratbag_resolution_ref(struct ratbag_resolution *resolution);
  * invalid and may not be interacted with.
  *
  * @param resolution A previously initialized ratbag resolution
- * @return NULL if context was destroyed otherwise the passed resolution
+ * @return NULL if the resolution was destroyed otherwise the passed resolution
  */
 struct ratbag_resolution *
 ratbag_resolution_unref(struct ratbag_resolution *resolution);
@@ -808,6 +808,11 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
  *
  * A value of 0 hz indicates the mode is disabled.
  *
+ * If the resolution does not have the @ref
+ * RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE capability, changing the
+ * report rate on one resolution changes the report rate for all resolutions
+ * in this profile.
+ *
  * @param resolution A previously initialized ratbag resolution
  *
  * @return zero on success, non-zero otherwise
@@ -887,7 +892,8 @@ ratbag_resolution_is_default(const struct ratbag_resolution *resolution);
  *
  * Return a reference to the button given by the index. The order of the
  * buttons is device-specific though indices 0, 1 and 2 should always refer
- * to left, middle, right buttons.
+ * to left, middle, right buttons. Use ratbag_button_get_type() to get the
+ * physical type of the button.
  *
  * The button is refcounted with an initial value of at least 1.
  * Use ratbag_button_unref() to release the button.
@@ -950,6 +956,9 @@ enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_WHEEL_CLICK,
 	RATBAG_BUTTON_TYPE_WHEEL_UP,
 	RATBAG_BUTTON_TYPE_WHEEL_DOWN,
+	/**
+	 * A button to toggle the wheel from free-spinning to click-based.
+	 */
 	RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT,
 	RATBAG_BUTTON_TYPE_EXTRA,
 	RATBAG_BUTTON_TYPE_SIDE,
@@ -974,6 +983,9 @@ enum ratbag_button_type {
  * used by configuration tools to provide a generic list of button names or
  * handles to configure devices. The type describes the physical location of
  * the button and remains constant for the lifetime of the device.
+ * For example, a button of type @ref RATBAG_BUTTON_TYPE_WHEEL_CLICK may be
+ * mapped to a logical middle button, but the physical description is that
+ * of a wheel click.
  *
  * For the button currently mapped to this physical button, see
  * ratbag_button_get_button()
@@ -1079,7 +1091,8 @@ enum ratbag_button_action_special {
 /**
  * @ingroup button
  *
- * This function returns the logical button number this button is mapped to,
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+ * this function returns the logical button number this button is mapped to,
  * starting at 1. The button numbers are in sequence and do not correspond
  * to any meaning other than its numeric value. It is up to the input stack
  * how to map that logical button number, but usually buttons 1, 2 and 3 are
@@ -1116,7 +1129,8 @@ ratbag_button_set_button(struct ratbag_button *button,
 /**
  * @ingroup button
  *
- * This function returns the special function assigned to this button.
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+ * this function returns the special function assigned to this button.
  *
  * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
  * this function returns @ref RATBAG_BUTTON_ACTION_SPECIAL_INVALID.
@@ -1147,7 +1161,8 @@ ratbag_button_set_special(struct ratbag_button *button,
 /**
  * @ingroup button
  *
- * Return the key or button configured for this button.
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_KEY,
+ * this function returns the key or button configured for this button.
  *
  * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_KEY,
  * this function returns 0 and leaves modifiers and sz untouched.
@@ -1236,7 +1251,7 @@ ratbag_button_ref(struct ratbag_button *button);
  * invalid and may not be interacted with.
  *
  * @param button A previously initialized ratbag button
- * @return NULL if context was destroyed otherwise the passed button
+ * @return NULL if the button was destroyed otherwise the passed button
  */
 struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button);
