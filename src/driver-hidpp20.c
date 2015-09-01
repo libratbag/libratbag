@@ -376,14 +376,14 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		break;
 	}
 	case HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS: {
-		 log_debug(ratbag, "device has programmable keys/buttons\n");
-		 drv_data->capabilities |= HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00;
+		log_debug(ratbag, "device has programmable keys/buttons\n");
+		drv_data->capabilities |= HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00;
 
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
 		if (!hidpp20drv_read_kbd_reprogrammable_key(device))
 			device->num_buttons = drv_data->num_controls;
-		 break;
+		break;
 	}
 	default:
 		log_raw(device->ratbag, "unknown feature 0x%04x\n", feature);
