@@ -1,8 +1,5 @@
-resolution is currently a single value, some mice have x/y resolution
-separate.
-
-resolution bits need a has_capability() for changing report rate and
-changing x/y separately.
+some mice have a per axis "sensitivity" control which adapts the hardware
+resolution without changing the DPI (looking at you Etekcity and Roccat).
 
 buttons need a couple of has_capability() functions to check which action
 types and actions are possible
