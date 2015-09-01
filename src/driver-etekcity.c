@@ -246,15 +246,16 @@ etekcity_button_action_to_raw(const struct ratbag_button_action *action)
 }
 
 static int
-etekcity_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
+etekcity_has_capability(const struct ratbag_device *device,
+			enum ratbag_device_capability cap)
 {
 	switch (cap) {
-	case RATBAG_CAP_NONE:
+	case RATBAG_DEVICE_CAP_NONE:
 		return 0;
-	case RATBAG_CAP_SWITCHABLE_RESOLUTION:
-	case RATBAG_CAP_SWITCHABLE_PROFILE:
-	case RATBAG_CAP_BUTTON_KEY:
-	case RATBAG_CAP_BUTTON_MACROS:
+	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
+	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
+	case RATBAG_DEVICE_CAP_BUTTON_KEY:
+	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
 		return 1;
 	}
 	return 0;

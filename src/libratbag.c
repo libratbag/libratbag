@@ -678,7 +678,7 @@ ratbag_device_get_num_buttons(struct ratbag_device *device)
 
 LIBRATBAG_EXPORT int
 ratbag_device_has_capability(const struct ratbag_device *device,
-			     enum ratbag_capability cap)
+			     enum ratbag_device_capability cap)
 {
 	assert(device->driver->has_capability);
 	return device->driver->has_capability(device, cap);
@@ -696,7 +696,7 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	if (rc)
 		return rc;
 
-	if (ratbag_device_has_capability(device, RATBAG_CAP_SWITCHABLE_PROFILE)) {
+	if (ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
 		assert(device->driver->set_active_profile);
 		rc = device->driver->set_active_profile(device, profile->index);
 	}

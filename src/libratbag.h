@@ -132,7 +132,7 @@ struct ratbag_device;
  * @struct ratbag_profile
  *
  * A handle to a profile context on devices with the @ref
- * RATBAG_CAP_SWITCHABLE_PROFILE capability.
+ * RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE capability.
  * This struct is refcounted, use ratbag_profile_ref() and
  * ratbag_profile_unref().
  */
@@ -308,8 +308,8 @@ ratbag_device_get_name(const struct ratbag_device* device);
 /**
  * @ingroup device
  */
-enum ratbag_capability {
-	RATBAG_CAP_NONE = 0,
+enum ratbag_device_capability {
+	RATBAG_DEVICE_CAP_NONE = 0,
 	/**
 	 * The device can change resolution, either software-controlled or
 	 * by a hardware button.
@@ -318,7 +318,7 @@ enum ratbag_capability {
 	 * query that, even if we can't switch it ourselves? Maybe better to
 	 * have a separate cap for that then.
 	 */
-	RATBAG_CAP_SWITCHABLE_RESOLUTION,
+	RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION,
 	/**
 	 * The device can switch between hardware profiles.
 	 * A device with this capability can store multiple profiles in the
@@ -326,18 +326,18 @@ enum ratbag_capability {
 	 * possibly with a button.
 	 * Devices without this capability will only have a single profile.
 	 */
-	RATBAG_CAP_SWITCHABLE_PROFILE,
+	RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE,
 
 	/**
 	 * The device supports assigning button numbers, key events or key +
 	 * modifier combinations.
 	 */
-	RATBAG_CAP_BUTTON_KEY,
+	RATBAG_DEVICE_CAP_BUTTON_KEY,
 
 	/**
 	 * The device supports user-defined key or button sequences.
 	 */
-	RATBAG_CAP_BUTTON_MACROS,
+	RATBAG_DEVICE_CAP_BUTTON_MACROS,
 };
 
 /**
@@ -353,7 +353,8 @@ enum ratbag_capability {
  * @retval 0 The device does not have the capability
  */
 int
-ratbag_device_has_capability(const struct ratbag_device *device, enum ratbag_capability cap);
+ratbag_device_has_capability(const struct ratbag_device *device,
+			     enum ratbag_device_capability cap);
 
 /**
  * @ingroup device

@@ -133,7 +133,8 @@ struct ratbag_driver {
 	 * for each device, but most of the time, it can be statically
 	 * stored.
 	 */
-	int (*has_capability)(const struct ratbag_device *device, enum ratbag_capability cap);
+	int (*has_capability)(const struct ratbag_device *device,
+			      enum ratbag_device_capability cap);
 
 	/** For the given button, fill in the struct ratbag_button
 	 * with the available information.
@@ -164,7 +165,7 @@ struct ratbag_driver {
 	/** For the given profile, overwrite the current resolution
 	 * of the sensor expressed in DPI, and commit it to the hardware.
 	 *
-	 * Mandatory if the driver exports RATBAG_CAP_SWITCHABLE_RESOLUTION.
+	 * Mandatory if the driver exports RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION.
 	 */
 	int (*write_resolution_dpi)(struct ratbag_resolution *resolution, int dpi);
 

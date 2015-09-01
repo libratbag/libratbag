@@ -298,16 +298,16 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 
 	printf("Capabilities:");
 	if (ratbag_device_has_capability(device,
-					 RATBAG_CAP_SWITCHABLE_RESOLUTION))
+					 RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION))
 		printf(" res");
 	if (ratbag_device_has_capability(device,
-					 RATBAG_CAP_SWITCHABLE_PROFILE))
+					 RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE))
 		printf(" profile");
 	if (ratbag_device_has_capability(device,
-					 RATBAG_CAP_BUTTON_KEY))
+					 RATBAG_DEVICE_CAP_BUTTON_KEY))
 		printf(" btn-key");
 	if (ratbag_device_has_capability(device,
-					 RATBAG_CAP_BUTTON_MACROS))
+					 RATBAG_DEVICE_CAP_BUTTON_MACROS))
 		printf(" btn-macros");
 	printf("\n");
 
@@ -394,7 +394,7 @@ ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char 
 	}
 
 	if (!ratbag_device_has_capability(device,
-					  RATBAG_CAP_SWITCHABLE_PROFILE)) {
+					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
 		error("Looks like '%s' has no switchable profiles\n", path);
 		goto out;
 	}
@@ -473,7 +473,7 @@ ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char
 	}
 
 	if (!ratbag_device_has_capability(device,
-					  RATBAG_CAP_SWITCHABLE_PROFILE)) {
+					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
 		error("Looks like '%s' has no switchable profiles\n", path);
 		goto out;
 	}
@@ -615,7 +615,7 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 	}
 
 	if (!ratbag_device_has_capability(device,
-					  RATBAG_CAP_BUTTON_KEY)) {
+					  RATBAG_DEVICE_CAP_BUTTON_KEY)) {
 		error("Looks like '%s' has no programmable buttons\n", path);
 		goto out;
 	}
@@ -760,7 +760,7 @@ ratbag_cmd_switch_dpi(struct ratbag *ratbag, uint32_t flags, int argc, char **ar
 	}
 
 	if (!ratbag_device_has_capability(device,
-					  RATBAG_CAP_SWITCHABLE_RESOLUTION)) {
+					  RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION)) {
 		error("Looks like '%s' has no switchable resolution\n", path);
 		goto out;
 	}

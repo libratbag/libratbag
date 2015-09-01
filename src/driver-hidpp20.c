@@ -127,7 +127,8 @@ hidpp20drv_write_button(struct ratbag_button *button,
 }
 
 static int
-hidpp20drv_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
+hidpp20drv_has_capability(const struct ratbag_device *device,
+			  enum ratbag_device_capability cap)
 {
 	/*
 	 * We need to force the non const, but we will not change anything,
@@ -136,9 +137,9 @@ hidpp20drv_has_capability(const struct ratbag_device *device, enum ratbag_capabi
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
 
 	switch (cap) {
-	case RATBAG_CAP_SWITCHABLE_RESOLUTION:
+	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
 		return !!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201);
-	case RATBAG_CAP_BUTTON_KEY:
+	case RATBAG_DEVICE_CAP_BUTTON_KEY:
 		return !!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04);
 	default:
 		return 0;

@@ -89,16 +89,17 @@ hidpp10drv_write_button(struct ratbag_button *button,
 }
 
 static int
-hidpp10drv_has_capability(const struct ratbag_device *device, enum ratbag_capability cap)
+hidpp10drv_has_capability(const struct ratbag_device *device,
+			  enum ratbag_device_capability cap)
 {
 	switch (cap) {
-	case RATBAG_CAP_NONE:
+	case RATBAG_DEVICE_CAP_NONE:
 		abort();
 		break;
-	case RATBAG_CAP_SWITCHABLE_PROFILE:
-	case RATBAG_CAP_SWITCHABLE_RESOLUTION:
-	case RATBAG_CAP_BUTTON_KEY:
-	case RATBAG_CAP_BUTTON_MACROS:
+	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
+	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
+	case RATBAG_DEVICE_CAP_BUTTON_KEY:
+	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
 		return (device->num_profiles > 1);
 	}
 	return 0;
