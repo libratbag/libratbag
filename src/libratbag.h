@@ -552,10 +552,38 @@ ratbag_resolution_set_user_data(struct ratbag_resolution *resolution, void *user
 void*
 ratbag_resolution_get_user_data(const struct ratbag_resolution *resolution);
 
+enum ratbag_resolution_capability {
+	/**
+	 * The report rate can be set per resolution mode. If this property
+	 * is not available, all resolutions within the same profile have
+	 * the same report rate and changing one changes the others.
+	 */
+	RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE = 1,
+
+	/**
+	 * The resolution can be set for x and y separately.
+	 */
+	RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION,
+};
+
+/**
+ * @ingroup resolution
+ *
+ * Check if a resolution has a specific capability.
+ *
+ * @return non-zero if the capability is available, zero otherwise.
+ */
+int
+ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
+				 enum ratbag_resolution_capability cap);
+
 /**
  * @ingroup resolution
  *
  * Set the resolution in DPI for the resolution mode.
+ * If the resolution has the @ref
+ * RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION capability, this function
+ * sets both x and y resolution to the given value.
  *
  * A value of 0 for dpi disables the mode.
  *
@@ -570,19 +598,83 @@ ratbag_resolution_get_user_data(const struct ratbag_resolution *resolution);
 int
 ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 			  unsigned int dpi);
+
+/**
+ * @ingroup resolution
+ *
+ * Set the x and y resolution in DPI for the resolution mode.
+ * If the resolution does not have the @ref
+ * RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION capability, this function
+ * returns an error and does nothing.
+ *
+ * A value of 0 for both x and y disables the mode. If either value is 0 and
+ * the other value is non-zero, this function returns an error and does
+ * nothing.
+ *
+ * If the resolution mode is the currently active mode and the profile is
+ * the currently active profile, the change takes effect immediately.
+ *
+ * @param resolution A previously initialized ratbag resolution with the
+ * @ref RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION capability
+ * @param x The x resolution in dpi
+ * @param y The y resolution in dpi
+ *
+ * @return zero on success, non-zero otherwise
+ */
+int
+ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
+			     unsigned int x, unsigned int y);
+
 /**
  * @ingroup resolution
  *
  * Get the resolution in DPI for the resolution mode.
+ * If the resolution has the @ref
+ * RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION capability, this function
+ * returns the x resolution, see ratbag_resolution_get_dpi_x().
  *
  * A value of 0 for dpi indicates the mode is disabled.
  *
  * @param resolution A previously initialized ratbag resolution
  *
- * @return zero on success, non-zero otherwise
+ * @return The resolution in dpi
  */
 int
 ratbag_resolution_get_dpi(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Get the x resolution in DPI for the resolution mode. If the resolution
+ * does not have the @ref RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION
+ * capability, this function is identical to ratbag_resolution_get_dpi().
+ *
+ * A value of 0 for dpi indicates the mode is disabled.
+ *
+ * @param resolution A previously initialized ratbag resolution with the
+ * @ref RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION capability
+ *
+ * @return The resolution in dpi
+ */
+int
+ratbag_resolution_get_dpi_x(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Get the y resolution in DPI for the resolution mode. If the resolution
+ * does not have the @ref RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION
+ * capability, this function is identical to ratbag_resolution_get_dpi().
+ *
+ * A value of 0 for dpi indicates the mode is disabled.
+ *
+ * @param resolution A previously initialized ratbag resolution with the
+ * @ref RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION capability
+ *
+ * @return The resolution in dpi
+ */
+int
+ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution);
 
 /**
  * @ingroup resolution

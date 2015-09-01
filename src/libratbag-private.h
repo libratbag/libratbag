@@ -27,6 +27,7 @@
 #include <linux/input.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #include "libratbag.h"
 #include "libratbag-util.h"
@@ -167,7 +168,8 @@ struct ratbag_driver {
 	 *
 	 * Mandatory if the driver exports RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION.
 	 */
-	int (*write_resolution_dpi)(struct ratbag_resolution *resolution, int dpi);
+	int (*write_resolution_dpi)(struct ratbag_resolution *resolution,
+				    int dpi_x, int dpi_y);
 
 	/* private */
 	struct list link;
@@ -178,10 +180,12 @@ struct ratbag_resolution{
 	struct ratbag_profile *profile;
 	int refcount;
 	void *userdata;
-	unsigned int dpi;	/**< resolution on dpi */
+	unsigned int dpi_x;	/**< x resolution in dpi */
+	unsigned int dpi_y;	/**< y resolution in dpi */
 	unsigned int hz;	/**< report rate in Hz */
 	bool is_active;
 	bool is_default;
+	uint32_t capabilities;
 };
 
 struct ratbag_profile {
@@ -309,15 +313,27 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 }
 
 static inline void
-ratbag_resolution_init(struct ratbag_profile *profile, int index, int dpi, int hz)
+ratbag_resolution_init(struct ratbag_profile *profile, int index,
+		       int dpi_x, int dpi_y, int hz)
 {
 	struct ratbag_resolution *res = &profile->resolution.modes[index];
 
 	res->profile = profile;
-	res->dpi = dpi;
+	res->dpi_x = dpi_x;
+	res->dpi_y = dpi_y;
 	res->hz = hz;
 	res->is_active = false;
 	res->is_default = false;
+	res->capabilities = 0;
+}
+
+static inline void
+ratbag_resolution_set_cap(struct ratbag_resolution *res,
+			  enum ratbag_resolution_capability cap)
+{
+	assert(cap <= RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+
+	res->capabilities = (1 << cap);
 }
 
 /**

@@ -332,6 +332,14 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 			rate = ratbag_resolution_get_report_rate(res);
 			if (dpi == 0)
 				printf("      %d: <disabled>\n", j);
+			else if (ratbag_resolution_has_capability(res,
+								  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION))
+				printf("      %d: %dx%ddpi @ %dHz%s%s\n", j,
+				       ratbag_resolution_get_dpi_x(res),
+				       ratbag_resolution_get_dpi_y(res),
+				       rate,
+				       ratbag_resolution_is_active(res) ? " (active)" : "",
+				       ratbag_resolution_is_default(res) ? " (default)" : "");
 			else
 				printf("      %d: %ddpi @ %dHz%s%s\n", j, dpi, rate,
 				       ratbag_resolution_is_active(res) ? " (active)" : "",

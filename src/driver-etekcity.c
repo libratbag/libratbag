@@ -507,10 +507,12 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 		hz = report_rate;
 		if (!(setting_report->dpi_mask & (1 << i))) {
 			/* the profile is disabled, overwrite it */
-			resolution->dpi = 0;
+			resolution->dpi_x = 0;
+			resolution->dpi_y = 0;
 			resolution->hz = 0;
 		}
-		ratbag_resolution_init(profile, i, dpi,hz);
+		/* FIXME */
+		ratbag_resolution_init(profile, i, dpi, dpi, hz);
 		resolution->is_active = (i == setting_report->current_dpi);
 	}
 
@@ -622,7 +624,8 @@ etekcity_write_button(struct ratbag_button *button,
 }
 
 static int
-etekcity_write_resolution_dpi(struct ratbag_resolution *resolution, int dpi)
+etekcity_write_resolution_dpi(struct ratbag_resolution *resolution,
+			      int dpi_x, int dpi_y)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
@@ -632,7 +635,9 @@ etekcity_write_resolution_dpi(struct ratbag_resolution *resolution, int dpi)
 	uint8_t *buf;
 	int rc;
 
-	if (dpi < 50 || dpi > 8200 || dpi % 50)
+	if (dpi_x < 50 || dpi_x > 8200 || dpi_x % 50)
+		return -EINVAL;
+	if (dpi_y < 50 || dpi_y > 8200 || dpi_y % 50)
 		return -EINVAL;
 
 	settings_report = &drv_data->settings[profile->index];
@@ -640,11 +645,10 @@ etekcity_write_resolution_dpi(struct ratbag_resolution *resolution, int dpi)
 	/* retrieve which resolution is asked to be changed */
 	index = resolution - profile->resolution.modes;
 
-	/* FIXME: allow both x and y dpi to be set */
 	settings_report->x_sensitivity = 0x0a;
 	settings_report->y_sensitivity = 0x0a;
-	settings_report->xres[index] = dpi / 50;
-	settings_report->yres[index] = dpi / 50;
+	settings_report->xres[index] = dpi_x / 50;
+	settings_report->yres[index] = dpi_y / 50;
 
 	buf = (uint8_t*)settings_report;
 	etekcity_set_config_profile(device, profile->index, ETEKCITY_CONFIG_SETTINGS);

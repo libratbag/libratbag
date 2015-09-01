@@ -40,14 +40,18 @@ global:
 	ratbag_profile_set_active;
 	ratbag_profile_unref;
 	ratbag_resolution_get_dpi;
+	ratbag_resolution_get_dpi_x;
+	ratbag_resolution_get_dpi_y;
 	ratbag_resolution_get_report_rate;
 	ratbag_resolution_get_user_data;
+	ratbag_resolution_has_capability;
 	ratbag_resolution_is_active;
 	ratbag_resolution_is_default;
 	ratbag_resolution_ref;
 	ratbag_resolution_set_active;
 	ratbag_resolution_set_default;
 	ratbag_resolution_set_dpi;
+	ratbag_resolution_set_dpi_xy;
 	ratbag_resolution_set_report_rate;
 	ratbag_resolution_set_user_data;
 	ratbag_resolution_unref;

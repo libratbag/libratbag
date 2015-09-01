@@ -208,8 +208,9 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			drv_data->num_sensors = MAX_RESOLUTIONS;
 		profile->resolution.num_modes = drv_data->num_sensors;
 		for (i = 0; i < profile->resolution.num_modes; i++) {
+			int dpi = drv_data->sensors[i].dpi;
 			/* FIXME: retrieve the refresh rate */
-			ratbag_resolution_init(profile, i, drv_data->sensors[i].dpi, 0);
+			ratbag_resolution_init(profile, i, dpi, dpi, 0);
 
 			/* FIXME: we mark all resolutions as active because
 			 * they are from different sensors */
@@ -223,13 +224,15 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 }
 
 static int
-hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution, int dpi)
+hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution,
+				int dpi_x, int dpi_y)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_sensor *sensor;
 	int rc, i;
+	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
 
 	if (!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201))
 		return -ENOTSUP;

@@ -139,10 +139,15 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	profile->resolution.num_modes = p.num_dpi_modes;
 	for (i = 0; i < p.num_dpi_modes; i++) {
-		/* FIXME: we should expose x/y res separately */
-		ratbag_resolution_init(profile, i, p.dpi_modes[i].xres,
+		ratbag_resolution_init(profile, i,
+				       p.dpi_modes[i].xres,
+				       p.dpi_modes[i].yres,
 				       p.refresh_rate);
-		if (profile->is_active && profile->resolution.modes[i].dpi == xres)
+		ratbag_resolution_set_cap(&profile->resolution.modes[i],
+					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+		if (profile->is_active &&
+		    profile->resolution.modes[i].dpi_x == xres &&
+		    profile->resolution.modes[i].dpi_y == yres)
 			profile->resolution.modes[i].is_active = true;
 		if (i == p.default_dpi_mode)
 			profile->resolution.modes[i].is_default = true;

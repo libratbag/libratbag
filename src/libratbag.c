@@ -569,7 +569,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	list_init(&profile->buttons);
 
 	for (i = 0; i < MAX_RESOLUTIONS; i++)
-		ratbag_resolution_init(profile, i, 0, 0);
+		ratbag_resolution_init(profile, i, 0, 0, 0);
 	profile->resolution.num_modes = 1;
 
 	assert(device->driver->read_profile);
@@ -756,14 +756,47 @@ ratbag_resolution_unref(struct ratbag_resolution *resolution)
 }
 
 LIBRATBAG_EXPORT int
+ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
+				 enum ratbag_resolution_capability cap)
+{
+	switch (cap) {
+	case RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE:
+	case RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION:
+		break;
+	default:
+		return 0;
+	}
+
+	return !!(resolution->capabilities & (1 << cap));
+}
+
+LIBRATBAG_EXPORT int
 ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 			  unsigned int dpi)
 {
 	struct ratbag_profile *profile = resolution->profile;
-	resolution->dpi = dpi;
+	resolution->dpi_x = dpi;
+	resolution->dpi_y = dpi;
 
 	assert(profile->device->driver->write_resolution_dpi);
-	return profile->device->driver->write_resolution_dpi(resolution, dpi);
+	return profile->device->driver->write_resolution_dpi(resolution, dpi, dpi);
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
+			     unsigned int x, unsigned int y)
+{
+	struct ratbag_profile *profile = resolution->profile;
+
+	if (!ratbag_resolution_has_capability(resolution,
+					      RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION))
+		return -1;
+
+	if ((x == 0 && y != 0) || (x != 0 && y == 0))
+		return -1;
+
+	assert(profile->device->driver->write_resolution_dpi);
+	return profile->device->driver->write_resolution_dpi(resolution, x, y);
 }
 
 LIBRATBAG_EXPORT int
@@ -778,7 +811,19 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 LIBRATBAG_EXPORT int
 ratbag_resolution_get_dpi(struct ratbag_resolution *resolution)
 {
-	return resolution->dpi;
+	return resolution->dpi_x;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_get_dpi_x(struct ratbag_resolution *resolution)
+{
+	return resolution->dpi_x;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution)
+{
+	return resolution->dpi_y;
 }
 
 LIBRATBAG_EXPORT int
