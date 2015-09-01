@@ -453,10 +453,11 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct etekcity_data *drv_data;
 	struct ratbag_resolution *resolution;
 	struct etekcity_settings_report *setting_report;
-	int rc;
-	uint8_t *buf, *dpi_list;
+	uint8_t *buf;
 	unsigned int report_rate;
 	unsigned int i, j;
+	int dpi_x, dpi_y, hz;
+	int rc;
 
 	assert(index <= ETEKCITY_PROFILE_MAX);
 
@@ -487,23 +488,10 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	profile->resolution.num_modes = ETEKCITY_NUM_DPI;
 
-	/* this will be optimized out by the compiler, but:
-	 * - if one of the 2 X or Y sensitivity is set to 0 (0x0a), we read the
-	 *   dpi settings from here
-	 * - if not, then we take the ones from X and pray they have a meaning
-	 */
-	/* FIXME: yeah, xres and yres would be even better */
-	if (setting_report->x_sensitivity == 0x0a)
-		dpi_list = setting_report->xres;
-	else if (setting_report->y_sensitivity == 0x0a)
-		dpi_list = setting_report->yres;
-	else
-		dpi_list = setting_report->xres;
-
 	for (i = 0; i < ETEKCITY_NUM_DPI; i++) {
-		int dpi, hz;
 		resolution = &profile->resolution.modes[i];
-		dpi = dpi_list[i] * 50;
+		dpi_x = setting_report->xres[i] * 50;
+		dpi_y = setting_report->yres[i] * 50;
 		hz = report_rate;
 		if (!(setting_report->dpi_mask & (1 << i))) {
 			/* the profile is disabled, overwrite it */
@@ -511,8 +499,9 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 			resolution->dpi_y = 0;
 			resolution->hz = 0;
 		}
-		/* FIXME */
-		ratbag_resolution_init(profile, i, dpi, dpi, hz);
+		ratbag_resolution_init(profile, i, dpi_x, dpi_y, hz);
+		ratbag_resolution_set_cap(resolution,
+					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		resolution->is_active = (i == setting_report->current_dpi);
 	}
 
