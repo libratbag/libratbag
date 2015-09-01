@@ -1,9 +1,3 @@
-get_active_profile should be a profile_is_active() instead. Better than
-comparing pointers for equality.
-
-resolutions have a "default" and an "active" setting, we currently treat
-them the same.
-
 resolution is currently a single value, some mice have x/y resolution
 separate.
 
