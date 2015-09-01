@@ -165,6 +165,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 	struct ratbag_device *device = profile->device;
 	struct ratbag *ratbag = device->ratbag;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag_resolution *res;
 	int rc;
 	unsigned int i;
 
@@ -210,11 +211,11 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		for (i = 0; i < profile->resolution.num_modes; i++) {
 			int dpi = drv_data->sensors[i].dpi;
 			/* FIXME: retrieve the refresh rate */
-			ratbag_resolution_init(profile, i, dpi, dpi, 0);
+			res = ratbag_resolution_init(profile, i, dpi, dpi, 0);
 
 			/* FIXME: we mark all resolutions as active because
 			 * they are from different sensors */
-			profile->resolution.modes[i].is_active = true;
+			res->is_active = true;
 		}
 
 		return 0;

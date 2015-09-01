@@ -312,7 +312,7 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	return 0;
 }
 
-static inline void
+static inline struct ratbag_resolution *
 ratbag_resolution_init(struct ratbag_profile *profile, int index,
 		       int dpi_x, int dpi_y, int hz)
 {
@@ -325,6 +325,8 @@ ratbag_resolution_init(struct ratbag_profile *profile, int index,
 	res->is_active = false;
 	res->is_default = false;
 	res->capabilities = 0;
+
+	return res;
 }
 
 static inline void
