@@ -26,6 +26,8 @@
  *   https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28&usp=sharing
  */
 
+#include <stdint.h>
+
 #ifndef HIDPP_GENERIC_H
 #define HIDPP_GENERIC_H
 
@@ -63,5 +65,20 @@
 #define ERR_WRONG_PIN_CODE			0x0C
 
 extern const char *hidpp_errors[0xFF];
+
+const char *
+hidpp20_1b04_get_physical_mapping_name(uint16_t value);
+
+enum ratbag_button_type
+hidpp20_1b04_get_physical_mapping(uint16_t value);
+
+const char *
+hidpp20_1b04_get_logical_mapping_name(uint16_t value);
+
+const struct ratbag_button_action *
+hidpp20_1b04_get_logical_mapping(uint16_t value);
+
+uint16_t
+hidpp20_1b04_get_logical_control_id(const struct ratbag_button_action *action);
 
 #endif /* HIDPP_GENERIC_H */
