@@ -84,11 +84,14 @@ struct ratbag_driver {
 	/** the name of the driver */
 	char *name;
 
-	/** a list of devices supported by this driver. The last element
-	 * must be empty to mark the end. */
+	/**
+	 * A list of devices supported by this driver. The last element
+	 * must be empty to mark the end.
+	 */
 	const struct ratbag_id *table_ids;
 
-	/** callback called while trying to open a device by libratbag.
+	/**
+	 * Callback called while trying to open a device by libratbag.
 	 * This function should decide whether or not this driver will
 	 * handle the given device.
 	 *
@@ -97,7 +100,8 @@ struct ratbag_driver {
 	 */
 	int (*probe)(struct ratbag_device *device, const struct ratbag_id id);
 
-	/** callback called right before the struct ratbag_device is
+	/**
+	 * Callback called right before the struct ratbag_device is
 	 * unref-ed.
 	 *
 	 * In this callback, the extra memory allocated in probe should
@@ -105,7 +109,8 @@ struct ratbag_driver {
 	 */
 	void (*remove)(struct ratbag_device *device);
 
-	/** callback called when a read profile is requested by the
+	/**
+	 * Callback called when a read profile is requested by the
 	 * caller of the library.
 	 *
 	 * The driver should probe here the device for the requested
@@ -115,19 +120,22 @@ struct ratbag_driver {
 	 */
 	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
 
-	/** here, the driver should actually write the profile to the
+	/**
+	 * Here, the driver should actually write the profile to the
 	 * device.
 	 */
 	int (*write_profile)(struct ratbag_profile *profile);
 
-	/** called to mark a previously writen profile as active.
+	/**
+	 * Called to mark a previously writen profile as active.
 	 *
 	 * There should be no need to write the profile here, a
 	 * .write_profile() call is issued before calling this.
 	 */
 	int (*set_active_profile)(struct ratbag_device *device, unsigned int index);
 
-	/** This should return a boolean whether or not the device
+	/**
+	 * This should return a boolean whether or not the device
 	 * supports the given capability.
 	 *
 	 * In most cases, the .probe() should store a list of capabilities
@@ -137,7 +145,8 @@ struct ratbag_driver {
 	int (*has_capability)(const struct ratbag_device *device,
 			      enum ratbag_device_capability cap);
 
-	/** For the given button, fill in the struct ratbag_button
+	/**
+	 * For the given button, fill in the struct ratbag_button
 	 * with the available information.
 	 *
 	 * For devices with profiles, profile will not be NULL. For
@@ -149,7 +158,8 @@ struct ratbag_driver {
 	 */
 	void (*read_button)(struct ratbag_button *button);
 
-	/** For the given button, store in the profile or in the device
+	/**
+	 * For the given button, store in the profile or in the device
 	 * the given struct ratbag_button.
 	 *
 	 * For devices with profiles, profile will not be NULL. For
@@ -163,7 +173,8 @@ struct ratbag_driver {
 	int (*write_button)(struct ratbag_button *button,
 			    const struct ratbag_button_action *action);
 
-	/** For the given profile, overwrite the current resolution
+	/**
+	 * For the given profile, overwrite the current resolution
 	 * of the sensor expressed in DPI, and commit it to the hardware.
 	 *
 	 * Mandatory if the driver exports RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION.
