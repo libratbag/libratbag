@@ -243,7 +243,7 @@ out:
 	return rc;
 }
 
-static struct ratbag_device*
+struct ratbag_device*
 ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 		  const char *name, const struct input_id *id)
 {
@@ -270,7 +270,7 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	return device;
 }
 
-static void
+void
 ratbag_device_destroy(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile, *next;
@@ -384,7 +384,7 @@ ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
 		(match_id->version == VERSION_ANY || match_id->version == dev_id->version);
 }
 
-static struct ratbag_driver *
+struct ratbag_driver *
 ratbag_find_driver(struct ratbag_device *device, const struct input_id *dev_id)
 {
 	struct ratbag *ratbag = device->ratbag;

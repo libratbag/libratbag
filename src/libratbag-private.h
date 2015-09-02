@@ -399,5 +399,14 @@ struct ratbag_driver etekcity_driver;
 struct ratbag_driver hidpp20_driver;
 struct ratbag_driver hidpp10_driver;
 
+struct ratbag_device*
+ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
+		  const char *name, const struct input_id *id);
+void
+ratbag_device_destroy(struct ratbag_device *device);
+
+struct ratbag_driver *
+ratbag_find_driver(struct ratbag_device *device, const struct input_id *dev_id);
+
 #endif /* LIBRATBAG_PRIVATE_H */
 
