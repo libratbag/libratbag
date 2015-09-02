@@ -1072,21 +1072,62 @@ ratbag_button_unref(struct ratbag_button *button)
 	return NULL;
 }
 
-#define func_userdata(T) \
-LIBRATBAG_EXPORT void \
-T##_set_user_data(struct T *ptr, void *userdata) \
-{ \
-	ptr->userdata = userdata; \
-} \
-\
-LIBRATBAG_EXPORT void * \
-T##_get_user_data(const struct T *ptr) \
-{ \
-	return ptr->userdata; \
-} \
+LIBRATBAG_EXPORT void
+ratbag_set_user_data(struct ratbag *ratbag, void *userdata)
+{
+	ratbag->userdata = userdata;
+}
 
-func_userdata(ratbag)
-func_userdata(ratbag_device)
-func_userdata(ratbag_profile)
-func_userdata(ratbag_button)
-func_userdata(ratbag_resolution)
+LIBRATBAG_EXPORT void
+ratbag_device_set_user_data(struct ratbag_device *ratbag_device, void *userdata)
+{
+	ratbag_device->userdata = userdata;
+}
+
+LIBRATBAG_EXPORT void
+ratbag_profile_set_user_data(struct ratbag_profile *ratbag_profile, void *userdata)
+{
+	ratbag_profile->userdata = userdata;
+}
+
+LIBRATBAG_EXPORT void
+ratbag_button_set_user_data(struct ratbag_button *ratbag_button, void *userdata)
+{
+	ratbag_button->userdata = userdata;
+}
+
+LIBRATBAG_EXPORT void
+ratbag_resolution_set_user_data(struct ratbag_resolution *ratbag_resolution, void *userdata)
+{
+	ratbag_resolution->userdata = userdata;
+}
+
+LIBRATBAG_EXPORT void*
+ratbag_get_user_data(const struct ratbag *ratbag)
+{
+	return ratbag->userdata;
+}
+
+LIBRATBAG_EXPORT void*
+ratbag_device_get_user_data(const struct ratbag_device *ratbag_device)
+{
+	return ratbag_device->userdata;
+}
+
+LIBRATBAG_EXPORT void*
+ratbag_profile_get_user_data(const struct ratbag_profile *ratbag_profile)
+{
+	return ratbag_profile->userdata;
+}
+
+LIBRATBAG_EXPORT void*
+ratbag_button_get_user_data(const struct ratbag_button *ratbag_button)
+{
+	return ratbag_button->userdata;
+}
+
+LIBRATBAG_EXPORT void*
+ratbag_resolution_get_user_data(const struct ratbag_resolution *ratbag_resolution)
+{
+	return ratbag_resolution->userdata;
+}
