@@ -744,7 +744,7 @@ static const struct ratbag_id etekcity_table[] = {
 		 .vendor = USB_VENDOR_ID_ETEKCITY,
 		 .product = 0x4011,
 		 .version = VERSION_ANY },
-	 .data = 1,
+	 .svg_filename = "etekcity.svg",
 	},
 
 	{ },

@@ -54,6 +54,7 @@ struct ratbag {
 
 struct ratbag_device {
 	char *name;
+	const char *svg_name;
 	void *userdata;
 
 	struct udev_device *udev_device;
@@ -74,6 +75,7 @@ struct ratbag_device {
 
 struct ratbag_id {
 	struct input_id id;
+	const char *svg_filename;
 	unsigned long data;
 };
 

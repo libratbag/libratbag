@@ -388,6 +388,16 @@ ratbag_device_get_name(const struct ratbag_device* device);
 
 /**
  * @ingroup device
+ *
+ * @param device A previously initialized ratbag device
+ * @return The file name of the svg drawing associated with the given ratbag.
+ * If there is no file associated to the device, NULL is returned.
+ */
+const char *
+ratbag_device_get_svg_name(const struct ratbag_device* device);
+
+/**
+ * @ingroup device
  */
 enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_NONE = 0,

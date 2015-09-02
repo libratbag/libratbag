@@ -287,10 +287,12 @@ ratbag_find_driver(struct ratbag_device *device, const struct input_id *dev_id)
 			if (ratbag_match_id(dev_id, &matching_id->id)) {
 				matched_id.id = *dev_id;
 				matched_id.data = matching_id->data;
+				matched_id.svg_filename = matching_id->svg_filename;
 				device->driver = driver;
 				rc = driver->probe(device, matched_id);
 				if (rc == 0) {
 					log_debug(ratbag, "driver match found\n");
+					device->svg_name = matching_id->svg_filename;
 					return driver;
 				}
 
@@ -436,6 +438,12 @@ LIBRATBAG_EXPORT const char *
 ratbag_device_get_name(const struct ratbag_device* device)
 {
 	return device->name;
+}
+
+LIBRATBAG_EXPORT const char *
+ratbag_device_get_svg_name(const struct ratbag_device* device)
+{
+	return device->svg_name;
 }
 
 static void

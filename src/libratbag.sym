@@ -21,6 +21,7 @@ global:
 	ratbag_device_get_num_buttons;
 	ratbag_device_get_num_profiles;
 	ratbag_device_get_profile_by_index;
+	ratbag_device_get_svg_name;
 	ratbag_device_get_user_data;
 	ratbag_device_has_capability;
 	ratbag_device_new_from_udev_device;
