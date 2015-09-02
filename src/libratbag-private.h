@@ -368,13 +368,6 @@ ratbag_resolution_set_cap(struct ratbag_resolution *res,
 	res->capabilities = (1 << cap);
 }
 
-/**
- * Override the auto-picked hidraw device.
- */
-void
-ratbag_device_set_hidraw_device(struct ratbag_device *device,
-				struct udev_device *hidraw);
-
 void
 log_msg_va(struct ratbag *ratbag,
 	   enum ratbag_log_priority priority,

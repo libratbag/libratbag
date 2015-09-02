@@ -150,18 +150,6 @@ ratbag_log_set_handler(struct ratbag *ratbag,
 	ratbag->log_handler = log_handler;
 }
 
-void
-ratbag_device_set_hidraw_device(struct ratbag_device *device,
-				struct udev_device *hidraw)
-{
-	udev_device_unref(device->udev_hidraw);
-	device->udev_hidraw = udev_device_ref(hidraw);
-
-	log_debug(device->ratbag,
-		  "Overriding hidraw device with %s\n",
-		  udev_device_get_syspath(hidraw));
-}
-
 static inline struct udev_device *
 udev_device_from_devnode(struct ratbag *ratbag, int fd)
 {
@@ -249,7 +237,6 @@ ratbag_device_init_udev(struct ratbag_device *device,
 	if (!hidraw_udev)
 		goto out;
 
-	/* Note: may be overridden later */
 	device->udev_hidraw = udev_device_ref(hidraw_udev);
 
 	log_debug(device->ratbag,
