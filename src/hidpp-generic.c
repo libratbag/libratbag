@@ -146,7 +146,7 @@ hidpp20_1b04_get_logical_mapping(uint16_t value)
 			return &map->action;
 	}
 
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
+	return NULL;
 }
 
 uint16_t

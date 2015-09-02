@@ -779,7 +779,7 @@ hidpp20_adjustable_dpi_get_dpi_list(struct ratbag_device *device,
 	sensor->dpi_min = 0xffff;
 
 	sensor->index = msg.msg.parameters[0];
-	while (i < LONG_MESSAGE_LENGTH - 1 &&
+	while (i < LONG_MESSAGE_LENGTH - 4U &&
 	       hidpp20_get_unaligned_u16(&msg.msg.parameters[i]) != 0) {
 		uint16_t value = hidpp20_get_unaligned_u16(&msg.msg.parameters[i]);
 
