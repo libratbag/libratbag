@@ -495,10 +495,12 @@ hidpp20drv_remove(struct ratbag_device *device)
 
 static const struct ratbag_id hidpp20drv_table[] = {
 	/* MX Master over unifying */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0x4041) },
+	{ .id = LOGITECH_DEVICE(BUS_USB, 0x4041),
+	  .svg_filename = "logitech-mx_master.svg" },
 
 	/* MX Master over bluetooth */
-	{ .id = LOGITECH_DEVICE(BUS_BLUETOOTH, 0xb012) },
+	{ .id = LOGITECH_DEVICE(BUS_BLUETOOTH, 0xb012),
+	  .svg_filename = "logitech-mx_master.svg" },
 
 	/* T650 over unifying */
 	{ .id = LOGITECH_DEVICE(BUS_USB, 0x4101) },
