@@ -41,10 +41,12 @@
 #define ETEKCITY_REPORT_ID_PROFILE		5
 #define ETEKCITY_REPORT_ID_SETTINGS		6
 #define ETEKCITY_REPORT_ID_KEY_MAPPING		7
+#define ETEKCITY_REPORT_ID_SPEED_SETTING	8
 #define ETEKCITY_REPORT_ID_MACRO		9
 
 #define ETEKCITY_REPORT_SIZE_PROFILE		50
 #define ETEKCITY_REPORT_SIZE_SETTINGS		40
+#define ETEKCITY_REPORT_SIZE_SPEED_SETTING	6
 #define ETEKCITY_REPORT_SIZE_MACRO		130
 
 #define ETEKCITY_CONFIG_SETTINGS		0x10
@@ -86,6 +88,7 @@ struct etekcity_data {
 	uint8_t profiles[(ETEKCITY_PROFILE_MAX + 1)][ETEKCITY_REPORT_SIZE_PROFILE];
 	struct etekcity_settings_report settings[(ETEKCITY_PROFILE_MAX + 1)];
 	struct etekcity_macro macros[(ETEKCITY_PROFILE_MAX + 1)][(ETEKCITY_BUTTON_MAX + 1)];
+	uint8_t speed_setting[ETEKCITY_REPORT_SIZE_SPEED_SETTING];
 };
 
 static char *
@@ -688,6 +691,12 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 		return -ENODEV;
 
 	ratbag_set_drv_data(device, drv_data);
+
+	/* retrieve the "on-to-go" speed setting */
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_SPEED_SETTING,
+			drv_data->speed_setting, ETEKCITY_REPORT_SIZE_SPEED_SETTING,
+			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	log_debug(device->ratbag, "device is at %d ms of latency\n", drv_data->speed_setting[2]);
 
 	/* profiles are 0-indexed */
 	ratbag_device_init_profiles(device, ETEKCITY_PROFILE_MAX + 1, ETEKCITY_BUTTON_MAX + 1);
