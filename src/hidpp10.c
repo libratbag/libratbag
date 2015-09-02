@@ -294,8 +294,7 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 
 	log_raw(dev->ratbag_device->ratbag, "Setting individual features\n");
 
-	if (dev)
-		mode.msg.device_idx = dev->index;
+	mode.msg.device_idx = dev->index;
 
 	mode.msg.parameters[0] = feature_bit_r0;
 	mode.msg.parameters[1] = feature_bit_r2;
