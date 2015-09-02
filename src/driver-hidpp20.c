@@ -491,7 +491,7 @@ hidpp20drv_remove(struct ratbag_device *device)
 	{ .bustype = (_bus),			\
 	  .vendor = USB_VENDOR_ID_LOGITECH,	\
 	  .product = (_pid),			\
-	  .version = VERSION_ANY },
+	  .version = VERSION_ANY }
 
 static const struct ratbag_id hidpp20drv_table[] = {
 	/* MX Master over unifying */
