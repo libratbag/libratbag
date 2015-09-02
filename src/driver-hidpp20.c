@@ -89,6 +89,10 @@ hidpp20drv_read_button(struct ratbag_button *button)
 	action = hidpp20_1b04_get_logical_mapping(mapping);
 	if (action)
 		button->action = *action;
+
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 }
 
 static int

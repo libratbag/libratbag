@@ -242,7 +242,15 @@ struct ratbag_button {
 	unsigned index;
 	enum ratbag_button_type type;
 	struct ratbag_button_action action;
+	uint32_t action_caps;
 };
+
+static inline void
+ratbag_button_enable_action_type(struct ratbag_button *button,
+				 enum ratbag_button_action_type type)
+{
+	button->action_caps |= 1 << type;
+}
 
 static inline int
 ratbag_open_path(struct ratbag_device *device, const char *path, int flags)

@@ -893,6 +893,23 @@ ratbag_button_get_action_type(struct ratbag_button *button)
 	return button->action.type;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_button_has_action_type(struct ratbag_button *button,
+			      enum ratbag_button_action_type action_type)
+{
+	switch (action_type) {
+	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		break;
+	default:
+		return 0;
+	}
+
+	return !!(button->action_caps & (1 << action_type));
+}
+
 LIBRATBAG_EXPORT unsigned int
 ratbag_button_get_button(struct ratbag_button *button)
 {

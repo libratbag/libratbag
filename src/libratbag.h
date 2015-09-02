@@ -1046,7 +1046,7 @@ ratbag_button_get_action_type(struct ratbag_button *button);
  *
  * @note It is a client bug to pass in @ref
  * RATBAG_BUTTON_ACTION_TYPE_UNKNOWN or @ref
- * RATBAG_BUTTON_ACTION_TYPE_UNKNOWN.
+ * RATBAG_BUTTON_ACTION_TYPE_NONE.
  *
  * @param button A previously initialized button
  * @param action_type An action type
