@@ -466,7 +466,8 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 			goto err;
 	}
 
-	ratbag_device_init_profiles(device, 1, 8);
+	ratbag_device_init_profiles(device, 1,
+				    device->num_buttons ? device->num_buttons : 8);
 
 	return rc;
 err:
