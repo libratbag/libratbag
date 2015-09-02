@@ -100,10 +100,7 @@ log_buffer(struct ratbag *ratbag,
 
 	output_buf = zalloc(buf_len);
 	if (!output_buf) {
-		if (header)
-			log_msg(ratbag, priority, "%s ......", header);
-		else
-			log_msg(ratbag, priority, " ......");
+		log_msg(ratbag, priority, "%s ......", header ?  header : "");
 		return;
 	}
 
@@ -125,6 +122,18 @@ LIBRATBAG_EXPORT void
 ratbag_log_set_priority(struct ratbag *ratbag,
 			enum ratbag_log_priority priority)
 {
+	switch (priority) {
+	case RATBAG_LOG_PRIORITY_RAW:
+	case RATBAG_LOG_PRIORITY_DEBUG:
+	case RATBAG_LOG_PRIORITY_INFO:
+	case RATBAG_LOG_PRIORITY_ERROR:
+		break;
+	default:
+		log_bug_client(ratbag,
+			       "Invalid log priority %d. Using INFO instead\n",
+			       priority);
+		return;
+	}
 	ratbag->log_priority = priority;
 }
 
@@ -364,7 +373,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	device->ratbag = ratbag_ref(ratbag);
 	if (get_product_id(udev_device, &device->ids) != 0)
 		goto out_err;
-	free(device->name);
+
 	device->name = get_device_name(udev_device);
 	if (!device->name) {
 		errno = ENOMEM;
