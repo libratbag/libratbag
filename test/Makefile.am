@@ -10,7 +10,8 @@ AM_CXXFLAGS = $(GCC_CXXFLAGS)
 TEST_LIBS = $(CHECK_LIBS) $(LIBEVDEV_LIBS) $(top_builddir)/src/libratbag.la
 
 run_tests = \
-	test-context
+	test-context \
+	test-device
 
 build_tests = \
 	test-build-cxx \
@@ -25,6 +26,10 @@ TESTS = $(run_tests) symbols-leak-test
 test_context_SOURCES = test-context.c
 test_context_LDADD = $(TEST_LIBS)
 test_context_LDFLAGS = -no-install
+
+test_device_SOURCES = test-device.c
+test_device_LDADD = $(TEST_LIBS)
+test_device_LDFLAGS = -no-install
 
 # build-test only
 test_build_pedantic_c99_SOURCES = build-pedantic.c
@@ -41,6 +46,8 @@ test_build_linker_LDADD = $(top_builddir)/src/libratbag.la
 # test including from C++
 test_build_cxx_SOURCES = build-cxx.cc
 test_build_cxx_CXXFLAGS = -Wall -Wextra -Wno-unused-parameter $(AM_CXXFLAGS)
+
+AM_TESTS_ENVIRONMENT=RATBAG_TEST=1; export RATBAG_TEST;
 
 if HAVE_VALGRIND
 VALGRIND_FLAGS=--leak-check=full \

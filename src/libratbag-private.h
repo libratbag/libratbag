@@ -37,6 +37,9 @@
 #define PRODUCT_ANY				0xffff
 #define VERSION_ANY				0xffff
 
+/* This struct is used by the test suite only */
+struct ratbag_test_device;
+
 struct ratbag_driver;
 struct ratbag_button_action;
 
@@ -77,6 +80,7 @@ struct ratbag_id {
 	struct input_id id;
 	const char *svg_filename;
 	unsigned long data;
+	struct ratbag_test_device *test_device; /**< Test suite only */
 };
 
 /**
@@ -406,7 +410,12 @@ void
 ratbag_device_destroy(struct ratbag_device *device);
 
 struct ratbag_driver *
-ratbag_find_driver(struct ratbag_device *device, const struct input_id *dev_id);
+ratbag_find_driver(struct ratbag_device *device,
+		   const struct input_id *dev_id,
+		   struct ratbag_test_device *test_device);
+
+void
+ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver);
 
 #endif /* LIBRATBAG_PRIVATE_H */
 

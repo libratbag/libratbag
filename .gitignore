@@ -44,5 +44,6 @@ test-build-pedantic-c99
 test-build-std-gnuc90
 test-suite.log
 test-context
+test-device
 test-*.log
 ratbag-command

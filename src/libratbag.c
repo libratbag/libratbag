@@ -385,13 +385,17 @@ ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
 }
 
 struct ratbag_driver *
-ratbag_find_driver(struct ratbag_device *device, const struct input_id *dev_id)
+ratbag_find_driver(struct ratbag_device *device,
+		   const struct input_id *dev_id,
+		   struct ratbag_test_device *test_device)
 {
 	struct ratbag *ratbag = device->ratbag;
 	struct ratbag_driver *driver;
 	const struct ratbag_id *matching_id;
 	struct ratbag_id matched_id;
 	int rc;
+
+	matched_id.test_device = test_device;
 
 	list_for_each(driver, &ratbag->drivers, link) {
 		log_debug(ratbag, "trying driver '%s'\n", driver->name);
@@ -501,7 +505,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	if (rc)
 		goto out_err;
 
-	driver = ratbag_find_driver(device, &device->ids);
+	driver = ratbag_find_driver(device, &device->ids, NULL);
 	if (!driver) {
 		errno = ENOTSUP;
 		goto out_err;
@@ -550,7 +554,7 @@ ratbag_device_get_svg_name(const struct ratbag_device* device)
 	return device->svg_name;
 }
 
-static void
+void
 ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 {
 	if (!driver->name) {

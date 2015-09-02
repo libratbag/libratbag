@@ -7,6 +7,7 @@ libratbag_la_SOURCES =			\
 	driver-etekcity.c		\
 	driver-hidpp20.c		\
 	driver-hidpp10.c		\
+	driver-test.c			\
 	hidpp-generic.h			\
 	hidpp-generic.c			\
 	hidpp10.c			\
@@ -19,7 +20,9 @@ libratbag_la_SOURCES =			\
 	libratbag-hidraw.h		\
 	libratbag-util.c		\
 	libratbag-private.h		\
-	libratbag-util.h
+	libratbag-util.h		\
+	libratbag-test.c		\
+	libratbag-test.h
 
 libratbag_la_LIBADD = $(LIBUDEV_LIBS) $(LIBEVDEV_LIBS)
 
