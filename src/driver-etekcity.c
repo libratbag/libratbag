@@ -526,7 +526,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 		struct etekcity_macro *macro;
 
 		action = etekcity_button_to_action(profile, i);
-		if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		if (!action || action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
 			continue;
 
 		etekcity_set_config_profile(device, index, i);
