@@ -663,6 +663,12 @@ ratbag_profile_is_active(struct ratbag_profile *profile)
 #endif
 }
 
+LIBRATBAG_EXPORT int
+ratbag_profile_is_default(struct ratbag_profile *profile)
+{
+	return profile->is_default;
+}
+
 LIBRATBAG_EXPORT unsigned int
 ratbag_device_get_num_profiles(struct ratbag_device *device)
 {
@@ -710,6 +716,32 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	return rc;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_profile_set_default(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag_profile *p;
+	int rc;
+
+	assert(device->driver->write_profile);
+	rc = device->driver->write_profile(profile);
+	if (rc)
+		return rc;
+
+	if (ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
+		assert(device->driver->set_active_profile);
+		rc = device->driver->set_default_profile(device, profile->index);
+	}
+
+	if (rc)
+		return rc;
+
+	list_for_each(p, &device->profiles, link) {
+		p->is_default = false;
+	}
+	profile->is_default = true;
+	return rc;
+}
 
 LIBRATBAG_EXPORT int
 ratbag_profile_get_num_resolutions(struct ratbag_profile *profile)

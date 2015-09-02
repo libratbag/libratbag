@@ -567,6 +567,31 @@ ratbag_profile_set_active(struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
+ * Check if the given profile is the default one. The default profile is the
+ * one selected by the device when it is plugged in.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return non-zero if the profile is the default, zero otherwise
+ */
+int
+ratbag_profile_is_default(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Make the given profile the default profile
+ *
+ * @param profile The profile to make the default profile.
+ *
+ * @return 0 on success or nonzero otherwise.
+ */
+int
+ratbag_profile_set_default(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
  * Get the number of @ref ratbag_resolution available in this profile. A
  * resolution mode is a tuple of (resolution, report rate), each mode can be
  * fetched with ratbag_profile_get_resolution_by_idx().

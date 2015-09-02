@@ -115,6 +115,12 @@ hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 	return -ENOTSUP;
 }
 
+static int
+hidpp10drv_set_default_profile(struct ratbag_device *device, unsigned int index)
+{
+	return -ENOTSUP;
+}
+
 static void
 hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
@@ -280,6 +286,7 @@ struct ratbag_driver hidpp10_driver = {
 	.read_profile = hidpp10drv_read_profile,
 	.write_profile = hidpp10drv_write_profile,
 	.set_active_profile = hidpp10drv_set_current_profile,
+	.set_default_profile = hidpp10drv_set_default_profile,
 	.has_capability = hidpp10drv_has_capability,
 	.read_button = hidpp10drv_read_button,
 	.write_button = hidpp10drv_write_button,

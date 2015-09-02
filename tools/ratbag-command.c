@@ -323,8 +323,9 @@ ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 		if (!profile)
 			continue;
 
-		printf("  Profile %d%s\n", i,
-		       ratbag_profile_is_active(profile) ? " (active)" : "");
+		printf("  Profile %d%s%s\n", i,
+		       ratbag_profile_is_active(profile) ? " (active)" : "",
+		       ratbag_profile_is_default(profile) ? " (default)" : "");
 		printf("    Resolutions:\n");
 		for (j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
 			struct ratbag_resolution *res;

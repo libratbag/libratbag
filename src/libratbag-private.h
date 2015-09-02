@@ -135,6 +135,14 @@ struct ratbag_driver {
 	int (*set_active_profile)(struct ratbag_device *device, unsigned int index);
 
 	/**
+	 * Called to mark a previously writen profile as the default.
+	 *
+	 * There should be no need to write the profile here, a
+	 * .write_profile() call is issued before calling this.
+	 */
+	int (*set_default_profile)(struct ratbag_device *device, unsigned int index);
+
+	/**
 	 * This should return a boolean whether or not the device
 	 * supports the given capability.
 	 *
@@ -215,6 +223,7 @@ struct ratbag_profile {
 	} resolution;
 
 	bool is_active;		/**< profile is the currently active one */
+	bool is_default;	/**< profile is the default one */
 };
 
 #define BUTTON_ACTION_NONE \
