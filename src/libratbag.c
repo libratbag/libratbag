@@ -277,6 +277,34 @@ ratbag_device_new(struct ratbag *ratbag, const char *name, const struct input_id
 	return device;
 }
 
+static void
+ratbag_device_destroy(struct ratbag_device *device)
+{
+	struct ratbag_profile *profile, *next;
+
+	if (!device)
+		return;
+
+	if (device->driver && device->driver->remove)
+		device->driver->remove(device);
+
+	/* the profiles are created during probe(), we should unref them */
+	list_for_each_safe(profile, next, &device->profiles, link)
+		ratbag_profile_unref(profile);
+
+	if (device->udev_device)
+		udev_device_unref(device->udev_device);
+	if (device->udev_hidraw)
+		udev_device_unref(device->udev_hidraw);
+
+	if (device->hidraw_fd >= 0)
+		close(device->hidraw_fd);
+
+	ratbag_unref(device->ratbag);
+	free(device->name);
+	free(device);
+}
+
 static inline bool
 ratbag_match_id(const struct input_id *dev_id, const struct input_id *match_id)
 {
@@ -397,20 +425,14 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	driver = ratbag_find_driver(device, &device->ids);
 	if (!driver) {
 		errno = ENOTSUP;
-		goto err_udev;
+		goto out_err;
 	}
 
 	return device;
 
-err_udev:
-	udev_device_unref(device->udev_device);
-	udev_device_unref(device->udev_hidraw);
 out_err:
-	if (device) {
-		free(device->name);
-		device->ratbag = ratbag_unref(device->ratbag);
-	}
-	free(device);
+	ratbag_device_destroy(device);
+
 	return NULL;
 }
 
@@ -424,7 +446,6 @@ ratbag_device_ref(struct ratbag_device *device)
 LIBRATBAG_EXPORT struct ratbag_device *
 ratbag_device_unref(struct ratbag_device *device)
 {
-	struct ratbag_profile *profile, *next;
 	if (device == NULL)
 		return NULL;
 
@@ -433,22 +454,8 @@ ratbag_device_unref(struct ratbag_device *device)
 	if (device->refcount > 0)
 		return device;
 
-	if (device->driver->remove)
-		device->driver->remove(device);
+	ratbag_device_destroy(device);
 
-	/* the profiles are created during probe(), we should unref them */
-	list_for_each_safe(profile, next, &device->profiles, link)
-		ratbag_profile_unref(profile);
-
-	udev_device_unref(device->udev_device);
-	udev_device_unref(device->udev_hidraw);
-
-	if (device->hidraw_fd >= 0)
-		close(device->hidraw_fd);
-
-	device->ratbag = ratbag_unref(device->ratbag);
-	free(device->name);
-	free(device);
 	return NULL;
 }
 
