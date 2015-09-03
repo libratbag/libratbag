@@ -687,9 +687,6 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 	}
 
 	drv_data = zalloc(sizeof(*drv_data));
-	if (!drv_data)
-		return -ENODEV;
-
 	ratbag_set_drv_data(device, drv_data);
 
 	/* retrieve the "on-to-go" speed setting */

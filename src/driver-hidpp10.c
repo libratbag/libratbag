@@ -208,10 +208,6 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	}
 
 	drv_data = zalloc(sizeof(*drv_data));
-	if (!drv_data) {
-		rc = -ENODEV;
-		goto err;
-	}
 
 	/* We can treat all devices as wired devices here. If we talk to the
 	 * correct hidraw device the kernel adjusts the device index for us,

@@ -92,7 +92,11 @@ strncpy_safe(char *dest, const char *src, size_t n)
 static inline void *
 zalloc(size_t size)
 {
-	return calloc(1, size);
+	void *p = calloc(1, size);
+
+	if (!p)
+		abort();
+	return p;
 }
 
 static inline void

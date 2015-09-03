@@ -99,11 +99,6 @@ log_buffer(struct ratbag *ratbag,
 	buf_len += 1; /* terminating '\0' */
 
 	output_buf = zalloc(buf_len);
-	if (!output_buf) {
-		log_msg(ratbag, priority, "%s ......", header ?  header : "");
-		return;
-	}
-
 	n = 0;
 	if (header)
 		n += sprintf(output_buf, "%s", header);
@@ -255,9 +250,6 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	struct ratbag_device *device = NULL;
 
 	device = zalloc(sizeof(*device));
-	if (!device)
-		return NULL;
-
 	device->name = strdup(name);
 
 	if (!name) {
@@ -498,9 +490,6 @@ ratbag_create_context(const struct ratbag_interface *interface,
 		return NULL;
 
 	ratbag = zalloc(sizeof(*ratbag));
-	if (!ratbag)
-		return NULL;
-
 	ratbag->refcount = 1;
 	ratbag->interface = interface;
 	ratbag->userdata = userdata;
@@ -553,9 +542,6 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag_button *button;
 
 	button = zalloc(sizeof(*button));
-	if (!button)
-		return NULL;
-
 	button->refcount = 1;
 	button->profile = profile;
 	button->index = index;
@@ -590,9 +576,6 @@ ratbag_create_profile(struct ratbag_device *device,
 	unsigned i;
 
 	profile = zalloc(sizeof(*profile));
-	if (!profile)
-		return NULL;
-
 	profile->refcount = 1;
 	profile->device = device;
 	profile->index = index;

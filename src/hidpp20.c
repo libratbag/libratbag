@@ -325,8 +325,6 @@ int hidpp20_feature_set_get(struct ratbag_device *device,
 	}
 
 	flist = zalloc(feature_count * sizeof(struct hidpp20_feature));
-	if (!flist)
-		return -ENOMEM;
 
 	for (i = 0; i < feature_count; i++) {
 		rc = hidpp20_feature_set_get_feature_id(device,
@@ -464,8 +462,6 @@ hidpp20_kbd_reprogrammable_keys_get_controls(struct ratbag_device *device,
 	}
 
 	c_list = zalloc(num_controls * sizeof(struct hidpp20_control_id));
-	if (!c_list)
-		return -ENOMEM;
 
 	for (i = 0; i < num_controls; i++) {
 		control = &c_list[i];
@@ -608,8 +604,6 @@ int hidpp20_special_key_mouse_get_controls(struct ratbag_device *device,
 	}
 
 	c_list = zalloc(num_controls * sizeof(struct hidpp20_control_id));
-	if (!c_list)
-		return -ENOMEM;
 
 	for (i = 0; i < num_controls; i++) {
 		control = &c_list[i];
@@ -851,8 +845,6 @@ int hidpp20_adjustable_dpi_get_sensors(struct ratbag_device *device,
 	}
 
 	s_list = zalloc(num_sensors * sizeof(struct hidpp20_sensor));
-	if (!s_list)
-		return -ENOMEM;
 
 	for (i = 0; i < num_sensors; i++) {
 		sensor = &s_list[i];

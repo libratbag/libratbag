@@ -443,9 +443,6 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	}
 
 	drv_data = zalloc(sizeof(*drv_data));
-	if (!drv_data)
-		return -ENODEV;
-
 	ratbag_set_drv_data(device, drv_data);
 
 	drv_data->proto_major = 1;
