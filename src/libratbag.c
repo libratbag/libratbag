@@ -260,7 +260,8 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	device->ratbag = ratbag_ref(ratbag);
 	device->hidraw_fd = -1;
 	device->refcount = 1;
-	device->udev_device = udev_device_ref(udev_device);
+	if (udev_device)
+		device->udev_device = udev_device_ref(udev_device);
 
 	device->ids = *id;
 	list_init(&device->profiles);
@@ -476,6 +477,10 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 		return NULL;
 	}
 
+	if (!udev_device) {
+		log_bug_client(ratbag, "udev device is NULL.\n");
+		return NULL;
+	}
 
 	if (get_product_id(udev_device, &id) != 0)
 		goto out_err;
