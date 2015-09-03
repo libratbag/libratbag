@@ -250,12 +250,31 @@ out:
 	return rc;
 }
 
-static void
-ratbag_device_init(struct ratbag_device *device)
+static struct ratbag_device*
+ratbag_device_new(struct ratbag *ratbag, const char *name, const struct input_id *id)
 {
+	struct ratbag_device *device = NULL;
+
+	device = zalloc(sizeof(*device));
+	if (!device)
+		return NULL;
+
+	device->name = strdup(name);
+
+	if (!name) {
+		free(device);
+		return NULL;
+	}
+
+	device->ratbag = ratbag_ref(ratbag);
 	device->hidraw_fd = -1;
 	device->refcount = 1;
+
+	device->ids = *id;
 	list_init(&device->profiles);
+
+
+	return device;
 }
 
 static inline bool
@@ -347,27 +366,30 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	int rc;
 	struct ratbag_device *device = NULL;
 	struct ratbag_driver *driver;
+	char *name = NULL;
+	struct input_id id;
 
 	if (!ratbag) {
 		fprintf(stderr, "ratbag is NULL\n");
 		return NULL;
 	}
 
-	device = zalloc(sizeof(*device));
-	if (!device)
-		return NULL;
 
-	device->ratbag = ratbag_ref(ratbag);
-	if (get_product_id(udev_device, &device->ids) != 0)
+	if (get_product_id(udev_device, &id) != 0)
 		goto out_err;
 
-	device->name = get_device_name(udev_device);
-	if (!device->name) {
+	name = get_device_name(udev_device);
+	if (!name) {
 		errno = ENOMEM;
 		goto out_err;
 	}
 
-	ratbag_device_init(device);
+	device = ratbag_device_new(ratbag, name, &id);
+	free(name);
+
+	if (!device)
+		goto out_err;
+
 	rc = ratbag_device_init_udev(device, udev_device);
 	if (rc)
 		goto out_err;
