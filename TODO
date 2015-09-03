@@ -12,3 +12,8 @@ light support:
 some epollfd-like thing for the caller to check if events are available.
 Needed for notification when the mouse changes through someone else
 manipulating settings.
+This is on backburner for now, it'll make the library more complicated,
+require HID parsing in libratbag for relatively little benefit. The only
+advantage we really get out of it is that a configuration UI would be able
+to update itself if a user presses a button to e.g. change the profile while
+the UI is running.
