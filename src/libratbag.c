@@ -682,6 +682,8 @@ ratbag_profile_is_active(struct ratbag_profile *profile)
 LIBRATBAG_EXPORT int
 ratbag_profile_is_default(struct ratbag_profile *profile)
 {
+	/* FIXME: unclear if any device actually supports this function */
+
 	return profile->is_default;
 }
 
@@ -738,6 +740,8 @@ ratbag_profile_set_default(struct ratbag_profile *profile)
 	struct ratbag_device *device = profile->device;
 	struct ratbag_profile *p;
 	int rc;
+
+	/* FIXME: unclear if any device actually supports this function */
 
 	assert(device->driver->write_profile);
 	rc = device->driver->write_profile(profile);
