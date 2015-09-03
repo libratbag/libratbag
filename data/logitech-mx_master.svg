@@ -71,10 +71,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.70710678"
-     inkscape:cx="693.57766"
-     inkscape:cy="575.81478"
+     inkscape:cx="705.88437"
+     inkscape:cy="617.7106"
      inkscape:document-units="px"
-     inkscape:current-layer="layer4"
+     inkscape:current-layer="layer5"
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
@@ -95,7 +95,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -227,8 +227,7 @@
      id="layer4"
      inkscape:label="Leaders"
      transform="translate(647.36582,205.64997)"
-     style="display:inline"
-     sodipodi:insensitive="true">
+     style="display:inline">
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m -345.36582,473.672 139,-91"
@@ -270,63 +269,62 @@
      id="layer5"
      inkscape:label="Controls"
      transform="translate(647.36582,205.64997)"
-     style="display:inline"
-     sodipodi:insensitive="true">
+     style="display:inline">
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="-512.28021"
-       y="509.37164"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00000381px;line-height:125%;font-family:Sans;-inkscape-font-specification:'Sans, Normal';text-align:end;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:end;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="-352.13092"
+       y="486.22949"
        id="text4473"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4475"
-         x="-512.28021"
-         y="509.37164">Button0</tspan></text>
+         x="-352.13092"
+         y="486.22949">Button0</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text4477"
-       y="242.09723"
-       x="-523.28021"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       y="225.95509"
+       x="-348.13092"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00000381px;line-height:125%;font-family:Sans;-inkscape-font-specification:'Sans, Normal';text-align:end;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:end;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
-         y="242.09723"
-         x="-523.28021"
+         y="225.95509"
+         x="-348.13092"
          id="tspan4479"
          sodipodi:role="line">Button1</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="-539.28021"
-       y="365.82291"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00000381px;line-height:125%;font-family:Sans;-inkscape-font-specification:'Sans, Normal';text-align:end;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:end;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="-376.13092"
+       y="351.68076"
        id="text4481"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4483"
-         x="-539.28021"
-         y="365.82291">Button2</tspan></text>
+         x="-376.13092"
+         y="351.68076">Button2</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text4485"
-       y="229.54855"
-       x="449.71985"
+       y="218.54855"
+       x="442.71985"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
-         y="229.54855"
-         x="449.71985"
+         y="218.54855"
+         x="442.71985"
          id="tspan4487"
          sodipodi:role="line">Button3</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="301.71985"
-       y="119.27421"
+       x="296.71985"
+       y="96.274208"
        id="text4489"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4491"
-         x="301.71985"
-         y="119.27421">Button4</tspan></text>
+         x="296.71985"
+         y="96.274208">Button4</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text4493"
@@ -342,13 +340,13 @@
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        x="-29.28018"
-       y="26.72551"
+       y="29.72551"
        id="text4497"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4499"
          x="-29.28018"
-         y="26.72551">Button6</tspan></text>
+         y="29.72551">Button6</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
