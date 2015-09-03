@@ -225,13 +225,11 @@ out:
 }
 
 static int
-ratbag_device_init_udev(struct ratbag_device *device,
+ratbag_device_init_hidraw(struct ratbag_device *device,
 			struct udev_device *udev_device)
 {
 	struct udev_device *hidraw_udev;
 	int rc = -ENODEV;
-
-	device->udev_device = udev_device_ref(udev_device);
 
 	hidraw_udev = udev_find_hidraw(device);
 	if (!hidraw_udev)
@@ -251,7 +249,8 @@ out:
 }
 
 static struct ratbag_device*
-ratbag_device_new(struct ratbag *ratbag, const char *name, const struct input_id *id)
+ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
+		  const char *name, const struct input_id *id)
 {
 	struct ratbag_device *device = NULL;
 
@@ -269,6 +268,7 @@ ratbag_device_new(struct ratbag *ratbag, const char *name, const struct input_id
 	device->ratbag = ratbag_ref(ratbag);
 	device->hidraw_fd = -1;
 	device->refcount = 1;
+	device->udev_device = udev_device_ref(udev_device);
 
 	device->ids = *id;
 	list_init(&device->profiles);
@@ -412,13 +412,13 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 		goto out_err;
 	}
 
-	device = ratbag_device_new(ratbag, name, &id);
+	device = ratbag_device_new(ratbag, udev_device, name, &id);
 	free(name);
 
 	if (!device)
 		goto out_err;
 
-	rc = ratbag_device_init_udev(device, udev_device);
+	rc = ratbag_device_init_hidraw(device, udev_device);
 	if (rc)
 		goto out_err;
 
