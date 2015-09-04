@@ -37,6 +37,24 @@ static const struct ratbag_id test_table[] = {
 	{ },
 };
 
+static int
+test_has_capability(const struct ratbag_device *device,
+		    enum ratbag_device_capability cap)
+{
+	switch (cap) {
+	case RATBAG_DEVICE_CAP_NONE:
+		abort();
+		break;
+	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
+	case RATBAG_DEVICE_CAP_BUTTON_KEY:
+	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
+		return (device->num_profiles > 1);
+	default:
+		return 0;
+	}
+	return 0;
+}
+
 static void
 test_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
@@ -63,6 +81,14 @@ test_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	profile->is_active = p->active;
 	profile->is_default = p->dflt;
+}
+
+static int
+test_write_profile(struct ratbag_profile *profile)
+{
+	/* check if the device is still valid */
+	assert(ratbag_get_drv_data(profile->device) != NULL);
+	return 0;
 }
 
 static int
@@ -103,9 +129,9 @@ struct ratbag_driver test_driver = {
 	.probe = test_probe,
 	.remove = test_remove,
 	.read_profile = test_read_profile,
-	.write_profile = NULL,
+	.write_profile = test_write_profile,
 	.set_active_profile = NULL,
-	.has_capability = NULL,
+	.has_capability = test_has_capability,
 	.read_button = NULL,
 	.write_button = NULL,
 	.write_resolution_dpi = NULL,

@@ -398,6 +398,45 @@ START_TEST(device_resolutions_num_0)
 }
 END_TEST
 
+START_TEST(device_freed_before_profile)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int is_active, rc;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
+	td.profiles[0].active = false;
+	td.profiles[1].active = true;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile_by_index(d, 0);
+	ck_assert(p != NULL);
+	is_active = ratbag_profile_is_active(p);
+	ck_assert_int_eq(is_active, 0);
+
+	d = ratbag_device_unref(d);
+	/* a ref to d is still kept through p, so d can not be NULL */
+	ck_assert(d != NULL);
+
+	rc = ratbag_profile_set_active(p);
+	ck_assert_int_eq(rc, 0);
+
+	is_active = ratbag_profile_is_active(p);
+	ck_assert_int_eq(is_active, 1);
+
+	p = ratbag_profile_unref(p);
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -416,6 +455,7 @@ test_context_suite(void)
 	tcase_add_test(tc, device_profiles_num_0);
 	tcase_add_test(tc, device_profiles_multiple_active);
 	tcase_add_test(tc, device_profiles_get_invalid);
+	tcase_add_test(tc, device_freed_before_profile);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("resolutions");
