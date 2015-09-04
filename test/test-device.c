@@ -437,6 +437,45 @@ START_TEST(device_freed_before_profile)
 }
 END_TEST
 
+START_TEST(device_and_profile_freed_before_button)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile_by_index(d, 0);
+	ck_assert(p != NULL);
+
+	d = ratbag_device_unref(d);
+	/* a ref to d is still kept through p, so d can not be NULL */
+	ck_assert(d != NULL);
+
+	b = ratbag_profile_get_button_by_index(p, 0);
+	ck_assert(b != NULL);
+
+	p = ratbag_profile_unref(p);
+	/* a ref to p is still kept through b, so p can not be NULL */
+	ck_assert(p != NULL);
+
+	/* FIXME: should probably call something for the button */
+	b = ratbag_button_unref(b);
+	ck_assert(b == NULL);
+
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -456,6 +495,7 @@ test_context_suite(void)
 	tcase_add_test(tc, device_profiles_multiple_active);
 	tcase_add_test(tc, device_profiles_get_invalid);
 	tcase_add_test(tc, device_freed_before_profile);
+	tcase_add_test(tc, device_and_profile_freed_before_button);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("resolutions");
