@@ -88,6 +88,13 @@ test_probe(struct ratbag_device *device, const struct ratbag_id id)
 static void
 test_remove(struct ratbag_device *device)
 {
+	struct ratbag_test_device *d = ratbag_get_drv_data(device);
+
+	/* remove must be called only once */
+	assert(d != NULL);
+	if (d->destroyed)
+		d->destroyed(device, d->destroyed_data);
+	ratbag_set_drv_data(device, NULL);
 }
 
 struct ratbag_driver test_driver = {

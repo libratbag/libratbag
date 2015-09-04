@@ -54,6 +54,8 @@ struct ratbag_test_device {
 	unsigned int num_profiles;
 	unsigned int num_buttons;
 	struct ratbag_test_profile profiles[RATBAG_TEST_MAX_PROFILES];
+	void (*destroyed)(struct ratbag_device *device, void *data);
+	void *destroyed_data;
 };
 
 struct ratbag_device* ratbag_device_new_test_device(struct ratbag *ratbag,

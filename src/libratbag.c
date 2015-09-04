@@ -412,7 +412,6 @@ ratbag_find_driver(struct ratbag_device *device,
 				rc = driver->probe(device, matched_id);
 				if (rc == 0) {
 					if (!ratbag_sanity_check_device(device)) {
-						driver->remove(device);
 						return NULL;
 					} else {
 						log_debug(ratbag, "driver match found\n");

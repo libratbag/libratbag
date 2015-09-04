@@ -35,6 +35,17 @@
 #include "libratbag.h"
 #include "libratbag-test.h"
 
+static void
+device_destroyed(struct ratbag_device *device, void *data)
+{
+	int *count = data;
+
+	if (!data)
+		return;
+
+	++*count;
+}
+
 /* A pre-setup sane device. Use for sanity testing by toggling the various
  * error conditions.
  */
@@ -73,6 +84,8 @@ const struct ratbag_test_device sane_device = {
 		.dflt = false,
 		},
 	},
+	.destroyed = device_destroyed,
+	.destroyed_data = NULL,
 };
 
 static int
@@ -101,6 +114,9 @@ START_TEST(device_init)
 	struct ratbag_device *d;
 	int nprofiles, nbuttons;
 	struct ratbag_test_device td = sane_device;
+	int device_freed_count = 0;
+
+	td.destroyed_data = &device_freed_count;
 
 	r = ratbag_create_context(&abort_iface, NULL);
 	d = ratbag_device_new_test_device(r, &td);
@@ -113,6 +129,7 @@ START_TEST(device_init)
 
 	ratbag_device_unref(d);
 	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
 }
 END_TEST
 
@@ -124,8 +141,11 @@ START_TEST(device_profiles)
 	int nprofiles;
 	int i;
 	bool is_active, is_default;
+	int device_freed_count = 0;
 
 	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
 
 	r = ratbag_create_context(&abort_iface, NULL);
 	d = ratbag_device_new_test_device(r, &td);
@@ -145,6 +165,7 @@ START_TEST(device_profiles)
 	}
 	ratbag_device_unref(d);
 	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
 }
 END_TEST
 
@@ -188,8 +209,11 @@ START_TEST(device_profiles_get_invalid)
 	struct ratbag_device *d;
 	struct ratbag_profile *p;
 	int nprofiles;
+	int device_freed_count = 0;
 
 	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
 
 	r = ratbag_create_context(&abort_iface, NULL);
 	d = ratbag_device_new_test_device(r, &td);
@@ -210,6 +234,7 @@ START_TEST(device_profiles_get_invalid)
 
 	ratbag_device_unref(d);
 	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
 }
 END_TEST
 
@@ -222,6 +247,7 @@ START_TEST(device_resolutions)
 	int nprofiles, nresolutions;
 	int i, j;
 	int xres, yres, rate;
+	int device_freed_count = 0;
 
 	struct ratbag_test_device td = {
 		.num_profiles = 3,
@@ -253,6 +279,8 @@ START_TEST(device_resolutions)
 			},
 			},
 		},
+		.destroyed = device_destroyed,
+		.destroyed_data = &device_freed_count,
 	};
 
 	r = ratbag_create_context(&abort_iface, NULL);
@@ -284,6 +312,7 @@ START_TEST(device_resolutions)
 	}
 	ratbag_device_unref(d);
 	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
 }
 END_TEST
 
