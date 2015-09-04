@@ -38,6 +38,11 @@
 #include "libratbag-util.h"
 
 static void
+ratbag_profile_destroy(struct ratbag_profile *profile);
+static void
+ratbag_button_destroy(struct ratbag_button *button);
+
+static void
 ratbag_default_log_func(struct ratbag *ratbag,
 			enum ratbag_log_priority priority,
 			const char *format, va_list args)
@@ -278,12 +283,14 @@ ratbag_device_destroy(struct ratbag_device *device)
 	if (!device)
 		return;
 
+	/* if we get to the point where the device is destroyed, profiles,
+	 * buttons, etc. are at a refcount of 0, so we can destroy
+	 * everything */
 	if (device->driver && device->driver->remove)
 		device->driver->remove(device);
 
-	/* the profiles are created during probe(), we should unref them */
 	list_for_each_safe(profile, next, &device->profiles, link)
-		ratbag_profile_unref(profile);
+		ratbag_profile_destroy(profile);
 
 	if (device->udev_device)
 		udev_device_unref(device->udev_device);
@@ -635,7 +642,7 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag_button *button;
 
 	button = zalloc(sizeof(*button));
-	button->refcount = 1;
+	button->refcount = 0;
 	button->profile = profile;
 	button->index = index;
 
@@ -669,7 +676,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	unsigned i;
 
 	profile = zalloc(sizeof(*profile));
-	profile->refcount = 1;
+	profile->refcount = 0;
 	profile->device = device;
 	profile->index = index;
 
@@ -707,6 +714,7 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_ref(struct ratbag_profile *profile)
 {
+	ratbag_device_ref(profile->device);
 	profile->refcount++;
 	return profile;
 }
@@ -716,9 +724,13 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 {
 	struct ratbag_button *button, *next;
 
-	/* the buttons are created by the profile, so we clean them up */
+	/* if we get to the point where the profile is destroyed, buttons,
+	 * resolutions , etc. are at a refcount of 0, so we can destroy
+	 * everything */
 	list_for_each_safe(button, next, &profile->buttons, link)
-		ratbag_button_unref(button);
+		ratbag_button_destroy(button);
+
+	/* Resolution is a fixed list of structs, no freeing required */
 
 	list_remove(&profile->link);
 	free(profile);
@@ -727,6 +739,7 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile)
 {
+	struct ratbag_profile *p = NULL;
 
 	if (profile == NULL)
 		return NULL;
@@ -734,11 +747,11 @@ ratbag_profile_unref(struct ratbag_profile *profile)
 	assert(profile->refcount > 0);
 	profile->refcount--;
 	if (profile->refcount > 0)
-		return profile;
+		p = profile;
 
-	ratbag_profile_destroy(profile);
+	ratbag_device_unref(profile->device);
 
-	return NULL;
+	return p;
 }
 
 LIBRATBAG_EXPORT struct ratbag_profile *
@@ -886,6 +899,7 @@ ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
 LIBRATBAG_EXPORT struct ratbag_resolution *
 ratbag_resolution_ref(struct ratbag_resolution *resolution)
 {
+	ratbag_profile_ref(resolution->profile);
 	resolution->refcount++;
 	return resolution;
 }
@@ -893,17 +907,19 @@ ratbag_resolution_ref(struct ratbag_resolution *resolution)
 LIBRATBAG_EXPORT struct ratbag_resolution *
 ratbag_resolution_unref(struct ratbag_resolution *resolution)
 {
+	struct ratbag_resolution *r = NULL;
+
 	if (resolution == NULL)
 		return NULL;
 
 	assert(resolution->refcount > 0);
 	resolution->refcount--;
 	if (resolution->refcount > 0)
-		return resolution;
+		r = resolution;
 
-	/* Resolution is a fixed list of structs, no freeing required */
+	ratbag_profile_unref(resolution->profile);
 
-	return NULL;
+	return r;
 }
 
 LIBRATBAG_EXPORT int
@@ -1171,6 +1187,7 @@ ratbag_button_disable(struct ratbag_button *button)
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_ref(struct ratbag_button *button)
 {
+	ratbag_profile_ref(button->profile);
 	button->refcount++;
 	return button;
 }
@@ -1185,17 +1202,19 @@ ratbag_button_destroy(struct ratbag_button *button)
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button)
 {
+	struct ratbag_button *b = NULL;
+
 	if (button == NULL)
 		return NULL;
 
 	assert(button->refcount > 0);
 	button->refcount--;
 	if (button->refcount > 0)
-		return button;
+		b = button;
 
-	ratbag_button_destroy(button);
+	ratbag_profile_unref(button->profile);
 
-	return NULL;
+	return b;
 }
 
 LIBRATBAG_EXPORT void

@@ -133,6 +133,44 @@ START_TEST(device_init)
 }
 END_TEST
 
+#define ref_unref_test(T, a) \
+ { \
+	 int i; \
+	 struct T *tmp = NULL; \
+ \
+	 for (i = 0; i < 1000; i++) { \
+		 tmp = T##_ref(a); \
+		 ck_assert(tmp == a); \
+	 } \
+	 for (i = 0; i < 1000; i++) { \
+		 tmp = T##_unref(a); \
+		 ck_assert(tmp == a); \
+	 } \
+	 for (i = 0; i < 1000; i++) { \
+		 tmp = T##_ref(a); \
+		 ck_assert(tmp == a); \
+		 tmp = T##_unref(a); \
+		 ck_assert(tmp == a); \
+	 } \
+ }
+
+START_TEST(device_ref_unref)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	ref_unref_test(ratbag_device, d);
+
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
 START_TEST(device_profiles)
 {
 	struct ratbag *r;
@@ -166,6 +204,27 @@ START_TEST(device_profiles)
 	ratbag_device_unref(d);
 	ratbag_unref(r);
 	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
+START_TEST(device_profiles_ref_unref)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile_by_index(d, 1);
+
+	ref_unref_test(ratbag_profile, p);
+
+	ratbag_device_unref(d);
+
+	ratbag_profile_unref(p);
+	ratbag_unref(r);
 }
 END_TEST
 
@@ -348,10 +407,12 @@ test_context_suite(void)
 	s = suite_create("device");
 	tc = tcase_create("device");
 	tcase_add_test(tc, device_init);
+	tcase_add_test(tc, device_ref_unref);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("profiles");
 	tcase_add_test(tc, device_profiles);
+	tcase_add_test(tc, device_profiles_ref_unref);
 	tcase_add_test(tc, device_profiles_num_0);
 	tcase_add_test(tc, device_profiles_multiple_active);
 	tcase_add_test(tc, device_profiles_get_invalid);
