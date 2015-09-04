@@ -324,6 +324,9 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	nprofiles = ratbag_device_get_num_profiles(device);
 	for (i = 0; i < nprofiles; i++) {
 		profile = ratbag_device_get_profile_by_index(device, i);
+		if (!profile)
+			goto out;
+
 		/* Allow max 1 default profile */
 		if (profile->is_default) {
 			if (has_default) {
