@@ -255,6 +255,9 @@ struct ratbag_interface {
  *
  * Create a new ratbag context.
  *
+ * The context is refcounted with an initial value of at least 1.
+ * Use ratbag_unref() to release the context.
+ *
  * @return An initialized ratbag context or NULL on error
  */
 struct ratbag *
@@ -318,6 +321,9 @@ ratbag_unref(struct ratbag *ratbag);
  * @ingroup base
  *
  * Create a new ratbag context from the given udev device.
+ *
+ * The device is refcounted with an initial value of at least 1.
+ * Use ratbag_device_unref() to release the device.
  *
  * @return A new device based on the udev device, or NULL in case of
  * failure.
