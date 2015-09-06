@@ -711,10 +711,22 @@ ratbag_profile_ref(struct ratbag_profile *profile)
 	return profile;
 }
 
+static void
+ratbag_profile_destroy(struct ratbag_profile *profile)
+{
+	struct ratbag_button *button, *next;
+
+	/* the buttons are created by the profile, so we clean them up */
+	list_for_each_safe(button, next, &profile->buttons, link)
+		ratbag_button_unref(button);
+
+	list_remove(&profile->link);
+	free(profile);
+}
+
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile)
 {
-	struct ratbag_button *button, *next;
 
 	if (profile == NULL)
 		return NULL;
@@ -724,12 +736,7 @@ ratbag_profile_unref(struct ratbag_profile *profile)
 	if (profile->refcount > 0)
 		return profile;
 
-	/* the buttons are created by the profile, so we clean them up */
-	list_for_each_safe(button, next, &profile->buttons, link)
-		ratbag_button_unref(button);
-
-	list_remove(&profile->link);
-	free(profile);
+	ratbag_profile_destroy(profile);
 
 	return NULL;
 }
@@ -1168,6 +1175,13 @@ ratbag_button_ref(struct ratbag_button *button)
 	return button;
 }
 
+static void
+ratbag_button_destroy(struct ratbag_button *button)
+{
+	list_remove(&button->link);
+	free(button);
+}
+
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button)
 {
@@ -1179,8 +1193,7 @@ ratbag_button_unref(struct ratbag_button *button)
 	if (button->refcount > 0)
 		return button;
 
-	list_remove(&button->link);
-	free(button);
+	ratbag_button_destroy(button);
 
 	return NULL;
 }
