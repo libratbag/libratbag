@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "libratbag-private.h"
 #include "libratbag-util.h"
@@ -531,6 +532,8 @@ out_err:
 LIBRATBAG_EXPORT struct ratbag_device *
 ratbag_device_ref(struct ratbag_device *device)
 {
+	assert(device->refcount < INT_MAX);
+
 	device->refcount++;
 	return device;
 }
@@ -714,6 +717,8 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_ref(struct ratbag_profile *profile)
 {
+	assert(profile->refcount < INT_MAX);
+
 	ratbag_device_ref(profile->device);
 	profile->refcount++;
 	return profile;
@@ -899,6 +904,8 @@ ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
 LIBRATBAG_EXPORT struct ratbag_resolution *
 ratbag_resolution_ref(struct ratbag_resolution *resolution)
 {
+	assert(resolution->refcount < INT_MAX);
+
 	ratbag_profile_ref(resolution->profile);
 	resolution->refcount++;
 	return resolution;
@@ -1187,6 +1194,8 @@ ratbag_button_disable(struct ratbag_button *button)
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_ref(struct ratbag_button *button)
 {
+	assert(button->refcount < INT_MAX);
+
 	ratbag_profile_ref(button->profile);
 	button->refcount++;
 	return button;
