@@ -138,15 +138,15 @@ END_TEST
 	 int i; \
 	 struct T *tmp = NULL; \
  \
-	 for (i = 0; i < 1000; i++) { \
+	 for (i = 0; i <= 256; i++) { \
 		 tmp = T##_ref(a); \
 		 ck_assert(tmp == a); \
 	 } \
-	 for (i = 0; i < 1000; i++) { \
+	 for (i = 0; i <= 256; i++) { \
 		 tmp = T##_unref(a); \
 		 ck_assert(tmp == a); \
 	 } \
-	 for (i = 0; i < 1000; i++) { \
+	 for (i = 0; i <= 256; i++) { \
 		 tmp = T##_ref(a); \
 		 ck_assert(tmp == a); \
 		 tmp = T##_unref(a); \
