@@ -69,6 +69,13 @@ err:
 	return -errno;
 }
 
+void
+ratbag_close_hidraw(struct ratbag_device *device)
+{
+	ratbag_close_fd(device, device->hidraw_fd);
+	device->hidraw_fd = -1;
+}
+
 int
 ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 			  uint8_t *buf, size_t len, unsigned char rtype, int reqtype)

@@ -731,6 +731,7 @@ err:
 static void
 etekcity_remove(struct ratbag_device *device)
 {
+	ratbag_close_hidraw(device);
 	free(ratbag_get_drv_data(device));
 }
 

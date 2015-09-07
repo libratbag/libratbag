@@ -478,6 +478,8 @@ hidpp20drv_remove(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 
+	ratbag_close_hidraw(device);
+
 	free(drv_data->controls);
 	free(drv_data->sensors);
 	free(drv_data);

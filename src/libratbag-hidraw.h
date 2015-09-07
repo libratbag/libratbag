@@ -44,6 +44,13 @@
 int ratbag_open_hidraw(struct ratbag_device *device);
 
 /**
+ * Close the hidraw device associated with the device.
+ *
+ * @param device the ratbag device
+ */
+void ratbag_close_hidraw(struct ratbag_device *device);
+
+/**
  * Send report request to device
  *
  * @param device the ratbag device
