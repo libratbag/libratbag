@@ -336,7 +336,7 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		return match->action.key.key == action->action.key.key;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
-		return match->action.special != action->action.special;
+		return match->action.special == action->action.special;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 		/* FIXME: currently, do nothing */
 	default:
