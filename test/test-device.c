@@ -164,10 +164,29 @@ START_TEST(device_ref_unref)
 	d = ratbag_device_new_test_device(r, &td);
 	ck_assert(d != NULL);
 
+	ratbag_unref(r);
+
 	ref_unref_test(ratbag_device, d);
 
 	ratbag_device_unref(d);
-	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_free_context_before_device)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	r = ratbag_unref(r);
+	ck_assert(r != NULL);
+
+	d = ratbag_device_unref(d);
+	ck_assert(d == NULL);
 }
 END_TEST
 
@@ -219,12 +238,12 @@ START_TEST(device_profiles_ref_unref)
 	d = ratbag_device_new_test_device(r, &td);
 	p = ratbag_device_get_profile_by_index(d, 1);
 
-	ref_unref_test(ratbag_profile, p);
-
+	ratbag_unref(r);
 	ratbag_device_unref(d);
 
+	ref_unref_test(ratbag_profile, p);
+
 	ratbag_profile_unref(p);
-	ratbag_unref(r);
 }
 END_TEST
 
@@ -375,6 +394,30 @@ START_TEST(device_resolutions)
 }
 END_TEST
 
+START_TEST(device_resolutions_ref_unref)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_resolution *res;
+
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile_by_index(d, 1);
+	res = ratbag_profile_get_resolution(p, 0);
+
+	ratbag_unref(r);
+	ratbag_device_unref(d);
+	ratbag_profile_unref(p);
+
+	ref_unref_test(ratbag_resolution, res);
+
+	ratbag_resolution_unref(res);
+}
+END_TEST
+
 START_TEST(device_resolutions_num_0)
 {
 	struct ratbag *r;
@@ -476,6 +519,139 @@ START_TEST(device_and_profile_freed_before_button)
 }
 END_TEST
 
+START_TEST(device_and_profile_freed_before_resolution)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_resolution *res;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile_by_index(d, 0);
+	ck_assert(p != NULL);
+
+	d = ratbag_device_unref(d);
+	/* a ref to d is still kept through p, so d can not be NULL */
+	ck_assert(d != NULL);
+
+	res = ratbag_profile_get_resolution(p, 0);
+	ck_assert(res != NULL);
+
+	p = ratbag_profile_unref(p);
+	/* a ref to p is still kept through res, so p can not be NULL */
+	ck_assert(p != NULL);
+
+	/* FIXME: should probably call something for the resolution */
+	res = ratbag_resolution_unref(res);
+	ck_assert(res == NULL);
+
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
+START_TEST(device_and_profile_and_button_freed_before_resolution)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_resolution *res;
+	struct ratbag_button *b;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile_by_index(d, 0);
+	ck_assert(p != NULL);
+
+	d = ratbag_device_unref(d);
+	/* a ref to d is still kept through p, so d can not be NULL */
+	ck_assert(d != NULL);
+
+	res = ratbag_profile_get_resolution(p, 0);
+	ck_assert(res != NULL);
+
+	b = ratbag_profile_get_button_by_index(p, 0);
+	ck_assert(b != NULL);
+
+	p = ratbag_profile_unref(p);
+	/* a ref to p is still kept through res and b, so p can not be NULL */
+	ck_assert(p != NULL);
+
+	/* a ref to p is still in res */
+	b = ratbag_button_unref(b);
+	ck_assert(b == NULL);
+
+	/* FIXME: should probably call something for the resolution */
+	res = ratbag_resolution_unref(res);
+	ck_assert(res == NULL);
+
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
+START_TEST(device_and_profile_and_resolution_freed_before_button)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_resolution *res;
+	struct ratbag_button *b;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile_by_index(d, 0);
+	ck_assert(p != NULL);
+
+	d = ratbag_device_unref(d);
+	/* a ref to d is still kept through p, so d can not be NULL */
+	ck_assert(d != NULL);
+
+	res = ratbag_profile_get_resolution(p, 0);
+	ck_assert(res != NULL);
+
+	b = ratbag_profile_get_button_by_index(p, 0);
+	ck_assert(b != NULL);
+
+	p = ratbag_profile_unref(p);
+	/* a ref to p is still kept through res and b, so p can not be NULL */
+	ck_assert(p != NULL);
+
+	/* a ref to p is still in res */
+	res = ratbag_resolution_unref(res);
+	ck_assert(res == NULL);
+
+	/* FIXME: should probably call something for the button */
+	b = ratbag_button_unref(b);
+	ck_assert(b == NULL);
+
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -486,6 +662,7 @@ test_context_suite(void)
 	tc = tcase_create("device");
 	tcase_add_test(tc, device_init);
 	tcase_add_test(tc, device_ref_unref);
+	tcase_add_test(tc, device_free_context_before_device);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("profiles");
@@ -496,10 +673,14 @@ test_context_suite(void)
 	tcase_add_test(tc, device_profiles_get_invalid);
 	tcase_add_test(tc, device_freed_before_profile);
 	tcase_add_test(tc, device_and_profile_freed_before_button);
+	tcase_add_test(tc, device_and_profile_freed_before_resolution);
+	tcase_add_test(tc, device_and_profile_and_button_freed_before_resolution);
+	tcase_add_test(tc, device_and_profile_and_resolution_freed_before_button);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("resolutions");
 	tcase_add_test(tc, device_resolutions);
+	tcase_add_test(tc, device_resolutions_ref_unref);
 	tcase_add_test(tc, device_resolutions_num_0);
 	suite_add_tcase(s, tc);
 
