@@ -143,8 +143,12 @@ ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size
 	fds.fd = device->hidraw_fd;
 	fds.events = POLLIN;
 
-	if (poll(&fds, 1, 1000) == -1)
+	rc = poll(&fds, 1, 1000);
+	if (rc == -1)
 		return -errno;
+
+	if (rc == 0)
+		return -ETIMEDOUT;
 
 	rc = read(device->hidraw_fd, buf, len);
 	return rc >= 0 ? rc : -errno;
