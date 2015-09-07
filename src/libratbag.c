@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <libudev.h>
-#include <linux/hidraw.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -133,7 +132,7 @@ ratbag_log_set_priority(struct ratbag *ratbag,
 		log_bug_client(ratbag,
 			       "Invalid log priority %d. Using INFO instead\n",
 			       priority);
-		return;
+		priority = RATBAG_LOG_PRIORITY_INFO;
 	}
 	ratbag->log_priority = priority;
 }
