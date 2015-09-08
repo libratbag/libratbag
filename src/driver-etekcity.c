@@ -598,15 +598,20 @@ etekcity_read_button(struct ratbag_button *button)
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 		} else {
-			log_info(device->ratbag,
-				 "macro on button %d of profile %d is named '%s', and contains %d events:\n",
-				 button->index, button->profile->index,
-				 macro->name, macro->length);
+			ratbag_button_set_macro(button);
+			log_raw(device->ratbag,
+				"macro on button %d of profile %d is named '%s', and contains %d events:\n",
+				button->index, button->profile->index,
+				macro->name, macro->length);
 			for (j = 0; j < macro->length; j++) {
-				log_info(device->ratbag,
-					 "    - %s %s\n",
-					 libevdev_event_code_get_name(EV_KEY, macro_mapping[macro->keys[j].keycode]),
-					 macro->keys[j].flag & 0x80 ? "released" : "pressed");
+				ratbag_button_set_macro_event(button,
+							      j,
+							      macro->keys[j].flag & 0x80 ? RATBAG_MACRO_EVENT_KEY_RELEASED : RATBAG_MACRO_EVENT_KEY_PRESSED,
+							      macro_mapping[macro->keys[j].keycode]);
+				log_raw(device->ratbag,
+					"    - %s %s\n",
+					libevdev_event_code_get_name(EV_KEY, macro_mapping[macro->keys[j].keycode]),
+					macro->keys[j].flag & 0x80 ? "released" : "pressed");
 			}
 		}
 		msleep(10);

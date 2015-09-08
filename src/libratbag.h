@@ -1259,18 +1259,94 @@ ratbag_button_disable(struct ratbag_button *button);
 /**
  * @ingroup button
  *
- * FIXME: no idea at this point
+ * Macro event types describing the event.
  */
-unsigned int
-ratbag_button_get_macro(struct ratbag_button *button);
+enum ratbag_macro_event_type {
+	RATBAG_MACRO_EVENT_INVALID = -1,
+	RATBAG_MACRO_EVENT_NONE = 0,
+	RATBAG_MACRO_EVENT_KEY_PRESSED,
+	RATBAG_MACRO_EVENT_KEY_RELEASED,
+	RATBAG_MACRO_EVENT_WAIT,
+};
 
 /**
  * @ingroup button
  *
- * FIXME: no idea at this point
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * this function returns the macro event type configured for the event at the
+ * given index.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * this function returns @ref RATBAG_MACRO_EVENT_INVALID.
+ *
+ * @param button A previously initialized ratbag button
+ * @param index An index of the event within the macro we are interested in.
+ *
+ * @return The type of the event at the given index
  */
-unsigned int
+enum ratbag_macro_event_type
+ratbag_button_get_macro_event_type(struct ratbag_button *button, unsigned int index);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO, and if the
+ * event stored at the given index is @ref RATBAG_MACRO_EVENT_KEY_PRESSED or
+ * @ref RATBAG_MACRO_EVENT_KEY_RELEASED, this function returns the key code
+ * configured for the event at the given index.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * or if the event stored at the given index is not
+ * @ref RATBAG_MACRO_EVENT_KEY_PRESSED or @ref RATBAG_MACRO_EVENT_KEY_RELEASED,
+ * this function returns -EINVAL.
+ *
+ * @param button A previously initialized ratbag button
+ * @param index An index of the event within the macro we are interested in.
+ *
+ * @return The key of the event at the given index
+ */
+int
+ratbag_button_get_macro_event_key(struct ratbag_button *button, unsigned int index);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO, and if the
+ * event stored at the given index is @ref RATBAG_MACRO_EVENT_WAIT, this
+ * function returns the timeout configured for the event at the given index.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * or if the event stored at the given index is not
+ * @ref RATBAG_MACRO_EVENT_WAIT, this function returns -EINVAL.
+ *
+ * @param button A previously initialized ratbag button
+ * @param index An index of the event within the macro we are interested in.
+ *
+ * @return The tiemout of the event at the given index
+ */
+int
+ratbag_button_get_macro_event_timeout(struct ratbag_button *button, unsigned int index);
+
+/**
+ * @ingroup button
+ *
+ * Sets the button's action to @ref RATBAG_BUTTON_ACTION_TYPE_MACRO and
+ * allocates the required memory to store the macro.
+ */
+int
 ratbag_button_set_macro(struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * Sets the macro's event at the given index to the given type with the
+ * key code or timeout given.
+ */
+int
+ratbag_button_set_macro_event(struct ratbag_button *button,
+			      unsigned int index,
+			      enum ratbag_macro_event_type type,
+			      unsigned int data);
 
 /**
  * @ingroup button
