@@ -1273,6 +1273,22 @@ enum ratbag_macro_event_type {
  * @ingroup button
  *
  * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * this function returns the macro name.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * this function returns NULL.
+ *
+ * @param button A previously initialized ratbag button
+ *
+ * @return The name of the macro associated to the button.
+ */
+const char *
+ratbag_button_get_macro_name(struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
  * this function returns the macro event type configured for the event at the
  * given index.
  *
@@ -1334,7 +1350,7 @@ ratbag_button_get_macro_event_timeout(struct ratbag_button *button, unsigned int
  * allocates the required memory to store the macro.
  */
 int
-ratbag_button_set_macro(struct ratbag_button *button);
+ratbag_button_set_macro(struct ratbag_button *button, const char *name);
 
 /**
  * @ingroup button

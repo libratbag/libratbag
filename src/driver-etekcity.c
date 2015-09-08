@@ -600,7 +600,7 @@ etekcity_read_button(struct ratbag_button *button)
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 		} else {
-			ratbag_button_set_macro(button);
+			ratbag_button_set_macro(button, macro->name);
 			log_raw(device->ratbag,
 				"macro on button %d of profile %d is named '%s', and contains %d events:\n",
 				button->index, button->profile->index,

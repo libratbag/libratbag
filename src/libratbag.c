@@ -1204,8 +1204,11 @@ static void
 ratbag_button_destroy(struct ratbag_button *button)
 {
 	list_remove(&button->link);
-	if (button->action.macro)
+	if (button->action.macro) {
+		if (button->action.macro->name)
+			free(button->action.macro->name);
 		free(button->action.macro);
+	}
 	free(button);
 }
 
@@ -1288,16 +1291,20 @@ ratbag_resolution_get_user_data(const struct ratbag_resolution *ratbag_resolutio
 }
 
 LIBRATBAG_EXPORT int
-ratbag_button_set_macro(struct ratbag_button *button)
+ratbag_button_set_macro(struct ratbag_button *button, const char *name)
 {
 	struct ratbag_macro *macro;
 
 	if (!button->action.macro)
 		button->action.macro = zalloc(sizeof(*macro));
-	else
+	else {
+		if (button->action.macro->name)
+			free(button->action.macro->name);
 		memset(button->action.macro, 0, sizeof(*macro));
+	}
 
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	button->action.macro->name = name ? strdup(name) : NULL;
 
 	return 0;
 }
@@ -1379,4 +1386,13 @@ ratbag_button_get_macro_event_timeout(struct ratbag_button *button, unsigned int
 		return -EINVAL;
 
 	return macro->events[index].event.timeout;
+}
+
+LIBRATBAG_EXPORT const char *
+ratbag_button_get_macro_name(struct ratbag_button *button)
+{
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		return NULL;
+
+	return  button->action.macro->name;
 }

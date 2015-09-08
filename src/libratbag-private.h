@@ -257,8 +257,8 @@ struct ratbag_macro_event {
 
 #define MAX_MACRO_EVENTS 64
 struct ratbag_macro {
-	const char *name;
-	const char *group;
+	char *name;
+	char *group;
 	struct ratbag_macro_event events[MAX_MACRO_EVENTS];
 };
 

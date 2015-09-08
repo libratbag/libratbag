@@ -158,10 +158,13 @@ char *
 button_action_macro_to_str(struct ratbag_button *button)
 {
 	char str[4096] = {0};
+	const char *name;
 	int offset;
 	unsigned int i;
 
-	offset = snprintf(str, sizeof(str), "macro:");
+	name = ratbag_button_get_macro_name(button);
+	offset = snprintf(str, sizeof(str), "macro \"%s\":",
+			  name ? name : "UNKNOWN");
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
 		enum ratbag_macro_event_type type = ratbag_button_get_macro_event_type(button, i);
 		int key = ratbag_button_get_macro_event_key(button, i);
