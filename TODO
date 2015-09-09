@@ -23,3 +23,19 @@ Macro support:
 - add API support for name/groups
 - revamp the API?
 - add command to set a macro in ratbag-command
+
+ratbag-command needs a revamp of the arguments into a tree type, e.g.
+instead of switch-dpi something like "ratbag command resolution set"
+
+decide on a stable set of arguments, build the installed version of the
+command with that set, add a set of debug arguments (e.g. the
+etekcity-specific ones) only available in the build.
+
+interactive shell mode for ratbag-command?
+
+dbus proxy - allows parallel access to the devices without interference, and
+provides a single instance for root permissions.
+
+python bindings - depends on the dbus decision, python bindings could be
+wrappers around libratbag itself, or a wrapper around the dbus protocol to
+speak to the dbus daemon
