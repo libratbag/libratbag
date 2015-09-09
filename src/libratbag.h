@@ -435,6 +435,14 @@ enum ratbag_device_capability {
 	 * The device supports user-defined key or button sequences.
 	 */
 	RATBAG_DEVICE_CAP_BUTTON_MACROS,
+
+	/**
+	 * The device can have one profile assigned as a default profile.
+	 * A default profile is the profile that is selected when the device
+	 * is plugged in. Devices without this capability may select the
+	 * last-used profile or a specific profile (usually the first).
+	 */
+	RATBAG_DEVICE_CAP_DEFAULT_PROFILE,
 };
 
 /**

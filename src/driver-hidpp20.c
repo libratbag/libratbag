@@ -149,6 +149,7 @@ hidpp20drv_has_capability(const struct ratbag_device *device,
 		return !!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04);
 	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
 	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
+	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
 		return 0;
 	}
 	return 0;

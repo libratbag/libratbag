@@ -262,6 +262,8 @@ etekcity_has_capability(const struct ratbag_device *device,
 	case RATBAG_DEVICE_CAP_BUTTON_KEY:
 	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
 		return 1;
+	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
+		return 0;
 	}
 	return 0;
 }

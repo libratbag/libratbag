@@ -104,6 +104,7 @@ hidpp10drv_has_capability(const struct ratbag_device *device,
 	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
 	case RATBAG_DEVICE_CAP_BUTTON_KEY:
 	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
+	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
 		return (device->num_profiles > 1);
 	}
 	return 0;
