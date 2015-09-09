@@ -52,6 +52,8 @@
 #define ETEKCITY_CONFIG_SETTINGS		0x10
 #define ETEKCITY_CONFIG_KEY_MAPPING		0x20
 
+#define ETEKCITY_MAX_MACRO_LENGTH		50
+
 struct etekcity_settings_report {
 	uint8_t reportID;
 	uint8_t twentyHeight;
@@ -75,13 +77,13 @@ struct etekcity_macro {
 	uint8_t heightytwo;
 	uint8_t profile;
 	uint8_t button_index;
-	uint8_t one;
+	uint8_t active;
 	char name[24];
 	uint8_t length;
 	struct {
 		uint8_t keycode;
 		uint8_t flag;
-	} keys[50];
+	} keys[ETEKCITY_MAX_MACRO_LENGTH];
 } __attribute__((packed));
 
 struct etekcity_data {
@@ -619,6 +621,67 @@ etekcity_read_button(struct ratbag_button *button)
 }
 
 static int
+etekcity_write_macro(struct ratbag_button *button,
+		     const struct ratbag_button_action *action)
+{
+	struct ratbag_device *device;
+	struct etekcity_macro *macro;
+	struct etekcity_data *drv_data;
+	uint8_t *buf;
+	unsigned i, j, count = 0;
+	int rc;
+
+	if (ratbag_button_get_action_type(button) != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		return 0;
+
+	device = button->profile->device;
+	drv_data = ratbag_get_drv_data(device);
+	macro = &drv_data->macros[button->profile->index][button->index];
+	buf = (uint8_t*)macro;
+
+	for (i = 0; i < MAX_MACRO_EVENTS && count < ETEKCITY_MAX_MACRO_LENGTH; i++) {
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
+			return -EINVAL; /* should not happen, ever */
+
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_NONE)
+			break;
+
+		/* ignore timeout events */
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_WAIT)
+			continue;
+
+		for (j = 0; j < ARRAY_LENGTH(macro_mapping); j++) {
+			if (macro_mapping[j] == action->macro->events[i].event.key)
+				macro->keys[count].keycode = j;
+		}
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED)
+			macro->keys[count].flag = 0x00;
+		else
+			macro->keys[count].flag = 0x80;
+		count++;
+	}
+
+	macro->reportID = ETEKCITY_REPORT_ID_MACRO;
+	macro->heightytwo = 0x82;
+	macro->profile = button->profile->index;
+	macro->button_index = button->index;
+	macro->active = 0x01;
+	strncpy(macro->name, action->macro->name, 23);
+	macro->length = count;
+
+	etekcity_set_config_profile(device,
+				    button->profile->index,
+				    button->index);
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_MACRO,
+		buf, ETEKCITY_REPORT_SIZE_MACRO,
+		HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+	if (rc < 0)
+		return rc;
+
+	return rc == ETEKCITY_REPORT_SIZE_MACRO ? 0 : -EIO;
+}
+
+static int
 etekcity_write_button(struct ratbag_button *button,
 		      const struct ratbag_button_action *action)
 {
@@ -636,7 +699,13 @@ etekcity_write_button(struct ratbag_button *button,
 
 	*data = rc;
 
-	return 0;
+	rc = etekcity_write_macro(button, action);
+	if (rc)
+		log_error(device->ratbag,
+			  "unable to write the macro to the device: '%s' (%d)\n",
+			  strerror(-rc), rc);
+
+	return rc;
 }
 
 static int
