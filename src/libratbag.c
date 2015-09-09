@@ -1343,6 +1343,13 @@ ratbag_button_set_macro_event(struct ratbag_button *button,
 	return 0;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_button_write_macro(struct ratbag_button *button)
+{
+	return button->profile->device->driver->write_button(button, &button->action);
+
+}
+
 LIBRATBAG_EXPORT enum ratbag_macro_event_type
 ratbag_button_get_macro_event_type(struct ratbag_button *button, unsigned int index)
 {

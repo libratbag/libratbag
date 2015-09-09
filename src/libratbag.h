@@ -1352,6 +1352,9 @@ ratbag_button_get_macro_event_timeout(struct ratbag_button *button, unsigned int
 int
 ratbag_button_set_macro(struct ratbag_button *button, const char *name);
 
+int
+ratbag_button_write_macro(struct ratbag_button *button);
+
 /**
  * @ingroup button
  *
