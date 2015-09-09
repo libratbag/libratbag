@@ -362,6 +362,37 @@ static const struct ratbag_cmd cmd_switch_etekcity = {
 	.help = "Switch the Etekcity mouse active profile",
 };
 
+struct macro {
+	const char *name;
+	struct {
+		enum ratbag_macro_event_type type;
+		unsigned data;
+	} events[64];
+};
+
+static int
+str_to_macro(const char *action_arg, struct macro *m)
+{
+	if (!action_arg)
+		return -EINVAL;
+
+	m->name = "foo";
+	m->events[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	m->events[0].data = KEY_F;
+	m->events[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	m->events[1].data = KEY_F;
+	m->events[2].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	m->events[2].data = KEY_O;
+	m->events[3].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	m->events[3].data = KEY_O;
+	m->events[4].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	m->events[4].data = KEY_O;
+	m->events[5].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	m->events[5].data = KEY_O;
+
+	return 0;
+}
+
 static int
 ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
 {
@@ -374,6 +405,7 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 	int rc = 1;
 	unsigned int btnkey;
 	enum ratbag_button_action_special special;
+	struct macro macro = {0};
 	int i;
 
 	if (argc != 4) {
@@ -399,6 +431,12 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 		action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
 		special = str_to_special_action(action_arg);
 		if (special == RATBAG_BUTTON_ACTION_SPECIAL_INVALID) {
+			error("Invalid special command '%s'\n", action_arg);
+			return 1;
+		}
+	} else if (streq(action_str, "macro")) {
+		action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+		if (str_to_macro(action_arg, &macro)) {
 			error("Invalid special command '%s'\n", action_arg);
 			return 1;
 		}
@@ -449,6 +487,19 @@ ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char *
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		rc = ratbag_button_set_special(button, special);
 		break;
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		rc = ratbag_button_set_macro(button, macro.name);
+		for (i = 0; i < ARRAY_LENGTH(macro.events); i++) {
+			if (macro.events[i].type == RATBAG_MACRO_EVENT_NONE)
+				break;
+
+			ratbag_button_set_macro_event(button,
+						      i,
+						      macro.events[i].type,
+						      macro.events[i].data);
+		}
+		rc = ratbag_button_write_macro(button);
+		break;
 	default:
 		error("well, that shouldn't have happened\n");
 		abort();
@@ -481,7 +532,7 @@ out:
 static const struct ratbag_cmd cmd_change_button = {
 	.name = "change-button",
 	.cmd = ratbag_cmd_change_button,
-	.args = "X <button|key|special> <number|KEY_FOO|special>",
+	.args = "X <button|key|special|macro> <number|KEY_FOO|special|macro name:KEY_FOO,KEY_BAR,...>",
 	.help = "Remap button X to the given action in the active profile",
 };
 
