@@ -141,11 +141,14 @@ hidpp20drv_has_capability(const struct ratbag_device *device,
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
 
 	switch (cap) {
+	case RATBAG_DEVICE_CAP_NONE:
+		abort();
 	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
 		return !!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201);
 	case RATBAG_DEVICE_CAP_BUTTON_KEY:
 		return !!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04);
-	default:
+	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
+	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
 		return 0;
 	}
 	return 0;
