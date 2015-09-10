@@ -17,3 +17,9 @@ require HID parsing in libratbag for relatively little benefit. The only
 advantage we really get out of it is that a configuration UI would be able
 to update itself if a user presses a button to e.g. change the profile while
 the UI is running.
+
+Macro support:
+- enhance doctext
+- add API support for name/groups
+- revamp the API?
+- add command to set a macro in ratbag-command

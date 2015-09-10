@@ -247,6 +247,21 @@ struct ratbag_profile {
  { .type = RATBAG_BUTTON_ACTION_TYPE_MACRO, \
 	/* FIXME: add the macro keys */ }
 
+struct ratbag_macro_event {
+	enum ratbag_macro_event_type type;
+	union ratbag_macro_evnt {
+		unsigned int key;
+		unsigned int timeout;
+	} event;
+};
+
+#define MAX_MACRO_EVENTS 64
+struct ratbag_macro {
+	char *name;
+	char *group;
+	struct ratbag_macro_event events[MAX_MACRO_EVENTS];
+};
+
 struct ratbag_button_action {
 	enum ratbag_button_action_type type;
 	union ratbag_btn_action {
@@ -256,8 +271,8 @@ struct ratbag_button_action {
 			unsigned int key; /* action_type == key */
 			/* FIXME: modifiers */
 		} key;
-		/* FIXME: MACRO */
 	} action;
+	struct ratbag_macro *macro; /* dynamically allocated, so kept aside */
 };
 
 struct ratbag_button {
@@ -338,7 +353,7 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		return match->action.special == action->action.special;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
-		/* FIXME: currently, do nothing */
+		return 1;
 	default:
 		break;
 	}

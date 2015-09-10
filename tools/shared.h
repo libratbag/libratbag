@@ -37,6 +37,8 @@
 #include <libratbag-util.h>
 #include <libevdev/libevdev.h>
 
+#define MAX_MACRO_EVENTS 64
+
 LIBRATBAG_ATTRIBUTE_PRINTF(1, 2)
 static inline void
 error(const char *format, ...)

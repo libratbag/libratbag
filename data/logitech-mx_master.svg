@@ -71,10 +71,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.70710678"
-     inkscape:cx="705.88437"
-     inkscape:cy="617.7106"
+     inkscape:cx="672.09896"
+     inkscape:cy="504.57351"
      inkscape:document-units="px"
-     inkscape:current-layer="layer5"
+     inkscape:current-layer="layer2"
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
@@ -367,5 +367,23 @@
        y="11.469827"
        rx="10.321068"
        ry="10.321068" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Title">
+    <text
+       transform="translate(647.36582,205.64997)"
+       xml:space="preserve"
+       style="display:inline;font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="-261.24213"
+       y="-97.912132"
+       id="text4223"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4225"
+         x="-261.24213"
+         y="-97.912132"
+         style="font-size:70.00000763px">Logitech MX Master</tspan></text>
   </g>
 </svg>

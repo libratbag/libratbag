@@ -145,6 +145,51 @@ button_action_key_to_str(struct ratbag_button *button)
 	return strdup(str);
 }
 
+static const char *strip_ev_key(int key)
+{
+	const char *str = libevdev_event_code_get_name(EV_KEY, key);
+
+	if (!strncmp(str, "KEY_", 4))
+		return str + 4;
+	return str;
+};
+
+char *
+button_action_macro_to_str(struct ratbag_button *button)
+{
+	char str[4096] = {0};
+	const char *name;
+	int offset;
+	unsigned int i;
+
+	name = ratbag_button_get_macro_name(button);
+	offset = snprintf(str, sizeof(str), "macro \"%s\":",
+			  name ? name : "UNKNOWN");
+	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
+		enum ratbag_macro_event_type type = ratbag_button_get_macro_event_type(button, i);
+		int key = ratbag_button_get_macro_event_key(button, i);
+		int timeout = ratbag_button_get_macro_event_timeout(button, i);
+
+		if (type == RATBAG_MACRO_EVENT_NONE)
+			break;
+
+		switch (type) {
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+			offset += snprintf(str + offset, sizeof(str) - offset, " %s↓", strip_ev_key(key));
+			break;
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			offset += snprintf(str + offset, sizeof(str) - offset, " %s↑", strip_ev_key(key));
+			break;
+		case RATBAG_MACRO_EVENT_WAIT:
+			offset += snprintf(str + offset, sizeof(str) - offset, " %d.%d⏱", timeout / 1000, timeout % 1000);
+		default:
+			offset += snprintf(str + offset, sizeof(str) - offset, " ###");
+		}
+	}
+
+	return strdup(str);
+}
+
 char *
 button_action_to_str(struct ratbag_button *button)
 {
@@ -157,7 +202,7 @@ button_action_to_str(struct ratbag_button *button)
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:	str = button_action_button_to_str(button); break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:	str = button_action_key_to_str(button); break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:	str = strdup(button_action_special_to_str(button)); break;
-	case RATBAG_BUTTON_ACTION_TYPE_MACRO:	str = strdup("macro"); break;
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:	str = button_action_macro_to_str(button); break;
 	case RATBAG_BUTTON_ACTION_TYPE_NONE:	str = strdup("none"); break;
 	default:
 		error("type %d unknown\n", type);
