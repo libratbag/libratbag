@@ -209,11 +209,11 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			log_error(ratbag, "Error, no compatible sensors found.\n");
 			return -ENODEV;
 		}
-		log_info(ratbag,
-			 "device is at %d dpi (variable between %d and %d).\n",
-			 drv_data->sensors[0].dpi,
-			 drv_data->sensors[0].dpi_min,
-			 drv_data->sensors[0].dpi_max);
+		log_debug(ratbag,
+			  "device is at %d dpi (variable between %d and %d).\n",
+			  drv_data->sensors[0].dpi,
+			  drv_data->sensors[0].dpi_min,
+			  drv_data->sensors[0].dpi_max);
 		drv_data->num_sensors = rc;
 		if (drv_data->num_sensors > MAX_RESOLUTIONS)
 			drv_data->num_sensors = MAX_RESOLUTIONS;
