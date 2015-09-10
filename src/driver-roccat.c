@@ -214,6 +214,18 @@ roccat_button_action_to_raw(const struct ratbag_button_action *action)
 	return 0;
 }
 
+static inline uint16_t roccat_crc(uint8_t *buf, unsigned int len)
+{
+	unsigned i;
+	uint16_t crc = 0;
+
+	for (i = 0; i < len; i++) {
+		crc += buf[i];
+	}
+
+	return crc;
+}
+
 static int
 roccat_has_capability(const struct ratbag_device *device,
 		      enum ratbag_device_capability cap)
@@ -555,6 +567,16 @@ roccat_read_button(struct ratbag_button *button)
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 		} else {
+			uint16_t crc = roccat_crc(buf, ROCCAT_REPORT_SIZE_MACRO - 2);
+
+			if (crc != macro->checksum) {
+				log_error(device->ratbag,
+					  "wrong checksum while reading the macro of button %d of profile %d.\n",
+					  button->index,
+					  button->profile->index);
+				goto out_macro;
+			}
+
 			ratbag_button_set_macro(button, macro->name);
 			log_raw(device->ratbag,
 				"macro on button %d of profile %d is named '%s', and contains %d events:\n",
@@ -577,6 +599,7 @@ roccat_read_button(struct ratbag_button *button)
 					macro->keys[j].flag & 0x80 ? "released" : "pressed");
 			}
 		}
+out_macro:
 		msleep(10);
 	}
 }
