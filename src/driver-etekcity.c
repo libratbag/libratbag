@@ -631,7 +631,7 @@ etekcity_write_macro(struct ratbag_button *button,
 	unsigned i, j, count = 0;
 	int rc;
 
-	if (ratbag_button_get_action_type(button) != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+	if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
 		return 0;
 
 	device = button->profile->device;
