@@ -579,7 +579,7 @@ etekcity_write_profile(struct ratbag_profile *profile)
 
 	msleep(100);
 
-	if (rc < 50)
+	if (rc < ETEKCITY_REPORT_SIZE_PROFILE)
 		return -EIO;
 
 	log_raw(device->ratbag, "profile: %d written %s:%d\n",
