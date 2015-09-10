@@ -181,7 +181,8 @@ button_action_macro_to_str(struct ratbag_button *button)
 			offset += snprintf(str + offset, sizeof(str) - offset, " %s↑", strip_ev_key(key));
 			break;
 		case RATBAG_MACRO_EVENT_WAIT:
-			offset += snprintf(str + offset, sizeof(str) - offset, " %d.%d⏱", timeout / 1000, timeout % 1000);
+			offset += snprintf(str + offset, sizeof(str) - offset, " %.03f⏱", timeout / 1000.0);
+			break;
 		default:
 			offset += snprintf(str + offset, sizeof(str) - offset, " ###");
 		}
