@@ -519,6 +519,11 @@ roccat_read_profile(struct ratbag_profile *profile, unsigned int index)
 	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
 		return;
 
+	if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_PROFILE))
+		log_error(device->ratbag,
+			  "Error while reading profile %d, continuing...\n",
+			  profile->index);
+
 	log_raw(device->ratbag, "profile: %d %s:%d\n",
 		buf[2],
 		__FILE__, __LINE__);
