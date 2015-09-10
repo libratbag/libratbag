@@ -18,6 +18,15 @@ advantage we really get out of it is that a configuration UI would be able
 to update itself if a user presses a button to e.g. change the profile while
 the UI is running.
 
+We should actually drop the "key" functionality in favor of macros:
+- either a device supports real hardware macro, then there is no point in
+  having a special set of keys exported to the user space while the driver
+  can just figure out which way is most efficient
+- if the device does not support macros, then all of the supported keys
+  should be RATBAG_SPECIAL, so the UI can enumerate them and get a capability
+  on the current button if it supports this particular action (example:
+  the UI is interested in sending "Volume Up", not KEY_VOLUMEUP.
+
 Macro support:
 - enhance doctext
 - add API support for name/groups
