@@ -376,19 +376,35 @@ str_to_macro(const char *action_arg, struct macro *m)
 	if (!action_arg)
 		return -EINVAL;
 
-	m->name = "foo";
-	m->events[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-	m->events[0].data = KEY_F;
-	m->events[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-	m->events[1].data = KEY_F;
-	m->events[2].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-	m->events[2].data = KEY_O;
-	m->events[3].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-	m->events[3].data = KEY_O;
-	m->events[4].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-	m->events[4].data = KEY_O;
-	m->events[5].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-	m->events[5].data = KEY_O;
+	if (action_arg[0] == 'f') {
+		m->name = "foo";
+		m->events[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+		m->events[0].data = KEY_F;
+		m->events[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+		m->events[1].data = KEY_F;
+		m->events[2].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+		m->events[2].data = KEY_O;
+		m->events[3].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+		m->events[3].data = KEY_O;
+		m->events[4].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+		m->events[4].data = KEY_O;
+		m->events[5].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+		m->events[5].data = KEY_O;
+	} else if (action_arg[0] == 'b') {
+		m->name = "bar";
+		m->events[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+		m->events[0].data = KEY_B;
+		m->events[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+		m->events[1].data = KEY_B;
+		m->events[2].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+		m->events[2].data = KEY_A;
+		m->events[3].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+		m->events[3].data = KEY_A;
+		m->events[4].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+		m->events[4].data = KEY_R;
+		m->events[5].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+		m->events[5].data = KEY_R;
+	}
 
 	return 0;
 }
