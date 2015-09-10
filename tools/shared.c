@@ -29,7 +29,7 @@ udev_device_from_path(struct udev *udev, const char *path)
 	struct udev_device *udev_device;
 	const char *event_node_prefix = "/dev/input/event";
 
-	if (strncmp(path, event_node_prefix, strlen(event_node_prefix)) == 0) {
+	if (strneq(path, event_node_prefix, strlen(event_node_prefix))) {
 		struct stat st;
 		if (stat(path, &st) == -1) {
 			error("Failed to stat '%s': %s\n", path, strerror(errno));
@@ -149,7 +149,7 @@ static const char *strip_ev_key(int key)
 {
 	const char *str = libevdev_event_code_get_name(EV_KEY, key);
 
-	if (!strncmp(str, "KEY_", 4))
+	if (strneq(str, "KEY_", 4))
 		return str + 4;
 	return str;
 };
