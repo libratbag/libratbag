@@ -214,16 +214,48 @@ roccat_button_action_to_raw(const struct ratbag_button_action *action)
 	return 0;
 }
 
-static inline uint16_t roccat_crc(uint8_t *buf, unsigned int len)
+static inline uint16_t
+roccat_get_unaligned_u16(uint8_t *buf)
+{
+	return (buf[1] << 8) | buf[0];
+}
+
+static inline uint16_t
+roccat_compute_crc(uint8_t *buf, unsigned int len)
 {
 	unsigned i;
 	uint16_t crc = 0;
 
-	for (i = 0; i < len; i++) {
+	if (len < 3)
+		return 0;
+
+	for (i = 0; i < len - 2; i++) {
 		crc += buf[i];
 	}
 
 	return crc;
+}
+
+static inline int
+roccat_crc_is_valid(struct ratbag_device *device, uint8_t *buf, unsigned int len)
+{
+	unsigned i;
+	uint16_t crc;
+	uint16_t given_crc;
+
+	if (len < 3)
+		return 0;
+
+	crc = roccat_compute_crc(buf, len);
+
+	given_crc = roccat_get_unaligned_u16(&buf[len - 2]);
+
+	log_raw(device->ratbag,
+		"checksum computed: 0x%04x, checksum given: 0x%04x\n",
+		crc,
+		given_crc);
+
+	return crc == given_crc;
 }
 
 static int
@@ -567,9 +599,7 @@ roccat_read_button(struct ratbag_button *button)
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 		} else {
-			uint16_t crc = roccat_crc(buf, ROCCAT_REPORT_SIZE_MACRO - 2);
-
-			if (crc != macro->checksum) {
+			if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_MACRO)) {
 				log_error(device->ratbag,
 					  "wrong checksum while reading the macro of button %d of profile %d.\n",
 					  button->index,
