@@ -7,6 +7,7 @@ libratbag_la_SOURCES =			\
 	driver-etekcity.c		\
 	driver-hidpp20.c		\
 	driver-hidpp10.c		\
+	driver-roccat.c			\
 	driver-test.c			\
 	hidpp-generic.h			\
 	hidpp-generic.c			\

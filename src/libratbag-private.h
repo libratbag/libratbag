@@ -417,6 +417,7 @@ log_buffer(struct ratbag *ratbag,
 struct ratbag_driver etekcity_driver;
 struct ratbag_driver hidpp20_driver;
 struct ratbag_driver hidpp10_driver;
+struct ratbag_driver roccat_driver;
 
 struct ratbag_device*
 ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,

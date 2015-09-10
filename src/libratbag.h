@@ -1135,6 +1135,9 @@ enum ratbag_button_action_special {
 	RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP,
 	RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN,
 
+	/* second mode for buttons */
+	RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,
+
 };
 
 /**

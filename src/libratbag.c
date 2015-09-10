@@ -609,6 +609,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag_register_driver(ratbag, &etekcity_driver);
 	ratbag_register_driver(ratbag, &hidpp20_driver);
 	ratbag_register_driver(ratbag, &hidpp10_driver);
+	ratbag_register_driver(ratbag, &roccat_driver);
 
 	return ratbag;
 }
