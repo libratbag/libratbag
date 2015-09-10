@@ -562,9 +562,15 @@ roccat_read_button(struct ratbag_button *button)
 				macro->name, macro->length);
 			for (j = 0; j < macro->length; j++) {
 				ratbag_button_set_macro_event(button,
-							      j,
+							      j * 2,
 							      macro->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
 							      macro_mapping[macro->keys[j].keycode]);
+				if (macro->keys[j].time)
+					ratbag_button_set_macro_event(button,
+								      j * 2 + 1,
+								      RATBAG_MACRO_EVENT_WAIT,
+								      macro->keys[j].time);
+
 				log_raw(device->ratbag,
 					"    - %s %s\n",
 					libevdev_event_code_get_name(EV_KEY, macro_mapping[macro->keys[j].keycode]),
