@@ -70,6 +70,9 @@ button_action_key_to_str(struct ratbag_button *button);
 char *
 button_action_to_str(struct ratbag_button *button);
 
+char *
+button_action_macro_to_str(struct ratbag_button *button);
+
 enum ratbag_button_action_special
 str_to_special_action(const char *str);
 
