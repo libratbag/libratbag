@@ -224,7 +224,7 @@ hidpp20_root_get_protocol_version(struct ratbag_device *device,
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0x00,
+		.msg.device_idx = 0xff,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_PROTOCOL_VERSION,
 	};
