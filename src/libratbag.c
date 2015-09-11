@@ -1294,14 +1294,12 @@ ratbag_resolution_get_user_data(const struct ratbag_resolution *ratbag_resolutio
 LIBRATBAG_EXPORT int
 ratbag_button_set_macro(struct ratbag_button *button, const char *name)
 {
-	struct ratbag_macro *macro;
-
 	if (!button->action.macro)
-		button->action.macro = zalloc(sizeof(*macro));
+		button->action.macro = zalloc(sizeof(struct ratbag_macro));
 	else {
 		if (button->action.macro->name)
 			free(button->action.macro->name);
-		memset(button->action.macro, 0, sizeof(*macro));
+		memset(button->action.macro, 0, sizeof(struct ratbag_macro));
 	}
 
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
