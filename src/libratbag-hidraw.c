@@ -72,6 +72,9 @@ err:
 void
 ratbag_close_hidraw(struct ratbag_device *device)
 {
+	if (device->hidraw_fd < 0)
+		return;
+
 	ratbag_close_fd(device, device->hidraw_fd);
 	device->hidraw_fd = -1;
 }

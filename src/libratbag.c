@@ -268,8 +268,7 @@ ratbag_device_destroy(struct ratbag_device *device)
 	if (device->udev_hidraw)
 		udev_device_unref(device->udev_hidraw);
 
-	if (device->hidraw_fd >= 0)
-		close(device->hidraw_fd);
+	ratbag_close_hidraw(device);
 
 	ratbag_unref(device->ratbag);
 	free(device->name);
