@@ -150,35 +150,6 @@ ratbag_log_set_handler(struct ratbag *ratbag,
 	ratbag->log_handler = log_handler;
 }
 
-static inline struct udev_device *
-udev_device_from_devnode(struct ratbag *ratbag, int fd)
-{
-	struct udev_device *dev;
-	struct stat st;
-	size_t count = 0;
-	struct udev *udev = ratbag->udev;
-
-	if (fstat(fd, &st) < 0)
-		return NULL;
-
-	dev = udev_device_new_from_devnum(ratbag->udev, 'c', st.st_rdev);
-
-	while (dev && !udev_device_get_is_initialized(dev)) {
-		udev_device_unref(dev);
-		msleep(10);
-		dev = udev_device_new_from_devnum(udev, 'c', st.st_rdev);
-
-		count++;
-		if (count > 50) {
-			log_bug_libratbag(ratbag,
-					  "udev device never initialized\n");
-			break;
-		}
-	}
-
-	return dev;
-}
-
 static struct udev_device *
 udev_find_hidraw(struct ratbag_device *device)
 {
@@ -1294,14 +1265,12 @@ ratbag_resolution_get_user_data(const struct ratbag_resolution *ratbag_resolutio
 LIBRATBAG_EXPORT int
 ratbag_button_set_macro(struct ratbag_button *button, const char *name)
 {
-	struct ratbag_macro *macro;
-
 	if (!button->action.macro)
-		button->action.macro = zalloc(sizeof(*macro));
+		button->action.macro = zalloc(sizeof(struct ratbag_macro));
 	else {
 		if (button->action.macro->name)
 			free(button->action.macro->name);
-		memset(button->action.macro, 0, sizeof(*macro));
+		memset(button->action.macro, 0, sizeof(struct ratbag_macro));
 	}
 
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
