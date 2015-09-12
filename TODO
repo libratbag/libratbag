@@ -35,6 +35,16 @@ Macro support:
 
 ratbag-command needs a revamp of the arguments into a tree type, e.g.
 instead of switch-dpi something like "ratbag command resolution set"
+proposed set of arguments:
+  ratbag-command profile 1 resolution 3 dpi set 400
+  ratbag-command profile 1 resolution 3 dpi-x set 400
+  ratbag-command profile 1 resolution 3 dpi-x get
+  ratbag-command profile 1 resolution 3 report-rate get
+  "profile" and "resolution" arguments can be optional, we juse the current
+  profile where missing, i.e. "ratbag-command dpi get" works
+  ratbag-command profile 1 button 1 button set 3
+  ratbag-command profile 1 button 1 special set foo
+  ratbag-command profile 1 button 1 macro set +KEY_ENTER -KEY_ENTER
 
 decide on a stable set of arguments, build the installed version of the
 command with that set, add a set of debug arguments (e.g. the
@@ -43,8 +53,14 @@ etekcity-specific ones) only available in the build.
 interactive shell mode for ratbag-command?
 
 dbus proxy - allows parallel access to the devices without interference, and
-provides a single instance for root permissions.
+provides a single instance for root permissions. this should be a separate
+project. Ideally, we can wrap the dbus API into a libratbag-dbus that
+exposes the same API to the application, but goes through dbus.
 
 python bindings - depends on the dbus decision, python bindings could be
 wrappers around libratbag itself, or a wrapper around the dbus protocol to
 speak to the dbus daemon
+
+change the API to return enum ratbag_error with more meaningful error
+messages. errno's are fine internally between the driver, but for the
+public-facing API we need better options
