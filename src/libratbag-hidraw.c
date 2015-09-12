@@ -137,6 +137,19 @@ err:
 	return -errno;
 }
 
+int
+ratbag_hidraw_has_report(struct ratbag_device *device, uint8_t report_id)
+{
+	unsigned i;
+
+	for (i = 0; i < device->hidraw.num_report_ids; i++) {
+		if (device->hidraw.report_ids[i] == report_id)
+			return 1;
+	}
+
+	return 0;
+}
+
 void
 ratbag_close_hidraw(struct ratbag_device *device)
 {

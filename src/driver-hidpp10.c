@@ -208,6 +208,11 @@ hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 		goto err;
 	}
 
+	if (!ratbag_hidraw_has_report(device, REPORT_ID_SHORT)) {
+		ratbag_close_hidraw(device);
+		return -ENODEV;
+	}
+
 	drv_data = zalloc(sizeof(*drv_data));
 
 	/* We can treat all devices as wired devices here. If we talk to the

@@ -96,4 +96,15 @@ int ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size
  */
 int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len);
 
+/**
+ * Tells if a given device has the specified report ID.
+ *
+ * @param device the ratbag device which hidraw node is opened
+ * @param report_id the report ID we inquire about
+ *
+ * @return 1 if the device has the given report id, 0 otherwise
+ */
+int
+ratbag_hidraw_has_report(struct ratbag_device *device, uint8_t report_id);
+
 #endif /* LIBRATBAG_HIDRAW_H */
