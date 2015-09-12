@@ -234,7 +234,7 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	}
 
 	device->ratbag = ratbag_ref(ratbag);
-	device->hidraw_fd = -1;
+	device->hidraw.fd = -1;
 	device->refcount = 1;
 	if (udev_device)
 		device->udev_device = udev_device_ref(udev_device);

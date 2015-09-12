@@ -34,6 +34,10 @@
 #define HID_OUTPUT_REPORT	1
 #define HID_FEATURE_REPORT	2
 
+struct ratbag_hidraw {
+	int fd;
+};
+
 /**
  * Open the hidraw device associated with the device.
  *
