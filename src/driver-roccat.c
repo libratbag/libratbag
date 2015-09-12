@@ -239,7 +239,6 @@ roccat_compute_crc(uint8_t *buf, unsigned int len)
 static inline int
 roccat_crc_is_valid(struct ratbag_device *device, uint8_t *buf, unsigned int len)
 {
-	unsigned i;
 	uint16_t crc;
 	uint16_t given_crc;
 
