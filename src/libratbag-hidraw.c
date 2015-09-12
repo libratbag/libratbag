@@ -36,6 +36,55 @@
 #define HID_MAX_BUFFER_SIZE	4096		/* 4kb */
 #endif
 
+#define HID_REPORT_ID		0b10000100
+
+static int
+ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
+{
+	int rc, desc_size = 0;
+	struct hidraw_report_descriptor report_desc = {0};
+	unsigned int i, j;
+
+	rc = ioctl(device->hidraw.fd, HIDIOCGRDESCSIZE, &desc_size);
+	if (rc < 0)
+		return rc;
+
+	report_desc.size = desc_size;
+	rc = ioctl(device->hidraw.fd, HIDIOCGRDESC, &report_desc);
+	if (rc < 0)
+		return rc;
+
+	log_buf_error(device->ratbag,
+			"Report Descriptor:\n",
+			 report_desc.value, report_desc.size);
+
+	i = 0;
+	while (i < report_desc.size) {
+		uint8_t value = report_desc.value[i];
+		uint8_t hid = value & 0xfc;
+		uint8_t size = value & 0x3;
+
+		if (size == 3)
+			size = 4;
+
+		if (i + size >= report_desc.size)
+			return -EPROTO;
+
+		if (hid == HID_REPORT_ID)
+			log_error(device->ratbag, "main item: %02x\n", hid);
+
+		for (j = 0; j < size; j++) {
+			value = report_desc.value[i + j + 1];
+			if (hid == HID_REPORT_ID)
+				log_error(device->ratbag, "         %02x\n", value);
+		}
+
+		i += 1 + j;
+	}
+
+	return 0;
+}
+
 int
 ratbag_open_hidraw(struct ratbag_device *device)
 {
@@ -60,6 +109,17 @@ ratbag_open_hidraw(struct ratbag_device *device)
 	}
 
 	device->hidraw.fd = fd;
+
+	res = ratbag_hidraw_parse_report_descriptor(device);
+	if (res) {
+		log_error(device->ratbag,
+			  "Error while parsing the report descriptor: '%s' (%d)\n",
+			  strerror(-res),
+			  res);
+		device->hidraw.fd = -1;
+		goto err;
+	}
+
 
 	return 0;
 
