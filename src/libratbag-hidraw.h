@@ -36,6 +36,8 @@
 
 struct ratbag_hidraw {
 	int fd;
+	uint8_t *report_ids;
+	unsigned num_report_ids;
 };
 
 /**
