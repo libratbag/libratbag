@@ -66,32 +66,41 @@ struct ratbag_cmd {
 static const struct ratbag_cmd *ratbag_commands[];
 
 static void
-usage_subcommand(const struct ratbag_cmd *cmd)
+usage_subcommand(const struct ratbag_cmd *cmd, const char *prefix_in)
 {
 	int i = 0;
 	int count;
 	const struct ratbag_cmd *sub;
+	char prefix[256];
 
 	if (cmd->subcommands[0] == NULL)
 		return;
 
 	sub = cmd->subcommands[0];
-	count = 20 - strlen(sub->name);
-	if (sub->args)
-		count -= 1 + strlen(sub->args);
-	if (count < 4)
-		count = 4;
-
 	while (sub) {
+		count = 40 - strlen(sub->name);
+		if (sub->args)
+			count -= 1 + strlen(sub->args);
+		if (count < 4)
+			count = 4;
+
+		sprintf(prefix, "%s%s%s%s ",
+			prefix_in,
+			cmd->name,
+			cmd->args ?  " " : "",
+			cmd->args ?  cmd->args : "");
+		count -= strlen(prefix);
 		if (sub->help)
-			printf("\t    %s %s%s%s %.*s %s\n",
-			       cmd->name,
+			printf("    %s%s%s%s %.*s %s\n",
+			       prefix,
 			       sub->name,
 			       sub->args ? " " : "",
 			       sub->args ? sub->args : "",
-			       count, "....................", sub->help);
+			       count,
+			       ".........................................",
+			       sub->help);
 
-		usage_subcommand(sub);
+		usage_subcommand(sub, prefix);
 
 		sub = cmd->subcommands[++i];
 	}
@@ -111,18 +120,21 @@ usage(void)
 		program_invocation_short_name);
 
 	while (cmd) {
-		count = 20 - strlen(cmd->name);
+		count = 40 - strlen(cmd->name);
 		if (cmd->args)
 			count -= 1 + strlen(cmd->args);
 		if (count < 4)
 			count = 4;
-		printf("    %s%s%s %.*s %s\n",
-		       cmd->name,
-		       cmd->args ? " " : "",
-		       cmd->args ? cmd->args : "",
-		       count, "....................", cmd->help);
+		if (cmd->help)
+			printf("    %s%s%s %.*s %s\n",
+			       cmd->name,
+			       cmd->args ? " " : "",
+			       cmd->args ? cmd->args : "",
+			       count,
+			       ".........................................",
+			       cmd->help);
 
-		usage_subcommand(cmd);
+		usage_subcommand(cmd, "");
 
 		cmd = ratbag_commands[++i];
 	}
@@ -701,7 +713,7 @@ ratbag_cmd_resolution_active_set(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution_active_set = {
 	.name = "set",
 	.cmd = ratbag_cmd_resolution_active_set,
-	.args = "N",
+	.args = "M",
 	.help = "Set the active resolution number",
 	.subcommands = { NULL },
 };
@@ -785,7 +797,7 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution_dpi_set = {
 	.name = "set",
 	.cmd = ratbag_cmd_resolution_dpi_set,
-	.args = "N",
+	.args = "<dpi>",
 	.help = "Set the resolution in dpi",
 	.subcommands = { NULL },
 };
@@ -853,8 +865,8 @@ ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution = {
 	.name = "resolution",
 	.cmd = ratbag_cmd_resolution,
-	.args = "[...]",
-	.help = "Modify a resolution",
+	.args = "N",
+	.help = NULL,
 	.subcommands = {
 		&cmd_resolution_active,
 		&cmd_resolution_dpi,
@@ -1116,8 +1128,8 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_profile = {
 	.name = "profile",
 	.cmd = ratbag_cmd_profile,
-	.args = "[...]",
-	.help = "Modify a profile",
+	.args = "<idx>",
+	.help = NULL,
 	.subcommands = {
 		&cmd_profile_active,
 		&cmd_resolution,
