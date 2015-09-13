@@ -74,9 +74,10 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 
 			for (j = 0; j < size; j++) {
 				report_id |= report_desc.value[i + j + 1] << ((size - j - 1) * 8);
-				log_debug(device->ratbag, "report ID %02x\n", report_id);
-				if (hidraw->report_ids)
+				if (hidraw->report_ids) {
+					log_debug(device->ratbag, "report ID %02x\n", report_id);
 					hidraw->report_ids[hidraw->num_report_ids] = report_id;
+				}
 				hidraw->num_report_ids++;
 			}
 		}
