@@ -754,10 +754,9 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 			      int argc, char **argv)
 {
 	struct ratbag_device *device;
-	struct ratbag_profile *profile = NULL;
+	struct ratbag_resolution *resolution;
 	int rc = 1;
 	int dpi;
-	int i;
 
 	if (argc != 2) {
 		usage();
@@ -770,7 +769,7 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 	argv++;
 
 	device = options->device;
-	profile = options->profile;
+	resolution = options->resolution;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION)) {
@@ -779,24 +778,11 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 		goto out;
 	}
 
-	for (i = 0; i < ratbag_profile_get_num_resolutions(profile); i++) {
-		struct ratbag_resolution *res;
-
-		res = ratbag_profile_get_resolution(profile, i);
-		if (ratbag_resolution_is_active(res)) {
-			rc = ratbag_resolution_set_dpi(res, dpi);
-			if (!rc)
-				printf("Switched the current resolution profile of '%s' to %d dpi\n",
-				       ratbag_device_get_name(device),
-				       dpi);
-			else
-				error("can't seem to be able to change the dpi: %s (%d)\n",
-				      strerror(-rc),
-				      rc);
-		}
-		ratbag_resolution_unref(res);
-	}
-
+	rc = ratbag_resolution_set_dpi(resolution, dpi);
+	if (rc)
+		error("can't seem to be able to change the dpi: %s (%d)\n",
+		      strerror(-rc),
+		      rc);
 out:
 	return rc;
 }
