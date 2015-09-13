@@ -304,7 +304,7 @@ ratbag_cmd_switch_profile(const struct ratbag_cmd *cmd,
 
 	num_profiles = ratbag_device_get_num_profiles(device);
 	if (index > num_profiles) {
-		error("'%s' is not a valid profile\n", argv[0]);
+		error("'%d' is not a valid profile\n", index);
 		goto out;
 	}
 
