@@ -65,7 +65,8 @@ struct roccat_settings_report {
 	uint8_t yres[5];
 	uint8_t padding1;
 	uint8_t report_rate;
-	uint8_t padding2[23];
+	uint8_t padding2[21];
+	uint16_t checksum;
 //	uint8_t padding2[4];
 //	uint8_t light;
 //	uint8_t light_heartbit;
@@ -784,9 +785,9 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	uint8_t *buf;
 	int rc;
 
-	if (dpi_x < 50 || dpi_x > 8200 || dpi_x % 50)
+	if (dpi_x < 200 || dpi_x > 8200 || dpi_x % 50)
 		return -EINVAL;
-	if (dpi_y < 50 || dpi_y > 8200 || dpi_y % 50)
+	if (dpi_y < 200 || dpi_y > 8200 || dpi_y % 50)
 		return -EINVAL;
 
 	settings_report = &drv_data->settings[profile->index];
@@ -794,13 +795,13 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	/* retrieve which resolution is asked to be changed */
 	index = resolution - profile->resolution.modes;
 
-	settings_report->x_sensitivity = 0x0a;
-	settings_report->y_sensitivity = 0x0a;
 	settings_report->xres[index] = dpi_x / 50;
 	settings_report->yres[index] = dpi_y / 50;
 
 	buf = (uint8_t*)settings_report;
-	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_SETTINGS);
+
+	settings_report->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_SETTINGS);
+
 	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_SETTINGS,
 				       buf, ROCCAT_REPORT_SIZE_SETTINGS,
 				       HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
@@ -900,5 +901,5 @@ struct ratbag_driver roccat_driver = {
 	.has_capability = roccat_has_capability,
 	.read_button = roccat_read_button,
 	.write_button = roccat_write_button,
-//	.write_resolution_dpi = roccat_write_resolution_dpi,
+	.write_resolution_dpi = roccat_write_resolution_dpi,
 };
