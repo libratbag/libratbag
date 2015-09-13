@@ -941,6 +941,7 @@ static const struct ratbag_id roccat_table[] = {
 		 .vendor = 0x1e7d,
 		 .product = 0x2e22,
 		 .version = VERSION_ANY },
+	 .svg_filename = "roccat-kone-xtd.svg",
 	},
 
 	{ },
