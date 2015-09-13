@@ -37,6 +37,8 @@
 #define ROCCAT_BUTTON_MAX			23
 #define ROCCAT_NUM_DPI				5
 
+#define ROCCAT_MAX_RETRY_READY			10
+
 #define ROCCAT_REPORT_ID_CONFIGURE_PROFILE	4
 #define ROCCAT_REPORT_ID_PROFILE		5
 #define ROCCAT_REPORT_ID_SETTINGS		6
@@ -259,6 +261,47 @@ roccat_crc_is_valid(struct ratbag_device *device, uint8_t *buf, unsigned int len
 }
 
 static int
+roccat_is_ready(struct ratbag_device *device)
+{
+	uint8_t buf[3] = { 0 };
+	int rc;
+
+	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_CONFIGURE_PROFILE,
+					buf, sizeof(buf),
+					HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	if (rc < 0)
+		return rc;
+	if (rc != sizeof(buf))
+		return -EIO;
+
+	if (buf[1] == 0x03)
+		msleep(100);
+
+	return buf[1] == 0x01;
+}
+
+static int
+roccat_wait_ready(struct ratbag_device *device)
+{
+	unsigned count = 0;
+	int rc;
+
+	msleep(10);
+	while (count < ROCCAT_MAX_RETRY_READY) {
+		rc = roccat_is_ready(device);
+		if (rc < 0)
+			return rc;
+
+		if (rc == 1)
+			return 0;
+
+		msleep(10);
+	}
+
+	return -ETIMEDOUT;
+}
+
+static int
 roccat_has_capability(const struct ratbag_device *device,
 		      enum ratbag_device_capability cap)
 {
@@ -304,9 +347,19 @@ roccat_set_current_profile(struct ratbag_device *device, unsigned int index)
 	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
 			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 
-	msleep(100);
+	if (ret < 0)
+		return ret;
 
-	return ret == sizeof(buf) ? 0 : ret;
+	if (ret != sizeof(buf))
+		return -EIO;
+
+	ret = roccat_wait_ready(device);
+	if (ret)
+		log_error(device->ratbag,
+			  "Error while waiting for the device to be ready: %s (%d)\n",
+			  strerror(-ret), ret);
+
+	return ret;
 }
 
 static int
@@ -320,10 +373,19 @@ roccat_set_config_profile(struct ratbag_device *device, uint8_t profile, uint8_t
 
 	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
 				 HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+	if (ret < 0)
+		return ret;
 
-	msleep(100);
+	if (ret != sizeof(buf))
+		return -EIO;
 
-	return ret == sizeof(buf) ? 0 : ret;
+	ret = roccat_wait_ready(device);
+	if (ret)
+		log_error(device->ratbag,
+			  "Error while waiting for the device to be ready: %s (%d)\n",
+			  strerror(-ret), ret);
+
+	return ret;
 }
 
 static const struct ratbag_button_action *
@@ -551,15 +613,20 @@ roccat_write_profile(struct ratbag_profile *profile)
 			buf, ROCCAT_REPORT_SIZE_PROFILE,
 			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 
-	msleep(100);
-
 	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
 		return -EIO;
 
 	log_raw(device->ratbag, "profile: %d written %s:%d\n",
 		buf[2],
 		__FILE__, __LINE__);
-	return 0;
+
+	rc = roccat_wait_ready(device);
+	if (rc)
+		log_error(device->ratbag,
+			  "Error while waiting for the device to be ready: %s (%d)\n",
+			  strerror(-rc), rc);
+
+	return rc;
 }
 
 static void
@@ -642,26 +709,6 @@ out_macro:
 }
 
 static int
-roccat_is_ready(struct ratbag_device *device)
-{
-	uint8_t buf[3] = { 0 };
-	int rc;
-
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_CONFIGURE_PROFILE,
-					buf, sizeof(buf),
-					HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
-	if (rc < 0)
-		return rc;
-	if (rc != sizeof(buf))
-		return -EIO;
-
-	if (buf[1] == 0x03)
-		msleep(100);
-
-	return buf[1] == 0x01;
-}
-
-static int
 roccat_write_macro(struct ratbag_button *button,
 		     const struct ratbag_button_action *action)
 {
@@ -732,19 +779,22 @@ roccat_write_macro(struct ratbag_button *button,
 	macro->length = count;
 	macro->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_MACRO);
 
-	while (!roccat_is_ready(device))
-		msleep(10);
-
 	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_MACRO,
 		buf, ROCCAT_REPORT_SIZE_MACRO,
 		HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 	if (rc < 0)
 		return rc;
 
-	while (!roccat_is_ready(device))
-		msleep(10);
+	if (rc != ROCCAT_REPORT_SIZE_MACRO)
+		return -EIO;
 
-	return rc == ROCCAT_REPORT_SIZE_MACRO ? 0 : -EIO;
+	rc = roccat_wait_ready(device);
+	if (rc)
+		log_error(device->ratbag,
+			  "Error while waiting for the device to be ready: %s (%d)\n",
+			  strerror(-rc), rc);
+
+	return rc;
 }
 
 static int
@@ -812,7 +862,13 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	if (rc != ROCCAT_REPORT_SIZE_SETTINGS)
 		return -EIO;
 
-	return 0;
+	rc = roccat_wait_ready(device);
+	if (rc)
+		log_error(device->ratbag,
+			  "Error while waiting for the device to be ready: %s (%d)\n",
+			  strerror(-rc), rc);
+
+	return rc;
 }
 
 static int
