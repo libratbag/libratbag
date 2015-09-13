@@ -51,14 +51,48 @@ struct ratbag_cmd_options {
 
 struct ratbag_cmd {
 	const char *name;
-	int (*cmd)(struct ratbag *ratbag,
+	int (*cmd)(const struct ratbag_cmd *cmd,
+		   struct ratbag *ratbag,
 		   struct ratbag_cmd_options *options,
 		   int argc, char **argv);
 	const char *args;
 	const char *help;
+	const struct ratbag_cmd *subcommands[];
 };
 
 static const struct ratbag_cmd *ratbag_commands[];
+
+static void
+usage_subcommand(const struct ratbag_cmd *cmd)
+{
+	int i = 0;
+	int count;
+	const struct ratbag_cmd *sub;
+
+	if (cmd->subcommands[0] == NULL)
+		return;
+
+	sub = cmd->subcommands[0];
+	count = 20 - strlen(sub->name);
+	if (sub->args)
+		count -= 1 + strlen(sub->args);
+	if (count < 4)
+		count = 4;
+
+	while (sub) {
+		if (sub->help)
+			printf("\t    %s %s%s%s %.*s %s\n",
+			       cmd->name,
+			       sub->name,
+			       sub->args ? " " : "",
+			       sub->args ? sub->args : "",
+			       count, "....................", sub->help);
+
+		usage_subcommand(sub);
+
+		sub = cmd->subcommands[++i];
+	}
+}
 
 static void
 usage(void)
@@ -84,6 +118,9 @@ usage(void)
 		       cmd->args ? " " : "",
 		       cmd->args ? cmd->args : "",
 		       count, "....................", cmd->help);
+
+		usage_subcommand(cmd);
+
 		cmd = ratbag_commands[++i];
 	}
 
@@ -94,7 +131,32 @@ usage(void)
 }
 
 static int
-ratbag_cmd_info(struct ratbag *ratbag,
+run_subcommand(const char *command,
+	       const struct ratbag_cmd *cmd,
+	       struct ratbag *ratbag,
+	       struct ratbag_cmd_options *options,
+	       int argc, char **argv)
+{
+	const struct ratbag_cmd *sub = cmd->subcommands[0];
+	int i = 0;
+
+	while (sub) {
+		if (streq(command, sub->name)) {
+			argc--;
+			argv++;
+			return sub->cmd(sub, ratbag, options, argc, argv);
+		}
+		sub = cmd->subcommands[i++];
+	}
+
+	error("Invalid subcommand '%s'\n", command);
+	usage();
+	return 1;
+}
+
+static int
+ratbag_cmd_info(const struct ratbag_cmd *cmd,
+		struct ratbag *ratbag,
 		struct ratbag_cmd_options *options,
 		int argc, char **argv)
 {
@@ -204,10 +266,12 @@ static const struct ratbag_cmd cmd_info = {
 	.cmd = ratbag_cmd_info,
 	.args = NULL,
 	.help = "Show information about the device's capabilities",
+	.subcommands = { NULL },
 };
 
 static int
-ratbag_cmd_switch_profile(struct ratbag *ratbag,
+ratbag_cmd_switch_profile(const struct ratbag_cmd *cmd,
+			  struct ratbag *ratbag,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
@@ -284,10 +348,12 @@ static const struct ratbag_cmd cmd_switch_profile = {
 	.cmd = ratbag_cmd_switch_profile,
 	.args = "N",
 	.help = "Set the current active profile to N",
+	.subcommands = { NULL },
 };
 
 static int
-ratbag_cmd_switch_etekcity(struct ratbag *ratbag,
+ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
+			   struct ratbag *ratbag,
 			   struct ratbag_cmd_options *options,
 			   int argc, char **argv)
 {
@@ -372,6 +438,7 @@ static const struct ratbag_cmd cmd_switch_etekcity = {
 	.cmd = ratbag_cmd_switch_etekcity,
 	.args = NULL,
 	.help = "Switch the Etekcity mouse active profile",
+	.subcommands = { NULL },
 };
 
 struct macro {
@@ -422,7 +489,8 @@ str_to_macro(const char *action_arg, struct macro *m)
 }
 
 static int
-ratbag_cmd_change_button(struct ratbag *ratbag,
+ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
+			 struct ratbag *ratbag,
 			 struct ratbag_cmd_options *options,
 			 int argc, char **argv)
 {
@@ -564,6 +632,7 @@ static const struct ratbag_cmd cmd_change_button = {
 	.cmd = ratbag_cmd_change_button,
 	.args = "X <button|key|special|macro> <number|KEY_FOO|special|macro name:KEY_FOO,KEY_BAR,...>",
 	.help = "Remap button X to the given action in the active profile",
+	.subcommands = { NULL },
 };
 
 static int
@@ -573,7 +642,8 @@ filter_event_node(const struct dirent *input_entry)
 }
 
 static int
-ratbag_cmd_list_supported_devices(struct ratbag *ratbag,
+ratbag_cmd_list_supported_devices(const struct ratbag_cmd *cmd,
+				  struct ratbag *ratbag,
 				  struct ratbag_cmd_options *options,
 				  int argc, char **argv)
 {
@@ -616,10 +686,12 @@ static const struct ratbag_cmd cmd_list = {
 	.cmd = ratbag_cmd_list_supported_devices,
 	.args = NULL,
 	.help = "List the available devices",
+	.subcommands = { NULL },
 };
 
 static int
-ratbag_cmd_switch_dpi(struct ratbag *ratbag,
+ratbag_cmd_switch_dpi(const struct ratbag_cmd *cmd,
+		      struct ratbag *ratbag,
 		      struct ratbag_cmd_options *options,
 		      int argc, char **argv)
 {
@@ -694,6 +766,7 @@ static const struct ratbag_cmd cmd_switch_dpi = {
 	.cmd = ratbag_cmd_switch_dpi,
 	.args = "N",
 	.help = "Switch the resolution of the mouse in the active profile",
+	.subcommands = { NULL },
 };
 
 static const struct ratbag_cmd *ratbag_commands[] = {
@@ -773,7 +846,7 @@ main(int argc, char **argv)
 		/* reset optind to reset the internal state, see NOTES in
 		 * getopt(3) */
 		optind = 0;
-		rc = (*cmd)->cmd(ratbag, &options, argc, argv);
+		rc = (*cmd)->cmd(*cmd, ratbag, &options, argc, argv);
 		goto out;
 	}
 
