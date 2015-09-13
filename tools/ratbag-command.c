@@ -278,93 +278,6 @@ static const struct ratbag_cmd cmd_info = {
 };
 
 static int
-ratbag_cmd_switch_profile(const struct ratbag_cmd *cmd,
-			  struct ratbag *ratbag,
-			  struct ratbag_cmd_options *options,
-			  int argc, char **argv)
-{
-	const char *path;
-	struct ratbag_device *device;
-	struct ratbag_profile *profile = NULL, *active_profile = NULL;
-	int num_profiles, index;
-	int rc = 1;
-	int i;
-
-	if (argc != 2) {
-		usage();
-		return 1;
-	}
-
-	index = atoi(argv[0]);
-
-	argc--;
-	argv++;
-	path = ratbag_cmd_get_path(argc, argv);
-	if (!path)
-		return 1;
-
-	device = ratbag_cmd_open_device(ratbag, path);
-	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
-		return 1;
-	}
-
-	if (!ratbag_device_has_capability(device,
-					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		error("Looks like '%s' has no switchable profiles\n", path);
-		goto out;
-	}
-
-	num_profiles = ratbag_device_get_num_profiles(device);
-	if (index > num_profiles) {
-		error("'%d' is not a valid profile\n", index);
-		goto out;
-	}
-
-	profile = ratbag_device_get_profile_by_index(device, index);
-	if (ratbag_profile_is_active(profile)) {
-		printf("'%s' is already in profile '%d'\n",
-		       ratbag_device_get_name(device), index);
-		goto out;
-	}
-
-	for (i = 0; i < num_profiles; i++) {
-		active_profile = ratbag_device_get_profile_by_index(device, i);
-		if (ratbag_profile_is_active(active_profile))
-			break;
-		ratbag_profile_unref(active_profile);
-		active_profile = NULL;
-	}
-
-	if (!active_profile) {
-		error("Huh hoh, something bad happened, unable to retrieve the profile '%d' \n",
-		      index);
-		goto out;
-	}
-
-	rc = ratbag_profile_set_active(profile);
-	if (!rc) {
-		printf("Switched '%s' to profile '%d'\n",
-		       ratbag_device_get_name(device), index);
-	}
-
-out:
-	profile = ratbag_profile_unref(profile);
-	active_profile = ratbag_profile_unref(active_profile);
-
-	device = ratbag_device_unref(device);
-	return rc;
-}
-
-static const struct ratbag_cmd cmd_switch_profile = {
-	.name = "switch-profile",
-	.cmd = ratbag_cmd_switch_profile,
-	.args = "N",
-	.help = "Set the current active profile to N",
-	.subcommands = { NULL },
-};
-
-static int
 ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 			   struct ratbag *ratbag,
 			   struct ratbag_cmd_options *options,
@@ -795,13 +708,228 @@ static const struct ratbag_cmd cmd_switch_dpi = {
 	.subcommands = { NULL },
 };
 
+static int
+ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
+			      struct ratbag *ratbag,
+			      struct ratbag_cmd_options *options,
+			      int argc, char **argv)
+{
+	const char *path;
+	struct ratbag_device *device;
+	struct ratbag_profile *profile = NULL, *active_profile = NULL;
+	int num_profiles, index;
+	int rc = 1;
+	int i;
+
+	if (argc != 2) {
+		usage();
+		return 1;
+	}
+
+	index = atoi(argv[0]);
+
+	argc--;
+	argv++;
+	path = ratbag_cmd_get_path(argc, argv);
+	if (!path)
+		return 1;
+
+	device = ratbag_cmd_open_device(ratbag, path);
+	if (!device) {
+		error("Looks like '%s' is not supported\n", path);
+		return 1;
+	}
+
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
+		error("Looks like '%s' has no switchable profiles\n", path);
+		goto out;
+	}
+
+	num_profiles = ratbag_device_get_num_profiles(device);
+	if (index > num_profiles) {
+		error("'%d' is not a valid profile\n", index);
+		goto out;
+	}
+
+	profile = ratbag_device_get_profile_by_index(device, index);
+	if (ratbag_profile_is_active(profile)) {
+		printf("'%s' is already in profile '%d'\n",
+		       ratbag_device_get_name(device), index);
+		goto out;
+	}
+
+	for (i = 0; i < num_profiles; i++) {
+		active_profile = ratbag_device_get_profile_by_index(device, i);
+		if (ratbag_profile_is_active(active_profile))
+			break;
+		ratbag_profile_unref(active_profile);
+		active_profile = NULL;
+	}
+
+	if (!active_profile) {
+		error("Huh hoh, something bad happened, unable to retrieve the profile '%d' \n",
+		      index);
+		goto out;
+	}
+
+	rc = ratbag_profile_set_active(profile);
+	if (!rc) {
+		printf("Switched '%s' to profile '%d'\n",
+		       ratbag_device_get_name(device), index);
+	}
+
+out:
+	profile = ratbag_profile_unref(profile);
+	active_profile = ratbag_profile_unref(active_profile);
+
+	device = ratbag_device_unref(device);
+	return rc;
+}
+
+static const struct ratbag_cmd cmd_profile_active_set = {
+	.name = "set",
+	.cmd = ratbag_cmd_profile_active_set,
+	.args = "N",
+	.help = "Set the active profile number",
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_profile_active_get(const struct ratbag_cmd *cmd,
+			      struct ratbag *ratbag,
+			      struct ratbag_cmd_options *options,
+			      int argc, char **argv)
+{
+	const char *path;
+	struct ratbag_device *device;
+	struct ratbag_profile *profile = NULL;
+	int i;
+	int rc = 1;
+	int active_profile_idx = 0;
+	int num_profiles = 0;
+
+	path = ratbag_cmd_get_path(argc, argv);
+	if (!path)
+		return 1;
+
+	device = ratbag_cmd_open_device(ratbag, path);
+	if (!device) {
+		error("Looks like '%s' is not supported\n", path);
+		return 1;
+	}
+
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
+		rc = 0;
+		goto out;
+	}
+
+	num_profiles = ratbag_device_get_num_profiles(device);
+	if (num_profiles <= 1) {
+		rc = 0;
+		goto out;
+	}
+
+	for (i = 0; i < num_profiles; i++) {
+		profile = ratbag_device_get_profile_by_index(device, i);
+		if (ratbag_profile_is_active(profile)) {
+			active_profile_idx = i;
+			rc = 0;
+			break;
+		}
+		ratbag_profile_unref(profile);
+		profile = NULL;
+	}
+
+	if (active_profile_idx >= num_profiles) {
+		error("Unable to find active profile, this is a bug.\n");
+		rc = 1;
+	}
+
+out:
+	if (rc == 0)
+		printf("%d\n", active_profile_idx);
+	profile = ratbag_profile_unref(profile);
+	device = ratbag_device_unref(device);
+	return rc;
+}
+
+static const struct ratbag_cmd cmd_profile_active_get = {
+	.name = "get",
+	.cmd = ratbag_cmd_profile_active_get,
+	.args = NULL,
+	.help = "Get the active profile number",
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_profile_active(const struct ratbag_cmd *cmd,
+			  struct ratbag *ratbag,
+			  struct ratbag_cmd_options *options,
+			  int argc, char **argv)
+{
+	if (argc < 2) {
+		usage();
+		return 1;
+	}
+
+	return run_subcommand(argv[0],
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_profile_active = {
+	.name = "active",
+	.cmd = ratbag_cmd_profile_active,
+	.args = NULL,
+	.help = NULL,
+	.subcommands = {
+		&cmd_profile_active_get,
+		&cmd_profile_active_set,
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_profile(const struct ratbag_cmd *cmd,
+		   struct ratbag *ratbag,
+		   struct ratbag_cmd_options *options,
+		   int argc, char **argv)
+{
+	const char *command;
+
+	if (argc < 2) {
+		usage();
+		return 1;
+	}
+	command = argv[0];
+
+	return run_subcommand(command,
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_profile = {
+	.name = "profile",
+	.cmd = ratbag_cmd_profile,
+	.args = "[...]",
+	.help = "Modify a profile",
+	.subcommands = {
+		&cmd_profile_active,
+		NULL,
+	},
+};
+
 static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_info,
 	&cmd_list,
 	&cmd_change_button,
 	&cmd_switch_etekcity,
 	&cmd_switch_dpi,
-	&cmd_switch_profile,
+	&cmd_profile,
 	NULL,
 };
 
