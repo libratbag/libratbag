@@ -73,10 +73,13 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 			unsigned report_id = 0;
 
 			for (j = 0; j < size; j++) {
+				hidraw->report_ids = realloc(hidraw->report_ids,
+							     (hidraw->num_report_ids + 1) * sizeof(uint8_t));
+
 				report_id |= report_desc.value[i + j + 1] << ((size - j - 1) * 8);
 				log_debug(device->ratbag, "report ID %02x\n", report_id);
-				if (hidraw->report_ids)
-					hidraw->report_ids[hidraw->num_report_ids] = report_id;
+				hidraw->report_ids[hidraw->num_report_ids] = report_id;
+
 				hidraw->num_report_ids++;
 			}
 		}
@@ -112,7 +115,6 @@ ratbag_open_hidraw(struct ratbag_device *device)
 
 	device->hidraw.fd = fd;
 
-	/* parse first to count the number of reports */
 	res = ratbag_hidraw_parse_report_descriptor(device);
 	if (res) {
 		log_error(device->ratbag,
@@ -121,12 +123,6 @@ ratbag_open_hidraw(struct ratbag_device *device)
 			  res);
 		device->hidraw.fd = -1;
 		goto err;
-	}
-
-	if (device->hidraw.num_report_ids) {
-		device->hidraw.report_ids = zalloc(device->hidraw.num_report_ids *
-							sizeof(uint8_t));
-		ratbag_hidraw_parse_report_descriptor(device);
 	}
 
 	return 0;
