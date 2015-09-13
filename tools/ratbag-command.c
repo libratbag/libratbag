@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -47,6 +48,7 @@ enum cmd_flags {
 
 struct ratbag_cmd_options {
 	enum cmd_flags flags;
+	struct ratbag_device *device;
 	int profile;
 	int button;
 	int resolution;
@@ -60,6 +62,7 @@ struct ratbag_cmd {
 		   int argc, char **argv);
 	const char *args;
 	const char *help;
+	bool no_file_arg;
 	const struct ratbag_cmd *subcommands[];
 };
 
@@ -176,12 +179,12 @@ ratbag_cmd_device_from_arg(struct ratbag *ratbag,
 	struct ratbag_device *device;
 	const char *path;
 
-	if (argc != 1) {
+	if (argc == 0) {
 		usage();
 		return NULL;
 	}
 
-	path = argv[0];
+	path = argv[argc - 1];
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
 		error("Looks like '%s' is not supported\n", path);
@@ -226,9 +229,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 	int i, j, b;
 	int rc = 1;
 
-	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
-	if (!device)
-		goto out;
+	device = options->device;
 
 	printf("Device '%s'\n", ratbag_device_get_name(device));
 
@@ -302,10 +303,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		profile = ratbag_profile_unref(profile);
 	}
 
-	device = ratbag_device_unref(device);
-
 	rc = 0;
-out:
 	return rc;
 }
 
@@ -331,9 +329,7 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 	size_t modifiers_sz = 10;
 	int i;
 
-	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
-	if (!device)
-		return 1;
+	device = options->device;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
@@ -386,7 +382,6 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 out:
 	profile = ratbag_profile_unref(profile);
 
-	device = ratbag_device_unref(device);
 	return rc;
 }
 
@@ -463,7 +458,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	struct macro macro = {0};
 	int i;
 
-	if (argc != 4) {
+	if (argc != 3) {
 		usage();
 		return 1;
 	}
@@ -503,9 +498,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 		return 1;
 	}
 
-	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
-	if (!device)
-		return 1;
+	device = options->device;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_BUTTON_KEY)) {
@@ -581,7 +574,6 @@ out:
 	button = ratbag_button_unref(button);
 	profile = ratbag_profile_unref(profile);
 
-	device = ratbag_device_unref(device);
 	return rc;
 }
 
@@ -644,6 +636,7 @@ static const struct ratbag_cmd cmd_list = {
 	.cmd = ratbag_cmd_list_supported_devices,
 	.args = NULL,
 	.help = "List the available devices",
+	.no_file_arg = true,
 	.subcommands = { NULL },
 };
 
@@ -755,9 +748,7 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 	argc--;
 	argv++;
 
-	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
-	if (!device)
-		return 1;
+	device = options->device;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION)) {
@@ -798,7 +789,6 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 out:
 	profile = ratbag_profile_unref(profile);
 
-	device = ratbag_device_unref(device);
 	return rc;
 }
 
@@ -816,7 +806,7 @@ ratbag_cmd_resolution_dpi(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
-	if (argc < 2) {
+	if (argc < 1) {
 		usage();
 		return 1;
 	}
@@ -849,7 +839,7 @@ ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 	int resolution = 0;
 	char *endp;
 
-	if (argc < 2) {
+	if (argc < 1) {
 		usage();
 		return 1;
 	}
@@ -935,7 +925,7 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	int rc = 1;
 	int i;
 
-	if (argc != 2) {
+	if (argc != 1) {
 		usage();
 		return 1;
 	}
@@ -945,7 +935,8 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	argc--;
 	argv++;
 
-	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+	device = options->device;
+
 	if (!device)
 		return 1;
 
@@ -993,7 +984,6 @@ out:
 	profile = ratbag_profile_unref(profile);
 	active_profile = ratbag_profile_unref(active_profile);
 
-	device = ratbag_device_unref(device);
 	return rc;
 }
 
@@ -1018,9 +1008,7 @@ ratbag_cmd_profile_active_get(const struct ratbag_cmd *cmd,
 	int active_profile_idx = 0;
 	int num_profiles = 0;
 
-	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
-	if (!device)
-		return 1;
+	device = options->device;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
@@ -1054,7 +1042,6 @@ out:
 	if (rc == 0)
 		printf("%d\n", active_profile_idx);
 	profile = ratbag_profile_unref(profile);
-	device = ratbag_device_unref(device);
 	return rc;
 }
 
@@ -1072,7 +1059,7 @@ ratbag_cmd_profile_active(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
-	if (argc < 2) {
+	if (argc < 1) {
 		usage();
 		return 1;
 	}
@@ -1105,7 +1092,7 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 	int profile = 0;
 	char *endp;
 
-	if (argc < 2) {
+	if (argc < 1) {
 		usage();
 		return 1;
 	}
@@ -1156,7 +1143,7 @@ main(int argc, char **argv)
 	const char *command;
 	int rc = 0;
 	const struct ratbag_cmd **cmd;
-	struct ratbag_cmd_options options;
+	struct ratbag_cmd_options options = {0};
 
 	ratbag = ratbag_create_context(&interface, NULL);
 	if (!ratbag) {
@@ -1208,13 +1195,23 @@ main(int argc, char **argv)
 	else if (options.flags & FLAG_VERBOSE)
 		ratbag_log_set_priority(ratbag, RATBAG_LOG_PRIORITY_DEBUG);
 
-	command = argv[optind++];
+	argc -= optind;
+	argv += optind;
+
+	command = argv[0];
 	ARRAY_FOR_EACH(ratbag_commands, cmd) {
 		if (!*cmd || !streq((*cmd)->name, command))
 			continue;
 
-		argc -= optind;
-		argv += optind;
+		argc--;
+		argv++;
+
+		if (!(*cmd)->no_file_arg) {
+			options.device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+			if (!options.device)
+				goto out;
+			argc--;
+		}
 
 		/* reset optind to reset the internal state, see NOTES in
 		 * getopt(3) */
@@ -1228,6 +1225,7 @@ main(int argc, char **argv)
 	rc = 1;
 
 out:
+	ratbag_device_unref(options.device);
 	ratbag_unref(ratbag);
 
 	return rc;
