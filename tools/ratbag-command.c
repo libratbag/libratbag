@@ -49,9 +49,9 @@ enum cmd_flags {
 struct ratbag_cmd_options {
 	enum cmd_flags flags;
 	struct ratbag_device *device;
-	int profile;
+	struct ratbag_profile *profile;
+	struct ratbag_resolution *resolution;
 	int button;
-	int resolution;
 };
 
 struct ratbag_cmd {
@@ -211,6 +211,27 @@ ratbag_cmd_get_active_profile(struct ratbag_device *device)
 
 	if (!profile)
 		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
+
+	return NULL;
+}
+
+static inline struct ratbag_resolution *
+ratbag_cmd_get_active_resolution(struct ratbag_profile *profile)
+{
+	struct ratbag_resolution *resolution = NULL;
+	int i;
+
+	for (i = 0; i < ratbag_profile_get_num_resolutions(profile); i++) {
+		resolution = ratbag_profile_get_resolution(profile, i);
+		if (ratbag_resolution_is_active(resolution))
+			return resolution;
+
+		ratbag_resolution_unref(resolution);
+		resolution = NULL;
+	}
+
+	if (!resolution)
+		error("Huh hoh, something bad happened, unable to retrieve the active resolution\n");
 
 	return NULL;
 }
@@ -749,22 +770,12 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 	argv++;
 
 	device = options->device;
+	profile = options->profile;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION)) {
 		error("Looks like '%s' has no switchable resolution\n",
 		      ratbag_device_get_name(device));
-		goto out;
-	}
-
-	if (options->profile == -1)
-		profile = ratbag_cmd_get_active_profile(device);
-	else
-		profile = ratbag_device_get_profile_by_index(device,
-							     options->profile);
-
-	if (!profile) {
-		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
 		goto out;
 	}
 
@@ -787,8 +798,6 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 	}
 
 out:
-	profile = ratbag_profile_unref(profile);
-
 	return rc;
 }
 
@@ -835,8 +844,11 @@ ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 		      struct ratbag_cmd_options *options,
 		      int argc, char **argv)
 {
+	struct ratbag_device *device;
+	struct ratbag_profile *profile;
+	struct ratbag_resolution *resolution;
 	const char *command;
-	int resolution = 0;
+	int resolution_idx = 0;
 	char *endp;
 
 	if (argc < 1) {
@@ -844,15 +856,36 @@ ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 		return 1;
 	}
 
+	device = options->device;
+	profile = options->profile;
+	if (!profile)
+		profile = ratbag_cmd_get_active_profile(device);
+	if (!profile)
+		return 1;
+	options->profile = profile;
+
 	command = argv[0];
 
-	resolution = strtod(command, &endp);
+	resolution_idx = strtod(command, &endp);
 	if (command != endp && *endp == '\0') {
-		options->resolution = resolution;
+		resolution = ratbag_profile_get_resolution(profile,
+							   resolution_idx);
+
+		if (!resolution) {
+			error("Unable to retrieve resolution %d\n",
+			      resolution_idx);
+			return 1;
+		}
 		argc--;
 		argv++;
 		command = argv[0];
+	} else {
+		resolution = ratbag_cmd_get_active_resolution(profile);
+		if (!resolution)
+			return 1;
 	}
+
+	options->resolution = resolution;
 
 	return run_subcommand(command,
 			      cmd,
@@ -1088,9 +1121,13 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 		   struct ratbag_cmd_options *options,
 		   int argc, char **argv)
 {
+	struct ratbag_profile *profile;
+	struct ratbag_device *device;
 	const char *command;
-	int profile = 0;
+	int profile_idx = 0;
 	char *endp;
+
+	device = options->device;
 
 	if (argc < 1) {
 		usage();
@@ -1098,13 +1135,25 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 	}
 	command = argv[0];
 
-	profile = strtod(command, &endp);
+	profile_idx = strtod(command, &endp);
 	if (command != endp && *endp == '\0') {
-		options->profile = profile;
+		profile = ratbag_device_get_profile_by_index(device,
+							     profile_idx);
+		if (!profile) {
+			error("Unable to find profile %d\n", profile_idx);
+			return 1;
+		}
+
 		argc--;
 		argv++;
 		command = argv[0];
+	} else {
+		profile = ratbag_cmd_get_active_profile(device);
+		if (!profile)
+			return 1;
 	}
+
+	options->profile = profile;
 
 	return run_subcommand(command,
 			      cmd,
@@ -1152,9 +1201,7 @@ main(int argc, char **argv)
 	}
 
 	options.flags = 0;
-	options.profile = -1;
 	options.button = -1;
-	options.resolution = -1;
 
 	while (1) {
 		int c;
@@ -1225,6 +1272,8 @@ main(int argc, char **argv)
 	rc = 1;
 
 out:
+	ratbag_resolution_unref(options.resolution);
+	ratbag_profile_unref(options.profile);
 	ratbag_device_unref(options.device);
 	ratbag_unref(ratbag);
 
