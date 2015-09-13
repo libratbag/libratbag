@@ -154,6 +154,17 @@ run_subcommand(const char *command,
 	return 1;
 }
 
+static inline const char*
+ratbag_cmd_get_path(int argc, char **argv)
+{
+	if (argc != 1) {
+		usage();
+		return NULL;
+	}
+
+	return argv[0];
+}
+
 static int
 ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		struct ratbag *ratbag,
@@ -169,12 +180,9 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 	int i, j, b;
 	int rc = 1;
 
-	if (argc != 1) {
-		usage();
+	path = ratbag_cmd_get_path(argc, argv);
+	if (!path)
 		return 1;
-	}
-
-	path = argv[0];
 
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
@@ -287,8 +295,13 @@ ratbag_cmd_switch_profile(const struct ratbag_cmd *cmd,
 		return 1;
 	}
 
-	path = argv[1];
 	index = atoi(argv[0]);
+
+	argc--;
+	argv++;
+	path = ratbag_cmd_get_path(argc, argv);
+	if (!path)
+		return 1;
 
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
@@ -371,7 +384,9 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 		return 1;
 	}
 
-	path = argv[0];
+	path = ratbag_cmd_get_path(argc, argv);
+	if (!path)
+		return 1;
 
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
@@ -514,7 +529,13 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	button_index = atoi(argv[0]);
 	action_str = argv[1];
 	action_arg = argv[2];
-	path = argv[3];
+
+	argc -= 3;
+	argv += 3;
+	path = ratbag_cmd_get_path(argc, argv);
+	if (!path)
+		return 1;
+
 	if (streq(action_str, "button")) {
 		action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 		btnkey = atoi(action_arg);
@@ -708,7 +729,12 @@ ratbag_cmd_switch_dpi(const struct ratbag_cmd *cmd,
 	}
 
 	dpi = atoi(argv[0]);
-	path = argv[1];
+
+	argc--;
+	argv++;
+	path = ratbag_cmd_get_path(argc, argv);
+	if (!path)
+		return 1;
 
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
