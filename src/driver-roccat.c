@@ -536,13 +536,14 @@ roccat_write_profile(struct ratbag_profile *profile)
 	struct roccat_data *drv_data;
 	int rc;
 	uint8_t *buf;
-
-	return 0;
+	uint16_t *crc;
 
 	assert(index <= ROCCAT_PROFILE_MAX);
 
 	drv_data = ratbag_get_drv_data(device);
 	buf = drv_data->profiles[index];
+	crc = (uint16_t *)&buf[ROCCAT_REPORT_SIZE_PROFILE - 2];
+	*crc = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_PROFILE);
 
 	roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
 	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_KEY_MAPPING,
@@ -594,6 +595,7 @@ roccat_read_button(struct ratbag_button *button)
 					  button->index);
 		macro = &drv_data->macros[button->profile->index][button->index];
 		buf = (uint8_t*)macro;
+		buf[0] = ROCCAT_REPORT_ID_MACRO;
 		rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_MACRO,
 				buf, ROCCAT_REPORT_SIZE_MACRO,
 				HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
@@ -639,6 +641,26 @@ out_macro:
 }
 
 static int
+roccat_is_ready(struct ratbag_device *device)
+{
+	uint8_t buf[3] = { 0 };
+	int rc;
+
+	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_CONFIGURE_PROFILE,
+					buf, sizeof(buf),
+					HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	if (rc < 0)
+		return rc;
+	if (rc != sizeof(buf))
+		return -EIO;
+
+	if (buf[1] == 0x03)
+		msleep(100);
+
+	return buf[1] == 0x01;
+}
+
+static int
 roccat_write_macro(struct ratbag_button *button,
 		     const struct ratbag_button_action *action)
 {
@@ -657,6 +679,8 @@ roccat_write_macro(struct ratbag_button *button,
 	macro = &drv_data->macros[button->profile->index][button->index];
 	buf = (uint8_t*)macro;
 
+	memset(buf, 0, ROCCAT_REPORT_SIZE_MACRO);
+
 	for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
 		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
 			return -EINVAL; /* should not happen, ever */
@@ -664,37 +688,60 @@ roccat_write_macro(struct ratbag_button *button,
 		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_NONE)
 			break;
 
-		/* ignore timeout events */
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_WAIT)
+		/* ignore the first wait */
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_WAIT &&
+		    !count)
 			continue;
 
-		for (j = 0; j < ARRAY_LENGTH(macro_mapping); j++) {
-			if (macro_mapping[j] == action->macro->events[i].event.key)
-				macro->keys[count].keycode = j;
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED ||
+		    action->macro->events[i].type == RATBAG_MACRO_EVENT_KEY_RELEASED) {
+			for (j = 0; j < ARRAY_LENGTH(macro_mapping); j++) {
+				if (macro_mapping[j] == action->macro->events[i].event.key)
+					macro->keys[count].keycode = j;
+			}
 		}
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED)
-			macro->keys[count].flag = 0x00;
-		else
-			macro->keys[count].flag = 0x80;
+
+		switch (action->macro->events[i].type) {
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+			macro->keys[count].flag = 0x01;
+			break;
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			macro->keys[count].flag = 0x02;
+			break;
+		case RATBAG_MACRO_EVENT_WAIT:
+			macro->keys[--count].time = action->macro->events[i].event.timeout;
+			break;
+		case RATBAG_MACRO_EVENT_INVALID:
+		case RATBAG_MACRO_EVENT_NONE:
+			/* should not happen */
+			log_error(device->ratbag,
+				  "something went wrong while writing a macro.\n");
+		}
 		count++;
 	}
 
 	macro->reportID = ROCCAT_REPORT_ID_MACRO;
 	macro->twentytwo = 0x22;
+	macro->height = 0x08;
 	macro->profile = button->profile->index;
 	macro->button_index = button->index;
 	macro->active = 0x01;
+	strcpy(macro->group, "g0");
 	strncpy(macro->name, action->macro->name, 23);
 	macro->length = count;
+	macro->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_MACRO);
 
-	roccat_set_config_profile(device,
-				    button->profile->index,
-				    button->index);
+	while (!roccat_is_ready(device))
+		msleep(10);
+
 	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_MACRO,
 		buf, ROCCAT_REPORT_SIZE_MACRO,
 		HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 	if (rc < 0)
 		return rc;
+
+	while (!roccat_is_ready(device))
+		msleep(10);
 
 	return rc == ROCCAT_REPORT_SIZE_MACRO ? 0 : -EIO;
 }
@@ -852,6 +899,6 @@ struct ratbag_driver roccat_driver = {
 	.set_active_profile = roccat_set_current_profile,
 	.has_capability = roccat_has_capability,
 	.read_button = roccat_read_button,
-//	.write_button = roccat_write_button,
+	.write_button = roccat_write_button,
 //	.write_resolution_dpi = roccat_write_resolution_dpi,
 };
