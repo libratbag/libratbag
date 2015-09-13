@@ -945,7 +945,7 @@ hidpp10_device_new(struct ratbag_device *device, int index)
 		return NULL;
 
 	dev->index = index;
-	dev->ratbag_device = ratbag_device_ref(device);
+	dev->ratbag_device = device;
 
 	return dev;
 }
@@ -991,6 +991,5 @@ hidpp10_device_new_from_idx(struct ratbag_device *device, int idx)
 void
 hidpp10_device_destroy(struct hidpp10_device *dev)
 {
-	ratbag_device_unref(dev->ratbag_device);
 	free(dev);
 }
