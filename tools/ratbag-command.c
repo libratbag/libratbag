@@ -47,6 +47,9 @@ enum cmd_flags {
 
 struct ratbag_cmd_options {
 	enum cmd_flags flags;
+	int profile;
+	int button;
+	int resolution;
 };
 
 struct ratbag_cmd {
@@ -683,12 +686,229 @@ out:
 	return rc;
 }
 
+static int
+ratbag_cmd_resolution_active_set(const struct ratbag_cmd *cmd,
+				 struct ratbag *ratbag,
+				 struct ratbag_cmd_options *options,
+				 int argc, char **argv)
+{
+
+	printf("Not yet implemented\n");
+
+	return 0;
+}
+
+static const struct ratbag_cmd cmd_resolution_active_set = {
+	.name = "set",
+	.cmd = ratbag_cmd_resolution_active_set,
+	.args = "N",
+	.help = "Set the active resolution number",
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_resolution_active_get(const struct ratbag_cmd *cmd,
+				 struct ratbag *ratbag,
+				 struct ratbag_cmd_options *options,
+				 int argc, char **argv)
+{
+	printf("Not yet implemented\n");
+
+	return 0;
+}
+
+static const struct ratbag_cmd cmd_resolution_active_get = {
+	.name = "get",
+	.cmd = ratbag_cmd_resolution_active_get,
+	.args = NULL,
+	.help = "Get the active resolution number",
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_resolution_active(const struct ratbag_cmd *cmd,
+			  struct ratbag *ratbag,
+			  struct ratbag_cmd_options *options,
+			  int argc, char **argv)
+{
+	if (argc < 2) {
+		usage();
+		return 1;
+	}
+
+	return run_subcommand(argv[0],
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_resolution_active = {
+	.name = "active",
+	.cmd = ratbag_cmd_resolution_active,
+	.args = NULL,
+	.help = NULL,
+	.subcommands = {
+		&cmd_resolution_active_get,
+		&cmd_resolution_active_set,
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_resolution_dpi_get(const struct ratbag_cmd *cmd,
+			      struct ratbag *ratbag,
+			      struct ratbag_cmd_options *options,
+			      int argc, char **argv)
+{
+	printf("Not yet implemented\n");
+	return 1;
+}
+
+static const struct ratbag_cmd cmd_resolution_dpi_get = {
+	.name = "get",
+	.cmd = ratbag_cmd_resolution_dpi_get,
+	.args = NULL,
+	.help = "Get the resolution in dpi",
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
+			      struct ratbag *ratbag,
+			      struct ratbag_cmd_options *options,
+			      int argc, char **argv)
+{
+	printf("Not yet implemented\n");
+	return 1;
+}
+
+static const struct ratbag_cmd cmd_resolution_dpi_set = {
+	.name = "set",
+	.cmd = ratbag_cmd_resolution_dpi_set,
+	.args = "N",
+	.help = "Set the resolution in dpi",
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_resolution_dpi(const struct ratbag_cmd *cmd,
+			  struct ratbag *ratbag,
+			  struct ratbag_cmd_options *options,
+			  int argc, char **argv)
+{
+	if (argc < 2) {
+		usage();
+		return 1;
+	}
+
+	return run_subcommand(argv[0],
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_resolution_dpi = {
+	.name = "dpi",
+	.cmd = ratbag_cmd_resolution_dpi,
+	.args = NULL,
+	.help = NULL,
+	.subcommands = {
+		&cmd_resolution_dpi_get,
+		&cmd_resolution_dpi_set,
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
+		      struct ratbag *ratbag,
+		      struct ratbag_cmd_options *options,
+		      int argc, char **argv)
+{
+	const char *command;
+	int resolution = 0;
+	char *endp;
+
+	if (argc < 2) {
+		usage();
+		return 1;
+	}
+
+	command = argv[0];
+
+	resolution = strtod(command, &endp);
+	if (command != endp && *endp == '\0') {
+		options->resolution = resolution;
+		argc--;
+		argv++;
+		command = argv[0];
+	}
+
+	return run_subcommand(command,
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_resolution = {
+	.name = "resolution",
+	.cmd = ratbag_cmd_resolution,
+	.args = "[...]",
+	.help = "Modify a resolution",
+	.subcommands = {
+		&cmd_resolution_active,
+		&cmd_resolution_dpi,
+		NULL,
+	},
+};
+
 static const struct ratbag_cmd cmd_switch_dpi = {
 	.name = "switch-dpi",
 	.cmd = ratbag_cmd_switch_dpi,
 	.args = "N",
 	.help = "Switch the resolution of the mouse in the active profile",
 	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_button(const struct ratbag_cmd *cmd,
+		   struct ratbag *ratbag,
+		   struct ratbag_cmd_options *options,
+		   int argc, char **argv)
+{
+	const char *command;
+	int button = 0;
+	char *endp;
+
+	if (argc < 2) {
+		usage();
+		return 1;
+	}
+
+	command = argv[1];
+
+	button = strtod(command, &endp);
+	if (command != endp && *endp == '\0') {
+		options->button = button;
+		argc--;
+		argv++;
+	}
+
+	return run_subcommand(command,
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_button = {
+	.name = "button",
+	.cmd = ratbag_cmd_button,
+	.args = "[...]",
+	.help = "Modify a button",
+	.subcommands = {
+		/* FIXME */
+		NULL,
+	},
 };
 
 static int
@@ -870,12 +1090,22 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 		   int argc, char **argv)
 {
 	const char *command;
+	int profile = 0;
+	char *endp;
 
 	if (argc < 2) {
 		usage();
 		return 1;
 	}
 	command = argv[0];
+
+	profile = strtod(command, &endp);
+	if (command != endp && *endp == '\0') {
+		options->profile = profile;
+		argc--;
+		argv++;
+		command = argv[0];
+	}
 
 	return run_subcommand(command,
 			      cmd,
@@ -890,6 +1120,8 @@ static const struct ratbag_cmd cmd_profile = {
 	.help = "Modify a profile",
 	.subcommands = {
 		&cmd_profile_active,
+		&cmd_resolution,
+		&cmd_button,
 		NULL,
 	},
 };
@@ -900,6 +1132,8 @@ static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_change_button,
 	&cmd_switch_etekcity,
 	&cmd_switch_dpi,
+	&cmd_button,
+	&cmd_resolution,
 	&cmd_profile,
 	NULL,
 };
@@ -920,6 +1154,9 @@ main(int argc, char **argv)
 	}
 
 	options.flags = 0;
+	options.profile = -1;
+	options.button = -1;
+	options.resolution = -1;
 
 	while (1) {
 		int c;
