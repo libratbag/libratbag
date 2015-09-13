@@ -45,9 +45,15 @@ enum cmd_flags {
 	FLAG_VERBOSE_RAW = 1 << 1,
 };
 
+struct ratbag_cmd_options {
+	enum cmd_flags flags;
+};
+
 struct ratbag_cmd {
 	const char *name;
-	int (*cmd)(struct ratbag *ratbag, uint32_t flags, int argc, char **argv);
+	int (*cmd)(struct ratbag *ratbag,
+		   struct ratbag_cmd_options *options,
+		   int argc, char **argv);
 	const char *args;
 	const char *help;
 };
@@ -88,7 +94,9 @@ usage(void)
 }
 
 static int
-ratbag_cmd_info(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+ratbag_cmd_info(struct ratbag *ratbag,
+		struct ratbag_cmd_options *options,
+		int argc, char **argv)
 {
 	const char *path;
 	struct ratbag_device *device;
@@ -199,7 +207,9 @@ static const struct ratbag_cmd cmd_info = {
 };
 
 static int
-ratbag_cmd_switch_profile(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+ratbag_cmd_switch_profile(struct ratbag *ratbag,
+			  struct ratbag_cmd_options *options,
+			  int argc, char **argv)
 {
 	const char *path;
 	struct ratbag_device *device;
@@ -277,7 +287,9 @@ static const struct ratbag_cmd cmd_switch_profile = {
 };
 
 static int
-ratbag_cmd_switch_etekcity(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+ratbag_cmd_switch_etekcity(struct ratbag *ratbag,
+			   struct ratbag_cmd_options *options,
+			   int argc, char **argv)
 {
 	const char *path;
 	struct ratbag_device *device;
@@ -410,7 +422,9 @@ str_to_macro(const char *action_arg, struct macro *m)
 }
 
 static int
-ratbag_cmd_change_button(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+ratbag_cmd_change_button(struct ratbag *ratbag,
+			 struct ratbag_cmd_options *options,
+			 int argc, char **argv)
 {
 	const char *path, *action_str, *action_arg;
 	struct ratbag_device *device;
@@ -559,7 +573,9 @@ filter_event_node(const struct dirent *input_entry)
 }
 
 static int
-ratbag_cmd_list_supported_devices(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+ratbag_cmd_list_supported_devices(struct ratbag *ratbag,
+				  struct ratbag_cmd_options *options,
+				  int argc, char **argv)
 {
 	struct dirent **input_list;
 	struct ratbag_device *device;
@@ -603,7 +619,9 @@ static const struct ratbag_cmd cmd_list = {
 };
 
 static int
-ratbag_cmd_switch_dpi(struct ratbag *ratbag, uint32_t flags, int argc, char **argv)
+ratbag_cmd_switch_dpi(struct ratbag *ratbag,
+		      struct ratbag_cmd_options *options,
+		      int argc, char **argv)
 {
 	const char *path;
 	struct ratbag_device *device;
@@ -695,13 +713,15 @@ main(int argc, char **argv)
 	const char *command;
 	int rc = 0;
 	const struct ratbag_cmd **cmd;
-	uint32_t flags = 0;
+	struct ratbag_cmd_options options;
 
 	ratbag = ratbag_create_context(&interface, NULL);
 	if (!ratbag) {
 		error("Can't initialize ratbag\n");
 		goto out;
 	}
+
+	options.flags = 0;
 
 	while (1) {
 		int c;
@@ -721,9 +741,9 @@ main(int argc, char **argv)
 			goto out;
 		case OPT_VERBOSE:
 			if (optarg && streq(optarg, "raw"))
-				flags |= FLAG_VERBOSE_RAW;
+				options.flags |= FLAG_VERBOSE_RAW;
 			else
-				flags |= FLAG_VERBOSE;
+				options.flags |= FLAG_VERBOSE;
 			break;
 		default:
 			usage();
@@ -737,9 +757,9 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	if (flags & FLAG_VERBOSE_RAW)
+	if (options.flags & FLAG_VERBOSE_RAW)
 		ratbag_log_set_priority(ratbag, RATBAG_LOG_PRIORITY_RAW);
-	else if (flags & FLAG_VERBOSE)
+	else if (options.flags & FLAG_VERBOSE)
 		ratbag_log_set_priority(ratbag, RATBAG_LOG_PRIORITY_DEBUG);
 
 	command = argv[optind++];
@@ -753,7 +773,7 @@ main(int argc, char **argv)
 		/* reset optind to reset the internal state, see NOTES in
 		 * getopt(3) */
 		optind = 0;
-		rc = (*cmd)->cmd(ratbag, flags, argc, argv);
+		rc = (*cmd)->cmd(ratbag, &options, argc, argv);
 		goto out;
 	}
 
