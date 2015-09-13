@@ -154,15 +154,26 @@ run_subcommand(const char *command,
 	return 1;
 }
 
-static inline const char*
-ratbag_cmd_get_path(int argc, char **argv)
+static inline struct ratbag_device *
+ratbag_cmd_device_from_arg(struct ratbag *ratbag,
+			   int argc, char **argv)
 {
+	struct ratbag_device *device;
+	const char *path;
+
 	if (argc != 1) {
 		usage();
 		return NULL;
 	}
 
-	return argv[0];
+	path = argv[0];
+	device = ratbag_cmd_open_device(ratbag, path);
+	if (!device) {
+		error("Looks like '%s' is not supported\n", path);
+		return NULL;
+	}
+
+	return device;
 }
 
 static int
@@ -171,7 +182,6 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		struct ratbag_cmd_options *options,
 		int argc, char **argv)
 {
-	const char *path;
 	struct ratbag_device *device;
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
@@ -180,17 +190,11 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 	int i, j, b;
 	int rc = 1;
 
-	path = ratbag_cmd_get_path(argc, argv);
-	if (!path)
-		return 1;
-
-	device = ratbag_cmd_open_device(ratbag, path);
-	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
+	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+	if (!device)
 		goto out;
-	}
 
-	printf("Device '%s' (%s)\n", ratbag_device_get_name(device), path);
+	printf("Device '%s'\n", ratbag_device_get_name(device));
 
 	printf("Capabilities:");
 	if (ratbag_device_has_capability(device,
@@ -283,7 +287,6 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 			   struct ratbag_cmd_options *options,
 			   int argc, char **argv)
 {
-	const char *path;
 	struct ratbag_device *device;
 	struct ratbag_button *button_6, *button_7;
 	struct ratbag_profile *profile = NULL;
@@ -292,24 +295,14 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 	size_t modifiers_sz = 10;
 	int i;
 
-	if (argc != 1) {
-		usage();
+	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+	if (!device)
 		return 1;
-	}
-
-	path = ratbag_cmd_get_path(argc, argv);
-	if (!path)
-		return 1;
-
-	device = ratbag_cmd_open_device(ratbag, path);
-	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
-		return 1;
-	}
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		error("Looks like '%s' has no switchable profiles\n", path);
+		error("Looks like '%s' has no switchable profiles\n",
+		      ratbag_device_get_name(device));
 		goto out;
 	}
 
@@ -422,7 +415,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 			 struct ratbag_cmd_options *options,
 			 int argc, char **argv)
 {
-	const char *path, *action_str, *action_arg;
+	const char *action_str, *action_arg;
 	struct ratbag_device *device;
 	struct ratbag_button *button = NULL;
 	struct ratbag_profile *profile = NULL;
@@ -445,9 +438,6 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 
 	argc -= 3;
 	argv += 3;
-	path = ratbag_cmd_get_path(argc, argv);
-	if (!path)
-		return 1;
 
 	if (streq(action_str, "button")) {
 		action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
@@ -477,16 +467,14 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 		return 1;
 	}
 
-
-	device = ratbag_cmd_open_device(ratbag, path);
-	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
+	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+	if (!device)
 		return 1;
-	}
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_BUTTON_KEY)) {
-		error("Looks like '%s' has no programmable buttons\n", path);
+		error("Looks like '%s' has no programmable buttons\n",
+		      ratbag_device_get_name(device));
 		goto out;
 	}
 
@@ -629,7 +617,6 @@ ratbag_cmd_switch_dpi(const struct ratbag_cmd *cmd,
 		      struct ratbag_cmd_options *options,
 		      int argc, char **argv)
 {
-	const char *path;
 	struct ratbag_device *device;
 	struct ratbag_profile *profile = NULL;
 	int rc = 1;
@@ -645,19 +632,15 @@ ratbag_cmd_switch_dpi(const struct ratbag_cmd *cmd,
 
 	argc--;
 	argv++;
-	path = ratbag_cmd_get_path(argc, argv);
-	if (!path)
-		return 1;
 
-	device = ratbag_cmd_open_device(ratbag, path);
-	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
+	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+	if (!device)
 		return 1;
-	}
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION)) {
-		error("Looks like '%s' has no switchable resolution\n", path);
+		error("Looks like '%s' has no switchable resolution\n",
+		      ratbag_device_get_name(device));
 		goto out;
 	}
 
@@ -714,7 +697,6 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 			      struct ratbag_cmd_options *options,
 			      int argc, char **argv)
 {
-	const char *path;
 	struct ratbag_device *device;
 	struct ratbag_profile *profile = NULL, *active_profile = NULL;
 	int num_profiles, index;
@@ -730,19 +712,15 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 
 	argc--;
 	argv++;
-	path = ratbag_cmd_get_path(argc, argv);
-	if (!path)
-		return 1;
 
-	device = ratbag_cmd_open_device(ratbag, path);
-	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
+	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+	if (!device)
 		return 1;
-	}
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		error("Looks like '%s' has no switchable profiles\n", path);
+		error("Looks like '%s' has no switchable profiles\n",
+		      ratbag_device_get_name(device));
 		goto out;
 	}
 
@@ -801,7 +779,6 @@ ratbag_cmd_profile_active_get(const struct ratbag_cmd *cmd,
 			      struct ratbag_cmd_options *options,
 			      int argc, char **argv)
 {
-	const char *path;
 	struct ratbag_device *device;
 	struct ratbag_profile *profile = NULL;
 	int i;
@@ -809,15 +786,9 @@ ratbag_cmd_profile_active_get(const struct ratbag_cmd *cmd,
 	int active_profile_idx = 0;
 	int num_profiles = 0;
 
-	path = ratbag_cmd_get_path(argc, argv);
-	if (!path)
+	device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+	if (!device)
 		return 1;
-
-	device = ratbag_cmd_open_device(ratbag, path);
-	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
-		return 1;
-	}
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
