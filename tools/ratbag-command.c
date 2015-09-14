@@ -376,29 +376,15 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 	int rc = 1, commit = 0;
 	unsigned int modifiers[10];
 	size_t modifiers_sz = 10;
-	int i;
 
 	device = options->device;
+	profile = options->profile;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
 		error("Device '%s' has no switchable profiles\n",
 		      ratbag_device_get_name(device));
-		goto out;
-	}
-
-	for (i = 0; i < ratbag_device_get_num_profiles(device); i++) {
-		profile = ratbag_device_get_profile_by_index(device, i);
-		if (ratbag_profile_is_active(profile))
-			break;
-
-		ratbag_profile_unref(profile);
-		profile = NULL;
-	}
-
-	if (!profile) {
-		error("Failed to retrieve the active profile\n");
-		goto out;
+		return 1;
 	}
 
 	button_6 = ratbag_profile_get_button_by_index(profile, 6);
@@ -419,17 +405,10 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 	button_6 = ratbag_button_unref(button_6);
 	button_7 = ratbag_button_unref(button_7);
 
-	if (!commit)
-		goto out;
-
-	rc = ratbag_profile_set_active(profile);
 	if (!rc)
 		printf("Switched the current profile of '%s' to %sreport the volume keys\n",
 		       ratbag_device_get_name(device),
 		       commit == 1 ? "not " : "");
-
-out:
-	profile = ratbag_profile_unref(profile);
 
 	return rc;
 }
@@ -439,7 +418,7 @@ static const struct ratbag_cmd cmd_switch_etekcity = {
 	.cmd = ratbag_cmd_switch_etekcity,
 	.args = NULL,
 	.help = "Switch the Etekcity mouse active profile",
-	.flags = FLAG_NEED_DEVICE,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = { NULL },
 };
 
@@ -549,24 +528,12 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	}
 
 	device = options->device;
+	profile = options->profile;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_BUTTON_KEY)) {
 		error("Device '%s' has no programmable buttons\n",
 		      ratbag_device_get_name(device));
-		goto out;
-	}
-
-	for (i = 0; i < ratbag_device_get_num_profiles(device); i++) {
-		profile = ratbag_device_get_profile_by_index(device, i);
-		if (ratbag_profile_is_active(profile))
-			break;
-		ratbag_profile_unref(profile);
-		profile = NULL;
-	}
-
-	if (!profile) {
-		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
 		goto out;
 	}
 
@@ -622,7 +589,6 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 
 out:
 	button = ratbag_button_unref(button);
-	profile = ratbag_profile_unref(profile);
 
 	return rc;
 }
@@ -632,7 +598,7 @@ static const struct ratbag_cmd cmd_change_button = {
 	.cmd = ratbag_cmd_change_button,
 	.args = "X <button|key|special|macro> <number|KEY_FOO|special|macro name:KEY_FOO,KEY_BAR,...>",
 	.help = "Remap button X to the given action in the active profile",
-	.flags = FLAG_NEED_DEVICE,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = { NULL },
 };
 
