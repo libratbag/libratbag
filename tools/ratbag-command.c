@@ -271,7 +271,6 @@ run_subcommand(const char *command,
 	}
 
 	error("Invalid subcommand '%s'\n", command);
-	usage();
 	return ERR_USAGE;
 }
 
@@ -496,10 +495,8 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	struct macro macro = {0};
 	int i;
 
-	if (argc != 3) {
-		usage();
+	if (argc != 3)
 		return ERR_USAGE;
-	}
 
 	button_index = atoi(argv[0]);
 	action_str = argv[1];
@@ -532,7 +529,6 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 			return ERR_USAGE;
 		}
 	} else {
-		usage();
 		return ERR_USAGE;
 	}
 
@@ -633,10 +629,8 @@ ratbag_cmd_list_supported_devices(const struct ratbag_cmd *cmd,
 	int n, i;
 	int supported = 0;
 
-	if (argc != 0) {
-		usage();
+	if (argc != 0)
 		return ERR_USAGE;
-	}
 
 	n = scandir("/dev/input", &input_list, filter_event_node, alphasort);
 	if (n < 0)
@@ -717,10 +711,8 @@ ratbag_cmd_resolution_active(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
-	if (argc < 1) {
-		usage();
+	if (argc < 1)
 		return ERR_USAGE;
-	}
 
 	return run_subcommand(argv[0],
 			      cmd,
@@ -777,10 +769,8 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 	int rc = SUCCESS;
 	int dpi;
 
-	if (argc != 1) {
-		usage();
+	if (argc != 1)
 		return ERR_USAGE;
-	}
 
 	dpi = atoi(argv[0]);
 
@@ -824,10 +814,8 @@ ratbag_cmd_resolution_dpi(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
-	if (argc < 1) {
-		usage();
+	if (argc < 1)
 		return ERR_USAGE;
-	}
 
 	return run_subcommand(argv[0],
 			      cmd,
@@ -860,10 +848,8 @@ ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 	int resolution_idx = 0;
 	char *endp;
 
-	if (argc < 1) {
-		usage();
+	if (argc < 1)
 		return ERR_USAGE;
-	}
 
 	command = argv[0];
 
@@ -919,10 +905,8 @@ ratbag_cmd_button(const struct ratbag_cmd *cmd,
 	int button = 0;
 	char *endp;
 
-	if (argc < 2) {
-		usage();
+	if (argc < 2)
 		return ERR_USAGE;
-	}
 
 	command = argv[1];
 
@@ -962,10 +946,8 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	int num_profiles, index;
 	int rc = ERR_UNSUPPORTED;
 
-	if (argc != 1) {
-		usage();
+	if (argc != 1)
 		return ERR_USAGE;
-	}
 
 	index = atoi(argv[0]);
 
@@ -1086,10 +1068,8 @@ ratbag_cmd_profile_active(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
-	if (argc < 1) {
-		usage();
+	if (argc < 1)
 		return ERR_USAGE;
-	}
 
 	return run_subcommand(argv[0],
 			      cmd,
@@ -1124,10 +1104,9 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 
 	device = options->device;
 
-	if (argc < 1) {
-		usage();
+	if (argc < 1)
 		return ERR_USAGE;
-	}
+
 	command = argv[0];
 
 	profile_idx = strtod(command, &endp);
@@ -1231,14 +1210,12 @@ main(int argc, char **argv)
 				options.flags |= FLAG_VERBOSE;
 			break;
 		default:
-			usage();
-			return ERR_USAGE;
+			goto out;
 		}
 	}
 
 	if (optind >= argc) {
 		rc = ERR_USAGE;
-		usage();
 		goto out;
 	}
 
@@ -1261,6 +1238,9 @@ out:
 	ratbag_profile_unref(options.profile);
 	ratbag_device_unref(options.device);
 	ratbag_unref(ratbag);
+
+	if (rc == ERR_USAGE)
+		usage();
 
 	return rc;
 }
