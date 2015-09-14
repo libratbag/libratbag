@@ -147,7 +147,7 @@ ratbag_cmd_device_from_arg(struct ratbag *ratbag,
 	path = argv[argc - 1];
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
-		error("Looks like '%s' is not supported\n", path);
+		error("Device '%s' is not supported\n", path);
 		return NULL;
 	}
 
@@ -170,7 +170,7 @@ ratbag_cmd_get_active_profile(struct ratbag_device *device)
 	}
 
 	if (!profile)
-		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
+		error("Failed to retrieve the active profile\n");
 
 	return NULL;
 }
@@ -191,7 +191,7 @@ ratbag_cmd_get_active_resolution(struct ratbag_profile *profile)
 	}
 
 	if (!resolution)
-		error("Huh hoh, something bad happened, unable to retrieve the active resolution\n");
+		error("Failed to retrieve the active resolution\n");
 
 	return NULL;
 }
@@ -382,7 +382,7 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		error("Looks like '%s' has no switchable profiles\n",
+		error("Device '%s' has no switchable profiles\n",
 		      ratbag_device_get_name(device));
 		goto out;
 	}
@@ -397,7 +397,7 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 	}
 
 	if (!profile) {
-		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
+		error("Failed to retrieve the active profile\n");
 		goto out;
 	}
 
@@ -552,7 +552,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_BUTTON_KEY)) {
-		error("Looks like '%s' has no programmable buttons\n",
+		error("Device '%s' has no programmable buttons\n",
 		      ratbag_device_get_name(device));
 		goto out;
 	}
@@ -813,14 +813,14 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION)) {
-		error("Looks like '%s' has no switchable resolution\n",
+		error("Device '%s' has no switchable resolution\n",
 		      ratbag_device_get_name(device));
 		goto out;
 	}
 
 	rc = ratbag_resolution_set_dpi(resolution, dpi);
 	if (rc)
-		error("can't seem to be able to change the dpi: %s (%d)\n",
+		error("Failed to change the dpi: %s (%d)\n",
 		      strerror(-rc),
 		      rc);
 out:
@@ -998,7 +998,7 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		error("Looks like '%s' has no switchable profiles\n",
+		error("Device '%s' has no switchable profiles\n",
 		      ratbag_device_get_name(device));
 		goto out;
 	}
@@ -1025,7 +1025,7 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	}
 
 	if (!active_profile) {
-		error("Huh hoh, something bad happened, unable to retrieve the profile '%d' \n",
+		error("Failed to retrieve the profile '%d' \n",
 		      index);
 		goto out;
 	}
@@ -1231,7 +1231,7 @@ main(int argc, char **argv)
 
 	ratbag = ratbag_create_context(&interface, NULL);
 	if (!ratbag) {
-		error("Can't initialize ratbag\n");
+		error("Failed to initialize ratbag\n");
 		goto out;
 	}
 
