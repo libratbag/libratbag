@@ -116,6 +116,8 @@ usage(void)
 	       "\n"
 	       "  dpi get			Print the dpi value\n"
 	       "  dpi set N			Set the dpi value to N\n"
+	       "  rate get			Print the report rate in Hz\n"
+	       "  rate set N			Set the report rate in N Hz\n"
 	       "\n"
 	       "Special Commands:\n"
 	       "These commands are for testing purposes and may be removed without notice\n"
@@ -126,7 +128,7 @@ usage(void)
 	       " %s profile active get\n"
 	       " %s profile 0 resolution active set 4\n"
 	       " %s profile 0 resolution 1 dpi get\n"
-	       " %s resolution 4 dpi get\n"
+	       " %s resolution 4 rate get\n"
 	       " %s dpi set 800\n"
 	       "\n",
 		program_invocation_short_name,
@@ -850,6 +852,103 @@ static const struct ratbag_cmd cmd_resolution_dpi = {
 };
 
 static int
+ratbag_cmd_resolution_rate_get(const struct ratbag_cmd *cmd,
+			       struct ratbag *ratbag,
+			       struct ratbag_cmd_options *options,
+			       int argc, char **argv)
+{
+	struct ratbag_resolution *resolution;
+	int rate;
+
+	resolution = options->resolution;
+	rate = ratbag_resolution_get_report_rate(resolution);
+	printf("%d\n", rate);
+
+	return SUCCESS;
+}
+
+static const struct ratbag_cmd cmd_resolution_rate_get = {
+	.name = "get",
+	.cmd = ratbag_cmd_resolution_rate_get,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_RESOLUTION,
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_resolution_rate_set(const struct ratbag_cmd *cmd,
+			       struct ratbag *ratbag,
+			       struct ratbag_cmd_options *options,
+			       int argc, char **argv)
+{
+	struct ratbag_device *device;
+	struct ratbag_resolution *resolution;
+	int rc = SUCCESS;
+	int rate;
+
+	if (argc != 1)
+		return ERR_USAGE;
+
+	rate = atoi(argv[0]);
+
+	argc--;
+	argv++;
+
+	device = options->device;
+	resolution = options->resolution;
+
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION)) {
+		error("Device '%s' has no switchable resolution\n",
+		      ratbag_device_get_name(device));
+		rc = ERR_UNSUPPORTED;
+		goto out;
+	}
+
+	rc = ratbag_resolution_set_report_rate(resolution, rate);
+	if (rc) {
+		error("Failed to change the rate: %s (%d)\n",
+		      strerror(-rc),
+		      rc);
+		rc = ERR_DEVICE;
+	}
+out:
+	return rc;
+}
+
+static const struct ratbag_cmd cmd_resolution_rate_set = {
+	.name = "set",
+	.cmd = ratbag_cmd_resolution_rate_set,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE| FLAG_NEED_RESOLUTION,
+	.subcommands = { NULL },
+};
+
+static int
+ratbag_cmd_resolution_rate(const struct ratbag_cmd *cmd,
+			   struct ratbag *ratbag,
+			   struct ratbag_cmd_options *options,
+			   int argc, char **argv)
+{
+	if (argc < 1)
+		return ERR_USAGE;
+
+	return run_subcommand(argv[0],
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_resolution_rate = {
+	.name = "rate",
+	.cmd = ratbag_cmd_resolution_rate,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE| FLAG_NEED_RESOLUTION,
+	.subcommands = {
+		&cmd_resolution_rate_get,
+		&cmd_resolution_rate_set,
+		NULL,
+	},
+};
+
+static int
 ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 		      struct ratbag *ratbag,
 		      struct ratbag_cmd_options *options,
@@ -902,6 +1001,7 @@ static const struct ratbag_cmd cmd_resolution = {
 	.subcommands = {
 		&cmd_resolution_active,
 		&cmd_resolution_dpi,
+		&cmd_resolution_rate,
 		NULL,
 	},
 };
@@ -1144,6 +1244,7 @@ static const struct ratbag_cmd top_level_commands = {
 		&cmd_resolution,
 		&cmd_profile,
 		&cmd_resolution_dpi,
+		&cmd_resolution_rate,
 		NULL,
 	},
 };
