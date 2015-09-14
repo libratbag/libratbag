@@ -134,22 +134,24 @@ usage(void)
 
 static inline struct ratbag_device *
 ratbag_cmd_device_from_arg(struct ratbag *ratbag,
-			   int argc, char **argv)
+			   int *argc, char **argv)
 {
 	struct ratbag_device *device;
 	const char *path;
 
-	if (argc == 0) {
+	if (*argc == 0) {
 		usage();
 		return NULL;
 	}
 
-	path = argv[argc - 1];
+	path = argv[*argc - 1];
 	device = ratbag_cmd_open_device(ratbag, path);
 	if (!device) {
 		error("Device '%s' is not supported\n", path);
 		return NULL;
 	}
+
+	(*argc)--;
 
 	return device;
 }
@@ -208,10 +210,9 @@ fill_options(struct ratbag *ratbag,
 
 	if ((flags & (FLAG_NEED_DEVICE|FLAG_NEED_PROFILE|FLAG_NEED_RESOLUTION)) &&
 	    device == NULL) {
-		device = ratbag_cmd_device_from_arg(ratbag, *argc, argv);
+		device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
 		if (!device)
 			return 1;
-		(*argc)--;
 		options->device = device;
 	}
 
