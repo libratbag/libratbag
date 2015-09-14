@@ -130,7 +130,13 @@ usage(void)
 	       "  button N action set special S	Set the button action to special action S\n"
 	       "  button N action set macro ...	Set the button action to the given macro \n"
 	       "\n"
-	       "  Macro syntax: FIXME\n"
+	       "  Macro syntax:\n"
+	       " 	A macro is a series of key events or waiting periods.\n"
+	       "	Keys must be specified in linux/input.h key names.\n"
+	       "	KEY_A			Press and release 'a'\n"
+	       "	+KEY_A			Press 'a'\n"
+	       "	-KEY_A			Release 'a'\n"
+	       "	t300			Wait 300ms\n"
 	       "\n"
 	       "Special Commands:\n"
 	       "These commands are for testing purposes and may be removed without notice\n"
@@ -458,40 +464,81 @@ struct macro {
 static int
 str_to_macro(const char *action_arg, struct macro *m)
 {
+	char *str, *s;
+	enum ratbag_macro_event_type type;
+	int code;
+	int idx = 0;
+	int rc = ERR_USAGE;
+
+	/* FIXME: handle per-device maximum lengths of macros */
+
 	if (!action_arg)
 		return -EINVAL;
 
-	if (action_arg[0] == 'f') {
-		m->name = "foo";
-		m->events[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-		m->events[0].data = KEY_F;
-		m->events[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-		m->events[1].data = KEY_F;
-		m->events[2].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-		m->events[2].data = KEY_O;
-		m->events[3].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-		m->events[3].data = KEY_O;
-		m->events[4].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-		m->events[4].data = KEY_O;
-		m->events[5].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-		m->events[5].data = KEY_O;
-	} else if (action_arg[0] == 'b') {
-		m->name = "bar";
-		m->events[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-		m->events[0].data = KEY_B;
-		m->events[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-		m->events[1].data = KEY_B;
-		m->events[2].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-		m->events[2].data = KEY_A;
-		m->events[3].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-		m->events[3].data = KEY_A;
-		m->events[4].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
-		m->events[4].data = KEY_R;
-		m->events[5].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
-		m->events[5].data = KEY_R;
+	str = strdup(action_arg);
+	s = str;
+
+	m->name = "<cmdline>";
+
+	while (idx < ARRAY_LENGTH(m->events)) {
+		char *token;
+
+		token = strsep(&s, " ");
+		if (!token)
+			break;
+		if (strlen(token) == 0)
+			continue;
+
+		switch(token[0]) {
+		case '+':
+			type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+			token++;
+			break;
+		case '-':
+			type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+			token++;
+			break;
+		case 't':
+			type = RATBAG_MACRO_EVENT_WAIT;
+			token++;
+			break;
+		default:
+			type = RATBAG_MACRO_EVENT_NONE;
+			break;
+		}
+
+		if (type == RATBAG_MACRO_EVENT_WAIT) {
+			char *endptr;
+			code = strtol(token, &endptr, 10);
+			if (*endptr != '\0') {
+				error("Invalid token name: %s\n", token);
+				goto out;
+			}
+		} else {
+			code = libevdev_event_code_from_name(EV_KEY, token);
+			if (code == -1) {
+				error("Invalid token name: %s\n", token);
+				goto out;
+			}
+		}
+
+		if (type == RATBAG_MACRO_EVENT_NONE) {
+			m->events[idx].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+			m->events[idx].data = code;
+			type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+			idx++;
+		}
+		m->events[idx].data = code;
+		m->events[idx].type = type;
+		idx++;
 	}
 
-	return 0;
+	rc = SUCCESS;
+
+out:
+	free(str);
+
+	return rc;
 }
 
 static int
@@ -1214,16 +1261,20 @@ ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
 	struct ratbag_device *device;
 	struct ratbag_button *button;
 	struct macro macro = {0};
-	char *str;
 	int rc;
 	int i;
+	char macro_str[PATH_MAX] = {0};
 
 	if (argc < 1)
 		return ERR_USAGE;
 
-	str = argv[0];
-	if (str_to_macro(str, &macro) != 0) {
-		error("Invalid macro string '%s'\n", str);
+	for (i = 0; i < argc; i++) {
+		strncat(macro_str, argv[i], sizeof(macro_str) - strlen(macro_str) - 1);
+		strcat(macro_str, " ");
+	}
+
+	if (str_to_macro(macro_str, &macro) != 0) {
+		error("Invalid macro string '%s'\n", macro_str);
 		return ERR_USAGE;
 	}
 
