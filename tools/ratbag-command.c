@@ -706,7 +706,7 @@ ratbag_cmd_resolution_active(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
-	if (argc < 2) {
+	if (argc < 1) {
 		usage();
 		return 1;
 	}
