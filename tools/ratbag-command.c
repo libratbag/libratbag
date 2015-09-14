@@ -57,6 +57,7 @@ enum cmd_flags {
 	FLAG_NEED_DEVICE = 1 << 10,
 	FLAG_NEED_PROFILE = 1 << 11,
 	FLAG_NEED_RESOLUTION = 1 << 12,
+	FLAG_NEED_BUTTON = 1 << 13,
 };
 
 struct ratbag_cmd_options {
@@ -64,7 +65,7 @@ struct ratbag_cmd_options {
 	struct ratbag_device *device;
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
-	int button;
+	struct ratbag_button *button;
 };
 
 struct ratbag_cmd {
@@ -118,6 +119,18 @@ usage(void)
 	       "  dpi set N			Set the dpi value to N\n"
 	       "  rate get			Print the report rate in Hz\n"
 	       "  rate set N			Set the report rate in N Hz\n"
+	       "\n"
+	       "Button Commands:\n"
+	       "  Button commands work on the given profile, or on the\n"
+	       "  active profile if none is given.\n"
+	       "\n"
+	       "  button count			Print the number of buttons\n"
+	       "  button N action get		Print the button action\n"
+	       "  button N action set button B	Set the button action to button B\n"
+	       "  button N action set special S	Set the button action to special action S\n"
+	       "  button N action set macro ...	Set the button action to the given macro \n"
+	       "\n"
+	       "  Macro syntax: FIXME\n"
 	       "\n"
 	       "Special Commands:\n"
 	       "These commands are for testing purposes and may be removed without notice\n"
@@ -216,6 +229,7 @@ fill_options(struct ratbag *ratbag,
 	struct ratbag_device *device = options->device;
 	struct ratbag_profile *profile = options->profile;
 	struct ratbag_resolution *resolution = options->resolution;
+	struct ratbag_button *button = options->button;
 	int rc;
 
 	if ((flags & (FLAG_NEED_DEVICE|FLAG_NEED_PROFILE|FLAG_NEED_RESOLUTION)) &&
@@ -240,6 +254,11 @@ fill_options(struct ratbag *ratbag,
 		if (!resolution)
 			return ERR_DEVICE;
 		options->resolution = resolution;
+	}
+
+	if (flags & FLAG_NEED_BUTTON && button == NULL) {
+		error("Missing button identifier\n");
+		return ERR_USAGE;
 	}
 
 	return SUCCESS;
@@ -1007,25 +1026,283 @@ static const struct ratbag_cmd cmd_resolution = {
 };
 
 static int
+ratbag_cmd_button_count(const struct ratbag_cmd *cmd,
+			struct ratbag *ratbag,
+			struct ratbag_cmd_options *options,
+			int argc, char **argv)
+{
+	struct ratbag_device *device;
+	int num_buttons;
+
+	device = options->device;
+	num_buttons = ratbag_device_get_num_buttons(device);
+	printf("%d\n", num_buttons);
+
+	return SUCCESS;
+}
+
+static const struct ratbag_cmd cmd_button_count = {
+	.name = "count",
+	.cmd = ratbag_cmd_button_count,
+	.flags = FLAG_NEED_DEVICE,
+	.subcommands = {
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_button_get(const struct ratbag_cmd *cmd,
+		      struct ratbag *ratbag,
+		      struct ratbag_cmd_options *options,
+		      int argc, char **argv)
+{
+	struct ratbag_button *button;
+	enum ratbag_button_type type;
+	const char *action;
+
+	button = options->button;
+
+	type = ratbag_button_get_type(button);
+	action = button_action_to_str(button);
+	printf("type %s to %s\n",
+	       button_type_to_str(type), action);
+
+
+	return SUCCESS;
+}
+
+static const struct ratbag_cmd cmd_button_get = {
+	.name = "get",
+	.cmd = ratbag_cmd_button_get,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_BUTTON,
+	.subcommands = {
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_button_set_button(const struct ratbag_cmd *cmd,
+			     struct ratbag *ratbag,
+			     struct ratbag_cmd_options *options,
+			     int argc, char **argv)
+{
+	struct ratbag_button *button;
+	char *str, *endptr;
+	int b;
+	int rc;
+
+	if (argc < 1)
+		return ERR_USAGE;
+
+	str = argv[0];
+	b = strtol(str, &endptr, 10);
+	if (*endptr != '\0')
+		return ERR_USAGE;
+
+	button = options->button;
+	rc = ratbag_button_set_button(button, b);
+	if (rc != 0)
+		return ERR_DEVICE;
+
+	return SUCCESS;
+}
+
+static const struct ratbag_cmd cmd_button_set_button = {
+	.name = "button",
+	.cmd = ratbag_cmd_button_set_button,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_BUTTON,
+	.subcommands = {
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_button_set_key(const struct ratbag_cmd *cmd,
+			  struct ratbag *ratbag,
+			  struct ratbag_cmd_options *options,
+			  int argc, char **argv)
+{
+	struct ratbag_button *button;
+	int keycode;
+	char *str;
+	int rc;
+
+	if (argc < 1)
+		return ERR_USAGE;
+
+	str = argv[0];
+	keycode = libevdev_event_code_from_name(EV_KEY, str);
+	if (keycode == -1) {
+		error("Failed to resolve keycode '%s'\n", str);
+		return ERR_USAGE;
+	}
+
+	button = options->button;
+	rc = ratbag_button_set_key(button, keycode, NULL, 0);
+	if (rc != 0)
+		return ERR_DEVICE;
+
+	return SUCCESS;
+}
+
+static const struct ratbag_cmd cmd_button_set_key = {
+	.name = "key",
+	.cmd = ratbag_cmd_button_set_key,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_BUTTON,
+	.subcommands = {
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_button_set_special(const struct ratbag_cmd *cmd,
+			      struct ratbag *ratbag,
+			      struct ratbag_cmd_options *options,
+			      int argc, char **argv)
+{
+	struct ratbag_button *button;
+	enum ratbag_button_action_special special;
+	char *str;
+	int rc;
+
+	if (argc < 1)
+		return ERR_USAGE;
+
+	str = argv[0];
+	special = str_to_special_action(str);
+	if (special == RATBAG_BUTTON_ACTION_SPECIAL_INVALID) {
+		error("Invalid special identifier '%s'\n", str);
+		return ERR_USAGE;
+	}
+
+	button = options->button;
+	rc = ratbag_button_set_special(button, special);
+	if (rc != 0)
+		return ERR_DEVICE;
+
+	return SUCCESS;
+}
+
+static const struct ratbag_cmd cmd_button_set_special = {
+	.name = "special",
+	.cmd = ratbag_cmd_button_set_special,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_BUTTON,
+	.subcommands = {
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
+			    struct ratbag *ratbag,
+			    struct ratbag_cmd_options *options,
+			    int argc, char **argv)
+{
+	struct ratbag_button *button;
+	struct macro macro = {0};
+	char *str;
+	int rc;
+	int i;
+
+	if (argc < 1)
+		return ERR_USAGE;
+
+	str = argv[0];
+	if (str_to_macro(str, &macro) != 0) {
+		error("Invalid macro string '%s'\n", str);
+		return ERR_USAGE;
+	}
+
+	button = options->button;
+	rc = ratbag_button_set_macro(button, macro.name);
+	for (i = 0; i < ARRAY_LENGTH(macro.events); i++) {
+		if (macro.events[i].type == RATBAG_MACRO_EVENT_NONE)
+			break;
+
+		ratbag_button_set_macro_event(button,
+					      i,
+					      macro.events[i].type,
+					      macro.events[i].data);
+	}
+	rc = ratbag_button_write_macro(button);
+	if (rc != 0)
+		return ERR_DEVICE;
+
+	return SUCCESS;
+}
+
+static const struct ratbag_cmd cmd_button_set_macro = {
+	.name = "macro",
+	.cmd = ratbag_cmd_button_set_macro,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_BUTTON,
+	.subcommands = {
+		NULL,
+	},
+};
+
+static int
+ratbag_cmd_button_set(const struct ratbag_cmd *cmd,
+		      struct ratbag *ratbag,
+		      struct ratbag_cmd_options *options,
+		      int argc, char **argv)
+{
+	const char *command;
+
+	if (argc < 1)
+		return ERR_USAGE;
+
+	command = argv[0];
+
+	return run_subcommand(command,
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_button_set = {
+	.name = "set",
+	.cmd = ratbag_cmd_button_set,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_BUTTON,
+	.subcommands = {
+		&cmd_button_set_button,
+		&cmd_button_set_key,
+		&cmd_button_set_special,
+		&cmd_button_set_macro,
+		NULL,
+	},
+};
+
+static int
 ratbag_cmd_button(const struct ratbag_cmd *cmd,
 		   struct ratbag *ratbag,
 		   struct ratbag_cmd_options *options,
 		   int argc, char **argv)
 {
+	struct ratbag_profile *profile;
+	struct ratbag_button *button;
 	const char *command;
-	int button = 0;
+	int button_idx = 0;
 	char *endp;
 
-	if (argc < 2)
+	if (argc < 1)
 		return ERR_USAGE;
 
-	command = argv[1];
+	profile = options->profile;
 
-	button = strtod(command, &endp);
+	command = argv[0];
+
+	button_idx = strtol(command, &endp, 10);
 	if (command != endp && *endp == '\0') {
+		button = ratbag_profile_get_button_by_index(profile,
+							    button_idx);
+		if (!button) {
+			error("Invalid button %d\n", button_idx);
+			return ERR_UNSUPPORTED;
+		}
 		options->button = button;
 		argc--;
 		argv++;
+		command = argv[0];
 	}
 
 	return run_subcommand(command,
@@ -1039,7 +1316,9 @@ static const struct ratbag_cmd cmd_button = {
 	.cmd = ratbag_cmd_button,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = {
-		/* FIXME */
+		&cmd_button_count,
+		&cmd_button_get,
+		&cmd_button_set,
 		NULL,
 	},
 };
@@ -1267,7 +1546,6 @@ main(int argc, char **argv)
 	}
 
 	options.flags = 0;
-	options.button = -1;
 
 	while (1) {
 		int c;
@@ -1317,6 +1595,7 @@ main(int argc, char **argv)
 			    argc, argv);
 out:
 	ratbag_resolution_unref(options.resolution);
+	ratbag_button_unref(options.button);
 	ratbag_profile_unref(options.profile);
 	ratbag_device_unref(options.device);
 	ratbag_unref(ratbag);
