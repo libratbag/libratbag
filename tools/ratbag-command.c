@@ -66,7 +66,7 @@ struct ratbag_cmd {
 	const struct ratbag_cmd *subcommands[];
 };
 
-static const struct ratbag_cmd *ratbag_commands[];
+static const struct ratbag_cmd *ratbag_commands;
 
 static void
 usage_subcommand(const struct ratbag_cmd *cmd, const char *prefix_in)
@@ -112,64 +112,19 @@ usage_subcommand(const struct ratbag_cmd *cmd, const char *prefix_in)
 static void
 usage(void)
 {
-	unsigned i = 0;
-	int count;
-	const struct ratbag_cmd *cmd = ratbag_commands[0];
-
 	printf("Usage: %s [options] [command] /sys/class/input/eventX\n"
 	       "/path/to/device ..... Open the given device only\n"
 	       "\n"
 	       "Commands:\n",
 		program_invocation_short_name);
 
-	while (cmd) {
-		count = 40 - strlen(cmd->name);
-		if (cmd->args)
-			count -= 1 + strlen(cmd->args);
-		if (count < 4)
-			count = 4;
-		if (cmd->help)
-			printf("    %s%s%s %.*s %s\n",
-			       cmd->name,
-			       cmd->args ? " " : "",
-			       cmd->args ? cmd->args : "",
-			       count,
-			       ".........................................",
-			       cmd->help);
 
-		usage_subcommand(cmd, "");
-
-		cmd = ratbag_commands[++i];
-	}
+	usage_subcommand(ratbag_commands, "");
 
 	printf("\n"
 	       "Options:\n"
 	       "    --verbose[=raw] ....... Print debugging output, with protocol output if requested.\n"
 	       "    --help .......... Print this help.\n");
-}
-
-static int
-run_subcommand(const char *command,
-	       const struct ratbag_cmd *cmd,
-	       struct ratbag *ratbag,
-	       struct ratbag_cmd_options *options,
-	       int argc, char **argv)
-{
-	const struct ratbag_cmd *sub = cmd->subcommands[0];
-	int i = 0;
-
-	while (sub) {
-		if (streq(command, sub->name)) {
-			argc--;
-			argv++;
-			return sub->cmd(sub, ratbag, options, argc, argv);
-		}
-		sub = cmd->subcommands[i++];
-	}
-
-	error("Invalid subcommand '%s'\n", command);
-	usage();
-	return 1;
 }
 
 static inline struct ratbag_device *
@@ -213,6 +168,38 @@ ratbag_cmd_get_active_profile(struct ratbag_device *device)
 		error("Huh hoh, something bad happened, unable to retrieve the active profile\n");
 
 	return NULL;
+}
+
+static int
+run_subcommand(const char *command,
+	       const struct ratbag_cmd *cmd,
+	       struct ratbag *ratbag,
+	       struct ratbag_cmd_options *options,
+	       int argc, char **argv)
+{
+	const struct ratbag_cmd *sub = cmd->subcommands[0];
+	int i = 0;
+
+	while (sub) {
+		if (streq(command, sub->name)) {
+
+			if (!sub->no_file_arg && options->device == NULL) {
+				options->device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
+				if (!options->device)
+					return 1;
+				argc--;
+			}
+
+			argc--;
+			argv++;
+			return sub->cmd(sub, ratbag, options, argc, argv);
+		}
+		sub = cmd->subcommands[i++];
+	}
+
+	error("Invalid subcommand '%s'\n", command);
+	usage();
+	return 1;
 }
 
 static inline struct ratbag_resolution *
@@ -1188,17 +1175,25 @@ static const struct ratbag_cmd cmd_profile = {
 	},
 };
 
-static const struct ratbag_cmd *ratbag_commands[] = {
-	&cmd_info,
-	&cmd_list,
-	&cmd_change_button,
-	&cmd_switch_etekcity,
-	&cmd_button,
-	&cmd_resolution,
-	&cmd_profile,
-	&cmd_resolution_dpi,
-	NULL,
+static const struct ratbag_cmd top_level_commands = {
+	.name = "ratbag-command",
+	.cmd = NULL,
+	.args = NULL,
+	.help = NULL,
+	.subcommands = {
+		&cmd_info,
+		&cmd_list,
+		&cmd_change_button,
+		&cmd_switch_etekcity,
+		&cmd_button,
+		&cmd_resolution,
+		&cmd_profile,
+		&cmd_resolution_dpi,
+		NULL,
+	},
 };
+
+static const struct ratbag_cmd *ratbag_commands = &top_level_commands;
 
 int
 main(int argc, char **argv)
@@ -1206,7 +1201,6 @@ main(int argc, char **argv)
 	struct ratbag *ratbag;
 	const char *command;
 	int rc = 0;
-	const struct ratbag_cmd **cmd;
 	struct ratbag_cmd_options options = {0};
 
 	ratbag = ratbag_create_context(&interface, NULL);
@@ -1260,31 +1254,11 @@ main(int argc, char **argv)
 	argv += optind;
 
 	command = argv[0];
-	ARRAY_FOR_EACH(ratbag_commands, cmd) {
-		if (!*cmd || !streq((*cmd)->name, command))
-			continue;
-
-		argc--;
-		argv++;
-
-		if (!(*cmd)->no_file_arg) {
-			options.device = ratbag_cmd_device_from_arg(ratbag, argc, argv);
-			if (!options.device)
-				goto out;
-			argc--;
-		}
-
-		/* reset optind to reset the internal state, see NOTES in
-		 * getopt(3) */
-		optind = 0;
-		rc = (*cmd)->cmd(*cmd, ratbag, &options, argc, argv);
-		goto out;
-	}
-
-	error("Invalid command '%s'\n", command);
-	usage();
-	rc = 1;
-
+	rc = run_subcommand(command,
+			    ratbag_commands,
+			    ratbag,
+			    &options,
+			    argc, argv);
 out:
 	ratbag_resolution_unref(options.resolution);
 	ratbag_profile_unref(options.profile);
