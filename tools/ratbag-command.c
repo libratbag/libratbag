@@ -978,7 +978,7 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 			      int argc, char **argv)
 {
 	struct ratbag_device *device;
-	struct ratbag_profile *profile = NULL, *active_profile = NULL;
+	struct ratbag_profile *profile = NULL;
 	int num_profiles, index;
 	int rc = ERR_UNSUPPORTED;
 
@@ -991,9 +991,6 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	argv++;
 
 	device = options->device;
-
-	if (!device)
-		return ERR_DEVICE;
 
 	if (!ratbag_device_has_capability(device,
 					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
@@ -1010,8 +1007,6 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 
 	profile = ratbag_device_get_profile_by_index(device, index);
 	if (ratbag_profile_is_active(profile)) {
-		printf("'%s' is already in profile '%d'\n",
-		       ratbag_device_get_name(device), index);
 		rc = SUCCESS;
 		goto out;
 	}
@@ -1027,7 +1022,6 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 
 out:
 	profile = ratbag_profile_unref(profile);
-	active_profile = ratbag_profile_unref(active_profile);
 
 	return rc;
 }
@@ -1050,42 +1044,30 @@ ratbag_cmd_profile_active_get(const struct ratbag_cmd *cmd,
 	struct ratbag_device *device;
 	struct ratbag_profile *profile = NULL;
 	int i;
-	int rc = ERR_DEVICE;
-	int active_profile_idx = 0;
+	int rc = SUCCESS;
+	int active_profile = -1;
 	int num_profiles = 0;
 
 	device = options->device;
 
-	if (!ratbag_device_has_capability(device,
-					  RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		rc = SUCCESS;
-		goto out;
-	}
-
 	num_profiles = ratbag_device_get_num_profiles(device);
-	if (num_profiles <= 1) {
-		rc = SUCCESS;
-		goto out;
-	}
 
-	for (i = 0; i < num_profiles; i++) {
+	for (i = 0; i < num_profiles && active_profile < 0; i++) {
 		profile = ratbag_device_get_profile_by_index(device, i);
-		if (ratbag_profile_is_active(profile)) {
-			active_profile_idx = i;
-			rc = SUCCESS;
-			break;
-		}
+		if (ratbag_profile_is_active(profile))
+			active_profile = i;
+
 		ratbag_profile_unref(profile);
-		profile = NULL;
 	}
 
-	if (active_profile_idx >= num_profiles)
-		error("Unable to find active profile, this is a bug.\n");
+	if (active_profile < 0) {
+		error("BUG: Unable to find active profile.\n");
+		rc = ERR_DEVICE;
+	}
 
-out:
 	if (rc == SUCCESS)
-		printf("%d\n", active_profile_idx);
-	profile = ratbag_profile_unref(profile);
+		printf("%d\n", active_profile);
+
 	return rc;
 }
 
