@@ -1086,6 +1086,7 @@ ratbag_cmd_button_set_button(const struct ratbag_cmd *cmd,
 			     struct ratbag_cmd_options *options,
 			     int argc, char **argv)
 {
+	struct ratbag_device *device;
 	struct ratbag_button *button;
 	char *str, *endptr;
 	int b;
@@ -1098,6 +1099,12 @@ ratbag_cmd_button_set_button(const struct ratbag_cmd *cmd,
 	b = strtol(str, &endptr, 10);
 	if (*endptr != '\0')
 		return ERR_USAGE;
+
+	device = options->device;
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+		return ERR_UNSUPPORTED;
+
 
 	button = options->button;
 	rc = ratbag_button_set_button(button, b);
@@ -1122,6 +1129,7 @@ ratbag_cmd_button_set_key(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
+	struct ratbag_device *device;
 	struct ratbag_button *button;
 	int keycode;
 	char *str;
@@ -1136,6 +1144,11 @@ ratbag_cmd_button_set_key(const struct ratbag_cmd *cmd,
 		error("Failed to resolve keycode '%s'\n", str);
 		return ERR_USAGE;
 	}
+
+	device = options->device;
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+		return ERR_UNSUPPORTED;
 
 	button = options->button;
 	rc = ratbag_button_set_key(button, keycode, NULL, 0);
@@ -1198,6 +1211,7 @@ ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
 			    struct ratbag_cmd_options *options,
 			    int argc, char **argv)
 {
+	struct ratbag_device *device;
 	struct ratbag_button *button;
 	struct macro macro = {0};
 	char *str;
@@ -1212,6 +1226,11 @@ ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
 		error("Invalid macro string '%s'\n", str);
 		return ERR_USAGE;
 	}
+
+	device = options->device;
+	if (!ratbag_device_has_capability(device,
+					  RATBAG_DEVICE_CAP_BUTTON_MACROS))
+		return ERR_UNSUPPORTED;
 
 	button = options->button;
 	rc = ratbag_button_set_macro(button, macro.name);
