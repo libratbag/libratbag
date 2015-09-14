@@ -986,7 +986,7 @@ ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 
 	profile = options->profile;
 
-	resolution_idx = strtod(command, &endp);
+	resolution_idx = strtol(command, &endp, 10);
 	if (command != endp && *endp == '\0') {
 		resolution = ratbag_profile_get_resolution(profile,
 							   resolution_idx);
@@ -1473,7 +1473,7 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 
 	command = argv[0];
 
-	profile_idx = strtod(command, &endp);
+	profile_idx = strtol(command, &endp, 10);
 	if (command != endp && *endp == '\0') {
 		profile = ratbag_device_get_profile_by_index(device,
 							     profile_idx);
