@@ -73,8 +73,6 @@ struct ratbag_cmd {
 		   struct ratbag *ratbag,
 		   struct ratbag_cmd_options *options,
 		   int argc, char **argv);
-	const char *args;
-	const char *help;
 	uint32_t flags;
 	const struct ratbag_cmd *subcommands[];
 };
@@ -82,62 +80,61 @@ struct ratbag_cmd {
 static const struct ratbag_cmd *ratbag_commands;
 
 static void
-usage_subcommand(const struct ratbag_cmd *cmd, const char *prefix_in)
-{
-	int i = 0;
-	int count;
-	const struct ratbag_cmd *sub;
-	char prefix[256];
-
-	if (cmd->subcommands[0] == NULL)
-		return;
-
-	sub = cmd->subcommands[0];
-	while (sub) {
-		count = 40 - strlen(sub->name);
-		if (sub->args)
-			count -= 1 + strlen(sub->args);
-		if (count < 4)
-			count = 4;
-
-		sprintf(prefix, "%s%s%s%s ",
-			prefix_in,
-			cmd->name,
-			cmd->args ?  " " : "",
-			cmd->args ?  cmd->args : "");
-		count -= strlen(prefix);
-		if (sub->help)
-			printf("    %s%s%s%s %.*s %s\n",
-			       prefix,
-			       sub->name,
-			       sub->args ? " " : "",
-			       sub->args ? sub->args : "",
-			       count,
-			       ".........................................",
-			       sub->help);
-
-		usage_subcommand(sub, prefix);
-
-		sub = cmd->subcommands[++i];
-	}
-}
-
-static void
 usage(void)
 {
-	printf("Usage: %s [options] [command] /sys/class/input/eventX\n"
-	       "/path/to/device ..... Open the given device only\n"
+	printf("%s [OPTIONS] {COMMAND} ... /path/to/device\n"
 	       "\n"
-	       "Commands:\n",
-		program_invocation_short_name);
-
-
-	usage_subcommand(ratbag_commands, "");
-
-	printf("\n"
+	       "Query or change a device's settings:\n"
+	       "\n"
 	       "Options:\n"
-	       "    --verbose[=raw] ....... Print debugging output, with protocol output if requested.\n"
-	       "    --help .......... Print this help.\n");
+	       "    --verbose	 		Print debugging output\n"
+	       "    --verbose=raw 		Print debugging output with protocol output.\n"
+	       "    --help 			Print this help.\n"
+	       "\n"
+	       "General Commands:\n"
+	       "  list 				List supported devices (does not take a device argument)\n"
+	       "\n"
+	       "Device Commands:\n"
+	       "  info				Print information about a device \n"
+	       "\n"
+	       "Profile Commands:\n"
+	       "  profile active get		Print the currently active profile\n"
+	       "  profile active set N		Set profile N as to the  active profile\n"
+	       "  profile N {COMMAND}		Use profile N for COMMAND\n"
+	       "\n"
+	       "Resolution Commands\n"
+	       "  Resolution commands work on the given profile, or on the\n"
+	       "  active profile if none is given.\n"
+	       "\n"
+	       "  resolution active get		Print the currently active resolution\n"
+	       "  resolution active set N	Set resolution N as the active resolution\n"
+	       "  resolution N {COMMAND}	Use resolution N for COMMAND\n"
+	       "\n"
+	       "DPI Commands:\n"
+	       "  DPI commands work on the given profile and resolution, or on the\n"
+	       "  active resolution of the active profile if none are given.\n"
+	       "\n"
+	       "  dpi get			Print the dpi value\n"
+	       "  dpi set N			Set the dpi value to N\n"
+	       "\n"
+	       "Special Commands:\n"
+	       "These commands are for testing purposes and may be removed without notice\n"
+	       "\n"
+	       "  switch-etekcity		Switch the Etekcity mouse active profile\n"
+	       "\n"
+	       "Examples:\n"
+	       " %s profile active get\n"
+	       " %s profile 0 resolution active set 4\n"
+	       " %s profile 0 resolution 1 dpi get\n"
+	       " %s resolution 4 dpi get\n"
+	       " %s dpi set 800\n"
+	       "\n",
+		program_invocation_short_name,
+		program_invocation_short_name,
+		program_invocation_short_name,
+		program_invocation_short_name,
+		program_invocation_short_name,
+		program_invocation_short_name);
 }
 
 static inline int
@@ -370,8 +367,6 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_info = {
 	.name = "info",
 	.cmd = ratbag_cmd_info,
-	.args = NULL,
-	.help = "Show information about the device's capabilities",
 	.flags = FLAG_NEED_DEVICE,
 	.subcommands = { NULL },
 };
@@ -427,8 +422,6 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_switch_etekcity = {
 	.name = "switch-etekcity",
 	.cmd = ratbag_cmd_switch_etekcity,
-	.args = NULL,
-	.help = "Switch the Etekcity mouse active profile",
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = { NULL },
 };
@@ -608,8 +601,6 @@ out:
 static const struct ratbag_cmd cmd_change_button = {
 	.name = "change-button",
 	.cmd = ratbag_cmd_change_button,
-	.args = "X <button|key|special|macro> <number|KEY_FOO|special|macro name:KEY_FOO,KEY_BAR,...>",
-	.help = "Remap button X to the given action in the active profile",
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = { NULL },
 };
@@ -661,8 +652,6 @@ ratbag_cmd_list_supported_devices(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_list = {
 	.name = "list",
 	.cmd = ratbag_cmd_list_supported_devices,
-	.args = NULL,
-	.help = "List the available devices",
 	.flags = 0,
 	.subcommands = { NULL },
 };
@@ -690,8 +679,6 @@ ratbag_cmd_resolution_active_set(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution_active_set = {
 	.name = "set",
 	.cmd = ratbag_cmd_resolution_active_set,
-	.args = "M",
-	.help = "Set the active resolution number",
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = { NULL },
 };
@@ -735,8 +722,6 @@ ratbag_cmd_resolution_active_get(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution_active_get = {
 	.name = "get",
 	.cmd = ratbag_cmd_resolution_active_get,
-	.args = NULL,
-	.help = "Get the active resolution number",
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = { NULL },
 };
@@ -759,8 +744,6 @@ ratbag_cmd_resolution_active(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution_active = {
 	.name = "active",
 	.cmd = ratbag_cmd_resolution_active,
-	.args = NULL,
-	.help = NULL,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = {
 		&cmd_resolution_active_get,
@@ -788,8 +771,6 @@ ratbag_cmd_resolution_dpi_get(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution_dpi_get = {
 	.name = "get",
 	.cmd = ratbag_cmd_resolution_dpi_get,
-	.args = NULL,
-	.help = "Get the resolution in dpi",
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_RESOLUTION,
 	.subcommands = { NULL },
 };
@@ -838,8 +819,6 @@ out:
 static const struct ratbag_cmd cmd_resolution_dpi_set = {
 	.name = "set",
 	.cmd = ratbag_cmd_resolution_dpi_set,
-	.args = "<dpi>",
-	.help = "Set the resolution in dpi",
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE| FLAG_NEED_RESOLUTION,
 	.subcommands = { NULL },
 };
@@ -862,8 +841,6 @@ ratbag_cmd_resolution_dpi(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution_dpi = {
 	.name = "dpi",
 	.cmd = ratbag_cmd_resolution_dpi,
-	.args = NULL,
-	.help = NULL,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE| FLAG_NEED_RESOLUTION,
 	.subcommands = {
 		&cmd_resolution_dpi_get,
@@ -921,8 +898,6 @@ ratbag_cmd_resolution(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_resolution = {
 	.name = "resolution",
 	.cmd = ratbag_cmd_resolution,
-	.args = "N",
-	.help = NULL,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = {
 		&cmd_resolution_active,
@@ -962,8 +937,6 @@ ratbag_cmd_button(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_button = {
 	.name = "button",
 	.cmd = ratbag_cmd_button,
-	.args = "[...]",
-	.help = "Modify a button",
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = {
 		/* FIXME */
@@ -1029,8 +1002,6 @@ out:
 static const struct ratbag_cmd cmd_profile_active_set = {
 	.name = "set",
 	.cmd = ratbag_cmd_profile_active_set,
-	.args = "N",
-	.help = "Set the active profile number",
 	.flags = FLAG_NEED_DEVICE,
 	.subcommands = { NULL },
 };
@@ -1074,8 +1045,6 @@ ratbag_cmd_profile_active_get(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_profile_active_get = {
 	.name = "get",
 	.cmd = ratbag_cmd_profile_active_get,
-	.args = NULL,
-	.help = "Get the active profile number",
 	.flags = FLAG_NEED_DEVICE,
 	.subcommands = { NULL },
 };
@@ -1098,8 +1067,6 @@ ratbag_cmd_profile_active(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_profile_active = {
 	.name = "active",
 	.cmd = ratbag_cmd_profile_active,
-	.args = NULL,
-	.help = NULL,
 	.flags = FLAG_NEED_DEVICE,
 	.subcommands = {
 		&cmd_profile_active_get,
@@ -1156,8 +1123,6 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 static const struct ratbag_cmd cmd_profile = {
 	.name = "profile",
 	.cmd = ratbag_cmd_profile,
-	.args = "<idx>",
-	.help = NULL,
 	.flags = FLAG_NEED_DEVICE,
 	.subcommands = {
 		&cmd_profile_active,
@@ -1170,8 +1135,6 @@ static const struct ratbag_cmd cmd_profile = {
 static const struct ratbag_cmd top_level_commands = {
 	.name = "ratbag-command",
 	.cmd = NULL,
-	.args = NULL,
-	.help = NULL,
 	.subcommands = {
 		&cmd_info,
 		&cmd_list,
