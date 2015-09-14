@@ -673,8 +673,16 @@ ratbag_cmd_resolution_active_set(const struct ratbag_cmd *cmd,
 				 struct ratbag_cmd_options *options,
 				 int argc, char **argv)
 {
+	struct ratbag_resolution *resolution;
+	int rc;
 
-	printf("Not yet implemented\n");
+	resolution = options->resolution;
+	rc = ratbag_resolution_set_active(resolution);
+
+	if (rc != 0) {
+		error("Failed to to set resolution as active\n");
+		return ERR_DEVICE;
+	}
 
 	return SUCCESS;
 }
@@ -694,9 +702,34 @@ ratbag_cmd_resolution_active_get(const struct ratbag_cmd *cmd,
 				 struct ratbag_cmd_options *options,
 				 int argc, char **argv)
 {
-	printf("Not yet implemented\n");
+	struct ratbag_profile *profile;
+	struct ratbag_resolution *resolution = NULL;
+	int num_resolutions;
+	int active_resolution = -1;
+	int i;
+	int rc = SUCCESS;
 
-	return SUCCESS;
+	profile = options->profile;
+
+	num_resolutions = ratbag_profile_get_num_resolutions(profile);
+
+	for (i = 0; i < num_resolutions && active_resolution < 0; i++) {
+		resolution = ratbag_profile_get_resolution(profile, i);
+		if (ratbag_resolution_is_active(resolution))
+			active_resolution = i;
+
+		ratbag_resolution_unref(resolution);
+	}
+
+	if (active_resolution < 0) {
+		error("BUG: Unable to find active resolution\n");
+		rc = ERR_DEVICE;
+	}
+
+	if (rc == SUCCESS)
+		printf("%d\n", active_resolution);
+
+	return rc;
 }
 
 static const struct ratbag_cmd cmd_resolution_active_get = {
