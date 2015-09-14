@@ -140,6 +140,7 @@ ratbag_cmd_device_from_arg(struct ratbag *ratbag,
 	const char *path;
 
 	if (*argc == 0) {
+		error("Missing device path.\n");
 		usage();
 		return NULL;
 	}
