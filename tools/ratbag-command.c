@@ -945,7 +945,6 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	struct ratbag_profile *profile = NULL, *active_profile = NULL;
 	int num_profiles, index;
 	int rc = 1;
-	int i;
 
 	if (argc != 1) {
 		usage();
@@ -979,20 +978,6 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	if (ratbag_profile_is_active(profile)) {
 		printf("'%s' is already in profile '%d'\n",
 		       ratbag_device_get_name(device), index);
-		goto out;
-	}
-
-	for (i = 0; i < num_profiles; i++) {
-		active_profile = ratbag_device_get_profile_by_index(device, i);
-		if (ratbag_profile_is_active(active_profile))
-			break;
-		ratbag_profile_unref(active_profile);
-		active_profile = NULL;
-	}
-
-	if (!active_profile) {
-		error("Failed to retrieve the profile '%d' \n",
-		      index);
 		goto out;
 	}
 
