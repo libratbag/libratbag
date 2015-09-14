@@ -735,8 +735,14 @@ ratbag_cmd_resolution_dpi_get(const struct ratbag_cmd *cmd,
 			      struct ratbag_cmd_options *options,
 			      int argc, char **argv)
 {
-	printf("Not yet implemented\n");
-	return 1;
+	struct ratbag_resolution *resolution;
+	int dpi;
+
+	resolution = options->resolution;
+	dpi = ratbag_resolution_get_dpi(resolution);
+	printf("%d\n", dpi);
+
+	return 0;
 }
 
 static const struct ratbag_cmd cmd_resolution_dpi_get = {
@@ -758,7 +764,7 @@ ratbag_cmd_resolution_dpi_set(const struct ratbag_cmd *cmd,
 	int rc = 1;
 	int dpi;
 
-	if (argc != 2) {
+	if (argc != 1) {
 		usage();
 		return 1;
 	}
