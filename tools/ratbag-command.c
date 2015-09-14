@@ -1248,8 +1248,7 @@ main(int argc, char **argv)
 
 	if (optind >= argc) {
 		usage();
-		ratbag_unref(ratbag);
-		return 1;
+		goto out;
 	}
 
 	if (options.flags & FLAG_VERBOSE_RAW)
