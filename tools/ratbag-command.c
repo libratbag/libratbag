@@ -807,9 +807,31 @@ ratbag_cmd_resolution_dpi(const struct ratbag_cmd *cmd,
 			  struct ratbag_cmd_options *options,
 			  int argc, char **argv)
 {
+	struct ratbag_device *device;
+	struct ratbag_profile *profile;
+	struct ratbag_resolution *resolution;
+
 	if (argc < 1) {
 		usage();
 		return 1;
+	}
+
+	device = options->device;
+	profile = options->profile;
+	resolution = options->resolution;
+
+	if (!resolution) {
+		if (!profile)
+			profile = ratbag_cmd_get_active_profile(device);
+		if (!profile)
+			return 1;
+
+		resolution = ratbag_cmd_get_active_resolution(profile);
+		if (!resolution)
+			return 1;
+
+		options->profile = profile;
+		options->resolution = resolution;
 	}
 
 	return run_subcommand(argv[0],
@@ -1174,6 +1196,7 @@ static const struct ratbag_cmd *ratbag_commands[] = {
 	&cmd_button,
 	&cmd_resolution,
 	&cmd_profile,
+	&cmd_resolution_dpi,
 	NULL,
 };
 
