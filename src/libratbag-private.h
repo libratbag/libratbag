@@ -174,16 +174,8 @@ struct ratbag_driver {
 	void (*read_button)(struct ratbag_button *button);
 
 	/**
-	 * For the given button, store in the profile or in the device
+	 * For the given button, store in the profile and in the device
 	 * the given struct ratbag_button.
-	 *
-	 * For devices with profiles, profile will not be NULL. For
-	 * device without, profile will be set to NULL.
-	 *
-	 * For devices with profile, there should not be the need to
-	 * actually write the button to the device. The caller
-	 * should later on write the profile in one call to
-	 * .write_profile().
 	 */
 	int (*write_button)(struct ratbag_button *button,
 			    const struct ratbag_button_action *action);
