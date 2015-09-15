@@ -663,6 +663,9 @@ roccat_read_button(struct ratbag_button *button)
 
 		roccat_set_config_profile(device,
 					  button->profile->index,
+					  0);
+		roccat_set_config_profile(device,
+					  button->profile->index,
 					  button->index);
 		macro = &drv_data->macros[button->profile->index][button->index];
 		buf = (uint8_t*)macro;
