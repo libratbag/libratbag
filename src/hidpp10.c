@@ -151,7 +151,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		 */
 		read_buffer.msg.device_idx = msg->msg.device_idx;
 
-		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret);
+		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret > 0 ? ret : 0);
 
 
 		/* actual answer */
