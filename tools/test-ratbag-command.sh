@@ -57,6 +57,7 @@ cmds+=("button 0 action set key KEY_ENTER")
 cmds+=("profile 0 button 0 action set key KEY_ENTER")
 cmds+=("button 0 action set special doubleclick")
 cmds+=("profile 0 button 0 action set special doubleclick")
+cmds+=("profile 0 button 0 action set macro +KEY_ENTER t05 -KEY_ENTER")
 
 for i in "${cmds[@]}"; do
 	echo "Testing arguments '$i $device'"
