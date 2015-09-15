@@ -4,8 +4,6 @@
 # against a device file.
 #
 
-declare -A cmds
-
 command="`dirname $0`/ratbag-command"
 device=$1
 if ! [[ -e "$device" ]]; then
@@ -14,7 +12,8 @@ if ! [[ -e "$device" ]]; then
 fi
 
 # no device argument
-cmds[0]="list"
+cmds=()
+cmds+=("list")
 
 for i in "${cmds[@]}"; do
 	echo "Testing arguments '$i $device'"
@@ -27,36 +26,37 @@ for i in "${cmds[@]}"; do
 done
 
 # commands with device argument
-cmds[0]="info"
-cmds[1]="switch-etekcity"
-cmds[2]="profile active get"
-cmds[3]="profile active set 0"
-cmds[4]="resolution active get"
-cmds[5]="resolution active set 0"
-cmds[6]="dpi get"
-cmds[7]="dpi set 800"
-cmds[8]="rate get"
-cmds[9]="rate set 500"
-cmds[10]="profile 0 resolution active get"
-cmds[11]="profile 0 resolution active set 0"
-cmds[12]="resolution 0 dpi get"
-cmds[13]="resolution 0 dpi set 800"
-cmds[14]="resolution 0 rate get"
-cmds[15]="resolution 0 rate set 500"
-cmds[16]="profile 0 resolution 0 dpi get"
-cmds[17]="profile 0 resolution 0 dpi set 800"
-cmds[18]="profile 0 resolution 0 rate get"
-cmds[19]="profile 0 resolution 0 rate set 500"
-cmds[20]="button count"
-cmds[21]="profile 0 button count"
-cmds[22]="button 0 action get"
-cmds[23]="button 0 action set button 1"
-cmds[24]="profile 0 button 0 action get"
-cmds[25]="profile 0 button 0 action set button 1"
-cmds[26]="button 0 action set key KEY_ENTER"
-cmds[27]="profile 0 button 0 action set key KEY_ENTER"
-cmds[28]="button 0 action set special doubleclick"
-cmds[29]="profile 0 button 0 action set special doubleclick"
+cmds=()
+cmds+=("info")
+cmds+=("switch-etekcity")
+cmds+=("profile active get")
+cmds+=("profile active set 0")
+cmds+=("resolution active get")
+cmds+=("resolution active set 0")
+cmds+=("dpi get")
+cmds+=("dpi set 800")
+cmds+=("rate get")
+cmds+=("rate set 500")
+cmds+=("profile 0 resolution active get")
+cmds+=("profile 0 resolution active set 0")
+cmds+=("resolution 0 dpi get")
+cmds+=("resolution 0 dpi set 800")
+cmds+=("resolution 0 rate get")
+cmds+=("resolution 0 rate set 500")
+cmds+=("profile 0 resolution 0 dpi get")
+cmds+=("profile 0 resolution 0 dpi set 800")
+cmds+=("profile 0 resolution 0 rate get")
+cmds+=("profile 0 resolution 0 rate set 500")
+cmds+=("button count")
+cmds+=("profile 0 button count")
+cmds+=("button 0 action get")
+cmds+=("button 0 action set button 1")
+cmds+=("profile 0 button 0 action get")
+cmds+=("profile 0 button 0 action set button 1")
+cmds+=("button 0 action set key KEY_ENTER")
+cmds+=("profile 0 button 0 action set key KEY_ENTER")
+cmds+=("button 0 action set special doubleclick")
+cmds+=("profile 0 button 0 action set special doubleclick")
 
 for i in "${cmds[@]}"; do
 	echo "Testing arguments '$i $device'"
