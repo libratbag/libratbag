@@ -1343,6 +1343,36 @@ static const struct ratbag_cmd cmd_button_set = {
 };
 
 static int
+ratbag_cmd_button_action(const struct ratbag_cmd *cmd,
+			 struct ratbag *ratbag,
+			 struct ratbag_cmd_options *options,
+			 int argc, char **argv)
+{
+	const char *command;
+
+	if (argc < 1)
+		return ERR_USAGE;
+
+	command = argv[0];
+
+	return run_subcommand(command,
+			      cmd,
+			      ratbag, options,
+			      argc, argv);
+}
+
+static const struct ratbag_cmd cmd_button_action = {
+	.name = "action",
+	.cmd = ratbag_cmd_button_action,
+	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_BUTTON,
+	.subcommands = {
+		&cmd_button_get,
+		&cmd_button_set,
+		NULL,
+	},
+};
+
+static int
 ratbag_cmd_button(const struct ratbag_cmd *cmd,
 		   struct ratbag *ratbag,
 		   struct ratbag_cmd_options *options,
@@ -1387,8 +1417,7 @@ static const struct ratbag_cmd cmd_button = {
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE,
 	.subcommands = {
 		&cmd_button_count,
-		&cmd_button_get,
-		&cmd_button_set,
+		&cmd_button_action,
 		NULL,
 	},
 };
