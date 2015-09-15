@@ -277,6 +277,9 @@ roccat_is_ready(struct ratbag_device *device)
 	if (buf[1] == 0x03)
 		msleep(100);
 
+	if (buf[1] == 0x02)
+		return -EINVAL;
+
 	return buf[1] == 0x01;
 }
 
