@@ -31,7 +31,6 @@ Macro support:
 - enhance doctext
 - add API support for name/groups
 - revamp the API?
-- add command to set a macro in ratbag-command
 
 decide on a stable set of arguments, build the installed version of the
 command with that set, add a set of debug arguments (e.g. the
@@ -51,3 +50,11 @@ speak to the dbus daemon
 change the API to return enum ratbag_error with more meaningful error
 messages. errno's are fine internally between the driver, but for the
 public-facing API we need better options
+
+ratbag-command:
+- add checks for user input: negative indices, unterminated macro
+  sequences, excessive timeouts, etc
+- add man page
+- extend test cases, have a list of test cases that should work on a
+  specific device, as per-device separate scripts
+- add default set/get to profile, resolution
