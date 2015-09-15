@@ -211,7 +211,7 @@ START_TEST(device_profiles)
 	ck_assert_int_eq(nprofiles, 3);
 
 	for (i = 0; i < nprofiles; i++) {
-		p = ratbag_device_get_profile_by_index(d, i);
+		p = ratbag_device_get_profile(d, i);
 		ck_assert(p != NULL);
 
 		is_active = ratbag_profile_is_active(p);
@@ -236,7 +236,7 @@ START_TEST(device_profiles_ref_unref)
 
 	r = ratbag_create_context(&abort_iface, NULL);
 	d = ratbag_device_new_test_device(r, &td);
-	p = ratbag_device_get_profile_by_index(d, 1);
+	p = ratbag_device_get_profile(d, 1);
 
 	ratbag_unref(r);
 	ratbag_device_unref(d);
@@ -299,15 +299,15 @@ START_TEST(device_profiles_get_invalid)
 	nprofiles = ratbag_device_get_num_profiles(d);
 	ck_assert_int_eq(nprofiles, 3);
 
-	p = ratbag_device_get_profile_by_index(d, nprofiles);
+	p = ratbag_device_get_profile(d, nprofiles);
 	ck_assert(p == NULL);
-	p = ratbag_device_get_profile_by_index(d, nprofiles + 1);
+	p = ratbag_device_get_profile(d, nprofiles + 1);
 	ck_assert(p == NULL);
-	p = ratbag_device_get_profile_by_index(d, -1);
+	p = ratbag_device_get_profile(d, -1);
 	ck_assert(p == NULL);
-	p = ratbag_device_get_profile_by_index(d, INT_MAX);
+	p = ratbag_device_get_profile(d, INT_MAX);
 	ck_assert(p == NULL);
-	p = ratbag_device_get_profile_by_index(d, UINT_MAX);
+	p = ratbag_device_get_profile(d, UINT_MAX);
 	ck_assert(p == NULL);
 
 	ratbag_device_unref(d);
@@ -366,7 +366,7 @@ START_TEST(device_resolutions)
 
 	nprofiles = ratbag_device_get_num_profiles(d);
 	for (i = 0; i < nprofiles; i++) {
-		p = ratbag_device_get_profile_by_index(d, i);
+		p = ratbag_device_get_profile(d, i);
 		nresolutions = ratbag_profile_get_num_resolutions(p);
 		ck_assert_int_eq(nresolutions, 3);
 
@@ -405,7 +405,7 @@ START_TEST(device_resolutions_ref_unref)
 
 	r = ratbag_create_context(&abort_iface, NULL);
 	d = ratbag_device_new_test_device(r, &td);
-	p = ratbag_device_get_profile_by_index(d, 1);
+	p = ratbag_device_get_profile(d, 1);
 	res = ratbag_profile_get_resolution(p, 0);
 
 	ratbag_unref(r);
@@ -459,7 +459,7 @@ START_TEST(device_freed_before_profile)
 	d = ratbag_device_new_test_device(r, &td);
 	ck_assert(d != NULL);
 
-	p = ratbag_device_get_profile_by_index(d, 0);
+	p = ratbag_device_get_profile(d, 0);
 	ck_assert(p != NULL);
 	is_active = ratbag_profile_is_active(p);
 	ck_assert_int_eq(is_active, 0);
@@ -496,14 +496,14 @@ START_TEST(device_and_profile_freed_before_button)
 	d = ratbag_device_new_test_device(r, &td);
 	ck_assert(d != NULL);
 
-	p = ratbag_device_get_profile_by_index(d, 0);
+	p = ratbag_device_get_profile(d, 0);
 	ck_assert(p != NULL);
 
 	d = ratbag_device_unref(d);
 	/* a ref to d is still kept through p, so d can not be NULL */
 	ck_assert(d != NULL);
 
-	b = ratbag_profile_get_button_by_index(p, 0);
+	b = ratbag_profile_get_button(p, 0);
 	ck_assert(b != NULL);
 
 	p = ratbag_profile_unref(p);
@@ -535,7 +535,7 @@ START_TEST(device_and_profile_freed_before_resolution)
 	d = ratbag_device_new_test_device(r, &td);
 	ck_assert(d != NULL);
 
-	p = ratbag_device_get_profile_by_index(d, 0);
+	p = ratbag_device_get_profile(d, 0);
 	ck_assert(p != NULL);
 
 	d = ratbag_device_unref(d);
@@ -575,7 +575,7 @@ START_TEST(device_and_profile_and_button_freed_before_resolution)
 	d = ratbag_device_new_test_device(r, &td);
 	ck_assert(d != NULL);
 
-	p = ratbag_device_get_profile_by_index(d, 0);
+	p = ratbag_device_get_profile(d, 0);
 	ck_assert(p != NULL);
 
 	d = ratbag_device_unref(d);
@@ -585,7 +585,7 @@ START_TEST(device_and_profile_and_button_freed_before_resolution)
 	res = ratbag_profile_get_resolution(p, 0);
 	ck_assert(res != NULL);
 
-	b = ratbag_profile_get_button_by_index(p, 0);
+	b = ratbag_profile_get_button(p, 0);
 	ck_assert(b != NULL);
 
 	p = ratbag_profile_unref(p);
@@ -622,7 +622,7 @@ START_TEST(device_and_profile_and_resolution_freed_before_button)
 	d = ratbag_device_new_test_device(r, &td);
 	ck_assert(d != NULL);
 
-	p = ratbag_device_get_profile_by_index(d, 0);
+	p = ratbag_device_get_profile(d, 0);
 	ck_assert(p != NULL);
 
 	d = ratbag_device_unref(d);
@@ -632,7 +632,7 @@ START_TEST(device_and_profile_and_resolution_freed_before_button)
 	res = ratbag_profile_get_resolution(p, 0);
 	ck_assert(res != NULL);
 
-	b = ratbag_profile_get_button_by_index(p, 0);
+	b = ratbag_profile_get_button(p, 0);
 	ck_assert(b != NULL);
 
 	p = ratbag_profile_unref(p);

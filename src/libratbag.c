@@ -300,7 +300,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 
 	nprofiles = ratbag_device_get_num_profiles(device);
 	for (i = 0; i < nprofiles; i++) {
-		profile = ratbag_device_get_profile_by_index(device, i);
+		profile = ratbag_device_get_profile(device, i);
 		if (!profile)
 			goto out;
 
@@ -730,7 +730,7 @@ ratbag_profile_unref(struct ratbag_profile *profile)
 }
 
 LIBRATBAG_EXPORT struct ratbag_profile *
-ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int index)
+ratbag_device_get_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct ratbag_profile *profile;
 
@@ -763,7 +763,7 @@ ratbag_profile_is_active(struct ratbag_profile *profile)
 		return NULL;
 	}
 
-	return ratbag_device_get_profile_by_index(device, current_profile);
+	return ratbag_device_get_profile(device, current_profile);
 #endif
 }
 
@@ -1006,7 +1006,7 @@ ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 }
 
 LIBRATBAG_EXPORT struct ratbag_button*
-ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
+ratbag_profile_get_button(struct ratbag_profile *profile,
 				   unsigned int index)
 {
 	struct ratbag_device *device = profile->device;

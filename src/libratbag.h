@@ -560,7 +560,7 @@ ratbag_profile_get_user_data(const struct ratbag_profile *profile);
  * @see ratbag_get_num_profiles
  */
 struct ratbag_profile *
-ratbag_device_get_profile_by_index(struct ratbag_device *device, unsigned int index);
+ratbag_device_get_profile(struct ratbag_device *device, unsigned int index);
 
 /**
  * @ingroup profile
@@ -955,8 +955,7 @@ ratbag_resolution_is_default(const struct ratbag_resolution *resolution);
  * @see ratbag_get_num_buttons
  */
 struct ratbag_button*
-ratbag_profile_get_button_by_index(struct ratbag_profile *profile,
-				   unsigned int index);
+ratbag_profile_get_button(struct ratbag_profile *profile, unsigned int index);
 
 /**
  * @ingroup button

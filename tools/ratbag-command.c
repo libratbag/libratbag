@@ -197,7 +197,7 @@ ratbag_cmd_get_active_profile(struct ratbag_device *device)
 	int i;
 
 	for (i = 0; i < ratbag_device_get_num_profiles(device); i++) {
-		profile = ratbag_device_get_profile_by_index(device, i);
+		profile = ratbag_device_get_profile(device, i);
 		if (ratbag_profile_is_active(profile))
 			return profile;
 
@@ -347,7 +347,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 
 	for (i = 0; i < num_profiles; i++) {
 		int dpi, rate;
-		profile = ratbag_device_get_profile_by_index(device, i);
+		profile = ratbag_device_get_profile(device, i);
 		if (!profile)
 			continue;
 
@@ -382,7 +382,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		for (b = 0; b < num_buttons; b++) {
 			enum ratbag_button_type type;
 
-			button = ratbag_profile_get_button_by_index(profile, b);
+			button = ratbag_profile_get_button(profile, b);
 			type = ratbag_button_get_type(button);
 			action = button_action_to_str(button);
 			printf("    Button: %d type %s is mapped to '%s'\n",
@@ -427,8 +427,8 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 		return ERR_UNSUPPORTED;
 	}
 
-	button_6 = ratbag_profile_get_button_by_index(profile, 6);
-	button_7 = ratbag_profile_get_button_by_index(profile, 7);
+	button_6 = ratbag_profile_get_button(profile, 6);
+	button_7 = ratbag_profile_get_button(profile, 7);
 
 	if (ratbag_button_get_key(button_6, modifiers, &modifiers_sz) == KEY_VOLUMEUP &&
 	    ratbag_button_get_key(button_7, modifiers, &modifiers_sz) == KEY_VOLUMEDOWN) {
@@ -613,7 +613,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 		goto out;
 	}
 
-	button = ratbag_profile_get_button_by_index(profile, button_index);
+	button = ratbag_profile_get_button(profile, button_index);
 	if (!button) {
 		error("Invalid button number %d\n", button_index);
 		rc = ERR_UNSUPPORTED;
@@ -1399,7 +1399,7 @@ ratbag_cmd_button(const struct ratbag_cmd *cmd,
 
 	button_idx = strtol(command, &endp, 10);
 	if (command != endp && *endp == '\0') {
-		button = ratbag_profile_get_button_by_index(profile,
+		button = ratbag_profile_get_button(profile,
 							    button_idx);
 		if (!button) {
 			error("Invalid button %d\n", button_idx);
@@ -1462,7 +1462,7 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 		goto out;
 	}
 
-	profile = ratbag_device_get_profile_by_index(device, index);
+	profile = ratbag_device_get_profile(device, index);
 	if (ratbag_profile_is_active(profile)) {
 		rc = SUCCESS;
 		goto out;
@@ -1508,7 +1508,7 @@ ratbag_cmd_profile_active_get(const struct ratbag_cmd *cmd,
 	num_profiles = ratbag_device_get_num_profiles(device);
 
 	for (i = 0; i < num_profiles && active_profile < 0; i++) {
-		profile = ratbag_device_get_profile_by_index(device, i);
+		profile = ratbag_device_get_profile(device, i);
 		if (ratbag_profile_is_active(profile))
 			active_profile = i;
 
@@ -1580,7 +1580,7 @@ ratbag_cmd_profile(const struct ratbag_cmd *cmd,
 
 	profile_idx = strtol(command, &endp, 10);
 	if (command != endp && *endp == '\0') {
-		profile = ratbag_device_get_profile_by_index(device,
+		profile = ratbag_device_get_profile(device,
 							     profile_idx);
 		if (!profile) {
 			error("Unable to find profile %d\n", profile_idx);

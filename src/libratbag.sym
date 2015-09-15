@@ -27,7 +27,7 @@ global:
 	ratbag_device_get_name;
 	ratbag_device_get_num_buttons;
 	ratbag_device_get_num_profiles;
-	ratbag_device_get_profile_by_index;
+	ratbag_device_get_profile;
 	ratbag_device_get_svg_name;
 	ratbag_device_get_user_data;
 	ratbag_device_has_capability;
@@ -40,7 +40,7 @@ global:
 	ratbag_log_get_priority;
 	ratbag_log_set_handler;
 	ratbag_log_set_priority;
-	ratbag_profile_get_button_by_index;
+	ratbag_profile_get_button;
 	ratbag_profile_get_num_resolutions;
 	ratbag_profile_get_resolution;
 	ratbag_profile_get_user_data;
