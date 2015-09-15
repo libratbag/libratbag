@@ -679,6 +679,13 @@ roccat_read_button(struct ratbag_button *button)
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 		} else {
+			if (buf[0] != ROCCAT_REPORT_ID_MACRO) {
+				log_error(device->ratbag,
+					  "Error while reading the macro of button %d of profile %d.\n",
+					  button->index,
+					  button->profile->index);
+				goto out_macro;
+			}
 			if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_MACRO)) {
 				log_error(device->ratbag,
 					  "wrong checksum while reading the macro of button %d of profile %d.\n",
