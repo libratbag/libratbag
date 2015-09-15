@@ -278,7 +278,7 @@ roccat_is_ready(struct ratbag_device *device)
 		msleep(100);
 
 	if (buf[1] == 0x02)
-		return -EINVAL;
+		return 2;
 
 	return buf[1] == 0x01;
 }
@@ -297,6 +297,9 @@ roccat_wait_ready(struct ratbag_device *device)
 
 		if (rc == 1)
 			return 0;
+
+		if (rc == 2)
+			return 2;
 
 		msleep(10);
 	}
@@ -383,7 +386,7 @@ roccat_set_config_profile(struct ratbag_device *device, uint8_t profile, uint8_t
 		return -EIO;
 
 	ret = roccat_wait_ready(device);
-	if (ret)
+	if (ret < 0)
 		log_error(device->ratbag,
 			  "Error while waiting for the device to be ready: %s (%d)\n",
 			  strerror(-ret), ret);
