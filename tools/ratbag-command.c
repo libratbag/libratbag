@@ -144,11 +144,17 @@ usage(void)
 	       "  switch-etekcity		Switch the Etekcity mouse active profile\n"
 	       "\n"
 	       "Examples:\n"
-	       " %s profile active get\n"
-	       " %s profile 0 resolution active set 4\n"
-	       " %s profile 0 resolution 1 dpi get\n"
-	       " %s resolution 4 rate get\n"
-	       " %s dpi set 800\n"
+	       "  %s profile active get\n"
+	       "  %s profile 0 resolution active set 4\n"
+	       "  %s profile 0 resolution 1 dpi get\n"
+	       "  %s resolution 4 rate get\n"
+	       "  %s dpi set 800\n"
+	       "\n"
+	       "Exit codes:\n"
+	       "  0	Success\n"
+	       "  1	Unsupported feature or index out of available range\n"
+	       "  2	Commandline arguments are invalid\n"
+	       "  3	Invalid device or a command failed on the device\n"
 	       "\n",
 		program_invocation_short_name,
 		program_invocation_short_name,
