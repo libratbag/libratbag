@@ -31,20 +31,6 @@ Macro support:
 - enhance doctext
 - add API support for name/groups
 - revamp the API?
-- add command to set a macro in ratbag-command
-
-ratbag-command needs a revamp of the arguments into a tree type, e.g.
-instead of switch-dpi something like "ratbag command resolution set"
-proposed set of arguments:
-  ratbag-command profile 1 resolution 3 dpi set 400
-  ratbag-command profile 1 resolution 3 dpi-x set 400
-  ratbag-command profile 1 resolution 3 dpi-x get
-  ratbag-command profile 1 resolution 3 report-rate get
-  "profile" and "resolution" arguments can be optional, we juse the current
-  profile where missing, i.e. "ratbag-command dpi get" works
-  ratbag-command profile 1 button 1 button set 3
-  ratbag-command profile 1 button 1 special set foo
-  ratbag-command profile 1 button 1 macro set +KEY_ENTER -KEY_ENTER
 
 decide on a stable set of arguments, build the installed version of the
 command with that set, add a set of debug arguments (e.g. the
@@ -64,3 +50,11 @@ speak to the dbus daemon
 change the API to return enum ratbag_error with more meaningful error
 messages. errno's are fine internally between the driver, but for the
 public-facing API we need better options
+
+ratbag-command:
+- add checks for user input: negative indices, unterminated macro
+  sequences, excessive timeouts, etc
+- add man page
+- extend test cases, have a list of test cases that should work on a
+  specific device, as per-device separate scripts
+- add default set/get to profile, resolution
