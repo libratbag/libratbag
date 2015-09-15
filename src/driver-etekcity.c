@@ -701,11 +701,21 @@ etekcity_write_button(struct ratbag_button *button,
 
 	*data = rc;
 
+	rc = etekcity_write_profile(button->profile);
+	if (rc) {
+		log_error(device->ratbag,
+			  "unable to write the profile to the device: '%s' (%d)\n",
+			  strerror(-rc), rc);
+		return rc;
+	}
+
 	rc = etekcity_write_macro(button, action);
-	if (rc)
+	if (rc) {
 		log_error(device->ratbag,
 			  "unable to write the macro to the device: '%s' (%d)\n",
 			  strerror(-rc), rc);
+		return rc;
+	}
 
 	return rc;
 }
