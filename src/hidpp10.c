@@ -520,32 +520,32 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	for (i = 0; i < 13; i++) {
 		union _hidpp10_button_binding *button = &p->buttons[i];
 		switch (button->any.type) {
-		case 0x81:
+		case PROFILE_BUTTON_TYPE_BUTTON:
 			log_raw(ratbag,
 				"Button %d: button %d\n",
 				i,
 				ffs(hidpp10_get_unaligned_u16le(&button->button.button_flags_lsb)));
 			break;
-		case 0x82:
+		case PROFILE_BUTTON_TYPE_KEYS:
 			log_raw(ratbag,
 				"Button %d: key %d modifier %x\n",
 				i,
 				button->keyboard_keys.key,
 				button->keyboard_keys.modifier_flags);
 			break;
-		case 0x83:
+		case PROFILE_BUTTON_TYPE_SPECIAL:
 			log_raw(ratbag,
 				"Button %d: special %x\n",
 				i,
 				ffs(hidpp10_get_unaligned_u16le(&button->special.flags1)));
 			break;
-		case 0x84:
+		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			log_raw(ratbag,
 				"Button %d: consumer: %x\n",
 				i,
 				hidpp10_get_unaligned_u16(&button->consumer_control.consumer_control1));
 			break;
-		case 0x8F:
+		case PROFILE_BUTTON_TYPE_DISABLED:
 			log_raw(ratbag, "Button %d: disabled\n", i);
 			break;
 		default:
