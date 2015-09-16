@@ -104,6 +104,16 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	union hidpp10_message expected_error_dev = ERROR_MSG(msg, msg->msg.device_idx);
 	int ret;
 	uint8_t hidpp_err = 0;
+	int command_size = 0;
+
+	switch (msg->msg.report_id) {
+	case REPORT_ID_SHORT:
+		command_size = SHORT_MESSAGE_LENGTH;
+		break;
+	case REPORT_ID_LONG:
+		command_size = LONG_MESSAGE_LENGTH;
+		break;
+	}
 
 	/* create the expected header */
 	expected_header = *msg;
@@ -122,12 +132,12 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		break;
 	}
 
-	log_buf_raw(ratbag, "sending: ", msg->data, SHORT_MESSAGE_LENGTH);
-	log_buf_raw(ratbag, "  expected_header:	", expected_header.data, SHORT_MESSAGE_LENGTH);
+	log_buf_raw(ratbag, "sending: ", msg->data, command_size);
+	log_buf_raw(ratbag, "  expected_header:	", expected_header.data, 4);
 	log_buf_raw(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
-	ret = hidpp10_write_command(dev, msg->data, SHORT_MESSAGE_LENGTH);
+	ret = hidpp10_write_command(dev, msg->data, command_size);
 	if (ret)
 		goto out_err;
 
