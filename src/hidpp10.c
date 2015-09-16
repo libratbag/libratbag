@@ -111,7 +111,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	union hidpp10_message expected_error_dev = ERROR_MSG(msg, msg->msg.device_idx);
 	int ret;
 	uint8_t hidpp_err = 0;
-	int command_size = 0;
+	int command_size;
 
 	switch (msg->msg.report_id) {
 	case REPORT_ID_SHORT:
@@ -120,6 +120,8 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	case REPORT_ID_LONG:
 		command_size = LONG_MESSAGE_LENGTH;
 		break;
+	default:
+		abort();
 	}
 
 	/* create the expected header */
