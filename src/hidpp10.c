@@ -65,6 +65,13 @@ hidpp10_get_unaligned_u16(uint8_t *buf)
 	return (buf[0] << 8) | buf[1];
 }
 
+static inline void
+hidpp10_set_unaligned_u16le(uint8_t *buf, uint16_t value)
+{
+	buf[0] = value & 0xFF;
+	buf[1] = value >> 8;
+}
+
 const char *device_types[0xFF] = {
 	[0x00] = "Unknown",
 	[0x01] = "Keyboard",
@@ -712,9 +719,9 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 #define __CMD_CURRENT_RESOLUTION		0x63
 
-#define CMD_CURRENT_RESOLUTION(idx, sub) { \
+#define CMD_CURRENT_RESOLUTION(id, idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = id, \
 		.device_idx = idx, \
 		.sub_id = sub, \
 		.address = __CMD_CURRENT_RESOLUTION, \
@@ -728,7 +735,7 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 			       uint16_t *yres)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_LONG_REGISTER_REQ);
 	int res;
 
 	log_raw(dev->ratbag_device->ratbag, "Fetching current resolution\n");
@@ -742,6 +749,20 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 	*yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
 
 	return 0;
+}
+
+int
+hidpp10_set_current_resolution(struct hidpp10_device *dev,
+			       uint16_t xres,
+			       uint16_t yres)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
+
+	hidpp10_set_unaligned_u16le(&resolution.data[4], xres / 50);
+	hidpp10_set_unaligned_u16le(&resolution.data[6], yres / 50);
+
+	return hidpp10_request_command(dev, &resolution);
 }
 
 /* -------------------------------------------------------------------------- */
