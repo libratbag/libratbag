@@ -178,6 +178,20 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 		       const bool led[4]);
 
 /* -------------------------------------------------------------------------- */
+/* 0x57: LED Color                                                           */
+/* -------------------------------------------------------------------------- */
+int
+hidpp10_get_led_color(struct hidpp10_device *dev,
+		      uint8_t *red,
+		      uint8_t *green,
+		      uint8_t *blue);
+int
+hidpp10_set_led_color(struct hidpp10_device *dev,
+		      uint8_t red,
+		      uint8_t green,
+		      uint8_t blue);
+
+/* -------------------------------------------------------------------------- */
 /* 0x61: Optical Sensor Settings                                              */
 /* -------------------------------------------------------------------------- */
 int

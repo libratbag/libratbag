@@ -603,6 +603,65 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x57: LED Color                                                            */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_LED_COLOR				0x57
+
+#define CMD_LED_COLOR(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_LED_COLOR, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+int
+hidpp10_get_led_color(struct hidpp10_device *dev,
+		      uint8_t *red,
+		      uint8_t *green,
+		      uint8_t *blue)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_color = CMD_LED_COLOR(idx, GET_REGISTER_REQ);
+	int res;
+
+	log_raw(dev->ratbag_device->ratbag, "Fetching LED color\n");
+
+	res = hidpp10_request_command(dev, &led_color);
+	if (res)
+		return res;
+
+	*red = led_color.msg.parameters[0];
+	*green = led_color.msg.parameters[1];
+	*blue = led_color.msg.parameters[2];
+
+	return 0;
+}
+
+int
+hidpp10_set_led_color(struct hidpp10_device *dev,
+		      uint8_t red,
+		      uint8_t green,
+		      uint8_t blue)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_color = CMD_LED_COLOR(idx, SET_REGISTER_REQ);
+	int res;
+
+	log_raw(dev->ratbag_device->ratbag, "Setting LED color\n");
+
+	led_color.msg.parameters[0] = red;
+	led_color.msg.parameters[1] = green;
+	led_color.msg.parameters[2] = blue;
+
+	res = hidpp10_request_command(dev, &led_color);
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x61: Optical Sensor Settings                                              */
 /* -------------------------------------------------------------------------- */
 #define __CMD_OPTICAL_SENSOR_SETTINGS		0x61
