@@ -65,6 +65,13 @@ hidpp10_get_unaligned_u16(uint8_t *buf)
 	return (buf[0] << 8) | buf[1];
 }
 
+static inline void
+hidpp10_set_unaligned_u16le(uint8_t *buf, uint16_t value)
+{
+	buf[0] = value & 0xFF;
+	buf[1] = value >> 8;
+}
+
 const char *device_types[0xFF] = {
 	[0x00] = "Unknown",
 	[0x01] = "Keyboard",
@@ -104,6 +111,16 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	union hidpp10_message expected_error_dev = ERROR_MSG(msg, msg->msg.device_idx);
 	int ret;
 	uint8_t hidpp_err = 0;
+	int command_size = 0;
+
+	switch (msg->msg.report_id) {
+	case REPORT_ID_SHORT:
+		command_size = SHORT_MESSAGE_LENGTH;
+		break;
+	case REPORT_ID_LONG:
+		command_size = LONG_MESSAGE_LENGTH;
+		break;
+	}
 
 	/* create the expected header */
 	expected_header = *msg;
@@ -122,12 +139,12 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		break;
 	}
 
-	log_buf_raw(ratbag, "sending: ", msg->data, SHORT_MESSAGE_LENGTH);
-	log_buf_raw(ratbag, "  expected_header:	", expected_header.data, SHORT_MESSAGE_LENGTH);
+	log_buf_raw(ratbag, "sending: ", msg->data, command_size);
+	log_buf_raw(ratbag, "  expected_header:	", expected_header.data, 4);
 	log_buf_raw(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
-	ret = hidpp10_write_command(dev, msg->data, SHORT_MESSAGE_LENGTH);
+	ret = hidpp10_write_command(dev, msg->data, command_size);
 	if (ret)
 		goto out_err;
 
@@ -503,32 +520,32 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	for (i = 0; i < 13; i++) {
 		union _hidpp10_button_binding *button = &p->buttons[i];
 		switch (button->any.type) {
-		case 0x81:
+		case PROFILE_BUTTON_TYPE_BUTTON:
 			log_raw(ratbag,
 				"Button %d: button %d\n",
 				i,
 				ffs(hidpp10_get_unaligned_u16le(&button->button.button_flags_lsb)));
 			break;
-		case 0x82:
+		case PROFILE_BUTTON_TYPE_KEYS:
 			log_raw(ratbag,
 				"Button %d: key %d modifier %x\n",
 				i,
 				button->keyboard_keys.key,
 				button->keyboard_keys.modifier_flags);
 			break;
-		case 0x83:
+		case PROFILE_BUTTON_TYPE_SPECIAL:
 			log_raw(ratbag,
 				"Button %d: special %x\n",
 				i,
 				ffs(hidpp10_get_unaligned_u16le(&button->special.flags1)));
 			break;
-		case 0x84:
+		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			log_raw(ratbag,
 				"Button %d: consumer: %x\n",
 				i,
 				hidpp10_get_unaligned_u16(&button->consumer_control.consumer_control1));
 			break;
-		case 0x8F:
+		case PROFILE_BUTTON_TYPE_DISABLED:
 			log_raw(ratbag, "Button %d: disabled\n", i);
 			break;
 		default:
@@ -702,9 +719,9 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 #define __CMD_CURRENT_RESOLUTION		0x63
 
-#define CMD_CURRENT_RESOLUTION(idx, sub) { \
+#define CMD_CURRENT_RESOLUTION(id, idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = id, \
 		.device_idx = idx, \
 		.sub_id = sub, \
 		.address = __CMD_CURRENT_RESOLUTION, \
@@ -718,7 +735,7 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 			       uint16_t *yres)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(idx, GET_LONG_REGISTER_REQ);
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_LONG_REGISTER_REQ);
 	int res;
 
 	log_raw(dev->ratbag_device->ratbag, "Fetching current resolution\n");
@@ -732,6 +749,20 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 	*yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
 
 	return 0;
+}
+
+int
+hidpp10_set_current_resolution(struct hidpp10_device *dev,
+			       uint16_t xres,
+			       uint16_t yres)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
+
+	hidpp10_set_unaligned_u16le(&resolution.data[4], xres / 50);
+	hidpp10_set_unaligned_u16le(&resolution.data[6], yres / 50);
+
+	return hidpp10_request_command(dev, &resolution);
 }
 
 /* -------------------------------------------------------------------------- */

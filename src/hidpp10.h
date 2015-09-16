@@ -203,6 +203,9 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 int
 hidpp10_get_current_resolution(struct hidpp10_device *dev,
 			       uint16_t *xres, uint16_t *yres);
+int
+hidpp10_set_current_resolution(struct hidpp10_device *dev,
+			       uint16_t xres, uint16_t yres);
 
 /* -------------------------------------------------------------------------- */
 /* 0x64: USB Refresh Rate                                                     */
