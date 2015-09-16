@@ -285,6 +285,9 @@ static const struct ratbag_id hidpp10drv_table[] = {
 	/* G5 */
 	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc041) },
 
+	/* G9 */
+	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc048) },
+
 	/* G500s */
 	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc24e),
 	  .svg_filename = "logitech-g500s.svg" },

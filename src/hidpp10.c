@@ -138,6 +138,12 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	do {
 		ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
 
+		/* Wait and retry if the USB timed out */
+		if (ret == -ETIMEDOUT) {
+			msleep(10);
+			ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
+		}
+
 		/* Overwrite the return device index with ours. The kernel
 		 * sets our device index on write, but gives us the real
 		 * device index on reply. Overwrite it with our index so the
@@ -145,7 +151,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		 */
 		read_buffer.msg.device_idx = msg->msg.device_idx;
 
-		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret);
+		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret > 0 ? ret : 0);
 
 
 		/* actual answer */
