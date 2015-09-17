@@ -443,7 +443,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	struct hidpp10_profile profile;
 
 	/* FIXME: profile offset appears to be 3, 1 and 2 are garbage */
-	number += 3;
+	number += 2;
 
 	log_raw(dev->ratbag_device->ratbag, "Fetching profile %d\n", number);
 
