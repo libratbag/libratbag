@@ -132,6 +132,9 @@ struct hidpp10_profile {
 	} dpi_modes[5];
 	size_t num_dpi_modes;
 
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
 	bool angle_correction;
 	uint8_t default_dpi_mode;
 	uint16_t refresh_rate;
