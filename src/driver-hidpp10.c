@@ -288,6 +288,12 @@ static const struct ratbag_id hidpp10drv_table[] = {
 	/* G9 */
 	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc048) },
 
+	/* G9x [Original] */
+	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc066) },
+
+	/* G9x [Call of Duty MW3 Edition] */
+	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc249) },
+
 	/* G500 */
 	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc068) },
 
