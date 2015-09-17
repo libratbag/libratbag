@@ -389,7 +389,10 @@ union _hidpp10_button_binding {
 _Static_assert(sizeof(union _hidpp10_button_binding) == 3, "Invalid size");
 
 struct _hidpp10_profile {
-	uint8_t unknown[4];
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+	uint8_t unknown;
 	struct _hidpp10_dpi_mode dpi_modes[PROFILE_NUM_DPI_MODES];
 	uint8_t angle_correction;
 	uint8_t default_dpi_mode;
@@ -450,6 +453,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			return res;
 	}
 
+	profile.red = p->red;
+	profile.green = p->green;
+	profile.blue = p->blue;
 	profile.angle_correction = p->angle_correction;
 	profile.default_dpi_mode = p->default_dpi_mode;
 	profile.refresh_rate = p->usb_refresh_rate ? 1000/p->usb_refresh_rate : 0;
