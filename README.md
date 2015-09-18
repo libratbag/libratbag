@@ -24,6 +24,17 @@ implemented. The HW driver then only accesses the bits required for
 libratbag. This allows us to optionally export the protocol as separate
 library in the future, if other projects require it.
 
+Adding Devices
+--------------
+Your device may already supported by one of our drivers. If so, you can
+enable it by adding the device vendor-id/product-id to the static table. For
+example, for a HID++ 1.0 device, edit the driver-hidpp10.c file and add an
+entry in the hidpp10drv_table. For the other drivers, look for the
+driver-{drivername}.c file and do the same.
+
+If the device doesn't work, you'll have to start reverse-engineering the
+device-specific protocol. Good luck :)
+
 License
 -------
 
