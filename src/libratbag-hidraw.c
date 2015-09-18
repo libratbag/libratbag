@@ -170,7 +170,7 @@ int
 ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 			  uint8_t *buf, size_t len, unsigned char rtype, int reqtype)
 {
-	char tmp_buf[HID_MAX_BUFFER_SIZE];
+	uint8_t tmp_buf[HID_MAX_BUFFER_SIZE];
 	int rc;
 
 	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw.fd < 0)
@@ -188,10 +188,14 @@ ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 		if (rc < 0)
 			return -errno;
 
+		log_buf_raw(device->ratbag, "feature get:   ", tmp_buf, (unsigned)rc);
+
 		memcpy(buf, tmp_buf, rc);
 		return rc;
 	case HID_REQ_SET_REPORT:
 		buf[0] = reportnum;
+
+		log_buf_raw(device->ratbag, "feature set:   ", buf, len);
 		rc = ioctl(device->hidraw.fd, HIDIOCSFEATURE(len), buf);
 		if (rc < 0)
 			return -errno;
@@ -209,6 +213,8 @@ ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t l
 
 	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw.fd < 0)
 		return -EINVAL;
+
+	log_buf_raw(device->ratbag, "output report: ", buf, len);
 
 	rc = write(device->hidraw.fd, buf, len);
 
@@ -241,5 +247,9 @@ ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size
 		return -ETIMEDOUT;
 
 	rc = read(device->hidraw.fd, buf, len);
+
+	if (rc > 0)
+		log_buf_raw(device->ratbag, "input report:  ", buf, rc);
+
 	return rc >= 0 ? rc : -errno;
 }

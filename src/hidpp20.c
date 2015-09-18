@@ -103,8 +103,6 @@ hidpp20_request_command_allow_error(struct ratbag_device *device, union hidpp20_
 
 	msg_len = msg->msg.report_id == REPORT_ID_SHORT ? SHORT_MESSAGE_LENGTH : LONG_MESSAGE_LENGTH;
 
-	log_buf_raw(ratbag, "sending: ", msg->data, msg_len);
-
 	/* Send the message to the Device */
 	ret = hidpp20_write_command(device, msg->data, msg_len);
 	if (ret)
@@ -122,8 +120,6 @@ hidpp20_request_command_allow_error(struct ratbag_device *device, union hidpp20_
 			msleep(10);
 			ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
 		}
-
-		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret > 0 ? ret : 0);
 
 		if (read_buffer.msg.report_id != REPORT_ID_SHORT &&
 		    read_buffer.msg.report_id != REPORT_ID_LONG)

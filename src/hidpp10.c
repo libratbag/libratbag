@@ -141,7 +141,6 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		break;
 	}
 
-	log_buf_raw(ratbag, "sending: ", msg->data, command_size);
 	log_buf_raw(ratbag, "  expected_header:	", expected_header.data, 4);
 	log_buf_raw(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
@@ -169,9 +168,6 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		 * messages are easier to check and compare.
 		 */
 		read_buffer.msg.device_idx = msg->msg.device_idx;
-
-		log_buf_raw(ratbag, " *** received: ", read_buffer.data, ret > 0 ? ret : 0);
-
 
 		/* actual answer */
 		if (!memcmp(read_buffer.data, expected_header.data, 4))
