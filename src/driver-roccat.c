@@ -643,7 +643,7 @@ roccat_read_button(struct ratbag_button *button)
 	struct roccat_macro *macro;
 	struct roccat_data *drv_data;
 	uint8_t *buf;
-	unsigned j;
+	unsigned j, time;
 	int rc;
 
 	device = button->profile->device;
@@ -708,10 +708,13 @@ roccat_read_button(struct ratbag_button *button)
 							      macro->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
 							      macro_mapping[macro->keys[j].keycode]);
 				if (macro->keys[j].time)
-					ratbag_button_set_macro_event(button,
-								      j * 2 + 1,
-								      RATBAG_MACRO_EVENT_WAIT,
-								      macro->keys[j].time);
+					time = macro->keys[j].time;
+				else
+					time = macro->keys[j].flag & 0x01 ? 10 : 50;
+				ratbag_button_set_macro_event(button,
+							      j * 2 + 1,
+							      RATBAG_MACRO_EVENT_WAIT,
+							      time);
 
 				log_raw(device->ratbag,
 					"    - %s %s\n",
