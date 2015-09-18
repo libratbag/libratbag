@@ -13,9 +13,9 @@ Architecture
 libratbag has two main components, the front-end API and wrapper code, and
 the back-end HW-specific drivers:
 
-   +-----+    +-----+    +-----------+    +----------+
-   | app | -> | API | -> | hw-driver | -> | protocol | -> device
-   +-----+    +-----+    +-----------+    +----------+
+    +-----+    +-----+    +-----------+    +----------+
+    | app | -> | API | -> | hw-driver | -> | protocol | -> device
+    +-----+    +-----+    +-----------+    +----------+
 
 The API layer is HW agnostic. Depend on the HW, the protocol may be part of
 the driver implementation (e.g. etekcity) or a separate set of files
