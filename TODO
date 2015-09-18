@@ -36,16 +36,11 @@ decide on a stable set of arguments, build the installed version of the
 command with that set, add a set of debug arguments (e.g. the
 etekcity-specific ones) only available in the build.
 
-interactive shell mode for ratbag-command?
+interactive shell mode/batch mode for ratbag-command?
 
 dbus proxy - allows parallel access to the devices without interference, and
 provides a single instance for root permissions. this should be a separate
-project. Ideally, we can wrap the dbus API into a libratbag-dbus that
-exposes the same API to the application, but goes through dbus.
-
-python bindings - depends on the dbus decision, python bindings could be
-wrappers around libratbag itself, or a wrapper around the dbus protocol to
-speak to the dbus daemon
+project.
 
 change the API to return enum ratbag_error with more meaningful error
 messages. errno's are fine internally between the driver, but for the
@@ -58,3 +53,7 @@ ratbag-command:
 - extend test cases, have a list of test cases that should work on a
   specific device, as per-device separate scripts
 - add default set/get to profile, resolution
+
+Move the HW driver assignment to a udev rule/hwdb combination, i.e. assign
+RATBAG_DRIVER=hidpp10 in the hwdb so we don't have the recompile the driver
+for every device.
