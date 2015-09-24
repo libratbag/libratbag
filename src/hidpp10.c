@@ -499,6 +499,11 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 #define __CMD_PROFILE				0x0F
 
+#define PROFILE_TYPE_INDEX			0x00
+#define PROFILE_TYPE_ADDRESS			0x01
+#define PROFILE_TYPE_EEPROM			0xEE
+#define PROFILE_TYPE_FACTORY			0xFF
+
 #define CMD_PROFILE(idx, sub) { \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
@@ -618,12 +623,53 @@ hidpp10_get_dpi_value(struct hidpp10_device *dev, uint8_t raw_value)
 }
 
 int
+hidpp10_get_profile_directory(struct hidpp10_device *dev,
+			      struct hidpp10_directory *out,
+			      size_t nelems)
+{
+	unsigned int i;
+	int res;
+	struct hidpp10_directory directory[16]; /* assume 16 profiles max */
+	size_t count;
+
+	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
+
+	for (i = 0; i < sizeof(directory); i += 16) {
+		res = hidpp10_read_memory(dev, 0x01, i, (uint8_t *)directory + i);
+		if (res)
+			return res;
+	}
+
+	count = 0;
+	for (i = 0; i < ARRAY_LENGTH(directory); i++) {
+		if (directory[i].page == 0xFF)
+			break;
+		count++;
+	}
+
+	count = min(count, nelems);
+	memcpy(out, directory, count  * sizeof(out[0]));
+
+	return count;
+}
+
+int
 hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message profile = CMD_PROFILE(idx, GET_REGISTER_REQ);
 	int res;
-	int8_t page;
+	unsigned i;
+	int8_t type, page, offset;
+	struct hidpp10_directory directory[16]; /* completely random profile count */
+	int count = 0;
+
+	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
+
+	count = hidpp10_get_profile_directory(dev, directory,
+					    ARRAY_LENGTH(directory));
+	if (count < 0)
+		return count;
 
 	hidpp_log_raw(&dev->base, "Fetching current profile\n");
 
@@ -631,14 +677,36 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 	if (res)
 		return res;
 
-	page = profile.msg.parameters[0]; /* FIXME: my mouse is always 0 */
-	*current_profile = page;
+	type = profile.msg.parameters[0];
+	page = profile.msg.parameters[1];
+	switch (type) {
+	case PROFILE_TYPE_INDEX:
+		*current_profile = page;
+		/* If the profile exceeds the directory length, default to
+		 * the first */
+		if (*current_profile > count)
+			*current_profile = 0;
+		return 0;
+	case PROFILE_TYPE_ADDRESS:
+		offset = profile.msg.parameters[2];
+		for (i = 0; i < ARRAY_LENGTH(directory) && directory[i].page < 32; i++) {
+			if (page == directory[i].page &&
+			    offset == directory[i].offset) {
+				*current_profile = i;
+				return 0;
+			}
+		}
+		hidpp_log_error(&dev->base,
+			  "unable to find the profile at (%d,%d) in the directory\n",
+			  page, offset);
+		break;
+	default:
+		hidpp_log_error(&dev->base,
+			  "Unexpected value: %02xn",
+			  type);
+	}
 
-	/* FIXME: my mouse appears to be on page 5, but with the offset of
-	 * 3, it's actually profile 2. not sure how to  change this */
-	*current_profile = 2;
-
-	return 0;
+	return -ENAVAIL;
 }
 
 int
@@ -649,18 +717,36 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	size_t i;
 	int res;
 	struct hidpp10_profile profile;
+	struct hidpp10_directory directory[16]; /* completely random profile count */
+	int count = 0;
+	uint8_t page;
 
 	/* Page 0 is RAM
 	 * Page 1 is the profile directory
 	 * Page 2-31 are Flash
-	 * -> profiles are stored in the Flash */
-	number += 2;
+	 * -> profiles are stored in the Flash
+	 *
+	 * For now we assume that number refers to the index in the profile
+	 * directory.
+	 */
 
 	hidpp_log_raw(&dev->base, "Fetching profile %d\n", number);
 
+	count = hidpp10_get_profile_directory(dev, directory,
+					    ARRAY_LENGTH(directory));
+	if (count < 0)
+		return count;
+
+	if (number >= count) {
+		hidpp_log_error(&dev->base, "Profile number %d not in the directory.\n", number);
+		return -EINVAL;
+	}
+
+	page = directory[number].page;
+
 	for (i = 0; i < sizeof(data); i += 16) {
 		/* each sector contains 16 bytes of data */
-		res = hidpp10_read_memory(dev, number, i,  &data.data[i]);
+		res = hidpp10_read_memory(dev, page, i / 2,  &data.data[i]);
 		if (res)
 			return res;
 	}

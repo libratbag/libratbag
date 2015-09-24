@@ -402,6 +402,17 @@ struct hidpp10_profile {
 	size_t num_buttons;
 };
 
+struct hidpp10_directory {
+	uint8_t page;
+	uint8_t offset;
+	uint8_t led_mask;
+} __attribute__((packed));
+
+int
+hidpp10_get_profile_directory(struct hidpp10_device *dev,
+			      struct hidpp10_directory *out,
+			      size_t nelems);
+
 int
 hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile);
 
