@@ -208,7 +208,7 @@ out_err:
 /* -------------------------------------------------------------------------- */
 
 static int
-hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
+hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
 		    uint8_t bytes[16]);
 
 /* -------------------------------------------------------------------------- */
@@ -438,13 +438,16 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	int res;
 	struct hidpp10_profile profile;
 
-	/* FIXME: profile offset appears to be 3, 1 and 2 are garbage */
+	/* Page 0-1 are RAM
+	 * Page 2-31 are Flash
+	 * -> profiles are stored in the Flash */
 	number += 2;
 
 	log_raw(dev->ratbag_device->ratbag, "Fetching profile %d\n", number);
 
 	for (i = 0; i < sizeof(data); i += 16) {
-		res = hidpp10_read_memory(dev, number, i,  &data.data[i]);
+		/* each sector contains 16 bytes of data */
+		res = hidpp10_read_memory(dev, number, i / 2,  &data.data[i]);
 		if (res)
 			return res;
 	}
@@ -814,17 +817,20 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 		.device_idx = idx, \
 		.sub_id = GET_LONG_REGISTER_REQ, \
 		.address = __CMD_READ_MEMORY, \
-		.parameters = {page, offset & 0xff, offset >> 8 }, \
+		.parameters = {page, offset, 0x00 }, \
 	} \
 }
 
 static int
-hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
+hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
 		    uint8_t bytes[16])
 {
 	unsigned idx = dev->index;
-	union hidpp10_message readmem = CMD_READ_MEMORY(idx, page, offset/2);
+	union hidpp10_message readmem = CMD_READ_MEMORY(idx, page, offset);
 	int res;
+
+	if (page > 31)
+		return -EINVAL;
 
 	log_raw(dev->ratbag_device->ratbag,
 		"Reading memory page %d, offset %#x\n",
