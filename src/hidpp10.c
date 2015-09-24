@@ -438,7 +438,8 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	int res;
 	struct hidpp10_profile profile;
 
-	/* Page 0-1 are RAM
+	/* Page 0 is RAM
+	 * Page 1 is the profile directory
 	 * Page 2-31 are Flash
 	 * -> profiles are stored in the Flash */
 	number += 2;
