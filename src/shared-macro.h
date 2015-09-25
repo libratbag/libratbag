@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -34,6 +35,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 /*
  * We require:
@@ -71,6 +73,15 @@
 #define _unused_ __attribute__((unused))
 #define _weak_ __attribute__((weak))
 #define _weakref_(_x) __attribute__((weakref(#_x)))
+
+/*
+ * PROTECT_ERRNO: make sure a function protects errno
+ */
+static inline void reset_errno(int *saved_errno)
+{
+	errno = *saved_errno;
+}
+#define PROTECT_ERRNO _cleanup_(reset_errno) _unused_ int saved_errno = errno
 
 /*
  * DEFINE_TRIVIAL_CLEANUP_FUNC() - define helper suitable for _cleanup_()
@@ -127,6 +138,22 @@ static inline void *mfree(void *mem)
 }
 
 /*
+ * safe_close() - safe variant of close(2)
+ * @fd: fd to close
+ *
+ * This is the same as close(2), but allows passing negative FDs, which makes
+ * it a no-op. Furthermore, this always returns -1.
+ */
+static inline int safe_close(int fd)
+{
+	if (fd >= 0) {
+		PROTECT_ERRNO;
+		close(fd);
+	}
+	return -1;
+}
+
+/*
  * Miscellaneous cleanup helpers
  * All these helpers are suitable for use with _cleanup_(). They call the helper
  * they're named after on the variable marked for cleanup.
@@ -134,6 +161,11 @@ static inline void *mfree(void *mem)
 static inline void freep(void *p)
 {
 	free(*(void**)p);
+}
+
+static inline void safe_closep(int *fd)
+{
+	safe_close(*fd);
 }
 
 /*
