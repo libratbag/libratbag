@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <libratbag.h>
 #include <libudev.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -58,6 +59,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_device *, ratbagd_device_free);
 
 struct ratbagd {
 	sd_event *event;
+	struct ratbag *lib_ctx;
 	struct udev_monitor *monitor;
 	sd_event_source *monitor_source;
 	sd_bus *bus;

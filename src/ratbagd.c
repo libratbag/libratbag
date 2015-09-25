@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <libratbag.h>
 #include <libudev.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,6 +101,23 @@ static int ratbagd_monitor_event(sd_event_source *source,
 	return 0;
 }
 
+static int ratbagd_lib_open_restricted(const char *path,
+				       int flags,
+				       void *userdata)
+{
+	return open(path, flags, 0);
+}
+
+static void ratbagd_lib_close_restricted(int fd, void *userdata)
+{
+	safe_close(fd);
+}
+
+static const struct ratbag_interface ratbagd_lib_interface = {
+	.open_restricted	= ratbagd_lib_open_restricted,
+	.close_restricted	= ratbagd_lib_close_restricted,
+};
+
 static struct ratbagd *ratbagd_free(struct ratbagd *ctx)
 {
 	if (!ctx)
@@ -108,9 +126,11 @@ static struct ratbagd *ratbagd_free(struct ratbagd *ctx)
 	ctx->bus = sd_bus_flush_close_unref(ctx->bus);
 	ctx->monitor_source = sd_event_source_unref(ctx->monitor_source);
 	ctx->monitor = udev_monitor_unref(ctx->monitor);
+	ctx->lib_ctx = ratbag_unref(ctx->lib_ctx);
 	ctx->event = sd_event_unref(ctx->event);
 
 	assert(!ctx->device_map.root);
+	assert(!ctx->lib_ctx); /* ratbag returns non-NULL if still pinned */
 
 	return mfree(ctx);
 }
@@ -172,6 +192,10 @@ static int ratbagd_new(struct ratbagd **out)
 	r = sd_event_set_watchdog(ctx->event, true);
 	if (r < 0)
 		return r;
+
+	ctx->lib_ctx = ratbag_create_context(&ratbagd_lib_interface, ctx);
+	if (!ctx->lib_ctx)
+		return -ENOMEM;
 
 	r = ratbagd_init_monitor(ctx);
 	if (r < 0)
