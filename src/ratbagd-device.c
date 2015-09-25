@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <libratbag.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +39,7 @@ struct ratbagd_device {
 	struct ratbagd *ctx;
 	RBNode node;
 	char *name;
+	struct ratbag_device *lib_device;
 };
 
 #define ratbagd_device_from_node(_ptr) \
@@ -117,7 +119,8 @@ static const sd_bus_vtable ratbagd_device_vtable[] = {
 
 int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbagd *ctx,
-		       const char *name)
+		       const char *name,
+		       struct ratbag_device *lib_device)
 {
 	_cleanup_(ratbagd_device_freep) struct ratbagd_device *device = NULL;
 
@@ -131,6 +134,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 
 	device->ctx = ctx;
 	rbnode_init(&device->node);
+	device->lib_device = ratbag_device_ref(lib_device);
 
 	device->name = strdup(name);
 	if (!device->name)
@@ -148,7 +152,11 @@ struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
 
 	assert(!ratbagd_device_linked(device));
 
+	device->lib_device = ratbag_device_unref(device->lib_device);
 	device->name = mfree(device->name);
+
+	assert(!device->lib_device); /* ratbag yields !NULL if still pinned */
+
 	return mfree(device);
 }
 

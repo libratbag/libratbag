@@ -45,7 +45,8 @@ struct ratbagd_device;
 
 int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbagd *ctx,
-		       const char *name);
+		       const char *name,
+		       struct ratbag_device *lib_device);
 struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device);
 bool ratbagd_device_linked(struct ratbagd_device *device);
 void ratbagd_device_link(struct ratbagd_device *device);

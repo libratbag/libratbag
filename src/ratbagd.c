@@ -37,18 +37,12 @@
 static void ratbagd_process_device(struct ratbagd *ctx,
 				   struct udev_device *udevice)
 {
+	struct ratbag_device *lib_device;
 	struct ratbagd_device *device;
 	const char *name;
 	int r;
 
 	/*
-	 * TODO: So far we just enumerate udev input devices and add a new
-	 *       ratbag device for each one we find. That's a bit easy. We
-	 *       should really try to create a libratbag device for the udev
-	 *       device and only add devices that are actually accepted.
-	 *       Furthermore, the libratbag object should really be kept as
-	 *       context in ratbagd_device.
-	 *
 	 * TODO: libratbag should provide some mechanism to allow
 	 *       device-grouping, just like libinput does. If multiple input
 	 *       devices belong to the same virtual device, we should not add
@@ -73,7 +67,16 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		/* device already known, refresh our view of the device */
 	} else {
 		/* device unknown, create new one and link it */
-		r = ratbagd_device_new(&device, ctx, name);
+		lib_device = ratbag_device_new_from_udev_device(ctx->lib_ctx,
+								udevice);
+		if (!lib_device)
+			return; /* unsupported device */
+
+		r = ratbagd_device_new(&device, ctx, name, lib_device);
+
+		/* the ratbagd_device takes its own reference, drop ours */
+		ratbag_device_unref(lib_device);
+
 		if (r < 0) {
 			fprintf(stderr, "Cannot track device '%s'\n", name);
 			return;
