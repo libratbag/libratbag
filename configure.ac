@@ -127,7 +127,7 @@ m4_pattern_forbid([^_?PKG_[A-Z_]+$],[*** pkg.m4 missing, please install pkg-conf
 # ------------------------------------------------------------------------------
 # dependencies
 
-PKG_CHECK_MODULES([UDEV], [libudev])
+PKG_CHECK_MODULES([LIBUDEV], [libudev])
 PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd >= 225])
 
 # ------------------------------------------------------------------------------

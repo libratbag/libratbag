@@ -84,10 +84,10 @@ ratbagd_SOURCES = \
 
 ratbagd_CFLAGS = \
 	$(AM_CFLAGS) \
-	$(UDEV_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
 	$(LIBSYSTEMD_CFLAGS)
 
 ratbagd_LDADD = \
 	libshared.la \
-	$(UDEV_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(LIBSYSTEMD_LIBS)
