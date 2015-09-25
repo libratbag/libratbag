@@ -186,6 +186,25 @@ static inline bool streq_ptr(const char *a, const char *b)
 }
 
 /*
+ * startswith() - test prefix of a string
+ * @s: string to test
+ * @prefix: prefix to test for
+ *
+ * This returns a pointer to the first character in @s that follows @prefix. If
+ * @s does not start with @prefix, NULL is returned.
+ */
+static inline char *startswith(const char *s, const char *prefix)
+{
+	size_t l;
+
+	l = strlen(prefix);
+	if (strncmp(s, prefix, l) == 0)
+		return (char*) s + l;
+
+	return NULL;
+}
+
+/*
  * now() - returns current time in nano-seconds
  * @clock: clock to use
  */

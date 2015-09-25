@@ -58,7 +58,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	 */
 
 	name = udev_device_get_sysname(udevice);
-	if (!name)
+	if (!name || !startswith(name, "event"))
 		return;
 
 	device = ratbagd_find_device(ctx, name);
