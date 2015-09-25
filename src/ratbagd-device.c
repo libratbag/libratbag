@@ -112,8 +112,28 @@ error:
 	return r;
 }
 
+static int ratbagd_device_get_description(sd_bus *bus,
+					  const char *path,
+					  const char *interface,
+					  const char *property,
+					  sd_bus_message *reply,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	const char *description;
+
+	description = ratbag_device_get_name(device->lib_device);
+	if (!description)
+		return -ENODATA;
+
+	return sd_bus_message_append(reply, "s", description);
+}
+
 static const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
+	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_VTABLE_END,
 };
 
