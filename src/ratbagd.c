@@ -55,7 +55,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	if (!name || !startswith(name, "event"))
 		return;
 
-	device = ratbagd_find_device(ctx, name);
+	device = ratbagd_device_lookup(ctx, name);
 
 	if (streq_ptr("remove", udev_device_get_action(udevice))) {
 		/* device was removed, unlink it and destroy our context */

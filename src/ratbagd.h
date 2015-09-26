@@ -54,6 +54,10 @@ void ratbagd_device_unlink(struct ratbagd_device *device);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_device *, ratbagd_device_free);
 
+struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,
+					     const char *name);
+int ratbagd_device_list(struct ratbagd *ctx, char ***paths);
+
 /*
  * Context
  */
@@ -70,5 +74,3 @@ struct ratbagd {
 };
 
 int ratbagd_init_device(struct ratbagd *ctx);
-struct ratbagd_device *ratbagd_find_device(struct ratbagd *ctx,
-					   const char *name);

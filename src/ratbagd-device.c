@@ -45,7 +45,7 @@ struct ratbagd_device {
 #define ratbagd_device_from_node(_ptr) \
 		rbnode_of((_ptr), struct ratbagd_device, node)
 
-static int ratbagd_device_find(sd_bus *bus,
+static int ratbagd_find_device(sd_bus *bus,
 			       const char *path,
 			       const char *interface,
 			       void *userdata,
@@ -57,12 +57,13 @@ static int ratbagd_device_find(sd_bus *bus,
 	struct ratbagd_device *device;
 	int r;
 
-	/* decodes the suffix into @name, returns 1 if valid */
-	r = sd_bus_path_decode(path, "/org/freedesktop/ratbag1/device", &name);
+	r = sd_bus_path_decode_many(path,
+				    "/org/freedesktop/ratbag1/device/%",
+				    &name);
 	if (r <= 0)
 		return r;
 
-	device = ratbagd_find_device(ctx, name);
+	device = ratbagd_device_lookup(ctx, name);
 	if (!device)
 		return 0;
 
@@ -70,46 +71,17 @@ static int ratbagd_device_find(sd_bus *bus,
 	return 1;
 }
 
-static int ratbagd_device_list(sd_bus *bus,
-			       const char *path,
-			       void *userdata,
-			       char ***nodes,
-			       sd_bus_error *error)
+static int ratbagd_list_devices(sd_bus *bus,
+				const char *path,
+				void *userdata,
+				char ***paths,
+				sd_bus_error *error)
 {
 	struct ratbagd *ctx = userdata;
-	struct ratbagd_device *device;
-	char **devices, **pos;
-	RBNode *node;
 	int r;
 
-	devices = calloc(ctx->n_devices + 1, sizeof(char *));
-	if (!devices)
-		return -ENOMEM;
-
-	pos = devices;
-
-	for (node = rbtree_first(&ctx->device_map);
-	     node;
-	     node = rbnode_next(node)) {
-		device = ratbagd_device_from_node(node);
-
-		r = sd_bus_path_encode("/org/freedesktop/ratbag1/device",
-				       device->name,
-				       pos++);
-		if (r < 0)
-			goto error;
-	}
-
-	*pos = NULL;
-
-	*nodes = devices;
-	return 1;
-
-error:
-	for (pos = devices; *pos; ++pos)
-		free(*pos);
-	free(devices);
-	return r;
+	r = ratbagd_device_list(ctx, paths);
+	return r < 0 ? r : 1;
 }
 
 static int ratbagd_device_get_description(sd_bus *bus,
@@ -274,7 +246,7 @@ int ratbagd_init_device(struct ratbagd *ctx)
 				       "/org/freedesktop/ratbag1/device",
 				       "org.freedesktop.ratbag1.Device",
 				       ratbagd_device_vtable,
-				       ratbagd_device_find,
+				       ratbagd_find_device,
 				       ctx);
 	if (r < 0)
 		return r;
@@ -282,7 +254,7 @@ int ratbagd_init_device(struct ratbagd *ctx)
 	r = sd_bus_add_node_enumerator(ctx->bus,
 				       NULL,
 				       "/org/freedesktop/ratbag1/device",
-				       ratbagd_device_list,
+				       ratbagd_list_devices,
 				       ctx);
 	if (r < 0)
 		return r;
@@ -290,8 +262,8 @@ int ratbagd_init_device(struct ratbagd *ctx)
 	return 0;
 }
 
-struct ratbagd_device *ratbagd_find_device(struct ratbagd *ctx,
-					   const char *name)
+struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,
+					     const char *name)
 {
 	struct ratbagd_device *device;
 	RBNode *node;
@@ -313,4 +285,40 @@ struct ratbagd_device *ratbagd_find_device(struct ratbagd *ctx,
 	}
 
 	return NULL;
+}
+
+int ratbagd_device_list(struct ratbagd *ctx, char ***paths)
+{
+	struct ratbagd_device *device;
+	char **devices, **pos;
+	RBNode *node;
+	int r;
+
+	devices = calloc(ctx->n_devices + 1, sizeof(char *));
+	if (!devices)
+		return -ENOMEM;
+
+	pos = devices;
+
+	for (node = rbtree_first(&ctx->device_map);
+	     node;
+	     node = rbnode_next(node)) {
+		device = ratbagd_device_from_node(node);
+
+		r = sd_bus_path_encode_many(pos++,
+					    "/org/freedesktop/ratbag1/device/%",
+					    device->name);
+		if (r < 0)
+			goto error;
+	}
+
+	*pos = NULL;
+	*paths = devices;
+	return 1;
+
+error:
+	for (pos = devices; *pos; ++pos)
+		free(*pos);
+	free(devices);
+	return r;
 }
