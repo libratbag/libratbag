@@ -43,6 +43,8 @@ struct ratbagd_device;
  * Devices
  */
 
+extern const sd_bus_vtable ratbagd_device_vtable[];
+
 int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbagd *ctx,
 		       const char *name,
@@ -72,5 +74,3 @@ struct ratbagd {
 	RBTree device_map;
 	size_t n_devices;
 };
-
-int ratbagd_init_device(struct ratbagd *ctx);

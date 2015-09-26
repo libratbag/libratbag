@@ -45,45 +45,6 @@ struct ratbagd_device {
 #define ratbagd_device_from_node(_ptr) \
 		rbnode_of((_ptr), struct ratbagd_device, node)
 
-static int ratbagd_find_device(sd_bus *bus,
-			       const char *path,
-			       const char *interface,
-			       void *userdata,
-			       void **found,
-			       sd_bus_error *error)
-{
-	_cleanup_(freep) char *name = NULL;
-	struct ratbagd *ctx = userdata;
-	struct ratbagd_device *device;
-	int r;
-
-	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/device/%",
-				    &name);
-	if (r <= 0)
-		return r;
-
-	device = ratbagd_device_lookup(ctx, name);
-	if (!device)
-		return 0;
-
-	*found = device;
-	return 1;
-}
-
-static int ratbagd_list_devices(sd_bus *bus,
-				const char *path,
-				void *userdata,
-				char ***paths,
-				sd_bus_error *error)
-{
-	struct ratbagd *ctx = userdata;
-	int r;
-
-	r = ratbagd_device_list(ctx, paths);
-	return r < 0 ? r : 1;
-}
-
 static int ratbagd_device_get_description(sd_bus *bus,
 					  const char *path,
 					  const char *interface,
@@ -102,7 +63,7 @@ static int ratbagd_device_get_description(sd_bus *bus,
 	return sd_bus_message_append(reply, "s", description);
 }
 
-static const sd_bus_vtable ratbagd_device_vtable[] = {
+const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
@@ -227,39 +188,6 @@ void ratbagd_device_unlink(struct ratbagd_device *device)
 	--device->ctx->n_devices;
 	rbtree_remove(&device->ctx->device_map, &device->node);
 	rbnode_init(&device->node);
-}
-
-int ratbagd_init_device(struct ratbagd *ctx)
-{
-	int r;
-
-	assert(ctx);
-
-	/*
-	 * Called by the context initializer after the context was prepared but
-	 * not run, yet. No need to cleanup anything if an error is returned,
-	 * as long it is teared down automatically on destruction.
-	 */
-
-	r = sd_bus_add_fallback_vtable(ctx->bus,
-				       NULL,
-				       "/org/freedesktop/ratbag1/device",
-				       "org.freedesktop.ratbag1.Device",
-				       ratbagd_device_vtable,
-				       ratbagd_find_device,
-				       ctx);
-	if (r < 0)
-		return r;
-
-	r = sd_bus_add_node_enumerator(ctx->bus,
-				       NULL,
-				       "/org/freedesktop/ratbag1/device",
-				       ratbagd_list_devices,
-				       ctx);
-	if (r < 0)
-		return r;
-
-	return 0;
 }
 
 struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,

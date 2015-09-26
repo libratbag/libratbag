@@ -34,6 +34,45 @@
 #include "ratbagd.h"
 #include "shared-macro.h"
 
+static int ratbagd_find_device(sd_bus *bus,
+			       const char *path,
+			       const char *interface,
+			       void *userdata,
+			       void **found,
+			       sd_bus_error *error)
+{
+	_cleanup_(freep) char *name = NULL;
+	struct ratbagd *ctx = userdata;
+	struct ratbagd_device *device;
+	int r;
+
+	r = sd_bus_path_decode_many(path,
+				    "/org/freedesktop/ratbag1/device/%",
+				    &name);
+	if (r <= 0)
+		return r;
+
+	device = ratbagd_device_lookup(ctx, name);
+	if (!device)
+		return 0;
+
+	*found = device;
+	return 1;
+}
+
+static int ratbagd_list_devices(sd_bus *bus,
+				const char *path,
+				void *userdata,
+				char ***paths,
+				sd_bus_error *error)
+{
+	struct ratbagd *ctx = userdata;
+	int r;
+
+	r = ratbagd_device_list(ctx, paths);
+	return r < 0 ? r : 1;
+}
+
 static void ratbagd_process_device(struct ratbagd *ctx,
 				   struct udev_device *udevice)
 {
@@ -214,7 +253,21 @@ static int ratbagd_new(struct ratbagd **out)
 	if (r < 0)
 		return r;
 
-	r = ratbagd_init_device(ctx);
+	r = sd_bus_add_fallback_vtable(ctx->bus,
+				       NULL,
+				       "/org/freedesktop/ratbag1/device",
+				       "org.freedesktop.ratbag1.Device",
+				       ratbagd_device_vtable,
+				       ratbagd_find_device,
+				       ctx);
+	if (r < 0)
+		return r;
+
+	r = sd_bus_add_node_enumerator(ctx->bus,
+				       NULL,
+				       "/org/freedesktop/ratbag1/device",
+				       ratbagd_list_devices,
+				       ctx);
 	if (r < 0)
 		return r;
 
