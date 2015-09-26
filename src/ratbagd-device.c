@@ -132,8 +132,8 @@ static int ratbagd_device_get_description(sd_bus *bus,
 
 static const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
-	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_VTABLE_END,
 };
 
