@@ -75,6 +75,18 @@
 #define _weakref_(_x) __attribute__((weakref(#_x)))
 
 /*
+ * DECIMAL_TOKEN_MAX() - calculate maximum length of the decimal representation
+ *                       of an integer
+ * @_type: type of integer
+ */
+#define DECIMAL_TOKEN_MAX(_type)                        \
+        (1 + (sizeof(_type) <= 1 ? 3 :                  \
+              sizeof(_type) <= 2 ? 5 :                  \
+              sizeof(_type) <= 4 ? 10 :                 \
+              sizeof(_type) <= 8 ? 20 :                 \
+              sizeof(int[-2 * (sizeof(_type) > 8)])))
+
+/*
  * PROTECT_ERRNO: make sure a function protects errno
  */
 static inline void reset_errno(int *saved_errno)
@@ -202,6 +214,36 @@ static inline char *startswith(const char *s, const char *prefix)
 		return (char*) s + l;
 
 	return NULL;
+}
+
+/*
+ * safe_atou() - safe variant of strtoul()
+ * @s: string to parse
+ * @ret_u: output storage for parsed integer
+ *
+ * This is a sane and safe variant of strtoul(), which rejects any invalid
+ * input, or trailing garbage.
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
+static inline int safe_atou(const char *s, unsigned int *ret_u)
+{
+	char *x = NULL;
+	unsigned long l;
+
+	assert(s);
+	assert(ret_u);
+
+	errno = 0;
+	l = strtoul(s, &x, 0);
+	if (!x || x == s || *x || errno)
+		return errno > 0 ? -errno : -EINVAL;
+
+	if ((unsigned long)(unsigned int)l != l)
+		return -ERANGE;
+
+	*ret_u = (unsigned int)l;
+	return 0;
 }
 
 /*

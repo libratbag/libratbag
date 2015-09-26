@@ -40,10 +40,82 @@ struct ratbagd_device {
 	RBNode node;
 	char *name;
 	struct ratbag_device *lib_device;
+
+	sd_bus_slot *profile_vtable_slot;
+	sd_bus_slot *profile_enum_slot;
+	unsigned int n_profiles;
+	struct ratbagd_profile **profiles;
 };
 
 #define ratbagd_device_from_node(_ptr) \
 		rbnode_of((_ptr), struct ratbagd_device, node)
+
+static int ratbagd_device_find_profile(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       void *userdata,
+				       void **found,
+				       sd_bus_error *error)
+{
+	_cleanup_(freep) char *name = NULL;
+	struct ratbagd_device *device = userdata;
+	unsigned int index;
+	int r;
+
+	r = sd_bus_path_decode_many(path,
+				    "/org/freedesktop/ratbag1/device/%/profile/%",
+				    NULL,
+				    &name);
+	if (r <= 0)
+		return r;
+
+	r = safe_atou(name, &index);
+	if (r < 0)
+		return 0;
+
+	if (index >= device->n_profiles)
+		return 0;
+
+	*found = device->profiles[index];
+	return 1;
+}
+
+static int ratbagd_device_list_profiles(sd_bus *bus,
+					const char *path,
+					void *userdata,
+					char ***paths,
+					sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
+	char **profiles;
+	unsigned int i;
+	int r;
+
+	profiles = calloc(device->n_profiles + 1, sizeof(char *));
+	if (!profiles)
+		return -ENOMEM;
+
+	for (i = 0; i < device->n_profiles; ++i) {
+		sprintf(index_buffer, "%u", i);
+		r = sd_bus_path_encode_many(&profiles[i],
+					    "/org/freedesktop/ratbag1/device/%/profile/%",
+					    device->name,
+					    index_buffer);
+		if (r < 0)
+			goto error;
+	}
+
+	profiles[i] = NULL;
+	*paths = profiles;
+	return 1;
+
+error:
+	for (i = 0; profiles[i]; ++i)
+		free(profiles[i]);
+	free(profiles);
+	return r;
+}
 
 static int ratbagd_device_get_description(sd_bus *bus,
 					  const char *path,
@@ -76,6 +148,9 @@ int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbag_device *lib_device)
 {
 	_cleanup_(ratbagd_device_freep) struct ratbagd_device *device = NULL;
+	struct ratbag_profile *profile;
+	unsigned int i;
+	int r;
 
 	assert(out);
 	assert(ctx);
@@ -93,6 +168,25 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	if (!device->name)
 		return -ENOMEM;
 
+	device->n_profiles = ratbag_device_get_num_profiles(device->lib_device);
+	device->profiles = calloc(device->n_profiles, sizeof(*device->profiles));
+	if (!device->profiles)
+		return -ENOMEM;
+
+	for (i = 0; i < device->n_profiles; ++i) {
+		profile = ratbag_device_get_profile(device->lib_device, i);
+		if (!profile)
+			continue;
+
+		r = ratbagd_profile_new(&device->profiles[i], profile, i);
+		if (r < 0) {
+			errno = -r;
+			fprintf(stderr,
+				"Cannot allocate profile for '%s': %m\n",
+				device->name);
+		}
+	}
+
 	*out = device;
 	device = NULL;
 	return 0;
@@ -100,11 +194,17 @@ int ratbagd_device_new(struct ratbagd_device **out,
 
 struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
 {
+	unsigned int i;
+
 	if (!device)
 		return NULL;
 
 	assert(!ratbagd_device_linked(device));
 
+	for (i = 0; i < device->n_profiles; ++i)
+		device->profiles[i] = ratbagd_profile_free(device->profiles[i]);
+
+	device->profiles = mfree(device->profiles);
 	device->lib_device = ratbag_device_unref(device->lib_device);
 	device->name = mfree(device->name);
 
@@ -120,7 +220,7 @@ bool ratbagd_device_linked(struct ratbagd_device *device)
 
 void ratbagd_device_link(struct ratbagd_device *device)
 {
-	_cleanup_(freep) char *path = NULL;
+	_cleanup_(freep) char *path = NULL, *prefix = NULL;
 	struct ratbagd_device *iter;
 	RBNode **node, *parent;
 	int r, v;
@@ -161,6 +261,32 @@ void ratbagd_device_link(struct ratbagd_device *device)
 			"Cannot send device notification for '%s': %m\n",
 			device->name);
 	}
+
+	/* register profile interfaces */
+	r = sd_bus_path_encode_many(&prefix,
+				    "/org/freedesktop/ratbag1/device/%/profile",
+				    device->name);
+	if (r >= 0) {
+		r = sd_bus_add_fallback_vtable(device->ctx->bus,
+					       &device->profile_vtable_slot,
+					       prefix,
+					       "org.freedesktop.ratbag1.Profile",
+					       ratbagd_profile_vtable,
+					       ratbagd_device_find_profile,
+					       device);
+		if (r >= 0)
+			r = sd_bus_add_node_enumerator(device->ctx->bus,
+						       &device->profile_enum_slot,
+						       prefix,
+						       ratbagd_device_list_profiles,
+						       device);
+	}
+	if (r < 0) {
+		errno = -r;
+		fprintf(stderr,
+			"Cannot register profile interfaces for '%s': %m\n",
+			device->name);
+	}
 }
 
 void ratbagd_device_unlink(struct ratbagd_device *device)
@@ -170,6 +296,9 @@ void ratbagd_device_unlink(struct ratbagd_device *device)
 
 	if (!ratbagd_device_linked(device))
 		return;
+
+	device->profile_enum_slot = sd_bus_slot_unref(device->profile_enum_slot);
+	device->profile_vtable_slot = sd_bus_slot_unref(device->profile_vtable_slot);
 
 	/* send out object-manager notification */
 	r = sd_bus_path_encode("/org/freedesktop/ratbag1/device",

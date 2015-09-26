@@ -80,7 +80,8 @@ bin_PROGRAMS += \
 ratbagd_SOURCES = \
 	src/ratbagd.h \
 	src/ratbagd.c \
-	src/ratbagd-device.c
+	src/ratbagd-device.c \
+	src/ratbagd-profile.c
 
 ratbagd_CFLAGS = \
 	$(AM_CFLAGS) \

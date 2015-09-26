@@ -1,5 +1,3 @@
-#pragma once
-
 /***
   This file is part of ratbagd.
 
@@ -28,63 +26,54 @@
 #include <assert.h>
 #include <errno.h>
 #include <libratbag.h>
-#include <libudev.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
+#include "ratbagd.h"
 #include "shared-macro.h"
-#include "shared-rbtree.h"
 
-struct ratbagd;
-struct ratbagd_device;
-struct ratbagd_profile;
+struct ratbagd_profile {
+	struct ratbag_profile *lib_profile;
+	unsigned int index;
+};
 
-/*
- * Profiles
- */
-
-extern const sd_bus_vtable ratbagd_profile_vtable[];
+const sd_bus_vtable ratbagd_profile_vtable[] = {
+	SD_BUS_VTABLE_START(0),
+	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_VTABLE_END,
+};
 
 int ratbagd_profile_new(struct ratbagd_profile **out,
 			struct ratbag_profile *lib_profile,
-			unsigned int index);
-struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile);
+			unsigned int index)
+{
+	_cleanup_(ratbagd_profile_freep) struct ratbagd_profile *profile = NULL;
 
-DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_profile *, ratbagd_profile_free);
+	assert(out);
+	assert(lib_profile);
 
-/*
- * Devices
- */
+	profile = calloc(1, sizeof(*profile));
+	if (!profile)
+		return -ENOMEM;
 
-extern const sd_bus_vtable ratbagd_device_vtable[];
+	profile->lib_profile = lib_profile;
+	profile->index = index;
 
-int ratbagd_device_new(struct ratbagd_device **out,
-		       struct ratbagd *ctx,
-		       const char *name,
-		       struct ratbag_device *lib_device);
-struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device);
-bool ratbagd_device_linked(struct ratbagd_device *device);
-void ratbagd_device_link(struct ratbagd_device *device);
-void ratbagd_device_unlink(struct ratbagd_device *device);
+	*out = profile;
+	profile = NULL;
+	return 0;
+}
 
-DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_device *, ratbagd_device_free);
+struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile)
+{
+	if (!profile)
+		return NULL;
 
-struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,
-					     const char *name);
-int ratbagd_device_list(struct ratbagd *ctx, char ***paths);
+	/* we cannot assume the profile is gone, so set NULL explicitly */
+	ratbag_profile_unref(profile->lib_profile);
+	profile->lib_profile = NULL;
 
-/*
- * Context
- */
-
-struct ratbagd {
-	sd_event *event;
-	struct ratbag *lib_ctx;
-	struct udev_monitor *monitor;
-	sd_event_source *monitor_source;
-	sd_bus *bus;
-
-	RBTree device_map;
-	size_t n_devices;
-};
+	return mfree(profile);
+}
