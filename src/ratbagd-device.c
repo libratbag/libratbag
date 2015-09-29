@@ -366,32 +366,3 @@ struct ratbagd_device *ratbagd_device_next(struct ratbagd_device *device)
 	node = rbnode_next(&device->node);
 	return node ? ratbagd_device_from_node(node) : NULL;
 }
-
-int ratbagd_device_list(struct ratbagd *ctx, char ***paths)
-{
-	struct ratbagd_device *device;
-	char **devices, **pos;
-
-	devices = calloc(ctx->n_devices + 1, sizeof(char *));
-	if (!devices)
-		return -ENOMEM;
-
-	pos = devices;
-
-	RATBAGD_DEVICE_FOREACH(device, ctx) {
-		*pos = strdup(device->path);
-		if (!*pos)
-			goto error;
-		++pos;
-	}
-
-	*pos = NULL;
-	*paths = devices;
-	return 1;
-
-error:
-	for (pos = devices; *pos; ++pos)
-		free(*pos);
-	free(devices);
-	return -ENOMEM;
-}

@@ -67,10 +67,31 @@ static int ratbagd_list_devices(sd_bus *bus,
 				sd_bus_error *error)
 {
 	struct ratbagd *ctx = userdata;
-	int r;
+	struct ratbagd_device *device;
+	char **devices, **pos;
 
-	r = ratbagd_device_list(ctx, paths);
-	return r < 0 ? r : 1;
+	devices = calloc(ctx->n_devices + 1, sizeof(char *));
+	if (!devices)
+		return -ENOMEM;
+
+	pos = devices;
+
+	RATBAGD_DEVICE_FOREACH(device, ctx) {
+		*pos = strdup(ratbagd_device_get_path(device));
+		if (!*pos)
+			goto error;
+		++pos;
+	}
+
+	*pos = NULL;
+	*paths = devices;
+	return 1;
+
+error:
+	for (pos = devices; *pos; ++pos)
+		free(*pos);
+	free(devices);
+	return -ENOMEM;
 }
 
 static void ratbagd_process_device(struct ratbagd *ctx,

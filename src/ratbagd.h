@@ -76,7 +76,6 @@ struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,
 					     const char *name);
 struct ratbagd_device *ratbagd_device_first(struct ratbagd *ctx);
 struct ratbagd_device *ratbagd_device_next(struct ratbagd_device *device);
-int ratbagd_device_list(struct ratbagd *ctx, char ***paths);
 
 #define RATBAGD_DEVICE_FOREACH(_device, _ctx)		\
 	for ((_device) = ratbagd_device_first(_ctx);	\
