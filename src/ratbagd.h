@@ -64,6 +64,8 @@ int ratbagd_device_new(struct ratbagd_device **out,
 		       const char *name,
 		       struct ratbag_device *lib_device);
 struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device);
+const char *ratbagd_device_get_path(struct ratbagd_device *device);
+
 bool ratbagd_device_linked(struct ratbagd_device *device);
 void ratbagd_device_link(struct ratbagd_device *device);
 void ratbagd_device_unlink(struct ratbagd_device *device);

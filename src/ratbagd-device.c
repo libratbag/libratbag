@@ -221,6 +221,12 @@ struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
 	return mfree(device);
 }
 
+const char *ratbagd_device_get_path(struct ratbagd_device *device)
+{
+	assert(device);
+	return device->path;
+}
+
 bool ratbagd_device_linked(struct ratbagd_device *device)
 {
 	return device && rbnode_linked(&device->node);
