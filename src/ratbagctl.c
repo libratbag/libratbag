@@ -249,7 +249,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
 	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
 	unsigned int prop_min_index = 0, prop_max_index = 0;
-	unsigned int prop_active_profile = -1;
+	unsigned int prop_active_profile = -1, prop_default_profile = -1;
 	const char *prop_id = NULL, *prop_description = NULL;
 	_cleanup_(freep) char *path = NULL;
 	int r;
@@ -330,6 +330,14 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 			r = show_device_get_profile_index(ctl,
 							  profile,
 							  &prop_active_profile);
+		} else if (!strcmp(property, "DefaultProfile")) {
+			r = sd_bus_message_read(reply, "v", "o", &profile);
+			if (r < 0)
+				goto exit;
+
+			r = show_device_get_profile_index(ctl,
+							  profile,
+							  &prop_default_profile);
 		} else {
 			r = sd_bus_message_skip(reply, "v");
 		}
@@ -361,6 +369,11 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 		printf("\t Active Profile: (unknown)\n");
 	else
 		printf("\t Active Profile: %u\n", prop_active_profile);
+
+	if (prop_default_profile == (unsigned int)-1)
+		printf("\tDefault Profile: (unknown)\n");
+	else
+		printf("\tDefault Profile: %u\n", prop_default_profile);
 
 exit:
 	if (r < 0)
