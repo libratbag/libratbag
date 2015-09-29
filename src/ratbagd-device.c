@@ -135,10 +135,70 @@ static int ratbagd_device_get_description(sd_bus *bus,
 	return sd_bus_message_append(reply, "s", description);
 }
 
+static int ratbagd_device_get_profiles(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       const char *property,
+				       sd_bus_message *reply,
+				       void *userdata,
+				       sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	struct ratbagd_profile *profile;
+	unsigned int i;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "o");
+	if (r < 0)
+		return r;
+
+	for (i = 0; i < device->n_profiles; ++i) {
+		profile = device->profiles[i];
+		if (!profile)
+			continue;
+
+		r = sd_bus_message_append(reply,
+					  "o",
+					  ratbagd_profile_get_path(profile));
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
+static int ratbagd_device_get_active_profile(sd_bus *bus,
+					     const char *path,
+					     const char *interface,
+					     const char *property,
+					     sd_bus_message *reply,
+					     void *userdata,
+					     sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	struct ratbagd_profile *profile;
+	unsigned int i;
+
+	for (i = 0; i < device->n_profiles; ++i) {
+		profile = device->profiles[i];
+		if (!profile)
+			continue;
+		if (!ratbagd_profile_is_active(profile))
+			continue;
+
+		return sd_bus_message_append(reply, "o",
+					     ratbagd_profile_get_path(profile));
+	}
+
+	return -ENODATA;
+}
+
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("ActiveProfile", "o", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_VTABLE_END,
 };
 
