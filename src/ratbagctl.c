@@ -69,6 +69,151 @@ static int ratbagctl_new(struct ratbagctl **out)
 	return 0;
 }
 
+static int get_profile_path(struct ratbagctl *ctl,
+			    const char *device_name,
+			    const char *profile_name,
+			    char **out_path,
+			    sd_bus_error *error)
+{
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply2 = NULL;
+	const char *device_path = NULL, *profile_path = NULL;
+	unsigned int profile_index;
+	char *path;
+	int r;
+
+	if (device_name) {
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       "/org/freedesktop/ratbag1",
+				       "org.freedesktop.ratbag1.Manager",
+				       "GetDeviceByName",
+				       error,
+				       &reply,
+				       "s",
+				       device_name);
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_read(reply, "o", &device_path);
+		if (r < 0)
+			return r;
+	} else {
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       "/org/freedesktop/ratbag1",
+				       "org.freedesktop.DBus.Properties",
+				       "Get",
+				       error,
+				       &reply,
+				       "ss",
+				       "org.freedesktop.ratbag1.Manager",
+				       "Devices");
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_enter_container(reply, 'v', "ao");
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_enter_container(reply, 'a', "o");
+		if (r < 0)
+			return r;
+
+		while ((r = sd_bus_message_read_basic(reply, 'o', &path)) > 0) {
+			if (!device_path)
+				device_path = path;
+		}
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			return r;
+
+		if (!device_path)
+			return -ENXIO;
+	}
+
+	assert(device_path);
+
+	if (profile_name) {
+		r = safe_atou(profile_name, &profile_index);
+		if (r < 0)
+			return -ENXIO;
+
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       device_path,
+				       "org.freedesktop.ratbag1.Device",
+				       "GetProfileByIndex",
+				       error,
+				       &reply2,
+				       "u",
+				       profile_index);
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_read(reply2, "o", &profile_path);
+		if (r < 0)
+			return r;
+	} else {
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       device_path,
+				       "org.freedesktop.DBus.Properties",
+				       "Get",
+				       error,
+				       &reply2,
+				       "ss",
+				       "org.freedesktop.ratbag1.Device",
+				       "ActiveProfile");
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_read(reply2, "v", "o", &profile_path);
+		if (r < 0)
+			return r;
+
+		if (streq(profile_path, "/")) {
+			reply2 = sd_bus_message_unref(reply2);
+
+			r = sd_bus_call_method(ctl->bus,
+					       "org.freedesktop.ratbag1",
+					       device_path,
+					       "org.freedesktop.DBus.Properties",
+					       "Get",
+					       error,
+					       &reply2,
+					       "ss",
+					       "org.freedesktop.ratbag1.Device",
+					       "DefaultProfile");
+			if (r < 0)
+				return r;
+
+			r = sd_bus_message_read(reply2, "v", "o", &profile_path);
+			if (r < 0)
+				return r;
+
+			if (streq(profile_path, "/"))
+				return -ENXIO;
+		}
+	}
+
+	assert(profile_path);
+
+	path = strdup(profile_path);
+	if (!path)
+		return -ENOMEM;
+
+	*out_path = path;
+	return 0;
+}
+
 static int list_devices_show(struct ratbagctl *ctl, const char *path)
 {
 	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
@@ -404,151 +549,6 @@ static int verb_show_device(struct ratbagctl *ctl, int argc, char **argv)
 	}
 
 	return show_device_print(ctl, device);
-}
-
-static int get_profile_path(struct ratbagctl *ctl,
-			    const char *device_name,
-			    const char *profile_name,
-			    char **out_path,
-			    sd_bus_error *error)
-{
-	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
-	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply2 = NULL;
-	const char *device_path = NULL, *profile_path = NULL;
-	unsigned int profile_index;
-	char *path;
-	int r;
-
-	if (device_name) {
-		r = sd_bus_call_method(ctl->bus,
-				       "org.freedesktop.ratbag1",
-				       "/org/freedesktop/ratbag1",
-				       "org.freedesktop.ratbag1.Manager",
-				       "GetDeviceByName",
-				       error,
-				       &reply,
-				       "s",
-				       device_name);
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_read(reply, "o", &device_path);
-		if (r < 0)
-			return r;
-	} else {
-		r = sd_bus_call_method(ctl->bus,
-				       "org.freedesktop.ratbag1",
-				       "/org/freedesktop/ratbag1",
-				       "org.freedesktop.DBus.Properties",
-				       "Get",
-				       error,
-				       &reply,
-				       "ss",
-				       "org.freedesktop.ratbag1.Manager",
-				       "Devices");
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_enter_container(reply, 'v', "ao");
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_enter_container(reply, 'a', "o");
-		if (r < 0)
-			return r;
-
-		while ((r = sd_bus_message_read_basic(reply, 'o', &path)) > 0) {
-			if (!device_path)
-				device_path = path;
-		}
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_exit_container(reply);
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_exit_container(reply);
-		if (r < 0)
-			return r;
-
-		if (!device_path)
-			return -ENXIO;
-	}
-
-	assert(device_path);
-
-	if (profile_name) {
-		r = safe_atou(profile_name, &profile_index);
-		if (r < 0)
-			return -ENXIO;
-
-		r = sd_bus_call_method(ctl->bus,
-				       "org.freedesktop.ratbag1",
-				       device_path,
-				       "org.freedesktop.ratbag1.Device",
-				       "GetProfileByIndex",
-				       error,
-				       &reply2,
-				       "u",
-				       profile_index);
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_read(reply2, "o", &profile_path);
-		if (r < 0)
-			return r;
-	} else {
-		r = sd_bus_call_method(ctl->bus,
-				       "org.freedesktop.ratbag1",
-				       device_path,
-				       "org.freedesktop.DBus.Properties",
-				       "Get",
-				       error,
-				       &reply2,
-				       "ss",
-				       "org.freedesktop.ratbag1.Device",
-				       "ActiveProfile");
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_read(reply2, "v", "o", &profile_path);
-		if (r < 0)
-			return r;
-
-		if (streq(profile_path, "/")) {
-			reply2 = sd_bus_message_unref(reply2);
-
-			r = sd_bus_call_method(ctl->bus,
-					       "org.freedesktop.ratbag1",
-					       device_path,
-					       "org.freedesktop.DBus.Properties",
-					       "Get",
-					       error,
-					       &reply2,
-					       "ss",
-					       "org.freedesktop.ratbag1.Device",
-					       "DefaultProfile");
-			if (r < 0)
-				return r;
-
-			r = sd_bus_message_read(reply2, "v", "o", &profile_path);
-			if (r < 0)
-				return r;
-
-			if (streq(profile_path, "/"))
-				return -ENXIO;
-		}
-	}
-
-	assert(profile_path);
-
-	path = strdup(profile_path);
-	if (!path)
-		return -ENOMEM;
-
-	*out_path = path;
-	return 0;
 }
 
 static int show_profile_print_resolutions(struct ratbagctl *ctl,
