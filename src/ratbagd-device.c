@@ -74,7 +74,7 @@ static int ratbagd_device_find_profile(sd_bus *bus,
 	if (r < 0)
 		return 0;
 
-	if (index >= device->n_profiles)
+	if (index >= device->n_profiles || !device->profiles[index])
 		return 0;
 
 	*found = device->profiles[index];
