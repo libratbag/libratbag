@@ -69,16 +69,13 @@ static int ratbagctl_new(struct ratbagctl **out)
 	return 0;
 }
 
-static int get_profile_path(struct ratbagctl *ctl,
-			    const char *device_name,
-			    const char *profile_name,
-			    char **out_path,
-			    sd_bus_error *error)
+static int get_device_path(struct ratbagctl *ctl,
+			   const char *device_name,
+			   char **out_path,
+			   sd_bus_error *error)
 {
 	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
-	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply2 = NULL;
-	const char *device_path = NULL, *profile_path = NULL;
-	unsigned int profile_index;
+	const char *device_path = NULL;
 	char *path;
 	int r;
 
@@ -140,6 +137,32 @@ static int get_profile_path(struct ratbagctl *ctl,
 	}
 
 	assert(device_path);
+
+	path = strdup(device_path);
+	if (!path)
+		return -ENOMEM;
+
+	*out_path = path;
+	return 0;
+}
+
+static int get_profile_path(struct ratbagctl *ctl,
+			    const char *device_name,
+			    const char *profile_name,
+			    char **out_path,
+			    sd_bus_error *error)
+{
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply2 = NULL;
+	_cleanup_(freep) char *device_path = NULL;
+	const char *profile_path = NULL;
+	unsigned int profile_index;
+	char *path;
+	int r;
+
+	r = get_device_path(ctl, device_name, &device_path, error);
+	if (r < 0)
+		return r;
 
 	if (profile_name) {
 		r = safe_atou(profile_name, &profile_index);
