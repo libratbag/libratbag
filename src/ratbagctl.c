@@ -422,9 +422,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 	_cleanup_(freep) char *path = NULL;
 	int r;
 
-	r = sd_bus_path_encode_many(&path,
-				    "/org/freedesktop/ratbag1/device/%",
-				    device);
+	r = get_device_path(ctl, device, &path, &error);
 	if (r < 0)
 		goto exit;
 
@@ -566,10 +564,6 @@ static int verb_show_device(struct ratbagctl *ctl, int argc, char **argv)
 	}
 
 	device = argv[optind];
-	if (!device) {
-		fprintf(stderr, "No device specified\n");
-		return -EINVAL;
-	}
 
 	return show_device_print(ctl, device);
 }
