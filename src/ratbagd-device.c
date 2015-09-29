@@ -190,7 +190,8 @@ static int ratbagd_device_get_active_profile(sd_bus *bus,
 					     ratbagd_profile_get_path(profile));
 	}
 
-	return -ENODATA;
+	/* Eww, we want 'maybe' types here! */
+	return sd_bus_message_append(reply, "o", "/");
 }
 
 const sd_bus_vtable ratbagd_device_vtable[] = {

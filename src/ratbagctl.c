@@ -211,6 +211,11 @@ static int show_device_get_profile_index(struct ratbagctl *ctl,
 	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
 	int r;
 
+	if (streq(path, "/")) {
+		*out_index = -1;
+		return 0;
+	}
+
 	r = sd_bus_call_method(ctl->bus,
 			       "org.freedesktop.ratbag1",
 			       path,
@@ -244,7 +249,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
 	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
 	unsigned int prop_min_index = 0, prop_max_index = 0;
-	unsigned int prop_active_profile = 0;
+	unsigned int prop_active_profile = -1;
 	const char *prop_id = NULL, *prop_description = NULL;
 	_cleanup_(freep) char *path = NULL;
 	int r;
@@ -343,6 +348,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 		goto exit;
 
 	printf("%s - %s\n", prop_id, prop_description);
+
 	if (prop_min_index == prop_max_index)
 		printf("\t       Profiles:\n");
 	else if (prop_min_index + 1 == prop_max_index)
@@ -350,7 +356,11 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 	else
 		printf("\t       Profiles: %u - %u\n",
 		       prop_min_index, prop_max_index - 1);
-	printf("\t Active Profile: %u\n", prop_active_profile);
+
+	if (prop_active_profile == (unsigned int)-1)
+		printf("\t Active Profile: (unknown)\n");
+	else
+		printf("\t Active Profile: %u\n", prop_active_profile);
 
 exit:
 	if (r < 0)
