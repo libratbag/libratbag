@@ -406,6 +406,362 @@ static int verb_show_device(struct ratbagctl *ctl, int argc, char **argv)
 	return show_device_print(ctl, device);
 }
 
+static int get_profile_path(struct ratbagctl *ctl,
+			    const char *device_name,
+			    const char *profile_name,
+			    char **out_path,
+			    sd_bus_error *error)
+{
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply2 = NULL;
+	const char *device_path = NULL, *profile_path = NULL;
+	unsigned int profile_index;
+	char *path;
+	int r;
+
+	if (device_name) {
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       "/org/freedesktop/ratbag1",
+				       "org.freedesktop.ratbag1.Manager",
+				       "GetDeviceByName",
+				       error,
+				       &reply,
+				       "s",
+				       device_name);
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_read(reply, "o", &device_path);
+		if (r < 0)
+			return r;
+	} else {
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       "/org/freedesktop/ratbag1",
+				       "org.freedesktop.DBus.Properties",
+				       "Get",
+				       error,
+				       &reply,
+				       "ss",
+				       "org.freedesktop.ratbag1.Manager",
+				       "Devices");
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_enter_container(reply, 'v', "ao");
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_enter_container(reply, 'a', "o");
+		if (r < 0)
+			return r;
+
+		while ((r = sd_bus_message_read_basic(reply, 'o', &path)) > 0) {
+			if (!device_path)
+				device_path = path;
+		}
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			return r;
+
+		if (!device_path)
+			return -ENXIO;
+	}
+
+	assert(device_path);
+
+	if (profile_name) {
+		r = safe_atou(profile_name, &profile_index);
+		if (r < 0)
+			return -ENXIO;
+
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       device_path,
+				       "org.freedesktop.ratbag1.Device",
+				       "GetProfileByIndex",
+				       error,
+				       &reply2,
+				       "u",
+				       profile_index);
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_read(reply2, "o", &profile_path);
+		if (r < 0)
+			return r;
+	} else {
+		r = sd_bus_call_method(ctl->bus,
+				       "org.freedesktop.ratbag1",
+				       device_path,
+				       "org.freedesktop.DBus.Properties",
+				       "Get",
+				       error,
+				       &reply2,
+				       "ss",
+				       "org.freedesktop.ratbag1.Device",
+				       "ActiveProfile");
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_read(reply2, "v", "o", &profile_path);
+		if (r < 0)
+			return r;
+
+		if (streq(profile_path, "/")) {
+			reply2 = sd_bus_message_unref(reply2);
+
+			r = sd_bus_call_method(ctl->bus,
+					       "org.freedesktop.ratbag1",
+					       device_path,
+					       "org.freedesktop.DBus.Properties",
+					       "Get",
+					       error,
+					       &reply2,
+					       "ss",
+					       "org.freedesktop.ratbag1.Device",
+					       "DefaultProfile");
+			if (r < 0)
+				return r;
+
+			r = sd_bus_message_read(reply2, "v", "o", &profile_path);
+			if (r < 0)
+				return r;
+
+			if (streq(profile_path, "/"))
+				return -ENXIO;
+		}
+	}
+
+	assert(profile_path);
+
+	path = strdup(profile_path);
+	if (!path)
+		return -ENOMEM;
+
+	*out_path = path;
+	return 0;
+}
+
+static int show_profile_print_resolutions(struct ratbagctl *ctl,
+					  sd_bus_message *m,
+					  unsigned int active_resolution,
+					  unsigned int default_resolution)
+{
+	unsigned int k = 0;
+	int r;
+
+	r = sd_bus_message_enter_container(m, 'v', "aa{sv}");
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_enter_container(m, 'a', "a{sv}");
+	if (r < 0)
+		return r;
+
+	while ((r = sd_bus_message_enter_container(m, 'a', "{sv}")) > 0) {
+		unsigned int dpi = -1, dpi_x = -1, dpi_y = -1;
+		unsigned int report_rate = -1;
+		const char *key;
+
+		while ((r = sd_bus_message_enter_container(m, 'e', "sv")) > 0) {
+			r = sd_bus_message_read_basic(m, 's', &key);
+			if (r < 0)
+				return r;
+
+			if (!strcmp(key, "dpi")) {
+				r = sd_bus_message_read(m, "v", "u", &dpi);
+			} else if (!strcmp(key, "dpi-x")) {
+				r = sd_bus_message_read(m, "v", "u", &dpi_x);
+			} else if (!strcmp(key, "dpi-y")) {
+				r = sd_bus_message_read(m, "v", "u", &dpi_y);
+			} else if (!strcmp(key, "report-rate")) {
+				r = sd_bus_message_read(m, "v", "u", &report_rate);
+			} else {
+				r = sd_bus_message_skip(m, "v");
+			}
+			if (r < 0)
+				return r;
+
+			r = sd_bus_message_exit_container(m);
+			if (r < 0)
+				return r;
+		}
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_exit_container(m);
+		if (r < 0)
+			return r;
+
+		if (dpi != (unsigned int)-1) {
+			dpi_x = dpi;
+			dpi_y = dpi;
+		}
+
+		if (dpi_x != (unsigned int)-1 &&
+		    dpi_y != (unsigned int)-1 &&
+		    report_rate != (unsigned int)-1) {
+			printf("%s%5u x %-5u dpi @ %5u Hz%s%s\n",
+			       (k != 0) ? "\t\t\t  " : "",
+			       dpi_x, dpi_y, report_rate,
+			       (k == active_resolution) ? " (active)" : "",
+			       (k == default_resolution) ? " (default)" : "");
+		}
+
+		++k;
+	}
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_exit_container(m);
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_exit_container(m);
+	if (r < 0)
+		return r;
+
+	if (k == 0)
+		printf("\n");
+
+	return 0;
+}
+
+static int show_profile_print(struct ratbagctl *ctl,
+			      const char *device,
+			      const char *profile)
+{
+	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	_cleanup_(freep) char *path = NULL;
+	unsigned int prop_index = -1, prop_active_resolution = -1;
+	unsigned int prop_default_resolution = -1;
+	int r;
+
+	r = get_profile_path(ctl, device, profile, &path, &error);
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_call_method(ctl->bus,
+			       "org.freedesktop.ratbag1",
+			       path,
+			       "org.freedesktop.DBus.Properties",
+			       "GetAll",
+			       &error,
+			       &reply,
+			       "s",
+			       "org.freedesktop.ratbag1.Profile");
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_enter_container(reply, 'a', "{sv}");
+	if (r < 0)
+		goto exit;
+
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			goto exit;
+
+		if (!strcmp(property, "Index")) {
+			r = sd_bus_message_read(reply, "v", "u",
+						&prop_index);
+		} else if (!strcmp(property, "ActiveResolution")) {
+			r = sd_bus_message_read(reply, "v", "u",
+						&prop_active_resolution);
+		} else if (!strcmp(property, "DefaultResolution")) {
+			r = sd_bus_message_read(reply, "v", "u",
+						&prop_default_resolution);
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			goto exit;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			goto exit;
+	}
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_rewind(reply, 0);
+	if (r < 0)
+		goto exit;
+
+	printf("profile-%u\n", prop_index);
+
+	printf("\t           Index: %u\n", prop_index);
+
+	printf("\t     Resolutions: ");
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			goto exit;
+
+		if (!strcmp(property, "Resolutions")) {
+			r = show_profile_print_resolutions(ctl,
+							   reply,
+							   prop_active_resolution,
+							   prop_default_resolution);
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			goto exit;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			goto exit;
+	}
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_exit_container(reply);
+exit:
+	if (r < 0)
+		fprintf(stderr, "Cannot show device: %s\n",
+			error.message ? : "Parser error");
+	return r;
+}
+
+static int verb_show_profile(struct ratbagctl *ctl, int argc, char **argv)
+{
+	static const struct option options[] = {
+		{ "device", required_argument, NULL, 'd' },
+		{},
+	};
+	const char *device = NULL, *profile = NULL;
+	int c;
+
+	while ((c = getopt_long(argc, argv, "+d:", options, NULL)) >= 0) {
+		switch (c) {
+		case 'd':
+			device = optarg;
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+
+	profile = argv[optind];
+
+	return show_profile_print(ctl, device, profile);
+}
+
 static const struct {
 	const char *verb;
 	const char *help;
@@ -414,6 +770,7 @@ static const struct {
 } verbs[] = {
 	{ "list-devices", "List available configurable mice", verb_list_devices, NULL },
 	{ "show-device", "Show device information", verb_show_device, NULL },
+	{ "show-profile", "Show profile information", verb_show_profile, NULL },
 	{ "help", "Show help for a command", verb_help, NULL },
 	{},
 };
