@@ -39,6 +39,7 @@ struct ratbagd_device {
 	struct ratbagd *ctx;
 	RBNode node;
 	char *name;
+	char *path;
 	struct ratbag_device *lib_device;
 
 	sd_bus_slot *profile_vtable_slot;
@@ -168,6 +169,12 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	if (!device->name)
 		return -ENOMEM;
 
+	r = sd_bus_path_encode("/org/freedesktop/ratbag1/device",
+			       device->name,
+			       &device->path);
+	if (r < 0)
+		return r;
+
 	device->n_profiles = ratbag_device_get_num_profiles(device->lib_device);
 	device->profiles = calloc(device->n_profiles, sizeof(*device->profiles));
 	if (!device->profiles)
@@ -206,6 +213,7 @@ struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
 
 	device->profiles = mfree(device->profiles);
 	device->lib_device = ratbag_device_unref(device->lib_device);
+	device->path = mfree(device->path);
 	device->name = mfree(device->name);
 
 	assert(!device->lib_device); /* ratbag yields !NULL if still pinned */
@@ -220,7 +228,7 @@ bool ratbagd_device_linked(struct ratbagd_device *device)
 
 void ratbagd_device_link(struct ratbagd_device *device)
 {
-	_cleanup_(freep) char *path = NULL, *prefix = NULL;
+	_cleanup_(freep) char *prefix = NULL;
 	struct ratbagd_device *iter;
 	RBNode **node, *parent;
 	int r, v;
@@ -250,11 +258,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	++device->ctx->n_devices;
 
 	/* send out object-manager notification */
-	r = sd_bus_path_encode("/org/freedesktop/ratbag1/device",
-			       device->name,
-			       &path);
-	if (r >= 0)
-		r = sd_bus_emit_object_added(device->ctx->bus, path);
+	r = sd_bus_emit_object_added(device->ctx->bus, device->path);
 	if (r < 0) {
 		errno = -r;
 		fprintf(stderr,
@@ -263,9 +267,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	}
 
 	/* register profile interfaces */
-	r = sd_bus_path_encode_many(&prefix,
-				    "/org/freedesktop/ratbag1/device/%/profile",
-				    device->name);
+	r = asprintf(&prefix, "%s/profile", device->path);
 	if (r >= 0) {
 		r = sd_bus_add_fallback_vtable(device->ctx->bus,
 					       &device->profile_vtable_slot,
@@ -291,7 +293,6 @@ void ratbagd_device_link(struct ratbagd_device *device)
 
 void ratbagd_device_unlink(struct ratbagd_device *device)
 {
-	_cleanup_(freep) char *path = NULL;
 	int r;
 
 	if (!ratbagd_device_linked(device))
@@ -301,11 +302,7 @@ void ratbagd_device_unlink(struct ratbagd_device *device)
 	device->profile_vtable_slot = sd_bus_slot_unref(device->profile_vtable_slot);
 
 	/* send out object-manager notification */
-	r = sd_bus_path_encode("/org/freedesktop/ratbag1/device",
-			       device->name,
-			       &path);
-	if (r >= 0)
-		r = sd_bus_emit_object_removed(device->ctx->bus, path);
+	r = sd_bus_emit_object_removed(device->ctx->bus, device->path);
 	if (r < 0) {
 		errno = -r;
 		fprintf(stderr,
@@ -349,7 +346,6 @@ int ratbagd_device_list(struct ratbagd *ctx, char ***paths)
 	struct ratbagd_device *device;
 	char **devices, **pos;
 	RBNode *node;
-	int r;
 
 	devices = calloc(ctx->n_devices + 1, sizeof(char *));
 	if (!devices)
@@ -361,12 +357,10 @@ int ratbagd_device_list(struct ratbagd *ctx, char ***paths)
 	     node;
 	     node = rbnode_next(node)) {
 		device = ratbagd_device_from_node(node);
-
-		r = sd_bus_path_encode_many(pos++,
-					    "/org/freedesktop/ratbag1/device/%",
-					    device->name);
-		if (r < 0)
+		*pos = strdup(device->path);
+		if (!*pos)
 			goto error;
+		++pos;
 	}
 
 	*pos = NULL;
@@ -377,5 +371,5 @@ error:
 	for (pos = devices; *pos; ++pos)
 		free(*pos);
 	free(devices);
-	return r;
+	return -ENOMEM;
 }
