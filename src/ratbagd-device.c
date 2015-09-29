@@ -185,7 +185,10 @@ int ratbagd_device_new(struct ratbagd_device **out,
 		if (!profile)
 			continue;
 
-		r = ratbagd_profile_new(&device->profiles[i], profile, i);
+		r = ratbagd_profile_new(&device->profiles[i],
+					device,
+					profile,
+					i);
 		if (r < 0) {
 			errno = -r;
 			fprintf(stderr,

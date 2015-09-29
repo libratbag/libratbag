@@ -37,6 +37,7 @@
 struct ratbagd_profile {
 	struct ratbag_profile *lib_profile;
 	unsigned int index;
+	char *path;
 };
 
 const sd_bus_vtable ratbagd_profile_vtable[] = {
@@ -46,10 +47,13 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 };
 
 int ratbagd_profile_new(struct ratbagd_profile **out,
+			struct ratbagd_device *device,
 			struct ratbag_profile *lib_profile,
 			unsigned int index)
 {
 	_cleanup_(ratbagd_profile_freep) struct ratbagd_profile *profile = NULL;
+	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
+	int r;
 
 	assert(out);
 	assert(lib_profile);
@@ -61,6 +65,14 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	profile->lib_profile = lib_profile;
 	profile->index = index;
 
+	sprintf(index_buffer, "%u", index);
+	r = sd_bus_path_encode_many(&profile->path,
+				    "/org/freedesktop/ratbag1/profile/%/%",
+				    ratbagd_device_get_name(device),
+				    index_buffer);
+	if (r < 0)
+		return r;
+
 	*out = profile;
 	profile = NULL;
 	return 0;
@@ -71,9 +83,23 @@ struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile)
 	if (!profile)
 		return NULL;
 
+	profile->path = mfree(profile->path);
+
 	/* we cannot assume the profile is gone, so set NULL explicitly */
 	ratbag_profile_unref(profile->lib_profile);
 	profile->lib_profile = NULL;
 
 	return mfree(profile);
+}
+
+const char *ratbagd_profile_get_path(struct ratbagd_profile *profile)
+{
+	assert(profile);
+	return profile->path;
+}
+
+bool ratbagd_profile_is_active(struct ratbagd_profile *profile)
+{
+	assert(profile);
+	return ratbag_profile_is_active(profile->lib_profile) != 0;
 }
