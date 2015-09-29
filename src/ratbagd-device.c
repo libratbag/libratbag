@@ -347,11 +347,30 @@ struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,
 	return NULL;
 }
 
+struct ratbagd_device *ratbagd_device_first(struct ratbagd *ctx)
+{
+	struct RBNode *node;
+
+	assert(ctx);
+
+	node = rbtree_first(&ctx->device_map);
+	return node ? ratbagd_device_from_node(node) : NULL;
+}
+
+struct ratbagd_device *ratbagd_device_next(struct ratbagd_device *device)
+{
+	struct RBNode *node;
+
+	assert(device);
+
+	node = rbnode_next(&device->node);
+	return node ? ratbagd_device_from_node(node) : NULL;
+}
+
 int ratbagd_device_list(struct ratbagd *ctx, char ***paths)
 {
 	struct ratbagd_device *device;
 	char **devices, **pos;
-	RBNode *node;
 
 	devices = calloc(ctx->n_devices + 1, sizeof(char *));
 	if (!devices)
@@ -359,10 +378,7 @@ int ratbagd_device_list(struct ratbagd *ctx, char ***paths)
 
 	pos = devices;
 
-	for (node = rbtree_first(&ctx->device_map);
-	     node;
-	     node = rbnode_next(node)) {
-		device = ratbagd_device_from_node(node);
+	RATBAGD_DEVICE_FOREACH(device, ctx) {
 		*pos = strdup(device->path);
 		if (!*pos)
 			goto error;
