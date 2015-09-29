@@ -64,7 +64,7 @@ static int ratbagd_device_find_profile(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/device/%/profile/%",
+				    "/org/freedesktop/ratbag1/profile/%/%",
 				    NULL,
 				    &name);
 	if (r <= 0)
@@ -88,22 +88,21 @@ static int ratbagd_device_list_profiles(sd_bus *bus,
 					sd_bus_error *error)
 {
 	struct ratbagd_device *device = userdata;
-	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
+	struct ratbagd_profile *profile;
 	char **profiles;
 	unsigned int i;
-	int r;
 
 	profiles = calloc(device->n_profiles + 1, sizeof(char *));
 	if (!profiles)
 		return -ENOMEM;
 
 	for (i = 0; i < device->n_profiles; ++i) {
-		sprintf(index_buffer, "%u", i);
-		r = sd_bus_path_encode_many(&profiles[i],
-					    "/org/freedesktop/ratbag1/device/%/profile/%",
-					    device->name,
-					    index_buffer);
-		if (r < 0)
+		profile = device->profiles[i];
+		if (!profile)
+			continue;
+
+		profiles[i] = strdup(ratbagd_profile_get_path(profile));
+		if (!profiles[i])
 			goto error;
 	}
 
@@ -115,7 +114,7 @@ error:
 	for (i = 0; profiles[i]; ++i)
 		free(profiles[i]);
 	free(profiles);
-	return r;
+	return -ENOMEM;
 }
 
 static int ratbagd_device_get_description(sd_bus *bus,
@@ -273,7 +272,9 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	++device->ctx->n_devices;
 
 	/* register profile interfaces */
-	r = asprintf(&prefix, "%s/profile", device->path);
+	r = sd_bus_path_encode_many(&prefix,
+				    "/org/freedesktop/ratbag1/profile/%",
+				    device->name);
 	if (r >= 0) {
 		r = sd_bus_add_fallback_vtable(device->ctx->bus,
 					       &device->profile_vtable_slot,
