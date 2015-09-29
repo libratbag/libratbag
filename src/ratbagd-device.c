@@ -221,6 +221,27 @@ static int ratbagd_device_get_default_profile(sd_bus *bus,
 	return sd_bus_message_append(reply, "o", "/");
 }
 
+static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
+					       void *userdata,
+					       sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	struct ratbagd_profile *profile;
+	unsigned int index;
+	int r;
+
+	r = sd_bus_message_read(m, "u", &index);
+	if (r < 0)
+		return r;
+
+	if (index >= device->n_profiles || !device->profiles[index])
+		return -ENXIO;
+
+	profile = device->profiles[index];
+	return sd_bus_reply_method_return(m, "o",
+					  ratbagd_profile_get_path(profile));
+}
+
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
@@ -228,6 +249,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ActiveProfile", "o", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_PROPERTY("DefaultProfile", "o", ratbagd_device_get_default_profile, 0, 0),
+	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
 

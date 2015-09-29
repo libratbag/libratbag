@@ -121,11 +121,33 @@ static int ratbagd_get_devices(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+static int ratbagd_get_device_by_name(sd_bus_message *m,
+				      void *userdata,
+				      sd_bus_error *error)
+{
+	struct ratbagd *ctx = userdata;
+	struct ratbagd_device *device;
+	const char *name;
+	int r;
+
+	r = sd_bus_message_read(m, "s", &name);
+	if (r < 0)
+		return r;
+
+	device = ratbagd_device_lookup(ctx, name);
+	if (!device)
+		return -ENXIO;
+
+	return sd_bus_reply_method_return(m, "o",
+					  ratbagd_device_get_path(device));
+}
+
 static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, 0),
 	SD_BUS_SIGNAL("DeviceNew", "o", 0),
 	SD_BUS_SIGNAL("DeviceRemoved", "o", 0),
+	SD_BUS_METHOD("GetDeviceByName", "s", "o", ratbagd_get_device_by_name, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
 
