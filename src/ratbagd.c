@@ -94,6 +94,41 @@ error:
 	return -ENOMEM;
 }
 
+static int ratbagd_get_devices(sd_bus *bus,
+			       const char *path,
+			       const char *interface,
+			       const char *property,
+			       sd_bus_message *reply,
+			       void *userdata,
+			       sd_bus_error *error)
+{
+	struct ratbagd *ctx = userdata;
+	struct ratbagd_device *device;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "o");
+	if (r < 0)
+		return r;
+
+	RATBAGD_DEVICE_FOREACH(device, ctx) {
+		r = sd_bus_message_append(reply,
+					  "o",
+					  ratbagd_device_get_path(device));
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
+static const sd_bus_vtable ratbagd_vtable[] = {
+	SD_BUS_VTABLE_START(0),
+	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, 0),
+	SD_BUS_SIGNAL("DeviceNew", "o", 0),
+	SD_BUS_SIGNAL("DeviceRemoved", "o", 0),
+	SD_BUS_VTABLE_END,
+};
+
 static void ratbagd_process_device(struct ratbagd *ctx,
 				   struct udev_device *udevice)
 {
@@ -120,6 +155,12 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	if (streq_ptr("remove", udev_device_get_action(udevice))) {
 		/* device was removed, unlink it and destroy our context */
 		if (device) {
+			(void) sd_bus_emit_signal(ctx->bus,
+						  "/org/freedesktop/ratbag1",
+						  "org.freedesktop.ratbag1.Manager",
+						  "DeviceRemoved",
+						  "o",
+						  ratbagd_device_get_path(device));
 			ratbagd_device_unlink(device);
 			ratbagd_device_free(device);
 		}
@@ -143,6 +184,12 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		}
 
 		ratbagd_device_link(device);
+		(void) sd_bus_emit_signal(ctx->bus,
+					  "/org/freedesktop/ratbag1",
+					  "org.freedesktop.ratbag1.Manager",
+					  "DeviceNew",
+					  "o",
+					  ratbagd_device_get_path(device));
 	}
 }
 
@@ -268,9 +315,12 @@ static int ratbagd_new(struct ratbagd **out)
 	if (r < 0)
 		return r;
 
-	r = sd_bus_add_object_manager(ctx->bus,
-				      NULL,
-				      "/org/freedesktop/ratbag1");
+	r = sd_bus_add_object_vtable(ctx->bus,
+				     NULL,
+				     "/org/freedesktop/ratbag1",
+				     "org.freedesktop.ratbag1.Manager",
+				     ratbagd_vtable,
+				     ctx);
 	if (r < 0)
 		return r;
 

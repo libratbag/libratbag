@@ -263,15 +263,6 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	rbtree_add(&device->ctx->device_map, parent, node, &device->node);
 	++device->ctx->n_devices;
 
-	/* send out object-manager notification */
-	r = sd_bus_emit_object_added(device->ctx->bus, device->path);
-	if (r < 0) {
-		errno = -r;
-		fprintf(stderr,
-			"Cannot send device notification for '%s': %m\n",
-			device->name);
-	}
-
 	/* register profile interfaces */
 	r = asprintf(&prefix, "%s/profile", device->path);
 	if (r >= 0) {
@@ -299,22 +290,11 @@ void ratbagd_device_link(struct ratbagd_device *device)
 
 void ratbagd_device_unlink(struct ratbagd_device *device)
 {
-	int r;
-
 	if (!ratbagd_device_linked(device))
 		return;
 
 	device->profile_enum_slot = sd_bus_slot_unref(device->profile_enum_slot);
 	device->profile_vtable_slot = sd_bus_slot_unref(device->profile_vtable_slot);
-
-	/* send out object-manager notification */
-	r = sd_bus_emit_object_removed(device->ctx->bus, device->path);
-	if (r < 0) {
-		errno = -r;
-		fprintf(stderr,
-			"Cannot send device notification for '%s': %m\n",
-			device->name);
-	}
 
 	/* unlink from context */
 	--device->ctx->n_devices;
