@@ -28,39 +28,359 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <systemd/sd-bus.h>
 #include "shared-macro.h"
 
 struct ratbagctl {
-	int unused;
+	sd_bus *bus;
 };
 
 static int verb_help(struct ratbagctl *ctl, int argc, char **argv);
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(sd_bus_message *, sd_bus_message_unref);
 
 static struct ratbagctl *ratbagctl_free(struct ratbagctl *ctl)
 {
 	if (!ctl)
 		return NULL;
 
-	free(ctl);
+	ctl->bus = sd_bus_unref(ctl->bus);
 
-	return NULL;
+	return mfree(ctl);
 }
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagctl *, ratbagctl_free);
 
 static int ratbagctl_new(struct ratbagctl **out)
 {
-	struct ratbagctl *ctl;
+	_cleanup_(ratbagctl_freep) struct ratbagctl *ctl = NULL;
+	int r;
 
 	ctl = calloc(1, sizeof(*ctl));
 	if (!ctl)
 		return -ENOMEM;
 
+	r = sd_bus_open_system(&ctl->bus);
+	if (r < 0)
+		return r;
+
 	*out = ctl;
+	ctl = NULL;
 	return 0;
 }
 
-static int verb_list(struct ratbagctl *ctl, int argc, char **argv)
+static int list_devices_show(struct ratbagctl *ctl, const char *path)
 {
+	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	const char *prop_id = NULL, *prop_description = NULL;
+	int r;
+
+	r = sd_bus_call_method(ctl->bus,
+			       "org.freedesktop.ratbag1",
+			       path,
+			       "org.freedesktop.DBus.Properties",
+			       "GetAll",
+			       &error,
+			       &reply,
+			       "s",
+			       "org.freedesktop.ratbag1.Device");
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_enter_container(reply, 'a', "{sv}");
+	if (r < 0)
+		return r;
+
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			return r;
+
+		if (!strcmp(property, "Id")) {
+			r = sd_bus_message_read(reply, "v", "s",
+						&prop_id);
+		} else if (!strcmp(property, "Description")) {
+			r = sd_bus_message_read(reply, "v", "s",
+						&prop_description);
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			return r;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			return r;
+	}
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_exit_container(reply);
+	if (r < 0)
+		return r;
+
+	printf("%10s %-32s\n", prop_id, prop_description);
 	return 0;
+}
+
+static int list_devices_all(struct ratbagctl *ctl)
+{
+	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	unsigned int k = 0;
+	const char *path;
+	int r;
+
+	r = sd_bus_call_method(ctl->bus,
+			       "org.freedesktop.ratbag1",
+			       "/org/freedesktop/ratbag1",
+			       "org.freedesktop.DBus.Properties",
+			       "Get",
+			       &error,
+			       &reply,
+			       "ss",
+			       "org.freedesktop.ratbag1.Manager",
+			       "Devices");
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_enter_container(reply, 'v', "ao");
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_enter_container(reply, 'a', "o");
+	if (r < 0)
+		goto exit;
+
+	printf("%10s %-32s\n", "DEVICE", "DESCRIPTION");
+
+	while ((r = sd_bus_message_read_basic(reply, 'o', &path)) > 0) {
+		r = list_devices_show(ctl, path);
+		if (r < 0)
+			goto exit;
+
+		++k;
+	}
+	if (r < 0)
+		goto exit;
+
+	printf("\n%u device%s listed.\n", k, k > 1 ? "s" : "");
+
+	r = sd_bus_message_exit_container(reply);
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_exit_container(reply);
+exit:
+	if (r < 0)
+		fprintf(stderr, "Cannot list devices: %s\n",
+			error.message ? : "Parser error");
+	return r;
+}
+
+static int verb_list_devices(struct ratbagctl *ctl, int argc, char **argv)
+{
+	static const struct option options[] = {
+		{},
+	};
+	int c;
+
+	while ((c = getopt_long(argc, argv, "+", options, NULL)) >= 0) {
+		switch (c) {
+		default:
+			return -EINVAL;
+		}
+	}
+
+	if (argv[optind]) {
+		fprintf(stderr, "Command does not take arguments\n");
+		return -EINVAL;
+	}
+
+	return list_devices_all(ctl);
+}
+
+static int show_device_get_profile_index(struct ratbagctl *ctl,
+					 const char *path,
+					 unsigned int *out_index)
+{
+	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	int r;
+
+	r = sd_bus_call_method(ctl->bus,
+			       "org.freedesktop.ratbag1",
+			       path,
+			       "org.freedesktop.DBus.Properties",
+			       "Get",
+			       &error,
+			       &reply,
+			       "ss",
+			       "org.freedesktop.ratbag1.Profile",
+			       "Index");
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_enter_container(reply, 'v', "u");
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_read_basic(reply, 'u', out_index);
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_exit_container(reply);
+	if (r < 0)
+		return r;
+
+	return 0;
+}
+
+static int show_device_print(struct ratbagctl *ctl, const char *device)
+{
+	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	unsigned int prop_min_index = 0, prop_max_index = 0;
+	unsigned int prop_active_profile = 0;
+	const char *prop_id = NULL, *prop_description = NULL;
+	_cleanup_(freep) char *path = NULL;
+	int r;
+
+	r = sd_bus_path_encode_many(&path,
+				    "/org/freedesktop/ratbag1/device/%",
+				    device);
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_call_method(ctl->bus,
+			       "org.freedesktop.ratbag1",
+			       path,
+			       "org.freedesktop.DBus.Properties",
+			       "GetAll",
+			       &error,
+			       &reply,
+			       "s",
+			       "org.freedesktop.ratbag1.Device");
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_enter_container(reply, 'a', "{sv}");
+	if (r < 0)
+		goto exit;
+
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property, *profile;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			goto exit;
+
+		if (!strcmp(property, "Id")) {
+			r = sd_bus_message_read(reply, "v", "s",
+						&prop_id);
+		} else if (!strcmp(property, "Description")) {
+			r = sd_bus_message_read(reply, "v", "s",
+						&prop_description);
+		} else if (!strcmp(property, "Profiles")) {
+			r = sd_bus_message_enter_container(reply, 'v', "ao");
+			if (r < 0)
+				goto exit;
+
+			r = sd_bus_message_enter_container(reply, 'a', "o");
+			if (r < 0)
+				goto exit;
+
+			while ((r = sd_bus_message_read_basic(reply,
+							      'o',
+							      &profile)) > 0) {
+				unsigned int index;
+
+				r = show_device_get_profile_index(ctl,
+								  profile,
+								  &index);
+				if (r < 0)
+					goto exit;
+
+				if (index < prop_min_index)
+					prop_min_index = index;
+				if (index >= prop_max_index)
+					prop_max_index = index + 1;
+			}
+			if (r < 0)
+				goto exit;
+
+			r = sd_bus_message_exit_container(reply);
+			if (r < 0)
+				goto exit;
+
+			r = sd_bus_message_exit_container(reply);
+		} else if (!strcmp(property, "ActiveProfile")) {
+			r = sd_bus_message_read(reply, "v", "o", &profile);
+			if (r < 0)
+				goto exit;
+
+			r = show_device_get_profile_index(ctl,
+							  profile,
+							  &prop_active_profile);
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			goto exit;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			goto exit;
+	}
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_exit_container(reply);
+	if (r < 0)
+		goto exit;
+
+	printf("%s - %s\n", prop_id, prop_description);
+	if (prop_min_index == prop_max_index)
+		printf("\t       Profiles:\n");
+	else if (prop_min_index + 1 == prop_max_index)
+		printf("\t       Profiles: %u\n", prop_min_index);
+	else
+		printf("\t       Profiles: %u - %u\n",
+		       prop_min_index, prop_max_index - 1);
+	printf("\t Active Profile: %u\n", prop_active_profile);
+
+exit:
+	if (r < 0)
+		fprintf(stderr, "Cannot show device: %s\n",
+			error.message ? : "Parser error");
+	return r;
+}
+
+static int verb_show_device(struct ratbagctl *ctl, int argc, char **argv)
+{
+	static const struct option options[] = {
+		{},
+	};
+	const char *device;
+	int c;
+
+	while ((c = getopt_long(argc, argv, "+", options, NULL)) >= 0) {
+		switch (c) {
+		default:
+			return -EINVAL;
+		}
+	}
+
+	device = argv[optind];
+	if (!device) {
+		fprintf(stderr, "No device specified\n");
+		return -EINVAL;
+	}
+
+	return show_device_print(ctl, device);
 }
 
 static const struct {
@@ -69,7 +389,8 @@ static const struct {
 	int (*dispatch) (struct ratbagctl *ctl, int argc, char **argv);
 	void (*long_help) (void);
 } verbs[] = {
-	{ "list", "List available configurable mice", verb_list, NULL },
+	{ "list-devices", "List available configurable mice", verb_list_devices, NULL },
+	{ "show-device", "Show device information", verb_show_device, NULL },
 	{ "help", "Show help for a command", verb_help, NULL },
 	{},
 };
