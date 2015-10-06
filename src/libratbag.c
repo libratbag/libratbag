@@ -196,8 +196,7 @@ out:
 }
 
 static int
-ratbag_device_init_hidraw(struct ratbag_device *device,
-			struct udev_device *udev_device)
+ratbag_device_init_hidraw(struct ratbag_device *device)
 {
 	struct udev_device *hidraw_udev;
 	int rc = -ENODEV;
@@ -480,7 +479,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	if (!device)
 		goto out_err;
 
-	rc = ratbag_device_init_hidraw(device, udev_device);
+	rc = ratbag_device_init_hidraw(device);
 	if (rc)
 		goto out_err;
 
