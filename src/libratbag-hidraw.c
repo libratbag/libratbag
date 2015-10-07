@@ -147,11 +147,6 @@ ratbag_open_hidraw(struct ratbag_device *device)
 	if (!hidraw_udev)
 		return -ENODEV;
 
-	log_debug(device->ratbag,
-		  "%s is device '%s'.\n",
-		  device->name,
-		  udev_device_get_devnode(hidraw_udev));
-
 	devnode = udev_device_get_devnode(hidraw_udev);
 	fd = ratbag_open_path(device, devnode, O_RDWR);
 	if (fd < 0)
@@ -164,6 +159,19 @@ ratbag_open_hidraw(struct ratbag_device *device)
 			  "error while getting info from device");
 		goto err;
 	}
+
+	/* check basic matching between the hidraw node and the ratbag device */
+	if (info.bustype != device->ids.bustype ||
+	    (info.vendor & 0xFFFF )!= device->ids.vendor ||
+	    (info.product & 0xFFFF) != device->ids.product) {
+		errno = ENODEV;
+		goto err;
+	}
+
+	log_debug(device->ratbag,
+		  "%s is device '%s'.\n",
+		  device->name,
+		  udev_device_get_devnode(hidraw_udev));
 
 	device->hidraw.fd = fd;
 
