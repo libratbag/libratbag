@@ -46,7 +46,7 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 	struct hidraw_report_descriptor report_desc = {0};
 	unsigned int i, j;
 
-	hidraw->num_report_ids = 0;
+	hidraw->num_reports = 0;
 
 	rc = ioctl(device->hidraw.fd, HIDIOCGRDESCSIZE, &desc_size);
 	if (rc < 0)
@@ -74,11 +74,11 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 
 			for (j = 0; j < size; j++) {
 				report_id |= report_desc.value[i + j + 1] << ((size - j - 1) * 8);
-				if (hidraw->report_ids) {
+				if (hidraw->reports) {
 					log_debug(device->ratbag, "report ID %02x\n", report_id);
-					hidraw->report_ids[hidraw->num_report_ids] = report_id;
+					hidraw->reports[hidraw->num_reports].report_id = report_id;
 				}
-				hidraw->num_report_ids++;
+				hidraw->num_reports++;
 			}
 		}
 
@@ -96,6 +96,7 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 	int fd, res;
 	const char *devnode;
 	const char *sysname;
+	size_t reports_size;
 
 	device->hidraw.fd = -1;
 
@@ -149,11 +150,13 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 		goto err;
 	}
 
-	if (device->hidraw.num_report_ids) {
-		device->hidraw.report_ids = zalloc(device->hidraw.num_report_ids *
-							sizeof(uint8_t));
-		ratbag_hidraw_parse_report_descriptor(device);
-	}
+	if (device->hidraw.num_reports)
+		reports_size = device->hidraw.num_reports * sizeof(struct ratbag_hid_report);
+	else
+		reports_size = sizeof(struct ratbag_hid_report);
+
+	device->hidraw.reports = zalloc(reports_size);
+	ratbag_hidraw_parse_report_descriptor(device);
 
 	device->hidraw.sysname = strdup(sysname);
 	return 0;
@@ -249,8 +252,11 @@ ratbag_hidraw_has_report(struct ratbag_device *device, uint8_t report_id)
 {
 	unsigned i;
 
-	for (i = 0; i < device->hidraw.num_report_ids; i++) {
-		if (device->hidraw.report_ids[i] == report_id)
+	if (report_id == 0)
+		return device->hidraw.reports[0].report_id == report_id;
+
+	for (i = 0; i < device->hidraw.num_reports; i++) {
+		if (device->hidraw.reports[i].report_id == report_id)
 			return 1;
 	}
 
@@ -271,9 +277,9 @@ ratbag_close_hidraw(struct ratbag_device *device)
 	ratbag_close_fd(device, device->hidraw.fd);
 	device->hidraw.fd = -1;
 
-	if (device->hidraw.report_ids) {
-		free(device->hidraw.report_ids);
-		device->hidraw.report_ids = NULL;
+	if (device->hidraw.reports) {
+		free(device->hidraw.reports);
+		device->hidraw.reports = NULL;
 	}
 }
 

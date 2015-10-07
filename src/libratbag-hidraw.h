@@ -34,10 +34,14 @@
 #define HID_OUTPUT_REPORT	1
 #define HID_FEATURE_REPORT	2
 
+struct ratbag_hid_report {
+	uint8_t report_id;
+};
+
 struct ratbag_hidraw {
 	int fd;
-	uint8_t *report_ids;
-	unsigned num_report_ids;
+	struct ratbag_hid_report *reports;
+	unsigned num_reports;
 	char *sysname;
 };
 
