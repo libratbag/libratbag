@@ -35,7 +35,7 @@
 #define HID_FEATURE_REPORT	2
 
 struct ratbag_hid_report {
-	uint8_t report_id;
+	unsigned int report_id;
 };
 
 struct ratbag_hidraw {
@@ -123,6 +123,6 @@ int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, 
  * @return 1 if the device has the given report id, 0 otherwise
  */
 int
-ratbag_hidraw_has_report(struct ratbag_device *device, uint8_t report_id);
+ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id);
 
 #endif /* LIBRATBAG_HIDRAW_H */

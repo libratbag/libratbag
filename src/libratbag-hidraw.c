@@ -248,7 +248,7 @@ ratbag_open_hidraw(struct ratbag_device *device)
 }
 
 int
-ratbag_hidraw_has_report(struct ratbag_device *device, uint8_t report_id)
+ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id)
 {
 	unsigned i;
 
