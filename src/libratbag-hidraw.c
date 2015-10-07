@@ -88,51 +88,6 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 	return 0;
 }
 
-static struct udev_device *
-udev_find_hidraw(struct ratbag_device *device)
-{
-	struct ratbag *ratbag = device->ratbag;
-	struct udev_enumerate *e;
-	struct udev_list_entry *entry;
-	struct udev_device *udev_device;
-	const char *path, *sysname;
-	struct udev_device *hid_udev;
-	struct udev_device *hidraw_udev = NULL;
-	struct udev *udev = ratbag->udev;
-
-	hid_udev = udev_device_get_parent_with_subsystem_devtype(device->udev_device, "hid", NULL);
-
-	if (!hid_udev)
-		return NULL;
-
-	e = udev_enumerate_new(udev);
-	udev_enumerate_add_match_subsystem(e, "hidraw");
-	udev_enumerate_add_match_parent(e, hid_udev);
-	udev_enumerate_scan_devices(e);
-	udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
-		path = udev_list_entry_get_name(entry);
-		udev_device = udev_device_new_from_syspath(udev, path);
-		if (!udev_device)
-			continue;
-
-		sysname = udev_device_get_sysname(udev_device);
-		if (!strneq("hidraw", sysname, 6)) {
-			udev_device_unref(udev_device);
-			continue;
-		}
-
-		hidraw_udev = udev_device_ref(udev_device);
-
-		udev_device_unref(udev_device);
-		goto out;
-	}
-
-out:
-	udev_enumerate_unref(e);
-
-	return hidraw_udev;
-}
-
 static int
 ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw_udev)
 {
@@ -209,25 +164,10 @@ err:
 	return -errno;
 }
 
-int
-ratbag_open_hidraw(struct ratbag_device *device)
-{
-	struct udev_device *hidraw_udev;
-	int rc;
-
-	hidraw_udev = udev_find_hidraw(device);
-	if (!hidraw_udev)
-		return -ENODEV;
-
-	rc = ratbag_open_hidraw_node(device, hidraw_udev);
-
-	udev_device_unref(hidraw_udev);
-
-	return rc;
-}
-
-int
-ratbag_find_hidraw(struct ratbag_device *device, int (*match)(struct ratbag_device *device))
+static int
+__ratbag_find_hidraw(struct ratbag_device *device,
+		     int (*match)(struct ratbag_device *device),
+		     int use_usb_parent)
 {
 	struct ratbag *ratbag = device->ratbag;
 	struct udev_enumerate *e;
@@ -247,7 +187,7 @@ ratbag_find_hidraw(struct ratbag_device *device, int (*match)(struct ratbag_devi
 	if (!hid_udev)
 		return -ENODEV;
 
-	if (device->ids.bustype == BUS_USB)
+	if (use_usb_parent && device->ids.bustype == BUS_USB)
 		/* using the parent usb_device to match siblings */
 		parent_udev = udev_device_get_parent_with_subsystem_devtype(hid_udev, "usb", "usb_device");
 	else
@@ -284,6 +224,24 @@ out:
 	udev_enumerate_unref(e);
 
 	return rc;
+}
+
+int
+ratbag_find_hidraw(struct ratbag_device *device, int (*match)(struct ratbag_device *device))
+{
+	return __ratbag_find_hidraw(device, match, true);
+}
+
+static int
+hidraw_match_all(struct ratbag_device *device)
+{
+	return 1;
+}
+
+int
+ratbag_open_hidraw(struct ratbag_device *device)
+{
+	return __ratbag_find_hidraw(device, hidraw_match_all, false);
 }
 
 int
