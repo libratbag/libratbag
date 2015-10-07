@@ -519,6 +519,9 @@ static const struct ratbag_id hidpp20drv_table[] = {
 	/* M325 over unifying */
 	{ .id = LOGITECH_DEVICE(BUS_USB, 0x400a) },
 
+	/* G502 over USB */
+	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc07d) },
+
 	/* G303 over USB */
 	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc080) },
 
