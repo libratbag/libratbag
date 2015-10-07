@@ -137,10 +137,23 @@ static int
 ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw_udev)
 {
 	struct hidraw_devinfo info;
+	struct ratbag_device *tmp_device;
 	int fd, res;
 	const char *devnode;
+	const char *sysname;
 
 	device->hidraw.fd = -1;
+
+	sysname = udev_device_get_sysname(hidraw_udev);
+	if (!strneq("hidraw", sysname, 6))
+		return -ENODEV;
+
+	list_for_each(tmp_device, &device->ratbag->devices, link) {
+		if (tmp_device->hidraw.sysname &&
+		    streq(tmp_device->hidraw.sysname, sysname)) {
+			return -ENODEV;
+		}
+	}
 
 	devnode = udev_device_get_devnode(hidraw_udev);
 	fd = ratbag_open_path(device, devnode, O_RDWR);
@@ -187,6 +200,7 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 		ratbag_hidraw_parse_report_descriptor(device);
 	}
 
+	device->hidraw.sysname = strdup(sysname);
 	return 0;
 
 err:
@@ -219,7 +233,7 @@ ratbag_find_hidraw(struct ratbag_device *device, int (*match)(struct ratbag_devi
 	struct udev_enumerate *e;
 	struct udev_list_entry *entry;
 	struct udev_device *udev_device;
-	const char *path, *sysname;
+	const char *path;
 	struct udev_device *hid_udev;
 	struct udev_device *parent_udev;
 	struct udev *udev = ratbag->udev;
@@ -249,24 +263,20 @@ ratbag_find_hidraw(struct ratbag_device *device, int (*match)(struct ratbag_devi
 		if (!udev_device)
 			continue;
 
-		sysname = udev_device_get_sysname(udev_device);
-		if (!strneq("hidraw", sysname, 6)) {
-			udev_device_unref(udev_device);
-			continue;
-		}
-
 		rc = ratbag_open_hidraw_node(device, udev_device);
 		if (rc)
-			ratbag_close_hidraw(device);
+			goto skip;
 
 		matched = match(device);
-		udev_device_unref(udev_device);
-
 		if (matched == 1) {
 			rc = 0;
+			udev_device_unref(udev_device);
 			goto out;
 		}
 
+skip:
+		ratbag_close_hidraw(device);
+		udev_device_unref(udev_device);
 		rc = -ENODEV;
 	}
 
@@ -294,6 +304,11 @@ ratbag_close_hidraw(struct ratbag_device *device)
 {
 	if (device->hidraw.fd < 0)
 		return;
+
+	if (device->hidraw.sysname) {
+		free(device->hidraw.sysname);
+		device->hidraw.sysname = NULL;
+	}
 
 	ratbag_close_fd(device, device->hidraw.fd);
 	device->hidraw.fd = -1;
