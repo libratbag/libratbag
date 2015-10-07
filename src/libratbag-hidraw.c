@@ -133,41 +133,26 @@ out:
 	return hidraw_udev;
 }
 
-static int
-ratbag_device_init_hidraw(struct ratbag_device *device)
-{
-	struct udev_device *hidraw_udev;
-	int rc = -ENODEV;
-
-	hidraw_udev = udev_find_hidraw(device);
-	if (!hidraw_udev)
-		goto out;
-
-	device->hidraw.udev_hidraw = udev_device_ref(hidraw_udev);
-
-	log_debug(device->ratbag,
-		  "%s is device '%s'.\n",
-		  device->name,
-		  udev_device_get_devnode(device->hidraw.udev_hidraw));
-
-	rc = 0;
-	udev_device_unref(hidraw_udev);
-out:
-	return rc;
-}
-
 int
 ratbag_open_hidraw(struct ratbag_device *device)
 {
 	struct hidraw_devinfo info;
+	struct udev_device *hidraw_udev;
 	int fd, res;
 	const char *devnode;
 
-	res = ratbag_device_init_hidraw(device);
-	if (res)
-		return res;
+	device->hidraw.fd = -1;
 
-	devnode = udev_device_get_devnode(device->hidraw.udev_hidraw);
+	hidraw_udev = udev_find_hidraw(device);
+	if (!hidraw_udev)
+		return -ENODEV;
+
+	log_debug(device->ratbag,
+		  "%s is device '%s'.\n",
+		  device->name,
+		  udev_device_get_devnode(hidraw_udev));
+
+	devnode = udev_device_get_devnode(hidraw_udev);
 	fd = ratbag_open_path(device, devnode, O_RDWR);
 	if (fd < 0)
 		goto err;
@@ -199,9 +184,11 @@ ratbag_open_hidraw(struct ratbag_device *device)
 		ratbag_hidraw_parse_report_descriptor(device);
 	}
 
+	udev_device_unref(hidraw_udev);
 	return 0;
 
 err:
+	udev_device_unref(hidraw_udev);
 	if (fd >= 0)
 		ratbag_close_fd(device, fd);
 	return -errno;
@@ -225,9 +212,6 @@ ratbag_close_hidraw(struct ratbag_device *device)
 {
 	if (device->hidraw.fd < 0)
 		return;
-
-	if (device->hidraw.udev_hidraw)
-		udev_device_unref(device->hidraw.udev_hidraw);
 
 	ratbag_close_fd(device, device->hidraw.fd);
 	device->hidraw.fd = -1;
