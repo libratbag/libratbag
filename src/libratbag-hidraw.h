@@ -50,6 +50,19 @@ struct ratbag_hidraw {
 int ratbag_open_hidraw(struct ratbag_device *device);
 
 /**
+ * Find and open the hidraw device associated with the device by using the
+ * given matching function.
+ *
+ * @param device the ratbag device
+ * @param match the matching test (return 1 if matched, 0 if not)
+ *
+ * @return 0 on success or a negative errno on error
+ */
+int
+ratbag_find_hidraw(struct ratbag_device *device,
+		   int (*match)(struct ratbag_device *device));
+
+/**
  * Close the hidraw device associated with the device.
  *
  * @param device the ratbag device

@@ -192,25 +192,28 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 }
 
 static int
+hidpp10drv_test_hidraw(struct ratbag_device *device)
+{
+	return ratbag_hidraw_has_report(device, REPORT_ID_SHORT);
+}
+
+static int
 hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
 	struct hidpp10drv_data *drv_data = NULL;
 	struct hidpp10_device *dev = NULL;
 
-	rc = ratbag_open_hidraw(device);
-	if (rc) {
+	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
+	if (rc == -ENODEV) {
+		return rc;
+	} else if (rc) {
 		log_error(device->ratbag,
 			  "Can't open corresponding hidraw node: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
 		rc = -ENODEV;
 		goto err;
-	}
-
-	if (!ratbag_hidraw_has_report(device, REPORT_ID_SHORT)) {
-		ratbag_close_hidraw(device);
-		return -ENODEV;
 	}
 
 	drv_data = zalloc(sizeof(*drv_data));

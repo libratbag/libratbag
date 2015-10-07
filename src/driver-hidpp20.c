@@ -432,22 +432,25 @@ hidpp20drv_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 }
 
 static int
+hidpp20drv_test_hidraw(struct ratbag_device *device)
+{
+	return ratbag_hidraw_has_report(device, REPORT_ID_LONG);
+}
+
+static int
 hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 {
 	int rc;
 	struct hidpp20drv_data *drv_data;
 
-	rc = ratbag_open_hidraw(device);
-	if (rc) {
+	rc = ratbag_find_hidraw(device, hidpp20drv_test_hidraw);
+	if (rc == -ENODEV) {
+		return rc;
+	} else if (rc) {
 		log_error(device->ratbag,
 			  "Can't open corresponding hidraw node: '%s' (%d)\n",
 			  strerror(-rc),
 			  rc);
-		return -ENODEV;
-	}
-
-	if (!ratbag_hidraw_has_report(device, REPORT_ID_LONG)) {
-		ratbag_close_hidraw(device);
 		return -ENODEV;
 	}
 
