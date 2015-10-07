@@ -165,7 +165,6 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	}
 
 	device->ratbag = ratbag_ref(ratbag);
-	device->hidraw.fd = -1;
 	device->refcount = 1;
 	if (udev_device)
 		device->udev_device = udev_device_ref(udev_device);
@@ -196,10 +195,6 @@ ratbag_device_destroy(struct ratbag_device *device)
 
 	if (device->udev_device)
 		udev_device_unref(device->udev_device);
-	if (device->udev_hidraw)
-		udev_device_unref(device->udev_hidraw);
-
-	ratbag_close_hidraw(device);
 
 	ratbag_unref(device->ratbag);
 	free(device->name);
@@ -380,7 +375,6 @@ LIBRATBAG_EXPORT struct ratbag_device*
 ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 				   struct udev_device *udev_device)
 {
-	int rc;
 	struct ratbag_device *device = NULL;
 	struct ratbag_driver *driver;
 	char *name = NULL;
@@ -409,10 +403,6 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	free(name);
 
 	if (!device)
-		goto out_err;
-
-	rc = ratbag_device_init_hidraw(device);
-	if (rc)
 		goto out_err;
 
 	driver = ratbag_find_driver(device, &device->ids, NULL);

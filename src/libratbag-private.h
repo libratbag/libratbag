@@ -62,7 +62,6 @@ struct ratbag_device {
 	void *userdata;
 
 	struct udev_device *udev_device;
-	struct udev_device *udev_hidraw;
 	struct ratbag_hidraw hidraw;
 	int refcount;
 	struct input_id ids;
