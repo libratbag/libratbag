@@ -41,6 +41,15 @@ struct ratbag_hidraw {
 };
 
 /**
+ * Initialize the hidraw internals.
+ *
+ * @param device the ratbag device
+ *
+ * @return 0 on success or a negative errno on error
+ */
+int ratbag_device_init_hidraw(struct ratbag_device *device);
+
+/**
  * Open the hidraw device associated with the device.
  *
  * @param device the ratbag device
