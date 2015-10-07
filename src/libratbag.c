@@ -172,6 +172,7 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	device->ids = *id;
 	list_init(&device->profiles);
 
+	list_insert(&ratbag->devices, &device->link);
 
 	return device;
 }
@@ -195,6 +196,8 @@ ratbag_device_destroy(struct ratbag_device *device)
 
 	if (device->udev_device)
 		udev_device_unref(device->udev_device);
+
+	list_remove(&device->link);
 
 	ratbag_unref(device->ratbag);
 	free(device->name);
@@ -488,6 +491,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag->userdata = userdata;
 
 	list_init(&ratbag->drivers);
+	list_init(&ratbag->devices);
 	ratbag->udev = udev_new();
 	if (!ratbag->udev) {
 		free(ratbag);

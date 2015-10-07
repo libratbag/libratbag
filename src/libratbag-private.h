@@ -50,6 +50,7 @@ struct ratbag {
 
 	struct udev *udev;
 	struct list drivers;
+	struct list devices;
 
 	int refcount;
 	ratbag_log_handler log_handler;
@@ -74,6 +75,8 @@ struct ratbag_device {
 	unsigned num_buttons;
 
 	void *drv_data;
+
+	struct list link;
 };
 
 struct ratbag_id {
