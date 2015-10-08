@@ -120,11 +120,16 @@ int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, 
  * Tells if a given device has the specified report ID.
  *
  * @param device the ratbag device which hidraw node is opened
- * @param report_id the report ID we inquire about
+ * @param report_id the report ID we inquire about (0 means no report ID)
+ * @param usage_page the usage page we want to match with (0 ignores the match)
+ * @param usage the usage we want to match with (0 ignores the match)
  *
  * @return 1 if the device has the given report id, 0 otherwise
  */
 int
-ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id);
+ratbag_hidraw_has_report(struct ratbag_device *device,
+			 unsigned int report_id,
+			 unsigned int usage_page,
+			 unsigned int usage);
 
 #endif /* LIBRATBAG_HIDRAW_H */

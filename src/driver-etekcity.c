@@ -781,7 +781,7 @@ etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
 		return -ENODEV;
 	}
 
-	if (!ratbag_hidraw_has_report(device, ETEKCITY_REPORT_ID_KEY_MAPPING)) {
+	if (!ratbag_hidraw_has_report(device, ETEKCITY_REPORT_ID_KEY_MAPPING, 0, 0)) {
 		ratbag_close_hidraw(device);
 		return -ENODEV;
 	}
