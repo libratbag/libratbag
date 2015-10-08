@@ -917,7 +917,7 @@ roccat_probe(struct ratbag_device *device, const struct ratbag_id id)
 		return -ENODEV;
 	}
 
-	if (!ratbag_hidraw_has_report(device, ROCCAT_REPORT_ID_KEY_MAPPING, 0, 0)) {
+	if (!ratbag_hidraw_has_report(device, ROCCAT_REPORT_ID_KEY_MAPPING)) {
 		ratbag_close_hidraw(device);
 		return -ENODEV;
 	}

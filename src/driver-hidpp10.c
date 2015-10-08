@@ -194,7 +194,7 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 static int
 hidpp10drv_test_hidraw(struct ratbag_device *device)
 {
-	return ratbag_hidraw_has_report(device, REPORT_ID_SHORT, 0, 0);
+	return ratbag_hidraw_has_report(device, REPORT_ID_SHORT);
 }
 
 static int

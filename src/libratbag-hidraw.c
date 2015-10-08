@@ -280,53 +280,17 @@ ratbag_open_hidraw(struct ratbag_device *device)
 	return __ratbag_find_hidraw(device, hidraw_match_all, false);
 }
 
-static inline int
-ratbag_hidraw_match_report(struct ratbag_hid_report *report,
-			   unsigned int report_id,
-			   unsigned int usage_page,
-			   unsigned int usage)
-{
-	if (usage && usage != report->usage)
-		return 0;
-
-	if (usage_page && usage_page != report->usage_page)
-		return 0;
-
-	return report->report_id == report_id;
-}
-
 int
-ratbag_hidraw_has_report(struct ratbag_device *device,
-			 unsigned int report_id,
-			 unsigned int usage_page,
-			 unsigned int usage)
+ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id)
 {
 	unsigned i;
 
 	if (report_id == 0)
-		if (ratbag_hidraw_match_report(&device->hidraw.reports[0],
-						  report_id,
-						  usage_page,
-						  usage)) {
-			log_debug(device->ratbag,
-				  "found matching report ID (0) with 0x%04x | 0x%04x\n",
-				  device->hidraw.reports[0].usage_page,
-				  device->hidraw.reports[0].usage);
-			return 1;
-		}
+		return device->hidraw.reports[0].report_id == report_id;
 
 	for (i = 0; i < device->hidraw.num_reports; i++) {
-		if (ratbag_hidraw_match_report(&device->hidraw.reports[i],
-						  report_id,
-						  usage_page,
-						  usage)) {
-			log_debug(device->ratbag,
-				  "found matching report ID (%d) with 0x%04x | 0x%04x\n",
-				  report_id,
-				  device->hidraw.reports[i].usage_page,
-				  device->hidraw.reports[i].usage);
+		if (device->hidraw.reports[i].report_id == report_id)
 			return 1;
-		}
 	}
 
 	return 0;

@@ -434,7 +434,7 @@ hidpp20drv_20_probe(struct ratbag_device *device, const struct ratbag_id id)
 static int
 hidpp20drv_test_hidraw(struct ratbag_device *device)
 {
-	return ratbag_hidraw_has_report(device, REPORT_ID_LONG, 0, 0);
+	return ratbag_hidraw_has_report(device, REPORT_ID_LONG);
 }
 
 static int
