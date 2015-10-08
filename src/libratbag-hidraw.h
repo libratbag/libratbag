@@ -127,4 +127,28 @@ int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, 
 int
 ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id);
 
+/**
+ * Gives the usage page of a report with the specified report ID.
+ *
+ * @param device the ratbag device which hidraw node is opened
+ * @param report_id the report ID we inquire about
+ *
+ * @return the usage page of the report if the device has the given report id,
+ * 0 otherwise
+ */
+unsigned int
+ratbag_hidraw_get_usage_page(struct ratbag_device *device, unsigned int report_id);
+
+/**
+ * Gives the usage of a report with the specified report ID.
+ *
+ * @param device the ratbag device which hidraw node is opened
+ * @param report_id the report ID we inquire about
+ *
+ * @return the usage of the report if the device has the given report id,
+ * 0 otherwise
+ */
+unsigned int
+ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id);
+
 #endif /* LIBRATBAG_HIDRAW_H */

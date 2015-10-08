@@ -280,20 +280,57 @@ ratbag_open_hidraw(struct ratbag_device *device)
 	return __ratbag_find_hidraw(device, hidraw_match_all, false);
 }
 
-int
-ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id)
+static struct ratbag_hid_report *
+ratbag_hidraw_get_report(struct ratbag_device *device, unsigned int report_id)
 {
 	unsigned i;
 
-	if (report_id == 0)
-		return device->hidraw.reports[0].report_id == report_id;
+	if (report_id == 0) {
+		if (device->hidraw.reports[0].report_id == report_id)
+			return &device->hidraw.reports[0];
+		else
+			return NULL;
+	}
 
 	for (i = 0; i < device->hidraw.num_reports; i++) {
 		if (device->hidraw.reports[i].report_id == report_id)
-			return 1;
+			return &device->hidraw.reports[i];
 	}
 
-	return 0;
+	return NULL;
+}
+
+
+int
+ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id)
+{
+	return ratbag_hidraw_get_report(device, report_id) != NULL;
+}
+
+unsigned int
+ratbag_hidraw_get_usage_page(struct ratbag_device *device, unsigned int report_id)
+{
+	struct ratbag_hid_report *report;
+
+	report = ratbag_hidraw_get_report(device, report_id);
+
+	if (!report)
+		return 0;
+
+	return report->usage_page;
+}
+
+unsigned int
+ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id)
+{
+	struct ratbag_hid_report *report;
+
+	report = ratbag_hidraw_get_report(device, report_id);
+
+	if (!report)
+		return 0;
+
+	return report->usage;
 }
 
 void
