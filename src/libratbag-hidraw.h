@@ -36,6 +36,8 @@
 
 struct ratbag_hid_report {
 	unsigned int report_id;
+	unsigned int usage_page;
+	unsigned int usage;
 };
 
 struct ratbag_hidraw {

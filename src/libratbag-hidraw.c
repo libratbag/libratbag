@@ -37,6 +37,13 @@
 #endif
 
 #define HID_REPORT_ID		0b10000100
+#define HID_COLLECTION		0b10100000
+#define HID_USAGE_PAGE		0b00000100
+#define HID_USAGE		0b00001000
+
+#define HID_PHYSICAL		0
+#define HID_APPLICATION		1
+#define HID_LOGICAL		2
 
 static int
 ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
@@ -45,6 +52,7 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 	struct ratbag_hidraw *hidraw = &device->hidraw;
 	struct hidraw_report_descriptor report_desc = {0};
 	unsigned int i, j;
+	unsigned int usage_page, usage;
 
 	hidraw->num_reports = 0;
 
@@ -58,10 +66,13 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 		return rc;
 
 	i = 0;
+	usage_page = 0;
+	usage = 0;
 	while (i < report_desc.size) {
 		uint8_t value = report_desc.value[i];
 		uint8_t hid = value & 0xfc;
 		uint8_t size = value & 0x3;
+		unsigned content = 0;
 
 		if (size == 3)
 			size = 4;
@@ -69,17 +80,34 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 		if (i + size >= report_desc.size)
 			return -EPROTO;
 
-		if (hid == HID_REPORT_ID) {
-			unsigned report_id = 0;
+		for (j = 0; j < size; j++)
+			content |= report_desc.value[i + j + 1] << ((size - j - 1) * 8);
 
-			for (j = 0; j < size; j++) {
-				report_id |= report_desc.value[i + j + 1] << ((size - j - 1) * 8);
-				if (hidraw->reports) {
-					log_debug(device->ratbag, "report ID %02x\n", report_id);
-					hidraw->reports[hidraw->num_reports].report_id = report_id;
-				}
-				hidraw->num_reports++;
+		switch (hid) {
+		case HID_REPORT_ID:
+			if (hidraw->reports) {
+				log_debug(device->ratbag, "report ID %02x\n", content);
+				hidraw->reports[hidraw->num_reports].report_id = content;
+				hidraw->reports[hidraw->num_reports].usage_page = usage_page;
+				hidraw->reports[hidraw->num_reports].usage = usage;
 			}
+			hidraw->num_reports++;
+			break;
+		case HID_COLLECTION:
+			if (content == HID_APPLICATION &&
+			    hidraw->reports &&
+			    !hidraw->num_reports &&
+			    !hidraw->reports[0].report_id) {
+				hidraw->reports[hidraw->num_reports].usage_page = usage_page;
+				hidraw->reports[hidraw->num_reports].usage = usage;
+			}
+			break;
+		case HID_USAGE_PAGE:
+			usage_page = content;
+			break;
+		case HID_USAGE:
+			usage = content;
+			break;
 		}
 
 		i += 1 + size;
