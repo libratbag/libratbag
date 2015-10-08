@@ -81,7 +81,7 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 			return -EPROTO;
 
 		for (j = 0; j < size; j++)
-			content |= report_desc.value[i + j + 1] << ((size - j - 1) * 8);
+			content |= report_desc.value[i + j + 1] << (j * 8);
 
 		switch (hid) {
 		case HID_REPORT_ID:
