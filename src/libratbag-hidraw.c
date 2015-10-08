@@ -218,11 +218,16 @@ __ratbag_find_hidraw(struct ratbag_device *device,
 	if (!hid_udev)
 		return -ENODEV;
 
-	if (use_usb_parent && device->ids.bustype == BUS_USB)
+	if (use_usb_parent && device->ids.bustype == BUS_USB) {
 		/* using the parent usb_device to match siblings */
-		parent_udev = udev_device_get_parent_with_subsystem_devtype(hid_udev, "usb", "usb_device");
-	else
+		parent_udev = udev_device_get_parent(hid_udev);
+		if (!streq("uhid", udev_device_get_sysname(parent_udev)))
+			parent_udev = udev_device_get_parent_with_subsystem_devtype(hid_udev,
+										    "usb",
+										    "usb_device");
+	} else {
 		parent_udev = hid_udev;
+	}
 
 	e = udev_enumerate_new(udev);
 	udev_enumerate_add_match_subsystem(e, "hidraw");
