@@ -26,11 +26,25 @@ library in the future, if other projects require it.
 
 Adding Devices
 --------------
+
+As of commit 3605bede4 libratbag now uses a hwdb entry to match the device
+with the drivers.
+
 Your device may already supported by one of our drivers. If so, you can
-enable it by adding the device vendor-id/product-id to the static table. For
-example, for a HID++ 1.0 device, edit the driver-hidpp10.c file and add an
-entry in the hidpp10drv_table. For the other drivers, look for the
-driver-{drivername}.c file and do the same.
+enable it by adding the device vendor-id/product-id to the hwdb file in
+`hwdb/70-libratbag-mouse.hwdb`. For example, for a HID++ 1.0 device, edit
+the 70-libratbag-mouse.hwdb file and add an entry with `RATBAG_DRIVER=hidpp10`.
+For the other drivers, look for the id of the driver in driver-{drivername}.c
+file and do the same.
+
+Then install libratbag, run:
+```
+sudo udevadm hwdb --update
+sudo udevadm control --reload
+```
+
+And unplug/replug your mouse. `RATBAG_DRIVER` should appear in the udev
+properties of your device with the value you previously set.
 
 If the device doesn't work, you'll have to start reverse-engineering the
 device-specific protocol. Good luck :)
