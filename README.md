@@ -38,10 +38,9 @@ For the other drivers, look for the id of the driver in driver-{drivername}.c
 file and do the same.
 
 Then install libratbag, run:
-```
-sudo udevadm hwdb --update
-sudo udevadm control --reload
-```
+
+    sudo udevadm hwdb --update
+    sudo udevadm control --reload
 
 And unplug/replug your mouse. `RATBAG_DRIVER` should appear in the udev
 properties of your device with the value you previously set.
