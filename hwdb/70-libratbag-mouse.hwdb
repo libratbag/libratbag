@@ -99,7 +99,7 @@ mouse:usb:v046dpc07d:name:*:
 # MX Master over unifying
 mouse:usb:v046dp4041:name:*:
 # MX Master over bluetooth
-mouse:usb:v046dpb012:name:*:
+mouse:bluetooth:v046dpb012:name:*:
  RATBAG_DRIVER=hidpp20
  RATBAG_SVG=logitech-mx_master.svg
 
