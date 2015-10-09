@@ -406,7 +406,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 }
 
 static int
-hidpp20drv_20_probe(struct ratbag_device *device, const struct ratbag_id id)
+hidpp20drv_20_probe(struct ratbag_device *device)
 {
 	struct hidpp20_feature *feature_list;
 	int rc, i;
@@ -438,7 +438,7 @@ hidpp20drv_test_hidraw(struct ratbag_device *device)
 }
 
 static int
-hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
+hidpp20drv_probe(struct ratbag_device *device)
 {
 	int rc;
 	struct hidpp20drv_data *drv_data;
@@ -470,7 +470,7 @@ hidpp20drv_probe(struct ratbag_device *device, const struct ratbag_id id)
 	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), drv_data->proto_major, drv_data->proto_minor);
 
 	if (drv_data->proto_major >= 2) {
-		rc = hidpp20drv_20_probe(device, id);
+		rc = hidpp20drv_20_probe(device);
 		if (rc)
 			goto err;
 	}
@@ -497,40 +497,9 @@ hidpp20drv_remove(struct ratbag_device *device)
 	free(drv_data);
 }
 
-#define USB_VENDOR_ID_LOGITECH			0x046d
-#define LOGITECH_DEVICE(_bus, _pid)		\
-	{ .bustype = (_bus),			\
-	  .vendor = USB_VENDOR_ID_LOGITECH,	\
-	  .product = (_pid),			\
-	  .version = VERSION_ANY }
-
-static const struct ratbag_id hidpp20drv_table[] = {
-	/* MX Master over unifying */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0x4041),
-	  .svg_filename = "logitech-mx_master.svg" },
-
-	/* MX Master over bluetooth */
-	{ .id = LOGITECH_DEVICE(BUS_BLUETOOTH, 0xb012),
-	  .svg_filename = "logitech-mx_master.svg" },
-
-	/* T650 over unifying */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0x4101) },
-
-	/* M325 over unifying */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0x400a) },
-
-	/* G502 over USB */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc07d) },
-
-	/* G303 over USB */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc080) },
-
-	{ },
-};
-
 struct ratbag_driver hidpp20_driver = {
 	.name = "Logitech HID++2.0",
-	.table_ids = hidpp20drv_table,
+	.id = "hidpp20",
 	.probe = hidpp20drv_probe,
 	.remove = hidpp20drv_remove,
 	.read_profile = hidpp20drv_read_profile,

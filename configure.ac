@@ -56,6 +56,14 @@ fi
 AC_SUBST(GCC_CFLAGS)
 AC_SUBST(GCC_CXXFLAGS)
 
+AC_ARG_WITH(udev-base-dir, AS_HELP_STRING([--with-udev-base-dir=DIR], [where udev base directory is]))
+if test -n "$with_udev_base_dir" ; then
+	UDEV_BASE_DIR="$with_udev_base_dir"
+else
+	UDEV_BASE_DIR="/usr/lib/udev"
+fi
+AC_SUBST(UDEV_BASE_DIR)
+
 AC_ARG_ENABLE([documentation],
 	      [AC_HELP_STRING([--enable-documentation],
 		              [Enable building the documentation (default=auto)])],
@@ -132,6 +140,7 @@ AM_CONDITIONAL(BUILD_DOCS, [test "x$build_documentation" = "xyes"])
 AC_CONFIG_FILES([Makefile
 		 doc/Makefile
 		 doc/libratbag.doxygen
+		 hwdb/Makefile
 		 src/Makefile
 		 src/libratbag.pc
 		 src/libratbag-version.h
@@ -143,6 +152,7 @@ AC_OUTPUT
 
 AC_MSG_RESULT([
 	Prefix			${prefix}
+	udev base directory:	${UDEV_BASE_DIR}
 
 	Build documentation	${build_documentation}
 	Build tests		${build_tests}

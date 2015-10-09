@@ -1,0 +1,124 @@
+# Database for libratbag to select the correct driver to use for gaming mice.
+#
+# The lookup keys are composed in:
+#   70-libratbag-mouse.rules
+#
+# Match string format:
+# mouse:<subsystem>:v<vid>p<pid>:name:<name>:
+#
+# Supported subsystems: usb, bluetooth
+# vid/pid as 4-digit hex lowercase vendor/product
+#
+# if vid/pid is unavailable, use
+# mouse:*:name:<name>:
+# if name is unavailable, use
+# mouse:<subsystem>:v<vid>p<pid>:*
+#
+# For example, the following 5 matches all match the same mouse:
+# mouse:usb:v17efp6019:name:Lenovo Optical USB Mouse:
+# mouse:usb:*:name:Lenovo Optical USB Mouse:
+# mouse:usb:v17efp6019:*
+# mouse:*:name:Lenovo Optical USB Mouse:
+#
+# To add local entries, create a new file
+#   /etc/udev/hwdb.d/71-libratbat-mouse-local.hwdb
+# and add your rules there. To load the new rules execute (as root):
+#   udevadm hwdb --update
+#   udevadm trigger /dev/input/eventXX
+# where /dev/input/eventXX is the mouse in question. If in
+# doubt, simply use /dev/input/event* to reload all input rules.
+#
+# If your changes are generally applicable, preferably send them as a pull
+# request to
+#   https://github.com/libratbag/libratbag
+# or create a bug report on https://github.com/libratbag/libratbag/issues and
+# include your new rules, a description of the device, and the output of
+#   udevadm info /dev/input/eventXX
+# (or /dev/input/event*).
+#
+# Allowed properties are:
+#    RATBAG_DRIVER
+#    RATBAG_SVG
+
+# Sort by brand, driver
+
+
+##########################################
+# Etekcity
+##########################################
+
+mouse:usb:v1ea7p4011:name:*:
+ RATBAG_DRIVER=etekcity
+ RATBAG_SVG=etekcity.svg
+
+##########################################
+# Logitech
+##########################################
+
+# M705
+mouse:usb:v046dp101b:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# M570
+mouse:usb:v046dp1028:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# G5
+mouse:usb:v046dpc041:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# G5 2007
+mouse:usb:v046dpc049:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# G9
+mouse:usb:v046dpc048:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# G9x [Original]
+mouse:usb:v046dpc066:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# G9x [Call of Duty MW3 Edition]
+mouse:usb:v046dpc249:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# G500
+mouse:usb:v046dpc068:name:*:
+ RATBAG_DRIVER=hidpp10
+
+# G500s
+mouse:usb:v046dpc24e:name:*:
+ RATBAG_DRIVER=hidpp10
+ RATBAG_SVG=logitech-g500s.svg
+
+# G502 over USB
+mouse:usb:v046dpc07d:name:*:
+ RATBAG_DRIVER=hidpp20
+
+# MX Master over unifying
+mouse:usb:v046dp4041:name:*:
+# MX Master over bluetooth
+mouse:usb:v046dpb012:name:*:
+ RATBAG_DRIVER=hidpp20
+ RATBAG_SVG=logitech-mx_master.svg
+
+# T650 over unifying
+mouse:usb:v046dp4101:name:*:
+ RATBAG_DRIVER=hidpp20
+
+# M325 over unifying
+mouse:usb:v046dp400a:name:*:
+ RATBAG_DRIVER=hidpp20
+
+# G303 over USB
+mouse:usb:v046dpc080:name:*:
+ RATBAG_DRIVER=hidpp20
+
+##########################################
+# Roccat
+##########################################
+
+mouse:usb:v1e7dp2e22:name:*:
+ RATBAG_DRIVER=roccat
+ RATBAG_SVG=roccat-kone-xtd.svg

@@ -26,17 +26,6 @@
 #include "libratbag-private.h"
 #include "libratbag-test.h"
 
-
-static const struct ratbag_id test_table[] = {
-	{.id = { .bustype = 0x00,
-		 .vendor = 0x00,
-		 .product = 0x00,
-		 .version = 0x00 },
-	 .data = 1,
-	},
-	{ },
-};
-
 static int
 test_has_capability(const struct ratbag_device *device,
 		    enum ratbag_device_capability cap)
@@ -92,17 +81,12 @@ test_write_profile(struct ratbag_profile *profile)
 }
 
 static int
-test_probe(struct ratbag_device *device, const struct ratbag_id id)
+test_probe(struct ratbag_device *device)
 {
 	struct ratbag_test_device *test_device;
 
-	assert(id.id.bustype == 0x00);
-	assert(id.id.vendor == 0x00);
-	assert(id.id.product == 0x00);
-	assert(id.id.version == 0x00);
-	assert(id.test_device != NULL);
-
-	test_device = id.test_device;
+	/* FIXME: after the move to hwdb the test_device is no
+	 * longer passed in. */
 
 	ratbag_set_drv_data(device, test_device);
 	ratbag_device_init_profiles(device,
@@ -125,7 +109,6 @@ test_remove(struct ratbag_device *device)
 
 struct ratbag_driver test_driver = {
 	.name = "Test driver",
-	.table_ids = test_table,
 	.probe = test_probe,
 	.remove = test_remove,
 	.read_profile = test_read_profile,
