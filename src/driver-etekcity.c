@@ -763,14 +763,12 @@ etekcity_write_resolution_dpi(struct ratbag_resolution *resolution,
 }
 
 static int
-etekcity_probe(struct ratbag_device *device, const struct ratbag_id id)
+etekcity_probe(struct ratbag_device *device)
 {
 	int rc;
 	struct ratbag_profile *profile;
 	struct etekcity_data *drv_data;
 	int active_idx;
-
-	log_raw(device->ratbag, "data: %d\n", id.data);
 
 	rc = ratbag_open_hidraw(device);
 	if (rc) {
@@ -835,22 +833,9 @@ etekcity_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
-#define USB_VENDOR_ID_ETEKCITY			0x1ea7
-
-static const struct ratbag_id etekcity_table[] = {
-	{.id = { .bustype = BUS_USB,
-		 .vendor = USB_VENDOR_ID_ETEKCITY,
-		 .product = 0x4011,
-		 .version = VERSION_ANY },
-	 .svg_filename = "etekcity.svg",
-	},
-
-	{ },
-};
-
 struct ratbag_driver etekcity_driver = {
 	.name = "EtekCity",
-	.table_ids = etekcity_table,
+	.id = "etekcity",
 	.probe = etekcity_probe,
 	.remove = etekcity_remove,
 	.read_profile = etekcity_read_profile,

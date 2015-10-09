@@ -59,7 +59,6 @@ struct ratbag {
 
 struct ratbag_device {
 	char *name;
-	const char *svg_name;
 	void *userdata;
 
 	struct udev_device *udev_device;
@@ -79,25 +78,15 @@ struct ratbag_device {
 	struct list link;
 };
 
-struct ratbag_id {
-	struct input_id id;
-	const char *svg_filename;
-	unsigned long data;
-	struct ratbag_test_device *test_device; /**< Test suite only */
-};
-
 /**
  * struct ratbag_driver - user space driver for a ratbag device
  */
 struct ratbag_driver {
-	/** the name of the driver */
+	/** A human-readable name of the driver */
 	char *name;
 
-	/**
-	 * A list of devices supported by this driver. The last element
-	 * must be empty to mark the end.
-	 */
-	const struct ratbag_id *table_ids;
+	/** The id of the driver used to match with RATBAG_DRIVER in udev */
+	char *id;
 
 	/**
 	 * Callback called while trying to open a device by libratbag.
@@ -107,7 +96,7 @@ struct ratbag_driver {
 	 * Return -ENODEV to ignore the device and let other drivers
 	 * probe the device. Any other error code will stop the probing.
 	 */
-	int (*probe)(struct ratbag_device *device, const struct ratbag_id id);
+	int (*probe)(struct ratbag_device *device);
 
 	/**
 	 * Callback called right before the struct ratbag_device is

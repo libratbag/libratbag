@@ -901,7 +901,7 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 }
 
 static int
-roccat_probe(struct ratbag_device *device, const struct ratbag_id id)
+roccat_probe(struct ratbag_device *device)
 {
 	int rc;
 	struct ratbag_profile *profile;
@@ -965,20 +965,9 @@ roccat_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
-static const struct ratbag_id roccat_table[] = {
-	{.id = { .bustype = BUS_USB,
-		 .vendor = 0x1e7d,
-		 .product = 0x2e22,
-		 .version = VERSION_ANY },
-	 .svg_filename = "roccat-kone-xtd.svg",
-	},
-
-	{ },
-};
-
 struct ratbag_driver roccat_driver = {
 	.name = "Roccat Kone XTD",
-	.table_ids = roccat_table,
+	.id = "roccat",
 	.probe = roccat_probe,
 	.remove = roccat_remove,
 	.read_profile = roccat_read_profile,

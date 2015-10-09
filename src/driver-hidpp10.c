@@ -198,7 +198,7 @@ hidpp10drv_test_hidraw(struct ratbag_device *device)
 }
 
 static int
-hidpp10drv_probe(struct ratbag_device *device, const struct ratbag_id id)
+hidpp10drv_probe(struct ratbag_device *device)
 {
 	int rc;
 	struct hidpp10drv_data *drv_data = NULL;
@@ -272,47 +272,9 @@ hidpp10drv_remove(struct ratbag_device *device)
 	free(drv_data);
 }
 
-#define LOGITECH_DEVICE(_bus, _pid)		\
-	{ .bustype = (_bus),			\
-	  .vendor = USB_VENDOR_ID_LOGITECH,	\
-	  .product = (_pid),			\
-	  .version = VERSION_ANY }
-
-static const struct ratbag_id hidpp10drv_table[] = {
-	/* M705 */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0x101b) },
-
-	/* M570 */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0x1028) },
-
-	/* G5 */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc041) },
-
-	/* G5 2007 */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc049) },
-
-	/* G9 */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc048) },
-
-	/* G9x [Original] */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc066) },
-
-	/* G9x [Call of Duty MW3 Edition] */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc249) },
-
-	/* G500 */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc068) },
-
-	/* G500s */
-	{ .id = LOGITECH_DEVICE(BUS_USB, 0xc24e),
-	  .svg_filename = "logitech-g500s.svg" },
-
-	{ },
-};
-
 struct ratbag_driver hidpp10_driver = {
 	.name = "Logitech HID++1.0",
-	.table_ids = hidpp10drv_table,
+	.id = "hidpp10",
 	.probe = hidpp10drv_probe,
 	.remove = hidpp10drv_remove,
 	.read_profile = hidpp10drv_read_profile,
