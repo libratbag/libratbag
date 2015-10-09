@@ -11,6 +11,12 @@ KERNELS=="input*", ENV{ID_BUS}=="usb", \
 KERNELS=="input*", ENV{ID_BUS}=="bluetooth", \
         IMPORT{builtin}="hwdb 'mouse:$env{ID_BUS}:v$attr{id/vendor}p$attr{id/product}:name:$attr{name}:'", \
         GOTO="mouse_end"
+KERNELS=="input*", ENV{DEVPATH}=="/devices/virtual/misc/uhid/0003:*", \
+        IMPORT{builtin}="hwdb 'mouse:usb:v$attr{id/vendor}p$attr{id/product}:name:$attr{name}:'", \
+        GOTO="mouse_end"
+KERNELS=="input*", ENV{DEVPATH}=="/devices/virtual/misc/uhid/0005:*", \
+        IMPORT{builtin}="hwdb 'mouse:bluetooth:v$attr{id/vendor}p$attr{id/product}:name:$attr{name}:'", \
+        GOTO="mouse_end"
 DRIVERS=="psmouse", SUBSYSTEMS=="serio", \
         IMPORT{builtin}="hwdb 'mouse:ps2::name:$attr{device/name}:'", \
         GOTO="mouse_end"
