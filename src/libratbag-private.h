@@ -181,6 +181,8 @@ struct ratbag_driver {
 				    int dpi_x, int dpi_y);
 
 	/* private */
+	int (*__test_probe)(struct ratbag_device *device, void *data);
+
 	struct list link;
 };
 

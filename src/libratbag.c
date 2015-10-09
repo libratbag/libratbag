@@ -294,9 +294,13 @@ ratbag_find_driver(struct ratbag_device *device,
 	int rc;
 	const char *driver_name;
 
-	driver_name = udev_prop_value(device->udev_device, "RATBAG_DRIVER");
-	if (!driver_name)
-		return NULL;
+	if (!test_device) {
+		driver_name = udev_prop_value(device->udev_device, "RATBAG_DRIVER");
+		if (!driver_name)
+			return NULL;
+	} else {
+		driver_name = "test_driver";
+	}
 
 	list_for_each(driver, &ratbag->drivers, link) {
 		if (!streq(driver->id, driver_name))
@@ -304,7 +308,10 @@ ratbag_find_driver(struct ratbag_device *device,
 
 		device->driver = driver;
 
-		rc = driver->probe(device);
+		if (test_device)
+			rc = driver->__test_probe(device, test_device);
+		else
+			rc = driver->probe(device);
 		if (rc == 0) {
 			if (!ratbag_sanity_check_device(device)) {
 				return NULL;

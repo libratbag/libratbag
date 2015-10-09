@@ -23,6 +23,8 @@
 
 #include "config.h"
 
+#include <errno.h>
+
 #include "libratbag-private.h"
 #include "libratbag-test.h"
 
@@ -81,12 +83,15 @@ test_write_profile(struct ratbag_profile *profile)
 }
 
 static int
-test_probe(struct ratbag_device *device)
+test_fake_probe(struct ratbag_device *device)
 {
-	struct ratbag_test_device *test_device;
+	return -ENODEV;
+}
 
-	/* FIXME: after the move to hwdb the test_device is no
-	 * longer passed in. */
+static int
+test_probe(struct ratbag_device *device, void *data)
+{
+	struct ratbag_test_device *test_device = data;
 
 	ratbag_set_drv_data(device, test_device);
 	ratbag_device_init_profiles(device,
@@ -109,7 +114,9 @@ test_remove(struct ratbag_device *device)
 
 struct ratbag_driver test_driver = {
 	.name = "Test driver",
-	.probe = test_probe,
+	.id = "test_driver",
+	.probe = test_fake_probe,
+	.__test_probe = test_probe,
 	.remove = test_remove,
 	.read_profile = test_read_profile,
 	.write_profile = test_write_profile,
