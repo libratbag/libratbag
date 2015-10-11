@@ -481,7 +481,7 @@ str_to_macro(const char *action_arg, struct macro *m)
 	if (!action_arg)
 		return -EINVAL;
 
-	str = strdup(action_arg);
+	str = strdup_safe(action_arg);
 	s = str;
 
 	m->name = "<cmdline>";

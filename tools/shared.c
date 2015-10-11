@@ -131,7 +131,7 @@ button_action_button_to_str(struct ratbag_button *button)
 
 	sprintf(str, "button %d", ratbag_button_get_button(button));
 
-	return strdup(str);
+	return strdup_safe(str);
 }
 
 char *
@@ -145,7 +145,7 @@ button_action_key_to_str(struct ratbag_button *button)
 	if (!str)
 		str = "UNKNOWN";
 
-	return strdup(str);
+	return strdup_safe(str);
 }
 
 static const char *strip_ev_key(int key)
@@ -191,7 +191,7 @@ button_action_macro_to_str(struct ratbag_button *button)
 		}
 	}
 
-	return strdup(str);
+	return strdup_safe(str);
 }
 
 char *
@@ -205,12 +205,12 @@ button_action_to_str(struct ratbag_button *button)
 	switch (type) {
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:	str = button_action_button_to_str(button); break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:	str = button_action_key_to_str(button); break;
-	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:	str = strdup(button_action_special_to_str(button)); break;
+	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:	str = strdup_safe(button_action_special_to_str(button)); break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:	str = button_action_macro_to_str(button); break;
-	case RATBAG_BUTTON_ACTION_TYPE_NONE:	str = strdup("none"); break;
+	case RATBAG_BUTTON_ACTION_TYPE_NONE:	str = strdup_safe("none"); break;
 	default:
 		error("type %d unknown\n", type);
-		str = strdup("UNKNOWN");
+		str = strdup_safe("UNKNOWN");
 	}
 
 	return str;

@@ -186,7 +186,7 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 	device->hidraw.reports = zalloc(reports_size);
 	ratbag_hidraw_parse_report_descriptor(device);
 
-	device->hidraw.sysname = strdup(sysname);
+	device->hidraw.sysname = strdup_safe(sysname);
 	return 0;
 
 err:

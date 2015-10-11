@@ -99,6 +99,24 @@ zalloc(size_t size)
 	return p;
 }
 
+/**
+ * returns NULL if str is NULL, otherwise guarantees a successful strdup.
+ */
+static inline char *
+strdup_safe(const char *str)
+{
+	char *s;
+
+	if (!str)
+		return NULL;
+
+	s = strdup(str);
+	if (!s)
+		abort();
+
+	return s;
+}
+
 static inline void
 msleep(unsigned int ms)
 {
