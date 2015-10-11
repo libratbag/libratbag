@@ -883,6 +883,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct ratbag_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi)
 {
 	uint8_t feature_index, feature_type, feature_version;
+	uint16_t returned_parameters;
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
@@ -907,7 +908,10 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct ratbag_device *device,
 	if (rc)
 		return rc;
 
-	if (hidpp20_get_unaligned_u16(&msg.msg.parameters[1]) != dpi)
+	returned_parameters = hidpp20_get_unaligned_u16(&msg.msg.parameters[1]);
+
+	/* version 0 of the protocol does not echo the parameters */
+	if (returned_parameters != dpi && returned_parameters)
 		return -EIO;
 
 	return 0;
