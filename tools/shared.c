@@ -129,7 +129,7 @@ button_action_button_to_str(struct ratbag_button *button)
 {
 	char str[96];
 
-	sprintf(str, "button %d", ratbag_button_get_button(button));
+	sprintf_safe(str, "button %d", ratbag_button_get_button(button));
 
 	return strdup_safe(str);
 }

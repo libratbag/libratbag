@@ -106,10 +106,10 @@ log_buffer(struct ratbag *ratbag,
 	output_buf = zalloc(buf_len);
 	n = 0;
 	if (header)
-		n += sprintf(output_buf, "%s", header);
+		n += snprintf_safe(output_buf, buf_len - n, "%s", header);
 
 	for (i = 0; i < len; ++i) {
-		n += sprintf(&output_buf[n], "%s%02x", sep, buf[i] & 0xFF);
+		n += snprintf_safe(&output_buf[n], buf_len - n, "%s%02x", sep, buf[i] & 0xFF);
 		sep = " ";
 	}
 
