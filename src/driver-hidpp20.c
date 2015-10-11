@@ -399,6 +399,22 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 			device->num_buttons = drv_data->num_controls;
 		break;
 	}
+	case HIDPP_PAGE_ADJUSTABLE_REPORT_RATE: {
+		log_debug(ratbag, "device has adjustable report rate\n");
+		break;
+	}
+	case HIDPP_PAGE_COLOR_LED_EFFECTS: {
+		log_debug(ratbag, "device has color effects\n");
+		break;
+	}
+	case HIDPP_PAGE_ONBOARD_PROFILES: {
+		log_debug(ratbag, "device has onboard profiles\n");
+		break;
+	}
+	case HIDPP_PAGE_MOUSE_BUTTON_SPY: {
+		log_debug(ratbag, "device has configurable mouse button spy\n");
+		break;
+	}
 	default:
 		log_raw(device->ratbag, "unknown feature 0x%04x\n", feature);
 	}

@@ -237,4 +237,28 @@ int hidpp20_adjustable_dpi_get_sensors(struct ratbag_device *device,
 int hidpp20_adjustable_dpi_set_sensor_dpi(struct ratbag_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi);
 
+/* -------------------------------------------------------------------------- */
+/* 0x8060 - Adjustable Report Rate                                            */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_ADJUSTABLE_REPORT_RATE		0x8060
+
+/* -------------------------------------------------------------------------- */
+/* 0x8070v4 - Color LED effects                                               */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_COLOR_LED_EFFECTS			0x8070
+
+/* -------------------------------------------------------------------------- */
+/* 0x8100 - Onboard Profiles                                                  */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_ONBOARD_PROFILES			0x8100
+
+/* -------------------------------------------------------------------------- */
+/* 0x8110 - Mouse Button Spy                                                  */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_MOUSE_BUTTON_SPY			0x8110
+
 #endif /* HIDPP_20_H */
