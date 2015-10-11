@@ -109,6 +109,41 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 			       uint8_t feature_bit_r2);
 
 /* -------------------------------------------------------------------------- */
+/* 0x07: Battery Status                                                       */
+/* -------------------------------------------------------------------------- */
+
+enum hidpp10_battery_level {
+	HIDPP10_BATTERY_LEVEL_UNKNOWN = 0x00,
+	HIDPP10_BATTERY_LEVEL_CRITICAL = 0x01,
+	HIDPP10_BATTERY_LEVEL_CRITICAL_LEGACY = 0x02,
+	HIDPP10_BATTERY_LEVEL_LOW = 0x03,
+	HIDPP10_BATTERY_LEVEL_LOW_LEGACY = 0x04,
+	HIDPP10_BATTERY_LEVEL_GOOD = 0x05,
+	HIDPP10_BATTERY_LEVEL_GOOD_LEGACY = 0x06,
+	HIDPP10_BATTERY_LEVEL_FULL_LEGACY = 0x07,
+	/* 0x08..0xFF ... reserved */
+};
+
+enum hidpp10_battery_charge_state {
+	HIDPP10_BATTERY_CHARGE_STATE_NOT_CHARGING = 0x00,
+	/* 0x01 ... 0x1F ... reserved (not charging) */
+	HIDPP10_BATTERY_CHARGE_STATE_UNKNOWN = 0x20,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING = 0x21,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_COMPLETE = 0x22,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_ERROR = 0x23,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_FAST = 0x24,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_SLOW = 0x25,
+	HIDPP10_BATTERY_CHARGE_STATE_TOPPING_CHARGE = 0x26,
+	/* 0x27 .. 0xff ... reserved */
+};
+
+int
+hidpp10_get_battery_status(struct hidpp10_device *dev,
+			   enum hidpp10_battery_level *level,
+			   enum hidpp10_battery_charge_state *charge_state,
+			   uint8_t *low_threshold_in_percent);
+
+/* -------------------------------------------------------------------------- */
 /* 0x0F: Profile queries                                                      */
 /* -------------------------------------------------------------------------- */
 #define PROFILE_NUM_BUTTONS				13

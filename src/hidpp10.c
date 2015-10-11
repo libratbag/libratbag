@@ -326,6 +326,47 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x07: Battery status                                                       */
+/* -------------------------------------------------------------------------- */
+#define __CMD_BATTERY_STATUS			0x07
+
+#define CMD_BATTERY_STATUS(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_BATTERY_STATUS, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+int
+hidpp10_get_battery_status(struct hidpp10_device *dev,
+			   enum hidpp10_battery_level *level,
+			   enum hidpp10_battery_charge_state *charge_state,
+			   uint8_t *low_threshold_in_percent)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message battery = CMD_BATTERY_STATUS(idx, GET_REGISTER_REQ);
+	int res;
+
+	res = hidpp10_request_command(dev, &battery);
+
+	*level = battery.msg.parameters[0];
+	*charge_state = battery.msg.parameters[1];
+	*low_threshold_in_percent = battery.msg.parameters[2];
+
+	if (*low_threshold_in_percent >= 7) {
+		/* reserved value, we just silently truncate it to 0 */
+		*low_threshold_in_percent = 0;
+	}
+
+	*low_threshold_in_percent *= 5; /* in 5% increments */
+
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x0F: Profile queries                                                      */
 /* -------------------------------------------------------------------------- */
 #define __CMD_PROFILE				0x0F
