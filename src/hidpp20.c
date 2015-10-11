@@ -171,6 +171,12 @@ hidpp20_get_unaligned_u16(uint8_t *buf)
 	return (buf[0] << 8) | buf[1];
 }
 
+static inline uint16_t
+hidpp20_get_unaligned_be_u16(uint8_t *buf)
+{
+	return (buf[1] << 8) | buf[0];
+}
+
 /* -------------------------------------------------------------------------- */
 /* 0x0000: Root                                                               */
 /* -------------------------------------------------------------------------- */
@@ -903,6 +909,147 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp_device *device,
 	/* version 0 of the protocol does not echo the parameters */
 	if (returned_parameters != dpi && returned_parameters)
 		return -EIO;
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x8100 - Onboard Profiles                                                  */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_ONBOARD_PROFILES_GET_PROFILES_DESCR		0x00
+#define CMD_ONBOARD_PROFILES_SET_CURRENT_PROFILE	0x30
+#define CMD_ONBOARD_PROFILES_GET_CURRENT_PROFILE	0x40
+#define CMD_ONBOARD_PROFILES_MEMORY_READ		0x50
+#define CMD_ONBOARD_PROFILES_MEMORY_ADDR_WRITE		0x60
+#define CMD_ONBOARD_PROFILES_MEMORY_WRITE		0x70
+#define CMD_ONBOARD_PROFILES_MEMORY_WRITE_END		0x80
+#define CMD_ONBOARD_PROFILES_GET_CURRENT_DPI_INDEX	0xb0
+#define CMD_ONBOARD_PROFILES_SET_CURRENT_DPI_INDEX	0xc0
+
+static int
+hidpp20_onboard_profiles_read_memory(struct hidpp_device *device,
+				     uint8_t reg,
+				     uint16_t page,
+				     uint16_t section,
+				     uint8_t *result)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = reg,
+		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_READ,
+		.msg.parameters[0] = page >> 8,
+		.msg.parameters[1] = page & 0xFF,
+		.msg.parameters[2] = section >> 8,
+		.msg.parameters[3] = section & 0xFF,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	/* msg.msg.parameters is guaranteed to have a size >= 16 */
+	memcpy(result, msg.msg.parameters, 16);
+
+	return 0;
+}
+
+int
+hidpp20_onboard_profiles_get_current_profile(struct hidpp_device *device,
+					     struct hidpp20_profiles *profiles_list)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = profiles_list->feature_index,
+		.msg.address = CMD_ONBOARD_PROFILES_GET_CURRENT_PROFILE,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return msg.msg.parameters[1];
+}
+
+int
+hidpp20_onboard_profiles_allocate(struct hidpp_device *device,
+				  struct hidpp20_profiles **profiles_list)
+{
+	uint8_t feature_index, feature_type, feature_version;
+	unsigned i;
+	int rc;
+	uint8_t data[16] = {0};
+	struct hidpp20_profiles *profiles;
+	unsigned profile_count = 0;
+
+	rc = hidpp_root_get_feature(device,
+				    HIDPP_PAGE_ONBOARD_PROFILES,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
+	if (rc)
+		return rc;
+
+	rc = hidpp20_onboard_profiles_read_memory(device, feature_index,
+						  0x0000,
+						  0x0000,
+						  data);
+	if (rc < 0)
+		return rc;
+
+	profiles = zalloc(sizeof(struct hidpp20_profiles));
+
+	for (i = 0; i < 3; i++) {
+		uint8_t *d = data + 4 * i;
+
+		if (d[0] == 0xFF && d[1] == 0xFF)
+			break;
+
+		profile_count++;
+		profiles->profiles[i].index = d[1];
+		profiles->profiles[i].enabled = d[2];
+	}
+
+	profiles->num_profiles = profile_count;
+	profiles->feature_index = feature_index;
+	profiles->num_modes = 5;
+
+	*profiles_list = profiles;
+
+	return profile_count;
+}
+
+int hidpp20_onboard_profiles_read(struct hidpp_device *device,
+				  unsigned int index,
+				  struct hidpp20_profiles *profiles_list)
+{
+	uint8_t data[16] = {0};
+	struct hidpp20_profile *profile = &profiles_list->profiles[index];
+	unsigned i;
+	int rc;
+
+	if (index >= profiles_list->num_profiles)
+		return -EINVAL;
+
+	rc = hidpp20_onboard_profiles_read_memory(device,
+						  profiles_list->feature_index,
+						  index + 1,
+						  0x0000,
+						  data);
+	if (rc < 0)
+		return rc;
+
+	profile->report_rate = 1000 / data[0];
+	profile->default_dpi = data[1];
+	profile->switched_dpi = data[2];
+
+	for (i = 0; i < 5; i++) {
+		profile->dpi[i] = hidpp20_get_unaligned_be_u16(&data[2 * i + 3]);
+	}
 
 	return 0;
 }
