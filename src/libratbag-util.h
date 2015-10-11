@@ -80,6 +80,14 @@ int list_empty(const struct list *list);
 #define streq(s1, s2) (strcmp((s1), (s2)) == 0)
 #define strneq(s1, s2, n) (strncmp((s1), (s2), (n)) == 0)
 
+static inline void
+cleanup_free(void *p) {
+	free(*(void**)p);
+}
+
+#define _cleanup_(x) __attribute__((cleanup(x)))
+#define _cleanup_free_ _cleanup_(cleanup_free)
+
 static inline char*
 strncpy_safe(char *dest, const char *src, size_t n)
 {
