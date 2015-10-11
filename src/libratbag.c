@@ -90,7 +90,7 @@ log_buffer(struct ratbag *ratbag,
 	const char *header,
 	uint8_t *buf, size_t len)
 {
-	char *output_buf;
+	_cleanup_free_ char *output_buf = NULL;
 	char *sep = "";
 	unsigned int i, n;
 	unsigned int buf_len;
@@ -114,8 +114,6 @@ log_buffer(struct ratbag *ratbag,
 	}
 
 	log_msg(ratbag, priority, "%s\n", output_buf);
-
-	free(output_buf);
 }
 
 LIBRATBAG_EXPORT void
@@ -208,8 +206,8 @@ static inline bool
 ratbag_sanity_check_device(struct ratbag_device *device)
 {
 	struct ratbag *ratbag = device->ratbag;
-	struct ratbag_profile *profile = NULL;
-	struct ratbag_resolution *res = NULL;
+	_cleanup_profile_ struct ratbag_profile *profile = NULL;
+	_cleanup_resolution_ struct ratbag_resolution *res = NULL;
 	bool has_active = false;
 	bool has_default = false;
 	unsigned int nres, nprofiles;
@@ -278,9 +276,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	rc = true;
 
 out:
-	ratbag_profile_unref(profile);
-	ratbag_resolution_unref(res);
-
 	return rc;
 }
 

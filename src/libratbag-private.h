@@ -33,6 +33,28 @@
 #include "libratbag-util.h"
 #include "libratbag-hidraw.h"
 
+static inline void
+cleanup_device(struct ratbag_device **d)
+{
+	ratbag_device_unref(*d);
+}
+
+static inline void
+cleanup_profile(struct ratbag_profile **p)
+{
+	ratbag_profile_unref(*p);
+}
+
+static inline void
+cleanup_resolution(struct ratbag_resolution **r)
+{
+	ratbag_resolution_unref(*r);
+}
+
+#define _cleanup_device_ _cleanup_(cleanup_device)
+#define _cleanup_profile_ _cleanup_(cleanup_profile)
+#define _cleanup_resolution_ _cleanup_(cleanup_resolution)
+
 #define BUS_ANY					0xffff
 #define VENDOR_ANY				0xffff
 #define PRODUCT_ANY				0xffff
