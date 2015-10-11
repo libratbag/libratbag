@@ -157,7 +157,7 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	struct ratbag_device *device = NULL;
 
 	device = zalloc(sizeof(*device));
-	device->name = strdup(name);
+	device->name = strdup_safe(name);
 
 	if (!name) {
 		free(device);
@@ -1190,7 +1190,7 @@ ratbag_button_set_macro(struct ratbag_button *button, const char *name)
 	}
 
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
-	button->action.macro->name = name ? strdup(name) : NULL;
+	button->action.macro->name = strdup_safe(name);
 
 	return 0;
 }
