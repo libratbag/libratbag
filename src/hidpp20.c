@@ -63,7 +63,7 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_ONBOARD_PROFILES);
 	CASE_RETURN_STRING(HIDPP_PAGE_MOUSE_BUTTON_SPY);
 	default:
-		sprintf(numeric, "%#4x", feature);
+		sprintf_safe(numeric, "%#4x", feature);
 		str = numeric;
 		break;
 	}

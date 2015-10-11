@@ -706,7 +706,7 @@ ratbag_cmd_list_supported_devices(const struct ratbag_cmd *cmd,
 
 	i = -1;
 	while (++i < n) {
-		sprintf(path, "/dev/input/%s", input_list[i]->d_name);
+		sprintf_safe(path, "/dev/input/%s", input_list[i]->d_name);
 		device = ratbag_cmd_open_device(ratbag, path);
 		if (device) {
 			printf("%s:\t%s\n", path, ratbag_device_get_name(device));

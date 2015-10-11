@@ -25,6 +25,7 @@
 #define LIBRATBAG_UTIL_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <libudev.h>
@@ -116,6 +117,25 @@ strdup_safe(const char *str)
 
 	return s;
 }
+
+static inline int
+snprintf_safe(char *buf, size_t n, const char *fmt, ...)
+{
+	va_list args;
+	int rc;
+
+	va_start(args, fmt);
+	rc = vsnprintf(buf, n, fmt, args);
+	va_end(args);
+
+	if (rc <= 0 || n < (size_t)rc)
+		abort();
+
+	return rc;
+}
+
+#define sprintf_safe(buf, fmt, ...) \
+	snprintf_safe(buf, ARRAY_LENGTH(buf), fmt, __VA_ARGS__)
 
 static inline void
 msleep(unsigned int ms)
