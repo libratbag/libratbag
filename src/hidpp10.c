@@ -627,10 +627,11 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 int
 hidpp10_get_led_status(struct hidpp10_device *dev,
-		       bool led[4])
+		       enum hidpp10_led_status led[6])
 {
 	unsigned idx = dev->index;
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, GET_REGISTER_REQ);
+	uint8_t *status = led_status.msg.parameters;
 	int res;
 
 	log_raw(dev->ratbag_device->ratbag, "Fetching LED status\n");
@@ -639,30 +640,47 @@ hidpp10_get_led_status(struct hidpp10_device *dev,
 	if (res)
 		return res;
 
-	/* each led is 4-bits, 0x1 == off, 0x2 == on */
-	led[0] = !!(led_status.msg.parameters[0] & 0x02); /* running man logo */
-	led[1] = !!(led_status.msg.parameters[0] & 0x20); /* lowest */
-	led[2] = !!(led_status.msg.parameters[1] & 0x02); /* middle */
-	led[3] = !!(led_status.msg.parameters[1] & 0x20); /* highest */
+	led[0] = status[0] & 0xF;
+	led[1] = (status[0] >> 4) & 0xF;
+	led[2] = status[1] & 0xF;
+	led[3] = (status[1] >> 4) & 0xF;
+	led[4] = status[2] & 0xF;
+	led[5] = (status[2] >> 4) & 0xF;
 
 	return 0;
 }
 
 int
 hidpp10_set_led_status(struct hidpp10_device *dev,
-		       const bool led[4])
+		       const enum hidpp10_led_status led[6])
 {
 	unsigned idx = dev->index;
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, SET_REGISTER_REQ);
+	uint8_t *status = led_status.msg.parameters;
 	int res;
+	int i;
 
 	log_raw(dev->ratbag_device->ratbag, "Setting LED status\n");
 
+	for (i = 0; i < 6; i++) {
+		switch (led[i]) {
+			case HIDPP10_LED_STATUS_NO_CHANGE:
+			case HIDPP10_LED_STATUS_OFF:
+			case HIDPP10_LED_STATUS_ON:
+			case HIDPP10_LED_STATUS_BLINK:
+			case HIDPP10_LED_STATUS_HEARTBEAT:
+			case HIDPP10_LED_STATUS_SLOW_ON:
+			case HIDPP10_LED_STATUS_SLOW_OFF:
+				break;
+			default:
+				abort();
+		}
+	}
+
 	/* each led is 4-bits, 0x1 == off, 0x2 == on */
-	led_status.msg.parameters[0] |= led[0] ? 0x02 : 0x01; /* running man logo */
-	led_status.msg.parameters[0] |= led[1] ? 0x20 : 0x10; /* lowest */
-	led_status.msg.parameters[1] |= led[2] ? 0x02 : 0x01; /* middle */
-	led_status.msg.parameters[1] |= led[3] ? 0x20 : 0x10; /* highest */
+	status[0] = led[0] | (led[1] << 4);
+	status[1] = led[2] | (led[3] << 4);
+	status[2] = led[4] | (led[5] << 4);
 
 	res = hidpp10_request_command(dev, &led_status);
 	return res;

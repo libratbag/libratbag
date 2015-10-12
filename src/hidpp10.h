@@ -208,12 +208,24 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number,
 /* -------------------------------------------------------------------------- */
 /* 0x51: LED Status                                                           */
 /* -------------------------------------------------------------------------- */
+
+enum hidpp10_led_status {
+	HIDPP10_LED_STATUS_NO_CHANGE = 0x0, /**< LED does not exist, or
+					      should not change */
+	HIDPP10_LED_STATUS_OFF = 0x1,
+	HIDPP10_LED_STATUS_ON = 0x2,
+	HIDPP10_LED_STATUS_BLINK = 0x3,
+	HIDPP10_LED_STATUS_HEARTBEAT = 0x4,
+	HIDPP10_LED_STATUS_SLOW_ON = 0x5,
+	HIDPP10_LED_STATUS_SLOW_OFF = 0x6,
+};
+
 int
 hidpp10_get_led_status(struct hidpp10_device *dev,
-		       bool led[4]);
+		       enum hidpp10_led_status led[6]);
 int
 hidpp10_set_led_status(struct hidpp10_device *dev,
-		       const bool led[4]);
+		       const enum hidpp10_led_status led[6]);
 
 /* -------------------------------------------------------------------------- */
 /* 0x54: LED Intensity                                                        */
@@ -306,7 +318,7 @@ struct hidpp10_device  {
 	uint8_t build;
 	uint16_t xres, yres;
 	uint16_t refresh_rate;
-	bool led[4];
+	enum hidpp10_led_status led[6];
 	int8_t current_profile;
 	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
 };
