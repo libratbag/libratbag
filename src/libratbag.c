@@ -1004,7 +1004,7 @@ ratbag_button_get_special(struct ratbag_button *button)
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_SPECIAL)
 		return 0;
 
-	return button->action.action.button;
+	return button->action.action.special;
 }
 
 LIBRATBAG_EXPORT int
