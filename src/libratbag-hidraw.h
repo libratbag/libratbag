@@ -151,4 +151,20 @@ ratbag_hidraw_get_usage_page(struct ratbag_device *device, unsigned int report_i
 unsigned int
 ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id);
 
+/**
+ * Gives the input key code associated to the keyboard HID usage.
+ *
+ * @return the key code of the HID usage or 0.
+ */
+unsigned int
+ratbag_hidraw_get_keycode(struct ratbag_device *device, uint8_t hid_code);
+
+/**
+ * Gives the HID keyboard usage associated to the input keycode.
+ *
+ * @return the HID keyboard usage or 0.
+ */
+uint8_t
+ratbag_hidraw_get_hid_keyboard_usage(struct ratbag_device *device,
+				     unsigned keycode);
 #endif /* LIBRATBAG_HIDRAW_H */
