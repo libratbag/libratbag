@@ -303,33 +303,38 @@ ratbag_find_driver(struct ratbag_device *device,
 	}
 
 	list_for_each(driver, &ratbag->drivers, link) {
-		if (!streq(driver->id, driver_name))
-			continue;
-
-		device->driver = driver;
-
-		if (test_device)
-			rc = driver->__test_probe(device, test_device);
-		else
-			rc = driver->probe(device);
-		if (rc == 0) {
-			if (!ratbag_sanity_check_device(device)) {
-				return NULL;
-			} else {
-				log_debug(ratbag, "driver match found: %s\n", driver->name);
-				return driver;
-			}
-		}
-
-		device->driver = NULL;
-
-		if (rc != -ENODEV) {
-			log_error(ratbag, "%s: no hidraw device found", device->name);
-			return NULL;
+		if (streq(driver->id, driver_name)) {
+			device->driver = driver;
+			break;
 		}
 	}
 
-	log_error(ratbag, "%s: driver specified in hwdb not found: %s\n", device->name, driver_name);
+	if (!device->driver) {
+		log_error(ratbag, "%s: driver specified in hwdb not found: %s\n",
+			  device->name, driver_name);
+		return NULL;
+	}
+
+	if (test_device)
+		rc = device->driver->__test_probe(device, test_device);
+	else
+		rc = device->driver->probe(device);
+	if (rc == 0) {
+		if (!ratbag_sanity_check_device(device)) {
+			return NULL;
+		} else {
+			log_debug(ratbag, "driver match found: %s\n", driver->name);
+			return device->driver;
+		}
+	}
+
+	device->driver = NULL;
+
+	if (rc != -ENODEV) {
+		log_error(ratbag, "%s: no hidraw device found", device->name);
+		return NULL;
+	}
+
 	return NULL;
 }
 
