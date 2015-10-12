@@ -216,6 +216,20 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 		       const bool led[4]);
 
 /* -------------------------------------------------------------------------- */
+/* 0x54: LED Intensity                                                        */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_get_led_intensity(struct hidpp10_device *dev,
+			  uint8_t led_intensity_in_percent[6]);
+
+/* Granularity for the led intensity is 10% increments. A value of 0 leaves
+ * the intensity unchanged */
+int
+hidpp10_set_led_intensity(struct hidpp10_device *dev,
+			  const uint8_t led_intensity_in_percent[6]);
+
+/* -------------------------------------------------------------------------- */
 /* 0x57: LED Color                                                           */
 /* -------------------------------------------------------------------------- */
 

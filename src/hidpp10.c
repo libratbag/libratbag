@@ -669,6 +669,69 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x54: LED Intensity                                                        */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_LED_INTENSITY			0x54
+
+#define CMD_LED_INTENSITY(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_LED_INTENSITY, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+int
+hidpp10_get_led_intensity(struct hidpp10_device *dev,
+			  uint8_t led_intensity_in_percent[6])
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, GET_REGISTER_REQ);
+	uint8_t *intensity = led_intensity.msg.parameters;
+	int res;
+
+	log_raw(dev->ratbag_device->ratbag, "Fetching LED intensity\n");
+
+	res = hidpp10_request_command(dev, &led_intensity);
+	if (res)
+		return res;
+
+	led_intensity_in_percent[0] = 10 * ((intensity[0]     ) & 0xF);
+	led_intensity_in_percent[1] = 10 * ((intensity[0] >> 4) & 0xF);
+	led_intensity_in_percent[2] = 10 * ((intensity[1]     ) & 0xF);
+	led_intensity_in_percent[3] = 10 * ((intensity[1] >> 4) & 0xF);
+	led_intensity_in_percent[4] = 10 * ((intensity[2]     ) & 0xF);
+	led_intensity_in_percent[5] = 10 * ((intensity[2] >> 4) & 0xF);
+
+	return 0;
+}
+
+int
+hidpp10_set_led_intensity(struct hidpp10_device *dev,
+			  const uint8_t led_intensity_in_percent[6])
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, SET_REGISTER_REQ);
+	uint8_t *intensity = led_intensity.msg.parameters;
+	int res;
+
+	log_raw(dev->ratbag_device->ratbag, "Setting LED intensity\n");
+
+	intensity[0]  = led_intensity_in_percent[0]/10 & 0xF;
+	intensity[0] |= (led_intensity_in_percent[1]/10 & 0xF) << 4;
+	intensity[1]  = led_intensity_in_percent[2]/10 & 0xF;
+	intensity[1] |= (led_intensity_in_percent[3]/10 & 0xF) << 4;
+	intensity[2]  = led_intensity_in_percent[4]/10 & 0xF;
+	intensity[2] |= (led_intensity_in_percent[5]/10 & 0xF) << 4;
+
+	res = hidpp10_request_command(dev, &led_intensity);
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x57: LED Color                                                            */
 /* -------------------------------------------------------------------------- */
 
