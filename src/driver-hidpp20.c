@@ -66,7 +66,7 @@ struct hidpp20drv_data {
 };
 
 static void
-hidpp20drv_read_button(struct ratbag_button *button)
+hidpp20drv_button_key_1b04_read_button(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -96,6 +96,38 @@ hidpp20drv_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+}
+
+static void
+hidpp20drv_onboard_profile_8100_read_button(struct ratbag_button *button)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *profile;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return;
+
+	profile = &drv_data->profiles->profiles[button->profile->index];
+
+	switch (profile->buttons[button->index].type) {
+	case HIDPP20_BUTTON_HID_MOUSE:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+		button->action.action.button = profile->buttons[button->index].code;
+		break;
+	}
+
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+}
+
+static void
+hidpp20drv_read_button(struct ratbag_button *button)
+{
+	hidpp20drv_button_key_1b04_read_button(button);
+	hidpp20drv_onboard_profile_8100_read_button(button);
 }
 
 static int
