@@ -218,6 +218,9 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x57: LED Color                                                           */
 /* -------------------------------------------------------------------------- */
+
+/* Note: this changes the color of the LED only, use 0x51 to turn the LED
+ * on/off */
 int
 hidpp10_get_led_color(struct hidpp10_device *dev,
 		      uint8_t *red,
