@@ -370,6 +370,75 @@ hidpp10_get_battery_status(struct hidpp10_device *dev,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x0D: Battery mileage                                                      */
+/* -------------------------------------------------------------------------- */
+#define __CMD_BATTERY_MILEAGE			0x0D
+
+#define CMD_BATTERY_MILEAGE(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_BATTERY_MILEAGE, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+int
+hidpp10_get_battery_mileage(struct hidpp10_device *dev,
+			    uint8_t *level_in_percent,
+			    uint32_t *max_seconds,
+			    enum hidpp10_battery_charge_state *state)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message battery = CMD_BATTERY_MILEAGE(idx, GET_REGISTER_REQ);
+	int res;
+	int max;
+
+	res = hidpp10_request_command(dev, &battery);
+
+	*level_in_percent = battery.msg.parameters[0] & 0x7F;
+
+	max = battery.msg.parameters[1];
+	max |= (battery.msg.parameters[2] & 0xF) << 8;
+
+	switch((battery.msg.parameters[2] & 0x30) >> 4) {
+	case 0x03: /* days */
+		max *= 24;
+
+		/* fallthrough */
+	case 0x02: /* hours */
+		max *= 60;
+
+		/* fallthrough */
+	case 0x01: /* min */
+		max *= 60;
+		break;
+	case 0x00: /* seconds */
+		break;
+	}
+
+	*max_seconds = max;
+
+	switch(battery.msg.parameters[2] >> 6) {
+	case 0x00:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_NOT_CHARGING;
+		break;
+	case 0x01:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_CHARGING;
+		break;
+	case 0x02:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_CHARGING_COMPLETE;
+		break;
+	case 0x03:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_CHARGING_ERROR;
+		break;
+	}
+
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x0F: Profile queries                                                      */
 /* -------------------------------------------------------------------------- */
 #define __CMD_PROFILE				0x0F

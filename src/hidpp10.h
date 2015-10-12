@@ -142,6 +142,15 @@ hidpp10_get_battery_status(struct hidpp10_device *dev,
 			   enum hidpp10_battery_level *level,
 			   enum hidpp10_battery_charge_state *charge_state,
 			   uint8_t *low_threshold_in_percent);
+/* -------------------------------------------------------------------------- */
+/* 0x0D: Battery Mileage                                                      */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_get_battery_mileage(struct hidpp10_device *dev,
+			    uint8_t *level_in_percent,
+			    uint32_t *max_seconds,
+			    enum hidpp10_battery_charge_state *state);
 
 /* -------------------------------------------------------------------------- */
 /* 0x0F: Profile queries                                                      */
