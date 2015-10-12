@@ -203,7 +203,6 @@ __ratbag_find_hidraw(struct ratbag_device *device,
 	struct ratbag *ratbag = device->ratbag;
 	struct udev_enumerate *e;
 	struct udev_list_entry *entry;
-	struct udev_device *udev_device;
 	const char *path;
 	struct udev_device *hid_udev;
 	struct udev_device *parent_udev;
@@ -234,6 +233,8 @@ __ratbag_find_hidraw(struct ratbag_device *device,
 	udev_enumerate_add_match_parent(e, parent_udev);
 	udev_enumerate_scan_devices(e);
 	udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
+		_cleanup_udev_device_unref_ struct udev_device *udev_device;
+
 		path = udev_list_entry_get_name(entry);
 		udev_device = udev_device_new_from_syspath(udev, path);
 		if (!udev_device)
@@ -246,13 +247,11 @@ __ratbag_find_hidraw(struct ratbag_device *device,
 		matched = match(device);
 		if (matched == 1) {
 			rc = 0;
-			udev_device_unref(udev_device);
 			goto out;
 		}
 
 skip:
 		ratbag_close_hidraw(device);
-		udev_device_unref(udev_device);
 		rc = -ENODEV;
 	}
 

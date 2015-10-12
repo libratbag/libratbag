@@ -220,20 +220,15 @@ struct ratbag_device *
 ratbag_cmd_open_device(struct ratbag *ratbag, const char *path)
 {
 	struct ratbag_device *device;
-	struct udev *udev;
-	struct udev_device *udev_device;
+	_cleanup_udev_unref_ struct udev *udev = NULL;
+	_cleanup_udev_device_unref_ struct udev_device *udev_device = NULL;
 
 	udev = udev_new();
 	udev_device = udev_device_from_path(udev, path);
-	if (!udev_device) {
-		udev_unref(udev);
+	if (!udev_device)
 		return NULL;
-	}
 
 	device = ratbag_device_new_from_udev_device(ratbag, udev_device);
-
-	udev_device_unref(udev_device);
-	udev_unref(udev);
 
 	return device;
 }
