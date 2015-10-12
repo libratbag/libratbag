@@ -61,7 +61,7 @@ int list_empty(const struct list *list);
 	     pos = container_of(pos->member.next, pos, member))
 
 #define list_for_each_safe(pos, tmp, head, member)			\
-	for (pos = 0, tmp = 0, 						\
+	for (pos = 0, tmp = 0,						\
 	     pos = container_of((head)->next, pos, member),		\
 	     tmp = container_of((pos)->member.next, tmp, member);	\
 	     &pos->member != (head);					\
