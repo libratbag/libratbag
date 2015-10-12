@@ -211,6 +211,9 @@ static int
 hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
 		    uint8_t bytes[16]);
 
+static inline void
+hidpp10_dump_all_pages(struct hidpp10_device *dev);
+
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
 /* -------------------------------------------------------------------------- */
@@ -966,6 +969,30 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
 	memcpy(bytes, readmem.msg.string, sizeof(readmem.msg.string));
 
 	return 0;
+}
+
+static inline void
+hidpp10_dump_all_pages(struct hidpp10_device *dev)
+{
+	uint16_t page, offset;
+	uint8_t bytes[16];
+	int res;
+
+	log_info(dev->ratbag_device->ratbag, "::::::: Dumping memory :::::\n");
+
+	for (page = 0; page < 512; page++) {
+		log_info(dev->ratbag_device->ratbag, ":: page %d\n", page);
+		for (offset = 0; offset < 256; offset += 16) {
+			res = hidpp10_read_memory(dev, page, offset, bytes);
+			if (res != 0)
+				goto out;
+
+			log_buffer(dev->ratbag_device->ratbag, RATBAG_LOG_PRIORITY_INFO, " ", bytes, ARRAY_LENGTH(bytes));
+		}
+	}
+
+out:
+	log_info(dev->ratbag_device->ratbag, "::::::: Dumping memory complete :::::\n");
 }
 
 /* -------------------------------------------------------------------------- */
