@@ -90,7 +90,7 @@ log_buffer(struct ratbag *ratbag,
 	const char *header,
 	uint8_t *buf, size_t len)
 {
-	char *output_buf;
+	_cleanup_free_ char *output_buf = NULL;
 	char *sep = "";
 	unsigned int i, n;
 	unsigned int buf_len;
@@ -106,16 +106,14 @@ log_buffer(struct ratbag *ratbag,
 	output_buf = zalloc(buf_len);
 	n = 0;
 	if (header)
-		n += sprintf(output_buf, "%s", header);
+		n += snprintf_safe(output_buf, buf_len - n, "%s", header);
 
 	for (i = 0; i < len; ++i) {
-		n += sprintf(&output_buf[n], "%s%02x", sep, buf[i] & 0xFF);
+		n += snprintf_safe(&output_buf[n], buf_len - n, "%s%02x", sep, buf[i] & 0xFF);
 		sep = " ";
 	}
 
 	log_msg(ratbag, priority, "%s\n", output_buf);
-
-	free(output_buf);
 }
 
 LIBRATBAG_EXPORT void
@@ -157,7 +155,7 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	struct ratbag_device *device = NULL;
 
 	device = zalloc(sizeof(*device));
-	device->name = strdup(name);
+	device->name = strdup_safe(name);
 
 	if (!name) {
 		free(device);
@@ -208,8 +206,8 @@ static inline bool
 ratbag_sanity_check_device(struct ratbag_device *device)
 {
 	struct ratbag *ratbag = device->ratbag;
-	struct ratbag_profile *profile = NULL;
-	struct ratbag_resolution *res = NULL;
+	_cleanup_profile_ struct ratbag_profile *profile = NULL;
+	_cleanup_resolution_ struct ratbag_resolution *res = NULL;
 	bool has_active = false;
 	bool has_default = false;
 	unsigned int nres, nprofiles;
@@ -278,9 +276,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	rc = true;
 
 out:
-	ratbag_profile_unref(profile);
-	ratbag_resolution_unref(res);
-
 	return rc;
 }
 
@@ -1180,7 +1175,7 @@ ratbag_button_set_macro(struct ratbag_button *button, const char *name)
 	}
 
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
-	button->action.macro->name = name ? strdup(name) : NULL;
+	button->action.macro->name = strdup_safe(name);
 
 	return 0;
 }

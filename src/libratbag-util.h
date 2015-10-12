@@ -25,6 +25,7 @@
 #define LIBRATBAG_UTIL_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <libudev.h>
@@ -79,6 +80,14 @@ int list_empty(const struct list *list);
 #define streq(s1, s2) (strcmp((s1), (s2)) == 0)
 #define strneq(s1, s2, n) (strncmp((s1), (s2), (n)) == 0)
 
+static inline void
+cleanup_free(void *p) {
+	free(*(void**)p);
+}
+
+#define _cleanup_(x) __attribute__((cleanup(x)))
+#define _cleanup_free_ _cleanup_(cleanup_free)
+
 static inline char*
 strncpy_safe(char *dest, const char *src, size_t n)
 {
@@ -98,6 +107,43 @@ zalloc(size_t size)
 		abort();
 	return p;
 }
+
+/**
+ * returns NULL if str is NULL, otherwise guarantees a successful strdup.
+ */
+static inline char *
+strdup_safe(const char *str)
+{
+	char *s;
+
+	if (!str)
+		return NULL;
+
+	s = strdup(str);
+	if (!s)
+		abort();
+
+	return s;
+}
+
+static inline int
+snprintf_safe(char *buf, size_t n, const char *fmt, ...)
+{
+	va_list args;
+	int rc;
+
+	va_start(args, fmt);
+	rc = vsnprintf(buf, n, fmt, args);
+	va_end(args);
+
+	if (rc < 0 || n < (size_t)rc)
+		abort();
+
+	return rc;
+}
+
+#define sprintf_safe(buf, fmt, ...) \
+	snprintf_safe(buf, ARRAY_LENGTH(buf), fmt, __VA_ARGS__)
 
 static inline void
 msleep(unsigned int ms)
