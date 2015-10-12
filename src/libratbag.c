@@ -436,10 +436,8 @@ ratbag_device_unref(struct ratbag_device *device)
 
 	assert(device->refcount > 0);
 	device->refcount--;
-	if (device->refcount > 0)
-		return device;
-
-	ratbag_device_destroy(device);
+	if (device->refcount == 0)
+		ratbag_device_destroy(device);
 
 	return NULL;
 }
@@ -521,11 +519,10 @@ ratbag_unref(struct ratbag *ratbag)
 
 	assert(ratbag->refcount > 0);
 	ratbag->refcount--;
-	if (ratbag->refcount > 0)
-		return ratbag;
-
-	ratbag->udev = udev_unref(ratbag->udev);
-	free(ratbag);
+	if (ratbag->refcount == 0) {
+		ratbag->udev = udev_unref(ratbag->udev);
+		free(ratbag);
+	}
 
 	return NULL;
 }
@@ -636,19 +633,15 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile)
 {
-	struct ratbag_profile *p = NULL;
-
 	if (profile == NULL)
 		return NULL;
 
 	assert(profile->refcount > 0);
 	profile->refcount--;
-	if (profile->refcount > 0)
-		p = profile;
 
 	ratbag_device_unref(profile->device);
 
-	return p;
+	return NULL;
 }
 
 LIBRATBAG_EXPORT struct ratbag_profile *
@@ -806,19 +799,15 @@ ratbag_resolution_ref(struct ratbag_resolution *resolution)
 LIBRATBAG_EXPORT struct ratbag_resolution *
 ratbag_resolution_unref(struct ratbag_resolution *resolution)
 {
-	struct ratbag_resolution *r = NULL;
-
 	if (resolution == NULL)
 		return NULL;
 
 	assert(resolution->refcount > 0);
 	resolution->refcount--;
-	if (resolution->refcount > 0)
-		r = resolution;
 
 	ratbag_profile_unref(resolution->profile);
 
-	return r;
+	return NULL;
 }
 
 LIBRATBAG_EXPORT int
@@ -1108,19 +1097,15 @@ ratbag_button_destroy(struct ratbag_button *button)
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button)
 {
-	struct ratbag_button *b = NULL;
-
 	if (button == NULL)
 		return NULL;
 
 	assert(button->refcount > 0);
 	button->refcount--;
-	if (button->refcount > 0)
-		b = button;
 
 	ratbag_profile_unref(button->profile);
 
-	return b;
+	return NULL;
 }
 
 LIBRATBAG_EXPORT void

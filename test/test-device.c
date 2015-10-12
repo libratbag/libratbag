@@ -144,13 +144,13 @@ END_TEST
 	 } \
 	 for (i = 0; i <= 256; i++) { \
 		 tmp = T##_unref(a); \
-		 ck_assert(tmp == a); \
+		 ck_assert(tmp == NULL); \
 	 } \
 	 for (i = 0; i <= 256; i++) { \
 		 tmp = T##_ref(a); \
 		 ck_assert(tmp == a); \
 		 tmp = T##_unref(a); \
-		 ck_assert(tmp == a); \
+		 ck_assert(tmp == NULL); \
 	 } \
  }
 
@@ -183,7 +183,7 @@ START_TEST(device_free_context_before_device)
 	ck_assert(d != NULL);
 
 	r = ratbag_unref(r);
-	ck_assert(r != NULL);
+	ck_assert(r == NULL);
 
 	d = ratbag_device_unref(d);
 	ck_assert(d == NULL);
@@ -465,8 +465,8 @@ START_TEST(device_freed_before_profile)
 	ck_assert_int_eq(is_active, 0);
 
 	d = ratbag_device_unref(d);
-	/* a ref to d is still kept through p, so d can not be NULL */
-	ck_assert(d != NULL);
+	/* a ref to d is still kept through p */
+	ck_assert(d == NULL);
 
 	rc = ratbag_profile_set_active(p);
 	ck_assert_int_eq(rc, 0);
@@ -500,15 +500,15 @@ START_TEST(device_and_profile_freed_before_button)
 	ck_assert(p != NULL);
 
 	d = ratbag_device_unref(d);
-	/* a ref to d is still kept through p, so d can not be NULL */
-	ck_assert(d != NULL);
+	/* a ref to d is still kept through p */
+	ck_assert(d == NULL);
 
 	b = ratbag_profile_get_button(p, 0);
 	ck_assert(b != NULL);
 
 	p = ratbag_profile_unref(p);
-	/* a ref to p is still kept through b, so p can not be NULL */
-	ck_assert(p != NULL);
+	/* a ref to p is still kept through b */
+	ck_assert(p == NULL);
 
 	/* FIXME: should probably call something for the button */
 	b = ratbag_button_unref(b);
@@ -539,15 +539,15 @@ START_TEST(device_and_profile_freed_before_resolution)
 	ck_assert(p != NULL);
 
 	d = ratbag_device_unref(d);
-	/* a ref to d is still kept through p, so d can not be NULL */
-	ck_assert(d != NULL);
+	/* a ref to d is still kept through p */
+	ck_assert(d == NULL);
 
 	res = ratbag_profile_get_resolution(p, 0);
 	ck_assert(res != NULL);
 
 	p = ratbag_profile_unref(p);
-	/* a ref to p is still kept through res, so p can not be NULL */
-	ck_assert(p != NULL);
+	/* a ref to p is still kept through res */
+	ck_assert(p == NULL);
 
 	/* FIXME: should probably call something for the resolution */
 	res = ratbag_resolution_unref(res);
@@ -580,7 +580,7 @@ START_TEST(device_and_profile_and_button_freed_before_resolution)
 
 	d = ratbag_device_unref(d);
 	/* a ref to d is still kept through p, so d can not be NULL */
-	ck_assert(d != NULL);
+	ck_assert(d == NULL);
 
 	res = ratbag_profile_get_resolution(p, 0);
 	ck_assert(res != NULL);
@@ -589,8 +589,8 @@ START_TEST(device_and_profile_and_button_freed_before_resolution)
 	ck_assert(b != NULL);
 
 	p = ratbag_profile_unref(p);
-	/* a ref to p is still kept through res and b, so p can not be NULL */
-	ck_assert(p != NULL);
+	/* a ref to p is still kept through res and b */
+	ck_assert(p == NULL);
 
 	/* a ref to p is still in res */
 	b = ratbag_button_unref(b);
@@ -626,8 +626,8 @@ START_TEST(device_and_profile_and_resolution_freed_before_button)
 	ck_assert(p != NULL);
 
 	d = ratbag_device_unref(d);
-	/* a ref to d is still kept through p, so d can not be NULL */
-	ck_assert(d != NULL);
+	/* a ref to d is still kept through p */
+	ck_assert(d == NULL);
 
 	res = ratbag_profile_get_resolution(p, 0);
 	ck_assert(res != NULL);
@@ -636,8 +636,8 @@ START_TEST(device_and_profile_and_resolution_freed_before_button)
 	ck_assert(b != NULL);
 
 	p = ratbag_profile_unref(p);
-	/* a ref to p is still kept through res and b, so p can not be NULL */
-	ck_assert(p != NULL);
+	/* a ref to p is still kept through res and b */
+	ck_assert(p == NULL);
 
 	/* a ref to p is still in res */
 	res = ratbag_resolution_unref(res);

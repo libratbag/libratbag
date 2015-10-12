@@ -347,12 +347,12 @@ ratbag_device_ref(struct ratbag_device *device);
 /**
  * @ingroup device
  *
- * Dereference the ratbag device. After this, the device may have been
- * destroyed, if the last reference was dereferenced. If so, the device is
- * invalid and may not be interacted with.
+ * Dereference the ratbag device. When the internal refcount reaches
+ * zero, all resources associated with this object are released. The object
+ * must be considered invalid once unref is called.
  *
  * @param device A previously initialized ratbag device
- * @return NULL if device was destroyed otherwise the passed device
+ * @return Always NULL
  */
 struct ratbag_device *
 ratbag_device_unref(struct ratbag_device *device);
@@ -505,12 +505,12 @@ ratbag_profile_ref(struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
- * Dereference the ratbag profile. After this, the profile may have been
- * destroyed, if the last reference was dereferenced. If so, the profile is
- * invalid and may not be interacted with.
+ * Dereference the ratbag profile. When the internal refcount reaches
+ * zero, all resources associated with this object are released. The object
+ * must be considered invalid once unref is called.
  *
  * @param profile A previously initialized ratbag profile
- * @return NULL if context was destroyed otherwise the passed profile
+ * @return Always NULL
  */
 struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile);
@@ -671,12 +671,12 @@ ratbag_resolution_ref(struct ratbag_resolution *resolution);
 /**
  * @ingroup resolution
  *
- * Dereference the ratbag resolution. After this, the resolution may have been
- * destroyed, if the last reference was dereferenced. If so, the resolution is
- * invalid and may not be interacted with.
+ * Dereference the ratbag resolution. When the internal refcount reaches
+ * zero, all resources associated with this object are released. The object
+ * must be considered invalid once unref is called.
  *
  * @param resolution A previously initialized ratbag resolution
- * @return NULL if the resolution was destroyed otherwise the passed resolution
+ * @return Always NULL
  */
 struct ratbag_resolution *
 ratbag_resolution_unref(struct ratbag_resolution *resolution);
@@ -1392,12 +1392,12 @@ ratbag_button_ref(struct ratbag_button *button);
 /**
  * @ingroup button
  *
- * Dereference the ratbag button. After this, the button may have been
- * destroyed, if the last reference was dereferenced. If so, the button is
- * invalid and may not be interacted with.
+ * Dereference the ratbag button. When the internal refcount reaches
+ * zero, all resources associated with this object are released. The object
+ * must be considered invalid once unref is called.
  *
  * @param button A previously initialized ratbag button
- * @return NULL if the button was destroyed otherwise the passed button
+ * @return Always NULL
  */
 struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button);

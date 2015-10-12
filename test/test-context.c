@@ -107,9 +107,9 @@ START_TEST(context_ref)
 	ck_assert_ptr_eq(lr, lr2);
 
 	lr2 = ratbag_unref(lr2);
-	ck_assert_ptr_eq(lr2, lr);
+	ck_assert_ptr_eq(lr2, NULL);
 
-	lr2 = ratbag_unref(lr2);
+	lr2 = ratbag_unref(lr);
 	ck_assert_ptr_eq(lr2, NULL);
 }
 END_TEST
