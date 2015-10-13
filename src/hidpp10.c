@@ -275,8 +275,7 @@ hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 
 int
 hidpp10_get_individual_features(struct hidpp10_device *dev,
-				uint8_t *feature_bit_r0,
-				uint8_t *feature_bit_r2)
+				uint32_t *feature_mask)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
@@ -288,16 +287,18 @@ hidpp10_get_individual_features(struct hidpp10_device *dev,
 	if (res)
 		return res;
 
-	*feature_bit_r0 = features.msg.parameters[0];
-	*feature_bit_r2 = features.msg.parameters[2];
+	*feature_mask = features.msg.parameters[0];
+	/* bits 0 and 4-7 are reserved */
+	*feature_mask |= (features.msg.parameters[1] & 0x0E) << 8;
+	/* bits 6-7 are reserved */
+	*feature_mask |= (features.msg.parameters[2] & 0x3F) << 16;
 
 	return 0;
 }
 
 int
-hidpp10_set_individual_feature(struct hidpp10_device *dev,
-			       uint8_t feature_bit_r0,
-			       uint8_t feature_bit_r2)
+hidpp10_set_individual_features(struct hidpp10_device *dev,
+				uint32_t feature_mask)
 {
 	unsigned idx = RECEIVER_IDX;
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, SET_REGISTER_REQ);
@@ -307,8 +308,9 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 
 	mode.msg.device_idx = dev->index;
 
-	mode.msg.parameters[0] = feature_bit_r0;
-	mode.msg.parameters[1] = feature_bit_r2;
+	mode.msg.parameters[0] = feature_mask & 0xFF;
+	mode.msg.parameters[1] = (feature_mask >> 8) & 0x0E;
+	mode.msg.parameters[2] = (feature_mask >> 16) & 0x3F;
 
 	res = hidpp10_request_command(dev, &mode);
 
@@ -1240,11 +1242,12 @@ void hidpp10_list_devices(struct ratbag_device *device) {
 static int
 hidpp10_get_device_info(struct hidpp10_device *dev)
 {
+	uint32_t feature_mask;
 	uint8_t f1, f2;
 	uint8_t reflect;
 	int i;
 
-	hidpp10_get_individual_features(dev, &f1, &f2);
+	hidpp10_get_individual_features(dev, &feature_mask);
 	hidpp10_get_hidpp_notifications(dev, &f1, &f2);
 
 	hidpp10_get_current_resolution(dev, &dev->xres, &dev->yres);

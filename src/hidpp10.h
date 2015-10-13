@@ -89,24 +89,117 @@ hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x01: Enable Individual Features                                           */
 /* -------------------------------------------------------------------------- */
-#define FEATURE_BIT_R0_SPECIAL_BUTTON_FUNCTION		1
-#define FEATURE_BIT_R0_ENHANCED_KEY_USAGE		2
-#define FEATURE_BIT_R0_FAST_FORWARD_REWIND		3
-#define FEATURE_BIT_R0_SCROLLING_ACCELERATION		6
-#define FEATURE_BIT_R0_BUTTONS_CONTROL_THE_RESOLUTION	7
-#define FEATURE_BIT_R2_INHIBIT_LOCK_KEY_SOUND		0
-#define FEATURE_BIT_R2_3D_ENGINE			2
-#define FEATURE_BIT_R2_HOST_SW_CONTROLS_LEDS		3
+
+enum hidpp10_individual_features {
+	HIDPP10_FEATURE_BIT_MOUSE_SENSOR_RESOLUTION = (1 << 0),
+	/**
+	 * disabled: buttons send button codes
+	 * enabled: buttons have special functions (default)
+	 * @note Do not use, use 0x63 instead
+	 */
+	HIDPP10_FEATURE_BIT_SPECIAL_BUTTON_FUNCTION = (1 << 1),
+	/**
+	 * disabled: normal key usage (default)
+	 * enabled: enhanced key usage
+	 */
+	HIDPP10_FEATURE_BIT_ENHANCED_KEY_USAGE      = (1 << 2),
+	/**
+	 * disabled: (default)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_FAST_FORWARD_REWIND     = (1 << 3),
+	/**
+	 * disabled: (default)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_SEND_CALCULATOR_RESULT  = (1 << 4),
+	/**
+	 * disabled:
+	 * enabled: (default)
+	 */
+	HIDPP10_FEATURE_BIT_MOTION_WAKEUP           = (1 << 5),
+	/**
+	 * disabled: (default)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_FAST_SCROLLING          = (1 << 6),
+	/**
+	 * disabled: work as buttons
+	 * enabled: control the resolution (default)
+	 */
+	HIDPP10_FEATURE_BIT_BUTTONS_CONTROL_RESOLUTION = (1 << 7),
+
+	/* 1 << 8 is reserved */
+
+	/**
+	 * disabled: (default)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_RECEIVER_MULTIPLE_RF_LOCK = (1 << 9),
+
+	/**
+	 * disabled: (default)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_RECEIVER_DISABLE_RFSCAN_IN_SUSPEND = (1 << 10),
+
+	/**
+	 * disabled: (default)
+	 * enabled:
+	 *
+	 * When enabled,removes all compatibility checks.
+	 */
+	HIDPP10_FEATURE_BIT_RECEIVER_ACCEPT_ALL_DEVICES_IN_PAIRING = (1 << 11),
+
+	/* 1 << 12 is reserved */
+	/* 1 << 13 is reserved */
+	/* 1 << 14 is reserved */
+	/* 1 << 15 is reserved */
+
+	/**
+	 * disabled: (default)
+	 * enabled: no sound
+	 */
+	HIDPP10_FEATURE_BIT_INHIBIT_LOCK_KEY_SOUND  = (1 << 16),
+
+	/**
+	 * disabled: (default)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_INHIBIT_TOUCHPAD        = (1 << 17),
+
+	/**
+	 * disabled:
+	 * enabled: (default)
+	 */
+	HIDPP10_FEATURE_BIT_3D_ENGINE               = (1 << 18),
+
+	/**
+	 * disabled: (disabled)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_SW_CONTROLS_LEDS        = (1 << 19),
+
+	/**
+	 * disabled: (disabled)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_NO_NUMLOCK_TOGGLE       = (1 << 20),
+
+	/**
+	 * disabled: (disabled)
+	 * enabled:
+	 */
+	HIDPP10_FEATURE_BIT_INHIBIT_PRESENCE_DETECTION = (1 << 21),
+};
 
 int
 hidpp10_get_individual_features(struct hidpp10_device *dev,
-				uint8_t *feature_bit_r0,
-				uint8_t *feature_bit_r2);
+				uint32_t *feature_mask);
 
 int
-hidpp10_set_individual_feature(struct hidpp10_device *dev,
-			       uint8_t feature_bit_r0,
-			       uint8_t feature_bit_r2);
+hidpp10_set_individual_features(struct hidpp10_device *dev,
+				uint32_t feature_mask);
 
 /* -------------------------------------------------------------------------- */
 /* 0x07: Battery Status                                                       */
