@@ -290,6 +290,10 @@ int
 hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t *rate);
 
+int
+hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
+			     uint16_t rate);
+
 /* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */

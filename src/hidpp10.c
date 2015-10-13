@@ -1001,6 +1001,20 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 	return 0;
 }
 
+int
+hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
+			     uint16_t rate)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
+
+	log_raw(dev->ratbag_device->ratbag, "Setting USB refresh rate\n");
+
+	refresh.msg.parameters[0] = 1000/rate;
+
+	return hidpp10_request_command(dev, &refresh);
+}
+
 /* -------------------------------------------------------------------------- */
 /* 0xA2: Reading memory                                                       */
 /* -------------------------------------------------------------------------- */
