@@ -109,6 +109,50 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 			       uint8_t feature_bit_r2);
 
 /* -------------------------------------------------------------------------- */
+/* 0x07: Battery Status                                                       */
+/* -------------------------------------------------------------------------- */
+
+enum hidpp10_battery_level {
+	HIDPP10_BATTERY_LEVEL_UNKNOWN = 0x00,
+	HIDPP10_BATTERY_LEVEL_CRITICAL = 0x01,
+	HIDPP10_BATTERY_LEVEL_CRITICAL_LEGACY = 0x02,
+	HIDPP10_BATTERY_LEVEL_LOW = 0x03,
+	HIDPP10_BATTERY_LEVEL_LOW_LEGACY = 0x04,
+	HIDPP10_BATTERY_LEVEL_GOOD = 0x05,
+	HIDPP10_BATTERY_LEVEL_GOOD_LEGACY = 0x06,
+	HIDPP10_BATTERY_LEVEL_FULL_LEGACY = 0x07,
+	/* 0x08..0xFF ... reserved */
+};
+
+enum hidpp10_battery_charge_state {
+	HIDPP10_BATTERY_CHARGE_STATE_NOT_CHARGING = 0x00,
+	/* 0x01 ... 0x1F ... reserved (not charging) */
+	HIDPP10_BATTERY_CHARGE_STATE_UNKNOWN = 0x20,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING = 0x21,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_COMPLETE = 0x22,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_ERROR = 0x23,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_FAST = 0x24,
+	HIDPP10_BATTERY_CHARGE_STATE_CHARGING_SLOW = 0x25,
+	HIDPP10_BATTERY_CHARGE_STATE_TOPPING_CHARGE = 0x26,
+	/* 0x27 .. 0xff ... reserved */
+};
+
+int
+hidpp10_get_battery_status(struct hidpp10_device *dev,
+			   enum hidpp10_battery_level *level,
+			   enum hidpp10_battery_charge_state *charge_state,
+			   uint8_t *low_threshold_in_percent);
+/* -------------------------------------------------------------------------- */
+/* 0x0D: Battery Mileage                                                      */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_get_battery_mileage(struct hidpp10_device *dev,
+			    uint8_t *level_in_percent,
+			    uint32_t *max_seconds,
+			    enum hidpp10_battery_charge_state *state);
+
+/* -------------------------------------------------------------------------- */
 /* 0x0F: Profile queries                                                      */
 /* -------------------------------------------------------------------------- */
 #define PROFILE_NUM_BUTTONS				13
@@ -173,16 +217,45 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number,
 /* -------------------------------------------------------------------------- */
 /* 0x51: LED Status                                                           */
 /* -------------------------------------------------------------------------- */
+
+enum hidpp10_led_status {
+	HIDPP10_LED_STATUS_NO_CHANGE = 0x0, /**< LED does not exist, or
+					      should not change */
+	HIDPP10_LED_STATUS_OFF = 0x1,
+	HIDPP10_LED_STATUS_ON = 0x2,
+	HIDPP10_LED_STATUS_BLINK = 0x3,
+	HIDPP10_LED_STATUS_HEARTBEAT = 0x4,
+	HIDPP10_LED_STATUS_SLOW_ON = 0x5,
+	HIDPP10_LED_STATUS_SLOW_OFF = 0x6,
+};
+
 int
 hidpp10_get_led_status(struct hidpp10_device *dev,
-		       bool led[4]);
+		       enum hidpp10_led_status led[6]);
 int
 hidpp10_set_led_status(struct hidpp10_device *dev,
-		       const bool led[4]);
+		       const enum hidpp10_led_status led[6]);
+
+/* -------------------------------------------------------------------------- */
+/* 0x54: LED Intensity                                                        */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_get_led_intensity(struct hidpp10_device *dev,
+			  uint8_t led_intensity_in_percent[6]);
+
+/* Granularity for the led intensity is 10% increments. A value of 0 leaves
+ * the intensity unchanged */
+int
+hidpp10_set_led_intensity(struct hidpp10_device *dev,
+			  const uint8_t led_intensity_in_percent[6]);
 
 /* -------------------------------------------------------------------------- */
 /* 0x57: LED Color                                                           */
 /* -------------------------------------------------------------------------- */
+
+/* Note: this changes the color of the LED only, use 0x51 to turn the LED
+ * on/off */
 int
 hidpp10_get_led_color(struct hidpp10_device *dev,
 		      uint8_t *red,
@@ -216,6 +289,10 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 int
 hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t *rate);
+
+int
+hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
+			     uint16_t rate);
 
 /* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */
@@ -254,7 +331,7 @@ struct hidpp10_device  {
 	uint8_t build;
 	uint16_t xres, yres;
 	uint16_t refresh_rate;
-	bool led[4];
+	enum hidpp10_led_status led[6];
 	int8_t current_profile;
 	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
 };

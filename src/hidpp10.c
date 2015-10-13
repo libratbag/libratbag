@@ -211,6 +211,9 @@ static int
 hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
 		    uint8_t bytes[16]);
 
+static inline void
+hidpp10_dump_all_pages(struct hidpp10_device *dev);
+
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
 /* -------------------------------------------------------------------------- */
@@ -321,6 +324,116 @@ hidpp10_set_individual_feature(struct hidpp10_device *dev,
 	mode.msg.parameters[1] = feature_bit_r2;
 
 	res = hidpp10_request_command(dev, &mode);
+
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x07: Battery status                                                       */
+/* -------------------------------------------------------------------------- */
+#define __CMD_BATTERY_STATUS			0x07
+
+#define CMD_BATTERY_STATUS(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_BATTERY_STATUS, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+int
+hidpp10_get_battery_status(struct hidpp10_device *dev,
+			   enum hidpp10_battery_level *level,
+			   enum hidpp10_battery_charge_state *charge_state,
+			   uint8_t *low_threshold_in_percent)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message battery = CMD_BATTERY_STATUS(idx, GET_REGISTER_REQ);
+	int res;
+
+	res = hidpp10_request_command(dev, &battery);
+
+	*level = battery.msg.parameters[0];
+	*charge_state = battery.msg.parameters[1];
+	*low_threshold_in_percent = battery.msg.parameters[2];
+
+	if (*low_threshold_in_percent >= 7) {
+		/* reserved value, we just silently truncate it to 0 */
+		*low_threshold_in_percent = 0;
+	}
+
+	*low_threshold_in_percent *= 5; /* in 5% increments */
+
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x0D: Battery mileage                                                      */
+/* -------------------------------------------------------------------------- */
+#define __CMD_BATTERY_MILEAGE			0x0D
+
+#define CMD_BATTERY_MILEAGE(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_BATTERY_MILEAGE, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+int
+hidpp10_get_battery_mileage(struct hidpp10_device *dev,
+			    uint8_t *level_in_percent,
+			    uint32_t *max_seconds,
+			    enum hidpp10_battery_charge_state *state)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message battery = CMD_BATTERY_MILEAGE(idx, GET_REGISTER_REQ);
+	int res;
+	int max;
+
+	res = hidpp10_request_command(dev, &battery);
+
+	*level_in_percent = battery.msg.parameters[0] & 0x7F;
+
+	max = battery.msg.parameters[1];
+	max |= (battery.msg.parameters[2] & 0xF) << 8;
+
+	switch((battery.msg.parameters[2] & 0x30) >> 4) {
+	case 0x03: /* days */
+		max *= 24;
+
+		/* fallthrough */
+	case 0x02: /* hours */
+		max *= 60;
+
+		/* fallthrough */
+	case 0x01: /* min */
+		max *= 60;
+		break;
+	case 0x00: /* seconds */
+		break;
+	}
+
+	*max_seconds = max;
+
+	switch(battery.msg.parameters[2] >> 6) {
+	case 0x00:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_NOT_CHARGING;
+		break;
+	case 0x01:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_CHARGING;
+		break;
+	case 0x02:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_CHARGING_COMPLETE;
+		break;
+	case 0x03:
+		*state = HIDPP10_BATTERY_CHARGE_STATE_CHARGING_ERROR;
+		break;
+	}
 
 	return res;
 }
@@ -586,10 +699,11 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 int
 hidpp10_get_led_status(struct hidpp10_device *dev,
-		       bool led[4])
+		       enum hidpp10_led_status led[6])
 {
 	unsigned idx = dev->index;
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, GET_REGISTER_REQ);
+	uint8_t *status = led_status.msg.parameters;
 	int res;
 
 	log_raw(dev->ratbag_device->ratbag, "Fetching LED status\n");
@@ -598,32 +712,112 @@ hidpp10_get_led_status(struct hidpp10_device *dev,
 	if (res)
 		return res;
 
-	/* each led is 4-bits, 0x1 == off, 0x2 == on */
-	led[0] = !!(led_status.msg.parameters[0] & 0x02); /* running man logo */
-	led[1] = !!(led_status.msg.parameters[0] & 0x20); /* lowest */
-	led[2] = !!(led_status.msg.parameters[1] & 0x02); /* middle */
-	led[3] = !!(led_status.msg.parameters[1] & 0x20); /* highest */
+	led[0] = status[0] & 0xF;
+	led[1] = (status[0] >> 4) & 0xF;
+	led[2] = status[1] & 0xF;
+	led[3] = (status[1] >> 4) & 0xF;
+	led[4] = status[2] & 0xF;
+	led[5] = (status[2] >> 4) & 0xF;
 
 	return 0;
 }
 
 int
 hidpp10_set_led_status(struct hidpp10_device *dev,
-		       const bool led[4])
+		       const enum hidpp10_led_status led[6])
 {
 	unsigned idx = dev->index;
 	union hidpp10_message led_status = CMD_LED_STATUS(idx, SET_REGISTER_REQ);
+	uint8_t *status = led_status.msg.parameters;
 	int res;
+	int i;
 
 	log_raw(dev->ratbag_device->ratbag, "Setting LED status\n");
 
+	for (i = 0; i < 6; i++) {
+		switch (led[i]) {
+			case HIDPP10_LED_STATUS_NO_CHANGE:
+			case HIDPP10_LED_STATUS_OFF:
+			case HIDPP10_LED_STATUS_ON:
+			case HIDPP10_LED_STATUS_BLINK:
+			case HIDPP10_LED_STATUS_HEARTBEAT:
+			case HIDPP10_LED_STATUS_SLOW_ON:
+			case HIDPP10_LED_STATUS_SLOW_OFF:
+				break;
+			default:
+				abort();
+		}
+	}
+
 	/* each led is 4-bits, 0x1 == off, 0x2 == on */
-	led_status.msg.parameters[0] |= led[0] ? 0x02 : 0x01; /* running man logo */
-	led_status.msg.parameters[0] |= led[1] ? 0x20 : 0x10; /* lowest */
-	led_status.msg.parameters[1] |= led[2] ? 0x02 : 0x01; /* middle */
-	led_status.msg.parameters[1] |= led[3] ? 0x20 : 0x10; /* highest */
+	status[0] = led[0] | (led[1] << 4);
+	status[1] = led[2] | (led[3] << 4);
+	status[2] = led[4] | (led[5] << 4);
 
 	res = hidpp10_request_command(dev, &led_status);
+	return res;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x54: LED Intensity                                                        */
+/* -------------------------------------------------------------------------- */
+
+#define __CMD_LED_INTENSITY			0x54
+
+#define CMD_LED_INTENSITY(idx, sub) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = sub, \
+		.address = __CMD_LED_INTENSITY, \
+		.parameters = {0x00, 0x00, 0x00 }, \
+	} \
+}
+
+int
+hidpp10_get_led_intensity(struct hidpp10_device *dev,
+			  uint8_t led_intensity_in_percent[6])
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, GET_REGISTER_REQ);
+	uint8_t *intensity = led_intensity.msg.parameters;
+	int res;
+
+	log_raw(dev->ratbag_device->ratbag, "Fetching LED intensity\n");
+
+	res = hidpp10_request_command(dev, &led_intensity);
+	if (res)
+		return res;
+
+	led_intensity_in_percent[0] = 10 * ((intensity[0]     ) & 0xF);
+	led_intensity_in_percent[1] = 10 * ((intensity[0] >> 4) & 0xF);
+	led_intensity_in_percent[2] = 10 * ((intensity[1]     ) & 0xF);
+	led_intensity_in_percent[3] = 10 * ((intensity[1] >> 4) & 0xF);
+	led_intensity_in_percent[4] = 10 * ((intensity[2]     ) & 0xF);
+	led_intensity_in_percent[5] = 10 * ((intensity[2] >> 4) & 0xF);
+
+	return 0;
+}
+
+int
+hidpp10_set_led_intensity(struct hidpp10_device *dev,
+			  const uint8_t led_intensity_in_percent[6])
+{
+	unsigned idx = dev->index;
+	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, SET_REGISTER_REQ);
+	uint8_t *intensity = led_intensity.msg.parameters;
+	int res;
+
+	log_raw(dev->ratbag_device->ratbag, "Setting LED intensity\n");
+
+	intensity[0]  = led_intensity_in_percent[0]/10 & 0xF;
+	intensity[0] |= (led_intensity_in_percent[1]/10 & 0xF) << 4;
+	intensity[1]  = led_intensity_in_percent[2]/10 & 0xF;
+	intensity[1] |= (led_intensity_in_percent[3]/10 & 0xF) << 4;
+	intensity[2]  = led_intensity_in_percent[4]/10 & 0xF;
+	intensity[2] |= (led_intensity_in_percent[5]/10 & 0xF) << 4;
+
+	res = hidpp10_request_command(dev, &led_intensity);
 	return res;
 }
 
@@ -807,6 +1001,20 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 	return 0;
 }
 
+int
+hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
+			     uint16_t rate)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
+
+	log_raw(dev->ratbag_device->ratbag, "Setting USB refresh rate\n");
+
+	refresh.msg.parameters[0] = 1000/rate;
+
+	return hidpp10_request_command(dev, &refresh);
+}
+
 /* -------------------------------------------------------------------------- */
 /* 0xA2: Reading memory                                                       */
 /* -------------------------------------------------------------------------- */
@@ -844,6 +1052,30 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
 	memcpy(bytes, readmem.msg.string, sizeof(readmem.msg.string));
 
 	return 0;
+}
+
+static inline void
+hidpp10_dump_all_pages(struct hidpp10_device *dev)
+{
+	uint16_t page, offset;
+	uint8_t bytes[16];
+	int res;
+
+	log_info(dev->ratbag_device->ratbag, "::::::: Dumping memory :::::\n");
+
+	for (page = 0; page < 512; page++) {
+		log_info(dev->ratbag_device->ratbag, ":: page %d\n", page);
+		for (offset = 0; offset < 256; offset += 16) {
+			res = hidpp10_read_memory(dev, page, offset, bytes);
+			if (res != 0)
+				goto out;
+
+			log_buffer(dev->ratbag_device->ratbag, RATBAG_LOG_PRIORITY_INFO, " ", bytes, ARRAY_LENGTH(bytes));
+		}
+	}
+
+out:
+	log_info(dev->ratbag_device->ratbag, "::::::: Dumping memory complete :::::\n");
 }
 
 /* -------------------------------------------------------------------------- */
