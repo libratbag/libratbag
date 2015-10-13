@@ -177,16 +177,22 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 {
 	int rc;
 	struct hidpp10_profile profile;
+	struct hidpp10_directory directory[16];
+	int count;
+
+	count = hidpp10_get_profile_directory(dev, directory, ARRAY_LENGTH(directory));
+	if (count < 0)
+		return count;
 
 	/* We don't know the HID++1.0 requests to query for buttons, etc.
-	 * and the get_current_profile request is garbage. So get profile 1
-	 * and fill the device information in from that.
+	 * Simply get the first profile and fill the device information in
+	 * from that.
 	 */
 	rc = hidpp10_get_profile(dev, 0, &profile);
 	if (rc)
 		return rc;
 
-	ratbag_device_init_profiles(device, HIDPP10_NUM_PROFILES, profile.num_buttons);
+	ratbag_device_init_profiles(device, count, profile.num_buttons);
 
 	return 0;
 }
