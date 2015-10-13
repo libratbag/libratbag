@@ -66,25 +66,102 @@ struct hidpp10_device *hidpp10_device_new_from_idx(struct ratbag_device *device,
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
 /* -------------------------------------------------------------------------- */
-#define REPORTING_FLAGS_R0_CONSUMER_SPECIFIC_CONTROL	0
-#define REPORTING_FLAGS_R0_POWER_KEYS			1
-#define REPORTING_FLAGS_R0_VERTICAL_SCROLL		2
-#define REPORTING_FLAGS_R0_MOUSE_EXTRA_BUTTONS		3
-#define REPORTING_FLAGS_R0_BATTERY_STATUS		4
-#define REPORTING_FLAGS_R0_HORIZONTAL_SCROLL		5
-#define REPORTING_FLAGS_R0_F_LOCK_STATUS		6
-#define REPORTING_FLAGS_R0_NUMPAD_NUMERIC_KEYS		7
-#define REPORTING_FLAGS_R2_3D_GESTURES			0
+
+/**
+ * All notifications are disabled by default on powerup.
+ */
+enum hidpp10_hidpp_notifications {
+	/**
+	 * enabled: Multimedia and MS vendor specific keys are reported as
+	 * HID++ notification 0x03
+	 * disabled: reported as normal HID reports
+	 */
+	HIDPP10_NOTIFICATIONS_CONSUMER_VENDOR_SPECIFIC_CONTROL      = (1 << 0),
+	/**
+	 * enabled: power keys are reported as HID++ notification 0x04
+	 * disabled: reported as normal HID reports
+	 */
+	HIDPP10_NOTIFICATIONS_POWER_KEYS                            = (1 << 1),
+	/**
+	 * enabled: Vertical scroll wheel/iNav are reported as HID++
+	 * notification 0x05
+	 * disabled: reported as normal HID reports
+	 */
+	HIDPP10_NOTIFICATIONS_ROLLER_V                              = (1 << 2),
+	/**
+	 * enabled: buttons not available in standard HID are reported as
+	 * HID++ notification 0x06
+	 * disabled: buttons not available in standard HID are not reported
+	 */
+	HIDPP10_NOTIFICATIONS_MOUSE_EXTRA_BUTTONS                   = (1 << 3),
+	/**
+	 * enabled: battery status/milage are reported as HID++ notification
+	 * 0x07 or 0x0D (device-dependent)
+	 * disabled: battery status/milage are not reported
+	 */
+	HIDPP10_NOTIFICATIONS_BATTERY_STATUS                        = (1 << 4),
+	/**
+	 * enabled: Horizontal scroll wheel/iNav are reported as HID++
+	 * notification 0x05
+	 * disabled: reported as normal HID reports
+	 */
+	HIDPP10_NOTIFICATIONS_ROLLER_H                              = (1 << 5),
+	/**
+	 * enabled: F-Lock status is reported as HID++ notification 0x09
+	 * disabled: F-Lock status is not reported
+	 */
+	HIDPP10_NOTIFICATIONS_F_LOCK_STATUS                         = (1 << 6),
+	/**
+	 * enabled: Numpad keys are reported as buttons in HID++
+	 * notification 0x03
+	 * disabled: reported as normal keys
+	 */
+	HIDPP10_NOTIFICATIONS_NUMPAD_NUMERIC_KEYS                   = (1 << 7),
+	/**
+	 * enabled: Device arrival/removal/... are reported as HID++
+	 * notifications 0x40, 0x41, 0x46 or 0x78
+	 * disabled: these events are not reported
+	 */
+	HIDPP10_NOTIFICATIONS_WIRELESS_NOTIFICATIONS                = (1 << 8),
+	/**
+	 * enabled: User interface events are reported as HID++ notification
+	 * 0x08
+	 * disabled: these events are not reported
+	 */
+	HIDPP10_NOTIFICATIONS_UI_NOTIFICATIONS                      = (1 << 9),
+	/**
+	 * enabled: Quad link quality info events are reported as HID++ notification
+	 * 0x49
+	 * disabled: these events are not reported
+	 */
+	HIDPP10_NOTIFICATIONS_QUAD_LINK_QUALITY_INFO                = (1 << 10),
+	HIDPP10_NOTIFICATIONS_SOFTWARE_PRESENT                      = (1 << 11),
+	HIDPP10_NOTIFICATIONS_TOUCHPAD_MULTITOUCH_NOTIFICATIONS     = (1 << 12),
+	/* 1 << 13 is reserved */
+	/* 1 << 14 is reserved */
+	/* 1 << 15 is reserved */
+
+	/**
+	 * enabled: 3D gestures are reported as HID++ notification 0x65
+	 * disabled: these events are not reported
+	 */
+	HIDPP10_NOTIFICATIONS_3D_GESTURE                            = (1 << 16),
+	HIDPP10_NOTIFICATIONS_VOIP_TELEPHONY                        = (1 << 17),
+	HIDPP10_NOTIFICATIONS_CONFIGURATION_COMPLETE                = (1 << 18),
+	/* 1 << 19 is reserved */
+	/* 1 << 20 is reserved */
+	/* 1 << 21 is reserved */
+	/* 1 << 22 is reserved */
+	/* 1 << 23 is reserved */
+};
 
 int
 hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
-				uint8_t *reporting_flags_r0,
-				uint8_t *reporting_flags_r2);
+				uint32_t *reporting_flags);
 
 int
 hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
-				uint8_t reporting_flags_r0,
-				uint8_t reporting_flags_r2);
+				uint32_t reporting_flags);
 
 /* -------------------------------------------------------------------------- */
 /* 0x01: Enable Individual Features                                           */
