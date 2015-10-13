@@ -36,7 +36,7 @@
 
 /* FIXME: that's what my G500s supports, but only pages 3-5 are valid.
  * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
-#define HIDPP10_NUM_PROFILES 3
+#define HIDPP10_NUM_PROFILES 5
 
 #define HIDPP10_MAX_PAGE_NUMBER 31
 

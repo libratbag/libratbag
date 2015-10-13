@@ -1440,6 +1440,8 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	enum hidpp10_led_status led[6];
 	int8_t current_profile;
 	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
+	int count;
+	struct hidpp10_directory directory[16];
 
 	hidpp10_get_individual_features(dev, &feature_mask);
 	hidpp10_get_hidpp_notifications(dev, &notifications);
@@ -1452,7 +1454,9 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 
 	hidpp10_get_current_profile(dev, &current_profile);
 
-	for (i = 0; i < HIDPP10_NUM_PROFILES; i++)
+	count = hidpp10_get_profile_directory(dev, directory,
+					      ARRAY_LENGTH(directory));
+	for (i = 0; i < count && i < HIDPP10_NUM_PROFILES; i++)
 		hidpp10_get_profile(dev, i, &profiles[i]);
 
 	return 0;
