@@ -180,7 +180,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	}
 
 	if (!hidpp_err) {
-		log_buf_raw(ratbag, "    received: ", read_buffer.data, ret);
+		log_buf_raw(ratbag, "  received: ", read_buffer.data, ret);
 		/* copy the answer for the caller */
 		*msg = read_buffer;
 	}
