@@ -126,22 +126,9 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 
 	/* create the expected header */
 	expected_header = *msg;
-	switch (msg->msg.sub_id) {
-	case SET_REGISTER_REQ:
-		expected_header.msg.report_id = REPORT_ID_SHORT;
-		break;
-	case GET_REGISTER_REQ:
-		expected_header.msg.report_id = REPORT_ID_SHORT;
-		break;
-	case SET_LONG_REGISTER_REQ:
-		expected_header.msg.report_id = REPORT_ID_LONG;
-		break;
-	case GET_LONG_REGISTER_REQ:
-		expected_header.msg.report_id = REPORT_ID_LONG;
-		break;
-	}
 
-	log_buf_raw(ratbag, "  expected_header:	", expected_header.data, 4);
+	/* response message length doesn't depend on request length */
+	log_buf_raw(ratbag, "  expected_header:		?? ", &expected_header.data[1], 3);
 	log_buf_raw(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
@@ -170,7 +157,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		read_buffer.msg.device_idx = msg->msg.device_idx;
 
 		/* actual answer */
-		if (!memcmp(read_buffer.data, expected_header.data, 4))
+		if (!memcmp(&read_buffer.data[1], &expected_header.data[1], 3))
 			break;
 
 		/* error */
