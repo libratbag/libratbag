@@ -56,12 +56,12 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 
 	hidraw->num_reports = 0;
 
-	rc = ioctl(device->hidraw.fd, HIDIOCGRDESCSIZE, &desc_size);
+	rc = ioctl(hidraw->fd, HIDIOCGRDESCSIZE, &desc_size);
 	if (rc < 0)
 		return rc;
 
 	report_desc.size = desc_size;
-	rc = ioctl(device->hidraw.fd, HIDIOCGRDESC, &report_desc);
+	rc = ioctl(hidraw->fd, HIDIOCGRDESC, &report_desc);
 	if (rc < 0)
 		return rc;
 
