@@ -1074,7 +1074,7 @@ int hidpp20_onboard_profiles_read(struct hidpp_device *device,
 			return rc;
 	}
 
-	profile->report_rate = 1000 / data[0];
+	profile->report_rate = 1000 / max(1, data[0]);
 	profile->default_dpi = data[1];
 	profile->switched_dpi = data[2];
 
