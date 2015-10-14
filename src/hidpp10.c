@@ -1214,24 +1214,6 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 	return 0;
 }
 
-void hidpp10_list_devices(struct ratbag_device *device) {
-	struct hidpp10_device *dev;
-	int i;
-
-	for (i = 0; i < 6; ++i) {
-		dev = hidpp10_device_new_from_idx(device, i);
-		if (!dev)
-			continue;
-
-		log_info(device->ratbag, "[%d] %s	%s (Wireless PID: %04x)\n",
-			 i,
-			 device_types[dev->device_type] ? device_types[dev->device_type] : "",
-			 dev->name, dev->wpid);
-		hidpp10_device_destroy(dev);
-	}
-
-}
-
 /* -------------------------------------------------------------------------- */
 /* general device handling                                                    */
 /* -------------------------------------------------------------------------- */
