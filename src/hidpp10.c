@@ -630,31 +630,31 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		switch (button->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
 			log_raw(ratbag,
-				"Button %d: button %d\n",
+				"Button %zd: button %d\n",
 				i,
 				ffs(hidpp10_get_unaligned_u16le(&button->button.button_flags_lsb)));
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			log_raw(ratbag,
-				"Button %d: key %d modifier %x\n",
+				"Button %zd: key %d modifier %x\n",
 				i,
 				button->keyboard_keys.key,
 				button->keyboard_keys.modifier_flags);
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
 			log_raw(ratbag,
-				"Button %d: special %x\n",
+				"Button %zd: special %x\n",
 				i,
 				ffs(hidpp10_get_unaligned_u16le(&button->special.flags1)));
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			log_raw(ratbag,
-				"Button %d: consumer: %x\n",
+				"Button %zd: consumer: %x\n",
 				i,
 				hidpp10_get_unaligned_u16(&button->consumer_control.consumer_control1));
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
-			log_raw(ratbag, "Button %d: disabled\n", i);
+			log_raw(ratbag, "Button %zd: disabled\n", i);
 			break;
 		default:
 			/* FIXME: this is the page number for the macro,

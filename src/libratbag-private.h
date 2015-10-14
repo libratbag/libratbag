@@ -399,10 +399,12 @@ void
 log_msg_va(struct ratbag *ratbag,
 	   enum ratbag_log_priority priority,
 	   const char *format,
-	   va_list args);
+	   va_list args)
+	LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
 void log_msg(struct ratbag *ratbag,
 	enum ratbag_log_priority priority,
-	const char *format, ...);
+	const char *format, ...)
+	LIBRATBAG_ATTRIBUTE_PRINTF(3, 4);
 void
 log_buffer(struct ratbag *ratbag,
 	enum ratbag_log_priority priority,

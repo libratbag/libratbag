@@ -458,7 +458,7 @@ ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 	}
 
 	if (!driver->probe || !driver->remove) {
-		log_bug_libratbag(ratbag, "Driver %s is incomplete.\n");
+		log_bug_libratbag(ratbag, "Driver %s is incomplete.\n", driver->name);
 		return;
 	}
 	list_insert(&ratbag->drivers, &driver->link);
