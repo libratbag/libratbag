@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <poll.h>
 #include <unistd.h>
 
 #include "hidpp10.h"
@@ -90,15 +91,49 @@ static int
 hidpp10_write_command(struct hidpp10_device *dev, uint8_t *cmd, int size)
 {
 	struct ratbag_device *device = dev->ratbag_device;
-	int res = ratbag_hidraw_output_report(device, cmd, size);
+	int fd = device->hidraw.fd;
+	int res;
 
-	if (res == 0)
-		return 0;
+	if (size < 1 || !cmd || fd < 0)
+		return -EINVAL;
 
-	if (res < 0)
+	log_buf_raw(device->ratbag, "hidpp10 write: ", cmd, size);
+	res = write(fd, cmd, size);
+	if (res < 0) {
+		res = -errno;
 		log_error(device->ratbag, "Error: %s (%d)\n", strerror(-res), -res);
+	}
 
-	return res;
+	return res < 0 ? res : 0;
+}
+
+static int
+hidpp10_read_response(struct hidpp10_device *dev, uint8_t *buf, size_t size)
+{
+	struct ratbag_device *device = dev->ratbag_device;
+	int fd = device->hidraw.fd;
+	struct pollfd fds;
+	int rc;
+
+	if (size < 1 || !buf || fd < 0)
+		return -EINVAL;
+
+	fds.fd = fd;
+	fds.events = POLLIN;
+
+	rc = poll(&fds, 1, 1000);
+	if (rc == -1)
+		return -errno;
+
+	if (rc == 0)
+		return -ETIMEDOUT;
+
+	rc = read(fd, buf, size);
+
+	if (rc > 0)
+		log_buf_raw(device->ratbag, "input report:  ", buf, rc);
+
+	return rc >= 0 ? rc : -errno;
 }
 
 int
@@ -141,12 +176,12 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	 * loop until we get the actual answer or an error code.
 	 */
 	do {
-		ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
+		ret = hidpp10_read_response(dev, read_buffer.data, LONG_MESSAGE_LENGTH);
 
 		/* Wait and retry if the USB timed out */
 		if (ret == -ETIMEDOUT) {
 			msleep(10);
-			ret = ratbag_hidraw_read_input_report(device, read_buffer.data, LONG_MESSAGE_LENGTH);
+			ret = hidpp10_read_response(dev, read_buffer.data, LONG_MESSAGE_LENGTH);
 		}
 
 		/* Overwrite the return device index with ours. The kernel
