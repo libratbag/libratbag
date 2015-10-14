@@ -76,7 +76,7 @@ Device-specific notes
 ---------------------
 
 A number of device-specific notes and observations can be found in our
-"devices-notes" repository: http://libratbag.github.io/devices-notes/
+"device-notes" repository: http://libratbag.github.io/device-notes/
 
 License
 -------
