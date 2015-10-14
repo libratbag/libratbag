@@ -55,6 +55,29 @@ installed udev rules/hwdb entries are not picked up by udev.
 If the device doesn't work, you'll have to start reverse-engineering the
 device-specific protocol. Good luck :)
 
+Source
+------
+
+    git clone https://github.com/libratbag/libratbag.git
+
+Bugs
+----
+
+Bugs can be reported in the issue tracker on our github repo:
+https://github.com/libratbag/libratbag/issues
+
+Mailing list
+------------
+
+libratbag discussions happen on the input-tools mailing list hosted on
+freedesktop.org: http://lists.freedesktop.org/archives/input-tools/
+
+Device-specific notes
+---------------------
+
+A number of device-specific notes and observations can be found in our
+"devices-notes" repository: http://libratbag.github.io/devices-notes/
+
 License
 -------
 
