@@ -212,15 +212,11 @@ hidpp_write_command(struct hidpp_device *dev, uint8_t *cmd, int size)
 	if (size < 1 || !cmd || fd < 0)
 		return -EINVAL;
 
-#if 0
-	log_buf_raw(device->ratbag, "hidpp10 write: ", cmd, size);
-#endif
+	hidpp_log_buf_raw(dev, "hidpp write: ", cmd, size);
 	res = write(fd, cmd, size);
 	if (res < 0) {
 		res = -errno;
-#if 0
-		log_error(device->ratbag, "Error: %s (%d)\n", strerror(-res), -res);
-#endif
+		hidpp_log_error(dev, "Error: %s (%d)\n", strerror(-res), -res);
 	}
 
 	return res < 0 ? res : 0;
@@ -248,10 +244,49 @@ hidpp_read_response(struct hidpp_device *dev, uint8_t *buf, size_t size)
 
 	rc = read(fd, buf, size);
 
-#if 0
 	if (rc > 0)
-		log_buf_raw(device->ratbag, "input report:  ", buf, rc);
-#endif
+		hidpp_log_buf_raw(dev, "hidpp read:  ", buf, rc);
 
 	return rc >= 0 ? rc : -errno;
+}
+
+void
+hidpp_log(struct hidpp_device *dev,
+	  enum hidpp_log_priority priority,
+	  const char *format,
+	  ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	dev->log_handler(dev->userdata, priority, format, args);
+	va_end(args);
+}
+
+void
+hidpp_log_buffer(struct hidpp_device *dev,
+		 enum hidpp_log_priority priority,
+		 const char *header,
+		 uint8_t *buf, size_t len)
+{
+	_cleanup_free_ char *output_buf = NULL;
+	char *sep = "";
+	unsigned int i, n;
+	unsigned int buf_len;
+
+	buf_len = header ? strlen(header) : 0;
+	buf_len += len * 3;
+	buf_len += 1; /* terminating '\0' */
+
+	output_buf = zalloc(buf_len);
+	n = 0;
+	if (header)
+		n += snprintf_safe(output_buf, buf_len - n, "%s", header);
+
+	for (i = 0; i < len; ++i) {
+		n += snprintf_safe(&output_buf[n], buf_len - n, "%s%02x", sep, buf[i] & 0xFF);
+		sep = " ";
+	}
+
+	hidpp_log(dev, priority, "%s\n", output_buf);
 }

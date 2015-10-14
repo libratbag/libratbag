@@ -197,12 +197,21 @@ hidpp10drv_test_hidraw(struct ratbag_device *device)
 	return ratbag_hidraw_has_report(device, REPORT_ID_SHORT);
 }
 
+static void
+hidpp10_log(void *userdata, enum hidpp_log_priority priority, const char *format, va_list args)
+{
+	struct ratbag_device *device = userdata;
+
+	log_msg_va(device->ratbag, priority, format, args);
+}
+
 static int
 hidpp10drv_probe(struct ratbag_device *device)
 {
 	int rc;
 	struct hidpp10drv_data *drv_data = NULL;
 	struct hidpp10_device *dev = NULL;
+	struct hidpp_device base;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
 	if (rc == -ENODEV) {
@@ -217,13 +226,16 @@ hidpp10drv_probe(struct ratbag_device *device)
 	}
 
 	drv_data = zalloc(sizeof(*drv_data));
+	base.log_handler = hidpp10_log;
+	base.userdata = device;
+	base.hidraw_fd = device->hidraw.fd;
 
 	/* We can treat all devices as wired devices here. If we talk to the
 	 * correct hidraw device the kernel adjusts the device index for us,
 	 * so even for unifying receiver devices we can just 0x00 as device
 	 * index.
 	 */
-	dev = hidpp10_device_new_from_idx(device, WIRED_DEVICE_IDX);
+	dev = hidpp10_device_new_from_idx(&base, WIRED_DEVICE_IDX);
 
 	if (!dev) {
 		log_error(device->ratbag,

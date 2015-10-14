@@ -27,6 +27,7 @@
  */
 
 #include <stdint.h>
+#include <stdarg.h>
 #include <stddef.h>
 
 #ifndef HIDPP_GENERIC_H
@@ -65,8 +66,27 @@
 #define ERR_INVALID_PARAM_VALUE			0x0B
 #define ERR_WRONG_PIN_CODE			0x0C
 
+/* Keep this in sync with ratbag_log_priority */
+enum hidpp_log_priority {
+	/**
+	 * Raw protocol messages. Using this log level results in *a lot* of
+	 * output.
+	 */
+	HIDPP_LOG_PRIORITY_RAW = 10,
+	HIDPP_LOG_PRIORITY_DEBUG = 20,
+	HIDPP_LOG_PRIORITY_INFO = 30,
+	HIDPP_LOG_PRIORITY_ERROR = 40,
+};
+
+typedef void (*hidpp_log_handler)(void *userdata,
+				  enum hidpp_log_priority priority,
+				  const char *format, va_list args)
+	__attribute__ ((format (printf, 3, 0)));
+
 struct hidpp_device {
 	int hidraw_fd;
+	void *userdata;
+	hidpp_log_handler log_handler;
 };
 
 extern const char *hidpp_errors[0xFF];
@@ -91,5 +111,28 @@ hidpp_write_command(struct hidpp_device *dev, uint8_t *cmd, int size);
 
 int
 hidpp_read_response(struct hidpp_device *dev, uint8_t *buf, size_t size);
+
+void
+hidpp_log(struct hidpp_device *dev,
+	  enum hidpp_log_priority priority,
+	  const char *format,
+	  ...)
+	__attribute__ ((format (printf, 3, 4)));
+
+void
+hidpp_log_buffer(struct hidpp_device *dev,
+		 enum hidpp_log_priority priority,
+		 const char *header,
+		 uint8_t *buf, size_t len);
+
+#define hidpp_log_raw(li_, ...) hidpp_log((li_), HIDPP_LOG_PRIORITY_RAW, __VA_ARGS__)
+#define hidpp_log_debug(li_, ...) hidpp_log((li_), HIDPP_LOG_PRIORITY_DEBUG, __VA_ARGS__)
+#define hidpp_log_info(li_, ...) hidpp_log((li_), HIDPP_LOG_PRIORITY_INFO, __VA_ARGS__)
+#define hidpp_log_error(li_, ...) hidpp_log((li_), HIDPP_LOG_PRIORITY_ERROR, __VA_ARGS__)
+#define hidpp_log_bug_kernel(li_, ...) hidpp((li_), HIDPP_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
+#define hidpp_log_buf_raw(li_, h_, buf_, len_) hidpp_log_buffer(li_, HIDPP_LOG_PRIORITY_RAW, h_, buf_, len_)
+#define hidpp_log_buf_debug(li_, h_, buf_, len_) hidpp_log_buffer(li_, HIDPP_LOG_PRIORITY_DEBUG, h_, buf_, len_)
+#define hidpp_log_buf_info(li_, h_, buf_, len_) hidpp_log_buffer(li_, HIDPP_LOG_PRIORITY_INFO, h_, buf_, len_)
+#define hidpp_log_buf_error(li_, h_, buf_, len_) hidpp_log_buffer(li_, HIDPP_LOG_PRIORITY_ERROR, h_, buf_, len_)
 
 #endif /* HIDPP_GENERIC_H */
