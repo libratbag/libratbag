@@ -89,6 +89,10 @@ struct hidpp_device {
 	hidpp_log_handler log_handler;
 };
 
+
+void
+hidpp_device_init(struct hidpp_device *dev, int fd);
+
 extern const char *hidpp_errors[0xFF];
 
 const char *

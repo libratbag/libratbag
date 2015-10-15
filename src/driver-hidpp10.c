@@ -226,9 +226,9 @@ hidpp10drv_probe(struct ratbag_device *device)
 	}
 
 	drv_data = zalloc(sizeof(*drv_data));
+	hidpp_device_init(&base, device->hidraw.fd);
 	base.log_handler = hidpp10_log;
 	base.userdata = device;
-	base.hidraw_fd = device->hidraw.fd;
 
 	/* We can treat all devices as wired devices here. If we talk to the
 	 * correct hidraw device the kernel adjusts the device index for us,

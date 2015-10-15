@@ -290,3 +290,17 @@ hidpp_log_buffer(struct hidpp_device *dev,
 
 	hidpp_log(dev, priority, "%s\n", output_buf);
 }
+
+static void
+simple_log(void *userdata, enum hidpp_log_priority priority, const char *format, va_list args)
+{
+	vprintf(format, args);
+}
+
+void
+hidpp_device_init(struct hidpp_device *dev, int fd)
+{
+	dev->hidraw_fd = fd;
+	dev->log_handler = simple_log;
+	dev->userdata = NULL;
+}
