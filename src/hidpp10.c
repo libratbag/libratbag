@@ -194,10 +194,6 @@ out_err:
 /* HID++ 1.0 commands 10                                                      */
 /* -------------------------------------------------------------------------- */
 
-static int
-hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
-		    uint8_t bytes[16]);
-
 static inline void
 hidpp10_dump_all_pages(struct hidpp10_device *dev);
 
@@ -1003,7 +999,7 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 }
 
 /* -------------------------------------------------------------------------- */
-/* 0xA2: Reading memory                                                       */
+/* 0xA2: Read Sector                                                          */
 /* -------------------------------------------------------------------------- */
 #define __CMD_READ_MEMORY			0xA2
 
@@ -1017,7 +1013,7 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 	} \
 }
 
-static int
+int
 hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
 		    uint8_t bytes[16])
 {
