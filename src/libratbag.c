@@ -311,7 +311,7 @@ ratbag_find_driver(struct ratbag_device *device,
 	}
 
 	if (test_device)
-		rc = device->driver->__test_probe(device, test_device);
+		rc = device->driver->test_probe(device, test_device);
 	else
 		rc = device->driver->probe(device);
 	if (rc == 0) {

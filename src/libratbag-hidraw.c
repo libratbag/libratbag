@@ -196,9 +196,9 @@ err:
 }
 
 static int
-__ratbag_find_hidraw(struct ratbag_device *device,
-		     int (*match)(struct ratbag_device *device),
-		     int use_usb_parent)
+ratbag_find_hidraw_node(struct ratbag_device *device,
+			int (*match)(struct ratbag_device *device),
+			int use_usb_parent)
 {
 	struct ratbag *ratbag = device->ratbag;
 	struct udev_enumerate *e;
@@ -264,7 +264,7 @@ out:
 int
 ratbag_find_hidraw(struct ratbag_device *device, int (*match)(struct ratbag_device *device))
 {
-	return __ratbag_find_hidraw(device, match, true);
+	return ratbag_find_hidraw_node(device, match, true);
 }
 
 static int
@@ -276,7 +276,7 @@ hidraw_match_all(struct ratbag_device *device)
 int
 ratbag_open_hidraw(struct ratbag_device *device)
 {
-	return __ratbag_find_hidraw(device, hidraw_match_all, false);
+	return ratbag_find_hidraw_node(device, hidraw_match_all, false);
 }
 
 static struct ratbag_hid_report *
