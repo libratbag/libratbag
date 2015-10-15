@@ -509,17 +509,6 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 struct hidpp10_device  {
 	struct hidpp_device base;
 	unsigned index;
-	char name[15];
 	uint16_t wpid;
-	uint8_t report_interval;
-	uint8_t device_type;
-	uint8_t fw_major;
-	uint8_t fw_minor;
-	uint8_t build;
-	uint16_t xres, yres;
-	uint16_t refresh_rate;
-	enum hidpp10_led_status led[6];
-	int8_t current_profile;
-	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
 };
 #endif /* HIDPP_10_H */

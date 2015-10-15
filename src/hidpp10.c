@@ -1203,20 +1203,25 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	uint32_t feature_mask, notifications;
 	uint8_t reflect;
 	int i;
+	uint16_t xres, yres;
+	uint16_t refresh_rate;
+	enum hidpp10_led_status led[6];
+	int8_t current_profile;
+	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
 
 	hidpp10_get_individual_features(dev, &feature_mask);
 	hidpp10_get_hidpp_notifications(dev, &notifications);
 
-	hidpp10_get_current_resolution(dev, &dev->xres, &dev->yres);
-	hidpp10_get_led_status(dev, dev->led);
-	hidpp10_get_usb_refresh_rate(dev, &dev->refresh_rate);
+	hidpp10_get_current_resolution(dev, &xres, &yres);
+	hidpp10_get_led_status(dev, led);
+	hidpp10_get_usb_refresh_rate(dev, &refresh_rate);
 
 	hidpp10_get_optical_sensor_settings(dev, &reflect);
 
-	hidpp10_get_current_profile(dev, &dev->current_profile);
+	hidpp10_get_current_profile(dev, &current_profile);
 
 	for (i = 0; i < HIDPP10_NUM_PROFILES; i++)
-		hidpp10_get_profile(dev, i, &dev->profiles[i]);
+		hidpp10_get_profile(dev, i, &profiles[i]);
 
 	return 0;
 }
