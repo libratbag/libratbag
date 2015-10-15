@@ -34,14 +34,24 @@
 
 #include "hidpp-generic.h"
 
-struct hidpp10_device;
+/* FIXME: that's what my G500s supports, but only pages 3-5 are valid.
+ * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
+#define HIDPP10_NUM_PROFILES 3
 
-void hidpp10_device_destroy(struct hidpp10_device *dev);
+struct hidpp10_device  {
+	struct hidpp_device base;
+	unsigned index;
+	uint16_t wpid;
+};
 
-struct hidpp10_device *hidpp10_device_new_from_wpid(const struct hidpp_device *base,
-						    uint16_t wpid);
-struct hidpp10_device *hidpp10_device_new_from_idx(const struct hidpp_device *base,
-						   int idx);
+struct hidpp10_device*
+hidpp10_device_new_from_wpid(const struct hidpp_device *base,
+			     uint16_t wpid);
+struct hidpp10_device*
+hidpp10_device_new_from_idx(const struct hidpp_device *base,
+			    int idx);
+void
+hidpp10_device_destroy(struct hidpp10_device *dev);
 
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
@@ -485,13 +495,4 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 				uint8_t *minor,
 				uint8_t *build_number);
 
-
-/* FIXME: that's what my G500s supports, but only pages 3-5 are valid.
- * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
-#define HIDPP10_NUM_PROFILES 3
-struct hidpp10_device  {
-	struct hidpp_device base;
-	unsigned index;
-	uint16_t wpid;
-};
 #endif /* HIDPP_10_H */
