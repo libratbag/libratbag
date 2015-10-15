@@ -30,6 +30,8 @@
 
 #include "hidpp-generic.h"
 
+#include <errno.h>
+#include <poll.h>
 #include <stddef.h>
 
 #include "libratbag-private.h"
@@ -201,3 +203,55 @@ hidpp20_1b04_get_physical_mapping_name(uint16_t value)
 	return "UNKNOWN";
 }
 
+int
+hidpp_write_command(struct hidpp_device *dev, uint8_t *cmd, int size)
+{
+	int fd = dev->hidraw_fd;
+	int res;
+
+	if (size < 1 || !cmd || fd < 0)
+		return -EINVAL;
+
+#if 0
+	log_buf_raw(device->ratbag, "hidpp10 write: ", cmd, size);
+#endif
+	res = write(fd, cmd, size);
+	if (res < 0) {
+		res = -errno;
+#if 0
+		log_error(device->ratbag, "Error: %s (%d)\n", strerror(-res), -res);
+#endif
+	}
+
+	return res < 0 ? res : 0;
+}
+
+int
+hidpp_read_response(struct hidpp_device *dev, uint8_t *buf, size_t size)
+{
+	int fd = dev->hidraw_fd;
+	struct pollfd fds;
+	int rc;
+
+	if (size < 1 || !buf || fd < 0)
+		return -EINVAL;
+
+	fds.fd = fd;
+	fds.events = POLLIN;
+
+	rc = poll(&fds, 1, 1000);
+	if (rc == -1)
+		return -errno;
+
+	if (rc == 0)
+		return -ETIMEDOUT;
+
+	rc = read(fd, buf, size);
+
+#if 0
+	if (rc > 0)
+		log_buf_raw(device->ratbag, "input report:  ", buf, rc);
+#endif
+
+	return rc >= 0 ? rc : -errno;
+}

@@ -27,6 +27,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifndef HIDPP_GENERIC_H
 #define HIDPP_GENERIC_H
@@ -64,6 +65,10 @@
 #define ERR_INVALID_PARAM_VALUE			0x0B
 #define ERR_WRONG_PIN_CODE			0x0C
 
+struct hidpp_device {
+	int hidraw_fd;
+};
+
 extern const char *hidpp_errors[0xFF];
 
 const char *
@@ -80,5 +85,11 @@ hidpp20_1b04_get_logical_mapping(uint16_t value);
 
 uint16_t
 hidpp20_1b04_get_logical_control_id(const struct ratbag_button_action *action);
+
+int
+hidpp_write_command(struct hidpp_device *dev, uint8_t *cmd, int size);
+
+int
+hidpp_read_response(struct hidpp_device *dev, uint8_t *buf, size_t size);
 
 #endif /* HIDPP_GENERIC_H */

@@ -87,55 +87,6 @@ const char *device_types[0xFF] = {
 	[0x0A ... 0xFE] = NULL,
 };
 
-static int
-hidpp10_write_command(struct hidpp10_device *dev, uint8_t *cmd, int size)
-{
-	struct ratbag_device *device = dev->ratbag_device;
-	int fd = device->hidraw.fd;
-	int res;
-
-	if (size < 1 || !cmd || fd < 0)
-		return -EINVAL;
-
-	log_buf_raw(device->ratbag, "hidpp10 write: ", cmd, size);
-	res = write(fd, cmd, size);
-	if (res < 0) {
-		res = -errno;
-		log_error(device->ratbag, "Error: %s (%d)\n", strerror(-res), -res);
-	}
-
-	return res < 0 ? res : 0;
-}
-
-static int
-hidpp10_read_response(struct hidpp10_device *dev, uint8_t *buf, size_t size)
-{
-	struct ratbag_device *device = dev->ratbag_device;
-	int fd = device->hidraw.fd;
-	struct pollfd fds;
-	int rc;
-
-	if (size < 1 || !buf || fd < 0)
-		return -EINVAL;
-
-	fds.fd = fd;
-	fds.events = POLLIN;
-
-	rc = poll(&fds, 1, 1000);
-	if (rc == -1)
-		return -errno;
-
-	if (rc == 0)
-		return -ETIMEDOUT;
-
-	rc = read(fd, buf, size);
-
-	if (rc > 0)
-		log_buf_raw(device->ratbag, "input report:  ", buf, rc);
-
-	return rc >= 0 ? rc : -errno;
-}
-
 int
 hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 {
@@ -167,7 +118,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	log_buf_raw(ratbag, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
-	ret = hidpp10_write_command(dev, msg->data, command_size);
+	ret = hidpp_write_command(&dev->base, msg->data, command_size);
 	if (ret)
 		goto out_err;
 
@@ -176,12 +127,12 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	 * loop until we get the actual answer or an error code.
 	 */
 	do {
-		ret = hidpp10_read_response(dev, read_buffer.data, LONG_MESSAGE_LENGTH);
+		ret = hidpp_read_response(&dev->base, read_buffer.data, LONG_MESSAGE_LENGTH);
 
 		/* Wait and retry if the USB timed out */
 		if (ret == -ETIMEDOUT) {
 			msleep(10);
-			ret = hidpp10_read_response(dev, read_buffer.data, LONG_MESSAGE_LENGTH);
+			ret = hidpp_read_response(&dev->base, read_buffer.data, LONG_MESSAGE_LENGTH);
 		}
 
 		/* Overwrite the return device index with ours. The kernel
@@ -1286,6 +1237,7 @@ hidpp10_device_new(struct ratbag_device *device, int index)
 		return NULL;
 
 	dev->index = index;
+	dev->base.hidraw_fd = device->hidraw.fd;
 	dev->ratbag_device = device;
 
 	return dev;

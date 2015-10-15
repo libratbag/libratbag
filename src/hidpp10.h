@@ -507,6 +507,7 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
  * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
 #define HIDPP10_NUM_PROFILES 3
 struct hidpp10_device  {
+	struct hidpp_device base;
 	struct ratbag_device *ratbag_device;
 	unsigned index;
 	char name[15];
