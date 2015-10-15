@@ -87,11 +87,16 @@ struct hidpp_device {
 	int hidraw_fd;
 	void *userdata;
 	hidpp_log_handler log_handler;
+	enum hidpp_log_priority log_priority;
 };
-
 
 void
 hidpp_device_init(struct hidpp_device *dev, int fd);
+void
+hidpp_device_set_log_handler(struct hidpp_device *dev,
+			     hidpp_log_handler log_handler,
+			     enum hidpp_log_priority priority,
+			     void *userdata);
 
 extern const char *hidpp_errors[0xFF];
 

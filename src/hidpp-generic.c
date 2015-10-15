@@ -258,6 +258,9 @@ hidpp_log(struct hidpp_device *dev,
 {
 	va_list args;
 
+	if (dev->log_priority > priority)
+		return;
+
 	va_start(args, format);
 	dev->log_handler(dev->userdata, priority, format, args);
 	va_end(args);
@@ -301,6 +304,16 @@ void
 hidpp_device_init(struct hidpp_device *dev, int fd)
 {
 	dev->hidraw_fd = fd;
-	dev->log_handler = simple_log;
-	dev->userdata = NULL;
+	hidpp_device_set_log_handler(dev, simple_log, HIDPP_LOG_PRIORITY_INFO, NULL);
+}
+
+void
+hidpp_device_set_log_handler(struct hidpp_device *dev,
+			     hidpp_log_handler log_handler,
+			     enum hidpp_log_priority priority,
+			     void *userdata)
+{
+	dev->log_handler = log_handler;
+	dev->log_priority = priority;
+	dev->userdata = userdata;
 }
