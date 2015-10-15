@@ -36,25 +36,8 @@
 
 struct hidpp10_device;
 
-struct _hidpp10_message {
-	uint8_t report_id;
-	uint8_t device_idx;
-	uint8_t sub_id;
-	uint8_t address;
-	union {
-		uint8_t parameters[3];
-		uint8_t string[16];
-	};
-} __attribute__((packed));
-
-union hidpp10_message {
-	struct _hidpp10_message msg;
-	uint8_t data[LONG_MESSAGE_LENGTH];
-};
-
 void hidpp10_device_destroy(struct hidpp10_device *dev);
 
-int hidpp10_request_command(struct hidpp10_device *device, union hidpp10_message *msg);
 struct hidpp10_device *hidpp10_device_new_from_wpid(const struct hidpp_device *base,
 						    uint16_t wpid);
 struct hidpp10_device *hidpp10_device_new_from_idx(const struct hidpp_device *base,

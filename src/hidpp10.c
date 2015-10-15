@@ -43,6 +43,22 @@
 #include "libratbag-util.h"
 #include "libratbag-hidraw.h"
 
+struct _hidpp10_message {
+	uint8_t report_id;
+	uint8_t device_idx;
+	uint8_t sub_id;
+	uint8_t address;
+	union {
+		uint8_t parameters[3];
+		uint8_t string[16];
+	};
+} __attribute__((packed));
+
+union hidpp10_message {
+	struct _hidpp10_message msg;
+	uint8_t data[LONG_MESSAGE_LENGTH];
+};
+
 #define ERROR_MSG(__hidpp_msg, idx)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
@@ -86,7 +102,7 @@ const char *device_types[0xFF] = {
 	[0x0A ... 0xFE] = NULL,
 };
 
-int
+static int
 hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 {
 	union hidpp10_message read_buffer;
