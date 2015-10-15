@@ -295,15 +295,6 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t rate);
 
 /* -------------------------------------------------------------------------- */
-/* 0xF1: Device Firmware Information                                          */
-/* -------------------------------------------------------------------------- */
-int
-hidpp10_get_firmare_information(struct hidpp10_device *dev,
-				uint8_t *major,
-				uint8_t *minor,
-				uint8_t *build_number);
-
-/* -------------------------------------------------------------------------- */
 /* 0xB5: Pairing Information                                                  */
 /* -------------------------------------------------------------------------- */
 int
@@ -315,6 +306,16 @@ int
 hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 					    char *name,
 					    size_t *name_sz);
+
+/* -------------------------------------------------------------------------- */
+/* 0xF1: Device Firmware Information                                          */
+/* -------------------------------------------------------------------------- */
+int
+hidpp10_get_firmare_information(struct hidpp10_device *dev,
+				uint8_t *major,
+				uint8_t *minor,
+				uint8_t *build_number);
+
 
 /* FIXME: that's what my G500s supports, but only pages 3-5 are valid.
  * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
