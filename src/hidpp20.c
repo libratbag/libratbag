@@ -1103,3 +1103,27 @@ int hidpp20_onboard_profiles_read(struct hidpp_device *device,
 
 	return 0;
 }
+
+static const enum ratbag_button_action_special hidpp20_profiles_specials[] = {
+	[0x00] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+	[0x01] = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT,
+	[0x02] = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT,
+	[0x03] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,
+	[0x04] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,
+	[0x05] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT,
+	[0x06] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,
+	[0x07] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE,
+	[0x08] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+	[0x09] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+	[0x0a] = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,
+	[0x0b] = RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,
+
+	[0x0c ... 0xff] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+};
+
+enum ratbag_button_action_special
+hidpp20_onboard_profiles_get_special(struct hidpp_device *device,
+				     uint8_t code)
+{
+	return hidpp20_profiles_specials[code];
+}
