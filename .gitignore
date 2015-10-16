@@ -48,3 +48,4 @@ test-device
 test-*.log
 ratbag-command
 hidpp10-dump-page
+hidpp20-dump-page

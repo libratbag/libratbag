@@ -1,4 +1,4 @@
-noinst_PROGRAMS = hidpp10-dump-page
+noinst_PROGRAMS = hidpp10-dump-page hidpp20-dump-page
 bin_PROGRAMS = ratbag-command
 noinst_LTLIBRARIES = libshared.la
 
@@ -21,3 +21,8 @@ hidpp10_dump_page_SOURCES = hidpp10-dump-page.c
 hidpp10_dump_page_LDADD = ../src/libhidpp10.la
 hidpp10_dump_page_LDFLAGS = -no-install
 hidpp10_dump_page_CFLAGS = -I$(top_srcdir)/src
+
+hidpp20_dump_page_SOURCES = hidpp20-dump-page.c
+hidpp20_dump_page_LDADD = ../src/libhidpp20.la
+hidpp20_dump_page_LDFLAGS = -no-install
+hidpp20_dump_page_CFLAGS = -I$(top_srcdir)/src
