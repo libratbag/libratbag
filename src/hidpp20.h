@@ -313,6 +313,14 @@ enum ratbag_button_action_special
 hidpp20_onboard_profiles_get_special(struct hidpp_device *device,
 				     uint8_t code);
 
+int
+hidpp20_onboard_profiles_read_memory(struct hidpp_device *device,
+				     uint8_t reg,
+				     uint8_t read_rom,
+				     uint8_t page,
+				     uint8_t section,
+				     uint8_t result[16]);
+
 /* -------------------------------------------------------------------------- */
 /* 0x8110 - Mouse Button Spy                                                  */
 /* -------------------------------------------------------------------------- */
