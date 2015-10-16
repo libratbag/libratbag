@@ -975,6 +975,33 @@ hidpp20_onboard_profiles_get_current_profile(struct hidpp_device *device,
 	return msg.msg.parameters[1];
 }
 
+static int
+hidpp20_onboard_profiles_initialize(struct hidpp_device *device,
+				    uint8_t feature_index,
+				    unsigned profile_count,
+				    struct hidpp20_profiles *profiles_list)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = 0xff,
+		.msg.sub_id = feature_index,
+		.msg.address = CMD_ONBOARD_PROFILES_GET_PROFILES_DESCR,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	profiles_list->feature_index = feature_index;
+	profiles_list->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
+	profiles_list->num_profiles = profile_count;
+	/* FIXME: actually retrieve the correct values */
+	profiles_list->num_modes = 5;
+
+	return 0;
+}
+
 int
 hidpp20_onboard_profiles_allocate(struct hidpp_device *device,
 				  struct hidpp20_profiles **profiles_list)
@@ -1014,9 +1041,8 @@ hidpp20_onboard_profiles_allocate(struct hidpp_device *device,
 		profiles->profiles[i].enabled = d[2];
 	}
 
-	profiles->num_profiles = profile_count;
-	profiles->feature_index = feature_index;
-	profiles->num_modes = 5;
+	hidpp20_onboard_profiles_initialize(device, feature_index,
+					    profile_count, profiles);
 
 	*profiles_list = profiles;
 
