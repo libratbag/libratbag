@@ -33,33 +33,26 @@
 #include <stdbool.h>
 
 #include "hidpp-generic.h"
-#include "libratbag-private.h"
-#include "libratbag.h"
 
-struct hidpp10_device;
+/* FIXME: that's what my G500s supports, but only pages 3-5 are valid.
+ * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
+#define HIDPP10_NUM_PROFILES 3
 
-struct _hidpp10_message {
-	uint8_t report_id;
-	uint8_t device_idx;
-	uint8_t sub_id;
-	uint8_t address;
-	union {
-		uint8_t parameters[3];
-		uint8_t string[16];
-	};
-} __attribute__((packed));
-
-union hidpp10_message {
-	struct _hidpp10_message msg;
-	uint8_t data[LONG_MESSAGE_LENGTH];
+struct hidpp10_device  {
+	struct hidpp_device base;
+	unsigned index;
+	uint16_t wpid;
 };
 
-void hidpp10_device_destroy(struct hidpp10_device *dev);
+struct hidpp10_device*
+hidpp10_device_new_from_wpid(const struct hidpp_device *base,
+			     uint16_t wpid);
+struct hidpp10_device*
+hidpp10_device_new_from_idx(const struct hidpp_device *base,
+			    int idx);
 
-int hidpp10_request_command(struct hidpp10_device *device, union hidpp10_message *msg);
-void hidpp10_list_devices(struct ratbag_device *device);
-struct hidpp10_device *hidpp10_device_new_from_wpid(struct ratbag_device *device, uint16_t wpid);
-struct hidpp10_device *hidpp10_device_new_from_idx(struct ratbag_device *device, int idx);
+void
+hidpp10_device_destroy(struct hidpp10_device *dev);
 
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */
@@ -503,24 +496,4 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 				uint8_t *minor,
 				uint8_t *build_number);
 
-
-/* FIXME: that's what my G500s supports, but only pages 3-5 are valid.
- * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
-#define HIDPP10_NUM_PROFILES 3
-struct hidpp10_device  {
-	struct ratbag_device *ratbag_device;
-	unsigned index;
-	char name[15];
-	uint16_t wpid;
-	uint8_t report_interval;
-	uint8_t device_type;
-	uint8_t fw_major;
-	uint8_t fw_minor;
-	uint8_t build;
-	uint16_t xres, yres;
-	uint16_t refresh_rate;
-	enum hidpp10_led_status led[6];
-	int8_t current_profile;
-	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
-};
 #endif /* HIDPP_10_H */

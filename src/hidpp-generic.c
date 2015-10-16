@@ -30,6 +30,8 @@
 
 #include "hidpp-generic.h"
 
+#include <errno.h>
+#include <poll.h>
 #include <stddef.h>
 
 #include "libratbag-private.h"
@@ -201,3 +203,117 @@ hidpp20_1b04_get_physical_mapping_name(uint16_t value)
 	return "UNKNOWN";
 }
 
+int
+hidpp_write_command(struct hidpp_device *dev, uint8_t *cmd, int size)
+{
+	int fd = dev->hidraw_fd;
+	int res;
+
+	if (size < 1 || !cmd || fd < 0)
+		return -EINVAL;
+
+	hidpp_log_buf_raw(dev, "hidpp write: ", cmd, size);
+	res = write(fd, cmd, size);
+	if (res < 0) {
+		res = -errno;
+		hidpp_log_error(dev, "Error: %s (%d)\n", strerror(-res), -res);
+	}
+
+	return res < 0 ? res : 0;
+}
+
+int
+hidpp_read_response(struct hidpp_device *dev, uint8_t *buf, size_t size)
+{
+	int fd = dev->hidraw_fd;
+	struct pollfd fds;
+	int rc;
+
+	if (size < 1 || !buf || fd < 0)
+		return -EINVAL;
+
+	fds.fd = fd;
+	fds.events = POLLIN;
+
+	rc = poll(&fds, 1, 1000);
+	if (rc == -1)
+		return -errno;
+
+	if (rc == 0)
+		return -ETIMEDOUT;
+
+	rc = read(fd, buf, size);
+
+	if (rc > 0)
+		hidpp_log_buf_raw(dev, "hidpp read:  ", buf, rc);
+
+	return rc >= 0 ? rc : -errno;
+}
+
+void
+hidpp_log(struct hidpp_device *dev,
+	  enum hidpp_log_priority priority,
+	  const char *format,
+	  ...)
+{
+	va_list args;
+
+	if (dev->log_priority > priority)
+		return;
+
+	va_start(args, format);
+	dev->log_handler(dev->userdata, priority, format, args);
+	va_end(args);
+}
+
+void
+hidpp_log_buffer(struct hidpp_device *dev,
+		 enum hidpp_log_priority priority,
+		 const char *header,
+		 uint8_t *buf, size_t len)
+{
+	_cleanup_free_ char *output_buf = NULL;
+	char *sep = "";
+	unsigned int i, n;
+	unsigned int buf_len;
+
+	buf_len = header ? strlen(header) : 0;
+	buf_len += len * 3;
+	buf_len += 1; /* terminating '\0' */
+
+	output_buf = zalloc(buf_len);
+	n = 0;
+	if (header)
+		n += snprintf_safe(output_buf, buf_len - n, "%s", header);
+
+	for (i = 0; i < len; ++i) {
+		n += snprintf_safe(&output_buf[n], buf_len - n, "%s%02x", sep, buf[i] & 0xFF);
+		sep = " ";
+	}
+
+	hidpp_log(dev, priority, "%s\n", output_buf);
+}
+
+static void
+simple_log(void *userdata, enum hidpp_log_priority priority, const char *format, va_list args)
+{
+	vprintf(format, args);
+}
+
+void
+hidpp_device_init(struct hidpp_device *dev, int fd)
+{
+	dev->hidraw_fd = fd;
+	hidpp_device_set_log_handler(dev, simple_log, HIDPP_LOG_PRIORITY_INFO, NULL);
+}
+
+void
+hidpp_device_set_log_handler(struct hidpp_device *dev,
+			     hidpp_log_handler log_handler,
+			     enum hidpp_log_priority priority,
+			     void *userdata)
+{
+	dev->log_handler = log_handler;
+	dev->log_priority = priority;
+	dev->userdata = userdata;
+}
