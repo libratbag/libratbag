@@ -469,8 +469,14 @@ hidpp10_read_memory(struct hidpp10_device *dev,
 /* 0xB2: Device Connection and Disconnection (Pairing)                        */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Open the receiver's lock to allow new devices be paired with this
+ * receiver. The timeout is in seconds, a value of 0 uses the device's
+ * default value (30s).
+ */
 int
-hidpp10_open_lock(struct hidpp10_device *device);
+hidpp10_open_lock(struct hidpp10_device *device, uint8_t timeout);
+
 int
 hidpp10_disconnect(struct hidpp10_device *device, int idx);
 

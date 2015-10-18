@@ -1057,9 +1057,11 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
 }
 
 int
-hidpp10_open_lock(struct hidpp10_device *device)
+hidpp10_open_lock(struct hidpp10_device *device, uint8_t timeout)
 {
-	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00, CONNECT_DEVICES_OPEN_LOCK, 0x08);
+	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00,
+									      CONNECT_DEVICES_OPEN_LOCK,
+									      timeout);
 
 	return hidpp10_request_command(device, &open_lock);
 }
