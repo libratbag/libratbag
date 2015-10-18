@@ -54,6 +54,3 @@ ratbag-command:
   specific device, as per-device separate scripts
 - add default set/get to profile, resolution
 
-Move the HW driver assignment to a udev rule/hwdb combination, i.e. assign
-RATBAG_DRIVER=hidpp10 in the hwdb so we don't have the recompile the driver
-for every device.
