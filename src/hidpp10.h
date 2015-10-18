@@ -462,7 +462,7 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 int
 hidpp10_read_memory(struct hidpp10_device *dev,
 		    uint8_t page,
-		    uint8_t offset,
+		    uint16_t offset,
 		    uint8_t bytes[16]);
 
 /* -------------------------------------------------------------------------- */
