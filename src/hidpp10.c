@@ -37,6 +37,8 @@
 #include <string.h>
 #include <poll.h>
 #include <unistd.h>
+#include <linux/hidraw.h>
+#include <sys/ioctl.h>
 
 #include "hidpp10.h"
 
@@ -86,6 +88,99 @@ hidpp10_set_unaligned_u16le(uint8_t *buf, uint16_t value)
 {
 	buf[0] = value & 0xFF;
 	buf[1] = value >> 8;
+}
+
+static unsigned int
+hidpp10_dpi_to_sensor(struct hidpp10_device *dev, unsigned int dpi)
+{
+	switch (dev->sensor) {
+	case HIDPP10_SENSOR_S6006:
+		if (dpi < 600)
+			return 0x80; /* 400 dpi */
+		else if (dpi < 1200)
+			return 0x81; /* 800 dpi */
+		else if (dpi < 1800)
+			return 0x82; /* 1600 dpi */
+		else
+			return 0x83; /* 2000 dpi */
+
+	case HIDPP10_SENSOR_A6090:
+		if (dpi < 200)
+			return 0x81; /* 200 dpi */
+		else if (dpi > 3200)
+			return 0x90; /* 3200 dpi */
+		else
+			return 0x80 + (dpi+100)/200;
+
+	case HIDPP10_SENSOR_S9500:
+		if (dpi < 200)
+			return 0x08; /* ~200 dpi, minimum accepted by LGS */
+		else if (dpi > 5700)
+			return 0xF3; /* ~5700 dpi, maxium accepted by LGS */
+		else
+			return (dpi*17 + 200) / 400;
+
+	case HIDPP10_SENSOR_S9808:
+		if (dpi < 200)
+			return 0x04;
+		else if (dpi > 8200)
+			return 0xA4;
+		else
+			return (dpi+25)/50;
+
+	default:
+		hidpp_log_error(&dev->base, "Unknown sensor\n");
+		return 0;
+	}
+}
+
+static unsigned int
+hidpp10_sensor_to_dpi(struct hidpp10_device *dev, unsigned int sensor_value)
+{
+	switch (dev->sensor) {
+	case HIDPP10_SENSOR_S6006:
+		switch (sensor_value) {
+		case 0x80:
+			return 400;
+		case 0x81:
+			return 800;
+		case 0x82:
+			return 1600;
+		case 0x83:
+			return 2000;
+		default:
+			return 0;
+		}
+
+	case HIDPP10_SENSOR_A6090:
+		if (sensor_value >= 0x81 && sensor_value <= 0x90)
+			return (sensor_value-0x80) * 200;
+		else {
+			return 0;
+		}
+
+	case HIDPP10_SENSOR_S9500:
+		if (sensor_value == 0) {
+			return 0;
+		}
+		else if (sensor_value > 0xF3)
+			return 5700;
+		else
+			return (sensor_value*400 + 8) / 17;
+
+	case HIDPP10_SENSOR_S9808:
+		if (sensor_value == 0) {
+			return 0;
+		}
+		else if (sensor_value > 0xA4)
+			return 8200;
+		else
+			return sensor_value*50;
+
+	default:
+		hidpp_log_error(&dev->base, "Unknown sensor\n");
+		return 0;
+	}
 }
 
 const char *device_types[0xFF] = {
@@ -559,9 +654,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		struct _hidpp10_dpi_mode *dpi = &p->dpi_modes[i];
 
 		be = (uint8_t*)&dpi->xres;
-		profile.dpi_modes[i].xres = hidpp10_get_unaligned_u16(be) * 50;
+		profile.dpi_modes[i].xres = hidpp10_sensor_to_dpi(dev, hidpp10_get_unaligned_u16(be));
 		be = (uint8_t*)&dpi->yres;
-		profile.dpi_modes[i].yres = hidpp10_get_unaligned_u16(be) * 50;
+		profile.dpi_modes[i].yres = hidpp10_sensor_to_dpi(dev, hidpp10_get_unaligned_u16(be));
 
 		profile.dpi_modes[i].led[0] = dpi->led1 == 0x2;
 		profile.dpi_modes[i].led[1] = dpi->led2 == 0x2;
@@ -926,9 +1021,8 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 	if (res)
 		return res;
 
-	/* resolution is in 50dpi multiples */
-	*xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
-	*yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
+	*xres = hidpp10_sensor_to_dpi(dev, hidpp10_get_unaligned_u16le(&resolution.data[4]));
+	*yres = hidpp10_sensor_to_dpi(dev, hidpp10_get_unaligned_u16le(&resolution.data[6]));
 
 	return 0;
 }
@@ -941,8 +1035,8 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 	unsigned idx = dev->index;
 	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
 
-	hidpp10_set_unaligned_u16le(&resolution.data[4], xres / 50);
-	hidpp10_set_unaligned_u16le(&resolution.data[6], yres / 50);
+	hidpp10_set_unaligned_u16le(&resolution.data[4], hidpp10_dpi_to_sensor(dev, xres));
+	hidpp10_set_unaligned_u16le(&resolution.data[6], hidpp10_dpi_to_sensor(dev, yres));
 
 	return hidpp10_request_command(dev, &resolution);
 }
@@ -1220,6 +1314,7 @@ hidpp10_device_new(const struct hidpp_device *base,
 		   int index)
 {
 	struct hidpp10_device *dev;
+	struct hidraw_devinfo devinfo;
 
 	dev = zalloc(sizeof(*dev));
 	if (!dev)
@@ -1227,6 +1322,30 @@ hidpp10_device_new(const struct hidpp_device *base,
 
 	dev->index = index;
 	dev->base = *base;
+	
+	if (-1 == ioctl(base->hidraw_fd, HIDIOCGRAWINFO, &devinfo)) {
+		hidpp_log_error(&dev->base, "Cannot get device info: %s\n", strerror(errno));
+		free (dev);
+		return NULL;
+	}
+	switch ((__u16)devinfo.product) {
+	case 0xc041: /* G5 */
+	case 0xc049: /* G5 (2007) */
+		dev->sensor = HIDPP10_SENSOR_S6006;
+		break;
+	case 0xc048: /* G9 */
+		dev->sensor = HIDPP10_SENSOR_A6090;
+		break;
+	case 0xc066: /* G9x */
+	case 0xc249: /* G9x (CoD:MW3) */
+	case 0xc068: /* G500 */
+		dev->sensor = HIDPP10_SENSOR_S9500;
+		break;
+	case 0xc24e: /* G500s */
+	default:
+		dev->sensor = HIDPP10_SENSOR_S9808;
+		break;
+	}
 
 	return dev;
 }

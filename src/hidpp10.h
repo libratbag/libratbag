@@ -38,10 +38,18 @@
  * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
 #define HIDPP10_NUM_PROFILES 3
 
+enum hidpp10_sensor {
+	HIDPP10_SENSOR_S6006,
+	HIDPP10_SENSOR_A6090,
+	HIDPP10_SENSOR_S9500,
+	HIDPP10_SENSOR_S9808,
+};
+
 struct hidpp10_device  {
 	struct hidpp_device base;
 	unsigned index;
 	uint16_t wpid;
+	enum hidpp10_sensor sensor;
 };
 
 struct hidpp10_device*
