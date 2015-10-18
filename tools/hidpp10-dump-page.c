@@ -35,8 +35,8 @@ dump_page(struct hidpp10_device *dev, size_t page, size_t offset)
 	int rc = 0;
 	uint8_t bytes[16];
 
-	while (offset < 256) {
-		hidpp_log_info(&dev->base, "page 0x%02zx off 0x%02zx: ", page, offset);
+	while (offset < 512) {
+		hidpp_log_info(&dev->base, "page 0x%02zx off 0x%03zx: ", page, offset);
 		rc = hidpp10_read_memory(dev, page, offset, bytes);
 		if (rc != 0)
 			break;

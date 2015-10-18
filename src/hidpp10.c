@@ -541,7 +541,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 	for (i = 0; i < sizeof(data); i += 16) {
 		/* each sector contains 16 bytes of data */
-		res = hidpp10_read_memory(dev, number, i / 2,  &data.data[i]);
+		res = hidpp10_read_memory(dev, number, i,  &data.data[i]);
 		if (res)
 			return res;
 	}
@@ -1011,12 +1011,17 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 }
 
 int
-hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint8_t offset,
+hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
 		    uint8_t bytes[16])
 {
 	unsigned idx = dev->index;
-	union hidpp10_message readmem = CMD_READ_MEMORY(idx, page, offset);
+	union hidpp10_message readmem = CMD_READ_MEMORY(idx, page, offset / 2);
 	int res;
+
+	if (offset % 2 != 0) {
+		hidpp_log_error(&dev->base, "Reading memory with odd offset is not supported.\n");
+		return -EINVAL;
+	}
 
 	if (page > 31)
 		return -EINVAL;
