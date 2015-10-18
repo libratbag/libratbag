@@ -38,6 +38,8 @@
  * 0 is zeroed, 1 and 2 are garbage, all above 6 is garbage */
 #define HIDPP10_NUM_PROFILES 3
 
+#define HIDPP10_MAX_PAGE_NUMBER 31
+
 struct hidpp10_device  {
 	struct hidpp_device base;
 	unsigned index;

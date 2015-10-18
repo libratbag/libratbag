@@ -1023,7 +1023,7 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
 		return -EINVAL;
 	}
 
-	if (page > 31)
+	if (page > HIDPP10_MAX_PAGE_NUMBER)
 		return -EINVAL;
 
 	hidpp_log_raw(&dev->base, "Reading memory page %d, offset %#x\n", page, offset);
