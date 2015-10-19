@@ -51,6 +51,7 @@
 #define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
 #define HIDPP_CAP_BATTERY_LEVEL_1000			(1 << 3)
 #define HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00		(1 << 4)
+#define HIDPP_CAP_ONBOARD_PROFILES_8100			(1 << 5)
 
 struct hidpp20drv_data {
 	struct hidpp_device base;
@@ -61,10 +62,11 @@ struct hidpp20drv_data {
 	struct hidpp20_sensor *sensors;
 	unsigned num_controls;
 	struct hidpp20_control_id *controls;
+	struct hidpp20_profiles *profiles;
 };
 
 static void
-hidpp20drv_read_button(struct ratbag_button *button)
+hidpp20drv_button_key_1b04_read_button(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -94,6 +96,48 @@ hidpp20drv_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+}
+
+static void
+hidpp20drv_onboard_profile_8100_read_button(struct ratbag_button *button)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *profile;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return;
+
+	profile = &drv_data->profiles->profiles[button->profile->index];
+
+	switch (profile->buttons[button->index].type) {
+	case HIDPP20_BUTTON_HID_MOUSE:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+		button->action.action.button = profile->buttons[button->index].code;
+		break;
+	case HIDPP20_BUTTON_HID_KEYBOARD:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+		button->action.action.key.key = ratbag_hidraw_get_keycode(device,
+									  profile->buttons[button->index].code);
+		break;
+	case HIDPP20_BUTTON_SPECIAL:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+		button->action.action.special = hidpp20_onboard_profiles_get_special(&drv_data->base,
+										     profile->buttons[button->index].code);
+		break;
+	}
+
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+}
+
+static void
+hidpp20drv_read_button(struct ratbag_button *button)
+{
+	hidpp20drv_button_key_1b04_read_button(button);
+	hidpp20drv_onboard_profile_8100_read_button(button);
 }
 
 static int
@@ -159,7 +203,18 @@ hidpp20drv_has_capability(const struct ratbag_device *device,
 static int
 hidpp20drv_current_profile(struct ratbag_device *device)
 {
-	return 0;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
+	int rc;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return 0;
+
+	rc = hidpp20_onboard_profiles_get_current_profile(&drv_data->base,
+							  drv_data->profiles);
+	if (rc < 0)
+		return rc;
+
+	return rc - 1;
 }
 
 static int
@@ -326,17 +381,66 @@ hidpp20drv_read_kbd_reprogrammable_key(struct ratbag_device *device)
 	return rc;
 }
 
+static int
+hidpp20drv_read_onboard_profile(struct ratbag_device *device, unsigned index)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return 0;
+
+	if (!drv_data->profiles) {
+		rc = hidpp20_onboard_profiles_allocate(&drv_data->base, &drv_data->profiles);
+		if (rc < 0)
+			return rc;
+
+		device->num_buttons = drv_data->profiles->num_buttons;
+	}
+
+	rc = hidpp20_onboard_profiles_read(&drv_data->base, index, drv_data->profiles);
+	if (rc < 0)
+		return rc;
+
+	return 0;
+}
+
 static void
 hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag_resolution *res;
+	unsigned i, dpi;
 
 	hidpp20drv_read_resolution_dpi(profile);
 	hidpp20drv_read_special_key_mouse(device);
+	hidpp20drv_read_onboard_profile(device, profile->index);
 
 	profile->is_active = false;
 	if ((int)index == hidpp20drv_current_profile(device))
 		profile->is_active = true;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return;
+
+	dpi = ratbag_resolution_get_dpi(profile->resolution.modes);
+
+	profile->resolution.num_modes = drv_data->profiles->num_modes;
+	for (i = 0; i < drv_data->profiles->num_modes; i++) {
+		struct hidpp20_profile *p = &drv_data->profiles->profiles[index];
+
+		res = ratbag_resolution_init(profile, i,
+					     p->dpi[i],
+					     p->dpi[i],
+					     p->report_rate);
+
+		if (profile->is_active &&
+		    res->dpi_x == dpi)
+			res->is_active = true;
+		if (i == p->default_dpi)
+			res->is_default = true;
+	}
 }
 
 static int
@@ -351,6 +455,13 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag *ratbag = device->ratbag;
 	int rc;
+	uint8_t feature_index, feature_type, feature_version;
+
+	rc = hidpp_root_get_feature(&drv_data->base,
+				    feature,
+				    &feature_index,
+				    &feature_type,
+				    &feature_version);
 
 	switch (feature) {
 	case HIDPP_PAGE_ROOT:
@@ -410,6 +521,10 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
 		log_debug(ratbag, "device has onboard profiles\n");
+		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
+		/* we read the profiles once with an incorect profile index
+		 * to get the correct number of supported profiles. */
+		hidpp20drv_read_onboard_profile(device, 0xffffff);
 		break;
 	}
 	case HIDPP_PAGE_MOUSE_BUTTON_SPY: {
@@ -503,7 +618,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 			goto err;
 	}
 
-	ratbag_device_init_profiles(device, 1,
+	ratbag_device_init_profiles(device, drv_data->profiles ? drv_data->profiles->num_profiles : 1,
 				    device->num_buttons ? device->num_buttons : 8);
 
 	return rc;
@@ -520,6 +635,8 @@ hidpp20drv_remove(struct ratbag_device *device)
 
 	ratbag_close_hidraw(device);
 
+	if (drv_data->profiles)
+		free(drv_data->profiles);
 	free(drv_data->controls);
 	free(drv_data->sensors);
 	free(drv_data);

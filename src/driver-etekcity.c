@@ -347,118 +347,6 @@ etekcity_button_to_action(struct ratbag_profile *profile,
 	return etekcity_raw_to_button_action(data);
 }
 
-static const unsigned int macro_mapping[] = {
-	[0x00 ... 0x03] = 0,
-	[0x04] = KEY_A,
-	[0x05] = KEY_B,
-	[0x06] = KEY_C,
-	[0x07] = KEY_D,
-	[0x08] = KEY_E,
-	[0x09] = KEY_F,
-	[0x0a] = KEY_G,
-	[0x0b] = KEY_H,
-	[0x0c] = KEY_I,
-	[0x0d] = KEY_J,
-	[0x0e] = KEY_K,
-	[0x0f] = KEY_L,
-	[0x10] = KEY_M,
-	[0x11] = KEY_N,
-	[0x12] = KEY_O,
-	[0x13] = KEY_P,
-	[0x14] = KEY_Q,
-	[0x15] = KEY_R,
-	[0x16] = KEY_S,
-	[0x17] = KEY_T,
-	[0x18] = KEY_U,
-	[0x19] = KEY_V,
-	[0x1a] = KEY_W,
-	[0x1b] = KEY_X,
-	[0x1c] = KEY_Y,
-	[0x1d] = KEY_Z,
-	[0x1e] = KEY_1,
-	[0x1f] = KEY_2,
-	[0x20] = KEY_3,
-	[0x21] = KEY_4,
-	[0x22] = KEY_5,
-	[0x23] = KEY_6,
-	[0x24] = KEY_7,
-	[0x25] = KEY_8,
-	[0x26] = KEY_9,
-	[0x27] = KEY_0,
-	[0x28] = KEY_ENTER,
-	[0x29] = KEY_ESC,
-	[0x2a] = KEY_BACKSPACE,
-	[0x2b] = KEY_TAB,
-	[0x2c] = KEY_SPACE,
-	[0x2d] = KEY_MINUS,
-	[0x2e] = KEY_EQUAL,
-	[0x2f] = KEY_LEFTBRACE,
-	[0x30] = KEY_RIGHTBRACE,
-	[0x31] = KEY_BACKSLASH,
-	[0x32] = KEY_BACKSLASH,
-	[0x33] = KEY_SEMICOLON,
-	[0x34] = KEY_APOSTROPHE,
-	[0x35] = KEY_GRAVE,
-	[0x36] = KEY_COMMA,
-	[0x37] = KEY_DOT,
-	[0x38] = KEY_SLASH,
-	[0x39] = KEY_CAPSLOCK,
-	[0x3a] = KEY_F1,
-	[0x3b] = KEY_F2,
-	[0x3c] = KEY_F3,
-	[0x3d] = KEY_F4,
-	[0x3e] = KEY_F5,
-	[0x3f] = KEY_F6,
-	[0x40] = KEY_F7,
-	[0x41] = KEY_F8,
-	[0x42] = KEY_F9,
-	[0x43] = KEY_F10,
-	[0x44] = KEY_F11,
-	[0x45] = KEY_F12,
-	[0x46] = KEY_SYSRQ,
-	[0x47] = KEY_SCROLLLOCK,
-	[0x48] = KEY_PAUSE,
-	[0x49] = KEY_INSERT,
-	[0x4a] = KEY_HOME,
-	[0x4b] = KEY_PAGEUP,
-	[0x4c] = KEY_DELETE,
-	[0x4d] = KEY_END,
-	[0x4e] = KEY_PAGEDOWN,
-	[0x4f] = KEY_RIGHT,
-	[0x50] = KEY_LEFT,
-	[0x51] = KEY_DOWN,
-	[0x52] = KEY_UP,
-	[0x53] = KEY_NUMLOCK,
-	[0x54] = KEY_KPSLASH,
-	[0x55] = KEY_KPASTERISK,
-	[0x56] = KEY_KPMINUS,
-	[0x57] = KEY_KPPLUS,
-	[0x58] = KEY_KPENTER,
-	[0x59] = KEY_KP1,
-	[0x5a] = KEY_KP2,
-	[0x5b] = KEY_KP3,
-	[0x5c] = KEY_KP4,
-	[0x5d] = KEY_KP5,
-	[0x5e] = KEY_KP6,
-	[0x5f] = KEY_KP7,
-	[0x60] = KEY_KP8,
-	[0x61] = KEY_KP9,
-	[0x62] = KEY_KP0,
-	[0x63] = KEY_KPDOT,
-	[0x64] = KEY_102ND,
-	[0x65] = KEY_COMPOSE,
-	[0x66 ... 0xdf] = 0,
-	[0xe0] = KEY_LEFTCTRL,
-	[0xe1] = KEY_LEFTSHIFT,
-	[0xe2] = KEY_LEFTALT,
-	[0xe3] = KEY_LEFTMETA,
-	[0xe4] = KEY_RIGHTCTRL,
-	[0xe5] = KEY_RIGHTSHIFT,
-	[0xe6] = KEY_RIGHTALT,
-	[0xe7] = KEY_RIGHTMETA,
-	[0xe8 ... 0xff] = 0,
-};
-
 static void
 etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
@@ -608,13 +496,15 @@ etekcity_read_button(struct ratbag_button *button)
 				button->index, button->profile->index,
 				macro->name, macro->length);
 			for (j = 0; j < macro->length; j++) {
+				unsigned int keycode = ratbag_hidraw_get_keycode(device,
+										 macro->keys[j].keycode);
 				ratbag_button_set_macro_event(button,
 							      j,
 							      macro->keys[j].flag & 0x80 ? RATBAG_MACRO_EVENT_KEY_RELEASED : RATBAG_MACRO_EVENT_KEY_PRESSED,
-							      macro_mapping[macro->keys[j].keycode]);
+							      keycode);
 				log_raw(device->ratbag,
 					"    - %s %s\n",
-					libevdev_event_code_get_name(EV_KEY, macro_mapping[macro->keys[j].keycode]),
+					libevdev_event_code_get_name(EV_KEY, keycode),
 					macro->keys[j].flag & 0x80 ? "released" : "pressed");
 			}
 		}
@@ -630,7 +520,7 @@ etekcity_write_macro(struct ratbag_button *button,
 	struct etekcity_macro *macro;
 	struct etekcity_data *drv_data;
 	uint8_t *buf;
-	unsigned i, j, count = 0;
+	unsigned i, count = 0;
 	int rc;
 
 	if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
@@ -652,10 +542,8 @@ etekcity_write_macro(struct ratbag_button *button,
 		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_WAIT)
 			continue;
 
-		for (j = 0; j < ARRAY_LENGTH(macro_mapping); j++) {
-			if (macro_mapping[j] == action->macro->events[i].event.key)
-				macro->keys[count].keycode = j;
-		}
+		macro->keys[count].keycode = ratbag_hidraw_get_hid_keyboard_usage(device,
+										  action->macro->events[i].event.key);
 		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED)
 			macro->keys[count].flag = 0x00;
 		else

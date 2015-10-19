@@ -111,6 +111,8 @@ button_action_special_to_str(struct ratbag_button *button)
 	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP:	str = "resolution cycle up"; break;
 	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP:	str = "resolution up"; break;
 	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN:	str = "resolution down"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE:	str = "resolution alternate"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT:	str = "resolution default"; break;
 
 	/* Profile */
 	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP:	str = "profile cycle up"; break;
@@ -247,9 +249,12 @@ str_to_special_action(const char *str) {
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,	"resolution cycle up" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,		"resolution up" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,		"resolution down" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE,	"resolution alternate" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT,	"resolution default" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,	"profile cycle up" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP,		"profile up" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN,		"profile down" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,		"secondary mode" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_INVALID,		NULL },
 	};
 	struct map *m = map;

@@ -253,10 +253,80 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp_device *device,
 
 #define HIDPP_PAGE_ONBOARD_PROFILES			0x8100
 
+#define HIDPP20_BUTTON_HID_MOUSE		0x81
+#define HIDPP20_BUTTON_HID_KEYBOARD		0x82
+#define HIDPP20_BUTTON_HID_CONSUMER_CONTROL	0x83
+#define HIDPP20_BUTTON_SPECIAL			0x90
+#define HIDPP20_BUTTON_DISABLED			0xFF
+
+#define HIDPP20_MODIFIER_KEY_CTRL	0x01
+#define HIDPP20_MODIFIER_KEY_SHIFT	0x02
+
+struct hidpp20_profile {
+	uint8_t index;
+	uint8_t enabled;
+	unsigned report_rate;
+	unsigned default_dpi;
+	unsigned switched_dpi;
+	uint16_t dpi[5];
+	struct {
+		uint8_t type;
+		uint8_t modifiers;
+		uint8_t code;
+	} buttons[32];
+};
+
+struct hidpp20_profiles {
+	uint8_t feature_index;
+	uint8_t num_profiles;
+	uint8_t num_buttons;
+	uint8_t num_modes;
+	struct hidpp20_profile profiles[5];
+};
+
+/**
+ * allocates a list of profiles that has to be freed by the caller.
+ *
+ * returns the number of profiles in the list or a negative error
+ */
+int hidpp20_onboard_profiles_allocate(struct hidpp_device *device,
+					struct hidpp20_profiles **profiles_list);
+
+/**
+ * return the current profile index or a negative error.
+ */
+int hidpp20_onboard_profiles_get_current_profile(struct hidpp_device *device,
+					struct hidpp20_profiles *profiles_list);
+
+/**
+ * parse a given profile from the mouse and fill in the right profile in
+ * profiles_list.
+ *
+ * return 0 or a negative error.
+ */
+int hidpp20_onboard_profiles_read(struct hidpp_device *device,
+				  unsigned int index,
+				  struct hidpp20_profiles *profiles_list);
+
+
+enum ratbag_button_action_special
+hidpp20_onboard_profiles_get_special(struct hidpp_device *device,
+				     uint8_t code);
+
+int
+hidpp20_onboard_profiles_read_memory(struct hidpp_device *device,
+				     uint8_t reg,
+				     uint8_t read_rom,
+				     uint8_t page,
+				     uint8_t section,
+				     uint8_t result[16]);
+
 /* -------------------------------------------------------------------------- */
 /* 0x8110 - Mouse Button Spy                                                  */
 /* -------------------------------------------------------------------------- */
 
 #define HIDPP_PAGE_MOUSE_BUTTON_SPY			0x8110
+
+
 
 #endif /* HIDPP_20_H */
