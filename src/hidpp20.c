@@ -313,13 +313,12 @@ hidpp20_feature_set_get_feature_id(struct hidpp20_device *device,
 }
 
 /**
- * allocates a list of features that has to be freed by the caller.
+ * allocates the list of features.
  *
- * returns the elements in the list or a negative error
+ * returns 0 or a negative error
  */
 static int
-hidpp20_feature_set_get(struct hidpp20_device *device,
-			struct hidpp20_feature **feature_list)
+hidpp20_feature_set_get(struct hidpp20_device *device)
 {
 	uint8_t feature_index, feature_type, feature_version;
 	struct hidpp20_feature *flist;
@@ -341,10 +340,8 @@ hidpp20_feature_set_get(struct hidpp20_device *device,
 
 	feature_count = (uint8_t)rc;
 
-	if (!feature_count) {
-		*feature_list = NULL;
-		return 0;
-	}
+	if (!feature_count)
+		return -ENOTSUP;
 
 	flist = zalloc(feature_count * sizeof(struct hidpp20_feature));
 
@@ -358,8 +355,10 @@ hidpp20_feature_set_get(struct hidpp20_device *device,
 			goto err;
 	}
 
-	*feature_list = flist;
-	return feature_count;
+	device->feature_list = flist;
+	device->feature_count = feature_count;
+
+	return 0;
 err:
 	free(flist);
 	return rc;
@@ -935,11 +934,9 @@ hidpp20_device_new(const struct hidpp_device *base, unsigned int idx)
 		goto err;
 	}
 
-	rc = hidpp20_feature_set_get(dev, &dev->feature_list);
-	if (rc <= 0)
+	rc = hidpp20_feature_set_get(dev);
+	if (rc < 0)
 		goto err;
-
-	dev->feature_count = rc;
 
 	return dev;
 err:
