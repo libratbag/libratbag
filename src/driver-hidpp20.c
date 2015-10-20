@@ -350,6 +350,8 @@ hidpp20drv_read_onboard_profile(struct ratbag_device *device, unsigned index)
 		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
 		if (rc < 0)
 			return rc;
+
+		device->num_buttons = drv_data->profiles->num_buttons;
 	}
 
 	rc = hidpp20_onboard_profiles_read(drv_data->dev, index, drv_data->profiles);

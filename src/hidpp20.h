@@ -275,6 +275,7 @@ struct hidpp20_profile {
 
 struct hidpp20_profiles {
 	uint8_t num_profiles;
+	uint8_t num_buttons;
 	uint8_t num_modes;
 	struct hidpp20_profile profiles[5];
 };
