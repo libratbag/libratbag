@@ -180,6 +180,29 @@ hidpp20_get_unaligned_u16(uint8_t *buf)
 #define CMD_ROOT_GET_FEATURE				0x00
 #define CMD_ROOT_GET_PROTOCOL_VERSION			0x10
 
+/**
+ * Returns the feature index or 0x00 if it is not found.
+ */
+static uint8_t
+hidpp_root_get_feature_idx(struct hidpp20_device *device,
+			   uint16_t feature)
+{
+	unsigned i;
+
+	/* error or not, we should not ask for feature 0 */
+	if (feature == 0x0000)
+		return 0;
+
+	/* feature 0x0000 is always at 0 */
+	for (i = 1; i < device->feature_count; i++) {
+		if (device->feature_list[i].feature == feature)
+			return i;
+	}
+
+	return 0;
+}
+
+
 int
 hidpp_root_get_feature(struct hidpp20_device *device,
 		       uint16_t feature,
@@ -354,7 +377,7 @@ hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 				       uint16_t *level,
 				       uint16_t *next_level)
 {
-	uint8_t feature_index, feature_type, feature_version;
+	uint8_t feature_index;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = device->index,
@@ -362,13 +385,10 @@ hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 	};
 	int rc;
 
-	rc = hidpp_root_get_feature(device,
-				    HIDPP_PAGE_BATTERY_LEVEL_STATUS,
-				    &feature_index,
-				    &feature_type,
-				    &feature_version);
-	if (rc)
-		return rc;
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_BATTERY_LEVEL_STATUS);
+	if (feature_index == 0)
+		return -ENOTSUP;
 
 	msg.msg.sub_id = feature_index;
 
@@ -436,19 +456,16 @@ int
 hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp20_device *device,
 					     struct hidpp20_control_id **controls_list)
 {
-	uint8_t feature_index, feature_type, feature_version;
+	uint8_t feature_index;
 	struct hidpp20_control_id *c_list, *control;
 	uint8_t num_controls;
 	unsigned i;
 	int rc;
 
-	rc = hidpp_root_get_feature(device,
-				    HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS,
-				    &feature_index,
-				    &feature_type,
-				    &feature_version);
-	if (rc)
-		return rc;
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS);
+	if (feature_index == 0)
+		return -ENOTSUP;
 
 	rc = hidpp20_kbd_reprogrammable_keys_get_count(device, feature_index);
 	if (rc < 0)
@@ -577,20 +594,17 @@ hidpp20_special_keys_buttons_get_reporting(struct hidpp20_device *device,
 int hidpp20_special_key_mouse_get_controls(struct hidpp20_device *device,
 					   struct hidpp20_control_id **controls_list)
 {
-	uint8_t feature_index, feature_type, feature_version;
+	uint8_t feature_index;
 	struct hidpp20_control_id *c_list, *control;
 	uint8_t num_controls;
 	unsigned i;
 	int rc;
 
 
-	rc = hidpp_root_get_feature(device,
-				    HIDPP_PAGE_SPECIAL_KEYS_BUTTONS,
-				    &feature_index,
-				    &feature_type,
-				    &feature_version);
-	if (rc)
-		return rc;
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_SPECIAL_KEYS_BUTTONS);
+	if (feature_index == 0)
+		return -ENOTSUP;
 
 	rc = hidpp20_special_keys_buttons_get_count(device, feature_index);
 	if (rc < 0)
@@ -650,7 +664,7 @@ int
 hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 				      struct hidpp20_control_id *control)
 {
-	uint8_t feature_index, feature_type, feature_version;
+	uint8_t feature_index;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = device->index,
@@ -661,16 +675,11 @@ hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 		.msg.parameters[3] = control->reporting.remapped >> 8,
 		.msg.parameters[4] = control->reporting.remapped & 0xff,
 	};
-	int rc;
 
-
-	rc = hidpp_root_get_feature(device,
-				    HIDPP_PAGE_SPECIAL_KEYS_BUTTONS,
-				    &feature_index,
-				    &feature_type,
-				    &feature_version);
-	if (rc)
-		return rc;
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_SPECIAL_KEYS_BUTTONS);
+	if (feature_index == 0)
+		return -ENOTSUP;
 
 	msg.msg.sub_id = feature_index;
 	if (control->reporting.divert)
@@ -694,7 +703,7 @@ hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 					   uint16_t *resolution,
 					   uint8_t *flags)
 {
-	uint8_t feature_index, feature_type, feature_version;
+	uint8_t feature_index;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = device->index,
@@ -702,13 +711,10 @@ hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 	};
 	int rc;
 
-	rc = hidpp_root_get_feature(device,
-				    HIDPP_PAGE_MOUSE_POINTER_BASIC,
-				    &feature_index,
-				    &feature_type,
-				    &feature_version);
-	if (rc)
-		return rc;
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_MOUSE_POINTER_BASIC);
+	if (feature_index == 0)
+		return -ENOTSUP;
 
 	msg.msg.sub_id = feature_index;
 
@@ -817,20 +823,16 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device,
 				       struct hidpp20_sensor **sensors_list)
 {
-	uint8_t feature_index, feature_type, feature_version;
+	uint8_t feature_index;
 	struct hidpp20_sensor *s_list, *sensor;
 	uint8_t num_sensors;
 	unsigned i;
 	int rc;
 
-
-	rc = hidpp_root_get_feature(device,
-				    HIDPP_PAGE_ADJUSTABLE_DPI,
-				    &feature_index,
-				    &feature_type,
-				    &feature_version);
-	if (rc)
-		return rc;
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ADJUSTABLE_DPI);
+	if (feature_index == 0)
+		return -ENOTSUP;
 
 	rc = hidpp20_adjustable_dpi_get_count(device, feature_index);
 	if (rc < 0)
@@ -877,7 +879,7 @@ err:
 int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi)
 {
-	uint8_t feature_index, feature_type, feature_version;
+	uint8_t feature_index;
 	uint16_t returned_parameters;
 	int rc;
 	union hidpp20_message msg = {
@@ -889,13 +891,10 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 		.msg.parameters[2] = dpi & 0xff,
 	};
 
-	rc = hidpp_root_get_feature(device,
-				    HIDPP_PAGE_ADJUSTABLE_DPI,
-				    &feature_index,
-				    &feature_type,
-				    &feature_version);
-	if (rc)
-		return rc;
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ADJUSTABLE_DPI);
+	if (feature_index == 0)
+		return -ENOTSUP;
 
 	msg.msg.sub_id = feature_index;
 
