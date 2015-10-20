@@ -930,6 +930,9 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define CMD_ONBOARD_PROFILES_GET_CURRENT_DPI_INDEX	0xb0
 #define CMD_ONBOARD_PROFILES_SET_CURRENT_DPI_INDEX	0xc0
 
+#define HIDPP20_PROFILE_SIZE		(15*16)
+#define HIDPP20_BUTTON_HID		0x80
+
 static int
 hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint16_t page,
@@ -1066,7 +1069,7 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				  unsigned int index,
 				  struct hidpp20_profiles *profiles_list)
 {
-	uint8_t data[16] = {0};
+	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
 	unsigned i;
 	int rc;
@@ -1074,12 +1077,14 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
-	rc = hidpp20_onboard_profiles_read_memory(device,
-						  index + 1,
-						  0x0000,
-						  data);
-	if (rc < 0)
-		return rc;
+	for (i = 0; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
+		rc = hidpp20_onboard_profiles_read_memory(device,
+							  index + 1,
+							  i * 0x10,
+							  data + i * 0x10);
+		if (rc < 0)
+			return rc;
+	}
 
 	profile->report_rate = 1000 / max(1, data[0]);
 	profile->default_dpi = data[1];
@@ -1087,6 +1092,25 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 
 	for (i = 0; i < 5; i++) {
 		profile->dpi[i] = hidpp20_get_unaligned_be_u16(&data[2 * i + 3]);
+	}
+
+	for (i = 0; i < profiles_list->num_buttons; i++) {
+		uint8_t *button = data + 0x20 + i * 4;
+
+		profile->buttons[i].type = button[0];
+
+		if (button[0] == HIDPP20_BUTTON_HID) {
+			profile->buttons[i].type |= button[1];
+
+			if (profile->buttons[i].type == HIDPP20_BUTTON_HID_KEYBOARD) {
+				profile->buttons[i].modifiers = button[2];
+				profile->buttons[i].code = button[3];
+			} else {
+				profile->buttons[i].code = ffs(hidpp20_get_unaligned_u16(&button[2]));
+			}
+		} else if (button[0] == HIDPP20_BUTTON_SPECIAL) {
+			profile->buttons[i].code = button[1];
+		}
 	}
 
 	return 0;
