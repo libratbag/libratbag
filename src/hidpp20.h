@@ -46,11 +46,18 @@ union hidpp20_message {
 	uint8_t data[LONG_MESSAGE_LENGTH];
 };
 
+struct hidpp20_feature {
+	uint16_t feature;
+	uint8_t type;
+};
+
 struct hidpp20_device {
 	struct hidpp_device base;
 	unsigned int index;
 	unsigned proto_major;
 	unsigned proto_minor;
+	unsigned feature_count;
+	struct hidpp20_feature *feature_list;
 };
 
 int hidpp20_request_command(struct hidpp20_device *dev, union hidpp20_message *msg);
@@ -87,21 +94,8 @@ int hidpp20_root_get_protocol_version(struct hidpp20_device *dev,
 
 #define HIDPP_PAGE_FEATURE_SET				0x0001
 
-struct hidpp20_feature {
-	uint16_t feature;
-	uint8_t type;
-};
-
-/**
- * allocates a list of features that has to be freed by the caller.
- *
- * returns the elements in the list or a negative error
- */
-int hidpp20_feature_set_get(struct hidpp20_device *device,
-			    struct hidpp20_feature **feature_list);
-
 /* -------------------------------------------------------------------------- */
-/* 0x0001: Device Info                                                        */
+/* 0x0003: Device Info                                                        */
 /* -------------------------------------------------------------------------- */
 
 #define HIDPP_PAGE_DEVICE_INFO				0x0003

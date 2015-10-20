@@ -289,8 +289,14 @@ hidpp20_feature_set_get_feature_id(struct hidpp20_device *device,
 	return 0;
 }
 
-int hidpp20_feature_set_get(struct hidpp20_device *device,
-			    struct hidpp20_feature **feature_list)
+/**
+ * allocates a list of features that has to be freed by the caller.
+ *
+ * returns the elements in the list or a negative error
+ */
+static int
+hidpp20_feature_set_get(struct hidpp20_device *device,
+			struct hidpp20_feature **feature_list)
 {
 	uint8_t feature_index, feature_type, feature_version;
 	struct hidpp20_feature *flist;
@@ -931,6 +937,12 @@ hidpp20_device_new(const struct hidpp_device *base, unsigned int idx)
 		goto err;
 	}
 
+	rc = hidpp20_feature_set_get(dev, &dev->feature_list);
+	if (rc <= 0)
+		goto err;
+
+	dev->feature_count = rc;
+
 	return dev;
 err:
 	free(dev);
@@ -940,5 +952,6 @@ err:
 void
 hidpp20_device_destroy(struct hidpp20_device *device)
 {
+	free(device->feature_list);
 	free(device);
 }
