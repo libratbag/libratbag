@@ -113,6 +113,11 @@ hidpp20drv_onboard_profile_8100_read_button(struct ratbag_button *button)
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 		button->action.action.button = profile->buttons[button->index].code;
 		break;
+	case HIDPP20_BUTTON_HID_KEYBOARD:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+							profile->buttons[button->index].code);
+		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 	}
