@@ -933,7 +933,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_PROFILE_SIZE		(15*16)
 #define HIDPP20_BUTTON_HID		0x80
 
-static int
+int
 hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint8_t read_rom,
 				     uint8_t page,
