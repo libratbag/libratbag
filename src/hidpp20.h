@@ -46,9 +46,24 @@ union hidpp20_message {
 	uint8_t data[LONG_MESSAGE_LENGTH];
 };
 
-int hidpp20_request_command(struct hidpp_device *dev, union hidpp20_message *msg);
+struct hidpp20_device {
+	struct hidpp_device base;
+	unsigned int index;
+};
+
+int hidpp20_request_command(struct hidpp20_device *dev, union hidpp20_message *msg);
 
 const char *hidpp20_feature_get_name(uint16_t feature);
+
+/* -------------------------------------------------------------------------- */
+/* generic hidpp20 device operations                                          */
+/* -------------------------------------------------------------------------- */
+
+struct hidpp20_device *
+hidpp20_device_new(const struct hidpp_device *base, unsigned int idx);
+
+void
+hidpp20_device_destroy(struct hidpp20_device *device);
 
 /* -------------------------------------------------------------------------- */
 /* 0x0000: Root                                                               */
@@ -56,12 +71,12 @@ const char *hidpp20_feature_get_name(uint16_t feature);
 
 #define HIDPP_PAGE_ROOT					0x0000
 
-int hidpp_root_get_feature(struct hidpp_device *devdevice,
+int hidpp_root_get_feature(struct hidpp20_device *device,
 			   uint16_t feature,
 			   uint8_t *feature_index,
 			   uint8_t *feature_type,
 			   uint8_t *feature_version);
-int hidpp20_root_get_protocol_version(struct hidpp_device *dev,
+int hidpp20_root_get_protocol_version(struct hidpp20_device *dev,
 				      unsigned *major,
 				      unsigned *minor);
 /* -------------------------------------------------------------------------- */
@@ -80,7 +95,7 @@ struct hidpp20_feature {
  *
  * returns the elements in the list or a negative error
  */
-int hidpp20_feature_set_get(struct hidpp_device *device,
+int hidpp20_feature_set_get(struct hidpp20_device *device,
 			    struct hidpp20_feature **feature_list);
 
 /* -------------------------------------------------------------------------- */
@@ -111,7 +126,7 @@ enum hidpp20_battery_status {
  *
  * @return the battery status or a negative errno on error
  */
-int hidpp20_batterylevel_get_battery_level(struct hidpp_device *device,
+int hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 					   uint16_t *level,
 					   uint16_t *next_level);
 
@@ -149,7 +164,7 @@ struct hidpp20_control_id {
 	} reporting;
 };
 
-int hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp_device *device,
+int hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp20_device *device,
 						 struct hidpp20_control_id **controls_list);
 
 /* -------------------------------------------------------------------------- */
@@ -163,7 +178,7 @@ int hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp_device *device,
  *
  * returns the elements in the list or a negative error
  */
-int hidpp20_special_key_mouse_get_controls(struct hidpp_device *device,
+int hidpp20_special_key_mouse_get_controls(struct hidpp20_device *device,
 					   struct hidpp20_control_id **controls_list);
 
 /**
@@ -172,7 +187,7 @@ int hidpp20_special_key_mouse_get_controls(struct hidpp_device *device,
  *
  * returns 0 or a negative error
  */
-int hidpp20_special_key_mouse_set_control(struct hidpp_device *device,
+int hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 					  struct hidpp20_control_id *control);
 
 const struct ratbag_button_action *hidpp20_1b04_get_logical_mapping(uint16_t value);
@@ -196,7 +211,7 @@ const char *hidpp20_1b04_get_physical_mapping_name(uint16_t value);
 #define HIDDP20_MOUSE_POINTER_ACCELERATION_MEDIUM	0x02
 #define HIDDP20_MOUSE_POINTER_ACCELERATION_HIGH		0x03
 
-int hidpp20_mousepointer_get_mousepointer_info(struct hidpp_device *device,
+int hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 					       uint16_t *resolution,
 					       uint8_t *flags);
 
@@ -225,14 +240,14 @@ struct hidpp20_sensor {
  *
  * returns the elements in the list or a negative error
  */
-int hidpp20_adjustable_dpi_get_sensors(struct hidpp_device *device,
+int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device,
 				       struct hidpp20_sensor **sensors_list);
 
 /**
  * set the current dpi of the provided sensor. sensor must have been
  * allocated by  hidpp20_adjustable_dpi_get_sensors()
  */
-int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp_device *device,
+int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi);
 
 /* -------------------------------------------------------------------------- */

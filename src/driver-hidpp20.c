@@ -53,7 +53,7 @@
 #define HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00		(1 << 4)
 
 struct hidpp20drv_data {
-	struct hidpp_device dev;
+	struct hidpp20_device *dev;
 	unsigned proto_major;
 	unsigned proto_minor;
 	unsigned long capabilities;
@@ -118,7 +118,7 @@ hidpp20drv_write_button(struct ratbag_button *button,
 	control->reporting.remapped = mapping;
 	control->reporting.updated = 1;
 
-	rc = hidpp20_special_key_mouse_set_control(&drv_data->dev, control);
+	rc = hidpp20_special_key_mouse_set_control(drv_data->dev, control);
 	if (rc == ERR_INVALID_ADDRESS)
 		return -EINVAL;
 
@@ -189,7 +189,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		uint8_t flags;
 
 		profile->resolution.num_modes = 1;
-		rc = hidpp20_mousepointer_get_mousepointer_info(&drv_data->dev, &resolution, &flags);
+		rc = hidpp20_mousepointer_get_mousepointer_info(drv_data->dev, &resolution, &flags);
 		if (rc) {
 			log_error(ratbag,
 				  "Error while requesting resolution: %s (%d)\n",
@@ -204,7 +204,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		free(drv_data->sensors);
 		drv_data->sensors = NULL;
 		drv_data->num_sensors = 0;
-		rc = hidpp20_adjustable_dpi_get_sensors(&drv_data->dev, &drv_data->sensors);
+		rc = hidpp20_adjustable_dpi_get_sensors(drv_data->dev, &drv_data->sensors);
 		if (rc < 0) {
 			log_error(ratbag,
 				  "Error while requesting resolution: %s (%d)\n",
@@ -278,7 +278,7 @@ hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution,
 			goto out;
 	}
 
-	rc = hidpp20_adjustable_dpi_set_sensor_dpi(&drv_data->dev, sensor, dpi);
+	rc = hidpp20_adjustable_dpi_set_sensor_dpi(drv_data->dev, sensor, dpi);
 
 out:
 	return rc;
@@ -296,7 +296,7 @@ hidpp20drv_read_special_key_mouse(struct ratbag_device *device)
 	free(drv_data->controls);
 	drv_data->controls = NULL;
 	drv_data->num_controls = 0;
-	rc = hidpp20_special_key_mouse_get_controls(&drv_data->dev, &drv_data->controls);
+	rc = hidpp20_special_key_mouse_get_controls(drv_data->dev, &drv_data->controls);
 	if (rc > 0) {
 		drv_data->num_controls = rc;
 		rc = 0;
@@ -317,7 +317,7 @@ hidpp20drv_read_kbd_reprogrammable_key(struct ratbag_device *device)
 	free(drv_data->controls);
 	drv_data->controls = NULL;
 	drv_data->num_controls = 0;
-	rc = hidpp20_kbd_reprogrammable_keys_get_controls(&drv_data->dev, &drv_data->controls);
+	rc = hidpp20_kbd_reprogrammable_keys_get_controls(drv_data->dev, &drv_data->controls);
 	if (rc > 0) {
 		drv_data->num_controls = rc;
 		rc = 0;
@@ -379,7 +379,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		uint16_t level, next_level;
 		enum hidpp20_battery_status status;
 
-		rc = hidpp20_batterylevel_get_battery_level(&drv_data->dev, &level, &next_level);
+		rc = hidpp20_batterylevel_get_battery_level(drv_data->dev, &level, &next_level);
 		if (rc < 0)
 			return rc;
 		status = rc;
@@ -429,7 +429,7 @@ hidpp20drv_20_probe(struct ratbag_device *device)
 	struct hidpp20_feature *feature_list;
 	int rc, i;
 
-	rc = hidpp20_feature_set_get(&drv_data->dev, &feature_list);
+	rc = hidpp20_feature_set_get(drv_data->dev, &feature_list);
 	if (rc < 0)
 		return rc;
 
@@ -468,6 +468,8 @@ hidpp20drv_probe(struct ratbag_device *device)
 {
 	int rc;
 	struct hidpp20drv_data *drv_data;
+	struct hidpp_device base;
+	struct hidpp20_device *dev;
 
 	rc = ratbag_find_hidraw(device, hidpp20drv_test_hidraw);
 	if (rc == -ENODEV) {
@@ -482,13 +484,22 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
-	hidpp_device_init(&drv_data->dev, device->hidraw.fd);
-	hidpp_device_set_log_handler(&drv_data->dev, hidpp20_log, HIDPP_LOG_PRIORITY_RAW, device);
+	hidpp_device_init(&base, device->hidraw.fd);
+	hidpp_device_set_log_handler(&base, hidpp20_log, HIDPP_LOG_PRIORITY_RAW, device);
 
+	dev = hidpp20_device_new(&base, RECEIVER_IDX);
+	if (!dev) {
+		log_error(device->ratbag,
+			  "Failed to get HID++1.0 device for %s\n",
+			  device->name);
+		goto err;
+	}
+
+	drv_data->dev = dev;
 	drv_data->proto_major = 1;
 	drv_data->proto_minor = 0;
 
-	rc = hidpp20_root_get_protocol_version(&drv_data->dev, &drv_data->proto_major, &drv_data->proto_minor);
+	rc = hidpp20_root_get_protocol_version(drv_data->dev, &drv_data->proto_major, &drv_data->proto_minor);
 	if (rc) {
 		/* communication error, best to ignore the device */
 		rc = -EINVAL;
@@ -522,6 +533,7 @@ hidpp20drv_remove(struct ratbag_device *device)
 
 	free(drv_data->controls);
 	free(drv_data->sensors);
+	hidpp20_device_destroy(drv_data->dev);
 	free(drv_data);
 }
 

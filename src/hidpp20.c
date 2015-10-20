@@ -73,7 +73,7 @@ hidpp20_feature_get_name(uint16_t feature)
 }
 
 static int
-hidpp20_request_command_allow_error(struct hidpp_device *device, union hidpp20_message *msg,
+hidpp20_request_command_allow_error(struct hidpp20_device *device, union hidpp20_message *msg,
 				    bool allow_error)
 {
 	union hidpp20_message read_buffer;
@@ -86,7 +86,7 @@ hidpp20_request_command_allow_error(struct hidpp_device *device, union hidpp20_m
 	const int DEVICE_SW_ID = 0x8;
 
 	if (msg->msg.address & 0xf) {
-		hidpp_log_raw(device, "hidpp20 error: sw address is already set\n");
+		hidpp_log_raw(&device->base, "hidpp20 error: sw address is already set\n");
 		return -EINVAL;
 	}
 	msg->msg.address |= DEVICE_SW_ID;
@@ -94,7 +94,7 @@ hidpp20_request_command_allow_error(struct hidpp_device *device, union hidpp20_m
 	msg_len = msg->msg.report_id == REPORT_ID_SHORT ? SHORT_MESSAGE_LENGTH : LONG_MESSAGE_LENGTH;
 
 	/* Send the message to the Device */
-	ret = hidpp_write_command(device, msg->data, msg_len);
+	ret = hidpp_write_command(&device->base, msg->data, msg_len);
 	if (ret)
 		goto out_err;
 
@@ -103,12 +103,12 @@ hidpp20_request_command_allow_error(struct hidpp_device *device, union hidpp20_m
 	 * loop until we get the actual answer or an error code.
 	 */
 	do {
-		ret = hidpp_read_response(device, read_buffer.data, LONG_MESSAGE_LENGTH);
+		ret = hidpp_read_response(&device->base, read_buffer.data, LONG_MESSAGE_LENGTH);
 
 		/* Wait and retry if the USB timed out */
 		if (ret == -ETIMEDOUT) {
 			msleep(10);
-			ret = hidpp_read_response(device, read_buffer.data, LONG_MESSAGE_LENGTH);
+			ret = hidpp_read_response(&device->base, read_buffer.data, LONG_MESSAGE_LENGTH);
 		}
 
 		if (read_buffer.msg.report_id != REPORT_ID_SHORT &&
@@ -127,13 +127,13 @@ hidpp20_request_command_allow_error(struct hidpp_device *device, union hidpp20_m
 		    read_buffer.msg.parameters[0] == msg->msg.address) {
 			hidpp_err = read_buffer.msg.parameters[1];
 			if (allow_error)
-				hidpp_log_debug(device,
+				hidpp_log_debug(&device->base,
 						"    HID++ error from the device (%d): %s (%02x)\n",
 						read_buffer.msg.device_idx,
 						hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
 						hidpp_err);
 			else
-				hidpp_log_error(device,
+				hidpp_log_error(&device->base,
 						"    HID++ error from the device (%d): %s (%02x)\n",
 						read_buffer.msg.device_idx,
 						hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
@@ -143,7 +143,7 @@ hidpp20_request_command_allow_error(struct hidpp_device *device, union hidpp20_m
 	} while (ret > 0);
 
 	if (ret < 0) {
-		hidpp_log_error(device, "    USB error: %s (%d)\n", strerror(-ret), -ret);
+		hidpp_log_error(&device->base, "    USB error: %s (%d)\n", strerror(-ret), -ret);
 		perror("write");
 		goto out_err;
 	}
@@ -160,7 +160,7 @@ out_err:
 }
 
 int
-hidpp20_request_command(struct hidpp_device *device, union hidpp20_message *msg)
+hidpp20_request_command(struct hidpp20_device *device, union hidpp20_message *msg)
 {
 	return hidpp20_request_command_allow_error(device, msg, false);
 }
@@ -181,7 +181,7 @@ hidpp20_get_unaligned_u16(uint8_t *buf)
 #define CMD_ROOT_GET_PROTOCOL_VERSION			0x10
 
 int
-hidpp_root_get_feature(struct hidpp_device *device,
+hidpp_root_get_feature(struct hidpp20_device *device,
 		       uint16_t feature,
 		       uint8_t *feature_index,
 		       uint8_t *feature_type,
@@ -190,7 +190,7 @@ hidpp_root_get_feature(struct hidpp_device *device,
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_FEATURE,
 		.msg.parameters[0] = feature >> 8,
@@ -205,19 +205,19 @@ hidpp_root_get_feature(struct hidpp_device *device,
 	*feature_type = msg.msg.parameters[1];
 	*feature_version = msg.msg.parameters[2];
 
-	hidpp_log_raw(device, "feature 0x%04x is at 0x%02x\n", feature, *feature_index);
+	hidpp_log_raw(&device->base, "feature 0x%04x is at 0x%02x\n", feature, *feature_index);
 	return 0;
 }
 
 int
-hidpp20_root_get_protocol_version(struct hidpp_device *device,
+hidpp20_root_get_protocol_version(struct hidpp20_device *device,
 				  unsigned *major,
 				  unsigned *minor)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_PROTOCOL_VERSION,
 	};
@@ -246,12 +246,12 @@ hidpp20_root_get_protocol_version(struct hidpp_device *device,
 #define CMD_FEATURE_SET_GET_FEATURE_ID			0x10
 
 static int
-hidpp20_feature_set_get_count(struct hidpp_device *device, uint8_t reg)
+hidpp20_feature_set_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_FEATURE_SET_GET_COUNT,
 	};
@@ -264,7 +264,7 @@ hidpp20_feature_set_get_count(struct hidpp_device *device, uint8_t reg)
 }
 
 static int
-hidpp20_feature_set_get_feature_id(struct hidpp_device *device,
+hidpp20_feature_set_get_feature_id(struct hidpp20_device *device,
 				   uint8_t reg,
 				   uint8_t feature_index,
 				   uint16_t *feature,
@@ -273,7 +273,7 @@ hidpp20_feature_set_get_feature_id(struct hidpp_device *device,
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_FEATURE_SET_GET_FEATURE_ID,
 		.msg.parameters[0] = feature_index,
@@ -289,7 +289,7 @@ hidpp20_feature_set_get_feature_id(struct hidpp_device *device,
 	return 0;
 }
 
-int hidpp20_feature_set_get(struct hidpp_device *device,
+int hidpp20_feature_set_get(struct hidpp20_device *device,
 			    struct hidpp20_feature **feature_list)
 {
 	uint8_t feature_index, feature_type, feature_version;
@@ -344,14 +344,14 @@ err:
 #define CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_CAPABILITY		0x10
 
 int
-hidpp20_batterylevel_get_battery_level(struct hidpp_device *device,
+hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 				       uint16_t *level,
 				       uint16_t *next_level)
 {
 	uint8_t feature_index, feature_type, feature_version;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.address = CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_LEVEL_STATUS,
 	};
 	int rc;
@@ -384,11 +384,11 @@ hidpp20_batterylevel_get_battery_level(struct hidpp_device *device,
 #define CMD_KBD_REPROGRAMMABLE_KEYS_GET_CTRL_ID_INFO	0x10
 
 static int
-hidpp20_kbd_reprogrammable_keys_get_count(struct hidpp_device *device, uint8_t reg)
+hidpp20_kbd_reprogrammable_keys_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_COUNT,
 	};
@@ -402,14 +402,14 @@ hidpp20_kbd_reprogrammable_keys_get_count(struct hidpp_device *device, uint8_t r
 }
 
 static int
-hidpp20_kbd_reprogrammable_keys_get_info(struct hidpp_device *device,
+hidpp20_kbd_reprogrammable_keys_get_info(struct hidpp20_device *device,
 					 uint8_t reg,
 					 struct hidpp20_control_id *control)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_CTRL_ID_INFO,
 		.msg.parameters[0] = control->index,
@@ -427,7 +427,7 @@ hidpp20_kbd_reprogrammable_keys_get_info(struct hidpp_device *device,
 }
 
 int
-hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp_device *device,
+hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp20_device *device,
 					     struct hidpp20_control_id **controls_list)
 {
 	uint8_t feature_index, feature_type, feature_version;
@@ -467,7 +467,7 @@ hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp_device *device,
 
 		/* 0x1b00 and 0x1b04 have the same control/task id mappings.
 		 * I hope */
-		hidpp_log_raw(device,
+		hidpp_log_raw(&device->base,
 			      "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x\n",
 			      control->index,
 			      hidpp20_1b04_get_logical_mapping_name(control->control_id),
@@ -494,12 +494,12 @@ err:
 #define CMD_SPECIAL_KEYS_BUTTONS_SET_REPORTING		0x30
 
 static int
-hidpp20_special_keys_buttons_get_count(struct hidpp_device *device, uint8_t reg)
+hidpp20_special_keys_buttons_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT,
 	};
@@ -512,14 +512,14 @@ hidpp20_special_keys_buttons_get_count(struct hidpp_device *device, uint8_t reg)
 }
 
 static int
-hidpp20_special_keys_buttons_get_info(struct hidpp_device *device,
+hidpp20_special_keys_buttons_get_info(struct hidpp20_device *device,
 				    uint8_t reg,
 				    struct hidpp20_control_id *control)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_INFO,
 		.msg.parameters[0] = control->index,
@@ -542,14 +542,14 @@ hidpp20_special_keys_buttons_get_info(struct hidpp_device *device,
 
 
 static int
-hidpp20_special_keys_buttons_get_reporting(struct hidpp_device *device,
+hidpp20_special_keys_buttons_get_reporting(struct hidpp20_device *device,
 					   uint8_t reg,
 					   struct hidpp20_control_id *control)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING,
 		.msg.parameters[0] = control->control_id >> 8,
@@ -568,7 +568,7 @@ hidpp20_special_keys_buttons_get_reporting(struct hidpp_device *device,
 	return 0;
 }
 
-int hidpp20_special_key_mouse_get_controls(struct hidpp_device *device,
+int hidpp20_special_key_mouse_get_controls(struct hidpp20_device *device,
 					   struct hidpp20_control_id **controls_list)
 {
 	uint8_t feature_index, feature_type, feature_version;
@@ -613,7 +613,7 @@ int hidpp20_special_key_mouse_get_controls(struct hidpp_device *device,
 		if (rc)
 			goto err;
 
-		hidpp_log_raw(device,
+		hidpp_log_raw(&device->base,
 			      "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x pos: %d group: %d gmask: 0x%02x raw_XY: %s\n"
 			      "      reporting: raw_xy: %s persist: %s divert: %s remapped: '%s' (%d)\n",
 			      control->index,
@@ -641,13 +641,13 @@ err:
 }
 
 int
-hidpp20_special_key_mouse_set_control(struct hidpp_device *device,
+hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 				      struct hidpp20_control_id *control)
 {
 	uint8_t feature_index, feature_type, feature_version;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_SET_REPORTING,
 		.msg.parameters[0] = control->control_id >> 8,
 		.msg.parameters[1] = control->control_id & 0xff,
@@ -684,14 +684,14 @@ hidpp20_special_key_mouse_set_control(struct hidpp_device *device,
 #define CMD_MOUSE_POINTER_BASIC_GET_INFO		0x00
 
 int
-hidpp20_mousepointer_get_mousepointer_info(struct hidpp_device *device,
+hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 					   uint16_t *resolution,
 					   uint8_t *flags)
 {
 	uint8_t feature_index, feature_type, feature_version;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.address = CMD_MOUSE_POINTER_BASIC_GET_INFO,
 		.msg.parameters[0] = feature_index,
 	};
@@ -727,12 +727,12 @@ hidpp20_mousepointer_get_mousepointer_info(struct hidpp_device *device,
 #define CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI		0x30
 
 static int
-hidpp20_adjustable_dpi_get_count(struct hidpp_device *device, uint8_t reg)
+hidpp20_adjustable_dpi_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_COUNT,
 	};
@@ -745,7 +745,7 @@ hidpp20_adjustable_dpi_get_count(struct hidpp_device *device, uint8_t reg)
 }
 
 static int
-hidpp20_adjustable_dpi_get_dpi_list(struct hidpp_device *device,
+hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 				    uint8_t reg,
 				    struct hidpp20_sensor *sensor)
 {
@@ -753,7 +753,7 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp_device *device,
 	unsigned i = 1, dpi_index = 0;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
 		.msg.parameters[0] = sensor->index,
@@ -786,14 +786,14 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp_device *device,
 
 
 static int
-hidpp20_adjustable_dpi_get_dpi(struct hidpp_device *device,
+hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 			       uint8_t reg,
 			       struct hidpp20_sensor *sensor)
 {
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI,
 		.msg.parameters[0] = sensor->index,
@@ -809,7 +809,7 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp_device *device,
 	return 0;
 }
 
-int hidpp20_adjustable_dpi_get_sensors(struct hidpp_device *device,
+int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device,
 				       struct hidpp20_sensor **sensors_list)
 {
 	uint8_t feature_index, feature_type, feature_version;
@@ -852,7 +852,7 @@ int hidpp20_adjustable_dpi_get_sensors(struct hidpp_device *device,
 		if (rc)
 			goto err;
 
-		hidpp_log_raw(device,
+		hidpp_log_raw(&device->base,
 			      "sensor %d: current dpi: %d (default: %d) min: %d max: %d steps: %d\n",
 			      sensor->index,
 			      sensor->dpi,
@@ -869,7 +869,7 @@ err:
 	return rc;
 }
 
-int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp_device *device,
+int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi)
 {
 	uint8_t feature_index, feature_type, feature_version;
@@ -877,7 +877,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp_device *device,
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
-		.msg.device_idx = 0xff,
+		.msg.device_idx = device->index,
 		.msg.address = CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI,
 		.msg.parameters[0] = sensor->index,
 		.msg.parameters[1] = dpi >> 8,
@@ -905,4 +905,27 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp_device *device,
 		return -EIO;
 
 	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* generic hidpp20 device operations                                          */
+/* -------------------------------------------------------------------------- */
+
+struct hidpp20_device *
+hidpp20_device_new(const struct hidpp_device *base, unsigned int idx)
+{
+	struct hidpp20_device *dev;
+
+	dev = zalloc(sizeof(*dev));
+
+	dev->index = idx;
+	dev->base = *base;
+
+	return dev;
+}
+
+void
+hidpp20_device_destroy(struct hidpp20_device *device)
+{
+	free(device);
 }
