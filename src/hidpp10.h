@@ -43,12 +43,8 @@
 struct hidpp10_device  {
 	struct hidpp_device base;
 	unsigned index;
-	uint16_t wpid;
 };
 
-struct hidpp10_device*
-hidpp10_device_new_from_wpid(const struct hidpp_device *base,
-			     uint16_t wpid);
 struct hidpp10_device*
 hidpp10_device_new_from_idx(const struct hidpp_device *base,
 			    int idx);

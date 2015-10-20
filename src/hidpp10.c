@@ -1239,26 +1239,6 @@ hidpp10_device_new(const struct hidpp_device *base,
 }
 
 struct hidpp10_device*
-hidpp10_device_new_from_wpid(const struct hidpp_device *base, uint16_t wpid)
-{
-	struct hidpp10_device *dev;
-	int i;
-
-	for (i = 1; i < 7; i++) {
-		dev = hidpp10_device_new_from_idx(base, i);
-		if (!dev)
-			continue;
-
-		if (dev->wpid == wpid)
-			return dev;
-
-		hidpp10_device_destroy(dev);
-	}
-
-	return NULL;
-}
-
-struct hidpp10_device*
 hidpp10_device_new_from_idx(const struct hidpp_device *base, int idx)
 {
 	struct hidpp10_device *dev;
