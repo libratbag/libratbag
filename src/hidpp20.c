@@ -699,7 +699,6 @@ hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_MOUSE_POINTER_BASIC_GET_INFO,
-		.msg.parameters[0] = feature_index,
 	};
 	int rc;
 
