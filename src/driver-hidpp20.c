@@ -54,8 +54,6 @@
 
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
-	unsigned proto_major;
-	unsigned proto_minor;
 	unsigned long capabilities;
 	unsigned num_sensors;
 	struct hidpp20_sensor *sensors;
@@ -496,19 +494,10 @@ hidpp20drv_probe(struct ratbag_device *device)
 	}
 
 	drv_data->dev = dev;
-	drv_data->proto_major = 1;
-	drv_data->proto_minor = 0;
 
-	rc = hidpp20_root_get_protocol_version(drv_data->dev, &drv_data->proto_major, &drv_data->proto_minor);
-	if (rc) {
-		/* communication error, best to ignore the device */
-		rc = -EINVAL;
-		goto err;
-	}
+	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), dev->proto_major, dev->proto_minor);
 
-	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), drv_data->proto_major, drv_data->proto_minor);
-
-	if (drv_data->proto_major >= 2) {
+	if (dev->proto_major >= 2) {
 		rc = hidpp20drv_20_probe(device);
 		if (rc)
 			goto err;

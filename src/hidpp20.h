@@ -49,6 +49,8 @@ union hidpp20_message {
 struct hidpp20_device {
 	struct hidpp_device base;
 	unsigned int index;
+	unsigned proto_major;
+	unsigned proto_minor;
 };
 
 int hidpp20_request_command(struct hidpp20_device *dev, union hidpp20_message *msg);

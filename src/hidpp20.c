@@ -915,13 +915,26 @@ struct hidpp20_device *
 hidpp20_device_new(const struct hidpp_device *base, unsigned int idx)
 {
 	struct hidpp20_device *dev;
+	int rc;
 
 	dev = zalloc(sizeof(*dev));
 
 	dev->index = idx;
 	dev->base = *base;
 
+	dev->proto_major = 1;
+	dev->proto_minor = 0;
+
+	rc = hidpp20_root_get_protocol_version(dev, &dev->proto_major, &dev->proto_minor);
+	if (rc) {
+		/* communication error, best to ignore the device */
+		goto err;
+	}
+
 	return dev;
+err:
+	free(dev);
+	return NULL;
 }
 
 void
