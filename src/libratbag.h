@@ -312,7 +312,7 @@ ratbag_ref(struct ratbag *ratbag);
  * invalid and may not be interacted with.
  *
  * @param ratbag A previously initialized ratbag context
- * @return NULL if context was destroyed otherwise the passed context
+ * @return Always NULL
  */
 struct ratbag *
 ratbag_unref(struct ratbag *ratbag);
