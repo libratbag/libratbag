@@ -46,8 +46,7 @@ struct hidpp10_device  {
 };
 
 struct hidpp10_device*
-hidpp10_device_new_from_idx(const struct hidpp_device *base,
-			    int idx);
+hidpp10_device_new(const struct hidpp_device *base, int idx);
 
 void
 hidpp10_device_destroy(struct hidpp10_device *dev);

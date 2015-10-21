@@ -234,7 +234,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 	 * so even for unifying receiver devices we can just 0x00 as device
 	 * index.
 	 */
-	dev = hidpp10_device_new_from_idx(&base, WIRED_DEVICE_IDX);
+	dev = hidpp10_device_new(&base, WIRED_DEVICE_IDX);
 
 	if (!dev) {
 		log_error(device->ratbag,
