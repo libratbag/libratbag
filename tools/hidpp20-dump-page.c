@@ -79,9 +79,8 @@ dump_everything(struct hidpp20_device *dev)
 	rc = dump_all_pages(dev, 0);
 	if (rc)
 		return rc;
-	rc = dump_all_pages(dev, 1);
-	if (rc)
-		return rc;
+
+	return dump_all_pages(dev, 1);
 }
 
 void
