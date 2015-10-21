@@ -973,8 +973,7 @@ hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 }
 
 int
-hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device,
-					     struct hidpp20_profiles *profiles_list)
+hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 {
 	uint8_t feature_index;
 	int rc;

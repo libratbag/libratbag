@@ -208,8 +208,7 @@ hidpp20drv_current_profile(struct ratbag_device *device)
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
 		return 0;
 
-	rc = hidpp20_onboard_profiles_get_current_profile(drv_data->dev,
-							  drv_data->profiles);
+	rc = hidpp20_onboard_profiles_get_current_profile(drv_data->dev);
 	if (rc < 0)
 		return rc;
 
