@@ -1222,32 +1222,16 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	return 0;
 }
 
-static struct hidpp10_device*
-hidpp10_device_new(const struct hidpp_device *base,
-		   int index)
+struct hidpp10_device*
+hidpp10_device_new(const struct hidpp_device *base, int idx)
 {
 	struct hidpp10_device *dev;
 
 	dev = zalloc(sizeof(*dev));
-	if (!dev)
-		return NULL;
-
-	dev->index = index;
-	dev->base = *base;
-
-	return dev;
-}
-
-struct hidpp10_device*
-hidpp10_device_new_from_idx(const struct hidpp_device *base, int idx)
-{
-	struct hidpp10_device *dev;
-
-	dev = hidpp10_device_new(base, idx);
-	if (!dev)
-		return NULL;
 
 	dev->index = idx;
+	dev->base = *base;
+
 	if (hidpp10_get_device_info(dev) != 0) {
 		hidpp10_device_destroy(dev);
 		dev = NULL;

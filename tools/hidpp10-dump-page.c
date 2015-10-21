@@ -98,7 +98,7 @@ main(int argc, char **argv)
 		error(1, errno, "Failed to open path %s", path);
 
 	hidpp_device_init(&base, fd);
-	dev = hidpp10_device_new_from_idx(&base, WIRED_DEVICE_IDX);
+	dev = hidpp10_device_new(&base, WIRED_DEVICE_IDX);
 
 	if (argc == 2)
 		rc = dump_all_pages(dev);
