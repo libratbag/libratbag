@@ -10,12 +10,6 @@ libratbag_la_SOURCES =			\
 	driver-hidpp10.c		\
 	driver-roccat.c			\
 	driver-test.c			\
-	hidpp-generic.h			\
-	hidpp-generic.c			\
-	hidpp10.c			\
-	hidpp10.h			\
-	hidpp20.c			\
-	hidpp20.h			\
 	libratbag.c			\
 	libratbag.h			\
 	libratbag-hidraw.c		\
@@ -26,7 +20,9 @@ libratbag_la_SOURCES =			\
 	libratbag-test.c		\
 	libratbag-test.h
 
-libratbag_la_LIBADD = $(LIBUDEV_LIBS) $(LIBEVDEV_LIBS)
+libratbag_la_LIBADD = 			\
+	libhidpp.la			\
+	$(LIBUDEV_LIBS) $(LIBEVDEV_LIBS)
 
 libratbag_la_CFLAGS = -I$(top_srcdir)/include \
 		      $(LIBUDEV_CFLAGS)		\
