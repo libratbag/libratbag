@@ -1,7 +1,5 @@
 lib_LTLIBRARIES = libratbag.la
-noinst_LTLIBRARIES =			\
-	libhidpp10.la			\
-	libhidpp20.la
+noinst_LTLIBRARIES = libhidpp.la
 
 include_HEADERS =			\
 	libratbag.h
@@ -49,14 +47,10 @@ EXTRA_DIST = libratbag-version.h.in libratbag.sym
 
 # The hidpp libraries are static libraries only for in-tree tools. No API
 # stability is guaranteed here.
-libhidpp10_la_SOURCES = \
+libhidpp_la_SOURCES = \
 			hidpp-generic.h	\
 			hidpp-generic.c	\
 			hidpp10.h	\
-			hidpp10.c
-
-libhidpp20_la_SOURCES = \
-			hidpp-generic.h	\
-			hidpp-generic.c	\
+			hidpp10.c	\
 			hidpp20.h	\
 			hidpp20.c
