@@ -930,7 +930,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define CMD_ONBOARD_PROFILES_GET_CURRENT_DPI_INDEX	0xb0
 #define CMD_ONBOARD_PROFILES_SET_CURRENT_DPI_INDEX	0xc0
 
-#define HIDPP20_PROFILE_SIZE		(15*16)
+#define HIDPP20_PROFILE_SIZE		(16*16)
 #define HIDPP20_BUTTON_HID		0x80
 
 int
