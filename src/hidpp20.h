@@ -317,6 +317,9 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				  unsigned int index,
 				  struct hidpp20_profiles *profiles_list);
 
+int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
+				   unsigned int index,
+				   struct hidpp20_profiles *profiles_list);
 
 enum ratbag_button_action_special
 hidpp20_onboard_profiles_get_special(uint8_t code);

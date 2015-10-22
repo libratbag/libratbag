@@ -972,6 +972,110 @@ hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 	return 0;
 }
 
+static int
+hidpp20_onboard_profiles_write_start(struct hidpp20_device *device,
+				     uint8_t page,
+				     uint8_t section)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_ADDR_WRITE,
+		.msg.parameters[0] = 0x00,
+		.msg.parameters[1] = page,
+		.msg.parameters[2] = 0,
+		.msg.parameters[3] = section,
+		.msg.parameters[4] = 0x01,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ONBOARD_PROFILES);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+static int
+hidpp20_onboard_profiles_write_end(struct hidpp20_device *device)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_WRITE_END,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ONBOARD_PROFILES);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+static int
+hidpp20_onboard_profiles_write_data(struct hidpp20_device *device,
+				    uint8_t page,
+				    uint8_t section,
+				    uint8_t *data,
+				    size_t len)
+{
+	uint8_t feature_index;
+	int transfered = 0;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_WRITE,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ONBOARD_PROFILES);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_onboard_profiles_write_start(device, page, section);
+	if (rc)
+		return rc;
+
+	while (len >= 16) {
+		msg.msg.address = CMD_ONBOARD_PROFILES_MEMORY_WRITE;
+		memcpy(msg.msg.parameters, data, 16);
+
+		rc = hidpp20_request_command(device, &msg);
+		if (rc)
+			return rc;
+
+		len -= 16;
+		data += 16;
+		transfered += 16;
+	}
+
+	rc = hidpp20_onboard_profiles_write_end(device);
+	if (rc)
+		return rc;
+
+	return transfered;
+}
+
 int
 hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 {
@@ -1117,6 +1221,101 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 			profile->buttons[i].code = button[1];
 		}
 	}
+
+	return 0;
+}
+
+/*
+ * The following crc computation has been provided by Logitech
+ */
+#define CRC_CCITT_SEED	0xFFFF
+
+static uint16_t
+hidpp20_crc_ccitt(uint8_t *data, unsigned int length)
+{
+	uint16_t crc, temp, quick;
+	unsigned int i;
+
+	crc = CRC_CCITT_SEED;
+
+	for (i = 0; i < length; i++) {
+		temp = (crc >> 8) ^ (*data++);
+		crc <<=8;
+		quick = temp ^ (temp >> 4);
+		crc ^= quick;
+		quick <<= 5;
+		crc ^= quick;
+		quick <<= 7;
+		crc ^= quick;
+	}
+
+	return crc;
+}
+
+int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
+				   unsigned int index,
+				   struct hidpp20_profiles *profiles_list)
+{
+	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
+	uint16_t temp, crc;
+	struct hidpp20_profile *profile = &profiles_list->profiles[index];
+	unsigned i;
+	int rc;
+
+	if (index >= profiles_list->num_profiles)
+		return -EINVAL;
+
+	for (i = 0; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
+		rc = hidpp20_onboard_profiles_read_memory(device,
+							  0,
+							  index + 1,
+							  i * 0x10,
+							  data + i * 0x10);
+		if (rc < 0)
+			return rc;
+	}
+
+	data[0] = 1000 / profile->report_rate;
+	data[1] = profile->default_dpi;
+	data[2] = profile->switched_dpi;
+
+	for (i = 0; i < 5; i++) {
+		data[2 * i + 3] = profile->dpi[i] & 0xff;
+		data[2 * i + 4] = (profile->dpi[i] >> 8) & 0xff;
+	}
+
+	for (i = 0; i < profiles_list->num_buttons; i++) {
+		uint8_t *button = data + 0x20 + i * 4;
+
+		button[0] = profile->buttons[i].type & 0xf0;
+
+		if (button[0] == HIDPP20_BUTTON_HID) {
+			button[1] = profile->buttons[i].type & 0x0f;
+
+			if (profile->buttons[i].type == HIDPP20_BUTTON_HID_KEYBOARD) {
+				button[2] = profile->buttons[i].modifiers;
+				button[3] = profile->buttons[i].code;
+			} else {
+				temp = 1U << (profile->buttons[i].code - 1);
+				button[2] = (temp >> 8) & 0xff;
+				button[3] = temp & 0xff;
+			}
+		} else if (button[0] == HIDPP20_BUTTON_SPECIAL) {
+			button[1] = profile->buttons[i].code;
+		}
+	}
+
+	crc = hidpp20_crc_ccitt(data, sizeof(data) - 2);
+
+	data[HIDPP20_PROFILE_SIZE - 2] = (crc >> 8) & 0xff;
+	data[HIDPP20_PROFILE_SIZE - 1] = crc & 0xff;
+
+	rc = hidpp20_onboard_profiles_write_data(device, index + 1, 0x00, data, sizeof(data));
+	if (rc < 0)
+		return rc;
+
+	if (rc != sizeof(data))
+		return -EIO;
 
 	return 0;
 }
