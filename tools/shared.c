@@ -120,7 +120,7 @@ button_action_special_to_str(struct ratbag_button *button)
 	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN:		str = "profile down"; break;
 
 	/* Second mode for buttons */
-	case RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE:		str = "second mode"; break;
+	case RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE:		str = "secondary mode"; break;
 	}
 
 	return str;
