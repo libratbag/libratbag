@@ -87,43 +87,52 @@ button_type_to_str(enum ratbag_button_type type)
 	return str;
 }
 
+const static struct map {
+	enum ratbag_button_action_special special;
+	const char *str;
+} special_map[] =  {
+	{ RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN,			"unknown" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK,		"doubleclick" },
+
+	/* Wheel mappings */
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT,		"wheel left" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT,		"wheel right" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP,		"wheel up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN,		"wheel down" },
+
+	/* DPI switch */
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,	"resolution cycle up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,		"resolution up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,		"resolution down" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE,	"resolution alternate" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT,	"resolution default" },
+
+	/* Profile */
+	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,	"profile cycle up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP,		"profile up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN,		"profile down" },
+
+	/* Second mode for buttons */
+	{ RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,		"secondary mode" },
+
+	/* must be the last entry in the table */
+	{ RATBAG_BUTTON_ACTION_SPECIAL_INVALID,		NULL },
+};
+
 const char *
 button_action_special_to_str(struct ratbag_button *button)
 {
 	enum ratbag_button_action_special special;
-	const char *str = "UNKNOWN";
+	const struct map *m = special_map;
 
 	special = ratbag_button_get_special(button);
 
-	switch (special) {
-	case RATBAG_BUTTON_ACTION_SPECIAL_INVALID:		str = "invalid"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN:		str = "unknown"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK:		str = "double click"; break;
-
-	/* Wheel mappings */
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT:		str = "wheel left"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT:		str = "wheel right"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:		str = "wheel up"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:		str = "wheel down"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH:	str = "ratchet mode switch"; break;
-
-	/* DPI switch */
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP:	str = "resolution cycle up"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP:	str = "resolution up"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN:	str = "resolution down"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE:	str = "resolution alternate"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT:	str = "resolution default"; break;
-
-	/* Profile */
-	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP:	str = "profile cycle up"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP:		str = "profile up"; break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN:		str = "profile down"; break;
-
-	/* Second mode for buttons */
-	case RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE:		str = "secondary mode"; break;
+	while (m->special != RATBAG_BUTTON_ACTION_SPECIAL_INVALID) {
+		if (m->special == special)
+			return m->str;
+		m++;
 	}
-
-	return str;
+	return "UNKNOWN";
 }
 
 char *
@@ -237,27 +246,7 @@ ratbag_cmd_open_device(struct ratbag *ratbag, const char *path)
 
 enum ratbag_button_action_special
 str_to_special_action(const char *str) {
-	struct map {
-		enum ratbag_button_action_special special;
-		const char *str;
-	} map[] =  {
-	{ RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK,		"doubleclick" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT,		"wheel left" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT,		"wheel right" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP,		"wheel up" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN,		"wheel down" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,	"resolution cycle up" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,		"resolution up" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,		"resolution down" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE,	"resolution alternate" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT,	"resolution default" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,	"profile cycle up" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP,		"profile up" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN,		"profile down" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,		"secondary mode" },
-	{ RATBAG_BUTTON_ACTION_SPECIAL_INVALID,		NULL },
-	};
-	struct map *m = map;
+	const struct map *m = special_map;
 
 	while (m->str) {
 		if (streq(m->str, str))
