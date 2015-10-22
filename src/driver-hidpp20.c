@@ -56,6 +56,7 @@
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
 	unsigned long capabilities;
+	unsigned long exported_capabilities;
 	unsigned num_sensors;
 	struct hidpp20_sensor *sensors;
 	unsigned num_controls;
@@ -241,20 +242,19 @@ hidpp20drv_has_capability(const struct ratbag_device *device,
 	 */
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
 
-	switch (cap) {
-	case RATBAG_DEVICE_CAP_NONE:
+	if (cap == RATBAG_DEVICE_CAP_NONE)
 		abort();
-	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
-		return !!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201);
-	case RATBAG_DEVICE_CAP_BUTTON_KEY:
-		return !!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04) ||
-			!!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100);
-	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
-	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
-	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
-		return 0;
-	}
-	return 0;
+
+	return !!(drv_data->exported_capabilities & (1UL << cap));
+}
+
+static inline void
+hidpp20drv_set_exported_capability(const struct ratbag_device *device,
+				   enum ratbag_device_capability cap)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
+
+	drv_data->exported_capabilities |= (1UL << cap);
 }
 
 static int
@@ -530,12 +530,14 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {
 		log_debug(ratbag, "device has adjustable dpi\n");
+		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
 		log_debug(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
+		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
 		if (!hidpp20drv_read_special_key_mouse(device))
@@ -578,6 +580,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
+		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		/* we read the profiles once with an incorect profile index
 		 * to get the correct number of supported profiles. */
 		hidpp20drv_read_onboard_profile(device, 0xffffff);
