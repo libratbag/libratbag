@@ -64,7 +64,7 @@ struct hidpp20drv_data {
 };
 
 static void
-hidpp20drv_button_key_1b04_read_button(struct ratbag_button *button)
+hidpp20drv_read_button_1b04(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -97,7 +97,7 @@ hidpp20drv_button_key_1b04_read_button(struct ratbag_button *button)
 }
 
 static void
-hidpp20drv_onboard_profile_8100_read_button(struct ratbag_button *button)
+hidpp20drv_read_button_8100(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -135,8 +135,8 @@ hidpp20drv_onboard_profile_8100_read_button(struct ratbag_button *button)
 static void
 hidpp20drv_read_button(struct ratbag_button *button)
 {
-	hidpp20drv_button_key_1b04_read_button(button);
-	hidpp20drv_onboard_profile_8100_read_button(button);
+	hidpp20drv_read_button_1b04(button);
+	hidpp20drv_read_button_8100(button);
 }
 
 static int
