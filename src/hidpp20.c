@@ -1343,6 +1343,19 @@ hidpp20_onboard_profiles_get_special(uint8_t code)
 	return hidpp20_profiles_specials[code];
 }
 
+uint8_t
+hidpp20_onboard_profiles_get_code_from_special(enum ratbag_button_action_special special)
+{
+	uint8_t i = 0;
+
+	while (++i) {
+		if (hidpp20_profiles_specials[i] == special)
+			return i;
+	}
+
+	return RATBAG_BUTTON_ACTION_SPECIAL_INVALID;
+}
+
 /* -------------------------------------------------------------------------- */
 /* generic hidpp20 device operations                                          */
 /* -------------------------------------------------------------------------- */

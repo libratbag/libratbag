@@ -324,6 +324,9 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 enum ratbag_button_action_special
 hidpp20_onboard_profiles_get_special(uint8_t code);
 
+uint8_t
+hidpp20_onboard_profiles_get_code_from_special(enum ratbag_button_action_special special);
+
 int
 hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint8_t read_rom,

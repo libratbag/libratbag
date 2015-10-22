@@ -175,11 +175,55 @@ hidpp20drv_write_button_1b04(struct ratbag_button *button,
 }
 
 static int
+hidpp20drv_write_button_8100(struct ratbag_button *button,
+			     const struct ratbag_button_action *action)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *profile;
+	uint8_t code;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return -ENOTSUP;
+
+	profile = &drv_data->profiles->profiles[button->profile->index];
+
+	switch (action->type) {
+	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+		profile->buttons[button->index].type = HIDPP20_BUTTON_HID_MOUSE;
+		profile->buttons[button->index].code = action->action.button;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key.key);
+		if (code == 0)
+			return -EINVAL;
+		profile->buttons[button->index].type = HIDPP20_BUTTON_HID_KEYBOARD;
+		profile->buttons[button->index].code = code;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+		code = hidpp20_onboard_profiles_get_code_from_special(action->action.special);
+		if (code == 0)
+			return -EINVAL;
+		profile->buttons[button->index].type = HIDPP20_BUTTON_SPECIAL;
+		profile->buttons[button->index].code = code;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+	default:
+		return -ENOTSUP;
+	}
+
+	return hidpp20_onboard_profiles_write(drv_data->dev, button->profile->index, drv_data->profiles);
+}
+
+static int
 hidpp20drv_write_button(struct ratbag_button *button,
 			const struct ratbag_button_action *action)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+		return hidpp20drv_write_button_8100(button, action);
 
 	if (drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04)
 		return hidpp20drv_write_button_1b04(button, action);
@@ -203,7 +247,8 @@ hidpp20drv_has_capability(const struct ratbag_device *device,
 	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
 		return !!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201);
 	case RATBAG_DEVICE_CAP_BUTTON_KEY:
-		return !!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04);
+		return !!(drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04) ||
+			!!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100);
 	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
 	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
 	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
