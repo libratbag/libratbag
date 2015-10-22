@@ -140,8 +140,8 @@ hidpp20drv_read_button(struct ratbag_button *button)
 }
 
 static int
-hidpp20drv_write_button(struct ratbag_button *button,
-			const struct ratbag_button_action *action)
+hidpp20drv_write_button_1b04(struct ratbag_button *button,
+			     const struct ratbag_button_action *action)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -172,6 +172,19 @@ hidpp20drv_write_button(struct ratbag_button *button,
 			  rc);
 
 	return rc;
+}
+
+static int
+hidpp20drv_write_button(struct ratbag_button *button,
+			const struct ratbag_button_action *action)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+
+	if (drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04)
+		return hidpp20drv_write_button_1b04(button, action);
+
+	return -ENOTSUP;
 }
 
 static int
