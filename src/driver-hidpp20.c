@@ -351,6 +351,26 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 }
 
 static int
+hidpp20drv_write_resolution_dpi_8100(struct ratbag_resolution *resolution,
+				     int dpi_x, int dpi_y)
+{
+	struct ratbag_profile *profile = resolution->profile;
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *h_profile;
+	unsigned int index;
+	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
+
+	/* retrieve which resolution is asked to be changed */
+	index = resolution - profile->resolution.modes;
+
+	h_profile = &drv_data->profiles->profiles[profile->index];
+	h_profile->dpi[index] = dpi;
+
+	return hidpp20_onboard_profiles_write(drv_data->dev, profile->index, drv_data->profiles);
+}
+
+static int
 hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution,
 				int dpi_x, int dpi_y)
 {
@@ -360,6 +380,9 @@ hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution,
 	struct hidpp20_sensor *sensor;
 	int rc, i;
 	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+		return hidpp20drv_write_resolution_dpi_8100(resolution, dpi_x, dpi_y);
 
 	if (!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201))
 		return -ENOTSUP;
@@ -581,6 +604,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
 		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
 		/* we read the profiles once with an incorect profile index
 		 * to get the correct number of supported profiles. */
 		hidpp20drv_read_onboard_profile(device, 0xffffff);
