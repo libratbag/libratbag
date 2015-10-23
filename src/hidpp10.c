@@ -1066,6 +1066,17 @@ hidpp10_open_lock(struct hidpp10_device *device, uint8_t timeout)
 	return hidpp10_request_command(device, &open_lock);
 }
 
+
+int
+hidpp10_close_lock(struct hidpp10_device *device)
+{
+	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00,
+									      CONNECT_DEVICES_CLOSE_LOCK,
+									      0);
+
+	return hidpp10_request_command(device, &open_lock);
+}
+
 int hidpp10_disconnect(struct hidpp10_device *device, int idx) {
 	union hidpp10_message disconnect = CMD_DEVICE_CONNECTION_DISCONNECTION(idx + 1, CONNECT_DEVICES_DISCONNECT, 0x00);
 

@@ -475,6 +475,9 @@ int
 hidpp10_open_lock(struct hidpp10_device *device, uint8_t timeout);
 
 int
+hidpp10_close_lock(struct hidpp10_device *device);
+
+int
 hidpp10_disconnect(struct hidpp10_device *device, int idx);
 
 /* -------------------------------------------------------------------------- */
