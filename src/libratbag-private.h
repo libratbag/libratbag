@@ -435,6 +435,10 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 void
 ratbag_device_destroy(struct ratbag_device *device);
 
+const char *
+ratbag_device_get_udev_property(const struct ratbag_device* device,
+				const char *name);
+
 struct ratbag_driver *
 ratbag_find_driver(struct ratbag_device *device,
 		   const struct input_id *dev_id,
