@@ -33,8 +33,8 @@
 #ifndef HIDPP_GENERIC_H
 #define HIDPP_GENERIC_H
 
-#define RECEIVER_IDX				0xFF
-#define WIRED_DEVICE_IDX			0x00
+#define HIDPP_RECEIVER_IDX			0xFF
+#define HIDPP_WIRED_DEVICE_IDX			0x00
 
 #define REPORT_ID_SHORT				0x10
 #define REPORT_ID_LONG				0x11

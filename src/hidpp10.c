@@ -164,7 +164,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 			hidpp_err = read_buffer.msg.parameters[1];
 			hidpp_log_raw(&dev->base,
 				"    HID++ error from the %s (%d): %s (%02x)\n",
-				read_buffer.msg.device_idx == RECEIVER_IDX ? "receiver" : "device",
+				read_buffer.msg.device_idx == HIDPP_RECEIVER_IDX ? "receiver" : "device",
 				read_buffer.msg.device_idx,
 				hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
 				hidpp_err);
@@ -292,7 +292,7 @@ int
 hidpp10_set_individual_features(struct hidpp10_device *dev,
 				uint32_t feature_mask)
 {
-	unsigned idx = RECEIVER_IDX;
+	unsigned idx = HIDPP_RECEIVER_IDX;
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, SET_REGISTER_REQ);
 	int res;
 
@@ -1049,7 +1049,7 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
 #define CMD_DEVICE_CONNECTION_DISCONNECTION(idx, cmd, timeout)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
-		.device_idx = RECEIVER_IDX, \
+		.device_idx = HIDPP_RECEIVER_IDX, \
 		.sub_id = SET_REGISTER_REQ, \
 		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
 		.parameters = {cmd, idx - 1, timeout }, \
@@ -1084,7 +1084,7 @@ int hidpp10_disconnect(struct hidpp10_device *device, int idx) {
 #define CMD_PAIRING_INFORMATION(idx, type)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
-		.device_idx = RECEIVER_IDX, \
+		.device_idx = HIDPP_RECEIVER_IDX, \
 		.sub_id = GET_LONG_REGISTER_REQ, \
 		.address = __CMD_PAIRING_INFORMATION, \
 		.parameters = {type + idx - 1, 0x00, 0x00 }, \

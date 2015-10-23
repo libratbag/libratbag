@@ -682,7 +682,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 	hidpp_device_init(&base, device->hidraw.fd);
 	hidpp_device_set_log_handler(&base, hidpp20_log, HIDPP_LOG_PRIORITY_RAW, device);
 
-	dev = hidpp20_device_new(&base, RECEIVER_IDX);
+	dev = hidpp20_device_new(&base, HIDPP_RECEIVER_IDX);
 	if (!dev) {
 		log_error(device->ratbag,
 			  "Failed to get HID++2.0 device for %s\n",
