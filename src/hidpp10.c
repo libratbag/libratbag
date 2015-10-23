@@ -1145,6 +1145,26 @@ hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 	return 0;
 }
 
+int
+hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
+					 uint32_t *serial)
+{
+	unsigned int idx = dev->index;
+	union hidpp10_message info = CMD_PAIRING_INFORMATION(idx, DEVICE_EXTENDED_PAIRING_INFORMATION);
+	int res;
+
+	hidpp_log_raw(&dev->base, "Fetching extended pairing information\n");
+
+	res = hidpp10_request_command(dev, &info);
+	if (res)
+		return -1;
+
+	*serial = hidpp10_get_unaligned_u16(&info.msg.string[2]);
+	*serial |= hidpp10_get_unaligned_u16(&info.msg.string[4]);
+
+	return 0;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */

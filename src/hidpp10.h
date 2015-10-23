@@ -492,6 +492,9 @@ int
 hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 					    char *name,
 					    size_t *name_sz);
+int
+hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
+					 uint32_t *serial);
 
 /* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */
