@@ -1139,7 +1139,7 @@ hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 	res = hidpp10_request_command(dev, &device_name);
 	if (res)
 		return -1;
-	*name_size = min(*name_size, device_name.msg.string[1]);
+	*name_size = min(*name_size, device_name.msg.string[1] + 1U);
 	strncpy_safe(name, (char*)&device_name.msg.string[2], *name_size);
 
 	return 0;
