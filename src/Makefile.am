@@ -1,5 +1,6 @@
 lib_LTLIBRARIES = libratbag.la
-noinst_LTLIBRARIES = libhidpp.la
+noinst_LTLIBRARIES = libhidpp.la \
+		     libutil.la
 
 include_HEADERS =			\
 	libratbag.h
@@ -14,14 +15,13 @@ libratbag_la_SOURCES =			\
 	libratbag.h			\
 	libratbag-hidraw.c		\
 	libratbag-hidraw.h		\
-	libratbag-util.c		\
 	libratbag-private.h		\
-	libratbag-util.h		\
 	libratbag-test.c		\
 	libratbag-test.h
 
 libratbag_la_LIBADD = 			\
 	libhidpp.la			\
+	libutil.la			\
 	$(LIBUDEV_LIBS) $(LIBEVDEV_LIBS)
 
 libratbag_la_CFLAGS = -I$(top_srcdir)/include \
@@ -50,3 +50,7 @@ libhidpp_la_SOURCES = \
 			hidpp10.c	\
 			hidpp20.h	\
 			hidpp20.c
+libutil_la_SOURCES = \
+		     libratbag-util.c \
+		     libratbag-util.h
+libutil_la_LIBADD = $(LIBUDEV_LIBS)

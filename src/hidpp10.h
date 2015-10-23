@@ -475,6 +475,9 @@ int
 hidpp10_open_lock(struct hidpp10_device *device, uint8_t timeout);
 
 int
+hidpp10_close_lock(struct hidpp10_device *device);
+
+int
 hidpp10_disconnect(struct hidpp10_device *device, int idx);
 
 /* -------------------------------------------------------------------------- */
@@ -489,6 +492,9 @@ int
 hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 					    char *name,
 					    size_t *name_sz);
+int
+hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
+					 uint32_t *serial);
 
 /* -------------------------------------------------------------------------- */
 /* 0xF1: Device Firmware Information                                          */

@@ -164,7 +164,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 			hidpp_err = read_buffer.msg.parameters[1];
 			hidpp_log_raw(&dev->base,
 				"    HID++ error from the %s (%d): %s (%02x)\n",
-				read_buffer.msg.device_idx == RECEIVER_IDX ? "receiver" : "device",
+				read_buffer.msg.device_idx == HIDPP_RECEIVER_IDX ? "receiver" : "device",
 				read_buffer.msg.device_idx,
 				hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
 				hidpp_err);
@@ -292,7 +292,7 @@ int
 hidpp10_set_individual_features(struct hidpp10_device *dev,
 				uint32_t feature_mask)
 {
-	unsigned idx = RECEIVER_IDX;
+	unsigned idx = HIDPP_RECEIVER_IDX;
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, SET_REGISTER_REQ);
 	int res;
 
@@ -1049,7 +1049,7 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
 #define CMD_DEVICE_CONNECTION_DISCONNECTION(idx, cmd, timeout)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
-		.device_idx = RECEIVER_IDX, \
+		.device_idx = HIDPP_RECEIVER_IDX, \
 		.sub_id = SET_REGISTER_REQ, \
 		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
 		.parameters = {cmd, idx - 1, timeout }, \
@@ -1062,6 +1062,17 @@ hidpp10_open_lock(struct hidpp10_device *device, uint8_t timeout)
 	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00,
 									      CONNECT_DEVICES_OPEN_LOCK,
 									      timeout);
+
+	return hidpp10_request_command(device, &open_lock);
+}
+
+
+int
+hidpp10_close_lock(struct hidpp10_device *device)
+{
+	union hidpp10_message open_lock = CMD_DEVICE_CONNECTION_DISCONNECTION(0x00,
+									      CONNECT_DEVICES_CLOSE_LOCK,
+									      0);
 
 	return hidpp10_request_command(device, &open_lock);
 }
@@ -1084,7 +1095,7 @@ int hidpp10_disconnect(struct hidpp10_device *device, int idx) {
 #define CMD_PAIRING_INFORMATION(idx, type)	{ \
 	.msg = { \
 		.report_id = REPORT_ID_SHORT, \
-		.device_idx = RECEIVER_IDX, \
+		.device_idx = HIDPP_RECEIVER_IDX, \
 		.sub_id = GET_LONG_REGISTER_REQ, \
 		.address = __CMD_PAIRING_INFORMATION, \
 		.parameters = {type + idx - 1, 0x00, 0x00 }, \
@@ -1128,8 +1139,28 @@ hidpp10_get_pairing_information_device_name(struct hidpp10_device *dev,
 	res = hidpp10_request_command(dev, &device_name);
 	if (res)
 		return -1;
-	*name_size = min(*name_size, device_name.msg.string[1]);
+	*name_size = min(*name_size, device_name.msg.string[1] + 1U);
 	strncpy_safe(name, (char*)&device_name.msg.string[2], *name_size);
+
+	return 0;
+}
+
+int
+hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
+					 uint32_t *serial)
+{
+	unsigned int idx = dev->index;
+	union hidpp10_message info = CMD_PAIRING_INFORMATION(idx, DEVICE_EXTENDED_PAIRING_INFORMATION);
+	int res;
+
+	hidpp_log_raw(&dev->base, "Fetching extended pairing information\n");
+
+	res = hidpp10_request_command(dev, &info);
+	if (res)
+		return -1;
+
+	*serial = hidpp10_get_unaligned_u16(&info.msg.string[2]);
+	*serial |= hidpp10_get_unaligned_u16(&info.msg.string[4]);
 
 	return 0;
 }
