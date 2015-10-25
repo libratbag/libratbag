@@ -71,6 +71,10 @@ mouse:usb:v046dpc041:name:*:
 mouse:usb:v046dpc049:name:*:
  RATBAG_DRIVER=hidpp10
 
+# G7
+mouse:usb:v046dpc51a:name:*:
+ RATBAG_DRIVER=hidpp10
+
 # G9
 mouse:usb:v046dpc048:name:*:
  RATBAG_DRIVER=hidpp10
