@@ -1457,7 +1457,7 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	}
 
 	num_profiles = ratbag_device_get_num_profiles(device);
-	if (index > num_profiles) {
+	if (index >= num_profiles) {
 		error("'%d' is not a valid profile\n", index);
 		goto out;
 	}
