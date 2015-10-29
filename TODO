@@ -4,6 +4,8 @@ resolution without changing the DPI (looking at you Etekcity and Roccat).
 buttons need a couple of has_capability() functions to check which action
 types and actions are possible
 
+profiles should be allowed to be enabled/disabled
+
 light support:
 - on/off
 - color
