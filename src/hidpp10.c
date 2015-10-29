@@ -37,6 +37,8 @@
 #include <string.h>
 #include <poll.h>
 #include <unistd.h>
+#include <limits.h>
+#include <math.h>
 
 #include "hidpp10.h"
 
@@ -82,6 +84,98 @@ const char *device_types[0xFF] = {
 	[0x09] = "Touchpad",
 	[0x0A ... 0xFE] = NULL,
 };
+
+int
+hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,
+				  const char *str_list)
+{
+	unsigned int i, count, index;
+	int nread, dpi = 0;
+	char c;
+	/*
+	 * str_list is in the form:
+	 * "0;200;400;600;800;1000;1200"
+	 */
+
+	/* first, count how many elements do we have in the table */
+	count = 1;
+	i = 0;
+	while (str_list[i] != 0) {
+		c = str_list[i++];
+		if (c == ';')
+			count++;
+	}
+
+	index = 0;
+
+	/* check that the max raw value fits in a uint8_t */
+	if (count + 0x80 - 1> 0xff)
+		return -EINVAL;
+
+	dev->dpi_count = count;
+	dev->dpi_table = zalloc(count * sizeof(*dev->dpi_table));
+
+	while (*str_list != 0 && index < count) {
+		if (*str_list == ';') {
+			str_list++;
+			continue;
+		}
+
+		nread = 0;
+		sscanf(str_list, "%d%n", &dpi, &nread);
+		if (!nread || dpi < 0)
+			goto err;
+
+		dev->dpi_table[index].raw_value = index + 0x80;
+		dev->dpi_table[index].dpi = dpi;
+
+		str_list += nread;
+		index++;
+	}
+
+	if (index != count)
+		goto err;
+
+	return 0;
+
+err:
+	dev->dpi_count = 0;
+	free(dev->dpi_table);
+	dev->dpi_table = NULL;
+	return -EINVAL;
+}
+
+int
+hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
+				      const char *str_dpi)
+{
+	float min, max, step;
+	unsigned raw_max, i;
+	int rc;
+	/*
+	 * str_list is in the form:
+	 * "MIN:MAX@STEP"
+	 */
+
+	rc = sscanf(str_dpi, "%f:%f@%f", &min, &max, &step);
+	if (rc != 3)
+		return -EINVAL;
+
+	raw_max = (max - min) / step;
+	if (raw_max > 0xff)
+		return -EINVAL;
+
+	dev->dpi_count = raw_max + 1;
+	dev->dpi_table = zalloc((raw_max + 1) * sizeof(*dev->dpi_table));
+
+	for (i = 1; i <= raw_max; i++) {
+		dev->dpi_table[i].raw_value = i;
+		dev->dpi_table[i].dpi = round((min + step * i) / 25.0f) * 25;
+	}
+
+	return 0;
+}
+
 
 static int
 hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
@@ -479,6 +573,50 @@ union _hidpp10_profile_data {
 };
 _Static_assert((sizeof(union _hidpp10_profile_data) % 16) == 0, "Invalid size");
 
+static uint8_t
+hidpp10_get_dpi_mapping(struct hidpp10_device *dev, unsigned int value)
+{
+	struct hidpp10_dpi_mapping *m;
+	unsigned int i, delta, min_delta;
+	uint8_t result = 0;
+
+	if (!dev->dpi_table)
+		return value / 50;
+
+	m = dev->dpi_table;
+
+	min_delta = INT_MAX;
+
+	for (i = 0; i < dev->dpi_count; i++) {
+		delta = abs(value - m[i].dpi);
+		if (delta < min_delta) {
+			result = m[i].raw_value;
+			min_delta = delta;
+		}
+	}
+
+	return result;
+}
+
+static unsigned int
+hidpp10_get_dpi_value(struct hidpp10_device *dev, uint8_t raw_value)
+{
+	struct hidpp10_dpi_mapping *m;
+	unsigned int i;
+
+	if (!dev->dpi_table)
+		return raw_value * 50;
+
+	m = dev->dpi_table;
+
+	for (i = 0; i < dev->dpi_count; i++) {
+		if (raw_value == m[i].raw_value)
+			return m[i].dpi;
+	}
+
+	return 0;
+}
+
 int
 hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 {
@@ -540,9 +678,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		struct _hidpp10_dpi_mode *dpi = &p->dpi_modes[i];
 
 		be = (uint8_t*)&dpi->xres;
-		profile.dpi_modes[i].xres = hidpp_get_unaligned_be_u16(be) * 50;
+		profile.dpi_modes[i].xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
 		be = (uint8_t*)&dpi->yres;
-		profile.dpi_modes[i].yres = hidpp_get_unaligned_be_u16(be) * 50;
+		profile.dpi_modes[i].yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
 
 		profile.dpi_modes[i].led[0] = dpi->led1 == 0x2;
 		profile.dpi_modes[i].led[1] = dpi->led2 == 0x2;
@@ -908,8 +1046,8 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 		return res;
 
 	/* resolution is in 50dpi multiples */
-	*xres = hidpp_get_unaligned_le_u16(&resolution.data[4]) * 50;
-	*yres = hidpp_get_unaligned_le_u16(&resolution.data[6]) * 50;
+	*xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution.data[4]));
+	*yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution.data[6]));
 
 	return 0;
 }
@@ -922,8 +1060,8 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 	unsigned idx = dev->index;
 	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
 
-	hidpp_set_unaligned_le_u16(&resolution.data[4], xres / 50);
-	hidpp_set_unaligned_le_u16(&resolution.data[6], yres / 50);
+	hidpp_set_unaligned_le_u16(&resolution.data[4], hidpp10_get_dpi_mapping(dev, xres));
+	hidpp_set_unaligned_le_u16(&resolution.data[6], hidpp10_get_dpi_mapping(dev, yres));
 
 	return hidpp10_request_command(dev, &resolution);
 }
@@ -1255,5 +1393,7 @@ hidpp10_device_new(const struct hidpp_device *base, int idx)
 void
 hidpp10_device_destroy(struct hidpp10_device *dev)
 {
+	if (dev->dpi_table)
+		free(dev->dpi_table);
 	free(dev);
 }

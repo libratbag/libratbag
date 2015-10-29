@@ -212,6 +212,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 	struct hidpp10drv_data *drv_data = NULL;
 	struct hidpp10_device *dev = NULL;
 	struct hidpp_device base;
+	const char *prop;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
 	if (rc == -ENODEV) {
@@ -242,6 +243,33 @@ hidpp10drv_probe(struct ratbag_device *device)
 			  device->name);
 		goto err;
 	}
+
+	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI");
+	if (prop) {
+		rc = hidpp10_build_dpi_table_from_dpi_info(dev, prop);
+		if (rc)
+			log_error(device->ratbag,
+				  "Error parsing RATBAG_HIDPP10_DPI: '%s' for %s\n",
+				  prop,
+				  device->name);
+	}
+
+	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI_LIST");
+	if (prop) {
+		rc = hidpp10_build_dpi_table_from_list(dev, prop);
+		if (rc)
+			log_error(device->ratbag,
+				  "Error parsing RATBAG_HIDPP10_DPI_LIST: '%s' for %s\n",
+				  prop,
+				  device->name);
+	}
+
+	if (!dev->dpi_count)
+		log_info(device->ratbag,
+			  "Device %s might have wrong dpi settings. "
+			  "Please add RATBAG_HIDPP10_DPI or RATBAG_HIDPP10_DPI_LIST "
+			  "to the udev properties.\n",
+			  device->name);
 
 	drv_data->dev = dev;
 	ratbag_set_drv_data(device, drv_data);
