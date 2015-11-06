@@ -165,18 +165,6 @@ hidpp20_request_command(struct hidpp20_device *device, union hidpp20_message *ms
 	return hidpp20_request_command_allow_error(device, msg, false);
 }
 
-static inline uint16_t
-hidpp20_get_unaligned_u16(uint8_t *buf)
-{
-	return (buf[0] << 8) | buf[1];
-}
-
-static inline uint16_t
-hidpp20_get_unaligned_be_u16(uint8_t *buf)
-{
-	return (buf[1] << 8) | buf[0];
-}
-
 /* -------------------------------------------------------------------------- */
 /* 0x0000: Root                                                               */
 /* -------------------------------------------------------------------------- */
@@ -312,7 +300,7 @@ hidpp20_feature_set_get_feature_id(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	*feature = hidpp20_get_unaligned_u16(msg.msg.parameters);
+	*feature = hidpp_get_unaligned_be_u16(msg.msg.parameters);
 	*type = msg.msg.parameters[2];
 
 	return 0;
@@ -450,8 +438,8 @@ hidpp20_kbd_reprogrammable_keys_get_info(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	control->control_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[0]);
-	control->task_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[2]);
+	control->control_id = hidpp_get_unaligned_be_u16(&msg.msg.parameters[0]);
+	control->task_id = hidpp_get_unaligned_be_u16(&msg.msg.parameters[2]);
 	control->flags = msg.msg.parameters[4];
 
 	return 0;
@@ -557,8 +545,8 @@ hidpp20_special_keys_buttons_get_info(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	control->control_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[0]);
-	control->task_id = hidpp20_get_unaligned_u16(&msg.msg.parameters[2]);
+	control->control_id = hidpp_get_unaligned_be_u16(&msg.msg.parameters[0]);
+	control->task_id = hidpp_get_unaligned_be_u16(&msg.msg.parameters[2]);
 	control->flags = msg.msg.parameters[4];
 	control->position = msg.msg.parameters[5];
 	control->group = msg.msg.parameters[6];
@@ -588,7 +576,7 @@ hidpp20_special_keys_buttons_get_reporting(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	control->reporting.remapped = hidpp20_get_unaligned_u16(&msg.msg.parameters[3]);
+	control->reporting.remapped = hidpp_get_unaligned_be_u16(&msg.msg.parameters[3]);
 	control->reporting.raw_XY = !!(msg.msg.parameters[2] & 0x10);
 	control->reporting.persist = !!(msg.msg.parameters[2] & 0x04);
 	control->reporting.divert = !!(msg.msg.parameters[2] & 0x01);
@@ -727,7 +715,7 @@ hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	*resolution = hidpp20_get_unaligned_u16(msg.msg.parameters);
+	*resolution = hidpp_get_unaligned_be_u16(msg.msg.parameters);
 	*flags = msg.msg.parameters[2];
 
 	return 0;
@@ -783,8 +771,8 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 
 	sensor->index = msg.msg.parameters[0];
 	while (i < LONG_MESSAGE_LENGTH - 4U &&
-	       hidpp20_get_unaligned_u16(&msg.msg.parameters[i]) != 0) {
-		uint16_t value = hidpp20_get_unaligned_u16(&msg.msg.parameters[i]);
+	       hidpp_get_unaligned_be_u16(&msg.msg.parameters[i]) != 0) {
+		uint16_t value = hidpp_get_unaligned_be_u16(&msg.msg.parameters[i]);
 
 		if (value > 0xe000) {
 			sensor->dpi_steps = value - 0xe000;
@@ -819,8 +807,8 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	sensor->dpi = hidpp20_get_unaligned_u16(&msg.msg.parameters[1]);
-	sensor->default_dpi = hidpp20_get_unaligned_u16(&msg.msg.parameters[3]);
+	sensor->dpi = hidpp_get_unaligned_be_u16(&msg.msg.parameters[1]);
+	sensor->default_dpi = hidpp_get_unaligned_be_u16(&msg.msg.parameters[3]);
 
 	return 0;
 }
@@ -907,7 +895,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	returned_parameters = hidpp20_get_unaligned_u16(&msg.msg.parameters[1]);
+	returned_parameters = hidpp_get_unaligned_be_u16(&msg.msg.parameters[1]);
 
 	/* version 0 of the protocol does not echo the parameters */
 	if (returned_parameters != dpi && returned_parameters)
@@ -1200,7 +1188,7 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 	profile->switched_dpi = data[2];
 
 	for (i = 0; i < 5; i++) {
-		profile->dpi[i] = hidpp20_get_unaligned_be_u16(&data[2 * i + 3]);
+		profile->dpi[i] = hidpp_get_unaligned_le_u16(&data[2 * i + 3]);
 	}
 
 	for (i = 0; i < profiles_list->num_buttons; i++) {
@@ -1215,7 +1203,7 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				profile->buttons[i].modifiers = button[2];
 				profile->buttons[i].code = button[3];
 			} else {
-				profile->buttons[i].code = ffs(hidpp20_get_unaligned_u16(&button[2]));
+				profile->buttons[i].code = ffs(hidpp_get_unaligned_be_u16(&button[2]));
 			}
 		} else if (button[0] == HIDPP20_BUTTON_SPECIAL) {
 			profile->buttons[i].code = button[1];
