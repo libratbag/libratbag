@@ -69,25 +69,6 @@ union hidpp10_message {
 	} \
 }
 
-static inline uint16_t
-hidpp10_get_unaligned_u16le(uint8_t *buf)
-{
-	return (buf[1] << 8) | buf[0];
-}
-
-static inline uint16_t
-hidpp10_get_unaligned_u16(uint8_t *buf)
-{
-	return (buf[0] << 8) | buf[1];
-}
-
-static inline void
-hidpp10_set_unaligned_u16le(uint8_t *buf, uint16_t value)
-{
-	buf[0] = value & 0xFF;
-	buf[1] = value >> 8;
-}
-
 const char *device_types[0xFF] = {
 	[0x00] = "Unknown",
 	[0x01] = "Keyboard",
@@ -559,9 +540,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		struct _hidpp10_dpi_mode *dpi = &p->dpi_modes[i];
 
 		be = (uint8_t*)&dpi->xres;
-		profile.dpi_modes[i].xres = hidpp10_get_unaligned_u16(be) * 50;
+		profile.dpi_modes[i].xres = hidpp_get_unaligned_be_u16(be) * 50;
 		be = (uint8_t*)&dpi->yres;
-		profile.dpi_modes[i].yres = hidpp10_get_unaligned_u16(be) * 50;
+		profile.dpi_modes[i].yres = hidpp_get_unaligned_be_u16(be) * 50;
 
 		profile.dpi_modes[i].led[0] = dpi->led1 == 0x2;
 		profile.dpi_modes[i].led[1] = dpi->led2 == 0x2;
@@ -579,18 +560,18 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		switch (b->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
 			button->button.button =
-				ffs(hidpp10_get_unaligned_u16le(&b->button.button_flags_lsb));
+				ffs(hidpp_get_unaligned_le_u16(&b->button.button_flags_lsb));
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			button->keys.modifier_flags = b->keyboard_keys.modifier_flags;
 			button->keys.key = b->keyboard_keys.key;
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
-			button->special.special = ffs(hidpp10_get_unaligned_u16le(&b->special.flags1));
+			button->special.special = ffs(hidpp_get_unaligned_le_u16(&b->special.flags1));
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			button->consumer_control.consumer_control =
-				  hidpp10_get_unaligned_u16(&b->consumer_control.consumer_control1);
+				  hidpp_get_unaligned_be_u16(&b->consumer_control.consumer_control1);
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			break;
@@ -625,7 +606,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			hidpp_log_raw(&dev->base,
 				"Button %zd: button %d\n",
 				i,
-				ffs(hidpp10_get_unaligned_u16le(&button->button.button_flags_lsb)));
+				ffs(hidpp_get_unaligned_le_u16(&button->button.button_flags_lsb)));
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			hidpp_log_raw(&dev->base,
@@ -638,13 +619,13 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			hidpp_log_raw(&dev->base,
 				"Button %zd: special %x\n",
 				i,
-				ffs(hidpp10_get_unaligned_u16le(&button->special.flags1)));
+				ffs(hidpp_get_unaligned_le_u16(&button->special.flags1)));
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: consumer: %x\n",
 				i,
-				hidpp10_get_unaligned_u16(&button->consumer_control.consumer_control1));
+				hidpp_get_unaligned_be_u16(&button->consumer_control.consumer_control1));
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			hidpp_log_raw(&dev->base, "Button %zd: disabled\n", i);
@@ -927,8 +908,8 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 		return res;
 
 	/* resolution is in 50dpi multiples */
-	*xres = hidpp10_get_unaligned_u16le(&resolution.data[4]) * 50;
-	*yres = hidpp10_get_unaligned_u16le(&resolution.data[6]) * 50;
+	*xres = hidpp_get_unaligned_le_u16(&resolution.data[4]) * 50;
+	*yres = hidpp_get_unaligned_le_u16(&resolution.data[6]) * 50;
 
 	return 0;
 }
@@ -941,8 +922,8 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 	unsigned idx = dev->index;
 	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
 
-	hidpp10_set_unaligned_u16le(&resolution.data[4], xres / 50);
-	hidpp10_set_unaligned_u16le(&resolution.data[6], yres / 50);
+	hidpp_set_unaligned_le_u16(&resolution.data[4], xres / 50);
+	hidpp_set_unaligned_le_u16(&resolution.data[6], yres / 50);
 
 	return hidpp10_request_command(dev, &resolution);
 }
@@ -1119,7 +1100,7 @@ hidpp10_get_pairing_information(struct hidpp10_device *dev,
 		return -1;
 
 	*report_interval = pairing_information.msg.string[2];
-	*wpid = hidpp10_get_unaligned_u16(&pairing_information.msg.string[3]);
+	*wpid = hidpp_get_unaligned_be_u16(&pairing_information.msg.string[3]);
 	*device_type = pairing_information.msg.string[7];
 
 	return 0;
@@ -1159,8 +1140,8 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 	if (res)
 		return -1;
 
-	*serial = hidpp10_get_unaligned_u16(&info.msg.string[2]) << 16;
-	*serial |= hidpp10_get_unaligned_u16(&info.msg.string[4]);
+	*serial = hidpp_get_unaligned_be_u16(&info.msg.string[2]) << 16;
+	*serial |= hidpp_get_unaligned_be_u16(&info.msg.string[4]);
 
 	return 0;
 }
@@ -1212,7 +1193,7 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 	res = hidpp10_request_command(dev, &build_information);
 	if (res)
 		return res;
-	build = hidpp10_get_unaligned_u16(&build_information.msg.string[1]);
+	build = hidpp_get_unaligned_be_u16(&build_information.msg.string[1]);
 
 	*major_out = maj;
 	*minor_out = min;

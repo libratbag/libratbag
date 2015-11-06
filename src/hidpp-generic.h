@@ -156,4 +156,11 @@ hidpp_get_unaligned_le_u16(uint8_t *buf)
 	return (buf[1] << 8) | buf[0];
 }
 
+static inline void
+hidpp_set_unaligned_le_u16(uint8_t *buf, uint16_t value)
+{
+	buf[0] = value & 0xFF;
+	buf[1] = value >> 8;
+}
+
 #endif /* HIDPP_GENERIC_H */
