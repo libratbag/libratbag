@@ -151,9 +151,36 @@ hidpp_get_unaligned_be_u16(uint8_t *buf)
 }
 
 static inline uint16_t
+hidpp_be_u16_to_cpu(uint16_t data)
+{
+	return hidpp_get_unaligned_be_u16((uint8_t *)&data);
+}
+
+static inline void
+hidpp_set_unaligned_be_u16(uint8_t *buf, uint16_t value)
+{
+	buf[0] = value >> 8;
+	buf[1] = value & 0xFF;
+}
+
+static inline uint16_t
+hidpp_cpu_to_be_u16(uint16_t data)
+{
+	uint16_t result;
+	hidpp_set_unaligned_be_u16((uint8_t *)&result, data);
+	return result;
+}
+
+static inline uint16_t
 hidpp_get_unaligned_le_u16(uint8_t *buf)
 {
 	return (buf[1] << 8) | buf[0];
+}
+
+static inline uint16_t
+hidpp_le_u16_to_cpu(uint16_t data)
+{
+	return hidpp_get_unaligned_le_u16((uint8_t *)&data);
 }
 
 static inline void
@@ -161,6 +188,14 @@ hidpp_set_unaligned_le_u16(uint8_t *buf, uint16_t value)
 {
 	buf[0] = value & 0xFF;
 	buf[1] = value >> 8;
+}
+
+static inline uint16_t
+hidpp_cpu_to_le_u16(uint16_t data)
+{
+	uint16_t result;
+	hidpp_set_unaligned_le_u16((uint8_t *)&result, data);
+	return result;
 }
 
 #endif /* HIDPP_GENERIC_H */
