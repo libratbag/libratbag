@@ -1278,6 +1278,18 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 		}
 	}
 
+	memcpy(profile->name, data + 0xa0, sizeof(profile->name));
+	/* force terminating '\0' */
+	profile->name[sizeof(profile->name) - 1] = '\0';
+
+	/* check if we are using the default name or not */
+	for (i = 0; i < sizeof(profile->name); i++) {
+		if (data[0xa0 + i] != 0xff)
+			break;
+	}
+	if (i == sizeof(profile->name))
+		memset(profile->name, 0, sizeof(profile->name));
+
 	return 0;
 }
 
@@ -1327,6 +1339,8 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 			button[1] = profile->buttons[i].code;
 		}
 	}
+
+	memcpy(data + 0xa0, profile->name, sizeof(profile->name));
 
 	crc = hidpp20_crc_ccitt(data, sizeof(data) - 2);
 

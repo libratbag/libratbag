@@ -276,6 +276,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 struct hidpp20_profile {
 	uint8_t index;
 	uint8_t enabled;
+	char name[16 * 3];
 	unsigned report_rate;
 	unsigned default_dpi;
 	unsigned switched_dpi;
