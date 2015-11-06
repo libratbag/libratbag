@@ -1186,6 +1186,55 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	return profile_count;
 }
 
+static int
+hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
+					       unsigned int index,
+					       uint8_t *data)
+{
+	int rc;
+	unsigned i;
+	uint16_t crc, read_crc;
+
+	rc = hidpp20_onboard_profiles_read_memory(device,
+						  0,
+						  index + 1,
+						  0x00,
+						  data);
+	if (rc < 0)
+		return rc;
+
+	if (data[0] > 0) {
+		for (i = 1; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
+			rc = hidpp20_onboard_profiles_read_memory(device,
+								  0,
+								  index + 1,
+								  i * 0x10,
+								  data + i * 0x10);
+			if (rc < 0)
+				return rc;
+		}
+
+		crc = hidpp20_crc_ccitt(data, HIDPP20_PROFILE_SIZE - 2);
+		read_crc = hidpp_get_unaligned_be_u16(&data[HIDPP20_PROFILE_SIZE - 2]);
+
+		if (crc == read_crc)
+			return 0;
+	}
+
+	/* something went wrong, the mouse is using the factory profile in ROM */
+	for (i = 0; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
+		rc = hidpp20_onboard_profiles_read_memory(device,
+							  1,
+							  index + 1,
+							  i * 0x10,
+							  data + i * 0x10);
+		if (rc < 0)
+			return rc;
+	}
+
+	return 0;
+}
+
 int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				  unsigned int index,
 				  struct hidpp20_profiles *profiles_list)
@@ -1198,15 +1247,9 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
-	for (i = 0; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
-		rc = hidpp20_onboard_profiles_read_memory(device,
-							  0,
-							  index + 1,
-							  i * 0x10,
-							  data + i * 0x10);
-		if (rc < 0)
-			return rc;
-	}
+	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
+	if (rc < 0)
+		return rc;
 
 	profile->report_rate = 1000 / max(1, data[0]);
 	profile->default_dpi = data[1];
@@ -1251,15 +1294,9 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
-	for (i = 0; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
-		rc = hidpp20_onboard_profiles_read_memory(device,
-							  0,
-							  index + 1,
-							  i * 0x10,
-							  data + i * 0x10);
-		if (rc < 0)
-			return rc;
-	}
+	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
+	if (rc < 0)
+		return rc;
 
 	data[0] = 1000 / profile->report_rate;
 	data[1] = profile->default_dpi;
