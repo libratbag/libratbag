@@ -1283,11 +1283,50 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 	return hidpp20_onboard_profiles_write_page(device, 0x00, data);
 }
 
+struct hidpp20_internal_button {
+	uint8_t type;
+	union {
+		struct {
+			uint8_t subtype;
+			union {
+				struct {
+					uint8_t modifier;
+					uint8_t code;
+				} key;
+				uint16_t button;
+			} __attribute__((packed));
+		} __attribute__((packed)) hid;
+		uint8_t special;
+	} value;
+} __attribute__((packed));
+
+union hidpp20_internal_profile {
+	uint8_t data[HIDPP20_PROFILE_SIZE];
+	struct {
+		uint8_t report_rate;
+		uint8_t default_dpi;
+		uint8_t switched_dpi;
+		uint16_t dpi[7];
+		uint8_t zero;
+		uint8_t padding[14];
+		struct hidpp20_internal_button buttons[16];
+		struct hidpp20_internal_button alternate_buttons[16];
+		union {
+			char txt[16 * 3];
+			uint8_t raw[16 * 3];
+		} name;
+		uint8_t padding1[46];
+		uint16_t crc;
+	} __attribute__((packed)) profile;
+};
+_Static_assert(sizeof(union hidpp20_internal_profile) == HIDPP20_PROFILE_SIZE, "Invalid size");
+
 int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				  unsigned int index,
 				  struct hidpp20_profiles *profiles_list)
 {
-	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
+	union hidpp20_internal_profile pdata = {0};
+	uint8_t *data = pdata.data;
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
 	unsigned i;
 	int rc;
@@ -1299,40 +1338,40 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 	if (rc < 0)
 		return rc;
 
-	profile->report_rate = 1000 / max(1, data[0]);
-	profile->default_dpi = data[1];
-	profile->switched_dpi = data[2];
+	profile->report_rate = 1000 / max(1, pdata.profile.report_rate);
+	profile->default_dpi = pdata.profile.default_dpi;
+	profile->switched_dpi = pdata.profile.switched_dpi;
 
 	for (i = 0; i < 5; i++) {
 		profile->dpi[i] = hidpp_get_unaligned_le_u16(&data[2 * i + 3]);
 	}
 
 	for (i = 0; i < profiles_list->num_buttons; i++) {
-		uint8_t *button = data + 0x20 + i * 4;
+		struct hidpp20_internal_button *button = &pdata.profile.buttons[i];
 
-		profile->buttons[i].type = button[0];
+		profile->buttons[i].type = button->type;
 
-		if (button[0] == HIDPP20_BUTTON_HID) {
-			profile->buttons[i].type |= button[1];
+		if (button->type == HIDPP20_BUTTON_HID) {
+			profile->buttons[i].type |= button->value.hid.subtype;
 
 			if (profile->buttons[i].type == HIDPP20_BUTTON_HID_KEYBOARD) {
-				profile->buttons[i].modifiers = button[2];
-				profile->buttons[i].code = button[3];
+				profile->buttons[i].modifiers = button->value.hid.key.modifier;
+				profile->buttons[i].code = button->value.hid.key.code;
 			} else {
-				profile->buttons[i].code = ffs(hidpp_get_unaligned_be_u16(&button[2]));
+				profile->buttons[i].code = ffs(hidpp_be_u16_to_cpu(button->value.hid.button));
 			}
-		} else if (button[0] == HIDPP20_BUTTON_SPECIAL) {
-			profile->buttons[i].code = button[1];
+		} else if (button->type == HIDPP20_BUTTON_SPECIAL) {
+			profile->buttons[i].code = button->value.special;
 		}
 	}
 
-	memcpy(profile->name, data + 0xa0, sizeof(profile->name));
+	memcpy(profile->name, pdata.profile.name.txt, sizeof(profile->name));
 	/* force terminating '\0' */
 	profile->name[sizeof(profile->name) - 1] = '\0';
 
 	/* check if we are using the default name or not */
 	for (i = 0; i < sizeof(profile->name); i++) {
-		if (data[0xa0 + i] != 0xff)
+		if (pdata.profile.name.raw[i] != 0xff)
 			break;
 	}
 	if (i == sizeof(profile->name))
@@ -1345,8 +1384,8 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 				   unsigned int index,
 				   struct hidpp20_profiles *profiles_list)
 {
-	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
-	uint16_t temp;
+	union hidpp20_internal_profile pdata = {0};
+	uint8_t *data = pdata.data;
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
 	unsigned i;
 	int rc;
@@ -1362,37 +1401,34 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	if (rc < 0)
 		return rc;
 
-	data[0] = 1000 / profile->report_rate;
-	data[1] = profile->default_dpi;
-	data[2] = profile->switched_dpi;
+	pdata.profile.report_rate = 1000 / profile->report_rate;
+	pdata.profile.default_dpi = profile->default_dpi;
+	pdata.profile.switched_dpi = profile->switched_dpi;
 
 	for (i = 0; i < 5; i++) {
-		data[2 * i + 3] = profile->dpi[i] & 0xff;
-		data[2 * i + 4] = (profile->dpi[i] >> 8) & 0xff;
+		pdata.profile.dpi[i] = hidpp_cpu_to_le_u16(profile->dpi[i]);
 	}
 
 	for (i = 0; i < profiles_list->num_buttons; i++) {
-		uint8_t *button = data + 0x20 + i * 4;
+		struct hidpp20_internal_button *button = &pdata.profile.buttons[i];
 
-		button[0] = profile->buttons[i].type & 0xf0;
+		button->type = profile->buttons[i].type & 0xf0;
 
-		if (button[0] == HIDPP20_BUTTON_HID) {
-			button[1] = profile->buttons[i].type & 0x0f;
+		if (button->type == HIDPP20_BUTTON_HID) {
+			button->value.hid.subtype = profile->buttons[i].type & 0x0f;
 
-			if (profile->buttons[i].type == HIDPP20_BUTTON_HID_KEYBOARD) {
-				button[2] = profile->buttons[i].modifiers;
-				button[3] = profile->buttons[i].code;
+			if (button->value.hid.subtype == HIDPP20_BUTTON_HID_KEYBOARD) {
+				button->value.hid.key.modifier = profile->buttons[i].modifiers;
+				button->value.hid.key.code = profile->buttons[i].code;
 			} else {
-				temp = 1U << (profile->buttons[i].code - 1);
-				button[2] = (temp >> 8) & 0xff;
-				button[3] = temp & 0xff;
+				button->value.hid.button = hidpp_cpu_to_be_u16(1U << (profile->buttons[i].code - 1));
 			}
-		} else if (button[0] == HIDPP20_BUTTON_SPECIAL) {
-			button[1] = profile->buttons[i].code;
+		} else if (button->type == HIDPP20_BUTTON_SPECIAL) {
+			button->value.special = profile->buttons[i].code;
 		}
 	}
 
-	memcpy(data + 0xa0, profile->name, sizeof(profile->name));
+	memcpy(pdata.profile.name.txt, profile->name, sizeof(profile->name));
 
 	rc = hidpp20_onboard_profiles_write_page(device, index + 1, data);
 	if (rc < 0)
