@@ -210,9 +210,9 @@ hidpp_root_get_feature(struct hidpp20_device *device,
 		.msg.device_idx = device->index,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_FEATURE,
-		.msg.parameters[0] = feature >> 8,
-		.msg.parameters[1] = feature & 0xff,
 	};
+
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[0], feature);
 
 	rc = hidpp20_request_command(device, &msg);
 	if (rc)
@@ -568,9 +568,9 @@ hidpp20_special_keys_buttons_get_reporting(struct hidpp20_device *device,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING,
-		.msg.parameters[0] = control->control_id >> 8,
-		.msg.parameters[1] = control->control_id & 0xff,
 	};
+
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[0], control->control_id);
 
 	rc = hidpp20_request_command(device, &msg);
 	if (rc)
@@ -662,12 +662,10 @@ hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_SET_REPORTING,
-		.msg.parameters[0] = control->control_id >> 8,
-		.msg.parameters[1] = control->control_id & 0xff,
-		.msg.parameters[2] = 0x00,
-		.msg.parameters[3] = control->reporting.remapped >> 8,
-		.msg.parameters[4] = control->reporting.remapped & 0xff,
 	};
+
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[0], control->control_id);
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[3], control->reporting.remapped);
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_SPECIAL_KEYS_BUTTONS);
@@ -880,9 +878,9 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI,
 		.msg.parameters[0] = sensor->index,
-		.msg.parameters[1] = dpi >> 8,
-		.msg.parameters[2] = dpi & 0xff,
 	};
+
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[1], dpi);
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ADJUSTABLE_DPI);
