@@ -1235,6 +1235,46 @@ hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 	return 0;
 }
 
+static int
+hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
+					unsigned int index,
+					struct hidpp20_profiles *profiles_list)
+{
+	unsigned int i, buffer_index = 0;
+	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
+	uint16_t crc;
+
+	if (profiles_list->profiles[index].enabled)
+		return 0;
+
+	profiles_list->profiles[index].index = index + 1;
+	profiles_list->profiles[index].enabled = 0x01;
+
+	for (i = 0; i < 3; i++) {
+		data[buffer_index++] = 0x00;
+		data[buffer_index++] = i + 1;
+		data[buffer_index++] = profiles_list->profiles[i].enabled;
+		data[buffer_index++] = 0x00;
+	}
+
+	data[buffer_index++] = 0xFF;
+	data[buffer_index++] = 0xFF;
+
+	data[buffer_index++] = 0x00;
+	data[buffer_index++] = 0x00;
+
+	memset(data + buffer_index, 0xff, sizeof(data) - buffer_index);
+
+	hidpp_log_buf_error(&device->base, "dictionary: ", data, 16);
+
+	crc = hidpp20_crc_ccitt(data, sizeof(data) - 2);
+
+	data[HIDPP20_PROFILE_SIZE - 2] = (crc >> 8) & 0xff;
+	data[HIDPP20_PROFILE_SIZE - 1] = crc & 0xff;
+
+	return hidpp20_onboard_profiles_write_data(device, 0x00, 0x00, data, sizeof(data));
+}
+
 int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				  unsigned int index,
 				  struct hidpp20_profiles *profiles_list)
@@ -1307,6 +1347,10 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 		return -EINVAL;
 
 	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
+	if (rc < 0)
+		return rc;
+
+	rc = hidpp20_onboard_profiles_enable_profile(device, index, profiles_list);
 	if (rc < 0)
 		return rc;
 
