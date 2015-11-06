@@ -916,7 +916,8 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define CMD_ONBOARD_PROFILES_GET_CURRENT_DPI_INDEX	0xb0
 #define CMD_ONBOARD_PROFILES_SET_CURRENT_DPI_INDEX	0xc0
 
-#define HIDPP20_PROFILE_SIZE		(16*16)
+#define HIDPP20_PAGE_SIZE		(16*16)
+#define HIDPP20_PROFILE_SIZE		HIDPP20_PAGE_SIZE
 #define HIDPP20_BUTTON_HID		0x80
 
 /*
@@ -1089,6 +1090,19 @@ hidpp20_onboard_profiles_write_data(struct hidpp20_device *device,
 	return transfered;
 }
 
+static int
+hidpp20_onboard_profiles_write_page(struct hidpp20_device *device,
+				    uint8_t page,
+				    uint8_t data[HIDPP20_PAGE_SIZE])
+{
+	uint16_t crc;
+
+	crc = hidpp20_crc_ccitt(data, HIDPP20_PAGE_SIZE - 2);
+	hidpp_set_unaligned_be_u16(&data[HIDPP20_PROFILE_SIZE - 2], crc);
+
+	return hidpp20_onboard_profiles_write_data(device, page, 0x00, data, HIDPP20_PAGE_SIZE);
+}
+
 int
 hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 {
@@ -1242,7 +1256,6 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 {
 	unsigned int i, buffer_index = 0;
 	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
-	uint16_t crc;
 
 	if (profiles_list->profiles[index].enabled)
 		return 0;
@@ -1267,12 +1280,7 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 
 	hidpp_log_buf_error(&device->base, "dictionary: ", data, 16);
 
-	crc = hidpp20_crc_ccitt(data, sizeof(data) - 2);
-
-	data[HIDPP20_PROFILE_SIZE - 2] = (crc >> 8) & 0xff;
-	data[HIDPP20_PROFILE_SIZE - 1] = crc & 0xff;
-
-	return hidpp20_onboard_profiles_write_data(device, 0x00, 0x00, data, sizeof(data));
+	return hidpp20_onboard_profiles_write_page(device, 0x00, data);
 }
 
 int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
@@ -1338,7 +1346,7 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 				   struct hidpp20_profiles *profiles_list)
 {
 	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
-	uint16_t temp, crc;
+	uint16_t temp;
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
 	unsigned i;
 	int rc;
@@ -1386,12 +1394,7 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 
 	memcpy(data + 0xa0, profile->name, sizeof(profile->name));
 
-	crc = hidpp20_crc_ccitt(data, sizeof(data) - 2);
-
-	data[HIDPP20_PROFILE_SIZE - 2] = (crc >> 8) & 0xff;
-	data[HIDPP20_PROFILE_SIZE - 1] = crc & 0xff;
-
-	rc = hidpp20_onboard_profiles_write_data(device, index + 1, 0x00, data, sizeof(data));
+	rc = hidpp20_onboard_profiles_write_page(device, index + 1, data);
 	if (rc < 0)
 		return rc;
 
