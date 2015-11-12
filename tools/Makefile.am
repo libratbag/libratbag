@@ -14,7 +14,6 @@ libshared_la_LIBADD = $(LIBUDEV_CFLAGS) $(LIBEVDEV_LIBS)
 
 ratbag_command_SOURCES = ratbag-command.c
 ratbag_command_LDADD = ../src/libratbag.la libshared.la $(LIBUDEV_LIBS) $(LIBEVDEV_LIBS)
-ratbag_command_LDFLAGS = -no-install
 ratbag_command_CFLAGS = $(LIBUDEV_CFLAGS) $(LIBEVDEV_CFLAGS)
 
 hidpp10_dump_page_SOURCES = hidpp10-dump-page.c
