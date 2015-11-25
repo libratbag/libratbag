@@ -40,9 +40,16 @@
 
 #define HIDPP10_MAX_PAGE_NUMBER 31
 
+struct hidpp10_dpi_mapping {
+	uint8_t raw_value;
+	unsigned dpi;
+};
+
 struct hidpp10_device  {
 	struct hidpp_device base;
 	unsigned index;
+	uint8_t dpi_count;
+	struct hidpp10_dpi_mapping *dpi_table; /* must be null terminated */
 };
 
 struct hidpp10_device*
@@ -50,6 +57,35 @@ hidpp10_device_new(const struct hidpp_device *base, int idx);
 
 void
 hidpp10_device_destroy(struct hidpp10_device *dev);
+
+/**
+ * Builds the table of dpi for the device from the given string.
+ *
+ * @param dev a struct hidpp10_device previously allocated
+ * @param str_list a string representing the dpi table
+ *
+ * The given string contains only positive integer values, separated by
+ * semicolons (';'). The n-th element in the list corresponds to the
+ * raw value (0x80 + n - 1)
+ */
+int
+hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,
+				  const char *str_list);
+
+/**
+ * Builds the table of dpi for the device from the given dpi description.
+ *
+ * @param dev a struct hidpp10_device previously allocated
+ * @param str_dpi a string representing the dpi parameters
+ *
+ * The given string contains 3 float values, separated by colons (':').
+ * The format is MIN:MAX@STEP
+ * MIN corresponds to the raw_value '0'
+ * MAX corresponds to the raw_value floor((MAX - MIN) / STEP)
+ */
+int
+hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
+				      const char *str_dpi);
 
 /* -------------------------------------------------------------------------- */
 /* 0x00: Enable HID++ Notifications                                           */

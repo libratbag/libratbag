@@ -50,6 +50,7 @@ libhidpp_la_SOURCES = \
 			hidpp10.c	\
 			hidpp20.h	\
 			hidpp20.c
+libhidpp_la_LDFLAGS = -lm
 libutil_la_SOURCES = \
 		     libratbag-util.c \
 		     libratbag-util.h
