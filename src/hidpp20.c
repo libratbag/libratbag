@@ -920,33 +920,6 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_PROFILE_SIZE		HIDPP20_PAGE_SIZE
 #define HIDPP20_BUTTON_HID		0x80
 
-/*
- * The following crc computation has been provided by Logitech
- */
-#define CRC_CCITT_SEED	0xFFFF
-
-static uint16_t
-hidpp20_crc_ccitt(uint8_t *data, unsigned int length)
-{
-	uint16_t crc, temp, quick;
-	unsigned int i;
-
-	crc = CRC_CCITT_SEED;
-
-	for (i = 0; i < length; i++) {
-		temp = (crc >> 8) ^ (*data++);
-		crc <<= 8;
-		quick = temp ^ (temp >> 4);
-		crc ^= quick;
-		quick <<= 5;
-		crc ^= quick;
-		quick <<= 7;
-		crc ^= quick;
-	}
-
-	return crc;
-}
-
 int
 hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint8_t read_rom,
@@ -1097,7 +1070,7 @@ hidpp20_onboard_profiles_write_page(struct hidpp20_device *device,
 {
 	uint16_t crc;
 
-	crc = hidpp20_crc_ccitt(data, HIDPP20_PAGE_SIZE - 2);
+	crc = hidpp_crc_ccitt(data, HIDPP20_PAGE_SIZE - 2);
 	hidpp_set_unaligned_be_u16(&data[HIDPP20_PROFILE_SIZE - 2], crc);
 
 	return hidpp20_onboard_profiles_write_data(device, page, 0x00, data, HIDPP20_PAGE_SIZE);
@@ -1228,7 +1201,7 @@ hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 				return rc;
 		}
 
-		crc = hidpp20_crc_ccitt(data, HIDPP20_PROFILE_SIZE - 2);
+		crc = hidpp_crc_ccitt(data, HIDPP20_PROFILE_SIZE - 2);
 		read_crc = hidpp_get_unaligned_be_u16(&data[HIDPP20_PROFILE_SIZE - 2]);
 
 		if (crc == read_crc)

@@ -144,6 +144,8 @@ hidpp_log_buffer(struct hidpp_device *dev,
 #define hidpp_log_buf_info(li_, h_, buf_, len_) hidpp_log_buffer(li_, HIDPP_LOG_PRIORITY_INFO, h_, buf_, len_)
 #define hidpp_log_buf_error(li_, h_, buf_, len_) hidpp_log_buffer(li_, HIDPP_LOG_PRIORITY_ERROR, h_, buf_, len_)
 
+uint16_t hidpp_crc_ccitt(uint8_t *data, unsigned int length);
+
 static inline uint16_t
 hidpp_get_unaligned_be_u16(uint8_t *buf)
 {

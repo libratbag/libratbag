@@ -317,3 +317,30 @@ hidpp_device_set_log_handler(struct hidpp_device *dev,
 	dev->log_priority = priority;
 	dev->userdata = userdata;
 }
+
+/*
+ * The following crc computation has been provided by Logitech
+ */
+#define CRC_CCITT_SEED	0xFFFF
+
+uint16_t
+hidpp_crc_ccitt(uint8_t *data, unsigned int length)
+{
+	uint16_t crc, temp, quick;
+	unsigned int i;
+
+	crc = CRC_CCITT_SEED;
+
+	for (i = 0; i < length; i++) {
+		temp = (crc >> 8) ^ (*data++);
+		crc <<= 8;
+		quick = temp ^ (temp >> 4);
+		crc ^= quick;
+		quick <<= 5;
+		crc ^= quick;
+		quick <<= 7;
+		crc ^= quick;
+	}
+
+	return crc;
+}
