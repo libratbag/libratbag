@@ -40,6 +40,8 @@
 
 #define HIDPP10_MAX_PAGE_NUMBER 31
 
+struct hidpp10_directory;
+
 struct hidpp10_dpi_mapping {
 	uint8_t raw_value;
 	unsigned dpi;
@@ -50,6 +52,7 @@ struct hidpp10_device  {
 	unsigned index;
 	uint8_t dpi_count;
 	struct hidpp10_dpi_mapping *dpi_table; /* must be null terminated */
+	struct hidpp10_directory  *profile_directory; /* must be null terminated */
 };
 
 struct hidpp10_device*

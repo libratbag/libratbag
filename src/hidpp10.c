@@ -633,6 +633,15 @@ hidpp10_get_profile_directory(struct hidpp10_device *dev,
 	struct hidpp10_directory *directory = (struct hidpp10_directory *)bytes;
 	size_t count;
 
+	if (dev->profile_directory) {
+		count = 0;
+		while (dev->profile_directory[count].page) {
+			count++;
+		}
+
+		goto out;
+	}
+
 	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
 
 	res = hidpp10_read_page(dev, 0x01, bytes);
@@ -647,8 +656,12 @@ hidpp10_get_profile_directory(struct hidpp10_device *dev,
 		count++;
 	}
 
+	dev->profile_directory = zalloc((count + 1) * sizeof(struct hidpp10_directory));
+	memcpy(dev->profile_directory, directory, count  * sizeof(struct hidpp10_directory));
+
+out:
 	count = min(count, nelems);
-	memcpy(out, directory, count  * sizeof(out[0]));
+	memcpy(out, dev->profile_directory, count  * sizeof(out[0]));
 
 	return count;
 }
@@ -1508,5 +1521,7 @@ hidpp10_device_destroy(struct hidpp10_device *dev)
 {
 	if (dev->dpi_table)
 		free(dev->dpi_table);
+	if (dev->profile_directory)
+		free(dev->profile_directory);
 	free(dev);
 }
