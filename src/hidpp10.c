@@ -629,19 +629,19 @@ hidpp10_get_profile_directory(struct hidpp10_device *dev,
 {
 	unsigned int i;
 	int res;
-	struct hidpp10_directory directory[16]; /* assume 16 profiles max */
+	uint8_t bytes[HIDPP10_PAGE_SIZE] = { 0 };
+	struct hidpp10_directory *directory = (struct hidpp10_directory *)bytes;
 	size_t count;
 
 	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
 
-	for (i = 0; i < sizeof(directory); i += 16) {
-		res = hidpp10_read_memory(dev, 0x01, i, (uint8_t *)directory + i);
-		if (res)
-			return res;
-	}
+	res = hidpp10_read_page(dev, 0x01, bytes);
+	if (res)
+		return res;
 
 	count = 0;
-	for (i = 0; i < ARRAY_LENGTH(directory); i++) {
+	/* assume 16 profiles max */
+	for (i = 0; i < 16; i++) {
 		if (directory[i].page == 0xFF)
 			break;
 		count++;
@@ -1238,6 +1238,29 @@ hidpp10_read_memory(struct hidpp10_device *dev, uint8_t page, uint16_t offset,
 		return res;
 
 	memcpy(bytes, readmem.msg.string, sizeof(readmem.msg.string));
+
+	return 0;
+}
+
+int
+hidpp10_read_page(struct hidpp10_device *dev, uint8_t page,
+		  uint8_t bytes[HIDPP10_PAGE_SIZE])
+{
+	unsigned int i;
+	int res;
+	uint16_t crc, read_crc;
+
+	for (i = 0; i < HIDPP10_PAGE_SIZE; i += 16) {
+		res = hidpp10_read_memory(dev, page, i, bytes + i);
+		if (res < 0)
+			return res;
+	}
+
+	crc = hidpp_crc_ccitt(bytes, HIDPP10_PAGE_SIZE - 2);
+	read_crc = hidpp_get_unaligned_be_u16(&bytes[HIDPP10_PAGE_SIZE - 2]);
+
+	if (crc != read_crc)
+		return -EILSEQ; /* return illegal sequence */
 
 	return 0;
 }

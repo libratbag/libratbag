@@ -503,11 +503,17 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 /* 0xA2: Read Sector                                                          */
 /* -------------------------------------------------------------------------- */
 
+#define HIDPP10_PAGE_SIZE		(16 * 2 * 16)
+
 int
 hidpp10_read_memory(struct hidpp10_device *dev,
 		    uint8_t page,
 		    uint16_t offset,
 		    uint8_t bytes[16]);
+
+int
+hidpp10_read_page(struct hidpp10_device *dev, uint8_t page,
+		  uint8_t bytes[HIDPP10_PAGE_SIZE]);
 
 /* -------------------------------------------------------------------------- */
 /* 0xB2: Device Connection and Disconnection (Pairing)                        */
