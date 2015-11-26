@@ -725,8 +725,9 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 int
 hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile_return)
 {
-	union _hidpp10_profile_data data;
-	struct _hidpp10_profile *p = &data.profile;
+	uint8_t page_data[HIDPP10_PAGE_SIZE];
+	union _hidpp10_profile_data *data = (union _hidpp10_profile_data *)page_data;
+	struct _hidpp10_profile *p = &data->profile;
 	size_t i;
 	int res;
 	struct hidpp10_profile profile;
@@ -757,12 +758,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 	page = directory[number].page;
 
-	for (i = 0; i < sizeof(data); i += 16) {
-		/* each sector contains 16 bytes of data */
-		res = hidpp10_read_memory(dev, page, i / 2,  &data.data[i]);
-		if (res)
-			return res;
-	}
+	res = hidpp10_read_page(dev, page, page_data);
+	if (res)
+		return res;
 
 	profile.red = p->red;
 	profile.green = p->green;
@@ -818,7 +816,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 	hidpp_log_buf_raw(&dev->base,
 		    "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
-		    data.data, 78);
+		    data->data, 78);
 
 	hidpp_log_raw(&dev->base, "Profile %d:\n", number);
 	for (i = 0; i < 5; i++) {
