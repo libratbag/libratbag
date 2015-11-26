@@ -835,7 +835,7 @@ hidpp10_fill_buttons(struct hidpp10_device *dev,
 			button->keys.key = b->keyboard_keys.key;
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
-			button->special.special = ffs(hidpp_get_unaligned_le_u16(&b->special.flags1));
+			button->special.special = hidpp_get_unaligned_le_u16(&b->special.flags1);
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			button->consumer_control.consumer_control =
@@ -991,6 +991,40 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	*profile_return = *profile;
 
 	return 0;
+}
+
+static const enum ratbag_button_action_special hidpp10_profiles_specials[] = {
+	[0x00] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+	[0x01] = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT,
+	[0x02] = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT,
+	[0x03] = RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL,
+	[0x04] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,
+	[0x05 ... 0x07] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+	[0x08] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,
+	[0x09] = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,
+	[0x0a ... 0x0f] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+	[0x11] = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,
+
+	[0x12 ... 0xff] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+};
+
+enum ratbag_button_action_special
+hidpp10_onboard_profiles_get_special(uint8_t code)
+{
+	return hidpp10_profiles_specials[code];
+}
+
+uint8_t
+hidpp10_onboard_profiles_get_code_from_special(enum ratbag_button_action_special special)
+{
+	uint8_t i = 0;
+
+	while (++i) {
+		if (hidpp10_profiles_specials[i] == special)
+			return i;
+	}
+
+	return RATBAG_BUTTON_ACTION_SPECIAL_INVALID;
 }
 
 /* -------------------------------------------------------------------------- */

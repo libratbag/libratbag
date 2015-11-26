@@ -115,6 +115,9 @@ const static struct map {
 	/* Second mode for buttons */
 	{ RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,		"secondary mode" },
 
+	/* battery level */
+	{ RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL,		"battery level" },
+
 	/* must be the last entry in the table */
 	{ RATBAG_BUTTON_ACTION_SPECIAL_INVALID,		NULL },
 };

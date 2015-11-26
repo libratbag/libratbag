@@ -1139,6 +1139,9 @@ enum ratbag_button_action_special {
 	/* second mode for buttons */
 	RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,
 
+	/* battery level */
+	RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL,
+
 };
 
 /**
