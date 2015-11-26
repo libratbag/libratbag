@@ -40,6 +40,11 @@
 
 #define HIDPP10_MAX_PAGE_NUMBER 31
 
+enum hidpp10_profile_type {
+	HIDPP10_PROFILE_UNKNOWN = -1,
+	HIDPP10_PROFILE_G500,
+};
+
 struct hidpp10_directory;
 
 struct hidpp10_dpi_mapping {
@@ -53,10 +58,12 @@ struct hidpp10_device  {
 	uint8_t dpi_count;
 	struct hidpp10_dpi_mapping *dpi_table; /* must be null terminated */
 	struct hidpp10_directory  *profile_directory; /* must be null terminated */
+	enum hidpp10_profile_type profile_type;
 };
 
 struct hidpp10_device*
-hidpp10_device_new(const struct hidpp_device *base, int idx);
+hidpp10_device_new(const struct hidpp_device *base, int idx,
+		   enum hidpp10_profile_type type);
 
 void
 hidpp10_device_destroy(struct hidpp10_device *dev);

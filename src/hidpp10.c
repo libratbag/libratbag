@@ -633,6 +633,11 @@ hidpp10_get_profile_directory(struct hidpp10_device *dev,
 	struct hidpp10_directory *directory = (struct hidpp10_directory *)bytes;
 	size_t count;
 
+	if (dev->profile_type == HIDPP10_PROFILE_UNKNOWN) {
+		hidpp_log_debug(&dev->base, "no profile type given\n");
+		return 0;
+	}
+
 	if (dev->profile_directory) {
 		count = 0;
 		while (dev->profile_directory[count].page) {
@@ -750,6 +755,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 					    ARRAY_LENGTH(directory));
 	if (count < 0)
 		return count;
+
+	if (count == 0 || dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
+		return -ENOTSUP;
 
 	if (number >= count) {
 		hidpp_log_error(&dev->base, "Profile number %d not in the directory.\n", number);
@@ -1497,7 +1505,8 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 }
 
 struct hidpp10_device*
-hidpp10_device_new(const struct hidpp_device *base, int idx)
+hidpp10_device_new(const struct hidpp_device *base, int idx,
+		   enum hidpp10_profile_type type)
 {
 	struct hidpp10_device *dev;
 
@@ -1505,6 +1514,7 @@ hidpp10_device_new(const struct hidpp_device *base, int idx)
 
 	dev->index = idx;
 	dev->base = *base;
+	dev->profile_type = type;
 
 	if (hidpp10_get_device_info(dev) != 0) {
 		hidpp10_device_destroy(dev);
