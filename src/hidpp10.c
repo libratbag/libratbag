@@ -136,6 +136,9 @@ hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,
 	if (index != count)
 		goto err;
 
+	/* mark the state as invalid */
+	dev->profile_count = 0;
+
 	return 0;
 
 err:
@@ -172,6 +175,9 @@ hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
 		dev->dpi_table[i].raw_value = i;
 		dev->dpi_table[i].dpi = round((min + step * i) / 25.0f) * 25;
 	}
+
+	/* mark the state as invalid */
+	dev->profile_count = 0;
 
 	return 0;
 }
@@ -665,6 +671,12 @@ hidpp10_get_profile_directory(struct hidpp10_device *dev,
 	memcpy(dev->profile_directory, directory, count  * sizeof(struct hidpp10_directory));
 
 out:
+	if (dev->profile_count != count) {
+		if (dev->profiles)
+			free(dev->profiles);
+		dev->profiles = zalloc(count * sizeof(struct hidpp10_profile));
+		dev->profile_count = count;
+	}
 	count = min(count, nelems);
 	memcpy(out, dev->profile_directory, count  * sizeof(out[0]));
 
@@ -797,8 +809,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	struct _hidpp10_profile *p = &data->profile;
 	size_t i;
 	int res;
-	struct hidpp10_profile profile;
+	struct hidpp10_profile *profile;
 	struct hidpp10_directory directory[16]; /* completely random profile count */
+	union _hidpp10_button_binding *buttons;
 	int count = 0;
 	uint8_t page;
 
@@ -826,22 +839,28 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		return -EINVAL;
 	}
 
-	page = directory[number].page;
+	buttons = p->buttons;
 
-	res = hidpp10_read_page(dev, page, page_data);
-	if (res)
-		return res;
+	profile = &dev->profiles[number];
+	if (!profile->initialized) {
 
-	profile.red = p->red;
-	profile.green = p->green;
-	profile.blue = p->blue;
-	profile.angle_correction = p->angle_correction;
-	profile.default_dpi_mode = p->default_dpi_mode;
-	profile.refresh_rate = p->usb_refresh_rate ? 1000/p->usb_refresh_rate : 0;
+		page = directory[number].page;
+		res = hidpp10_read_page(dev, page, page_data);
+		if (res)
+			return res;
 
-	hidpp10_fill_dpi_modes(dev, &profile, p->dpi_modes, PROFILE_NUM_DPI_MODES);
+		profile->red = p->red;
+		profile->green = p->green;
+		profile->blue = p->blue;
+		profile->angle_correction = p->angle_correction;
+		profile->default_dpi_mode = p->default_dpi_mode;
+		profile->refresh_rate = p->usb_refresh_rate ? 1000/p->usb_refresh_rate : 0;
 
-	hidpp10_fill_buttons(dev, &profile, p->buttons, PROFILE_NUM_BUTTONS);
+		hidpp10_fill_dpi_modes(dev, profile, p->dpi_modes, PROFILE_NUM_DPI_MODES);
+
+		hidpp10_fill_buttons(dev, profile, p->buttons, PROFILE_NUM_BUTTONS);
+		profile->initialized = 1;
+	}
 
 	hidpp_log_buf_raw(&dev->base,
 		    "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
@@ -851,20 +870,20 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	for (i = 0; i < 5; i++) {
 		hidpp_log_raw(&dev->base,
 			"DPI mode: %dx%d dpi\n",
-			profile.dpi_modes[i].xres,
-			profile.dpi_modes[i].yres);
-	        hidpp_log_raw(&dev->base,
+			profile->dpi_modes[i].xres,
+			profile->dpi_modes[i].yres);
+		hidpp_log_raw(&dev->base,
 			"LED status: 1:%s 2:%s 3:%s 4:%s\n",
-			(p->dpi_modes[i].led1 & 0x2) ? "on" : "off",
-			(p->dpi_modes[i].led2 & 0x2) ? "on" : "off",
-			(p->dpi_modes[i].led3 & 0x2) ? "on" : "off",
-			(p->dpi_modes[i].led4 & 0x2) ? "on" : "off");
+			(profile->dpi_modes[i].led[0] & 0x2) ? "on" : "off",
+			(profile->dpi_modes[i].led[1] & 0x2) ? "on" : "off",
+			(profile->dpi_modes[i].led[2] & 0x2) ? "on" : "off",
+			(profile->dpi_modes[i].led[3] & 0x2) ? "on" : "off");
 	}
-	hidpp_log_raw(&dev->base, "Angle correction: %d\n", profile.angle_correction);
-	hidpp_log_raw(&dev->base, "Default DPI mode: %d\n", profile.default_dpi_mode);
-	hidpp_log_raw(&dev->base, "Refresh rate: %d\n", profile.refresh_rate);
+	hidpp_log_raw(&dev->base, "Angle correction: %d\n", profile->angle_correction);
+	hidpp_log_raw(&dev->base, "Default DPI mode: %d\n", profile->default_dpi_mode);
+	hidpp_log_raw(&dev->base, "Refresh rate: %d\n", profile->refresh_rate);
 	for (i = 0; i < 13; i++) {
-		union _hidpp10_button_binding *button = &p->buttons[i];
+		union _hidpp10_button_binding *button = &buttons[i];
 		switch (button->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
 			hidpp_log_raw(&dev->base,
@@ -901,7 +920,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		}
 	}
 
-	*profile_return = profile;
+	*profile_return = *profile;
 
 	return 0;
 }
@@ -1552,5 +1571,7 @@ hidpp10_device_destroy(struct hidpp10_device *dev)
 		free(dev->dpi_table);
 	if (dev->profile_directory)
 		free(dev->profile_directory);
+	if (dev->profiles)
+		free(dev->profiles);
 	free(dev);
 }
