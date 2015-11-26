@@ -727,6 +727,68 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 	return -ENAVAIL;
 }
 
+static void
+hidpp10_fill_dpi_modes(struct hidpp10_device *dev,
+		       struct hidpp10_profile *profile,
+		       struct _hidpp10_dpi_mode *dpi_list,
+		       unsigned int count)
+{
+	unsigned int i;
+
+	profile->num_dpi_modes = count;
+	for (i = 0; i < count; i++) {
+		uint8_t *be; /* in big endian */
+		struct _hidpp10_dpi_mode *dpi = &dpi_list[i];
+
+		be = (uint8_t*)&dpi->xres;
+		profile->dpi_modes[i].xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
+		be = (uint8_t*)&dpi->yres;
+		profile->dpi_modes[i].yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
+
+		profile->dpi_modes[i].led[0] = dpi->led1 == 0x2;
+		profile->dpi_modes[i].led[1] = dpi->led2 == 0x2;
+		profile->dpi_modes[i].led[2] = dpi->led3 == 0x2;
+		profile->dpi_modes[i].led[3] = dpi->led4 == 0x2;
+	}
+}
+
+static void
+hidpp10_fill_buttons(struct hidpp10_device *dev,
+		     struct hidpp10_profile *profile,
+		     union _hidpp10_button_binding *buttons,
+		     unsigned int count)
+{
+	unsigned int i;
+
+	profile->num_buttons = count;
+	for (i = 0; i < count; i++) {
+		union _hidpp10_button_binding *b = &buttons[i];
+		union hidpp10_button *button = &profile->buttons[i];
+
+		button->any.type = b->any.type;
+
+		switch (b->any.type) {
+		case PROFILE_BUTTON_TYPE_BUTTON:
+			button->button.button =
+				ffs(hidpp_get_unaligned_le_u16(&b->button.button_flags_lsb));
+			break;
+		case PROFILE_BUTTON_TYPE_KEYS:
+			button->keys.modifier_flags = b->keyboard_keys.modifier_flags;
+			button->keys.key = b->keyboard_keys.key;
+			break;
+		case PROFILE_BUTTON_TYPE_SPECIAL:
+			button->special.special = ffs(hidpp_get_unaligned_le_u16(&b->special.flags1));
+			break;
+		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
+			button->consumer_control.consumer_control =
+				  hidpp_get_unaligned_be_u16(&b->consumer_control.consumer_control1);
+			break;
+		case PROFILE_BUTTON_TYPE_DISABLED:
+			break;
+		}
+	}
+}
+
 int
 hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile_return)
 {
@@ -777,50 +839,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	profile.default_dpi_mode = p->default_dpi_mode;
 	profile.refresh_rate = p->usb_refresh_rate ? 1000/p->usb_refresh_rate : 0;
 
-	profile.num_dpi_modes = PROFILE_NUM_DPI_MODES;
-	for (i = 0; i < PROFILE_NUM_DPI_MODES; i++) {
-		uint8_t *be; /* in big endian */
-		struct _hidpp10_dpi_mode *dpi = &p->dpi_modes[i];
+	hidpp10_fill_dpi_modes(dev, &profile, p->dpi_modes, PROFILE_NUM_DPI_MODES);
 
-		be = (uint8_t*)&dpi->xres;
-		profile.dpi_modes[i].xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
-		be = (uint8_t*)&dpi->yres;
-		profile.dpi_modes[i].yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
-
-		profile.dpi_modes[i].led[0] = dpi->led1 == 0x2;
-		profile.dpi_modes[i].led[1] = dpi->led2 == 0x2;
-		profile.dpi_modes[i].led[2] = dpi->led3 == 0x2;
-		profile.dpi_modes[i].led[3] = dpi->led4 == 0x2;
-	}
-
-	profile.num_buttons = PROFILE_NUM_BUTTONS;
-	for (i = 0; i < PROFILE_NUM_BUTTONS; i++) {
-		union _hidpp10_button_binding *b = &p->buttons[i];
-		union hidpp10_button *button = &profile.buttons[i];
-
-		button->any.type = b->any.type;
-
-		switch (b->any.type) {
-		case PROFILE_BUTTON_TYPE_BUTTON:
-			button->button.button =
-				ffs(hidpp_get_unaligned_le_u16(&b->button.button_flags_lsb));
-			break;
-		case PROFILE_BUTTON_TYPE_KEYS:
-			button->keys.modifier_flags = b->keyboard_keys.modifier_flags;
-			button->keys.key = b->keyboard_keys.key;
-			break;
-		case PROFILE_BUTTON_TYPE_SPECIAL:
-			button->special.special = ffs(hidpp_get_unaligned_le_u16(&b->special.flags1));
-			break;
-		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
-			button->consumer_control.consumer_control =
-				  hidpp_get_unaligned_be_u16(&b->consumer_control.consumer_control1);
-			break;
-		case PROFILE_BUTTON_TYPE_DISABLED:
-			break;
-		}
-
-	}
+	hidpp10_fill_buttons(dev, &profile, p->buttons, PROFILE_NUM_BUTTONS);
 
 	hidpp_log_buf_raw(&dev->base,
 		    "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
