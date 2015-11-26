@@ -54,6 +54,53 @@ struct hidpp10drv_data {
 };
 
 static void
+hidpp10drv_map_button(struct ratbag_device *device,
+		      struct hidpp10_device *hidpp10,
+		      struct ratbag_button *button)
+{
+	struct hidpp10_profile profile;
+	int ret;
+
+	ret = hidpp10_get_profile(hidpp10, button->profile->index, &profile);
+	if (ret)
+		return;
+
+	switch (profile.buttons[button->index].any.type) {
+	case PROFILE_BUTTON_TYPE_BUTTON:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+		button->action.action.button = profile.buttons[button->index].button.button;
+		break;
+	case PROFILE_BUTTON_TYPE_KEYS:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+							profile.buttons[button->index].keys.key);
+		break;
+	case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+		/* FIXME: we need the consumer control table */
+		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+							profile.buttons[button->index].consumer_control.consumer_control);
+		break;
+	case PROFILE_BUTTON_TYPE_SPECIAL:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+		button->action.action.special = hidpp10_onboard_profiles_get_special(profile.buttons[button->index].special.special);
+		break;
+	case PROFILE_BUTTON_TYPE_DISABLED:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		break;
+	default:
+		if (profile.buttons[button->index].any.type & 0x80) {
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
+		} else {
+			/* FIXME: MACRO */
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
+	}
+
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+}
+
+static void
 hidpp10drv_read_button(struct ratbag_button *button)
 {
 	enum ratbag_button_type type = RATBAG_BUTTON_TYPE_UNKNOWN;
@@ -81,6 +128,7 @@ hidpp10drv_read_button(struct ratbag_button *button)
 		default:
 			break;
 		}
+		hidpp10drv_map_button(device, hidpp10, button);
 		break;
 	case HIDPP10_PROFILE_G700:
 		switch (button->index) {
@@ -100,6 +148,7 @@ hidpp10drv_read_button(struct ratbag_button *button)
 		default:
 			break;
 		}
+		hidpp10drv_map_button(device, hidpp10, button);
 		break;
 	default:
 		switch (button->index) {
