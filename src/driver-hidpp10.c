@@ -57,25 +57,58 @@ static void
 hidpp10drv_read_button(struct ratbag_button *button)
 {
 	enum ratbag_button_type type = RATBAG_BUTTON_TYPE_UNKNOWN;
+	struct ratbag_device *device = button->profile->device;
+	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp10_device *hidpp10 = drv_data->dev;
 
-	/* FIXME: this is valid for the G500s only */
-	switch (button->index) {
-	case 0: type = RATBAG_BUTTON_TYPE_LEFT; break;
-	case 1: type = RATBAG_BUTTON_TYPE_MIDDLE; break;
-	case 2: type = RATBAG_BUTTON_TYPE_RIGHT; break;
-	case 3: type = RATBAG_BUTTON_TYPE_THUMB; break;
-	case 4: type = RATBAG_BUTTON_TYPE_THUMB2; break;
-	case 5: type = RATBAG_BUTTON_TYPE_THUMB3; break;
-	case 6: type = RATBAG_BUTTON_TYPE_WHEEL_LEFT; break;
-	case 7: type = RATBAG_BUTTON_TYPE_WHEEL_RIGHT; break;
-	case 8: type = RATBAG_BUTTON_TYPE_RESOLUTION_UP; break;
-	case 9: type = RATBAG_BUTTON_TYPE_RESOLUTION_DOWN; break;
-	case 10:
-	case 11:
-	case 12: /* these don't actually exist on the device */
-		type = RATBAG_BUTTON_TYPE_UNKNOWN; break;
-	default:
+	switch (hidpp10->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		switch (button->index) {
+		case 0: type = RATBAG_BUTTON_TYPE_LEFT; break;
+		case 1: type = RATBAG_BUTTON_TYPE_MIDDLE; break;
+		case 2: type = RATBAG_BUTTON_TYPE_RIGHT; break;
+		case 3: type = RATBAG_BUTTON_TYPE_THUMB; break;
+		case 4: type = RATBAG_BUTTON_TYPE_THUMB2; break;
+		case 5: type = RATBAG_BUTTON_TYPE_THUMB3; break;
+		case 6: type = RATBAG_BUTTON_TYPE_WHEEL_LEFT; break;
+		case 7: type = RATBAG_BUTTON_TYPE_WHEEL_RIGHT; break;
+		case 8: type = RATBAG_BUTTON_TYPE_RESOLUTION_UP; break;
+		case 9: type = RATBAG_BUTTON_TYPE_RESOLUTION_DOWN; break;
+		case 10:
+		case 11:
+		case 12: /* these don't actually exist on the device */
+			type = RATBAG_BUTTON_TYPE_UNKNOWN; break;
+		default:
+			break;
+		}
 		break;
+	case HIDPP10_PROFILE_G700:
+		switch (button->index) {
+		case 0: type = RATBAG_BUTTON_TYPE_LEFT; break;
+		case 1: type = RATBAG_BUTTON_TYPE_MIDDLE; break;
+		case 2: type = RATBAG_BUTTON_TYPE_RIGHT; break;
+		case 3: type = RATBAG_BUTTON_TYPE_THUMB; break;
+		case 4: type = RATBAG_BUTTON_TYPE_THUMB2; break;
+		case 5: type = RATBAG_BUTTON_TYPE_THUMB3; break;
+		case 6: type = RATBAG_BUTTON_TYPE_THUMB4; break;
+		case 7: type = RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP; break;
+		case 8: type = RATBAG_BUTTON_TYPE_RESOLUTION_DOWN; break;
+		case 9: type = RATBAG_BUTTON_TYPE_RESOLUTION_UP; break;
+		case 10: type = RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP; break;
+		case 11: type = RATBAG_BUTTON_TYPE_WHEEL_LEFT; break;
+		case 12: type = RATBAG_BUTTON_TYPE_WHEEL_RIGHT; break;
+		default:
+			break;
+		}
+		break;
+	default:
+		switch (button->index) {
+		case 0: type = RATBAG_BUTTON_TYPE_LEFT; break;
+		case 1: type = RATBAG_BUTTON_TYPE_MIDDLE; break;
+		case 2: type = RATBAG_BUTTON_TYPE_RIGHT; break;
+		default:
+			break;
+		}
 	}
 
 	button->type = type;
@@ -241,6 +274,8 @@ hidpp10drv_probe(struct ratbag_device *device)
 	if (prop) {
 		if (strcasecmp("G500", prop) == 0)
 			type = HIDPP10_PROFILE_G500;
+		else if (strcasecmp("G700", prop) == 0)
+			type = HIDPP10_PROFILE_G700;
 	}
 	/* We can treat all devices as wired devices here. If we talk to the
 	 * correct hidraw device the kernel adjusts the device index for us,

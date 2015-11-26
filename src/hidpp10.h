@@ -43,6 +43,7 @@
 enum hidpp10_profile_type {
 	HIDPP10_PROFILE_UNKNOWN = -1,
 	HIDPP10_PROFILE_G500,
+	HIDPP10_PROFILE_G700,
 };
 
 struct hidpp10_directory;
