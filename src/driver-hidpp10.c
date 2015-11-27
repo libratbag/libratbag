@@ -302,6 +302,8 @@ hidpp10drv_probe(struct ratbag_device *device)
 	struct hidpp_device base;
 	enum hidpp10_profile_type type = HIDPP10_PROFILE_UNKNOWN;
 	const char *prop;
+	int device_idx = HIDPP_WIRED_DEVICE_IDX;
+	int nread = 0;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
 	if (rc == -ENODEV) {
@@ -326,12 +328,27 @@ hidpp10drv_probe(struct ratbag_device *device)
 		else if (strcasecmp("G700", prop) == 0)
 			type = HIDPP10_PROFILE_G700;
 	}
-	/* We can treat all devices as wired devices here. If we talk to the
-	 * correct hidraw device the kernel adjusts the device index for us,
-	 * so even for unifying receiver devices we can just 0x00 as device
-	 * index.
+
+	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_INDEX");
+	if (prop) {
+		sscanf(prop, "%d%n", &device_idx, &nread);
+		if (!nread || (prop[nread]) != '\0' || device_idx < 0) {
+			log_error(device->ratbag,
+				  "Error parsing RATBAG_HIDPP10_INDEX: '%s' for %s\n",
+				  prop,
+				  device->name);
+			device_idx = HIDPP_WIRED_DEVICE_IDX;
+		}
+	}
+	/* In the general case, we can treat all devices as wired devices
+	 * here. If we talk to the correct hidraw device the kernel adjusts
+	 * the device index for us, so even for unifying receiver devices
+	 * we can just use 0x00 as device index.
+	 *
+	 * If there is a special need like for G700(s), we can pass a
+	 * udev prop RATBAG_HIDPP10_INDEX.
 	 */
-	dev = hidpp10_device_new(&base, HIDPP_WIRED_DEVICE_IDX, type);
+	dev = hidpp10_device_new(&base, device_idx, type);
 
 	if (!dev) {
 		log_error(device->ratbag,
