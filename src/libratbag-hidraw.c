@@ -31,6 +31,13 @@
 #include "libratbag-hidraw.h"
 #include "libratbag-private.h"
 
+#ifndef KEY_SCREENSAVER
+#define KEY_SCREENSAVER		0x245
+#endif
+#ifndef KEY_VOICECOMMAND
+#define KEY_VOICECOMMAND	0x246
+#endif
+
 /* defined in include/linux.hid.h in the kernel, but not exported */
 #ifndef HID_MAX_BUFFER_SIZE
 #define HID_MAX_BUFFER_SIZE	4096		/* 4kb */
