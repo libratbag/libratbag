@@ -77,8 +77,7 @@ hidpp10drv_map_button(struct ratbag_device *device,
 		break;
 	case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		/* FIXME: we need the consumer control table */
-		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+		button->action.action.key.key = ratbag_hidraw_get_keycode_from_consumer_usage(device,
 							profile.buttons[button->index].consumer_control.consumer_control);
 		break;
 	case PROFILE_BUTTON_TYPE_SPECIAL:

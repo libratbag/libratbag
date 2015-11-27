@@ -168,4 +168,22 @@ ratbag_hidraw_get_keycode_from_keyboard_usage(struct ratbag_device *device,
 uint8_t
 ratbag_hidraw_get_keyboard_usage_from_keycode(struct ratbag_device *device,
 					      unsigned keycode);
+
+/**
+ * Gives the input key code associated to the Consumer Control HID usage.
+ *
+ * @return the key code of the HID usage or 0.
+ */
+unsigned int
+ratbag_hidraw_get_keycode_from_consumer_usage(struct ratbag_device *device,
+					      uint16_t hid_code);
+
+/**
+ * Gives the HID Consumer Control usage associated to the input keycode.
+ *
+ * @return the HID Consumer Control usage or 0.
+ */
+uint16_t
+ratbag_hidraw_get_consumer_usage_from_keycode(struct ratbag_device *device,
+					      unsigned keycode);
 #endif /* LIBRATBAG_HIDRAW_H */

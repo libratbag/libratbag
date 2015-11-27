@@ -119,6 +119,11 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 							profile->buttons[button->index].code);
 		break;
+	case HIDPP20_BUTTON_HID_CONSUMER_CONTROL:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+		button->action.action.key.key = ratbag_hidraw_get_keycode_from_consumer_usage(device,
+							profile->buttons[button->index].code);
+		break;
 	case HIDPP20_BUTTON_SPECIAL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
 		button->action.action.special = hidpp20_onboard_profiles_get_special(profile->buttons[button->index].code);
@@ -182,7 +187,7 @@ hidpp20drv_write_button_8100(struct ratbag_button *button,
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
-	uint8_t code;
+	uint8_t code, type;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
 		return -ENOTSUP;
@@ -195,10 +200,15 @@ hidpp20drv_write_button_8100(struct ratbag_button *button,
 		profile->buttons[button->index].code = action->action.button;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+		type = HIDPP20_BUTTON_HID_KEYBOARD;
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key.key);
-		if (code == 0)
-			return -EINVAL;
-		profile->buttons[button->index].type = HIDPP20_BUTTON_HID_KEYBOARD;
+		if (code == 0) {
+			type = HIDPP20_BUTTON_HID_CONSUMER_CONTROL;
+			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, action->action.key.key);
+			if (code == 0)
+				return -EINVAL;
+		}
+		profile->buttons[button->index].type = type;
 		profile->buttons[button->index].code = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:

@@ -1330,6 +1330,9 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 			if (profile->buttons[i].type == HIDPP20_BUTTON_HID_KEYBOARD) {
 				profile->buttons[i].modifiers = button->value.hid.key.modifier;
 				profile->buttons[i].code = button->value.hid.key.code;
+			} else if (profile->buttons[i].type == HIDPP20_BUTTON_HID_CONSUMER_CONTROL) {
+				profile->buttons[i].modifiers = button->value.hid.key.modifier;
+				profile->buttons[i].code = button->value.hid.key.code;
 			} else {
 				profile->buttons[i].code = ffs(hidpp_be_u16_to_cpu(button->value.hid.button));
 			}
