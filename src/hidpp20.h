@@ -264,14 +264,49 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 
 #define HIDPP_PAGE_ONBOARD_PROFILES			0x8100
 
-#define HIDPP20_BUTTON_HID_MOUSE		0x81
-#define HIDPP20_BUTTON_HID_KEYBOARD		0x82
-#define HIDPP20_BUTTON_HID_CONSUMER_CONTROL	0x83
-#define HIDPP20_BUTTON_SPECIAL			0x90
-#define HIDPP20_BUTTON_DISABLED			0xFF
+#define HIDPP20_BUTTON_HID_TYPE				0x80
+#define HIDPP20_BUTTON_HID_TYPE_MOUSE			0x01
+#define HIDPP20_BUTTON_HID_TYPE_KEYBOARD		0x02
+#define HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL	0x03
+#define HIDPP20_BUTTON_SPECIAL				0x90
+#define HIDPP20_BUTTON_DISABLED				0xFF
 
-#define HIDPP20_MODIFIER_KEY_CTRL	0x01
-#define HIDPP20_MODIFIER_KEY_SHIFT	0x02
+#define HIDPP20_MODIFIER_KEY_CTRL			0x01
+#define HIDPP20_MODIFIER_KEY_SHIFT			0x02
+
+union hidpp20_button_binding {
+	struct {
+		uint8_t type;
+	} any;
+	struct {
+		uint8_t type;
+		uint8_t subtype;
+	} subany;
+	struct {
+		uint8_t type;		/* HIDPP20_BUTTON_HID_TYPE */
+		uint8_t subtype;	/* HIDPP20_BUTTON_HID_TYPE_MOUSE */
+		uint16_t buttons;	/* flags when internal */
+	} __attribute__((packed)) button;
+	struct {
+		uint8_t type;		/* HIDPP20_BUTTON_HID_TYPE */
+		uint8_t subtype;	/* HIDPP20_BUTTON_HID_TYPE_KEYBOARD */
+		uint8_t modifier_flags;
+		uint8_t key;
+	} __attribute__((packed)) keyboard_keys;
+	struct {
+		uint8_t type;		/* HIDPP20_BUTTON_HID_TYPE */
+		uint8_t subtype;	/* HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL */
+		uint16_t consumer_control;
+	} __attribute__((packed)) consumer_control;
+	struct {
+		uint8_t type; /* HIDPP20_BUTTON_SPECIAL */
+		uint8_t special;
+	} __attribute__((packed)) special;
+	struct {
+		uint8_t type; /* PROFILE_BUTTON_TYPE_DISABLED */
+	} disabled;
+} __attribute__((packed));
+_Static_assert(sizeof(union hidpp20_button_binding) == 4, "Invalid size");
 
 struct hidpp20_profile {
 	uint8_t index;
@@ -281,11 +316,7 @@ struct hidpp20_profile {
 	unsigned default_dpi;
 	unsigned switched_dpi;
 	uint16_t dpi[5];
-	struct {
-		uint8_t type;
-		uint8_t modifiers;
-		uint8_t code;
-	} buttons[32];
+	union hidpp20_button_binding buttons[32];
 };
 
 struct hidpp20_profiles {

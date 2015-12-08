@@ -109,24 +109,28 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 
 	profile = &drv_data->profiles->profiles[button->profile->index];
 
-	switch (profile->buttons[button->index].type) {
-	case HIDPP20_BUTTON_HID_MOUSE:
-		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-		button->action.action.button = profile->buttons[button->index].code;
-		break;
-	case HIDPP20_BUTTON_HID_KEYBOARD:
-		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
-							profile->buttons[button->index].code);
-		break;
-	case HIDPP20_BUTTON_HID_CONSUMER_CONTROL:
-		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		button->action.action.key.key = ratbag_hidraw_get_keycode_from_consumer_usage(device,
-							profile->buttons[button->index].code);
+	switch (profile->buttons[button->index].any.type) {
+	case HIDPP20_BUTTON_HID_TYPE:
+		switch (profile->buttons[button->index].subany.subtype) {
+		case HIDPP20_BUTTON_HID_TYPE_MOUSE:
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+			button->action.action.button = profile->buttons[button->index].button.buttons;
+			break;
+		case HIDPP20_BUTTON_HID_TYPE_KEYBOARD:
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+			button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+								profile->buttons[button->index].keyboard_keys.key);
+			break;
+		case HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL:
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+			button->action.action.key.key = ratbag_hidraw_get_keycode_from_consumer_usage(device,
+								profile->buttons[button->index].consumer_control.consumer_control);
+			break;
+		}
 		break;
 	case HIDPP20_BUTTON_SPECIAL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
-		button->action.action.special = hidpp20_onboard_profiles_get_special(profile->buttons[button->index].code);
+		button->action.action.special = hidpp20_onboard_profiles_get_special(profile->buttons[button->index].special.special);
 		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
@@ -187,7 +191,7 @@ hidpp20drv_write_button_8100(struct ratbag_button *button,
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
-	uint8_t code, type;
+	uint8_t code, type, subtype;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
 		return -ENOTSUP;
@@ -196,27 +200,33 @@ hidpp20drv_write_button_8100(struct ratbag_button *button,
 
 	switch (action->type) {
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-		profile->buttons[button->index].type = HIDPP20_BUTTON_HID_MOUSE;
-		profile->buttons[button->index].code = action->action.button;
+		profile->buttons[button->index].button.type = HIDPP20_BUTTON_HID_TYPE;
+		profile->buttons[button->index].button.subtype = HIDPP20_BUTTON_HID_TYPE_MOUSE;
+		profile->buttons[button->index].button.buttons = action->action.button;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
-		type = HIDPP20_BUTTON_HID_KEYBOARD;
+		type = HIDPP20_BUTTON_HID_TYPE;
+		subtype = HIDPP20_BUTTON_HID_TYPE_KEYBOARD;
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key.key);
 		if (code == 0) {
-			type = HIDPP20_BUTTON_HID_CONSUMER_CONTROL;
+			subtype = HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL;
 			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, action->action.key.key);
 			if (code == 0)
 				return -EINVAL;
 		}
-		profile->buttons[button->index].type = type;
-		profile->buttons[button->index].code = code;
+		profile->buttons[button->index].subany.type = type;
+		profile->buttons[button->index].subany.subtype = subtype;
+		if (subtype == HIDPP20_BUTTON_HID_TYPE_KEYBOARD)
+			profile->buttons[button->index].keyboard_keys.key = code;
+		else
+			profile->buttons[button->index].consumer_control.consumer_control = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		code = hidpp20_onboard_profiles_get_code_from_special(action->action.special);
 		if (code == 0)
 			return -EINVAL;
-		profile->buttons[button->index].type = HIDPP20_BUTTON_SPECIAL;
-		profile->buttons[button->index].code = code;
+		profile->buttons[button->index].special.type = HIDPP20_BUTTON_SPECIAL;
+		profile->buttons[button->index].special.special = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 	default:

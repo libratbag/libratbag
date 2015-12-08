@@ -1256,23 +1256,6 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 	return hidpp20_onboard_profiles_write_page(device, 0x00, data);
 }
 
-struct hidpp20_internal_button {
-	uint8_t type;
-	union {
-		struct {
-			uint8_t subtype;
-			union {
-				struct {
-					uint8_t modifier;
-					uint8_t code;
-				} key;
-				uint16_t button;
-			} __attribute__((packed));
-		} __attribute__((packed)) hid;
-		uint8_t special;
-	} value;
-} __attribute__((packed));
-
 union hidpp20_internal_profile {
 	uint8_t data[HIDPP20_PROFILE_SIZE];
 	struct {
@@ -1282,8 +1265,8 @@ union hidpp20_internal_profile {
 		uint16_t dpi[7];
 		uint8_t zero;
 		uint8_t padding[14];
-		struct hidpp20_internal_button buttons[16];
-		struct hidpp20_internal_button alternate_buttons[16];
+		union hidpp20_button_binding buttons[16];
+		union hidpp20_button_binding alternate_buttons[16];
 		union {
 			char txt[16 * 3];
 			uint8_t raw[16 * 3];
@@ -1293,6 +1276,90 @@ union hidpp20_internal_profile {
 	} __attribute__((packed)) profile;
 };
 _Static_assert(sizeof(union hidpp20_internal_profile) == HIDPP20_PROFILE_SIZE, "Invalid size");
+
+static void
+hidpp20_buttons_to_cpu(struct hidpp20_profile *profile,
+		       union hidpp20_button_binding *buttons,
+		       unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		union hidpp20_button_binding *b = &buttons[i];
+		union hidpp20_button_binding *button = &profile->buttons[i];
+
+		button->any.type = b->any.type;
+
+		switch (b->any.type) {
+		case HIDPP20_BUTTON_HID_TYPE:
+			button->subany.subtype = b->subany.subtype;
+			switch (b->subany.subtype) {
+			case HIDPP20_BUTTON_HID_TYPE_MOUSE:
+				button->button.buttons = ffs(hidpp_be_u16_to_cpu(b->button.buttons));
+				break;
+			case HIDPP20_BUTTON_HID_TYPE_KEYBOARD:
+				button->keyboard_keys.modifier_flags = b->keyboard_keys.modifier_flags;
+				button->keyboard_keys.key = b->keyboard_keys.key;
+				break;
+			case HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL:
+				button->consumer_control.consumer_control =
+					hidpp_be_u16_to_cpu(b->consumer_control.consumer_control);
+				break;
+			}
+			break;
+		case HIDPP20_BUTTON_SPECIAL:
+			button->special.special = b->special.special;
+			break;
+		case HIDPP20_BUTTON_DISABLED:
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+static void
+hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
+			 union hidpp20_button_binding *buttons,
+			 unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		union hidpp20_button_binding *button = &buttons[i];
+		union hidpp20_button_binding *b = &profile->buttons[i];
+
+		button->any.type = b->any.type;
+
+		switch (b->any.type) {
+		case HIDPP20_BUTTON_HID_TYPE:
+			button->subany.subtype = b->subany.subtype;
+			switch (b->subany.subtype) {
+			case HIDPP20_BUTTON_HID_TYPE_MOUSE:
+				button->button.buttons = hidpp_cpu_to_be_u16(1U << (b->button.buttons - 1));
+				break;
+			case HIDPP20_BUTTON_HID_TYPE_KEYBOARD:
+				button->keyboard_keys.modifier_flags = b->keyboard_keys.modifier_flags;
+				button->keyboard_keys.key = b->keyboard_keys.key;
+				break;
+			case HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL:
+				button->consumer_control.type = HIDPP20_BUTTON_HID_TYPE;
+				button->consumer_control.subtype = HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL;
+				button->consumer_control.consumer_control =
+					hidpp_cpu_to_be_u16(b->consumer_control.consumer_control);
+				break;
+			}
+			break;
+		case HIDPP20_BUTTON_SPECIAL:
+			button->special.special = b->special.special;
+			break;
+		case HIDPP20_BUTTON_DISABLED:
+			break;
+		default:
+			break;
+		}
+	}
+}
 
 int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				  unsigned int index,
@@ -1319,27 +1386,7 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 		profile->dpi[i] = hidpp_get_unaligned_le_u16(&data[2 * i + 3]);
 	}
 
-	for (i = 0; i < profiles_list->num_buttons; i++) {
-		struct hidpp20_internal_button *button = &pdata.profile.buttons[i];
-
-		profile->buttons[i].type = button->type;
-
-		if (button->type == HIDPP20_BUTTON_HID) {
-			profile->buttons[i].type |= button->value.hid.subtype;
-
-			if (profile->buttons[i].type == HIDPP20_BUTTON_HID_KEYBOARD) {
-				profile->buttons[i].modifiers = button->value.hid.key.modifier;
-				profile->buttons[i].code = button->value.hid.key.code;
-			} else if (profile->buttons[i].type == HIDPP20_BUTTON_HID_CONSUMER_CONTROL) {
-				profile->buttons[i].modifiers = button->value.hid.key.modifier;
-				profile->buttons[i].code = button->value.hid.key.code;
-			} else {
-				profile->buttons[i].code = ffs(hidpp_be_u16_to_cpu(button->value.hid.button));
-			}
-		} else if (button->type == HIDPP20_BUTTON_SPECIAL) {
-			profile->buttons[i].code = button->value.special;
-		}
-	}
+	hidpp20_buttons_to_cpu(profile, pdata.profile.buttons, profiles_list->num_buttons);
 
 	memcpy(profile->name, pdata.profile.name.txt, sizeof(profile->name));
 	/* force terminating '\0' */
@@ -1385,24 +1432,7 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 		pdata.profile.dpi[i] = hidpp_cpu_to_le_u16(profile->dpi[i]);
 	}
 
-	for (i = 0; i < profiles_list->num_buttons; i++) {
-		struct hidpp20_internal_button *button = &pdata.profile.buttons[i];
-
-		button->type = profile->buttons[i].type & 0xf0;
-
-		if (button->type == HIDPP20_BUTTON_HID) {
-			button->value.hid.subtype = profile->buttons[i].type & 0x0f;
-
-			if (button->value.hid.subtype == HIDPP20_BUTTON_HID_KEYBOARD) {
-				button->value.hid.key.modifier = profile->buttons[i].modifiers;
-				button->value.hid.key.code = profile->buttons[i].code;
-			} else {
-				button->value.hid.button = hidpp_cpu_to_be_u16(1U << (profile->buttons[i].code - 1));
-			}
-		} else if (button->type == HIDPP20_BUTTON_SPECIAL) {
-			button->value.special = profile->buttons[i].code;
-		}
-	}
+	hidpp20_buttons_from_cpu(profile, pdata.profile.buttons, profiles_list->num_buttons);
 
 	memcpy(pdata.profile.name.txt, profile->name, sizeof(profile->name));
 
