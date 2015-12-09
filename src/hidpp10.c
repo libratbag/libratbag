@@ -548,9 +548,8 @@ union _hidpp10_button_binding {
 	} any;
 	struct {
 		uint8_t type; /* 0x81 */
-		uint8_t button_flags_lsb;
-		uint8_t button_flags_msb;
-	} button;
+		uint16_t button_flags;
+	} __attribute__((packed)) button;
 	struct {
 		uint8_t type; /* 0x82 */
 		uint8_t modifier_flags;
@@ -558,14 +557,12 @@ union _hidpp10_button_binding {
 	} keyboard_keys;
 	struct {
 		uint8_t type; /* 0x83 */
-		uint8_t flags1;
-		uint8_t flags2;
-	} special;
+		uint16_t flags;
+	} __attribute__((packed))  special;
 	struct {
 		uint8_t type; /* 0x84 */
-		uint8_t consumer_control1;
-		uint8_t consumer_control2;
-	} consumer_control;
+		uint16_t consumer_control;
+	} __attribute__((packed))  consumer_control;
 	struct {
 		uint8_t type; /* 0x8F */
 		uint8_t zero0;
@@ -827,19 +824,18 @@ hidpp10_fill_buttons(struct hidpp10_device *dev,
 
 		switch (b->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
-			button->button.button =
-				ffs(hidpp_get_unaligned_le_u16(&b->button.button_flags_lsb));
+			button->button.button = ffs(hidpp_le_u16_to_cpu(b->button.button_flags));
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			button->keys.modifier_flags = b->keyboard_keys.modifier_flags;
 			button->keys.key = b->keyboard_keys.key;
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
-			button->special.special = hidpp_get_unaligned_le_u16(&b->special.flags1);
+			button->special.special = hidpp_le_u16_to_cpu(b->special.flags);
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			button->consumer_control.consumer_control =
-				  hidpp_get_unaligned_be_u16(&b->consumer_control.consumer_control1);
+				  hidpp_be_u16_to_cpu(b->consumer_control.consumer_control);
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			break;
@@ -951,32 +947,32 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	hidpp_log_raw(&dev->base, "Default DPI mode: %d\n", profile->default_dpi_mode);
 	hidpp_log_raw(&dev->base, "Refresh rate: %d\n", profile->refresh_rate);
 	for (i = 0; i < 13; i++) {
-		union _hidpp10_button_binding *button = &buttons[i];
+		union hidpp10_button *button = &profile->buttons[i];
 		switch (button->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: button %d\n",
 				i,
-				ffs(hidpp_get_unaligned_le_u16(&button->button.button_flags_lsb)));
+				button->button.button);
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: key %d modifier %x\n",
 				i,
-				button->keyboard_keys.key,
-				button->keyboard_keys.modifier_flags);
+				button->keys.key,
+				button->keys.modifier_flags);
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: special %x\n",
 				i,
-				ffs(hidpp_get_unaligned_le_u16(&button->special.flags1)));
+				button->special.special);
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: consumer: %x\n",
 				i,
-				hidpp_get_unaligned_be_u16(&button->consumer_control.consumer_control1));
+				button->consumer_control.consumer_control);
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			hidpp_log_raw(&dev->base, "Button %zd: disabled\n", i);
