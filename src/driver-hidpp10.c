@@ -302,6 +302,49 @@ hidpp10drv_write_profile(struct ratbag_profile *profile)
 }
 
 static int
+hidpp10drv_write_resolution_dpi(struct ratbag_resolution *resolution,
+				int dpi_x, int dpi_y)
+{
+	struct ratbag_profile *profile = resolution->profile;
+	struct ratbag_device *device = profile->device;
+	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp10_device *hidpp10 = drv_data->dev;
+	struct hidpp10_profile p;
+	unsigned int index;
+	uint16_t cur_dpi_x, cur_dpi_y;
+	int rc;
+
+	rc = hidpp10_get_profile(hidpp10, profile->index, &p);
+	if (rc)
+		return rc;
+
+	/* store the current resolution */
+	rc = hidpp10_get_current_resolution(hidpp10, &cur_dpi_x, &cur_dpi_y);
+	if (rc)
+		return rc;
+
+	if (resolution->is_active) {
+		/* we need to switch to the new resolution */
+		cur_dpi_x = dpi_x;
+		cur_dpi_y = dpi_y;
+	}
+
+	/* retrieve which resolution is asked to be changed */
+	index = resolution - profile->resolution.modes;
+
+	p.dpi_modes[index].xres = dpi_x;
+	p.dpi_modes[index].yres = dpi_y;
+
+	/* this effectively switches the resolution to the default in the profile */
+	rc = hidpp10_set_profile(drv_data->dev, profile->index, &p);
+	if (rc)
+		return rc;
+
+	/* restore the current setting */
+	return hidpp10_set_current_resolution(hidpp10, cur_dpi_x, cur_dpi_y);
+}
+
+static int
 hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device *dev)
 {
 	int rc;
@@ -483,4 +526,5 @@ struct ratbag_driver hidpp10_driver = {
 	.has_capability = hidpp10drv_has_capability,
 	.read_button = hidpp10drv_read_button,
 	.write_button = hidpp10drv_write_button,
+	.write_resolution_dpi = hidpp10drv_write_resolution_dpi,
 };
