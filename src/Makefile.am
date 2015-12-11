@@ -1,9 +1,11 @@
-lib_LTLIBRARIES = libratbag.la
+lib_LTLIBRARIES = libratbag.la \
+		  liblur.la
 noinst_LTLIBRARIES = libhidpp.la \
 		     libutil.la
 
 include_HEADERS =			\
-	libratbag.h
+	libratbag.h			\
+	liblur.h
 
 libratbag_la_SOURCES =			\
 	driver-etekcity.c		\
@@ -32,6 +34,17 @@ EXTRA_libratbag_la_DEPENDENCIES = $(srcdir)/libratbag.sym
 
 libratbag_la_LDFLAGS = -version-info $(LIBRATBAG_LT_VERSION) -shared \
 		      -Wl,--version-script=$(srcdir)/libratbag.sym
+
+liblur_la_SOURCES = 			\
+	liblur.c			\
+	liblur.h
+liblur_la_LIBADD =			\
+	libhidpp.la			\
+	libutil.la
+liblur_la_CFLAGS = 			\
+	-I$(top_srcdir)/include 	\
+	$(GCC_CFLAGS)
+liblur_la_LDFLAGS = -shared
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libratbag.pc
