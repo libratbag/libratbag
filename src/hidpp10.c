@@ -760,6 +760,74 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 	return -ENAVAIL;
 }
 
+static int
+hidpp10_set_internal_current_profile(struct hidpp10_device *dev,
+				     int16_t current_profile,
+				     uint8_t profile_type)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message profile = CMD_PROFILE(idx, SET_REGISTER_REQ);
+	unsigned i;
+	int8_t page, offset;
+	struct hidpp10_directory directory[16]; /* completely random profile count */
+	int count = 0;
+
+	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
+
+	count = hidpp10_get_profile_directory(dev, directory,
+					    ARRAY_LENGTH(directory));
+	if (count < 0)
+		return count;
+
+	hidpp_log_raw(&dev->base, "Setting current profile\n");
+
+	profile.msg.parameters[0] = profile_type;
+
+	switch (profile_type) {
+	case PROFILE_TYPE_INDEX:
+		if (current_profile > count)
+			return -EINVAL;
+		profile.msg.parameters[1] = current_profile & 0xFF;
+		break;
+	case PROFILE_TYPE_ADDRESS:
+		page = current_profile >> 8;
+		offset = current_profile & 0xFF;
+		for (i = 0; i < ARRAY_LENGTH(directory) && directory[i].page < 32; i++) {
+			if (page == directory[i].page &&
+			    offset == directory[i].offset) {
+				/* found the address in the directory */
+				break;
+			}
+		}
+		if (i >= ARRAY_LENGTH(directory) || directory[i].page >= 32) {
+			hidpp_log_error(&dev->base,
+					"unable to find the profile at (%d,%d) in the directory\n",
+					page, offset);
+			return -EINVAL;
+		}
+		profile.msg.parameters[1] = page;
+		profile.msg.parameters[2] = offset;
+		break;
+	case PROFILE_TYPE_FACTORY:
+		break;
+	default:
+		hidpp_log_error(&dev->base,
+			  "Unexpected value: %02x\n",
+			  profile_type);
+		return -EINVAL;
+	}
+
+	return hidpp10_request_command(dev, &profile);
+}
+
+int
+hidpp10_set_current_profile(struct hidpp10_device *dev, int16_t current_profile)
+{
+	return hidpp10_set_internal_current_profile(dev,
+						    current_profile,
+						    PROFILE_TYPE_INDEX);
+}
+
 static void
 hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
 			 struct hidpp10_profile *profile,

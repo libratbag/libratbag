@@ -436,6 +436,9 @@ int
 hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile);
 
 int
+hidpp10_set_current_profile(struct hidpp10_device *dev, int16_t current_profile);
+
+int
 hidpp10_get_profile(struct hidpp10_device *dev, int8_t number,
 		    struct hidpp10_profile *profile);
 
