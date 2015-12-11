@@ -928,11 +928,11 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
 		}
 		profile->initialized = 1;
-	}
 
-	hidpp_log_buf_raw(&dev->base,
-		    "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
-		    data->data, 78);
+		hidpp_log_buf_raw(&dev->base,
+				  "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
+				  data->data, 78);
+	}
 
 	hidpp_log_raw(&dev->base, "Profile %d:\n", number);
 	for (i = 0; i < 5; i++) {
