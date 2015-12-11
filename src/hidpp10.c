@@ -756,7 +756,7 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 		break;
 	default:
 		hidpp_log_error(&dev->base,
-			  "Unexpected value: %02xn",
+			  "Unexpected value: %02x\n",
 			  type);
 	}
 
