@@ -384,6 +384,9 @@ struct hidpp10_profile {
 	} dpi_modes[5];
 	size_t num_dpi_modes;
 
+	unsigned char name[24]; /* the G700 has 23 chars, add one for terminating 0 */
+	unsigned char macro_names[11][18]; /* adding one extra terminating 0 per name */
+
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
@@ -433,7 +436,14 @@ int
 hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile);
 
 int
+hidpp10_set_current_profile(struct hidpp10_device *dev, int16_t current_profile);
+
+int
 hidpp10_get_profile(struct hidpp10_device *dev, int8_t number,
+		    struct hidpp10_profile *profile);
+
+int
+hidpp10_set_profile(struct hidpp10_device *dev, int8_t number,
 		    struct hidpp10_profile *profile);
 
 enum ratbag_button_action_special
@@ -521,6 +531,33 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 int
 hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t rate);
+
+/* -------------------------------------------------------------------------- */
+/* 0xA0: Generic Memory Management                                            */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_erase_memory(struct hidpp10_device *dev, uint8_t page);
+
+int
+hidpp10_write_flash(struct hidpp10_device *dev,
+		    uint8_t src_page,
+		    uint16_t src_offset,
+		    uint8_t dst_page,
+		    uint16_t dst_offset,
+		    uint16_t size);
+
+/* -------------------------------------------------------------------------- */
+/* 0x9x: HOT payload                                                          */
+/* 0xA1: HOT Control Register                                                 */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_send_hot_payload(struct hidpp10_device *dev,
+			 uint8_t dst_page,
+			 uint16_t dst_offset,
+			 uint8_t *data,
+			 unsigned size);
 
 /* -------------------------------------------------------------------------- */
 /* 0xA2: Read Sector                                                          */

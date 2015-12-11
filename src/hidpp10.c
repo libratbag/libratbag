@@ -548,9 +548,8 @@ union _hidpp10_button_binding {
 	} any;
 	struct {
 		uint8_t type; /* 0x81 */
-		uint8_t button_flags_lsb;
-		uint8_t button_flags_msb;
-	} button;
+		uint16_t button_flags;
+	} __attribute__((packed)) button;
 	struct {
 		uint8_t type; /* 0x82 */
 		uint8_t modifier_flags;
@@ -558,14 +557,12 @@ union _hidpp10_button_binding {
 	} keyboard_keys;
 	struct {
 		uint8_t type; /* 0x83 */
-		uint8_t flags1;
-		uint8_t flags2;
-	} special;
+		uint16_t flags;
+	} __attribute__((packed))  special;
 	struct {
 		uint8_t type; /* 0x84 */
-		uint8_t consumer_control1;
-		uint8_t consumer_control2;
-	} consumer_control;
+		uint16_t consumer_control;
+	} __attribute__((packed))  consumer_control;
 	struct {
 		uint8_t type; /* 0x8F */
 		uint8_t zero0;
@@ -588,6 +585,10 @@ struct _hidpp10_profile_500 {
 } __attribute__((packed));
 _Static_assert(sizeof(struct _hidpp10_profile_500) == 78, "Invalid size");
 
+static const uint8_t _hidpp10_profile_700_unknown1[3] = { 0x80, 0x01, 0x10 };
+static const uint8_t _hidpp10_profile_700_unknown2[10] = { 0x01, 0x2c, 0x02, 0x58, 0x64, 0xff, 0xbc, 0x00, 0x09, 0x31 };
+static const uint8_t _hidpp10_profile_700_unknown3[5] = { 0x4c, 0x47, 0x53, 0x30, 0x32 };
+
 struct _hidpp10_profile_700 {
 	struct _hidpp10_dpi_mode_8 dpi_modes[PROFILE_NUM_DPI_MODES];
 	uint8_t default_dpi_mode;
@@ -597,7 +598,7 @@ struct _hidpp10_profile_700 {
 	union _hidpp10_button_binding buttons[PROFILE_NUM_BUTTONS];
 	uint8_t unknown3[5];
 	uint16_t name[23];
-	uint16_t macro_names[17][11];
+	uint16_t macro_names[11][17];
 } __attribute__((packed));
 _Static_assert(sizeof(struct _hidpp10_profile_700) == 499, "Invalid size");
 
@@ -763,6 +764,74 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 	return -ENAVAIL;
 }
 
+static int
+hidpp10_set_internal_current_profile(struct hidpp10_device *dev,
+				     int16_t current_profile,
+				     uint8_t profile_type)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message profile = CMD_PROFILE(idx, SET_REGISTER_REQ);
+	unsigned i;
+	int8_t page, offset;
+	struct hidpp10_directory directory[16]; /* completely random profile count */
+	int count = 0;
+
+	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
+
+	count = hidpp10_get_profile_directory(dev, directory,
+					    ARRAY_LENGTH(directory));
+	if (count < 0)
+		return count;
+
+	hidpp_log_raw(&dev->base, "Setting current profile\n");
+
+	profile.msg.parameters[0] = profile_type;
+
+	switch (profile_type) {
+	case PROFILE_TYPE_INDEX:
+		if (current_profile > count)
+			return -EINVAL;
+		profile.msg.parameters[1] = current_profile & 0xFF;
+		break;
+	case PROFILE_TYPE_ADDRESS:
+		page = current_profile >> 8;
+		offset = current_profile & 0xFF;
+		for (i = 0; i < ARRAY_LENGTH(directory) && directory[i].page < 32; i++) {
+			if (page == directory[i].page &&
+			    offset == directory[i].offset) {
+				/* found the address in the directory */
+				break;
+			}
+		}
+		if (i >= ARRAY_LENGTH(directory) || directory[i].page >= 32) {
+			hidpp_log_error(&dev->base,
+					"unable to find the profile at (%d,%d) in the directory\n",
+					page, offset);
+			return -EINVAL;
+		}
+		profile.msg.parameters[1] = page;
+		profile.msg.parameters[2] = offset;
+		break;
+	case PROFILE_TYPE_FACTORY:
+		break;
+	default:
+		hidpp_log_error(&dev->base,
+			  "Unexpected value: %02x\n",
+			  profile_type);
+		return -EINVAL;
+	}
+
+	return hidpp10_request_command(dev, &profile);
+}
+
+int
+hidpp10_set_current_profile(struct hidpp10_device *dev, int16_t current_profile)
+{
+	return hidpp10_set_internal_current_profile(dev,
+						    current_profile,
+						    PROFILE_TYPE_INDEX);
+}
+
 static void
 hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
 			 struct hidpp10_profile *profile,
@@ -782,6 +851,27 @@ hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
 		profile->dpi_modes[i].led[1] = dpi->led2 == 0x2;
 		profile->dpi_modes[i].led[2] = dpi->led3 == 0x2;
 		profile->dpi_modes[i].led[3] = dpi->led4 == 0x2;
+	}
+}
+
+static void
+hidpp10_write_dpi_modes_8(struct hidpp10_device *dev,
+			  struct hidpp10_profile *profile,
+			  struct _hidpp10_dpi_mode_8 *dpi_list,
+			  unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		struct _hidpp10_dpi_mode_8 *dpi = &dpi_list[i];
+
+		dpi->xres = hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres);
+		dpi->yres = hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].yres);
+
+		dpi->led1 = profile->dpi_modes[i].led[0] ? 0x02 : 0x01;
+		dpi->led2 = profile->dpi_modes[i].led[1] ? 0x02 : 0x01;
+		dpi->led3 = profile->dpi_modes[i].led[2] ? 0x02 : 0x01;
+		dpi->led4 = profile->dpi_modes[i].led[3] ? 0x02 : 0x01;
 	}
 }
 
@@ -811,6 +901,30 @@ hidpp10_fill_dpi_modes_16(struct hidpp10_device *dev,
 }
 
 static void
+hidpp10_write_dpi_modes_16(struct hidpp10_device *dev,
+			   struct hidpp10_profile *profile,
+			   struct _hidpp10_dpi_mode_16 *dpi_list,
+			   unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		uint8_t *be; /* in big endian */
+		struct _hidpp10_dpi_mode_16 *dpi = &dpi_list[i];
+
+		be = (uint8_t*)&dpi->xres;
+		hidpp_set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres));
+		be = (uint8_t*)&dpi->yres;
+		hidpp_set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].yres));
+
+		dpi->led1 = profile->dpi_modes[i].led[0] ? 0x02 : 0x01;
+		dpi->led2 = profile->dpi_modes[i].led[1] ? 0x02 : 0x01;
+		dpi->led3 = profile->dpi_modes[i].led[2] ? 0x02 : 0x01;
+		dpi->led4 = profile->dpi_modes[i].led[3] ? 0x02 : 0x01;
+	}
+}
+
+static void
 hidpp10_fill_buttons(struct hidpp10_device *dev,
 		     struct hidpp10_profile *profile,
 		     union _hidpp10_button_binding *buttons,
@@ -827,24 +941,76 @@ hidpp10_fill_buttons(struct hidpp10_device *dev,
 
 		switch (b->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
-			button->button.button =
-				ffs(hidpp_get_unaligned_le_u16(&b->button.button_flags_lsb));
+			button->button.button = ffs(hidpp_le_u16_to_cpu(b->button.button_flags));
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			button->keys.modifier_flags = b->keyboard_keys.modifier_flags;
 			button->keys.key = b->keyboard_keys.key;
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
-			button->special.special = hidpp_get_unaligned_le_u16(&b->special.flags1);
+			button->special.special = hidpp_le_u16_to_cpu(b->special.flags);
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			button->consumer_control.consumer_control =
-				  hidpp_get_unaligned_be_u16(&b->consumer_control.consumer_control1);
+				  hidpp_be_u16_to_cpu(b->consumer_control.consumer_control);
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			break;
 		}
 	}
+}
+
+static void
+hidpp10_write_buttons(struct hidpp10_device *dev,
+		      struct hidpp10_profile *profile,
+		      union _hidpp10_button_binding *buttons,
+		      unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		union _hidpp10_button_binding *button = &buttons[i];
+		union hidpp10_button *b = &profile->buttons[i];
+
+		button->any.type = b->any.type;
+
+		switch (b->any.type) {
+		case PROFILE_BUTTON_TYPE_BUTTON:
+			button->button.button_flags = hidpp_cpu_to_le_u16(1U << (b->button.button - 1));
+			break;
+		case PROFILE_BUTTON_TYPE_KEYS:
+			button->keyboard_keys.modifier_flags = b->keys.modifier_flags;
+			button->keyboard_keys.key = b->keys.key;
+			break;
+		case PROFILE_BUTTON_TYPE_SPECIAL:
+			button->special.flags = hidpp_cpu_to_le_u16(b->special.special);
+			break;
+		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
+			button->consumer_control.consumer_control =
+					hidpp_cpu_to_be_u16(b->consumer_control.consumer_control);
+			break;
+		case PROFILE_BUTTON_TYPE_DISABLED:
+			break;
+		}
+	}
+}
+
+static void
+hidpp10_uchar16_to_uchar8(uint8_t *dst, uint16_t *src, size_t len)
+{
+	unsigned i;
+
+	for (i = 0; i < len; i++)
+		dst[i] = hidpp_le_u16_to_cpu(src[i]) & 0xFF;
+}
+
+static void
+hidpp10_uchar8_to_uchar16(uint16_t *dst, uint8_t *src, size_t len)
+{
+	unsigned i;
+
+	for (i = 0; i < len; i++)
+		dst[i] = hidpp_cpu_to_le_u16(src[i]);
 }
 
 int
@@ -923,6 +1089,13 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 			hidpp10_fill_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+			hidpp10_uchar16_to_uchar8(profile->name, p700->name, ARRAY_LENGTH(p700->name));
+			hidpp_log_raw(&dev->base, "profile %d is named '%s'\n", number, profile->name);
+			for (i = 0; i < ARRAY_LENGTH(p700->macro_names); i++) {
+				hidpp10_uchar16_to_uchar8(profile->macro_names[i], p700->macro_names[i], ARRAY_LENGTH(p700->macro_names[i]));
+				if (profile->macro_names[i][0])
+					hidpp_log_raw(&dev->base, "macro %d of profile %d is named: '%s'\n", (unsigned)i, number, profile->macro_names[i]);
+			}
 			break;
 		default:
 			hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
@@ -951,32 +1124,32 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	hidpp_log_raw(&dev->base, "Default DPI mode: %d\n", profile->default_dpi_mode);
 	hidpp_log_raw(&dev->base, "Refresh rate: %d\n", profile->refresh_rate);
 	for (i = 0; i < 13; i++) {
-		union _hidpp10_button_binding *button = &buttons[i];
+		union hidpp10_button *button = &profile->buttons[i];
 		switch (button->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: button %d\n",
 				i,
-				ffs(hidpp_get_unaligned_le_u16(&button->button.button_flags_lsb)));
+				button->button.button);
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: key %d modifier %x\n",
 				i,
-				button->keyboard_keys.key,
-				button->keyboard_keys.modifier_flags);
+				button->keys.key,
+				button->keys.modifier_flags);
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: special %x\n",
 				i,
-				ffs(hidpp_get_unaligned_le_u16(&button->special.flags1)));
+				button->special.special);
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			hidpp_log_raw(&dev->base,
 				"Button %zd: consumer: %x\n",
 				i,
-				hidpp_get_unaligned_be_u16(&button->consumer_control.consumer_control1));
+				button->consumer_control.consumer_control);
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			hidpp_log_raw(&dev->base, "Button %zd: disabled\n", i);
@@ -1034,6 +1207,158 @@ hidpp10_onboard_profiles_get_code_from_special(enum ratbag_button_action_special
 	}
 
 	return RATBAG_BUTTON_ACTION_SPECIAL_INVALID;
+}
+
+int
+hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile)
+{
+	uint8_t page_data[HIDPP10_PAGE_SIZE];
+	union _hidpp10_profile_data *data = (union _hidpp10_profile_data *)page_data;
+	struct _hidpp10_profile_500 *p500 = &data->profile_500;
+	struct _hidpp10_profile_700 *p700 = &data->profile_700;
+	int res;
+	struct hidpp10_directory directory[16]; /* completely random profile count */
+	union _hidpp10_button_binding *buttons;
+	int count = 0;
+	unsigned i;
+	uint16_t crc;
+	uint8_t page;
+
+	hidpp_log_raw(&dev->base, "Fetching profile %d\n", number);
+
+	count = hidpp10_get_profile_directory(dev, directory,
+					    ARRAY_LENGTH(directory));
+	if (count < 0)
+		return count;
+
+	if (count == 0 || dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
+		return -ENOTSUP;
+
+	if (number >= count) {
+		hidpp_log_error(&dev->base, "Profile number %d not in the directory.\n", number);
+		return -EINVAL;
+	}
+
+	memset(page_data, 0xff, sizeof(page_data));
+
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		buttons = p500->buttons;
+		break;
+	case HIDPP10_PROFILE_G700:
+		buttons = p700->buttons;
+		break;
+	default:
+		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+	}
+
+
+	/* First, fill out the unknown fields with the constants or the current
+	 * values when we are not sure. */
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		/* we do not know the actual values of the remaining field right now
+		 * so pre-fill with the current data */
+		res = hidpp10_read_page(dev, directory[number].page, page_data);
+		if (res)
+			return res;
+		break;
+	case HIDPP10_PROFILE_G700:
+		memcpy(p700->unknown1, _hidpp10_profile_700_unknown1, sizeof(p700->unknown1));
+		memcpy(p700->unknown2, _hidpp10_profile_700_unknown2, sizeof(p700->unknown2));
+		memcpy(p700->unknown3, _hidpp10_profile_700_unknown3, sizeof(p700->unknown3));
+		break;
+	default:
+		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+	}
+
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		p500->red = profile->red;
+		p500->green = profile->green;
+		p500->blue = profile->blue;
+		p500->angle_correction = profile->angle_correction;
+		p500->default_dpi_mode = profile->default_dpi_mode;
+		p500->usb_refresh_rate = 1000/profile->refresh_rate;
+
+		hidpp10_write_dpi_modes_16(dev, profile, p500->dpi_modes, PROFILE_NUM_DPI_MODES);
+		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+		break;
+	case HIDPP10_PROFILE_G700:
+		p700->default_dpi_mode = profile->default_dpi_mode;
+		p700->usb_refresh_rate = 1000 / profile->refresh_rate;
+
+		hidpp10_write_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
+		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+		hidpp10_uchar8_to_uchar16(p700->name, profile->name, sizeof(p700->name));
+		for (i = 0; i < ARRAY_LENGTH(p700->macro_names); i++) {
+			hidpp10_uchar8_to_uchar16(p700->macro_names[i], profile->macro_names[i], ARRAY_LENGTH(p700->macro_names[i]));
+		}
+		break;
+	default:
+		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+	}
+
+	crc = hidpp_crc_ccitt(page_data, HIDPP10_PAGE_SIZE - 2);
+	hidpp_set_unaligned_be_u16(&page_data[HIDPP10_PAGE_SIZE - 2], crc);
+
+	/*
+	 * writing the data in several steps to prevent shroedinger state
+	 * if the device is unplugged while uploading the data:
+	 * - first disable the current profile by using the factory one
+	 *   (this prevents the user to change the current profile by pressing
+	 *    a button)
+	 * - then upload in RAM half of the data
+	 * - erase the portion of the flash we are overwriting
+	 * - write the uploaded data to the flash
+	 * - upload the rest
+	 * - write the uploaded data to the flash
+	 * - switch to the new profile
+	 */
+	res = hidpp10_set_internal_current_profile(dev, 0, PROFILE_TYPE_FACTORY);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_send_hot_payload(dev,
+				       0x00, 0x0000, /* destination: RAM */
+				       page_data,
+				       HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	page = directory[number].page;
+	/* according to the spec, a profile can have an offset.
+	 * For all the devices we know, they all start at 0x0000 */
+	res = hidpp10_erase_memory(dev, page);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_write_flash(dev,
+				  0x00, 0x0000,
+				  page, 0x0000,
+				  HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_send_hot_payload(dev,
+				       0x00, 0x0000, /* destination: RAM */
+				       page_data + HIDPP10_PAGE_SIZE / 2,
+				       HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_write_flash(dev,
+				  0x00, 0x0000,
+				  page, HIDPP10_PAGE_SIZE / 2,
+				  HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_set_internal_current_profile(dev, number, PROFILE_TYPE_INDEX);
+	if (res < 0)
+		return res;
+
+	return res;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1368,6 +1693,247 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 	refresh.msg.parameters[0] = 1000/rate;
 
 	return hidpp10_request_command(dev, &refresh);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0xA0: Generic Memory Management                                            */
+/* -------------------------------------------------------------------------- */
+#define __CMD_GENERIC_MEMORY_MANAGEMENT			0xA0
+
+#define CMD_ERASE_MEMORY(idx, page) { \
+	.msg = { \
+		.report_id = REPORT_ID_LONG, \
+		.device_idx = idx, \
+		.sub_id = SET_LONG_REGISTER_REQ, \
+		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.string = {0x02, 0x00, \
+			   0x00, 0x00, 0x00, 0x00, \
+			   page, 0x00, 0x00, 0x00,\
+			   0x00, 0x00, 0x00, 0x00}, \
+	} \
+}
+
+#define CMD_WRITE_FLASH(idx, src_page, src_woffset, dst_page, dst_woffset, size) { \
+	.msg = { \
+		.report_id = REPORT_ID_LONG, \
+		.device_idx = idx, \
+		.sub_id = SET_LONG_REGISTER_REQ, \
+		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.string = {0x03, 0x00, \
+			   src_page, src_woffset, 0x00, 0x00, \
+			   dst_page, dst_woffset, 0x00, 0x00,\
+			   size >> 8, size & 0xFF}, \
+	} \
+}
+
+int
+hidpp10_erase_memory(struct hidpp10_device *dev, uint8_t page)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message erase = CMD_ERASE_MEMORY(idx, page);
+
+	hidpp_log_raw(&dev->base, "Erasing page 0x%02x\n", page);
+
+	return hidpp10_request_command(dev, &erase);
+}
+
+int
+hidpp10_write_flash(struct hidpp10_device *dev,
+		    uint8_t src_page,
+		    uint16_t src_offset,
+		    uint8_t dst_page,
+		    uint16_t dst_offset,
+		    uint16_t size)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message copy = CMD_WRITE_FLASH(idx,
+						     src_page, src_offset / 2,
+						     dst_page, dst_offset / 2,
+						     size);
+
+	if ((src_offset % 2 != 0) || (dst_offset % 2 != 0)) {
+		hidpp_log_error(&dev->base, "Accessing memory with odd offset is not supported.\n");
+		return -EINVAL;
+	}
+
+	hidpp_log_raw(&dev->base, "Copying %d bytes from (0x%02x,0x%04x) to (0x%02x,0x%04x)\n",
+		      size,
+		      src_page, src_offset,
+		      dst_page, dst_offset);
+
+	return hidpp10_request_command(dev, &copy);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x9x: HOT payload                                                          */
+/* 0xA1: HOT Control Register                                                 */
+/* -------------------------------------------------------------------------- */
+#define __CMD_HOT_CONTROL			0xA1
+
+#define CMD_HOT_RESET(idx) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = SET_REGISTER_REQ, \
+		.address = __CMD_HOT_CONTROL, \
+		.parameters = {0x01, 0x00, 0x00 }, \
+	} \
+}
+
+#define HOT_NOTIFICATION			0x50
+#define HOT_WRITE				0x92
+#define HOT_CONTINUE				0x93
+
+static int
+hidpp10_hot_ctrl_reset(struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message ctrl_reset = CMD_HOT_RESET(idx);
+
+	return hidpp10_request_command(dev, &ctrl_reset);
+}
+
+static int
+hidpp10_hot_request_command(struct hidpp10_device *dev, uint8_t data[LONG_MESSAGE_LENGTH])
+{
+	uint8_t read_buffer[LONG_MESSAGE_LENGTH] = {0};
+	int ret;
+	uint8_t id = data[3];
+
+	if ((data[0] != REPORT_ID_LONG) ||
+	    ((data[2] != HOT_WRITE) && (data[2] != HOT_CONTINUE)))
+		return -EINVAL;
+
+	/* Send the message to the Device */
+	ret = hidpp_write_command(&dev->base, data, LONG_MESSAGE_LENGTH);
+	if (ret)
+		goto out_err;
+
+	/*
+	 * Now read the answers from the device:
+	 * loop until we get the actual answer or an error code.
+	 */
+	do {
+		ret = hidpp_read_response(&dev->base, read_buffer, LONG_MESSAGE_LENGTH);
+
+		/* Wait and retry if the USB timed out */
+		if (ret == -ETIMEDOUT) {
+			msleep(10);
+			ret = hidpp_read_response(&dev->base, read_buffer, LONG_MESSAGE_LENGTH);
+		}
+
+		/* actual answer */
+		if (read_buffer[2] == HOT_NOTIFICATION)
+			break;
+	} while (ret > 0);
+
+	if (ret < 0) {
+		hidpp_log_error(&dev->base, "    USB error: %s (%d)\n", strerror(-ret), -ret);
+		perror("write");
+		goto out_err;
+	}
+
+	if (read_buffer[4] != id) {
+		ret = -EPROTO;
+		hidpp_log_error(&dev->base, "    Protocol error: ids do not match.\n");
+		perror("write");
+		goto out_err;
+	}
+
+	ret = 0;
+
+out_err:
+	return ret;
+}
+
+struct hot_header {
+	uint8_t id;
+	uint8_t page;
+	uint8_t offset;
+	uint16_t zero;
+	uint16_t size;
+	uint16_t zero1;
+} __attribute__ ((__packed__));
+
+static int
+hidpp10_send_hot_chunk(struct hidpp10_device *dev,
+		       uint8_t index,
+		       bool first,
+		       uint8_t dst_page,
+		       uint16_t dst_offset,
+		       uint8_t *data,
+		       unsigned size)
+{
+	struct hot_header header = {0};
+	uint8_t buffer[LONG_MESSAGE_LENGTH] = {0};
+	unsigned offset = 0;
+	unsigned count;
+	int res;
+
+	buffer[offset++] = REPORT_ID_LONG;
+	buffer[offset++] = dev->index;
+
+	if (first) {
+		if (dst_offset % 2 != 0) {
+			hidpp_log_error(&dev->base, "Writing memory with odd offset is not supported.\n");
+			return -EINVAL;
+		}
+		buffer[offset++] = HOT_WRITE;
+		buffer[offset++] = index;
+		header.id = 0x01;
+		header.page = dst_page;
+		header.offset = dst_offset / 2;
+		header.size = hidpp_cpu_to_be_u16(size);
+		memcpy(&buffer[offset], &header, sizeof(header));
+		offset += sizeof(header);
+	} else {
+		buffer[offset++] = HOT_CONTINUE;
+		buffer[offset++] = index;
+	}
+
+	count = min(LONG_MESSAGE_LENGTH - offset, size);
+	if (count <= 0)
+		return -EINVAL;
+
+	memcpy(&buffer[offset], data, count);
+
+	res = hidpp10_hot_request_command(dev, buffer);
+	if (res < 0)
+		return res;
+
+	return count;
+}
+
+int
+hidpp10_send_hot_payload(struct hidpp10_device *dev,
+			 uint8_t dst_page,
+			 uint16_t dst_offset,
+			 uint8_t *data,
+			 unsigned size)
+{
+	bool first = true;
+	unsigned int count = 0;
+	unsigned int index = 0;
+	int res;
+
+	res = hidpp10_hot_ctrl_reset(dev);
+	if (res < 0)
+		return res;
+
+	do {
+		res = hidpp10_send_hot_chunk(dev, index, first,
+					     dst_page, dst_offset,
+					     data + count,
+					     size - count);
+		if (res < 0)
+			return res;
+
+		first = false;
+		count += res;
+		index++;
+	} while (size > count);
+
+	return 0;
 }
 
 /* -------------------------------------------------------------------------- */
