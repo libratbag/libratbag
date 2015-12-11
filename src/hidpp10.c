@@ -585,6 +585,10 @@ struct _hidpp10_profile_500 {
 } __attribute__((packed));
 _Static_assert(sizeof(struct _hidpp10_profile_500) == 78, "Invalid size");
 
+static const uint8_t _hidpp10_profile_700_unknown1[3] = { 0x80, 0x01, 0x10 };
+static const uint8_t _hidpp10_profile_700_unknown2[10] = { 0x01, 0x2c, 0x02, 0x58, 0x64, 0xff, 0xbc, 0x00, 0x09, 0x31 };
+static const uint8_t _hidpp10_profile_700_unknown3[5] = { 0x4c, 0x47, 0x53, 0x30, 0x32 };
+
 struct _hidpp10_profile_700 {
 	struct _hidpp10_dpi_mode_8 dpi_modes[PROFILE_NUM_DPI_MODES];
 	uint8_t default_dpi_mode;
@@ -851,6 +855,27 @@ hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
 }
 
 static void
+hidpp10_write_dpi_modes_8(struct hidpp10_device *dev,
+			  struct hidpp10_profile *profile,
+			  struct _hidpp10_dpi_mode_8 *dpi_list,
+			  unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		struct _hidpp10_dpi_mode_8 *dpi = &dpi_list[i];
+
+		dpi->xres = hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres);
+		dpi->yres = hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].yres);
+
+		dpi->led1 = profile->dpi_modes[i].led[0] ? 0x02 : 0x01;
+		dpi->led2 = profile->dpi_modes[i].led[1] ? 0x02 : 0x01;
+		dpi->led3 = profile->dpi_modes[i].led[2] ? 0x02 : 0x01;
+		dpi->led4 = profile->dpi_modes[i].led[3] ? 0x02 : 0x01;
+	}
+}
+
+static void
 hidpp10_fill_dpi_modes_16(struct hidpp10_device *dev,
 			  struct hidpp10_profile *profile,
 			  struct _hidpp10_dpi_mode_16 *dpi_list,
@@ -872,6 +897,30 @@ hidpp10_fill_dpi_modes_16(struct hidpp10_device *dev,
 		profile->dpi_modes[i].led[1] = dpi->led2 == 0x2;
 		profile->dpi_modes[i].led[2] = dpi->led3 == 0x2;
 		profile->dpi_modes[i].led[3] = dpi->led4 == 0x2;
+	}
+}
+
+static void
+hidpp10_write_dpi_modes_16(struct hidpp10_device *dev,
+			   struct hidpp10_profile *profile,
+			   struct _hidpp10_dpi_mode_16 *dpi_list,
+			   unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		uint8_t *be; /* in big endian */
+		struct _hidpp10_dpi_mode_16 *dpi = &dpi_list[i];
+
+		be = (uint8_t*)&dpi->xres;
+		hidpp_set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres));
+		be = (uint8_t*)&dpi->yres;
+		hidpp_set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].yres));
+
+		dpi->led1 = profile->dpi_modes[i].led[0] ? 0x02 : 0x01;
+		dpi->led2 = profile->dpi_modes[i].led[1] ? 0x02 : 0x01;
+		dpi->led3 = profile->dpi_modes[i].led[2] ? 0x02 : 0x01;
+		dpi->led4 = profile->dpi_modes[i].led[3] ? 0x02 : 0x01;
 	}
 }
 
@@ -912,12 +961,56 @@ hidpp10_fill_buttons(struct hidpp10_device *dev,
 }
 
 static void
+hidpp10_write_buttons(struct hidpp10_device *dev,
+		      struct hidpp10_profile *profile,
+		      union _hidpp10_button_binding *buttons,
+		      unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		union _hidpp10_button_binding *button = &buttons[i];
+		union hidpp10_button *b = &profile->buttons[i];
+
+		button->any.type = b->any.type;
+
+		switch (b->any.type) {
+		case PROFILE_BUTTON_TYPE_BUTTON:
+			button->button.button_flags = hidpp_cpu_to_le_u16(1U << (b->button.button - 1));
+			break;
+		case PROFILE_BUTTON_TYPE_KEYS:
+			button->keyboard_keys.modifier_flags = b->keys.modifier_flags;
+			button->keyboard_keys.key = b->keys.key;
+			break;
+		case PROFILE_BUTTON_TYPE_SPECIAL:
+			button->special.flags = hidpp_cpu_to_le_u16(b->special.special);
+			break;
+		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
+			button->consumer_control.consumer_control =
+					hidpp_cpu_to_be_u16(b->consumer_control.consumer_control);
+			break;
+		case PROFILE_BUTTON_TYPE_DISABLED:
+			break;
+		}
+	}
+}
+
+static void
 hidpp10_uchar16_to_uchar8(uint8_t *dst, uint16_t *src, size_t len)
 {
 	unsigned i;
 
 	for (i = 0; i < len; i++)
 		dst[i] = hidpp_le_u16_to_cpu(src[i]) & 0xFF;
+}
+
+static void
+hidpp10_uchar8_to_uchar16(uint16_t *dst, uint8_t *src, size_t len)
+{
+	unsigned i;
+
+	for (i = 0; i < len; i++)
+		dst[i] = hidpp_cpu_to_le_u16(src[i]);
 }
 
 int
@@ -1114,6 +1207,105 @@ hidpp10_onboard_profiles_get_code_from_special(enum ratbag_button_action_special
 	}
 
 	return RATBAG_BUTTON_ACTION_SPECIAL_INVALID;
+}
+
+int
+hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile)
+{
+	uint8_t page_data[HIDPP10_PAGE_SIZE];
+	union _hidpp10_profile_data *data = (union _hidpp10_profile_data *)page_data;
+	struct _hidpp10_profile_500 *p500 = &data->profile_500;
+	struct _hidpp10_profile_700 *p700 = &data->profile_700;
+	int res;
+	struct hidpp10_directory directory[16]; /* completely random profile count */
+	union _hidpp10_button_binding *buttons;
+	int count = 0;
+	unsigned i;
+	uint16_t crc;
+
+	hidpp_log_raw(&dev->base, "Fetching profile %d\n", number);
+
+	count = hidpp10_get_profile_directory(dev, directory,
+					    ARRAY_LENGTH(directory));
+	if (count < 0)
+		return count;
+
+	if (count == 0 || dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
+		return -ENOTSUP;
+
+	if (number >= count) {
+		hidpp_log_error(&dev->base, "Profile number %d not in the directory.\n", number);
+		return -EINVAL;
+	}
+
+	memset(page_data, 0xff, sizeof(page_data));
+
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		buttons = p500->buttons;
+		break;
+	case HIDPP10_PROFILE_G700:
+		buttons = p700->buttons;
+		break;
+	default:
+		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+	}
+
+
+	/* First, fill out the unknown fields with the constants or the current
+	 * values when we are not sure. */
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		/* we do not know the actual values of the remaining field right now
+		 * so pre-fill with the current data */
+		res = hidpp10_read_page(dev, directory[number].page, page_data);
+		if (res)
+			return res;
+		break;
+	case HIDPP10_PROFILE_G700:
+		memcpy(p700->unknown1, _hidpp10_profile_700_unknown1, sizeof(p700->unknown1));
+		memcpy(p700->unknown2, _hidpp10_profile_700_unknown2, sizeof(p700->unknown2));
+		memcpy(p700->unknown3, _hidpp10_profile_700_unknown3, sizeof(p700->unknown3));
+		break;
+	default:
+		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+	}
+
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		p500->red = profile->red;
+		p500->green = profile->green;
+		p500->blue = profile->blue;
+		p500->angle_correction = profile->angle_correction;
+		p500->default_dpi_mode = profile->default_dpi_mode;
+		p500->usb_refresh_rate = 1000/profile->refresh_rate;
+
+		hidpp10_write_dpi_modes_16(dev, profile, p500->dpi_modes, PROFILE_NUM_DPI_MODES);
+		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+		break;
+	case HIDPP10_PROFILE_G700:
+		p700->default_dpi_mode = profile->default_dpi_mode;
+		p700->usb_refresh_rate = 1000 / profile->refresh_rate;
+
+		hidpp10_write_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
+		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+		hidpp10_uchar8_to_uchar16(p700->name, profile->name, sizeof(p700->name));
+		for (i = 0; i < ARRAY_LENGTH(p700->macro_names); i++) {
+			hidpp10_uchar8_to_uchar16(p700->macro_names[i], profile->macro_names[i], ARRAY_LENGTH(p700->macro_names[i]));
+		}
+		break;
+	default:
+		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+	}
+
+	crc = hidpp_crc_ccitt(page_data, HIDPP10_PAGE_SIZE - 2);
+	hidpp_set_unaligned_be_u16(&page_data[HIDPP10_PAGE_SIZE - 2], crc);
+
+	for (i = 0; i < HIDPP10_PAGE_SIZE / 16; i++) {
+		hidpp_log_buf_error(&dev->base, "new profile: ", page_data + i * 16, 16);
+	}
+
+	return 0;
 }
 
 /* -------------------------------------------------------------------------- */
