@@ -594,7 +594,7 @@ struct _hidpp10_profile_700 {
 	union _hidpp10_button_binding buttons[PROFILE_NUM_BUTTONS];
 	uint8_t unknown3[5];
 	uint16_t name[23];
-	uint16_t macro_names[17][11];
+	uint16_t macro_names[11][17];
 } __attribute__((packed));
 _Static_assert(sizeof(struct _hidpp10_profile_700) == 499, "Invalid size");
 
@@ -843,6 +843,15 @@ hidpp10_fill_buttons(struct hidpp10_device *dev,
 	}
 }
 
+static void
+hidpp10_uchar16_to_uchar8(uint8_t *dst, uint16_t *src, size_t len)
+{
+	unsigned i;
+
+	for (i = 0; i < len; i++)
+		dst[i] = hidpp_le_u16_to_cpu(src[i]) & 0xFF;
+}
+
 int
 hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile_return)
 {
@@ -919,6 +928,13 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 			hidpp10_fill_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+			hidpp10_uchar16_to_uchar8(profile->name, p700->name, ARRAY_LENGTH(p700->name));
+			hidpp_log_raw(&dev->base, "profile %d is named '%s'\n", number, profile->name);
+			for (i = 0; i < ARRAY_LENGTH(p700->macro_names); i++) {
+				hidpp10_uchar16_to_uchar8(profile->macro_names[i], p700->macro_names[i], ARRAY_LENGTH(p700->macro_names[i]));
+				if (profile->macro_names[i][0])
+					hidpp_log_raw(&dev->base, "macro %d of profile %d is named: '%s'\n", (unsigned)i, number, profile->macro_names[i]);
+			}
 			break;
 		default:
 			hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");

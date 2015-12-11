@@ -384,6 +384,9 @@ struct hidpp10_profile {
 	} dpi_modes[5];
 	size_t num_dpi_modes;
 
+	unsigned char name[24]; /* the G700 has 23 chars, add one for terminating 0 */
+	unsigned char macro_names[11][18]; /* adding one extra terminating 0 per name */
+
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
