@@ -442,6 +442,10 @@ int
 hidpp10_get_profile(struct hidpp10_device *dev, int8_t number,
 		    struct hidpp10_profile *profile);
 
+int
+hidpp10_set_profile(struct hidpp10_device *dev, int8_t number,
+		    struct hidpp10_profile *profile);
+
 enum ratbag_button_action_special
 hidpp10_onboard_profiles_get_special(uint8_t code);
 
