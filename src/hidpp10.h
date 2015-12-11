@@ -533,6 +533,33 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t rate);
 
 /* -------------------------------------------------------------------------- */
+/* 0xA0: Generic Memory Management                                            */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_erase_memory(struct hidpp10_device *dev, uint8_t page);
+
+int
+hidpp10_write_flash(struct hidpp10_device *dev,
+		    uint8_t src_page,
+		    uint16_t src_offset,
+		    uint8_t dst_page,
+		    uint16_t dst_offset,
+		    uint16_t size);
+
+/* -------------------------------------------------------------------------- */
+/* 0x9x: HOT payload                                                          */
+/* 0xA1: HOT Control Register                                                 */
+/* -------------------------------------------------------------------------- */
+
+int
+hidpp10_send_hot_payload(struct hidpp10_device *dev,
+			 uint8_t dst_page,
+			 uint16_t dst_offset,
+			 uint8_t *data,
+			 unsigned size);
+
+/* -------------------------------------------------------------------------- */
 /* 0xA2: Read Sector                                                          */
 /* -------------------------------------------------------------------------- */
 

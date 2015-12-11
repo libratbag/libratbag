@@ -1208,6 +1208,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	int count = 0;
 	unsigned i;
 	uint16_t crc;
+	uint8_t page;
 
 	hidpp_log_raw(&dev->base, "Fetching profile %d\n", number);
 
@@ -1287,11 +1288,63 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	crc = hidpp_crc_ccitt(page_data, HIDPP10_PAGE_SIZE - 2);
 	hidpp_set_unaligned_be_u16(&page_data[HIDPP10_PAGE_SIZE - 2], crc);
 
-	for (i = 0; i < HIDPP10_PAGE_SIZE / 16; i++) {
-		hidpp_log_buf_error(&dev->base, "new profile: ", page_data + i * 16, 16);
-	}
+	/*
+	 * writing the data in several steps to prevent shroedinger state
+	 * if the device is unplugged while uploading the data:
+	 * - first disable the current profile by using the factory one
+	 *   (this prevents the user to change the current profile by pressing
+	 *    a button)
+	 * - then upload in RAM half of the data
+	 * - erase the portion of the flash we are overwriting
+	 * - write the uploaded data to the flash
+	 * - upload the rest
+	 * - write the uploaded data to the flash
+	 * - switch to the new profile
+	 */
+	res = hidpp10_set_internal_current_profile(dev, 0, PROFILE_TYPE_FACTORY);
+	if (res < 0)
+		return res;
 
-	return 0;
+	res = hidpp10_send_hot_payload(dev,
+				       0x00, 0x0000, /* destination: RAM */
+				       page_data,
+				       HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	page = directory[number].page;
+	/* according to the spec, a profile can have an offset.
+	 * For all the devices we know, they all start at 0x0000 */
+	res = hidpp10_erase_memory(dev, page);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_write_flash(dev,
+				  0x00, 0x0000,
+				  page, 0x0000,
+				  HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_send_hot_payload(dev,
+				       0x00, 0x0000, /* destination: RAM */
+				       page_data + HIDPP10_PAGE_SIZE / 2,
+				       HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_write_flash(dev,
+				  0x00, 0x0000,
+				  page, HIDPP10_PAGE_SIZE / 2,
+				  HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_set_internal_current_profile(dev, number, PROFILE_TYPE_INDEX);
+	if (res < 0)
+		return res;
+
+	return res;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1626,6 +1679,247 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 	refresh.msg.parameters[0] = 1000/rate;
 
 	return hidpp10_request_command(dev, &refresh);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0xA0: Generic Memory Management                                            */
+/* -------------------------------------------------------------------------- */
+#define __CMD_GENERIC_MEMORY_MANAGEMENT			0xA0
+
+#define CMD_ERASE_MEMORY(idx, page) { \
+	.msg = { \
+		.report_id = REPORT_ID_LONG, \
+		.device_idx = idx, \
+		.sub_id = SET_LONG_REGISTER_REQ, \
+		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.string = {0x02, 0x00, \
+			   0x00, 0x00, 0x00, 0x00, \
+			   page, 0x00, 0x00, 0x00,\
+			   0x00, 0x00, 0x00, 0x00}, \
+	} \
+}
+
+#define CMD_WRITE_FLASH(idx, src_page, src_woffset, dst_page, dst_woffset, size) { \
+	.msg = { \
+		.report_id = REPORT_ID_LONG, \
+		.device_idx = idx, \
+		.sub_id = SET_LONG_REGISTER_REQ, \
+		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.string = {0x03, 0x00, \
+			   src_page, src_woffset, 0x00, 0x00, \
+			   dst_page, dst_woffset, 0x00, 0x00,\
+			   size >> 8, size & 0xFF}, \
+	} \
+}
+
+int
+hidpp10_erase_memory(struct hidpp10_device *dev, uint8_t page)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message erase = CMD_ERASE_MEMORY(idx, page);
+
+	hidpp_log_raw(&dev->base, "Erasing page 0x%02x\n", page);
+
+	return hidpp10_request_command(dev, &erase);
+}
+
+int
+hidpp10_write_flash(struct hidpp10_device *dev,
+		    uint8_t src_page,
+		    uint16_t src_offset,
+		    uint8_t dst_page,
+		    uint16_t dst_offset,
+		    uint16_t size)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message copy = CMD_WRITE_FLASH(idx,
+						     src_page, src_offset / 2,
+						     dst_page, dst_offset / 2,
+						     size);
+
+	if ((src_offset % 2 != 0) || (dst_offset % 2 != 0)) {
+		hidpp_log_error(&dev->base, "Accessing memory with odd offset is not supported.\n");
+		return -EINVAL;
+	}
+
+	hidpp_log_raw(&dev->base, "Copying %d bytes from (0x%02x,0x%04x) to (0x%02x,0x%04x)\n",
+		      size,
+		      src_page, src_offset,
+		      dst_page, dst_offset);
+
+	return hidpp10_request_command(dev, &copy);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x9x: HOT payload                                                          */
+/* 0xA1: HOT Control Register                                                 */
+/* -------------------------------------------------------------------------- */
+#define __CMD_HOT_CONTROL			0xA1
+
+#define CMD_HOT_RESET(idx) { \
+	.msg = { \
+		.report_id = REPORT_ID_SHORT, \
+		.device_idx = idx, \
+		.sub_id = SET_REGISTER_REQ, \
+		.address = __CMD_HOT_CONTROL, \
+		.parameters = {0x01, 0x00, 0x00 }, \
+	} \
+}
+
+#define HOT_NOTIFICATION			0x50
+#define HOT_WRITE				0x92
+#define HOT_CONTINUE				0x93
+
+static int
+hidpp10_hot_ctrl_reset(struct hidpp10_device *dev)
+{
+	unsigned idx = dev->index;
+	union hidpp10_message ctrl_reset = CMD_HOT_RESET(idx);
+
+	return hidpp10_request_command(dev, &ctrl_reset);
+}
+
+static int
+hidpp10_hot_request_command(struct hidpp10_device *dev, uint8_t data[LONG_MESSAGE_LENGTH])
+{
+	uint8_t read_buffer[LONG_MESSAGE_LENGTH] = {0};
+	int ret;
+	uint8_t id = data[3];
+
+	if ((data[0] != REPORT_ID_LONG) ||
+	    ((data[2] != HOT_WRITE) && (data[2] != HOT_CONTINUE)))
+		return -EINVAL;
+
+	/* Send the message to the Device */
+	ret = hidpp_write_command(&dev->base, data, LONG_MESSAGE_LENGTH);
+	if (ret)
+		goto out_err;
+
+	/*
+	 * Now read the answers from the device:
+	 * loop until we get the actual answer or an error code.
+	 */
+	do {
+		ret = hidpp_read_response(&dev->base, read_buffer, LONG_MESSAGE_LENGTH);
+
+		/* Wait and retry if the USB timed out */
+		if (ret == -ETIMEDOUT) {
+			msleep(10);
+			ret = hidpp_read_response(&dev->base, read_buffer, LONG_MESSAGE_LENGTH);
+		}
+
+		/* actual answer */
+		if (read_buffer[2] == HOT_NOTIFICATION)
+			break;
+	} while (ret > 0);
+
+	if (ret < 0) {
+		hidpp_log_error(&dev->base, "    USB error: %s (%d)\n", strerror(-ret), -ret);
+		perror("write");
+		goto out_err;
+	}
+
+	if (read_buffer[4] != id) {
+		ret = -EPROTO;
+		hidpp_log_error(&dev->base, "    Protocol error: ids do not match.\n");
+		perror("write");
+		goto out_err;
+	}
+
+	ret = 0;
+
+out_err:
+	return ret;
+}
+
+struct hot_header {
+	uint8_t id;
+	uint8_t page;
+	uint8_t offset;
+	uint16_t zero;
+	uint16_t size;
+	uint16_t zero1;
+} __attribute__ ((__packed__));
+
+static int
+hidpp10_send_hot_chunk(struct hidpp10_device *dev,
+		       uint8_t index,
+		       bool first,
+		       uint8_t dst_page,
+		       uint16_t dst_offset,
+		       uint8_t *data,
+		       unsigned size)
+{
+	struct hot_header header = {0};
+	uint8_t buffer[LONG_MESSAGE_LENGTH] = {0};
+	unsigned offset = 0;
+	unsigned count;
+	int res;
+
+	buffer[offset++] = REPORT_ID_LONG;
+	buffer[offset++] = dev->index;
+
+	if (first) {
+		if (dst_offset % 2 != 0) {
+			hidpp_log_error(&dev->base, "Writing memory with odd offset is not supported.\n");
+			return -EINVAL;
+		}
+		buffer[offset++] = HOT_WRITE;
+		buffer[offset++] = index;
+		header.id = 0x01;
+		header.page = dst_page;
+		header.offset = dst_offset / 2;
+		header.size = hidpp_cpu_to_be_u16(size);
+		memcpy(&buffer[offset], &header, sizeof(header));
+		offset += sizeof(header);
+	} else {
+		buffer[offset++] = HOT_CONTINUE;
+		buffer[offset++] = index;
+	}
+
+	count = min(LONG_MESSAGE_LENGTH - offset, size);
+	if (count <= 0)
+		return -EINVAL;
+
+	memcpy(&buffer[offset], data, count);
+
+	res = hidpp10_hot_request_command(dev, buffer);
+	if (res < 0)
+		return res;
+
+	return count;
+}
+
+int
+hidpp10_send_hot_payload(struct hidpp10_device *dev,
+			 uint8_t dst_page,
+			 uint16_t dst_offset,
+			 uint8_t *data,
+			 unsigned size)
+{
+	bool first = true;
+	unsigned int count = 0;
+	unsigned int index = 0;
+	int res;
+
+	res = hidpp10_hot_ctrl_reset(dev);
+	if (res < 0)
+		return res;
+
+	do {
+		res = hidpp10_send_hot_chunk(dev, index, first,
+					     dst_page, dst_offset,
+					     data + count,
+					     size - count);
+		if (res < 0)
+			return res;
+
+		first = false;
+		count += res;
+		index++;
+	} while (size > count);
+
+	return 0;
 }
 
 /* -------------------------------------------------------------------------- */
