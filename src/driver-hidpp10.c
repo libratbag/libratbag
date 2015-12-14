@@ -222,6 +222,10 @@ static int
 hidpp10drv_has_capability(const struct ratbag_device *device,
 			  enum ratbag_device_capability cap)
 {
+	/* we force a non const device to shut up a warning, but we won't change anything */
+	struct hidpp10drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
+	struct hidpp10_device *hidpp10 = drv_data->dev;
+
 	switch (cap) {
 	case RATBAG_DEVICE_CAP_NONE:
 		abort();
@@ -231,7 +235,7 @@ hidpp10drv_has_capability(const struct ratbag_device *device,
 	case RATBAG_DEVICE_CAP_BUTTON_KEY:
 	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
 	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
-		return (device->num_profiles > 1);
+		return (hidpp10->profile_type != HIDPP10_PROFILE_UNKNOWN);
 	}
 	return 0;
 }
@@ -447,32 +451,34 @@ hidpp10drv_probe(struct ratbag_device *device)
 		goto err;
 	}
 
-	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI");
-	if (prop) {
-		rc = hidpp10_build_dpi_table_from_dpi_info(dev, prop);
-		if (rc)
-			log_error(device->ratbag,
-				  "Error parsing RATBAG_HIDPP10_DPI: '%s' for %s\n",
-				  prop,
+	if (type != HIDPP10_PROFILE_UNKNOWN) {
+		prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI");
+		if (prop) {
+			rc = hidpp10_build_dpi_table_from_dpi_info(dev, prop);
+			if (rc)
+				log_error(device->ratbag,
+					  "Error parsing RATBAG_HIDPP10_DPI: '%s' for %s\n",
+					  prop,
+					  device->name);
+		}
+
+		prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI_LIST");
+		if (prop) {
+			rc = hidpp10_build_dpi_table_from_list(dev, prop);
+			if (rc)
+				log_error(device->ratbag,
+					  "Error parsing RATBAG_HIDPP10_DPI_LIST: '%s' for %s\n",
+					  prop,
+					  device->name);
+		}
+
+		if (!dev->dpi_count)
+			log_info(device->ratbag,
+				  "Device %s might have wrong dpi settings. "
+				  "Please add RATBAG_HIDPP10_DPI or RATBAG_HIDPP10_DPI_LIST "
+				  "to the udev properties.\n",
 				  device->name);
 	}
-
-	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI_LIST");
-	if (prop) {
-		rc = hidpp10_build_dpi_table_from_list(dev, prop);
-		if (rc)
-			log_error(device->ratbag,
-				  "Error parsing RATBAG_HIDPP10_DPI_LIST: '%s' for %s\n",
-				  prop,
-				  device->name);
-	}
-
-	if (!dev->dpi_count)
-		log_info(device->ratbag,
-			  "Device %s might have wrong dpi settings. "
-			  "Please add RATBAG_HIDPP10_DPI or RATBAG_HIDPP10_DPI_LIST "
-			  "to the udev properties.\n",
-			  device->name);
 
 	drv_data->dev = dev;
 	ratbag_set_drv_data(device, drv_data);
