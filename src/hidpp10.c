@@ -1054,6 +1054,16 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 		page = directory[number].page;
 		res = hidpp10_read_page(dev, page, page_data);
+		if (res == -EILSEQ) {
+			/*
+			 * if the CRC is wrong, the mouse still handles the
+			 * profile. Warn the user.
+			 */
+			hidpp_log_info(&dev->base,
+				      "Profile %d has a wrong CRC, assuming valid.\n",
+				      number);
+			res = 0;
+		}
 		if (res)
 			return res;
 
