@@ -594,8 +594,9 @@ struct _hidpp10_profile_500 {
 	uint8_t unknown2[2];
 	uint8_t usb_refresh_rate;
 	union _hidpp10_button_binding buttons[PROFILE_NUM_BUTTONS];
+	union _hidpp10_profile_metadata metadata;
 } __attribute__((packed));
-_Static_assert(sizeof(struct _hidpp10_profile_500) == 78, "Invalid size");
+_Static_assert(sizeof(struct _hidpp10_profile_500) == 503, "Invalid size");
 
 static const uint8_t _hidpp10_profile_700_unknown1[3] = { 0x80, 0x01, 0x10 };
 static const uint8_t _hidpp10_profile_700_unknown2[10] = { 0x01, 0x2c, 0x02, 0x58, 0x64, 0xff, 0xbc, 0x00, 0x09, 0x31 };
@@ -1133,6 +1134,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 			hidpp10_fill_dpi_modes_16(dev, profile, p500->dpi_modes, PROFILE_NUM_DPI_MODES);
 			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+			hidpp10_profile_parse_names(dev, profile, number, &p500->metadata);
 			break;
 		case HIDPP10_PROFILE_G700:
 			profile->default_dpi_mode = p700->default_dpi_mode;
@@ -1326,6 +1328,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 		hidpp10_write_dpi_modes_16(dev, profile, p500->dpi_modes, PROFILE_NUM_DPI_MODES);
 		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+		hidpp10_profile_set_names(dev, profile, number, &p500->metadata);
 		break;
 	case HIDPP10_PROFILE_G700:
 		p700->default_dpi_mode = profile->default_dpi_mode;
