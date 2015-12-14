@@ -571,6 +571,18 @@ union _hidpp10_button_binding {
 } __attribute__((packed));
 _Static_assert(sizeof(union _hidpp10_button_binding) == 3, "Invalid size");
 
+union _hidpp10_profile_metadata {
+	struct {
+		uint8_t marker[5];
+		uint8_t padding[420];
+	} __attribute__((packed)) any;
+	struct {
+		uint8_t marker[5]; /* { 'L', 'G', 'S', '0', '2' } */
+		uint16_t name[23];
+		uint16_t macro_names[11][17];
+	} __attribute__((packed)) lgs02;
+} __attribute__((packed));
+
 struct _hidpp10_profile_500 {
 	uint8_t red;
 	uint8_t green;
@@ -587,7 +599,6 @@ _Static_assert(sizeof(struct _hidpp10_profile_500) == 78, "Invalid size");
 
 static const uint8_t _hidpp10_profile_700_unknown1[3] = { 0x80, 0x01, 0x10 };
 static const uint8_t _hidpp10_profile_700_unknown2[10] = { 0x01, 0x2c, 0x02, 0x58, 0x64, 0xff, 0xbc, 0x00, 0x09, 0x31 };
-static const uint8_t _hidpp10_profile_700_unknown3[5] = { 0x4c, 0x47, 0x53, 0x30, 0x32 };
 
 struct _hidpp10_profile_700 {
 	struct _hidpp10_dpi_mode_8 dpi_modes[PROFILE_NUM_DPI_MODES];
@@ -596,9 +607,7 @@ struct _hidpp10_profile_700 {
 	uint8_t usb_refresh_rate;
 	uint8_t unknown2[10];
 	union _hidpp10_button_binding buttons[PROFILE_NUM_BUTTONS];
-	uint8_t unknown3[5];
-	uint16_t name[23];
-	uint16_t macro_names[11][17];
+	union _hidpp10_profile_metadata metadata;
 } __attribute__((packed));
 _Static_assert(sizeof(struct _hidpp10_profile_700) == 499, "Invalid size");
 
@@ -999,6 +1008,52 @@ hidpp10_uchar8_to_uchar16(uint16_t *dst, uint8_t *src, size_t len)
 		dst[i] = hidpp_cpu_to_le_u16(src[i]);
 }
 
+static void
+hidpp10_profile_parse_names(struct hidpp10_device *dev, struct hidpp10_profile *profile,
+			    uint8_t number,
+			    union _hidpp10_profile_metadata *metadata)
+{
+	unsigned i;
+
+	if (strneq((char *)metadata->any.marker, "LGS02", 5)) {
+		hidpp10_uchar16_to_uchar8(profile->name,
+					  metadata->lgs02.name,
+					  ARRAY_LENGTH(metadata->lgs02.name));
+		hidpp_log_raw(&dev->base, "profile %d is named '%s'\n", number, profile->name);
+		for (i = 0; i < ARRAY_LENGTH(metadata->lgs02.macro_names); i++) {
+			hidpp10_uchar16_to_uchar8(profile->macro_names[i],
+						  metadata->lgs02.macro_names[i],
+						  ARRAY_LENGTH(metadata->lgs02.macro_names[i]));
+			if (profile->macro_names[i][0])
+				hidpp_log_raw(&dev->base,
+					      "macro %d of profile %d is named: '%s'\n",
+					      (unsigned)i,
+					      number,
+					      profile->macro_names[i]);
+		}
+	} else {
+		snprintf((char *)profile->name, sizeof(profile->name) - 1, "Profile %d", number + 1);
+	}
+}
+
+static void
+hidpp10_profile_set_names(struct hidpp10_device *dev, struct hidpp10_profile *profile,
+			  uint8_t number,
+			  union _hidpp10_profile_metadata *metadata)
+{
+	unsigned i;
+
+	memcpy(metadata->lgs02.marker, "LGS02", sizeof(metadata->lgs02.marker));
+	hidpp10_uchar8_to_uchar16(metadata->lgs02.name,
+				  profile->name,
+				  sizeof(metadata->lgs02.name));
+	for (i = 0; i < ARRAY_LENGTH(metadata->lgs02.macro_names); i++) {
+		hidpp10_uchar8_to_uchar16(metadata->lgs02.macro_names[i],
+					  profile->macro_names[i],
+					  ARRAY_LENGTH(metadata->lgs02.macro_names[i]));
+	}
+}
+
 int
 hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile_return)
 {
@@ -1085,13 +1140,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 			hidpp10_fill_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
-			hidpp10_uchar16_to_uchar8(profile->name, p700->name, ARRAY_LENGTH(p700->name));
-			hidpp_log_raw(&dev->base, "profile %d is named '%s'\n", number, profile->name);
-			for (i = 0; i < ARRAY_LENGTH(p700->macro_names); i++) {
-				hidpp10_uchar16_to_uchar8(profile->macro_names[i], p700->macro_names[i], ARRAY_LENGTH(p700->macro_names[i]));
-				if (profile->macro_names[i][0])
-					hidpp_log_raw(&dev->base, "macro %d of profile %d is named: '%s'\n", (unsigned)i, number, profile->macro_names[i]);
-			}
+			hidpp10_profile_parse_names(dev, profile, number, &p700->metadata);
 			break;
 		default:
 			hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
@@ -1216,7 +1265,6 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	struct hidpp10_directory directory[16]; /* completely random profile count */
 	union _hidpp10_button_binding *buttons;
 	int count = 0;
-	unsigned i;
 	uint16_t crc;
 	uint8_t page;
 
@@ -1262,7 +1310,6 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	case HIDPP10_PROFILE_G700:
 		memcpy(p700->unknown1, _hidpp10_profile_700_unknown1, sizeof(p700->unknown1));
 		memcpy(p700->unknown2, _hidpp10_profile_700_unknown2, sizeof(p700->unknown2));
-		memcpy(p700->unknown3, _hidpp10_profile_700_unknown3, sizeof(p700->unknown3));
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
@@ -1286,10 +1333,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 		hidpp10_write_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
-		hidpp10_uchar8_to_uchar16(p700->name, profile->name, sizeof(p700->name));
-		for (i = 0; i < ARRAY_LENGTH(p700->macro_names); i++) {
-			hidpp10_uchar8_to_uchar16(p700->macro_names[i], profile->macro_names[i], ARRAY_LENGTH(p700->macro_names[i]));
-		}
+		hidpp10_profile_set_names(dev, profile, number, &p700->metadata);
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
