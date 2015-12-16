@@ -263,7 +263,7 @@ struct ratbag_macro_event {
 	} event;
 };
 
-#define MAX_MACRO_EVENTS 64
+#define MAX_MACRO_EVENTS 256
 struct ratbag_macro {
 	char *name;
 	char *group;
