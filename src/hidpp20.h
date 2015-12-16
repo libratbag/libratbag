@@ -327,12 +327,20 @@ struct hidpp20_profiles {
 };
 
 /**
- * allocates a list of profiles that has to be freed by the caller.
+ * allocates a list of profiles that has to be destroyed by the caller.
+ * The caller must use hidpp20_onboard_profiles_destroy() to free the memory.
  *
  * returns the number of profiles in the list or a negative error
  */
 int hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 					struct hidpp20_profiles **profiles_list);
+
+/**
+ * free a list of profiles allocated by hidpp20_onboard_profiles_allocate()
+ */
+void
+hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
+				 struct hidpp20_profiles *profiles_list);
 
 /**
  * return the current profile index or a negative error.

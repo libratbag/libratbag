@@ -734,11 +734,12 @@ static void
 hidpp20drv_remove(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_device *dev = drv_data->dev;
 
 	ratbag_close_hidraw(device);
 
 	if (drv_data->profiles)
-		free(drv_data->profiles);
+		hidpp20_onboard_profiles_destroy(dev, drv_data->profiles);
 	free(drv_data->controls);
 	free(drv_data->sensors);
 	hidpp20_device_destroy(drv_data->dev);

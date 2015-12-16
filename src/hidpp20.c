@@ -1173,6 +1173,16 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	return profile_count;
 }
 
+void
+hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
+				 struct hidpp20_profiles *profiles_list)
+{
+	if (!profiles_list)
+		return;
+
+	free(profiles_list);
+}
+
 static int
 hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 					       unsigned int index,
