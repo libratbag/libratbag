@@ -1133,6 +1133,166 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	return 0;
 }
 
+static int
+hidpp20_onboard_profiles_macro_next(struct hidpp20_device *device,
+				    uint8_t memory[32],
+				    uint16_t *index,
+				    union hidpp20_macro_data *macro)
+{
+	int rc = 0;
+	unsigned int step = 1;
+
+	if (*index >= 32 - sizeof(union hidpp20_macro_data)) {
+		hidpp_log_error(&device->base, "error while parsing macro.\n");
+		return -EFAULT;
+	}
+
+	memcpy(macro, &memory[*index], sizeof(union hidpp20_macro_data));
+
+	switch (macro->any.type) {
+	case HIDPP20_MACRO_DELAY:
+		/* fallthrough */
+	case HIDPP20_MACRO_KEY_PRESS:
+		/* fallthrough */
+	case HIDPP20_MACRO_KEY_RELEASE:
+		/* fallthrough */
+	case HIDPP20_MACRO_JUMP:
+		step = 3;
+		rc = -EAGAIN;
+		break;
+	case HIDPP20_MACRO_NOOP:
+		step = 1;
+		rc = -EAGAIN;
+		break;
+	case HIDPP20_MACRO_END:
+		step = 1;
+		return 0;
+	default:
+		hidpp_log_error(&device->base, "unknown tag: 0x%02x\n", macro->any.type);
+		rc = -EFAULT;
+	}
+
+	if ((*index + step) & 0xF0)
+		/* the next item will be on the following chunk */
+		return -ENOMEM;
+
+	*index += step;
+
+	return rc;
+}
+
+static int
+hidpp20_onboard_profiles_read_macro(struct hidpp20_device *device,
+				    uint8_t page, uint8_t offset,
+				    union hidpp20_macro_data **return_macro)
+{
+	uint8_t memory[HIDPP20_PAGE_SIZE];
+	union hidpp20_macro_data *macro = NULL;
+	unsigned count = 0;
+	unsigned index = 0;
+	uint16_t mem_index = 0;
+	int rc = -ENOMEM;
+
+	do {
+		if (count == index) {
+			union hidpp20_macro_data *tmp;
+
+			count += 32;
+			/* manual realloc to have the memory zero-initialized */
+			tmp = zalloc(count * sizeof(union hidpp20_macro_data));
+			if (macro) {
+				memcpy(tmp, macro, (count - 32) * sizeof(union hidpp20_macro_data));
+				free(macro);
+			}
+			macro = tmp;
+		}
+
+		if (rc == -ENOMEM) {
+			offset += mem_index;
+			rc = hidpp20_onboard_profiles_read_memory(device,
+								  0,
+								  page,
+								  offset,
+								  memory);
+			if (rc)
+				goto out_err;
+
+			mem_index = 0;
+		}
+
+		rc = hidpp20_onboard_profiles_macro_next(device,
+							 memory,
+							 &mem_index,
+							 &macro[index]);
+		if (rc == -EFAULT)
+			goto out_err;
+
+		if (rc != -ENOMEM) {
+			if (macro[index].any.type == HIDPP20_MACRO_JUMP) {
+				page = macro[index].jump.page;
+				offset = macro[index].jump.offset;
+				mem_index = 0;
+				/* no need to store the jump in memory */
+				index--;
+				/* force memory fetching */
+				rc = -ENOMEM;
+			}
+
+			index++;
+		}
+	} while (rc);
+
+	*return_macro = macro;
+	return index;
+
+out_err:
+	if (macro)
+		free(macro);
+
+	return rc;
+}
+
+static int
+hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
+				     uint8_t page, uint8_t offset,
+				     union hidpp20_macro_data **return_macro)
+{
+	union hidpp20_macro_data *m, *macro = NULL;
+	unsigned i, count = 0;
+	int rc;
+
+	rc = hidpp20_onboard_profiles_read_macro(device, page, offset, &macro);
+	if (rc < 0)
+		return rc;
+
+	count = rc;
+
+	for (i = 0; i < count; i++) {
+		m = &macro[i];
+		switch (m->any.type) {
+		case HIDPP20_MACRO_DELAY:
+			m->delay.time = hidpp_be_u16_to_cpu(m->delay.time);
+			break;
+		case HIDPP20_MACRO_KEY_PRESS:
+			break;
+		case HIDPP20_MACRO_KEY_RELEASE:
+			break;
+		case HIDPP20_MACRO_JUMP:
+			break;
+		case HIDPP20_MACRO_END:
+			break;
+		case HIDPP20_MACRO_NOOP:
+			break;
+		default:
+			hidpp_log_error(&device->base, "unknown tag: 0x%02x\n", m->any.type);
+		}
+	}
+
+	*return_macro = macro;
+
+	return 0;
+}
+
 int
 hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 				  struct hidpp20_profiles **profiles_list)
@@ -1177,8 +1337,21 @@ void
 hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
 				 struct hidpp20_profiles *profiles_list)
 {
+	struct hidpp20_profile *profile;
+	union hidpp20_macro_data **macro;
+	unsigned i;
+
 	if (!profiles_list)
 		return;
+
+	for (i = 0; i < profiles_list->num_profiles; i++) {
+		profile = &profiles_list->profiles[i];
+
+		ARRAY_FOR_EACH(profile->macros, macro) {
+			if (*macro)
+				free(*macro);
+		}
+	}
 
 	free(profiles_list);
 }
@@ -1288,7 +1461,8 @@ union hidpp20_internal_profile {
 _Static_assert(sizeof(union hidpp20_internal_profile) == HIDPP20_PROFILE_SIZE, "Invalid size");
 
 static void
-hidpp20_buttons_to_cpu(struct hidpp20_profile *profile,
+hidpp20_buttons_to_cpu(struct hidpp20_device *device,
+		       struct hidpp20_profile *profile,
 		       union hidpp20_button_binding *buttons,
 		       unsigned int count)
 {
@@ -1319,6 +1493,17 @@ hidpp20_buttons_to_cpu(struct hidpp20_profile *profile,
 			break;
 		case HIDPP20_BUTTON_SPECIAL:
 			button->special.special = b->special.special;
+			break;
+		case HIDPP20_BUTTON_MACRO:
+			if (profile->macros[i]) {
+				free(profile->macros[i]);
+				profile->macros[i] = NULL;
+			}
+			hidpp20_onboard_profiles_parse_macro(device,
+							     b->macro.page,
+							     b->macro.offset,
+							     &profile->macros[i]);
+			button->macro.page = i;
 			break;
 		case HIDPP20_BUTTON_DISABLED:
 			break;
@@ -1396,7 +1581,7 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 		profile->dpi[i] = hidpp_get_unaligned_le_u16(&data[2 * i + 3]);
 	}
 
-	hidpp20_buttons_to_cpu(profile, pdata.profile.buttons, profiles_list->num_buttons);
+	hidpp20_buttons_to_cpu(device, profile, pdata.profile.buttons, profiles_list->num_buttons);
 
 	memcpy(profile->name, pdata.profile.name.txt, sizeof(profile->name));
 	/* force terminating '\0' */

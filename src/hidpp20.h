@@ -269,6 +269,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_BUTTON_HID_TYPE_KEYBOARD		0x02
 #define HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL	0x03
 #define HIDPP20_BUTTON_SPECIAL				0x90
+#define HIDPP20_BUTTON_MACRO				0x00
 #define HIDPP20_BUTTON_DISABLED				0xFF
 
 #define HIDPP20_MODIFIER_KEY_CTRL			0x01
@@ -303,10 +304,47 @@ union hidpp20_button_binding {
 		uint8_t special;
 	} __attribute__((packed)) special;
 	struct {
+		uint8_t type; /* HIDPP20_BUTTON_MACRO */
+		uint8_t page;
+		uint8_t zero;
+		uint8_t offset;
+	} __attribute__((packed)) macro;
+	struct {
 		uint8_t type; /* PROFILE_BUTTON_TYPE_DISABLED */
 	} disabled;
 } __attribute__((packed));
 _Static_assert(sizeof(union hidpp20_button_binding) == 4, "Invalid size");
+
+#define HIDPP20_MACRO_NOOP			0x01
+#define HIDPP20_MACRO_DELAY			0x40
+#define HIDPP20_MACRO_KEY_PRESS			0x43
+#define HIDPP20_MACRO_KEY_RELEASE		0x44
+#define HIDPP20_MACRO_JUMP			0x60
+#define HIDPP20_MACRO_END			0xff
+
+union hidpp20_macro_data {
+	struct {
+		uint8_t type;
+	} __attribute__((packed)) any;
+	struct {
+		uint8_t type; /* HIDPP20_MACRO_DELAY */
+		uint16_t time;
+	} __attribute__((packed)) delay;
+	struct {
+		uint8_t type; /* HIDPP20_MACRO_KEY_PRESS or HIDPP20_MACRO_KEY_RELEASE */
+		uint8_t modifier;
+		uint8_t key;
+	} __attribute__((packed)) key;
+	struct {
+		uint8_t type; /* HIDPP20_MACRO_JUMP */
+		uint8_t offset;
+		uint8_t page;
+	} __attribute__((packed)) jump;
+	struct {
+		uint8_t type; /* HIDPP20_MACRO_END */
+	} __attribute__((packed)) end;
+} __attribute__((packed));
+_Static_assert(sizeof(union hidpp20_macro_data) == 3, "Invalid size");
 
 struct hidpp20_profile {
 	uint8_t index;
@@ -317,6 +355,7 @@ struct hidpp20_profile {
 	unsigned switched_dpi;
 	uint16_t dpi[5];
 	union hidpp20_button_binding buttons[32];
+	union hidpp20_macro_data *macros[32];
 };
 
 struct hidpp20_profiles {

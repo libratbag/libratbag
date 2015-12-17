@@ -97,6 +97,78 @@ hidpp20drv_read_button_1b04(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 }
 
+static unsigned int
+hidpp20drv_read_macro_key_8100(struct ratbag_device *device, union hidpp20_macro_data *macro)
+{
+	switch (macro->key.modifier) {
+	case 0x01: return KEY_LEFTCTRL;
+	case 0x02: return KEY_LEFTSHIFT;
+	case 0x04: return KEY_LEFTALT;
+	case 0x08: return KEY_LEFTMETA;
+	case 0x10: return KEY_RIGHTCTRL;
+	case 0x20: return KEY_RIGHTSHIFT;
+	case 0x40: return KEY_RIGHTALT;
+	case 0x80: return KEY_RIGHTMETA;
+	}
+
+	return ratbag_hidraw_get_keycode_from_keyboard_usage(device, macro->key.key);
+}
+
+static void
+hidpp20drv_read_macro_8100(struct ratbag_button *button,
+			   struct hidpp20_profile *profile,
+			   union hidpp20_button_binding *binding)
+{
+	struct ratbag_device *device = button->profile->device;
+	union hidpp20_macro_data *macro;
+	unsigned int i, keycode;
+	bool delay = true;
+
+	macro = profile->macros[binding->macro.page];
+
+	ratbag_button_set_macro(button, "macro");
+	i = 0;
+
+	while (macro && macro->any.type != HIDPP20_MACRO_END && i < MAX_MACRO_EVENTS) {
+		switch (macro->any.type) {
+		case HIDPP20_MACRO_DELAY:
+			ratbag_button_set_macro_event(button,
+						   i++,
+						   RATBAG_MACRO_EVENT_WAIT,
+						   macro->delay.time);
+			delay = true;
+			break;
+		case HIDPP20_MACRO_KEY_PRESS:
+			keycode = hidpp20drv_read_macro_key_8100(device, macro);
+			if (!delay)
+				ratbag_button_set_macro_event(button,
+							      i++,
+							      RATBAG_MACRO_EVENT_WAIT,
+							      1);
+			ratbag_button_set_macro_event(button,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_PRESSED,
+						      keycode);
+			delay = false;
+			break;
+		case HIDPP20_MACRO_KEY_RELEASE:
+			keycode = hidpp20drv_read_macro_key_8100(device, macro);
+			if (!delay)
+				ratbag_button_set_macro_event(button,
+							      i++,
+							      RATBAG_MACRO_EVENT_WAIT,
+							      1);
+			ratbag_button_set_macro_event(button,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_RELEASED,
+						      keycode);
+			delay = false;
+			break;
+		}
+		macro++;
+	}
+}
+
 static void
 hidpp20drv_read_button_8100(struct ratbag_button *button)
 {
@@ -131,6 +203,9 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 	case HIDPP20_BUTTON_SPECIAL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
 		button->action.action.special = hidpp20_onboard_profiles_get_special(profile->buttons[button->index].special.special);
+		break;
+	case HIDPP20_BUTTON_MACRO:
+		hidpp20drv_read_macro_8100(button, profile, &profile->buttons[button->index]);
 		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
