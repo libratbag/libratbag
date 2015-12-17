@@ -376,6 +376,75 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 #define PROFILE_BUTTON_SPECIAL_DPI_NEXT			0x4
 #define PROFILE_BUTTON_SPECIAL_DPI_PREV			0x8
 
+#define HIDPP10_MACRO_NOOP				0x00
+#define HIDPP10_MACRO_WAIT_FOR_BUTTON_RELEASE		0x01
+#define HIDPP10_MACRO_REPEAT_UNTIL_BUTTON_RELEASE	0x02
+#define HIDPP10_MACRO_REPEAT				0x03
+#define HIDPP10_MACRO_KEY_PRESS				0x20
+#define HIDPP10_MACRO_KEY_RELEASE			0x21
+#define HIDPP10_MACRO_MOD_PRESS				0x22
+#define HIDPP10_MACRO_MOD_RELEASE			0x23
+#define HIDPP10_MACRO_MOUSE_WHEEL			0x24
+#define HIDPP10_MACRO_MOUSE_BUTTON_PRESS		0x40
+#define HIDPP10_MACRO_MOUSE_BUTTON_RELEASE		0x41
+#define HIDPP10_MACRO_KEY_CONSUMER_CONTROL		0x42
+#define HIDPP10_MACRO_DELAY				0x43
+#define HIDPP10_MACRO_JUMP				0x44
+#define HIDPP10_MACRO_JUMP_IF_PRESSED			0x45
+#define HIDPP10_MACRO_MOUSE_POINTER_MOVE		0x60
+#define HIDPP10_MACRO_JUMP_IF_RELEASED_TIMEOUT		0x61
+#define HIDPP10_MACRO_END				0xff
+
+union hidpp10_macro_data {
+	struct {
+		uint8_t type;
+	} __attribute__((packed)) any;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_KEY_PRESS or HIDPP10_MACRO_KEY_RELEASE */
+		uint8_t key;
+	} __attribute__((packed)) key;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_MOD_PRESS or HIDPP10_MACRO_MOD_RELEASE */
+		uint8_t key;
+	} __attribute__((packed)) modifier;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_MOUSE_WHEEL */
+		int8_t value;
+	} __attribute__((packed)) wheel;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_MOUSE_BUTTON_PRESS or HIDPP10_MACRO_MOUSE_BUTTON_RELEASE */
+		uint16_t flags;
+	} __attribute__((packed)) button;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_KEY_CONSUMER_CONTROL */
+		uint16_t key;
+	} __attribute__((packed)) consumer_control;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_DELAY */
+		uint16_t time;
+	} __attribute__((packed)) delay;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_JUMP or HIDPP10_MACRO_JUMP_IF_PRESSED */
+		uint8_t page;
+		uint8_t offset;
+	} __attribute__((packed)) jump;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_MOUSE_POINTER_MOVE */
+		int16_t x_rel;
+		uint16_t y_rel;
+	} __attribute__((packed)) pointer;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_JUMP_IF_RELEASED_TIMEOUT */
+		int16_t timeout;
+		uint8_t page;
+		uint8_t offset;
+	} __attribute__((packed)) jump_timeout;
+	struct {
+		uint8_t type; /* HIDPP10_MACRO_END */
+	} __attribute__((packed)) end;
+} __attribute__((packed));
+_Static_assert(sizeof(union hidpp10_macro_data) == 5, "Invalid size");
+
 struct hidpp10_profile {
 	struct {
 		uint16_t xres;
@@ -415,7 +484,11 @@ struct hidpp10_profile {
 		struct {
 			uint8_t type;
 		} disabled;
+		struct {
+			uint8_t address;
+		} macro;
 	} buttons[PROFILE_NUM_BUTTONS];
+	union hidpp10_macro_data *macros[PROFILE_NUM_BUTTONS];
 	size_t num_buttons;
 
 	unsigned int initialized;

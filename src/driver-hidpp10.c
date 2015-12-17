@@ -53,6 +53,106 @@ struct hidpp10drv_data {
 	struct hidpp10_device *dev;
 };
 
+static unsigned int
+hidpp10drv_read_macro_modifier(struct ratbag_device *device, union hidpp10_macro_data *macro)
+{
+	switch (macro->key.key) {
+	case 0x01: return KEY_LEFTCTRL;
+	case 0x02: return KEY_LEFTSHIFT;
+	case 0x04: return KEY_LEFTALT;
+	case 0x08: return KEY_LEFTMETA;
+	case 0x10: return KEY_RIGHTCTRL;
+	case 0x20: return KEY_RIGHTSHIFT;
+	case 0x40: return KEY_RIGHTALT;
+	case 0x80: return KEY_RIGHTMETA;
+	}
+
+	return KEY_RESERVED;
+}
+
+static void
+hidpp10drv_read_macro(struct ratbag_button *button,
+		      struct hidpp10_profile *profile,
+		      union hidpp10_button *binding)
+{
+	struct ratbag_device *device = button->profile->device;
+	const char *name;
+	union hidpp10_macro_data *macro;
+	unsigned int i, keycode;
+	bool delay = true;
+
+	macro = profile->macros[binding->macro.address];
+
+	name = binding->macro.address > 1 ? (const char *)profile->macro_names[binding->macro.address - 2] : "";
+	ratbag_button_set_macro(button, name);
+	i = 0;
+
+	while (macro && macro->any.type != HIDPP10_MACRO_END && i < MAX_MACRO_EVENTS) {
+		switch (macro->any.type) {
+		case HIDPP10_MACRO_DELAY:
+			ratbag_button_set_macro_event(button,
+						      i++,
+						      RATBAG_MACRO_EVENT_WAIT,
+						      macro->delay.time);
+			delay = true;
+			break;
+		case HIDPP10_MACRO_KEY_PRESS:
+			keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device, macro->key.key);
+			if (!delay)
+				ratbag_button_set_macro_event(button,
+							      i++,
+							      RATBAG_MACRO_EVENT_WAIT,
+							      1);
+			ratbag_button_set_macro_event(button,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_PRESSED,
+						      keycode);
+			delay = false;
+			break;
+		case HIDPP10_MACRO_KEY_RELEASE:
+			keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device, macro->key.key);
+			if (!delay)
+				ratbag_button_set_macro_event(button,
+							      i++,
+							      RATBAG_MACRO_EVENT_WAIT,
+							      1);
+			ratbag_button_set_macro_event(button,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_RELEASED,
+						      keycode);
+			delay = false;
+			break;
+		case HIDPP10_MACRO_MOD_PRESS:
+			keycode = hidpp10drv_read_macro_modifier(device, macro);
+			if (!delay)
+				ratbag_button_set_macro_event(button,
+							      i++,
+							      RATBAG_MACRO_EVENT_WAIT,
+							      1);
+			ratbag_button_set_macro_event(button,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_PRESSED,
+						      keycode);
+			delay = false;
+			break;
+		case HIDPP10_MACRO_MOD_RELEASE:
+			keycode = hidpp10drv_read_macro_modifier(device, macro);
+			if (!delay)
+				ratbag_button_set_macro_event(button,
+							      i++,
+							      RATBAG_MACRO_EVENT_WAIT,
+							      1);
+			ratbag_button_set_macro_event(button,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_RELEASED,
+						      keycode);
+			delay = false;
+			break;
+		}
+		macro++;
+	}
+}
+
 static void
 hidpp10drv_map_button(struct ratbag_device *device,
 		      struct hidpp10_device *hidpp10,
@@ -91,8 +191,7 @@ hidpp10drv_map_button(struct ratbag_device *device,
 		if (profile.buttons[button->index].any.type & 0x80) {
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 		} else {
-			/* FIXME: MACRO */
-			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+			hidpp10drv_read_macro(button, &profile, &profile.buttons[button->index]);
 		}
 	}
 

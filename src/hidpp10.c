@@ -568,6 +568,11 @@ union _hidpp10_button_binding {
 		uint8_t zero0;
 		uint8_t zero1;
 	} disabled;
+	struct {
+		uint8_t page;
+		uint8_t offset;
+		uint8_t zero;
+	} __attribute__((packed)) macro;
 } __attribute__((packed));
 _Static_assert(sizeof(union _hidpp10_button_binding) == 3, "Invalid size");
 
@@ -920,6 +925,266 @@ hidpp10_write_dpi_modes_16(struct hidpp10_device *dev,
 	}
 }
 
+static int
+hidpp10_onboard_profiles_macro_next(struct hidpp10_device *device,
+				    uint8_t memory[32],
+				    uint16_t *index,
+				    union hidpp10_macro_data *macro)
+{
+	int rc = 0;
+	unsigned int step = 0;
+
+	if (*index >= 32 - sizeof(union hidpp10_macro_data)) {
+		hidpp_log_error(&device->base, "error while parsing macro.\n");
+		return -EFAULT;
+	}
+
+	memcpy(macro, &memory[*index], sizeof(union hidpp10_macro_data));
+
+	switch (macro->any.type) {
+	case HIDPP10_MACRO_NOOP:
+		/* fallthrough */
+	case HIDPP10_MACRO_WAIT_FOR_BUTTON_RELEASE:
+		/* fallthrough */
+	case HIDPP10_MACRO_REPEAT_UNTIL_BUTTON_RELEASE:
+		/* fallthrough */
+	case HIDPP10_MACRO_REPEAT:
+		step = 1;
+		rc = -EAGAIN;
+		break;
+	case HIDPP10_MACRO_KEY_PRESS:
+		/* fallthrough */
+	case HIDPP10_MACRO_KEY_RELEASE:
+		/* fallthrough */
+	case HIDPP10_MACRO_MOD_PRESS:
+		/* fallthrough */
+	case HIDPP10_MACRO_MOD_RELEASE:
+		/* fallthrough */
+	case HIDPP10_MACRO_MOUSE_WHEEL:
+		step = 2;
+		rc = -EAGAIN;
+		break;
+	case HIDPP10_MACRO_MOUSE_BUTTON_PRESS:
+		/* fallthrough */
+	case HIDPP10_MACRO_MOUSE_BUTTON_RELEASE:
+		/* fallthrough */
+	case HIDPP10_MACRO_KEY_CONSUMER_CONTROL:
+		/* fallthrough */
+	case HIDPP10_MACRO_DELAY:
+		/* fallthrough */
+	case HIDPP10_MACRO_JUMP:
+		/* fallthrough */
+	case HIDPP10_MACRO_JUMP_IF_PRESSED:
+		step = 3;
+		rc = -EAGAIN;
+		break;
+	case HIDPP10_MACRO_MOUSE_POINTER_MOVE:
+		/* fallthrough */
+	case HIDPP10_MACRO_JUMP_IF_RELEASED_TIMEOUT:
+		step = 5;
+		rc = -EAGAIN;
+		break;
+
+	case HIDPP10_MACRO_END:
+		step = 1;
+		return 0;
+	default:
+		if (macro->any.type >= 0x80 && macro->any.type <= 0xFE) {
+			step = 1;
+			rc = -EAGAIN;
+		} else {
+			hidpp_log_error(&device->base, "unknown tag: 0x%02x\n", macro->any.type);
+			return -EFAULT;
+		}
+	}
+
+	if ((*index + step) & 0xF0)
+		/* the next item will be on the following chunk */
+		return -ENOMEM;
+
+	*index += step;
+
+	return rc;
+}
+
+static int
+hidpp10_onboard_profiles_read_macro(struct hidpp10_device *device,
+				    uint8_t page, uint8_t offset,
+				    union hidpp10_macro_data **return_macro)
+{
+	uint8_t memory[HIDPP10_PAGE_SIZE];
+	union hidpp10_macro_data *macro = NULL;
+	unsigned count = 0;
+	unsigned index = 0;
+	uint16_t mem_index = 0;
+	int rc = -ENOMEM;
+
+	do {
+		if (count == index) {
+			union hidpp10_macro_data *tmp;
+
+			count += 32;
+			/* manual realloc to have the memory zero-initialized */
+			tmp = zalloc(count * sizeof(union hidpp10_macro_data));
+			if (macro) {
+				memcpy(tmp, macro, (count - 32) * sizeof(union hidpp10_macro_data));
+				free(macro);
+			}
+			macro = tmp;
+		}
+
+		if (rc == -ENOMEM) {
+			offset += mem_index;
+			if (offset & 0x01)
+				offset--;
+			rc = hidpp10_read_memory(device, page, offset, memory);
+			if (rc)
+				goto out_err;
+			mem_index &= 0x01;
+
+			hidpp_log_buf_raw(&device->base, "-> ", memory + mem_index, 16 - mem_index);
+		}
+
+		rc = hidpp10_onboard_profiles_macro_next(device,
+							 memory,
+							 &mem_index,
+							 &macro[index]);
+		if (rc == -EFAULT)
+			goto out_err;
+
+		if (rc != -ENOMEM) {
+			if (macro[index].any.type == HIDPP10_MACRO_JUMP) {
+				page = macro[index].jump.page;
+				offset = macro[index].jump.offset;
+				mem_index = 0;
+				/* no need to store the jump in memory */
+				index--;
+				/* force memory fetching */
+				rc = -ENOMEM;
+			}
+
+			index++;
+		}
+	} while (rc);
+
+	*return_macro = macro;
+	return index;
+
+out_err:
+	if (macro)
+		free(macro);
+
+	return rc;
+}
+
+static int
+hidpp10_onboard_profiles_parse_macro(struct hidpp10_device *device,
+				     uint8_t page, uint8_t offset,
+				     union hidpp10_macro_data **return_macro)
+{
+	union hidpp10_macro_data *m, *macro = NULL;
+	unsigned i, count = 0;
+	int rc;
+
+	hidpp_log_raw(&device->base, "*** macro starts at (0x%02x, 0x%04x) ***\n", page, offset);
+
+	rc = hidpp10_onboard_profiles_read_macro(device, page, offset, &macro);
+	if (rc < 0)
+		return rc;
+
+	count = rc;
+
+	for (i = 0; i < count; i++) {
+		m = &macro[i];
+		switch (m->any.type) {
+
+		case HIDPP10_MACRO_NOOP:
+			hidpp_log_raw(&device->base, "noop\n");
+			break;
+		case HIDPP10_MACRO_WAIT_FOR_BUTTON_RELEASE:
+			hidpp_log_raw(&device->base, "wait for button release\n");
+			break;
+		case HIDPP10_MACRO_REPEAT_UNTIL_BUTTON_RELEASE:
+			hidpp_log_raw(&device->base, "repeat from beginning until button release\n");
+			break;
+		case HIDPP10_MACRO_REPEAT:
+			hidpp_log_raw(&device->base, "repeat from beginning\n");
+			break;
+		case HIDPP10_MACRO_KEY_PRESS:
+			hidpp_log_raw(&device->base, "key press: %02x\n", m->key.key);
+			break;
+		case HIDPP10_MACRO_KEY_RELEASE:
+			hidpp_log_raw(&device->base, "key release: %02x\n", m->key.key);
+			break;
+		case HIDPP10_MACRO_MOD_PRESS:
+			hidpp_log_raw(&device->base, "modifier press: %02x\n", m->modifier.key);
+			break;
+		case HIDPP10_MACRO_MOD_RELEASE:
+			hidpp_log_raw(&device->base, "modifier release: %02x\n", m->modifier.key);
+			break;
+		case HIDPP10_MACRO_MOUSE_WHEEL:
+			hidpp_log_raw(&device->base, "mouse wheel: %+d\n", m->wheel.value);
+			break;
+		case HIDPP10_MACRO_MOUSE_BUTTON_PRESS:
+			m->button.flags = ffs(hidpp_le_u16_to_cpu(m->button.flags));
+			hidpp_log_raw(&device->base, "mouse button press: %d\n", m->button.flags);
+			break;
+		case HIDPP10_MACRO_MOUSE_BUTTON_RELEASE:
+			m->button.flags = ffs(hidpp_le_u16_to_cpu(m->button.flags));
+			hidpp_log_raw(&device->base, "mouse button release: %d\n", m->button.flags);
+			break;
+		case HIDPP10_MACRO_KEY_CONSUMER_CONTROL:
+			m->consumer_control.key = hidpp_be_u16_to_cpu(m->consumer_control.key);
+			hidpp_log_raw(&device->base, "switched to consumer control: 0x%04x\n", m->consumer_control.key);
+			break;
+		case HIDPP10_MACRO_DELAY:
+			m->delay.time = hidpp_be_u16_to_cpu(m->delay.time);
+			hidpp_log_raw(&device->base, "delay: %0.03f\n", m->delay.time/1000.0);
+			break;
+		case HIDPP10_MACRO_JUMP:
+			/* should be skipped by hidpp10_onboard_profiles_read_macro */
+			hidpp_log_raw(&device->base, "jump to: (0x%02x, 0x%02x)\n", m->jump.page, m->jump.offset);
+			break;
+		case HIDPP10_MACRO_JUMP_IF_PRESSED:
+			hidpp_log_raw(&device->base, "conditional jump to: (0x%02x, 0x%02x)\n", m->jump.page, m->jump.offset);
+			break;
+		case HIDPP10_MACRO_MOUSE_POINTER_MOVE:
+			break;
+		case HIDPP10_MACRO_JUMP_IF_RELEASED_TIMEOUT:
+			m->jump_timeout.timeout = hidpp_be_u16_to_cpu(m->jump_timeout.timeout);
+			hidpp_log_raw(&device->base, "conditional jump to: (0x%02x, 0x%02x) if released whithin %0.03f msecs.\n", m->jump_timeout.page, m->jump_timeout.offset, m->jump_timeout.timeout / 1000.0);
+			break;
+		case HIDPP10_MACRO_END:
+			break;
+		default:
+			if (m->any.type >= 0x80 && m->any.type <= 0x9F) {
+				m->delay.time = 8 + (m->any.type - 0x80) * 4;
+				m->any.type = HIDPP10_MACRO_DELAY;
+				hidpp_log_raw(&device->base, "short delay: %0.03f\n", m->delay.time/1000.0);
+			} else if (m->any.type >= 0xA0 && m->any.type <= 0xBF) {
+				m->delay.time = 132 + (m->any.type - 0x9F) * 8;
+				m->any.type = HIDPP10_MACRO_DELAY;
+				hidpp_log_raw(&device->base, "short delay: %0.03f\n", m->delay.time/1000.0);
+			} else if (m->any.type >= 0xC0 && m->any.type <= 0xDF) {
+				m->delay.time = 388 + (m->any.type - 0xBF) * 16;
+				m->any.type = HIDPP10_MACRO_DELAY;
+				hidpp_log_raw(&device->base, "short delay: %0.03f\n", m->delay.time/1000.0);
+			} else if (m->any.type >= 0xE0 && m->any.type <= 0xFE) {
+				m->delay.time = 900 + (m->any.type - 0xDF) * 32;
+				m->any.type = HIDPP10_MACRO_DELAY;
+				hidpp_log_raw(&device->base, "short delay: %0.03f\n", m->delay.time/1000.0);
+			} else {
+				hidpp_log_error(&device->base, "unknown tag: 0x%02x\n", m->any.type);
+			}
+		}
+	}
+
+	hidpp_log_raw(&device->base, "*** end of macro ***\n");
+	*return_macro = macro;
+
+	return 0;
+}
+
 static void
 hidpp10_fill_buttons(struct hidpp10_device *dev,
 		     struct hidpp10_profile *profile,
@@ -952,6 +1217,17 @@ hidpp10_fill_buttons(struct hidpp10_device *dev,
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			break;
+		default:
+			/* macros */
+			button->macro.address = i;
+			if (profile->macros[i]) {
+				free(profile->macros[i]);
+				profile->macros[i] = NULL;
+			}
+			hidpp10_onboard_profiles_parse_macro(dev,
+							     b->macro.page,
+							     b->macro.offset * 2,
+							     &profile->macros[i]);
 		}
 	}
 }
@@ -1133,16 +1409,16 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			profile->refresh_rate = p500->usb_refresh_rate ? 1000/p500->usb_refresh_rate : 0;
 
 			hidpp10_fill_dpi_modes_16(dev, profile, p500->dpi_modes, PROFILE_NUM_DPI_MODES);
-			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 			hidpp10_profile_parse_names(dev, profile, number, &p500->metadata);
+			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 			break;
 		case HIDPP10_PROFILE_G700:
 			profile->default_dpi_mode = p700->default_dpi_mode;
 			profile->refresh_rate = p700->usb_refresh_rate ? 1000/p700->usb_refresh_rate : 0;
 
 			hidpp10_fill_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
-			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 			hidpp10_profile_parse_names(dev, profile, number, &p700->metadata);
+			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 			break;
 		default:
 			hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
@@ -2287,11 +2563,24 @@ hidpp10_device_new(const struct hidpp_device *base, int idx,
 void
 hidpp10_device_destroy(struct hidpp10_device *dev)
 {
+	union hidpp10_macro_data **macro;
+	unsigned i;
+
 	if (dev->dpi_table)
 		free(dev->dpi_table);
 	if (dev->profile_directory)
 		free(dev->profile_directory);
-	if (dev->profiles)
+	if (dev->profiles) {
+		for (i = 0; i < dev->profile_count; i++) {
+			ARRAY_FOR_EACH(dev->profiles[i].macros, macro) {
+				if (*macro) {
+					free(*macro);
+					*macro = NULL;
+				}
+			}
+		}
+
 		free(dev->profiles);
+	}
 	free(dev);
 }
