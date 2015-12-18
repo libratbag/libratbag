@@ -1503,7 +1503,11 @@ hidpp20_buttons_to_cpu(struct hidpp20_device *device,
 							     b->macro.page,
 							     b->macro.offset,
 							     &profile->macros[i]);
+
+			/* the actual page is stored in the 'zero' field */
 			button->macro.page = i;
+			button->macro.offset = b->macro.offset;
+			button->macro.zero = b->macro.page;
 			break;
 		case HIDPP20_BUTTON_DISABLED:
 			break;
@@ -1549,6 +1553,12 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 			button->special.special = b->special.special;
 			break;
 		case HIDPP20_BUTTON_DISABLED:
+			break;
+		case HIDPP20_BUTTON_MACRO:
+			/* the actual page is stored in the 'zero' field */
+			button->macro.page = b->macro.zero;
+			button->macro.offset = b->macro.offset;
+			button->macro.zero = 0;
 			break;
 		default:
 			break;
