@@ -485,6 +485,8 @@ struct hidpp10_profile {
 			uint8_t type;
 		} disabled;
 		struct {
+			uint8_t page;
+			uint8_t offset;
 			uint8_t address;
 		} macro;
 	} buttons[PROFILE_NUM_BUTTONS];

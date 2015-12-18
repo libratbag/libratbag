@@ -1219,6 +1219,8 @@ hidpp10_fill_buttons(struct hidpp10_device *dev,
 			break;
 		default:
 			/* macros */
+			button->macro.page = b->macro.page;
+			button->macro.offset = b->macro.offset;
 			button->macro.address = i;
 			if (profile->macros[i]) {
 				free(profile->macros[i]);
@@ -1263,6 +1265,11 @@ hidpp10_write_buttons(struct hidpp10_device *dev,
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
 			break;
+		default:
+			/* macros */
+			button->macro.page = b->macro.page;
+			button->macro.offset = b->macro.offset;
+			button->macro.zero = 0;
 		}
 	}
 }
