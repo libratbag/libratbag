@@ -520,6 +520,8 @@ hidpp10drv_probe(struct ratbag_device *device)
 			type = HIDPP10_PROFILE_G500;
 		else if (strcasecmp("G700", prop) == 0)
 			type = HIDPP10_PROFILE_G700;
+		else if (strcasecmp("G9", prop) == 0)
+			type = HIDPP10_PROFILE_G9;
 	}
 
 	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_INDEX");
