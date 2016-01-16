@@ -23,7 +23,8 @@ config.log
 config.status
 configure
 libtool
-m4/
+*.m4
+!m4/attributes.m4
 ratbagctl
 ratbagd
 stamp-*
