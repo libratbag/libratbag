@@ -372,9 +372,21 @@ static int
 hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
+	struct hidpp20_profile *h_profile;
+	int rc;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
 		return 0;
+
+	if (index >= drv_data->profiles->num_profiles)
+		return -EINVAL;
+
+	h_profile = &drv_data->profiles->profiles[index];
+	if (!h_profile->enabled) {
+		rc = hidpp20_onboard_profiles_write(drv_data->dev, index, drv_data->profiles);
+		if (rc)
+			return rc;
+	}
 
 	return hidpp20_onboard_profiles_set_current_profile(drv_data->dev, index);
 }
