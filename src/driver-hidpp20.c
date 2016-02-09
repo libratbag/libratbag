@@ -371,7 +371,12 @@ hidpp20drv_current_profile(struct ratbag_device *device)
 static int
 hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
-	return -ENOTSUP;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return 0;
+
+	return hidpp20_onboard_profiles_set_current_profile(drv_data->dev, index);
 }
 
 static int
@@ -700,6 +705,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
 		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
 		/* we read the profiles once with an incorect profile index
 		 * to get the correct number of supported profiles. */
 		hidpp20drv_read_onboard_profile(device, 0xffffff);

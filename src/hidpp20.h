@@ -387,6 +387,16 @@ hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
 int hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device);
 
 /**
+ * Sets the current profile index.
+ * Indexes are 1-indexed.
+ *
+ * return 0 or a negative error.
+ */
+int
+hidpp20_onboard_profiles_set_current_profile(struct hidpp20_device *device,
+					     uint8_t index);
+
+/**
  * parse a given profile from the mouse and fill in the right profile in
  * profiles_list.
  *
