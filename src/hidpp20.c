@@ -1645,7 +1645,7 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	if (rc < 0)
 		return rc;
 
-	if (rc != sizeof(data))
+	if (rc != sizeof(pdata.data))
 		return -EIO;
 
 	return 0;
