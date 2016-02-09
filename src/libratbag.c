@@ -754,7 +754,7 @@ ratbag_profile_set_default(struct ratbag_profile *profile)
 		return rc;
 
 	if (ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		assert(device->driver->set_active_profile);
+		assert(device->driver->set_default_profile);
 		rc = device->driver->set_default_profile(device, profile->index);
 	}
 
