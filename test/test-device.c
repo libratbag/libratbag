@@ -326,6 +326,7 @@ START_TEST(device_resolutions)
 	int i, j;
 	int xres, yres, rate;
 	int device_freed_count = 0;
+	bool is_active;
 
 	struct ratbag_test_device td = {
 		.num_profiles = 3,
@@ -335,7 +336,7 @@ START_TEST(device_resolutions)
 			.num_resolutions = 3,
 			.resolutions = {
 				{ .xres = 100, .yres = 200, .hz = 1000 },
-				{ .xres = 200, .yres = 300, .hz = 1000 },
+				{ .xres = 200, .yres = 300, .hz = 1000, .active = true },
 				{ .xres = 300, .yres = 400, .hz = 1000 },
 			},
 			.active = true,
@@ -344,7 +345,7 @@ START_TEST(device_resolutions)
 			.num_resolutions = 3,
 			.resolutions = {
 				{ .xres = 1100, .yres = 1200, .hz = 2000 },
-				{ .xres = 1200, .yres = 1300, .hz = 2000 },
+				{ .xres = 1200, .yres = 1300, .hz = 2000, .active = true },
 				{ .xres = 1300, .yres = 1400, .hz = 2000 },
 			},
 			},
@@ -352,7 +353,7 @@ START_TEST(device_resolutions)
 			.num_resolutions = 3,
 			.resolutions = {
 				{ .xres = 2100, .yres = 2200, .hz = 3000 },
-				{ .xres = 2200, .yres = 2300, .hz = 3000 },
+				{ .xres = 2200, .yres = 2300, .hz = 3000, .active = true },
 				{ .xres = 2300, .yres = 2400, .hz = 3000 },
 			},
 			},
@@ -376,10 +377,12 @@ START_TEST(device_resolutions)
 			xres = ratbag_resolution_get_dpi_x(res);
 			yres = ratbag_resolution_get_dpi_y(res);
 			rate = ratbag_resolution_get_report_rate(res);
+			is_active = ratbag_resolution_is_active(res);
 
 			ck_assert_int_eq(xres, i * 1000 + (j + 1) * 100);
 			ck_assert_int_eq(yres, i * 1000 + (j + 1) * 100 + 100);
 			ck_assert_int_eq(xres, ratbag_resolution_get_dpi(res));
+			ck_assert_int_eq(is_active, (j == 1));
 
 			ck_assert_int_eq(rate, (i + 1) * 1000);
 
