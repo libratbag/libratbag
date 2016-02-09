@@ -668,20 +668,6 @@ LIBRATBAG_EXPORT int
 ratbag_profile_is_active(struct ratbag_profile *profile)
 {
 	return profile->is_active;
-
-	/* FIXME: should be read on startup so we can just do the above */
-#if 0
-	int current_profile;
-
-	assert(device->driver->get_active_profile);
-	current_profile = device->driver->get_active_profile(device);
-	if (current_profile < 0) {
-		errno = -current_profile;
-		return NULL;
-	}
-
-	return ratbag_device_get_profile(device, current_profile);
-#endif
 }
 
 LIBRATBAG_EXPORT int
