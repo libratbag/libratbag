@@ -62,6 +62,10 @@ struct hidpp20drv_data {
 	unsigned num_controls;
 	struct hidpp20_control_id *controls;
 	struct hidpp20_profiles *profiles;
+
+	unsigned int num_profiles;
+	unsigned int num_resolutions;
+	unsigned int num_buttons;
 };
 
 static void
@@ -378,7 +382,7 @@ hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
 		return 0;
 
-	if (index >= drv_data->profiles->num_profiles)
+	if (index >= drv_data->num_profiles)
 		return -EINVAL;
 
 	h_profile = &drv_data->profiles->profiles[index];
@@ -427,6 +431,8 @@ hidpp20drv_read_resolution_dpi_2201(struct ratbag_device *device)
 	if (drv_data->num_sensors > MAX_RESOLUTIONS)
 		drv_data->num_sensors = MAX_RESOLUTIONS;
 
+	drv_data->num_resolutions = drv_data->num_sensors;
+
 	return 0;
 }
 
@@ -444,7 +450,6 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		uint16_t resolution;
 		uint8_t flags;
 
-		profile->resolution.num_modes = 1;
 		rc = hidpp20_mousepointer_get_mousepointer_info(drv_data->dev, &resolution, &flags);
 		if (rc) {
 			log_error(ratbag,
@@ -460,7 +465,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return rc;
-		profile->resolution.num_modes = drv_data->num_sensors;
+		profile->resolution.num_modes = drv_data->num_resolutions;
 		for (i = 0; i < profile->resolution.num_modes; i++) {
 			int dpi = drv_data->sensors[i].dpi;
 			/* FIXME: retrieve the refresh rate */
@@ -596,14 +601,6 @@ hidpp20drv_read_onboard_profile(struct ratbag_device *device, unsigned index)
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
 		return 0;
 
-	if (!drv_data->profiles) {
-		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
-		if (rc < 0)
-			return rc;
-
-		device->num_buttons = drv_data->profiles->num_buttons;
-	}
-
 	rc = hidpp20_onboard_profiles_read(drv_data->dev, index, drv_data->profiles);
 	if (rc < 0)
 		return rc;
@@ -628,9 +625,9 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 
 	dpi = ratbag_resolution_get_dpi(profile->resolution.modes);
 
-	profile->resolution.num_modes = drv_data->profiles->num_modes;
 	p = &drv_data->profiles->profiles[index];
 
+	profile->resolution.num_modes = drv_data->num_resolutions;
 	for (i = 0; i < profile->resolution.num_modes; i++) {
 		res = ratbag_resolution_init(profile, i,
 					     p->dpi[i],
@@ -693,6 +690,11 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		log_debug(ratbag, "device has adjustable dpi\n");
 		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
+		/* we read the profile once to get the correct number of
+		 * supported resolutions. */
+		rc = hidpp20drv_read_resolution_dpi_2201(device);
+		if (rc < 0)
+			return rc;
 		break;
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
@@ -744,9 +746,15 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
 		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
-		/* we read the profiles once with an incorect profile index
-		 * to get the correct number of supported profiles. */
-		hidpp20drv_read_onboard_profile(device, 0xffffff);
+
+		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
+		if (rc < 0)
+			return rc;
+
+		drv_data->num_profiles = drv_data->profiles->num_profiles;
+		drv_data->num_resolutions = drv_data->profiles->num_modes;
+		drv_data->num_buttons = drv_data->profiles->num_buttons;
+
 		break;
 	}
 	case HIDPP_PAGE_MOUSE_BUTTON_SPY: {
@@ -833,14 +841,20 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), dev->proto_major, dev->proto_minor);
 
+	/* add some defaults that will be overwritten by the device */
+	drv_data->num_profiles = 1;
+	drv_data->num_resolutions = 1;
+	drv_data->num_buttons = 8;
+
 	if (dev->proto_major >= 2) {
 		rc = hidpp20drv_20_probe(device);
 		if (rc)
 			goto err;
 	}
 
-	ratbag_device_init_profiles(device, drv_data->profiles ? drv_data->profiles->num_profiles : 1,
-				    device->num_buttons ? device->num_buttons : 8);
+	ratbag_device_init_profiles(device,
+				    drv_data->num_profiles,
+				    drv_data->num_buttons);
 
 	return rc;
 err:
