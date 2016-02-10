@@ -71,7 +71,6 @@ test_read_profile(struct ratbag_profile *profile, unsigned int index)
 	}
 
 	profile->is_active = p->active;
-	profile->is_default = p->dflt;
 }
 
 static int

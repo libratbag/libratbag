@@ -348,12 +348,6 @@ hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 	return hidpp10_set_current_profile(hidpp10, index);
 }
 
-static int
-hidpp10drv_set_default_profile(struct ratbag_device *device, unsigned int index)
-{
-	return -ENOTSUP;
-}
-
 static void
 hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
@@ -591,7 +585,6 @@ hidpp10drv_probe(struct ratbag_device *device)
 		ratbag_device_init_profiles(device, 1, 3);
 		profile = ratbag_device_get_profile(device, 0);
 		profile->is_active = true;
-		profile->is_default = true;
 		ratbag_profile_unref(profile);
 	}
 
@@ -629,7 +622,6 @@ struct ratbag_driver hidpp10_driver = {
 	.read_profile = hidpp10drv_read_profile,
 	.write_profile = hidpp10drv_write_profile,
 	.set_active_profile = hidpp10drv_set_current_profile,
-	.set_default_profile = hidpp10drv_set_default_profile,
 	.has_capability = hidpp10drv_has_capability,
 	.read_button = hidpp10drv_read_button,
 	.write_button = hidpp10drv_write_button,
