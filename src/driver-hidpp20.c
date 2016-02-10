@@ -428,9 +428,6 @@ hidpp20drv_read_resolution_dpi_2201(struct ratbag_device *device)
 		  drv_data->sensors[0].dpi_max);
 
 	drv_data->num_sensors = rc;
-	if (drv_data->num_sensors > MAX_RESOLUTIONS)
-		drv_data->num_sensors = MAX_RESOLUTIONS;
-
 	drv_data->num_resolutions = drv_data->num_sensors;
 
 	return 0;
@@ -465,7 +462,6 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return rc;
-		profile->resolution.num_modes = drv_data->num_resolutions;
 		for (i = 0; i < profile->resolution.num_modes; i++) {
 			int dpi = drv_data->sensors[i].dpi;
 			/* FIXME: retrieve the refresh rate */
@@ -627,7 +623,6 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 
 	p = &drv_data->profiles->profiles[index];
 
-	profile->resolution.num_modes = drv_data->num_resolutions;
 	for (i = 0; i < profile->resolution.num_modes; i++) {
 		res = ratbag_resolution_init(profile, i,
 					     p->dpi[i],
@@ -854,6 +849,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
+				    drv_data->num_resolutions,
 				    drv_data->num_buttons);
 
 	return rc;

@@ -51,10 +51,10 @@ device_destroyed(struct ratbag_device *device, void *data)
  */
 const struct ratbag_test_device sane_device = {
 	.num_profiles = 3,
+	.num_resolutions = 3,
 	.num_buttons = 1,
 	.profiles = {
 		{
-		.num_resolutions = 3,
 		.resolutions = {
 			{ .xres = 100, .yres = 200, .hz = 1000 },
 			{ .xres = 200, .yres = 300, .hz = 1000 },
@@ -64,7 +64,6 @@ const struct ratbag_test_device sane_device = {
 		.dflt = false,
 		},
 		{
-		.num_resolutions = 3,
 		.resolutions = {
 			{ .xres = 1100, .yres = 1200, .hz = 2000 },
 			{ .xres = 1200, .yres = 1300, .hz = 2000 },
@@ -74,7 +73,6 @@ const struct ratbag_test_device sane_device = {
 		.dflt = true,
 		},
 		{
-		.num_resolutions = 3,
 		.resolutions = {
 			{ .xres = 2100, .yres = 2200, .hz = 3000 },
 			{ .xres = 2200, .yres = 2300, .hz = 3000 },
@@ -330,10 +328,10 @@ START_TEST(device_resolutions)
 
 	struct ratbag_test_device td = {
 		.num_profiles = 3,
+		.num_resolutions = 3,
 		.num_buttons = 1,
 		.profiles = {
 			{
-			.num_resolutions = 3,
 			.resolutions = {
 				{ .xres = 100, .yres = 200, .hz = 1000 },
 				{ .xres = 200, .yres = 300, .hz = 1000, .active = true },
@@ -342,7 +340,6 @@ START_TEST(device_resolutions)
 			.active = true,
 			},
 			{
-			.num_resolutions = 3,
 			.resolutions = {
 				{ .xres = 1100, .yres = 1200, .hz = 2000 },
 				{ .xres = 1200, .yres = 1300, .hz = 2000, .active = true },
@@ -350,7 +347,6 @@ START_TEST(device_resolutions)
 			},
 			},
 			{
-			.num_resolutions = 3,
 			.resolutions = {
 				{ .xres = 2100, .yres = 2200, .hz = 3000 },
 				{ .xres = 2200, .yres = 2300, .hz = 3000, .active = true },
@@ -429,9 +425,9 @@ START_TEST(device_resolutions_num_0)
 	struct ratbag_test_device td = {
 		.num_profiles = 1,
 		.num_buttons = 1,
+		.num_resolutions = 0, /* failure trigger */
 		.profiles = {
 			{
-			.num_resolutions = 0, /* failure trigger */
 			.active = true,
 			},
 		},

@@ -446,9 +446,7 @@ roccat_read_profile(struct ratbag_profile *profile, unsigned int index)
 		report_rate = 0;
 	}
 
-	profile->resolution.num_modes = ROCCAT_NUM_DPI;
-
-	for (i = 0; i < ROCCAT_NUM_DPI; i++) {
+	for (i = 0; i < profile->resolution.num_modes; i++) {
 		dpi_x = setting_report->xres[i] * 50;
 		dpi_y = setting_report->yres[i] * 50;
 		hz = report_rate;
@@ -813,7 +811,10 @@ roccat_probe(struct ratbag_device *device)
 	ratbag_set_drv_data(device, drv_data);
 
 	/* profiles are 0-indexed */
-	ratbag_device_init_profiles(device, ROCCAT_PROFILE_MAX + 1, ROCCAT_BUTTON_MAX + 1);
+	ratbag_device_init_profiles(device,
+				    ROCCAT_PROFILE_MAX + 1,
+				    ROCCAT_NUM_DPI,
+				    ROCCAT_BUTTON_MAX + 1);
 
 	active_idx = roccat_current_profile(device);
 	if (active_idx < 0) {

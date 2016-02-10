@@ -57,8 +57,7 @@ test_read_profile(struct ratbag_profile *profile, unsigned int index)
 	assert(index < d->num_profiles);
 
 	p = &d->profiles[index];
-	profile->resolution.num_modes = p->num_resolutions;
-	for (i = 0; i < p->num_resolutions; i++) {
+	for (i = 0; i < d->num_resolutions; i++) {
 		struct ratbag_resolution *res;
 
 		r = &p->resolutions[i];
@@ -96,6 +95,7 @@ test_probe(struct ratbag_device *device, void *data)
 	ratbag_set_drv_data(device, test_device);
 	ratbag_device_init_profiles(device,
 				    test_device->num_profiles,
+				    test_device->num_resolutions,
 				    test_device->num_buttons);
 	return 0;
 }

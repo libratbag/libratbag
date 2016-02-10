@@ -208,7 +208,6 @@ struct ratbag_driver {
 	struct list link;
 };
 
-#define MAX_RESOLUTIONS 10
 struct ratbag_resolution{
 	struct ratbag_profile *profile;
 	int refcount;
@@ -232,7 +231,7 @@ struct ratbag_profile {
 	void *drv_data;
 	void *user_data;
 	struct {
-		struct ratbag_resolution modes[MAX_RESOLUTIONS];
+		struct ratbag_resolution *modes;
 		unsigned int num_modes;
 	} resolution;
 
@@ -332,6 +331,7 @@ ratbag_get_drv_data(struct ratbag_device *device)
 int
 ratbag_device_init_profiles(struct ratbag_device *device,
 			    unsigned int num_profiles,
+			    unsigned int num_resolutions,
 			    unsigned int num_buttons);
 
 static inline void

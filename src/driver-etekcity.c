@@ -387,9 +387,7 @@ etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
 		report_rate = 0;
 	}
 
-	profile->resolution.num_modes = ETEKCITY_NUM_DPI;
-
-	for (i = 0; i < ETEKCITY_NUM_DPI; i++) {
+	for (i = 0; i < profile->resolution.num_modes; i++) {
 		dpi_x = setting_report->xres[i] * 50;
 		dpi_y = setting_report->yres[i] * 50;
 		hz = report_rate;
@@ -682,7 +680,10 @@ etekcity_probe(struct ratbag_device *device)
 	log_debug(device->ratbag, "device is at %d ms of latency\n", drv_data->speed_setting[2]);
 
 	/* profiles are 0-indexed */
-	ratbag_device_init_profiles(device, ETEKCITY_PROFILE_MAX + 1, ETEKCITY_BUTTON_MAX + 1);
+	ratbag_device_init_profiles(device,
+				    ETEKCITY_PROFILE_MAX + 1,
+				    ETEKCITY_NUM_DPI,
+				    ETEKCITY_BUTTON_MAX + 1);
 
 	active_idx = etekcity_current_profile(device);
 	if (active_idx < 0) {

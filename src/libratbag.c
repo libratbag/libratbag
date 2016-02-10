@@ -564,6 +564,7 @@ ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
 static struct ratbag_profile *
 ratbag_create_profile(struct ratbag_device *device,
 		      unsigned int index,
+		      unsigned int num_resolutions,
 		      unsigned int num_buttons)
 {
 	struct ratbag_profile *profile;
@@ -573,13 +574,15 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->refcount = 0;
 	profile->device = device;
 	profile->index = index;
+	profile->resolution.modes = zalloc(num_resolutions *
+					   sizeof(*profile->resolution.modes));
+	profile->resolution.num_modes = num_resolutions;
 
 	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
 
-	for (i = 0; i < MAX_RESOLUTIONS; i++)
+	for (i = 0; i < num_resolutions; i++)
 		ratbag_resolution_init(profile, i, 0, 0, 0);
-	profile->resolution.num_modes = 1;
 
 	assert(device->driver->read_profile);
 	device->driver->read_profile(profile, index);
@@ -592,12 +595,13 @@ ratbag_create_profile(struct ratbag_device *device,
 int
 ratbag_device_init_profiles(struct ratbag_device *device,
 			    unsigned int num_profiles,
+			    unsigned int num_resolutions,
 			    unsigned int num_buttons)
 {
 	unsigned int i;
 
 	for (i = 0; i < num_profiles; i++) {
-		ratbag_create_profile(device, i, num_buttons);
+		ratbag_create_profile(device, i, num_resolutions, num_buttons);
 	}
 
 	device->num_profiles = num_profiles;
@@ -626,7 +630,7 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 	list_for_each_safe(button, next, &profile->buttons, link)
 		ratbag_button_destroy(button);
 
-	/* Resolution is a fixed list of structs, no freeing required */
+	free(profile->resolution.modes);
 
 	list_remove(&profile->link);
 	free(profile);
