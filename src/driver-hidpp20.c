@@ -612,30 +612,26 @@ hidpp20drv_read_onboard_profile(struct ratbag_device *device, unsigned index)
 }
 
 static void
-hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
+hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_resolution *res;
+	struct hidpp20_profile *p;
 	unsigned i, dpi;
 
-	hidpp20drv_read_resolution_dpi(profile);
-	hidpp20drv_read_special_key_mouse(device);
 	hidpp20drv_read_onboard_profile(device, profile->index);
 
 	profile->is_active = false;
 	if ((int)index == hidpp20drv_current_profile(device))
 		profile->is_active = true;
 
-	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
-		return;
-
 	dpi = ratbag_resolution_get_dpi(profile->resolution.modes);
 
 	profile->resolution.num_modes = drv_data->profiles->num_modes;
-	for (i = 0; i < drv_data->profiles->num_modes; i++) {
-		struct hidpp20_profile *p = &drv_data->profiles->profiles[index];
+	p = &drv_data->profiles->profiles[index];
 
+	for (i = 0; i < profile->resolution.num_modes; i++) {
 		res = ratbag_resolution_init(profile, i,
 					     p->dpi[i],
 					     p->dpi[i],
@@ -647,6 +643,21 @@ hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 		if (i == p->default_dpi)
 			res->is_default = true;
 	}
+}
+
+static void
+hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+		return hidpp20drv_read_profile_8100(profile, index);
+
+	hidpp20drv_read_resolution_dpi(profile);
+	hidpp20drv_read_special_key_mouse(device);
+
+	profile->is_active = (index == 0);
 }
 
 static int
