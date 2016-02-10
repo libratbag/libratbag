@@ -56,7 +56,6 @@
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
 	unsigned long capabilities;
-	unsigned long exported_capabilities;
 	unsigned num_sensors;
 	struct hidpp20_sensor *sensors;
 	unsigned num_controls;
@@ -329,31 +328,6 @@ hidpp20drv_write_button(struct ratbag_button *button,
 		return hidpp20drv_write_button_1b04(button, action);
 
 	return -ENOTSUP;
-}
-
-static int
-hidpp20drv_has_capability(const struct ratbag_device *device,
-			  enum ratbag_device_capability cap)
-{
-	/*
-	 * We need to force the non const, but we will not change anything,
-	 * promise!
-	 */
-	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
-
-	if (cap == RATBAG_DEVICE_CAP_NONE)
-		abort();
-
-	return !!(drv_data->exported_capabilities & (1UL << cap));
-}
-
-static inline void
-hidpp20drv_set_exported_capability(const struct ratbag_device *device,
-				   enum ratbag_device_capability cap)
-{
-	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
-
-	drv_data->exported_capabilities |= (1UL << cap);
 }
 
 static int
@@ -683,7 +657,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {
 		log_debug(ratbag, "device has adjustable dpi\n");
-		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		/* we read the profile once to get the correct number of
 		 * supported resolutions. */
@@ -695,7 +669,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
 		log_debug(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
-		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
 		if (!hidpp20drv_read_special_key_mouse(device))
@@ -738,9 +712,6 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
-		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
-		hidpp20drv_set_exported_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
 
 		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
 		if (rc < 0)
@@ -884,7 +855,6 @@ struct ratbag_driver hidpp20_driver = {
 	.write_profile = hidpp20drv_write_profile,
 	.set_active_profile = hidpp20drv_set_current_profile,
 	.set_default_profile = hidpp20drv_set_default_profile,
-	.has_capability = hidpp20drv_has_capability,
 	.read_button = hidpp20drv_read_button,
 	.write_button = hidpp20drv_write_button,
 	.write_resolution_dpi = hidpp20drv_write_resolution_dpi,

@@ -28,24 +28,6 @@
 #include "libratbag-private.h"
 #include "libratbag-test.h"
 
-static int
-test_has_capability(const struct ratbag_device *device,
-		    enum ratbag_device_capability cap)
-{
-	switch (cap) {
-	case RATBAG_DEVICE_CAP_NONE:
-		abort();
-		break;
-	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
-	case RATBAG_DEVICE_CAP_BUTTON_KEY:
-	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
-		return (device->num_profiles > 1);
-	default:
-		return 0;
-	}
-	return 0;
-}
-
 static void
 test_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
@@ -82,6 +64,17 @@ test_write_profile(struct ratbag_profile *profile)
 }
 
 static int
+test_set_active_profile(struct ratbag_device *device, unsigned int index)
+{
+	struct ratbag_test_device *d = ratbag_get_drv_data(device);
+
+	/* check if the device is still valid */
+	assert(d != NULL);
+	assert(index < d->num_profiles);
+	return 0;
+}
+
+static int
 test_fake_probe(struct ratbag_device *device)
 {
 	return -ENODEV;
@@ -97,6 +90,9 @@ test_probe(struct ratbag_device *device, void *data)
 				    test_device->num_profiles,
 				    test_device->num_resolutions,
 				    test_device->num_buttons);
+	if (test_device->num_profiles > 1)
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+
 	return 0;
 }
 
@@ -120,8 +116,7 @@ struct ratbag_driver test_driver = {
 	.remove = test_remove,
 	.read_profile = test_read_profile,
 	.write_profile = test_write_profile,
-	.set_active_profile = NULL,
-	.has_capability = test_has_capability,
+	.set_active_profile = test_set_active_profile,
 	.read_button = NULL,
 	.write_button = NULL,
 	.write_resolution_dpi = NULL,

@@ -308,23 +308,6 @@ roccat_wait_ready(struct ratbag_device *device)
 }
 
 static int
-roccat_has_capability(const struct ratbag_device *device,
-		      enum ratbag_device_capability cap)
-{
-	switch (cap) {
-	case RATBAG_DEVICE_CAP_NONE:
-	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
-		return 0;
-	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
-	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
-	case RATBAG_DEVICE_CAP_BUTTON_KEY:
-	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
-		return 1;
-	}
-	return 0;
-}
-
-static int
 roccat_current_profile(struct ratbag_device *device)
 {
 	uint8_t buf[3];
@@ -816,6 +799,8 @@ roccat_probe(struct ratbag_device *device)
 				    ROCCAT_NUM_DPI,
 				    ROCCAT_BUTTON_MAX + 1);
 
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+
 	active_idx = roccat_current_profile(device);
 	if (active_idx < 0) {
 		log_error(device->ratbag,
@@ -861,7 +846,6 @@ struct ratbag_driver roccat_driver = {
 	.read_profile = roccat_read_profile,
 	.write_profile = roccat_write_profile,
 	.set_active_profile = roccat_set_current_profile,
-	.has_capability = roccat_has_capability,
 	.read_button = roccat_read_button,
 	.write_button = roccat_write_button,
 	.write_resolution_dpi = roccat_write_resolution_dpi,

@@ -251,24 +251,6 @@ etekcity_button_action_to_raw(const struct ratbag_button_action *action)
 }
 
 static int
-etekcity_has_capability(const struct ratbag_device *device,
-			enum ratbag_device_capability cap)
-{
-	switch (cap) {
-	case RATBAG_DEVICE_CAP_NONE:
-		return 0;
-	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
-	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
-	case RATBAG_DEVICE_CAP_BUTTON_KEY:
-	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
-		return 1;
-	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
-		return 0;
-	}
-	return 0;
-}
-
-static int
 etekcity_current_profile(struct ratbag_device *device)
 {
 	uint8_t buf[3];
@@ -685,6 +667,8 @@ etekcity_probe(struct ratbag_device *device)
 				    ETEKCITY_NUM_DPI,
 				    ETEKCITY_BUTTON_MAX + 1);
 
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+
 	active_idx = etekcity_current_profile(device);
 	if (active_idx < 0) {
 		log_error(device->ratbag,
@@ -731,7 +715,6 @@ struct ratbag_driver etekcity_driver = {
 	.write_profile = etekcity_write_profile,
 	.set_active_profile = etekcity_set_current_profile,
 	.set_default_profile = etekcity_set_default_profile,
-	.has_capability = etekcity_has_capability,
 	.read_button = etekcity_read_button,
 	.write_button = etekcity_write_button,
 	.write_resolution_dpi = etekcity_write_resolution_dpi,
