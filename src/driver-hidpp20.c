@@ -398,6 +398,39 @@ hidpp20drv_set_default_profile(struct ratbag_device *device, unsigned int index)
 }
 
 static int
+hidpp20drv_read_resolution_dpi_2201(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag *ratbag = device->ratbag;
+	int rc;
+
+	free(drv_data->sensors);
+	drv_data->sensors = NULL;
+	drv_data->num_sensors = 0;
+	rc = hidpp20_adjustable_dpi_get_sensors(drv_data->dev, &drv_data->sensors);
+	if (rc < 0) {
+		log_error(ratbag,
+			  "Error while requesting resolution: %s (%d)\n",
+			  strerror(-rc), rc);
+		return rc;
+	} else if (rc == 0) {
+		log_error(ratbag, "Error, no compatible sensors found.\n");
+		return -ENODEV;
+	}
+	log_debug(ratbag,
+		  "device is at %d dpi (variable between %d and %d).\n",
+		  drv_data->sensors[0].dpi,
+		  drv_data->sensors[0].dpi_min,
+		  drv_data->sensors[0].dpi_max);
+
+	drv_data->num_sensors = rc;
+	if (drv_data->num_sensors > MAX_RESOLUTIONS)
+		drv_data->num_sensors = MAX_RESOLUTIONS;
+
+	return 0;
+}
+
+static int
 hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
@@ -424,27 +457,9 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
-		free(drv_data->sensors);
-		drv_data->sensors = NULL;
-		drv_data->num_sensors = 0;
-		rc = hidpp20_adjustable_dpi_get_sensors(drv_data->dev, &drv_data->sensors);
-		if (rc < 0) {
-			log_error(ratbag,
-				  "Error while requesting resolution: %s (%d)\n",
-				  strerror(-rc), rc);
+		rc = hidpp20drv_read_resolution_dpi_2201(device);
+		if (rc < 0)
 			return rc;
-		} else if (rc == 0) {
-			log_error(ratbag, "Error, no compatible sensors found.\n");
-			return -ENODEV;
-		}
-		log_debug(ratbag,
-			  "device is at %d dpi (variable between %d and %d).\n",
-			  drv_data->sensors[0].dpi,
-			  drv_data->sensors[0].dpi_min,
-			  drv_data->sensors[0].dpi_max);
-		drv_data->num_sensors = rc;
-		if (drv_data->num_sensors > MAX_RESOLUTIONS)
-			drv_data->num_sensors = MAX_RESOLUTIONS;
 		profile->resolution.num_modes = drv_data->num_sensors;
 		for (i = 0; i < profile->resolution.num_modes; i++) {
 			int dpi = drv_data->sensors[i].dpi;
