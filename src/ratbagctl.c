@@ -37,8 +37,6 @@ struct ratbagctl {
 
 static int verb_help(struct ratbagctl *ctl, int argc, char **argv);
 
-DEFINE_TRIVIAL_CLEANUP_FUNC(sd_bus_message *, sd_bus_message_unref);
-
 static struct ratbagctl *ratbagctl_free(struct ratbagctl *ctl)
 {
 	if (!ctl)
