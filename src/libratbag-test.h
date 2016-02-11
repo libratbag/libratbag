@@ -43,7 +43,6 @@ struct ratbag_test_resolution {
 };
 
 struct ratbag_test_profile {
-	unsigned int num_resolutions;
 	struct ratbag_test_button buttons[RATBAG_TEST_MAX_BUTTONS];
 	struct ratbag_test_resolution resolutions[RATBAG_TEST_MAX_RESOLUTIONS];
 	bool active;
@@ -52,6 +51,7 @@ struct ratbag_test_profile {
 
 struct ratbag_test_device {
 	unsigned int num_profiles;
+	unsigned int num_resolutions;
 	unsigned int num_buttons;
 	struct ratbag_test_profile profiles[RATBAG_TEST_MAX_PROFILES];
 	void (*destroyed)(struct ratbag_device *device, void *data);

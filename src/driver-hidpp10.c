@@ -318,28 +318,6 @@ hidpp10drv_write_button(struct ratbag_button *button,
 }
 
 static int
-hidpp10drv_has_capability(const struct ratbag_device *device,
-			  enum ratbag_device_capability cap)
-{
-	/* we force a non const device to shut up a warning, but we won't change anything */
-	struct hidpp10drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
-	struct hidpp10_device *hidpp10 = drv_data->dev;
-
-	switch (cap) {
-	case RATBAG_DEVICE_CAP_NONE:
-		abort();
-		break;
-	case RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE:
-	case RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION:
-	case RATBAG_DEVICE_CAP_BUTTON_KEY:
-	case RATBAG_DEVICE_CAP_BUTTON_MACROS:
-	case RATBAG_DEVICE_CAP_DEFAULT_PROFILE:
-		return (hidpp10->profile_type != HIDPP10_PROFILE_UNKNOWN);
-	}
-	return 0;
-}
-
-static int
 hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
@@ -381,8 +359,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	if (rc)
 		xres = 0xffff;
 
-	profile->resolution.num_modes = p.num_dpi_modes;
-	for (i = 0; i < p.num_dpi_modes; i++) {
+	for (i = 0; i < profile->resolution.num_modes; i++) {
 		res = ratbag_resolution_init(profile, i,
 					     p.dpi_modes[i].xres,
 					     p.dpi_modes[i].yres,
@@ -467,7 +444,13 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 	if (rc)
 		return rc;
 
-	ratbag_device_init_profiles(device, count, profile.num_buttons);
+	ratbag_device_init_profiles(device,
+				    count,
+				    profile.num_dpi_modes,
+				    profile.num_buttons);
+
+	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN)
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 	return 0;
 }
@@ -588,7 +571,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 		/* Fall back to something that every mouse has */
 		struct ratbag_profile *profile;
 
-		ratbag_device_init_profiles(device, 1, 3);
+		ratbag_device_init_profiles(device, 1, 1, 3);
 		profile = ratbag_device_get_profile(device, 0);
 		profile->is_active = true;
 		profile->is_default = true;
@@ -630,7 +613,6 @@ struct ratbag_driver hidpp10_driver = {
 	.write_profile = hidpp10drv_write_profile,
 	.set_active_profile = hidpp10drv_set_current_profile,
 	.set_default_profile = hidpp10drv_set_default_profile,
-	.has_capability = hidpp10drv_has_capability,
 	.read_button = hidpp10drv_read_button,
 	.write_button = hidpp10drv_write_button,
 	.write_resolution_dpi = hidpp10drv_write_resolution_dpi,

@@ -89,6 +89,7 @@ struct ratbag_device {
 	struct input_id ids;
 	struct ratbag_driver *driver;
 	struct ratbag *ratbag;
+	unsigned long capabilities;
 
 	unsigned num_profiles;
 	struct list profiles;
@@ -163,17 +164,6 @@ struct ratbag_driver {
 	int (*set_default_profile)(struct ratbag_device *device, unsigned int index);
 
 	/**
-	 * This should return a boolean whether or not the device
-	 * supports the given capability.
-	 *
-	 * In most cases, the .probe() should store a list of capabilities
-	 * for each device, but most of the time, it can be statically
-	 * stored.
-	 */
-	int (*has_capability)(const struct ratbag_device *device,
-			      enum ratbag_device_capability cap);
-
-	/**
 	 * For the given button, fill in the struct ratbag_button
 	 * with the available information.
 	 *
@@ -208,7 +198,6 @@ struct ratbag_driver {
 	struct list link;
 };
 
-#define MAX_RESOLUTIONS 10
 struct ratbag_resolution{
 	struct ratbag_profile *profile;
 	int refcount;
@@ -232,7 +221,7 @@ struct ratbag_profile {
 	void *drv_data;
 	void *user_data;
 	struct {
-		struct ratbag_resolution modes[MAX_RESOLUTIONS];
+		struct ratbag_resolution *modes;
 		unsigned int num_modes;
 	} resolution;
 
@@ -332,7 +321,12 @@ ratbag_get_drv_data(struct ratbag_device *device)
 int
 ratbag_device_init_profiles(struct ratbag_device *device,
 			    unsigned int num_profiles,
+			    unsigned int num_resolutions,
 			    unsigned int num_buttons);
+
+void
+ratbag_device_set_capability(struct ratbag_device *device,
+			     enum ratbag_device_capability cap);
 
 static inline void
 ratbag_profile_set_drv_data(struct ratbag_profile *profile, void *drv_data)
