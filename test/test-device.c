@@ -195,7 +195,7 @@ START_TEST(device_profiles)
 	struct ratbag_profile *p;
 	int nprofiles;
 	int i;
-	bool is_active, is_default;
+	bool is_active;
 	int device_freed_count = 0;
 
 	struct ratbag_test_device td = sane_device;
@@ -214,8 +214,6 @@ START_TEST(device_profiles)
 
 		is_active = ratbag_profile_is_active(p);
 		ck_assert_int_eq(is_active, (i == 0));
-		is_default = ratbag_profile_is_default(p);
-		ck_assert_int_eq(is_default, (i == 1));
 		ratbag_profile_unref(p);
 	}
 	ratbag_device_unref(d);

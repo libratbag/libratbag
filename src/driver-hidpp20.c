@@ -370,12 +370,6 @@ hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 }
 
 static int
-hidpp20drv_set_default_profile(struct ratbag_device *device, unsigned int index)
-{
-	return -ENOTSUP;
-}
-
-static int
 hidpp20drv_read_resolution_dpi_2201(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -854,7 +848,6 @@ struct ratbag_driver hidpp20_driver = {
 	.read_profile = hidpp20drv_read_profile,
 	.write_profile = hidpp20drv_write_profile,
 	.set_active_profile = hidpp20drv_set_current_profile,
-	.set_default_profile = hidpp20drv_set_default_profile,
 	.read_button = hidpp20drv_read_button,
 	.write_button = hidpp20drv_write_button,
 	.write_resolution_dpi = hidpp20drv_write_resolution_dpi,

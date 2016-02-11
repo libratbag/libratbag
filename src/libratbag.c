@@ -209,7 +209,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	_cleanup_profile_ struct ratbag_profile *profile = NULL;
 	_cleanup_resolution_ struct ratbag_resolution *res = NULL;
 	bool has_active = false;
-	bool has_default = false;
 	unsigned int nres, nprofiles;
 	bool rc = false;
 	unsigned int i;
@@ -230,17 +229,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		profile = ratbag_device_get_profile(device, i);
 		if (!profile)
 			goto out;
-
-		/* Allow max 1 default profile */
-		if (profile->is_default) {
-			if (has_default) {
-				log_bug_libratbag(ratbag,
-						  "%s: multiple default profiles\n",
-						  device->name);
-				goto out;
-			}
-			has_default = true;
-		}
 
 		/* Allow max 1 active profile */
 		if (profile->is_active) {
@@ -685,14 +673,6 @@ ratbag_profile_is_active(struct ratbag_profile *profile)
 	return profile->is_active;
 }
 
-LIBRATBAG_EXPORT int
-ratbag_profile_is_default(struct ratbag_profile *profile)
-{
-	/* FIXME: unclear if any device actually supports this function */
-
-	return profile->is_default;
-}
-
 LIBRATBAG_EXPORT unsigned int
 ratbag_device_get_num_profiles(struct ratbag_device *device)
 {
@@ -746,35 +726,6 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 		p->is_active = false;
 	}
 	profile->is_active = true;
-	return rc;
-}
-
-LIBRATBAG_EXPORT int
-ratbag_profile_set_default(struct ratbag_profile *profile)
-{
-	struct ratbag_device *device = profile->device;
-	struct ratbag_profile *p;
-	int rc;
-
-	/* FIXME: unclear if any device actually supports this function */
-
-	assert(device->driver->write_profile);
-	rc = device->driver->write_profile(profile);
-	if (rc)
-		return rc;
-
-	if (ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		assert(device->driver->set_default_profile);
-		rc = device->driver->set_default_profile(device, profile->index);
-	}
-
-	if (rc)
-		return rc;
-
-	list_for_each(p, &device->profiles, link) {
-		p->is_default = false;
-	}
-	profile->is_default = true;
 	return rc;
 }
 

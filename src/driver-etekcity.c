@@ -285,12 +285,6 @@ etekcity_set_current_profile(struct ratbag_device *device, unsigned int index)
 }
 
 static int
-etekcity_set_default_profile(struct ratbag_device *device, unsigned int index)
-{
-	return -ENOTSUP;
-}
-
-static int
 etekcity_set_config_profile(struct ratbag_device *device, uint8_t profile, uint8_t type)
 {
 	uint8_t buf[] = {ETEKCITY_REPORT_ID_CONFIGURE_PROFILE, profile, type};
@@ -714,7 +708,6 @@ struct ratbag_driver etekcity_driver = {
 	.read_profile = etekcity_read_profile,
 	.write_profile = etekcity_write_profile,
 	.set_active_profile = etekcity_set_current_profile,
-	.set_default_profile = etekcity_set_default_profile,
 	.read_button = etekcity_read_button,
 	.write_button = etekcity_write_button,
 	.write_resolution_dpi = etekcity_write_resolution_dpi,
