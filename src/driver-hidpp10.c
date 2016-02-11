@@ -443,8 +443,11 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 				    profile.num_dpi_modes,
 				    profile.num_buttons);
 
-	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN)
+	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+	}
 
 	return 0;
 }
