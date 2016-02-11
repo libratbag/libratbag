@@ -234,9 +234,3 @@ bool ratbagd_profile_is_active(struct ratbagd_profile *profile)
 	assert(profile);
 	return ratbag_profile_is_active(profile->lib_profile) != 0;
 }
-
-bool ratbagd_profile_is_default(struct ratbagd_profile *profile)
-{
-	assert(profile);
-	return ratbag_profile_is_default(profile->lib_profile) != 0;
-}

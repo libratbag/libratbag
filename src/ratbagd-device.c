@@ -194,33 +194,6 @@ static int ratbagd_device_get_active_profile(sd_bus *bus,
 	return sd_bus_message_append(reply, "o", "/");
 }
 
-static int ratbagd_device_get_default_profile(sd_bus *bus,
-					      const char *path,
-					      const char *interface,
-					      const char *property,
-					      sd_bus_message *reply,
-					      void *userdata,
-					      sd_bus_error *error)
-{
-	struct ratbagd_device *device = userdata;
-	struct ratbagd_profile *profile;
-	unsigned int i;
-
-	for (i = 0; i < device->n_profiles; ++i) {
-		profile = device->profiles[i];
-		if (!profile)
-			continue;
-		if (!ratbagd_profile_is_default(profile))
-			continue;
-
-		return sd_bus_message_append(reply, "o",
-					     ratbagd_profile_get_path(profile));
-	}
-
-	/* Eww, we want 'maybe' types here! */
-	return sd_bus_message_append(reply, "o", "/");
-}
-
 static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
 					       void *userdata,
 					       sd_bus_error *error)
@@ -248,7 +221,6 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ActiveProfile", "o", ratbagd_device_get_active_profile, 0, 0),
-	SD_BUS_PROPERTY("DefaultProfile", "o", ratbagd_device_get_default_profile, 0, 0),
 	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
