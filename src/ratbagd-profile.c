@@ -168,12 +168,28 @@ static int ratbagd_profile_get_default_resolution(sd_bus *bus,
 	return sd_bus_message_append(reply, "u", (unsigned int)-1);
 }
 
+static int ratbagd_profile_set_active(sd_bus_message *m,
+				      void *userdata,
+				      sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	int r;
+
+	r = sd_bus_message_read(m, "");
+	if (r < 0)
+		return r;
+
+        return sd_bus_reply_method_return(m, "u",
+                                          ratbag_profile_set_active(profile->lib_profile));
+}
+
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "aa{sv}", ratbagd_profile_get_resolutions, 0, 0),
 	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
 	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
+	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
 
