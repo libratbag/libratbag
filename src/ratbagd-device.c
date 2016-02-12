@@ -135,6 +135,25 @@ static int ratbagd_device_get_description(sd_bus *bus,
 	return sd_bus_message_append(reply, "s", description);
 }
 
+static int ratbagd_device_get_svg(sd_bus *bus,
+				  const char *path,
+				  const char *interface,
+				  const char *property,
+				  sd_bus_message *reply,
+				  void *userdata,
+				  sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	const char *svg;
+
+	svg = ratbag_device_get_svg_name(device->lib_device);
+	if (!svg)
+		return -ENODATA;
+
+	return sd_bus_message_append(reply, "s", svg);
+}
+
+
 static int ratbagd_device_get_profiles(sd_bus *bus,
 				       const char *path,
 				       const char *interface,
@@ -219,6 +238,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ActiveProfile", "o", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
