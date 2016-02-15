@@ -212,7 +212,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	profile->lib_profile = lib_profile;
 	profile->index = index;
 
-	sprintf(index_buffer, "%u", index);
+	sprintf(index_buffer, "p%u", index);
 	r = sd_bus_path_encode_many(&profile->path,
 				    "/org/freedesktop/ratbag1/profile/%/%",
 				    ratbagd_device_get_name(device),

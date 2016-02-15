@@ -64,7 +64,7 @@ static int ratbagd_device_find_profile(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/profile/%/%",
+				    "/org/freedesktop/ratbag1/profile/%/p%",
 				    NULL,
 				    &name);
 	if (r <= 0)
