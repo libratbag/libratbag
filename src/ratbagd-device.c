@@ -349,6 +349,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	struct ratbagd_device *iter;
 	RBNode **node, *parent;
 	int r, v;
+	unsigned int i;
 
 	assert(device);
 	assert(!ratbagd_device_linked(device));
@@ -398,6 +399,18 @@ void ratbagd_device_link(struct ratbagd_device *device)
 		fprintf(stderr,
 			"Cannot register profile interfaces for '%s': %m\n",
 			device->name);
+		return;
+	}
+
+	for (i = 0; i < device->n_profiles; i++) {
+		r = ratbagd_profile_register_resolutions(device->ctx->bus,
+							 device,
+							 device->profiles[i]);
+		if (r < 0) {
+			fprintf(stderr,
+				"Cannot register resolutions for '%s': %m\n",
+				device->name);
+		}
 	}
 }
 

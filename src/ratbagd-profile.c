@@ -38,7 +38,43 @@ struct ratbagd_profile {
 	struct ratbag_profile *lib_profile;
 	unsigned int index;
 	char *path;
+
+	sd_bus_slot *resolution_vtable_slot;
+	sd_bus_slot *resolution_enum_slot;
+	unsigned int n_resolutions;
+	struct ratbagd_resolution **resolutions;
 };
+
+static int ratbagd_profile_find_resolution(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   void *userdata,
+					   void **found,
+					   sd_bus_error *error)
+{
+	_cleanup_(freep) char *name = NULL;
+	struct ratbagd_profile *profile = userdata;
+	unsigned int index;
+	int r;
+
+	r = sd_bus_path_decode_many(path,
+				    "/org/freedesktop/ratbag1/resolution/%/p%/r%",
+				    NULL,
+				    NULL,
+				    &name);
+	if (r <= 0)
+		return r;
+
+	r = safe_atou(name, &index);
+	if (r < 0)
+		return 0;
+
+	if (index >= profile->n_resolutions || !profile->resolutions[index])
+		return 0;
+
+	*found = profile->resolutions[index];
+	return 1;
+}
 
 static int ratbagd_profile_get_resolutions(sd_bus *bus,
 					   const char *path,
@@ -49,60 +85,22 @@ static int ratbagd_profile_get_resolutions(sd_bus *bus,
 					   sd_bus_error *error)
 {
 	struct ratbagd_profile *profile = userdata;
-	unsigned int i, n_resolutions;
+	struct ratbagd_resolution *resolution;
+	unsigned int i;
 	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "a{sv}");
+	r = sd_bus_message_open_container(reply, 'a', "o");
 	if (r < 0)
 		return r;
 
-	n_resolutions = ratbag_profile_get_num_resolutions(profile->lib_profile);
-	for (i = 0; i < n_resolutions; ++i) {
-		struct ratbag_resolution *resolution;
-		bool cap_separate_xy_resolution;
-		unsigned int dpi_x, dpi_y, report_rate;
-
-		resolution = ratbag_profile_get_resolution(profile->lib_profile, i);
+	for (i = 0; i < profile->n_resolutions; ++i) {
+		resolution = profile->resolutions[i];
 		if (!resolution)
 			continue;
 
-		cap_separate_xy_resolution = ratbag_resolution_has_capability(resolution,
-							RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
-		report_rate = ratbag_resolution_get_report_rate(resolution);
-		if (cap_separate_xy_resolution) {
-			dpi_x = ratbag_resolution_get_dpi_x(resolution);
-			dpi_y = ratbag_resolution_get_dpi_y(resolution);
-		} else {
-			dpi_x = ratbag_resolution_get_dpi(resolution);
-		}
-
-		r = sd_bus_message_open_container(reply, 'a', "{sv}");
-		if (r < 0)
-			return r;
-
-		if (cap_separate_xy_resolution) {
-			r = sd_bus_message_append(reply, "{sv}",
-						  "dpi-x", "u", dpi_x);
-			if (r < 0)
-				return r;
-
-			r = sd_bus_message_append(reply, "{sv}",
-						  "dpi-y", "u", dpi_y);
-			if (r < 0)
-				return r;
-		} else {
-			r = sd_bus_message_append(reply, "{sv}",
-						  "dpi", "u", dpi_x);
-			if (r < 0)
-				return r;
-		}
-
-		r = sd_bus_message_append(reply, "{sv}",
-					  "report-rate", "u", report_rate);
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_close_container(reply);
+		r = sd_bus_message_append(reply,
+					  "o",
+					  ratbagd_resolution_get_path(resolution));
 		if (r < 0)
 			return r;
 	}
@@ -186,7 +184,7 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Resolutions", "aa{sv}", ratbagd_profile_get_resolutions, 0, 0),
+	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
 	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
 	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
@@ -199,7 +197,9 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 			unsigned int index)
 {
 	_cleanup_(ratbagd_profile_freep) struct ratbagd_profile *profile = NULL;
+	struct ratbag_resolution *resolution;
 	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
+	unsigned int i;
 	int r;
 
 	assert(out);
@@ -219,6 +219,29 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 				    index_buffer);
 	if (r < 0)
 		return r;
+
+	profile->n_resolutions = ratbag_profile_get_num_resolutions(profile->lib_profile);
+	profile->resolutions = calloc(profile->n_resolutions, sizeof(*profile->resolutions));
+	if (!profile->resolutions)
+		return -ENOMEM;
+
+	for (i = 0; i < profile->n_resolutions; ++i) {
+		resolution = ratbag_profile_get_resolution(profile->lib_profile, i);
+		if (!resolution)
+			continue;
+
+		r = ratbagd_resolution_new(&profile->resolutions[i],
+					   device,
+					   profile,
+					   resolution,
+					   i);
+		if (r < 0) {
+			errno = -r;
+			fprintf(stderr,
+				"Cannot allocate resolution for '%s': %m\n",
+				ratbagd_device_get_name(device));
+		}
+	}
 
 	*out = profile;
 	profile = NULL;
@@ -249,4 +272,89 @@ bool ratbagd_profile_is_active(struct ratbagd_profile *profile)
 {
 	assert(profile);
 	return ratbag_profile_is_active(profile->lib_profile) != 0;
+}
+
+unsigned int ratbagd_profile_get_index(struct ratbagd_profile *profile)
+{
+	assert(profile);
+	return profile->index;
+}
+
+static int ratbagd_profile_list_resolutions(sd_bus *bus,
+					    const char *path,
+					    void *userdata,
+					    char ***paths,
+					    sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbagd_resolution *resolution;
+	char **resolutions;
+	unsigned int i;
+
+	resolutions = calloc(profile->n_resolutions + 1, sizeof(char *));
+	if (!resolutions)
+		return -ENOMEM;
+
+	for (i = 0; i < profile->n_resolutions; ++i) {
+		resolution = profile->resolutions[i];
+		if (!resolution)
+			continue;
+
+		resolutions[i] = strdup(ratbagd_resolution_get_path(resolution));
+		if (!resolutions[i])
+			goto error;
+	}
+
+	resolutions[i] = NULL;
+	*paths = resolutions;
+	return 1;
+
+error:
+	for (i = 0; resolutions[i]; ++i)
+		free(resolutions[i]);
+	free(resolutions);
+	return -ENOMEM;
+}
+
+
+int ratbagd_profile_register_resolutions(struct sd_bus *bus,
+					 struct ratbagd_device *device,
+					 struct ratbagd_profile *profile)
+{
+	_cleanup_(freep) char *prefix = NULL;
+	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
+	int r;
+
+	sprintf(index_buffer, "p%u", profile->index);
+
+	/* register resolution interfaces */
+	r = sd_bus_path_encode_many(&prefix,
+				    "/org/freedesktop/ratbag1/resolution/%/%",
+				    ratbagd_device_get_name(device),
+				    index_buffer);
+
+
+	if (r >= 0) {
+		r = sd_bus_add_fallback_vtable(bus,
+					       &profile->resolution_vtable_slot,
+					       prefix,
+					       "org.freedesktop.ratbag1.Resolution",
+					       ratbagd_resolution_vtable,
+					       ratbagd_profile_find_resolution,
+					       profile);
+		if (r >= 0)
+			r = sd_bus_add_node_enumerator(bus,
+						       &profile->resolution_enum_slot,
+						       prefix,
+						       ratbagd_profile_list_resolutions,
+						       profile);
+	}
+	if (r < 0) {
+		errno = -r;
+		fprintf(stderr,
+			"Cannot register resolutions for '%s': %m\n",
+			ratbagd_device_get_name(device));
+	}
+
+	return 0;
 }

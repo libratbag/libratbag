@@ -39,6 +39,7 @@
 struct ratbagd;
 struct ratbagd_device;
 struct ratbagd_profile;
+struct ratbagd_resolution;
 
 /*
  * Profiles
@@ -54,8 +55,27 @@ struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile);
 const char *ratbagd_profile_get_path(struct ratbagd_profile *profile);
 bool ratbagd_profile_is_active(struct ratbagd_profile *profile);
 bool ratbagd_profile_is_default(struct ratbagd_profile *profile);
+unsigned int ratbagd_profile_get_index(struct ratbagd_profile *profile);
+int ratbagd_profile_register_resolutions(struct sd_bus *bus,
+					 struct ratbagd_device *device,
+					 struct ratbagd_profile *profile);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_profile *, ratbagd_profile_free);
+
+/*
+ * Resolutions
+ */
+extern const sd_bus_vtable ratbagd_resolution_vtable[];
+
+int ratbagd_resolution_new(struct ratbagd_resolution **out,
+			   struct ratbagd_device *device,
+			   struct ratbagd_profile *profile,
+			   struct ratbag_resolution *lib_resolution,
+			   unsigned int index);
+struct ratbagd_resolution *ratbagd_resolution_free(struct ratbagd_resolution *resolution);
+const char *ratbagd_resolution_get_path(struct ratbagd_resolution *resolution);
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_resolution *, ratbagd_resolution_free);
 
 /*
  * Devices
