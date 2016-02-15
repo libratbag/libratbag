@@ -112,3 +112,15 @@ struct ratbagd_resolution *ratbagd_resolution_free(struct ratbagd_resolution *re
 
 	return mfree(resolution);
 }
+
+bool ratbagd_resolution_is_active(struct ratbagd_resolution *resolution)
+{
+	assert(resolution);
+	return ratbag_resolution_is_active(resolution->lib_resolution) != 0;
+}
+
+bool ratbagd_resolution_is_default(struct ratbagd_resolution *resolution)
+{
+	assert(resolution);
+	return ratbag_resolution_is_default(resolution->lib_resolution) != 0;
+}

@@ -117,24 +117,22 @@ static int ratbagd_profile_get_active_resolution(sd_bus *bus,
 						 sd_bus_error *error)
 {
 	struct ratbagd_profile *profile = userdata;
-	unsigned int i, n_resolutions, k = 0;
+	struct ratbagd_resolution *resolution;
+	unsigned int i;
 
-	n_resolutions = ratbag_profile_get_num_resolutions(profile->lib_profile);
-	for (i = 0; i < n_resolutions; ++i) {
-		struct ratbag_resolution *resolution;
-
-		resolution = ratbag_profile_get_resolution(profile->lib_profile, i);
+	for (i = 0; i < profile->n_resolutions; ++i) {
+		resolution = profile->resolutions[i];
 		if (!resolution)
 			continue;
-		if (!ratbag_resolution_is_active(resolution)) {
-			++k;
+		if (!ratbagd_resolution_is_active(resolution))
 			continue;
-		}
 
-		return sd_bus_message_append(reply, "u", k);
+		return sd_bus_message_append(reply, "o",
+					     ratbagd_resolution_get_path(resolution));
 	}
 
-	return sd_bus_message_append(reply, "u", (unsigned int)-1);
+	/* Eww, we want 'maybe' types here! */
+	return sd_bus_message_append(reply, "o", "/");
 }
 
 static int ratbagd_profile_get_default_resolution(sd_bus *bus,
@@ -146,24 +144,22 @@ static int ratbagd_profile_get_default_resolution(sd_bus *bus,
 						  sd_bus_error *error)
 {
 	struct ratbagd_profile *profile = userdata;
-	unsigned int i, n_resolutions, k = 0;
+	struct ratbagd_resolution *resolution;
+	unsigned int i;
 
-	n_resolutions = ratbag_profile_get_num_resolutions(profile->lib_profile);
-	for (i = 0; i < n_resolutions; ++i) {
-		struct ratbag_resolution *resolution;
-
-		resolution = ratbag_profile_get_resolution(profile->lib_profile, i);
+	for (i = 0; i < profile->n_resolutions; ++i) {
+		resolution = profile->resolutions[i];
 		if (!resolution)
 			continue;
-		if (!ratbag_resolution_is_default(resolution)) {
-			++k;
+		if (!ratbagd_resolution_is_default(resolution))
 			continue;
-		}
 
-		return sd_bus_message_append(reply, "u", k);
+		return sd_bus_message_append(reply, "o",
+					     ratbagd_resolution_get_path(resolution));
 	}
 
-	return sd_bus_message_append(reply, "u", (unsigned int)-1);
+	/* Eww, we want 'maybe' types here! */
+	return sd_bus_message_append(reply, "o", "/");
 }
 
 static int ratbagd_profile_set_active(sd_bus_message *m,
@@ -206,8 +202,8 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
-	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
-	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
+	SD_BUS_PROPERTY("ActiveResolution", "o", ratbagd_profile_get_active_resolution, 0, 0),
+	SD_BUS_PROPERTY("DefaultResolution", "o", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetResolutionByIndex", "u", "o", ratbagd_profile_get_resolution_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
