@@ -35,6 +35,7 @@
 #include "shared-macro.h"
 
 struct ratbagd_profile {
+	struct ratbagd_device *device;
 	struct ratbag_profile *lib_profile;
 	unsigned int index;
 	char *path;
@@ -127,12 +128,12 @@ static int ratbagd_profile_get_active_resolution(sd_bus *bus,
 		if (!ratbagd_resolution_is_active(resolution))
 			continue;
 
-		return sd_bus_message_append(reply, "o",
-					     ratbagd_resolution_get_path(resolution));
+		return sd_bus_message_append(reply, "u", i);
 	}
 
-	/* Eww, we want 'maybe' types here! */
-	return sd_bus_message_append(reply, "o", "/");
+	fprintf(stderr, "Unable to find active resolution for %s\n",
+		ratbagd_device_get_name(profile->device));
+	return sd_bus_message_append(reply, "u", 0);
 }
 
 static int ratbagd_profile_get_default_resolution(sd_bus *bus,
@@ -154,12 +155,12 @@ static int ratbagd_profile_get_default_resolution(sd_bus *bus,
 		if (!ratbagd_resolution_is_default(resolution))
 			continue;
 
-		return sd_bus_message_append(reply, "o",
-					     ratbagd_resolution_get_path(resolution));
+		return sd_bus_message_append(reply, "u", i);
 	}
 
-	/* Eww, we want 'maybe' types here! */
-	return sd_bus_message_append(reply, "o", "/");
+	fprintf(stderr, "Unable to find default resolution for %s\n",
+		ratbagd_device_get_name(profile->device));
+	return sd_bus_message_append(reply, "u", 0);
 }
 
 static int ratbagd_profile_set_active(sd_bus_message *m,
@@ -202,8 +203,8 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
-	SD_BUS_PROPERTY("ActiveResolution", "o", ratbagd_profile_get_active_resolution, 0, 0),
-	SD_BUS_PROPERTY("DefaultResolution", "o", ratbagd_profile_get_default_resolution, 0, 0),
+	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
+	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetResolutionByIndex", "u", "o", ratbagd_profile_get_resolution_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
@@ -227,6 +228,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	if (!profile)
 		return -ENOMEM;
 
+	profile->device = device;
 	profile->lib_profile = lib_profile;
 	profile->index = index;
 
