@@ -205,12 +205,12 @@ static int ratbagd_device_get_active_profile(sd_bus *bus,
 		if (!ratbagd_profile_is_active(profile))
 			continue;
 
-		return sd_bus_message_append(reply, "o",
-					     ratbagd_profile_get_path(profile));
+		return sd_bus_message_append(reply, "u", i);
 	}
 
-	/* Eww, we want 'maybe' types here! */
-	return sd_bus_message_append(reply, "o", "/");
+	fprintf(stderr, "Unable to find active profile for %s\n",
+		device->name);
+	return sd_bus_message_append(reply, "u", 0);
 }
 
 static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
@@ -240,7 +240,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("ActiveProfile", "o", ratbagd_device_get_active_profile, 0, 0),
+	SD_BUS_PROPERTY("ActiveProfile", "u", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
