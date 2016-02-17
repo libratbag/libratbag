@@ -34,6 +34,19 @@
 #include "ratbagd.h"
 #include "shared-macro.h"
 
+static bool verbose = false;
+
+void log_verbose(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+
+	if (verbose)
+		vprintf(fmt, args);
+	va_end(args);
+}
+
 static int ratbagd_find_device(sd_bus *bus,
 			       const char *path,
 			       const char *interface,
@@ -449,11 +462,15 @@ int main(int argc, char *argv[])
 	struct ratbagd *ctx = NULL;
 	int r;
 
-	if (argc != 1) {
-		fprintf(stderr, "%s: This program takes no arguments\n",
-			program_invocation_short_name);
-		r = -EINVAL;
-		goto exit;
+	if (argc > 1) {
+		if (streq(argv[1], "--verbose")) {
+			verbose = true;
+		} else {
+			fprintf(stderr, "Usage: %s [--verbose]\n",
+				program_invocation_short_name);
+			r = -EINVAL;
+			goto exit;
+		}
 	}
 
 	r = ratbagd_new(&ctx);

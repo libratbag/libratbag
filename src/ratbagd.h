@@ -41,6 +41,9 @@ struct ratbagd_device;
 struct ratbagd_profile;
 struct ratbagd_resolution;
 
+
+void log_verbose(const char *fmt, ...) _printf_(1, 2);
+
 /*
  * Profiles
  */
