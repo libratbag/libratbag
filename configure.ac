@@ -138,6 +138,7 @@ AM_CONDITIONAL(BUILD_TESTS, [test "x$build_tests" = "xyes"])
 AM_CONDITIONAL(BUILD_DOCS, [test "x$build_documentation" = "xyes"])
 
 AC_CONFIG_FILES([Makefile
+		 data/Makefile
 		 doc/Makefile
 		 doc/libratbag.doxygen
 		 hwdb/Makefile
