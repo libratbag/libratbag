@@ -1,7 +1,7 @@
 AC_PREREQ([2.64])
 
 m4_define([libratbag_major_version], [0])
-m4_define([libratbag_minor_version], [1])
+m4_define([libratbag_minor_version], [2])
 m4_define([libratbag_micro_version], [0])
 m4_define([libratbag_version],
           [libratbag_major_version.libratbag_minor_version.libratbag_micro_version])
