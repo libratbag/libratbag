@@ -43,6 +43,11 @@ struct ratbagd_resolution {
 
 	sd_bus_slot *profile_vtable_slot;
 	sd_bus_slot *profile_enum_slot;
+
+	struct {
+		bool individual_report_rate;
+		bool separate_xy_res;
+	} capabilities;
 };
 
 static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
@@ -86,6 +91,12 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("CapIndividualReportRate", "b", NULL,
+			offsetof(struct ratbagd_resolution, capabilities.individual_report_rate),
+			SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("CapSeparateXYResolution", "b", NULL,
+			offsetof(struct ratbagd_resolution, capabilities.separate_xy_res),
+			SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("XResolution", "u", NULL, offsetof(struct ratbagd_resolution, xres), 0),
 	SD_BUS_PROPERTY("YResolution", "u", NULL, offsetof(struct ratbagd_resolution, yres), 0),
 	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), 0),
@@ -117,6 +128,12 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 	resolution->xres = ratbag_resolution_get_dpi_x(lib_resolution);
 	resolution->yres = ratbag_resolution_get_dpi_y(lib_resolution);
 	resolution->rate = ratbag_resolution_get_report_rate(lib_resolution);
+	resolution->capabilities.individual_report_rate =
+			ratbag_resolution_has_capability(lib_resolution,
+							 RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE);
+	resolution->capabilities.separate_xy_res =
+			ratbag_resolution_has_capability(lib_resolution,
+							 RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(resolution_buffer, "r%u", index);
