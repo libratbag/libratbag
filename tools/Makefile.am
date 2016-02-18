@@ -28,5 +28,4 @@ hidpp20_dump_page_CFLAGS = -I$(top_srcdir)/src
 
 lur_command_SOURCeS = lur-command.c
 lur_command_LDADD = ../src/liblur.la
-lur_command_LDFLAGS = -no-install
 lur_command_CFLAGS = -I$(top_srcdir)/src
