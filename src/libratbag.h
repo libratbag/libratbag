@@ -927,7 +927,7 @@ ratbag_resolution_is_default(const struct ratbag_resolution *resolution);
  *
  * @return A button context, or NULL if the button does not exist.
  *
- * @see ratbag_get_num_buttons
+ * @see ratbag_device_get_num_buttons
  */
 struct ratbag_button*
 ratbag_profile_get_button(struct ratbag_profile *profile, unsigned int index);
