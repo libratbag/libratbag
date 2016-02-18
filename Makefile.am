@@ -80,6 +80,7 @@ bin_PROGRAMS += \
 ratbagd_SOURCES = \
 	src/ratbagd.h \
 	src/ratbagd.c \
+	src/ratbagd-button.c \
 	src/ratbagd-device.c \
 	src/ratbagd-profile.c \
 	src/ratbagd-resolution.c

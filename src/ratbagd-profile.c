@@ -44,6 +44,11 @@ struct ratbagd_profile {
 	sd_bus_slot *resolution_enum_slot;
 	unsigned int n_resolutions;
 	struct ratbagd_resolution **resolutions;
+
+	sd_bus_slot *button_vtable_slot;
+	sd_bus_slot *button_enum_slot;
+	unsigned int n_buttons;
+	struct ratbagd_button **buttons;
 };
 
 static int ratbagd_profile_find_resolution(sd_bus *bus,
@@ -163,6 +168,37 @@ static int ratbagd_profile_get_default_resolution(sd_bus *bus,
 	return sd_bus_message_append(reply, "u", 0);
 }
 
+static int ratbagd_profile_find_button(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       void *userdata,
+				       void **found,
+				       sd_bus_error *error)
+{
+	_cleanup_(freep) char *name = NULL;
+	struct ratbagd_profile *profile = userdata;
+	unsigned int index;
+	int r;
+
+	r = sd_bus_path_decode_many(path,
+				    "/org/freedesktop/ratbag1/button/%/p%/b%",
+				    NULL,
+				    NULL,
+				    &name);
+	if (r <= 0)
+		return r;
+
+	r = safe_atou(name, &index);
+	if (r < 0)
+		return 0;
+
+	if (index >= profile->n_buttons || !profile->buttons[index])
+		return 0;
+
+	*found = profile->buttons[index];
+	return 1;
+}
+
 static int ratbagd_profile_set_active(sd_bus_message *m,
 				      void *userdata,
 				      sd_bus_error *error)
@@ -217,6 +253,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 {
 	_cleanup_(ratbagd_profile_freep) struct ratbagd_profile *profile = NULL;
 	struct ratbag_resolution *resolution;
+	struct ratbag_button *button;
 	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
 	unsigned int i;
 	int r;
@@ -245,6 +282,11 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	if (!profile->resolutions)
 		return -ENOMEM;
 
+	profile->n_buttons = ratbagd_device_get_num_buttons(device);
+	profile->buttons = calloc(profile->n_buttons, sizeof(*profile->buttons));
+	if (!profile->buttons)
+		return -ENOMEM;
+
 	for (i = 0; i < profile->n_resolutions; ++i) {
 		resolution = ratbag_profile_get_resolution(profile->lib_profile, i);
 		if (!resolution)
@@ -259,6 +301,24 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 			errno = -r;
 			fprintf(stderr,
 				"Cannot allocate resolution for '%s': %m\n",
+				ratbagd_device_get_name(device));
+		}
+	}
+
+	for (i = 0; i < profile->n_buttons; ++i) {
+		button = ratbag_profile_get_button(profile->lib_profile, i);
+		if (!button)
+			continue;
+
+		r = ratbagd_button_new(&profile->buttons[i],
+				       device,
+				       profile,
+				       button,
+				       i);
+		if (r < 0) {
+			errno = -r;
+			fprintf(stderr,
+				"Cannot allocate button for '%s': %m\n",
 				ratbagd_device_get_name(device));
 		}
 	}
@@ -373,6 +433,84 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 		errno = -r;
 		fprintf(stderr,
 			"Cannot register resolutions for '%s': %m\n",
+			ratbagd_device_get_name(device));
+	}
+
+	return 0;
+}
+
+static int ratbagd_profile_list_buttons(sd_bus *bus,
+					const char *path,
+					void *userdata,
+					char ***paths,
+					sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbagd_button *button;
+	char **buttons;
+	unsigned int i;
+
+	buttons = calloc(profile->n_buttons + 1, sizeof(char *));
+	if (!buttons)
+		return -ENOMEM;
+
+	for (i = 0; i < profile->n_buttons; ++i) {
+		button = profile->buttons[i];
+		if (!button)
+			continue;
+
+		buttons[i] = strdup(ratbagd_button_get_path(button));
+		if (!buttons[i])
+			goto error;
+	}
+
+	buttons[i] = NULL;
+	*paths = buttons;
+	return 1;
+
+error:
+	for (i = 0; buttons[i]; ++i)
+		free(buttons[i]);
+	free(buttons);
+	return -ENOMEM;
+}
+
+int ratbagd_profile_register_buttons(struct sd_bus *bus,
+				     struct ratbagd_device *device,
+				     struct ratbagd_profile *profile)
+{
+	_cleanup_(freep) char *prefix = NULL;
+	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
+	int r;
+
+	sprintf(index_buffer, "p%u", profile->index);
+
+	/* register resolution interfaces */
+	r = sd_bus_path_encode_many(&prefix,
+				    "/org/freedesktop/ratbag1/button/%/%",
+				    ratbagd_device_get_name(device),
+				    index_buffer);
+
+
+	if (r >= 0) {
+		r = sd_bus_add_fallback_vtable(bus,
+					       &profile->button_vtable_slot,
+					       prefix,
+					       "org.freedesktop.ratbag1.Button",
+					       ratbagd_button_vtable,
+					       ratbagd_profile_find_button,
+					       profile);
+		if (r >= 0)
+			r = sd_bus_add_node_enumerator(bus,
+						       &profile->button_enum_slot,
+						       prefix,
+						       ratbagd_profile_list_buttons,
+						       profile);
+	}
+	if (r < 0) {
+		errno = -r;
+		fprintf(stderr,
+			"Cannot register buttons for '%s': %m\n",
 			ratbagd_device_get_name(device));
 	}
 

@@ -40,7 +40,7 @@ struct ratbagd;
 struct ratbagd_device;
 struct ratbagd_profile;
 struct ratbagd_resolution;
-
+struct ratbagd_button;
 
 void log_verbose(const char *fmt, ...) _printf_(1, 2);
 
@@ -62,6 +62,9 @@ unsigned int ratbagd_profile_get_index(struct ratbagd_profile *profile);
 int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 					 struct ratbagd_device *device,
 					 struct ratbagd_profile *profile);
+int ratbagd_profile_register_buttons(struct sd_bus *bus,
+				     struct ratbagd_device *device,
+				     struct ratbagd_profile *profile);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_profile *, ratbagd_profile_free);
 
@@ -83,6 +86,21 @@ bool ratbagd_resolution_is_default(struct ratbagd_resolution *resolution);
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_resolution *, ratbagd_resolution_free);
 
 /*
+ * Buttons
+ */
+extern const sd_bus_vtable ratbagd_button_vtable[];
+
+int ratbagd_button_new(struct ratbagd_button **out,
+		       struct ratbagd_device *device,
+		       struct ratbagd_profile *profile,
+		       struct ratbag_button *lib_button,
+		       unsigned int index);
+struct ratbagd_button *ratbagd_button_free(struct ratbagd_button *button);
+const char *ratbagd_button_get_path(struct ratbagd_button *button);
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_button *, ratbagd_button_free);
+
+/*
  * Devices
  */
 
@@ -95,6 +113,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device);
 const char *ratbagd_device_get_name(struct ratbagd_device *device);
 const char *ratbagd_device_get_path(struct ratbagd_device *device);
+unsigned int ratbagd_device_get_num_buttons(struct ratbagd_device *device);
 
 bool ratbagd_device_linked(struct ratbagd_device *device);
 void ratbagd_device_link(struct ratbagd_device *device);
