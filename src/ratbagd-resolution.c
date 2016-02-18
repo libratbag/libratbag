@@ -41,9 +41,6 @@ struct ratbagd_resolution {
 	unsigned int xres, yres;
 	unsigned int rate;
 
-	sd_bus_slot *profile_vtable_slot;
-	sd_bus_slot *profile_enum_slot;
-
 	struct {
 		bool individual_report_rate;
 		bool separate_xy_res;
