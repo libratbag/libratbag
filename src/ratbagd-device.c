@@ -46,6 +46,14 @@ struct ratbagd_device {
 	sd_bus_slot *profile_enum_slot;
 	unsigned int n_profiles;
 	struct ratbagd_profile **profiles;
+
+	struct {
+		bool switchable_resolution;
+		bool switchable_profile;
+		bool button_keys;
+		bool button_macros;
+		bool default_profile;
+	} capabilities;
 };
 
 #define ratbagd_device_from_node(_ptr) \
@@ -237,6 +245,21 @@ static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("CapSwitchableResolution", "b", NULL,
+			offsetof(struct ratbagd_device, capabilities.switchable_resolution),
+			SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("CapSwitchableProfile", "b", NULL,
+			offsetof(struct ratbagd_device, capabilities.switchable_profile),
+			SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("CapButtonKeys", "b", NULL,
+			offsetof(struct ratbagd_device, capabilities.button_keys),
+			SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("CapButtonMacros", "b", NULL,
+			offsetof(struct ratbagd_device, capabilities.button_macros),
+			SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("CapDefaultProfile", "b", NULL,
+			offsetof(struct ratbagd_device, capabilities.default_profile),
+			SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
@@ -304,6 +327,23 @@ int ratbagd_device_new(struct ratbagd_device **out,
 				device->name);
 		}
 	}
+
+
+	device->capabilities.switchable_resolution =
+		ratbag_device_has_capability(lib_device,
+					     RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+	device->capabilities.switchable_profile =
+		ratbag_device_has_capability(lib_device,
+					     RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
+	device->capabilities.button_keys =
+		ratbag_device_has_capability(lib_device,
+					     RATBAG_DEVICE_CAP_BUTTON_MACROS);
+	device->capabilities.button_macros =
+		ratbag_device_has_capability(lib_device,
+					     RATBAG_DEVICE_CAP_BUTTON_MACROS);
+	device->capabilities.default_profile =
+		ratbag_device_has_capability(lib_device,
+					     RATBAG_DEVICE_CAP_DEFAULT_PROFILE);
 
 	*out = device;
 	device = NULL;
