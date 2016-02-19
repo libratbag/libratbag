@@ -265,10 +265,10 @@ static int list_devices_show(struct ratbagctl *ctl, const char *path)
 		if (r < 0)
 			return r;
 
-		if (!strcmp(property, "Id")) {
+		if (streq(property, "Id")) {
 			r = sd_bus_message_read(reply, "v", "s",
 						&prop_id);
-		} else if (!strcmp(property, "Description")) {
+		} else if (streq(property, "Description")) {
 			r = sd_bus_message_read(reply, "v", "s",
 						&prop_description);
 		} else {
@@ -447,13 +447,13 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 		if (r < 0)
 			goto exit;
 
-		if (!strcmp(property, "Id")) {
+		if (streq(property, "Id")) {
 			r = sd_bus_message_read(reply, "v", "s",
 						&prop_id);
-		} else if (!strcmp(property, "Description")) {
+		} else if (streq(property, "Description")) {
 			r = sd_bus_message_read(reply, "v", "s",
 						&prop_description);
-		} else if (!strcmp(property, "Profiles")) {
+		} else if (streq(property, "Profiles")) {
 			r = sd_bus_message_enter_container(reply, 'v', "ao");
 			if (r < 0)
 				goto exit;
@@ -486,7 +486,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 				goto exit;
 
 			r = sd_bus_message_exit_container(reply);
-		} else if (!strcmp(property, "ActiveProfile")) {
+		} else if (streq(property, "ActiveProfile")) {
 			r = sd_bus_message_read(reply, "v", "o", &profile);
 			if (r < 0)
 				goto exit;
@@ -494,7 +494,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 			r = show_device_get_profile_index(ctl,
 							  profile,
 							  &prop_active_profile);
-		} else if (!strcmp(property, "DefaultProfile")) {
+		} else if (streq(property, "DefaultProfile")) {
 			r = sd_bus_message_read(reply, "v", "o", &profile);
 			if (r < 0)
 				goto exit;
@@ -592,13 +592,13 @@ static int show_profile_print_resolutions(struct ratbagctl *ctl,
 			if (r < 0)
 				return r;
 
-			if (!strcmp(key, "dpi")) {
+			if (streq(key, "dpi")) {
 				r = sd_bus_message_read(m, "v", "u", &dpi);
-			} else if (!strcmp(key, "dpi-x")) {
+			} else if (streq(key, "dpi-x")) {
 				r = sd_bus_message_read(m, "v", "u", &dpi_x);
-			} else if (!strcmp(key, "dpi-y")) {
+			} else if (streq(key, "dpi-y")) {
 				r = sd_bus_message_read(m, "v", "u", &dpi_y);
-			} else if (!strcmp(key, "report-rate")) {
+			} else if (streq(key, "report-rate")) {
 				r = sd_bus_message_read(m, "v", "u", &report_rate);
 			} else {
 				r = sd_bus_message_skip(m, "v");
@@ -689,13 +689,13 @@ static int show_profile_print(struct ratbagctl *ctl,
 		if (r < 0)
 			goto exit;
 
-		if (!strcmp(property, "Index")) {
+		if (streq(property, "Index")) {
 			r = sd_bus_message_read(reply, "v", "u",
 						&prop_index);
-		} else if (!strcmp(property, "ActiveResolution")) {
+		} else if (streq(property, "ActiveResolution")) {
 			r = sd_bus_message_read(reply, "v", "u",
 						&prop_active_resolution);
-		} else if (!strcmp(property, "DefaultResolution")) {
+		} else if (streq(property, "DefaultResolution")) {
 			r = sd_bus_message_read(reply, "v", "u",
 						&prop_default_resolution);
 		} else {
@@ -727,7 +727,7 @@ static int show_profile_print(struct ratbagctl *ctl,
 		if (r < 0)
 			goto exit;
 
-		if (!strcmp(property, "Resolutions")) {
+		if (streq(property, "Resolutions")) {
 			r = show_profile_print_resolutions(ctl,
 							   reply,
 							   prop_active_resolution,
