@@ -137,8 +137,11 @@ static int ratbagd_device_get_description(sd_bus *bus,
 	const char *description;
 
 	description = ratbag_device_get_name(device->lib_device);
-	if (!description)
-		return -ENODATA;
+	if (!description) {
+		log_error("Unable to fetch description for %s\n",
+			  ratbagd_device_get_name(device));
+		description = "";
+	}
 
 	return sd_bus_message_append(reply, "s", description);
 }
@@ -155,8 +158,11 @@ static int ratbagd_device_get_svg(sd_bus *bus,
 	const char *svg;
 
 	svg = ratbag_device_get_svg_name(device->lib_device);
-	if (!svg)
-		return -ENODATA;
+	if (!svg) {
+		log_error("Unable to fetch SVG for %s\n",
+			  ratbagd_device_get_name(device));
+		svg = "";
+	}
 
 	return sd_bus_message_append(reply, "s", svg);
 }
