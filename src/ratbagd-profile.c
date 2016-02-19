@@ -136,8 +136,8 @@ static int ratbagd_profile_get_active_resolution(sd_bus *bus,
 		return sd_bus_message_append(reply, "u", i);
 	}
 
-	fprintf(stderr, "Unable to find active resolution for %s\n",
-		ratbagd_device_get_name(profile->device));
+	log_error("Unable to find active resolution for %s\n",
+		  ratbagd_device_get_name(profile->device));
 	return sd_bus_message_append(reply, "u", 0);
 }
 
@@ -163,8 +163,8 @@ static int ratbagd_profile_get_default_resolution(sd_bus *bus,
 		return sd_bus_message_append(reply, "u", i);
 	}
 
-	fprintf(stderr, "Unable to find default resolution for %s\n",
-		ratbagd_device_get_name(profile->device));
+	log_error("Unable to find default resolution for %s\n",
+		  ratbagd_device_get_name(profile->device));
 	return sd_bus_message_append(reply, "u", 0);
 }
 
@@ -299,9 +299,8 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 					   i);
 		if (r < 0) {
 			errno = -r;
-			fprintf(stderr,
-				"Cannot allocate resolution for '%s': %m\n",
-				ratbagd_device_get_name(device));
+			log_error("Cannot allocate resolution for '%s': %m\n",
+				  ratbagd_device_get_name(device));
 		}
 	}
 
@@ -317,9 +316,8 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 				       i);
 		if (r < 0) {
 			errno = -r;
-			fprintf(stderr,
-				"Cannot allocate button for '%s': %m\n",
-				ratbagd_device_get_name(device));
+			log_error("Cannot allocate button for '%s': %m\n",
+				  ratbagd_device_get_name(device));
 		}
 	}
 
@@ -431,9 +429,8 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 	}
 	if (r < 0) {
 		errno = -r;
-		fprintf(stderr,
-			"Cannot register resolutions for '%s': %m\n",
-			ratbagd_device_get_name(device));
+		log_error("Cannot register resolutions for '%s': %m\n",
+			  ratbagd_device_get_name(device));
 	}
 
 	return 0;
@@ -509,9 +506,8 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 	}
 	if (r < 0) {
 		errno = -r;
-		fprintf(stderr,
-			"Cannot register buttons for '%s': %m\n",
-			ratbagd_device_get_name(device));
+		log_error("Cannot register buttons for '%s': %m\n",
+			  ratbagd_device_get_name(device));
 	}
 
 	return 0;

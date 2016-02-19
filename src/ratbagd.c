@@ -47,6 +47,16 @@ void log_verbose(const char *fmt, ...)
 	va_end(args);
 }
 
+void log_error(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	fprintf(stderr, "%s error: ", program_invocation_short_name);
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+}
+
 static int ratbagd_find_device(sd_bus *bus,
 			       const char *path,
 			       const char *interface,
@@ -214,7 +224,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		ratbag_device_unref(lib_device);
 
 		if (r < 0) {
-			fprintf(stderr, "Cannot track device '%s'\n", name);
+			log_error("Cannot track device '%s'\n", name);
 			return;
 		}
 
@@ -488,8 +498,7 @@ exit:
 
 	if (r < 0) {
 		errno = -r;
-		fprintf(stderr, "%s: Failed: %m\n",
-			program_invocation_short_name);
+		log_error("Failed: %m\n");
 		return EXIT_FAILURE;
 	}
 

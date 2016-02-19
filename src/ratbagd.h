@@ -43,6 +43,7 @@ struct ratbagd_resolution;
 struct ratbagd_button;
 
 void log_verbose(const char *fmt, ...) _printf_(1, 2);
+void log_error(const char *fmt, ...) _printf_(1, 2);
 
 /*
  * Profiles

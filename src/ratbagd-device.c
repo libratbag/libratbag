@@ -216,8 +216,7 @@ static int ratbagd_device_get_active_profile(sd_bus *bus,
 		return sd_bus_message_append(reply, "u", i);
 	}
 
-	fprintf(stderr, "Unable to find active profile for %s\n",
-		device->name);
+	log_error("Unable to find active profile for %s\n", device->name);
 	return sd_bus_message_append(reply, "u", 0);
 }
 
@@ -322,9 +321,8 @@ int ratbagd_device_new(struct ratbagd_device **out,
 					i);
 		if (r < 0) {
 			errno = -r;
-			fprintf(stderr,
-				"Cannot allocate profile for '%s': %m\n",
-				device->name);
+			log_error("Cannot allocate profile for '%s': %m\n",
+				  device->name);
 		}
 	}
 
@@ -448,9 +446,8 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	}
 	if (r < 0) {
 		errno = -r;
-		fprintf(stderr,
-			"Cannot register profile interfaces for '%s': %m\n",
-			device->name);
+		log_error("Cannot register profile interfaces for '%s': %m\n",
+			  device->name);
 		return;
 	}
 
@@ -459,9 +456,8 @@ void ratbagd_device_link(struct ratbagd_device *device)
 							 device,
 							 device->profiles[i]);
 		if (r < 0) {
-			fprintf(stderr,
-				"Cannot register resolutions for '%s': %m\n",
-				device->name);
+			log_error("Cannot register resolutions for '%s': %m\n",
+				  device->name);
 		}
 
 		r = ratbagd_profile_register_buttons(device->ctx->bus,
