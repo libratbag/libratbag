@@ -342,6 +342,10 @@ static int ratbagd_new(struct ratbagd **out)
 	if (!ctx->lib_ctx)
 		return -ENOMEM;
 
+	if (verbose)
+		ratbag_log_set_priority(ctx->lib_ctx,
+					RATBAG_LOG_PRIORITY_DEBUG);
+
 	r = ratbagd_init_monitor(ctx);
 	if (r < 0)
 		return r;
