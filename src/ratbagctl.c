@@ -505,12 +505,41 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 	if (r < 0)
 		goto exit;
 
-	r = sd_bus_message_exit_container(reply);
+	r = sd_bus_message_rewind(reply, 0);
 	if (r < 0)
 		goto exit;
 
 	printf("%s - %s\n", prop_id, prop_description);
 		printf("\t            Svg: %s\n", strlen(prop_svg) > 0 ? prop_svg : "<missing>");
+
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			goto exit;
+
+		if (startswith(property, "Cap")) {
+			bool has_cap;
+			r = sd_bus_message_read(reply, "v", "b", &has_cap);
+
+			printf("%23s: %s\n", property, has_cap ? "yes" : "no");
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			goto exit;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			goto exit;
+	}
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_exit_container(reply);
+	if (r < 0)
+		goto exit;
 
 	if (prop_min_index == prop_max_index)
 		printf("\t       Profiles:\n");
@@ -608,7 +637,7 @@ static int show_profile_print_resolution(struct ratbagctl *ctl, const char *path
 	if (r < 0)
 		goto exit;
 
-	r = sd_bus_message_exit_container(reply);
+	r = sd_bus_message_rewind(reply, 0);
 	if (r < 0)
 		goto exit;
 
@@ -617,6 +646,35 @@ static int show_profile_print_resolution(struct ratbagctl *ctl, const char *path
 	printf("\t           Index: %u\n", prop_index);
 	printf("\t     Report Rate: %uHz\n", prop_report_rate);
 	printf("\t      Resolution: %ux%udpi\n", prop_xres, prop_yres);
+
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			goto exit;
+
+		if (startswith(property, "Cap")) {
+			bool has_cap;
+			r = sd_bus_message_read(reply, "v", "b", &has_cap);
+
+			printf("%24s: %s\n", property, has_cap ? "yes" : "no");
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			goto exit;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			goto exit;
+	}
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_exit_container(reply);
+	if (r < 0)
+		goto exit;
 
 	printf("\n");
 
