@@ -416,7 +416,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
 	unsigned int prop_min_index = 0, prop_max_index = 0;
 	unsigned int prop_active_profile = -1;
-	const char *prop_id = NULL, *prop_description = NULL;
+	const char *prop_id = NULL, *prop_description = NULL, *prop_svg = NULL;
 	_cleanup_(freep) char *path = NULL;
 	int r;
 
@@ -453,6 +453,8 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 		} else if (streq(property, "Description")) {
 			r = sd_bus_message_read(reply, "v", "s",
 						&prop_description);
+		} else if (streq(property, "Svg")) {
+			r = sd_bus_message_read(reply, "v", "s", &prop_svg);
 		} else if (streq(property, "Profiles")) {
 			r = sd_bus_message_enter_container(reply, 'v', "ao");
 			if (r < 0)
@@ -508,6 +510,7 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 		goto exit;
 
 	printf("%s - %s\n", prop_id, prop_description);
+		printf("\t            Svg: %s\n", strlen(prop_svg) > 0 ? prop_svg : "<missing>");
 
 	if (prop_min_index == prop_max_index)
 		printf("\t       Profiles:\n");
@@ -549,76 +552,99 @@ static int verb_show_device(struct ratbagctl *ctl, int argc, char **argv)
 	return show_device_print(ctl, device);
 }
 
+static int show_profile_print_resolution(struct ratbagctl *ctl, const char *path)
+{
+	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	unsigned int prop_index = -1,
+		     prop_report_rate = -1,
+		     prop_xres = -1,
+		     prop_yres = -1;
+	int r;
+
+	r = sd_bus_call_method(ctl->bus,
+			       "org.freedesktop.ratbag1",
+			       path,
+			       "org.freedesktop.DBus.Properties",
+			       "GetAll",
+			       &error,
+			       &reply,
+			       "s",
+			       "org.freedesktop.ratbag1.Resolution");
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_enter_container(reply, 'a', "{sv}");
+	if (r < 0)
+		goto exit;
+
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			goto exit;
+
+		if (streq(property, "Index")) {
+			r = sd_bus_message_read(reply, "v", "u",
+						&prop_index);
+		} else if (streq(property, "ReportRate")) {
+			r = sd_bus_message_read(reply, "v", "u",
+						&prop_report_rate);
+		} else if (streq(property, "XResolution")) {
+			r = sd_bus_message_read(reply, "v", "u", &prop_xres);
+		} else if (streq(property, "YResolution")) {
+			r = sd_bus_message_read(reply, "v", "u", &prop_yres);
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			goto exit;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			goto exit;
+	}
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_exit_container(reply);
+	if (r < 0)
+		goto exit;
+
+	printf("resolution-%u\n", prop_index);
+
+	printf("\t           Index: %u\n", prop_index);
+	printf("\t     Report Rate: %uHz\n", prop_report_rate);
+	printf("\t      Resolution: %ux%udpi\n", prop_xres, prop_yres);
+
+	printf("\n");
+
+exit:
+	if (r < 0)
+		fprintf(stderr, "Cannot show resolution: %s\n",
+			error.message ? : "Parser error");
+	return r;
+}
+
 static int show_profile_print_resolutions(struct ratbagctl *ctl,
 					  sd_bus_message *m,
 					  unsigned int active_resolution,
 					  unsigned int default_resolution)
 {
-	unsigned int k = 0;
+	const char *resolution;
 	int r;
 
-	r = sd_bus_message_enter_container(m, 'v', "aa{sv}");
+	r = sd_bus_message_enter_container(m, 'v', "ao");
 	if (r < 0)
 		return r;
 
-	r = sd_bus_message_enter_container(m, 'a', "a{sv}");
+	r = sd_bus_message_enter_container(m, 'a', "o");
 	if (r < 0)
 		return r;
 
-	while ((r = sd_bus_message_enter_container(m, 'a', "{sv}")) > 0) {
-		unsigned int dpi = -1, dpi_x = -1, dpi_y = -1;
-		unsigned int report_rate = -1;
-		const char *key;
-
-		while ((r = sd_bus_message_enter_container(m, 'e', "sv")) > 0) {
-			r = sd_bus_message_read_basic(m, 's', &key);
-			if (r < 0)
-				return r;
-
-			if (streq(key, "dpi")) {
-				r = sd_bus_message_read(m, "v", "u", &dpi);
-			} else if (streq(key, "dpi-x")) {
-				r = sd_bus_message_read(m, "v", "u", &dpi_x);
-			} else if (streq(key, "dpi-y")) {
-				r = sd_bus_message_read(m, "v", "u", &dpi_y);
-			} else if (streq(key, "report-rate")) {
-				r = sd_bus_message_read(m, "v", "u", &report_rate);
-			} else {
-				r = sd_bus_message_skip(m, "v");
-			}
-			if (r < 0)
-				return r;
-
-			r = sd_bus_message_exit_container(m);
-			if (r < 0)
-				return r;
-		}
-		if (r < 0)
-			return r;
-
-		r = sd_bus_message_exit_container(m);
-		if (r < 0)
-			return r;
-
-		if (dpi != (unsigned int)-1) {
-			dpi_x = dpi;
-			dpi_y = dpi;
-		}
-
-		if (dpi_x != (unsigned int)-1 &&
-		    dpi_y != (unsigned int)-1 &&
-		    report_rate != (unsigned int)-1) {
-			printf("%s%5u x %-5u dpi @ %5u Hz%s%s\n",
-			       (k != 0) ? "\t\t\t  " : "",
-			       dpi_x, dpi_y, report_rate,
-			       (k == active_resolution) ? " (active)" : "",
-			       (k == default_resolution) ? " (default)" : "");
-		}
-
-		++k;
-	}
-	if (r < 0)
-		return r;
+	while ((r = sd_bus_message_read_basic(m, 'o', &resolution)) > 0)
+		show_profile_print_resolution(ctl, resolution);
 
 	r = sd_bus_message_exit_container(m);
 	if (r < 0)
@@ -627,9 +653,6 @@ static int show_profile_print_resolutions(struct ratbagctl *ctl,
 	r = sd_bus_message_exit_container(m);
 	if (r < 0)
 		return r;
-
-	if (k == 0)
-		printf("\n");
 
 	return 0;
 }
@@ -702,7 +725,6 @@ static int show_profile_print(struct ratbagctl *ctl,
 
 	printf("\t           Index: %u\n", prop_index);
 
-	printf("\t     Resolutions: ");
 	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
 		const char *property;
 
