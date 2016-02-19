@@ -487,13 +487,9 @@ static int show_device_print(struct ratbagctl *ctl, const char *device)
 
 			r = sd_bus_message_exit_container(reply);
 		} else if (streq(property, "ActiveProfile")) {
-			r = sd_bus_message_read(reply, "v", "o", &profile);
+			r = sd_bus_message_read(reply, "v", "u", &prop_active_profile);
 			if (r < 0)
 				goto exit;
-
-			r = show_device_get_profile_index(ctl,
-							  profile,
-							  &prop_active_profile);
 		} else {
 			r = sd_bus_message_skip(reply, "v");
 		}
