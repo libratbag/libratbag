@@ -65,6 +65,9 @@ static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
 
 	r = ratbag_resolution_set_report_rate(resolution->lib_resolution,
 					      rate);
+	if (r == 0) {
+		resolution->rate = rate;
+	}
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -82,6 +85,10 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 
 	r = ratbag_resolution_set_dpi_xy(resolution->lib_resolution,
 					 xres, yres);
+	if (r == 0) {
+		resolution->xres = xres;
+		resolution->yres = yres;
+	}
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -94,9 +101,9 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_PROPERTY("CapSeparateXYResolution", "b", NULL,
 			offsetof(struct ratbagd_resolution, capabilities.separate_xy_res),
 			SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("XResolution", "u", NULL, offsetof(struct ratbagd_resolution, xres), 0),
-	SD_BUS_PROPERTY("YResolution", "u", NULL, offsetof(struct ratbagd_resolution, yres), 0),
-	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), 0),
+	SD_BUS_PROPERTY("XResolution", "u", NULL, offsetof(struct ratbagd_resolution, xres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("YResolution", "u", NULL, offsetof(struct ratbagd_resolution, yres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
