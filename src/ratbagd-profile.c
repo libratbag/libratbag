@@ -114,6 +114,39 @@ static int ratbagd_profile_get_resolutions(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+static int ratbagd_profile_get_buttons(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       const char *property,
+				       sd_bus_message *reply,
+				       void *userdata,
+				       sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbagd_button *button;
+	unsigned int i;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "o");
+	if (r < 0)
+		return r;
+
+	for (i = 0; i < profile->n_buttons; ++i) {
+		button = profile->buttons[i];
+		if (!button)
+			continue;
+
+		r = sd_bus_message_append(reply,
+					  "o",
+					  ratbagd_button_get_path(button));
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
+
 static int ratbagd_profile_get_active_resolution(sd_bus *bus,
 						 const char *path,
 						 const char *interface,
@@ -239,6 +272,7 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
+	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
 	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
@@ -482,7 +516,7 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 
 	sprintf(index_buffer, "p%u", profile->index);
 
-	/* register resolution interfaces */
+	/* register button interfaces */
 	r = sd_bus_path_encode_many(&prefix,
 				    "/org/freedesktop/ratbag1/button/%/%",
 				    ratbagd_device_get_name(device),

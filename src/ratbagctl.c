@@ -715,6 +715,176 @@ static int show_profile_print_resolutions(struct ratbagctl *ctl,
 	return 0;
 }
 
+static int show_profile_print_button(struct ratbagctl *ctl, const char *path)
+{
+	_cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+	unsigned int prop_index = -1,
+		     prop_btnmap = -1;
+	unsigned int prop_keymap[20] = {0};
+	const char *prop_type,
+		   *prop_action_type,
+		   *prop_special;
+	const char *prop_action_types[20] = {0};
+	unsigned int idx = 0;
+	unsigned int modmap = 0;
+	int r;
+
+	r = sd_bus_call_method(ctl->bus,
+			       "org.freedesktop.ratbag1",
+			       path,
+			       "org.freedesktop.DBus.Properties",
+			       "GetAll",
+			       &error,
+			       &reply,
+			       "s",
+			       "org.freedesktop.ratbag1.Button");
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_enter_container(reply, 'a', "{sv}");
+	if (r < 0)
+		goto exit;
+
+	while ((r = sd_bus_message_enter_container(reply, 'e', "sv")) > 0) {
+		const char *property;
+
+		r = sd_bus_message_read_basic(reply, 's', &property);
+		if (r < 0)
+			goto exit;
+
+		if (streq(property, "Index")) {
+			r = sd_bus_message_read(reply, "v", "u",
+						&prop_index);
+		} else if (streq(property, "Type")) {
+			r = sd_bus_message_read(reply, "v", "s",
+						&prop_type);
+		} else if (streq(property, "ButtonMapping")) {
+			r = sd_bus_message_read(reply, "v", "u",
+						&prop_btnmap);
+		} else if (streq(property, "SpecialMapping")) {
+			r = sd_bus_message_read(reply, "v", "s",
+						&prop_special);
+		} else if (streq(property, "KeyMapping")) {
+			r = sd_bus_message_enter_container(reply, 'v', "au");
+			if (r < 0)
+				goto exit;
+
+			r = sd_bus_message_enter_container(reply, 'a', "u");
+			if (r < 0)
+				goto exit;
+
+			idx = 0;
+			while ((r = sd_bus_message_read_basic(reply, 'u',
+							      &prop_keymap[idx++])) > 0)
+				;
+
+			r = sd_bus_message_exit_container(reply);
+			if (r < 0)
+				goto exit;
+
+			r = sd_bus_message_exit_container(reply);
+			if (r < 0)
+				goto exit;
+		} else if (streq(property, "ActionType")) {
+			r = sd_bus_message_read(reply, "v", "s",
+						&prop_action_type);
+		} else if (streq(property, "ActionTypes")) {
+			r = sd_bus_message_enter_container(reply, 'v', "as");
+			if (r < 0)
+				goto exit;
+
+			r = sd_bus_message_enter_container(reply, 'a', "s");
+			if (r < 0)
+				goto exit;
+
+			idx = 0;
+			while ((r = sd_bus_message_read_basic(reply, 's',
+							      &prop_action_types[idx++])) > 0)
+				;
+
+			r = sd_bus_message_exit_container(reply);
+			if (r < 0)
+				goto exit;
+
+			r = sd_bus_message_exit_container(reply);
+			if (r < 0)
+				goto exit;
+		} else {
+			r = sd_bus_message_skip(reply, "v");
+		}
+		if (r < 0)
+			goto exit;
+
+		r = sd_bus_message_exit_container(reply);
+		if (r < 0)
+			goto exit;
+	}
+	if (r < 0)
+		goto exit;
+
+	r = sd_bus_message_rewind(reply, 0);
+	if (r < 0)
+		goto exit;
+
+	printf("button-%u\n", prop_index);
+
+	printf("\t           Index: %u\n", prop_index);
+	printf("\t            Type: %s\n", prop_type);
+	printf("\t     Action type: %s\n", prop_action_type);
+	idx = 0;
+	printf("\t    Action types: ");
+	while ((prop_action_type = prop_action_types[idx++]) != NULL)
+		printf("%s ", prop_action_type);
+	printf("\n");
+	printf("\t Special mapping: %s\n", prop_special);
+	printf("\t  Button mapping: %d\n", prop_btnmap);
+
+	printf("\t     Key mapping: %d (", prop_keymap[0]);
+	idx = 1;
+	if (prop_keymap[1] == 0) {
+		printf("no modifiers");
+	} else {
+		printf("modifiers ");
+		while ((modmap = prop_keymap[idx++]) != 0)
+			printf("%d ", modmap);
+	}
+	printf(")\n");
+exit:
+	if (r < 0)
+		fprintf(stderr, "Cannot show button: %s\n",
+			error.message ? : "Parser error");
+	return r;
+}
+
+static int show_profile_print_buttons(struct ratbagctl *ctl,
+				      sd_bus_message *m)
+{
+	const char *button;
+	int r;
+
+	r = sd_bus_message_enter_container(m, 'v', "ao");
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_enter_container(m, 'a', "o");
+	if (r < 0)
+		return r;
+
+	while ((r = sd_bus_message_read_basic(m, 'o', &button)) > 0)
+		show_profile_print_button(ctl, button);
+
+	r = sd_bus_message_exit_container(m);
+	if (r < 0)
+		return r;
+
+	r = sd_bus_message_exit_container(m);
+	if (r < 0)
+		return r;
+
+	return 0;
+}
+
 static int show_profile_print(struct ratbagctl *ctl,
 			      const char *device,
 			      const char *profile)
@@ -795,6 +965,8 @@ static int show_profile_print(struct ratbagctl *ctl,
 							   reply,
 							   prop_active_resolution,
 							   prop_default_resolution);
+		} else if (streq(property, "Buttons")) {
+			r = show_profile_print_buttons(ctl, reply);
 		} else {
 			r = sd_bus_message_skip(reply, "v");
 		}
