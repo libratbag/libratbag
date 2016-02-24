@@ -959,7 +959,7 @@ LIBRATBAG_EXPORT enum ratbag_button_action_special
 ratbag_button_get_special(struct ratbag_button *button)
 {
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_SPECIAL)
-		return 0;
+		return RATBAG_BUTTON_ACTION_SPECIAL_INVALID;
 
 	return button->action.action.special;
 }
