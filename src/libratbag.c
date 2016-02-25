@@ -952,6 +952,9 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 
 	rc = button->profile->device->driver->write_button(button, &action);
 
+	if (rc == 0)
+		button->action = action;
+
 	return rc;
 }
 
@@ -980,6 +983,9 @@ ratbag_button_set_special(struct ratbag_button *button,
 	action.action.special = act;
 
 	rc = button->profile->device->driver->write_button(button, &action);
+
+	if (rc == 0)
+		button->action = action;
 
 	return rc;
 }
@@ -1017,6 +1023,9 @@ ratbag_button_set_key(struct ratbag_button *button,
 	action.action.key.key = key;
 	rc = button->profile->device->driver->write_button(button, &action);
 
+	if (rc == 0)
+		button->action = action;
+
 	return rc;
 }
 
@@ -1031,6 +1040,9 @@ ratbag_button_disable(struct ratbag_button *button)
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 	rc = button->profile->device->driver->write_button(button, &action);
+
+	if (rc == 0)
+		button->action = action;
 
 	return rc;
 }
