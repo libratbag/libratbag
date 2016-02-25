@@ -295,7 +295,7 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 		special = RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL;
 	else {
 		log_error("Unknown button special action %s\n", s);
-		return 0;
+		return sd_bus_reply_method_return(m, "u", -1);
 	}
 
 	r = ratbag_button_set_special(button->lib_button, special);
