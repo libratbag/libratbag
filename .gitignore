@@ -28,3 +28,4 @@ libtool
 ratbagctl
 ratbagd
 stamp-*
+ratbagd.service

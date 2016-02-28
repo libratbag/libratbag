@@ -132,6 +132,16 @@ PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd >= 227])
 PKG_CHECK_MODULES([LIBRATBAG], [libratbag])
 
 # ------------------------------------------------------------------------------
+# options
+AC_ARG_WITH([systemd-unit-dir],
+	    AS_HELP_STRING([--with-systemd-unit-dir=DIR],
+			   [systemd unit directory [[default=$libdir/systemd/system]]]),
+	    [unitdir="$withval"],
+	    [unitdir="$libdir/systemd/system"])
+SYSTEMD_UNIT_DIR=${unitdir}
+AC_SUBST(SYSTEMD_UNIT_DIR)
+
+# ------------------------------------------------------------------------------
 # report
 
 AC_CONFIG_FILES([Makefile])

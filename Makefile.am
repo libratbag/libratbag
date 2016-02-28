@@ -96,3 +96,12 @@ ratbagd_LDADD = \
 	$(LIBUDEV_LIBS) \
 	$(LIBSYSTEMD_LIBS) \
 	$(LIBRATBAG_LIBS)
+
+unitdir = $(SYSTEMD_UNIT_DIR)
+unit_DATA = ratbagd.service
+
+$(unit_DATA): $(unit_DATA).in
+	$(AM_V_GEN)$(SED) -e 's|__BIN_PREFIX__|$(bindir)|g' < $< > $@
+
+EXTRA_DIST += ratbagd.service.in
+BUILT_SOURCES += ratbagd.service
