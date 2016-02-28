@@ -207,7 +207,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 {
 	struct ratbag *ratbag = device->ratbag;
 	_cleanup_profile_ struct ratbag_profile *profile = NULL;
-	_cleanup_resolution_ struct ratbag_resolution *res = NULL;
 	bool has_active = false;
 	unsigned int nres, nprofiles;
 	bool rc = false;
