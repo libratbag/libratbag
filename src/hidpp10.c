@@ -635,7 +635,7 @@ struct _hidpp10_profile_9 {
 	uint8_t default_dpi_mode;
 	uint8_t unknown2[2];
 	uint8_t usb_refresh_rate;
-	union _hidpp10_button_binding buttons[10];
+	union _hidpp10_button_binding buttons[PROFILE_NUM_BUTTONS_G9];
 	uint8_t unknown3[3];
 	union _hidpp10_profile_metadata metadata;
 } __attribute__((packed));
@@ -1437,6 +1437,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+		return -EINVAL;
 	}
 
 	profile = &dev->profiles[number];
@@ -1484,7 +1485,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 			hidpp10_fill_dpi_modes_8(dev, profile, p9->dpi_modes, PROFILE_NUM_DPI_MODES);
 			hidpp10_profile_parse_names(dev, profile, number, &p9->metadata);
-			hidpp10_fill_buttons(dev, profile, buttons, 10);
+			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS_G9);
 			break;
 		default:
 			hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");

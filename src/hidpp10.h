@@ -365,6 +365,7 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 /* 0x0F: Profile queries                                                      */
 /* -------------------------------------------------------------------------- */
 #define PROFILE_NUM_BUTTONS				13
+#define PROFILE_NUM_BUTTONS_G9				10
 #define PROFILE_NUM_DPI_MODES				5
 #define PROFILE_BUTTON_TYPE_BUTTON			0x81
 #define PROFILE_BUTTON_TYPE_KEYS			0x82
