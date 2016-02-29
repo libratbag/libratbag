@@ -169,6 +169,15 @@ static int ratbagd_button_set_button(sd_bus_message *m,
 
 	r = ratbag_button_set_button(button->lib_button, map);
 
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       "org.freedesktop.ratbag1.Button",
+					       "ButtonMapping",
+					       NULL);
+	}
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -299,6 +308,15 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 	}
 
 	r = ratbag_button_set_special(button->lib_button, special);
+
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       "org.freedesktop.ratbag1.Button",
+					       "SpecialMapping",
+					       NULL);
+	}
 
 	return sd_bus_reply_method_return(m, "u", r);
 }
