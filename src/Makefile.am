@@ -44,15 +44,19 @@ liblur_la_LIBADD =			\
 liblur_la_CFLAGS = 			\
 	-I$(top_srcdir)/include 	\
 	$(GCC_CFLAGS)
-liblur_la_LDFLAGS = -shared
+EXTRA_liblur_la_DEPENDENCIES = $(srcdir)/liblur.sym
+
+liblur_la_LDFLAGS = -version-info $(LIBLUR_LT_VERSION) -shared \
+		      -Wl,--version-script=$(srcdir)/liblur.sym
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libratbag.pc
+pkgconfig_DATA = libratbag.pc \
+		 liblur.pc
 
 AM_CFLAGS = $(GCC_CFLAGS)
 
 DISTCLEANFILES = libratbag-version.h
-EXTRA_DIST = libratbag-version.h.in libratbag.sym
+EXTRA_DIST = libratbag-version.h.in libratbag.sym liblur.sym
 
 # The hidpp libraries are static libraries only for in-tree tools. No API
 # stability is guaranteed here.

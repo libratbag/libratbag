@@ -22,16 +22,18 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([1.11 foreign no-dist-gzip dist-xz])
 
-# Before making a release, the LIBRATBAG_LT_VERSION string should be
-# modified.
-# The string is of the form C:R:A.
+# Before making a release, the LIBRATBAG_LT_VERSION and LIBLUR_LT_VERSION
+# strings should be modified.
+# The strings are of the form C:R:A.
 # a) If binary compatibility has been broken (eg removed or changed interfaces)
 #    change to C+1:0:0.
 # b) If interfaces have been changed or added, but binary compatibility has
 #    been preserved, change to C+1:0:A+1
 # c) If the interface is the same as the previous version, change to C:R+1:A
 LIBRATBAG_LT_VERSION=1:0:0
+LIBLUR_LT_VERSION=1:0:0
 AC_SUBST(LIBRATBAG_LT_VERSION)
+AC_SUBST(LIBLUR_LT_VERSION)
 
 AM_SILENT_RULES([yes])
 AC_USE_SYSTEM_EXTENSIONS
@@ -145,6 +147,7 @@ AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 src/libratbag.pc
 		 src/libratbag-version.h
+		 src/liblur.pc
 		 test/Makefile
 		 tools/Makefile])
 AC_CONFIG_FILES([test/symbols-leak-test],
