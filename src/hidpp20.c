@@ -907,6 +907,8 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 /* -------------------------------------------------------------------------- */
 
 #define CMD_ONBOARD_PROFILES_GET_PROFILES_DESCR		0x00
+#define CMD_ONBOARD_PROFILES_SET_ONBOARD_MODE		0x10
+#define CMD_ONBOARD_PROFILES_GET_ONBOARD_MODE		0x20
 #define CMD_ONBOARD_PROFILES_SET_CURRENT_PROFILE	0x30
 #define CMD_ONBOARD_PROFILES_GET_CURRENT_PROFILE	0x40
 #define CMD_ONBOARD_PROFILES_MEMORY_READ		0x50
@@ -919,6 +921,10 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_PAGE_SIZE		(16*16)
 #define HIDPP20_PROFILE_SIZE		HIDPP20_PAGE_SIZE
 #define HIDPP20_BUTTON_HID		0x80
+
+#define HIDPP20_MODE_NO_CHANGE				0x00
+#define HIDPP20_ONBOARD_MODE				0x01
+#define HIDPP20_HOST_MODE				0x02
 
 #define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_PROTOSS	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_PROTOSS	0x01
@@ -1095,6 +1101,58 @@ hidpp20_onboard_profiles_write_page(struct hidpp20_device *device,
 	return hidpp20_onboard_profiles_write_data(device, page, 0x00, data, HIDPP20_PAGE_SIZE);
 }
 
+static int
+hidpp20_onboard_profiles_get_onboard_mode(struct hidpp20_device *device)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ONBOARD_PROFILES_GET_ONBOARD_MODE,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ONBOARD_PROFILES);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return msg.msg.parameters[0];
+}
+
+static int
+hidpp20_onboard_profiles_set_onboard_mode(struct hidpp20_device *device,
+					  uint8_t onboard_mode)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ONBOARD_PROFILES_SET_ONBOARD_MODE,
+		.msg.parameters[1] = onboard_mode,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ONBOARD_PROFILES);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
 int
 hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 {
@@ -1160,6 +1218,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		.msg.address = CMD_ONBOARD_PROFILES_GET_PROFILES_DESCR,
 	};
 	struct hidpp20_onboard_profiles_info *info;
+	int onboard_mode;
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ONBOARD_PROFILES);
@@ -1203,6 +1262,21 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		return -ENOTSUP;
 	}
 
+	rc = hidpp20_onboard_profiles_get_onboard_mode(device);
+	if (rc < 0)
+		return rc;
+
+	onboard_mode = rc;
+	if (onboard_mode != HIDPP20_ONBOARD_MODE) {
+		hidpp_log_raw(&device->base,
+			      "not on the correct mode: %d.\n",
+			      onboard_mode);
+		rc = hidpp20_onboard_profiles_set_onboard_mode(device,
+							       HIDPP20_ONBOARD_MODE);
+		if (rc < 0)
+			return rc;
+	}
+
 	profiles = zalloc(sizeof(struct hidpp20_profiles) +
 			  info->profile_count * sizeof(struct hidpp20_profile));
 
@@ -1223,6 +1297,8 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		profiles->wireless = 1;
 		break;
 	}
+
+	
 
 	*profiles_list = profiles;
 
