@@ -364,6 +364,10 @@ struct hidpp20_profiles {
 	uint8_t num_profiles;
 	uint8_t num_buttons;
 	uint8_t num_modes;
+	uint8_t has_g_shift;
+	uint8_t has_dpi_shift;
+	uint8_t corded;
+	uint8_t wireless;
 	struct hidpp20_profile profiles[0];
 };
 

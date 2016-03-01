@@ -920,6 +920,25 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_PROFILE_SIZE		HIDPP20_PAGE_SIZE
 #define HIDPP20_BUTTON_HID		0x80
 
+#define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_PROTOSS	0x01
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_PROTOSS	0x01
+#define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_PROTOSS	0x01
+
+struct hidpp20_onboard_profiles_info {
+	uint8_t memory_model_id;
+	uint8_t profile_format_id;
+	uint8_t macro_format_id;
+	uint8_t profile_count;
+	uint8_t profile_count_oob;
+	uint8_t button_count;
+	uint8_t sector_count;
+	uint16_t sector_size;
+	uint8_t mechanical_layout;
+	uint8_t various_info;
+	uint8_t reserved[5];
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_onboard_profiles_info) == 16, "Invalid size");
+
 int
 hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint8_t read_rom,
@@ -1133,7 +1152,6 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 				    struct hidpp20_profiles **profiles_list)
 {
 	uint8_t feature_index;
-	uint8_t profiles_count;
 	int rc;
 	struct hidpp20_profiles *profiles;
 	union hidpp20_message msg = {
@@ -1141,6 +1159,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_GET_PROFILES_DESCR,
 	};
+	struct hidpp20_onboard_profiles_info *info;
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ONBOARD_PROFILES);
@@ -1153,14 +1172,57 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	profiles_count = msg.msg.parameters[3];
+	info = (struct hidpp20_onboard_profiles_info *)msg.msg.parameters;
+
+	if (info->memory_model_id != HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_PROTOSS) {
+		hidpp_log_error(&device->base,
+				"Memory layout not supported: 0x%02x.\n",
+				info->memory_model_id);
+		return -ENOTSUP;
+	}
+
+	if (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_PROTOSS) {
+		hidpp_log_error(&device->base,
+				"Profile layout not supported: 0x%02x.\n",
+				info->profile_format_id);
+		return -ENOTSUP;
+	}
+
+	if (info->macro_format_id != HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_PROTOSS) {
+		hidpp_log_error(&device->base,
+				"Macro format not supported: 0x%02x.\n",
+				info->macro_format_id);
+		return -ENOTSUP;
+	}
+
+	info->sector_size = hidpp_be_u16_to_cpu(info->sector_size);
+	if (info->sector_size != HIDPP20_PAGE_SIZE) {
+		hidpp_log_error(&device->base,
+				"Unsupported sector size: %d.\n",
+				info->sector_size);
+		return -ENOTSUP;
+	}
 
 	profiles = zalloc(sizeof(struct hidpp20_profiles) +
-			  profiles_count * sizeof(struct hidpp20_profile));
+			  info->profile_count * sizeof(struct hidpp20_profile));
 
-	profiles->num_profiles = profiles_count;
+	profiles->num_profiles = info->profile_count;
 	profiles->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
 	profiles->num_modes = HIDPP20_DPI_COUNT;
+	profiles->has_g_shift = (info->mechanical_layout & 0x03) == 2;
+	profiles->has_dpi_shift = (info->mechanical_layout & 0x0c) == 2;
+	switch(info->various_info & 0x07) {
+	case 1:
+		profiles->corded = 1;
+		break;
+	case 2:
+		profiles->wireless = 1;
+		break;
+	case 4:
+		profiles->corded = 1;
+		profiles->wireless = 1;
+		break;
+	}
 
 	*profiles_list = profiles;
 
