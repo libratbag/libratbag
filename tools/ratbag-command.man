@@ -1,0 +1,141 @@
+.TH RATBAG_COMMAND "1"
+.SH NAME
+ratbag-command \- Query or change a device's settings
+.SH SYNOPSIS
+.B ratbag-command [OPTIONS] {COMMAND} ... /path/to/device
+.SH DESCRIPTION
+.PP
+The
+.I ratbag-commandq
+tool query or change a device's settings.
+.PP
+This tool usually needs to be run as root to have access to the
+/dev/input/eventX nodes.
+.SH OPTIONS
+.TP 8
+.B --verbose
+Print debugging output
+.TP 8
+.B --verbose=raw
+Print debugging output with protocol output. No guarantees are given regarding
+the output format when this flag is on.
+.TP 8
+.B --help
+Print the help.
+.SH General Commands
+.TP 8
+.B list
+List supported devices (does not take a device argument)
+.SH Device Commands
+.TP 8
+.B info
+Print information about a device
+.SH Profile Commands
+.TP 8
+.B profile active get
+Print the currently active profile
+.TP 8
+.B profile active set N
+Set profile N as to the  active profile
+.TP 8
+.B profile N {COMMAND}
+Use profile N for COMMAND
+.SH Resolution Commands
+Resolution commands work on the given profile, or on the active profile if none
+is given.
+.TP 8
+.B resolution active get
+Print the currently active resolution
+.TP 8
+.B resolution active set N
+Set resolution N as the active resolution
+.TP 8
+.B resolution N {COMMAND}
+Use resolution N for COMMAND
+.SH DPI Commands
+DPI commands work on the given profile and resolution, or on the active
+resolution of the active profile if none are given.
+.TP 8
+.B dpi get
+Print the dpi value
+.TP 8
+.B dpi set N
+Set the dpi value to N
+.TP 8
+.B rate get
+Print the report rate in Hz
+.TP 8
+.B rate set N
+Set the report rate in N Hz
+.SH Button Commands
+Button commands work on the given profile, or on the active profile if none is
+given.
+.TP 8
+.B button count
+Print the number of buttons
+.TP 8
+.B button N action get
+Print the button action
+.TP 8
+.B button N action set button B
+Set the button action to button B
+.TP 8
+.B button N action set special S
+Set the button action to special action S
+.TP 8
+.B button N action set macro ...
+Set the button action to the given macro
+.PP
+.B Macro syntax:
+.HP 8
+A macro is a series of key events or waiting periods. Keys must be specified
+in linux/input.h key names.
+.RS
+.TP 8
+.B KEY_A
+Press and release 'a'
+.TP 8
+.B +KEY_A
+Press 'a'
+.TP 8
+.B -KEY_A
+Release 'a'
+.TP 8
+.B t300
+Wait 300ms
+.RE
+.SH Special Commands
+These commands are for testing purposes and may be removed without notice
+.TP 8
+.B switch-etekcity
+Switch the Etekcity mouse active profile
+.SH Examples
+.TP 8
+ratbag-command profile active get
+.TP 8
+ratbag-command profile 0 resolution active set 4
+.TP 8
+ratbag-command profile 0 resolution 1 dpi get
+.TP 8
+ratbag-command resolution 4 rate get
+.TP 8
+ratbag-command dpi set 800
+.SH Exit codes
+.TP 8
+.B 0
+Success
+.TP 8
+.B 1
+Unsupported feature or index out of available range
+.TP 8
+.B 2
+Commandline arguments are invalid
+.TP 8
+.B 3
+Invalid device or a command failed on the device
+.SH NOTES
+.PP
+There is currently no guarantees that the output format of
+.B ratbag-command
+will not change in the future. There should be some stability with the commands
+mentioned in this man page, but do not expect it to stay the same.
