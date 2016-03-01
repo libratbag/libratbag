@@ -881,6 +881,26 @@ hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
 }
 
 static void
+hidpp10_write_dpi_modes_8(struct hidpp10_device *dev,
+			  struct hidpp10_profile *profile,
+			  struct _hidpp10_dpi_mode_8 *dpi_list,
+			  unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count; i++) {
+		struct _hidpp10_dpi_mode_8 *dpi = &dpi_list[i];
+
+		dpi->res = hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres);
+
+		dpi->led1 = profile->dpi_modes[i].led[0] ? 0x02 : 0x01;
+		dpi->led2 = profile->dpi_modes[i].led[1] ? 0x02 : 0x01;
+		dpi->led3 = profile->dpi_modes[i].led[2] ? 0x02 : 0x01;
+		dpi->led4 = profile->dpi_modes[i].led[3] ? 0x02 : 0x01;
+	}
+}
+
+static void
 hidpp10_fill_dpi_modes_8_dual(struct hidpp10_device *dev,
 			      struct hidpp10_profile *profile,
 			      struct _hidpp10_dpi_mode_8_dual *dpi_list,
@@ -1606,6 +1626,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	union _hidpp10_profile_data *data = (union _hidpp10_profile_data *)page_data;
 	struct _hidpp10_profile_500 *p500 = &data->profile_500;
 	struct _hidpp10_profile_700 *p700 = &data->profile_700;
+	struct _hidpp10_profile_9 *p9 = &data->profile_9;
 	int res;
 	struct hidpp10_directory directory[16]; /* completely random profile count */
 	union _hidpp10_button_binding *buttons;
@@ -1637,6 +1658,9 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	case HIDPP10_PROFILE_G700:
 		buttons = p700->buttons;
 		break;
+	case HIDPP10_PROFILE_G9:
+		buttons = p9->buttons;
+		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
 	}
@@ -1646,6 +1670,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	 * values when we are not sure. */
 	switch (dev->profile_type) {
 	case HIDPP10_PROFILE_G500:
+	case HIDPP10_PROFILE_G9:
 		/* we do not know the actual values of the remaining field right now
 		 * so pre-fill with the current data */
 		res = hidpp10_read_page(dev, directory[number].page, page_data);
@@ -1680,6 +1705,17 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		hidpp10_write_dpi_modes_8_dual(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 		hidpp10_profile_set_names(dev, profile, number, &p700->metadata);
+		break;
+	case HIDPP10_PROFILE_G9:
+		p9->red = profile->red;
+		p9->green = profile->green;
+		p9->blue = profile->blue;
+		p9->default_dpi_mode = profile->default_dpi_mode;
+		p9->usb_refresh_rate = 1000 / profile->refresh_rate;
+
+		hidpp10_write_dpi_modes_8(dev, profile, p9->dpi_modes, PROFILE_NUM_DPI_MODES);
+		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
+		hidpp10_profile_set_names(dev, profile, number, &p9->metadata);
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
