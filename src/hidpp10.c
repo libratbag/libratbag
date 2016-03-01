@@ -520,16 +520,16 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 	} \
 }
 
-struct _hidpp10_dpi_mode_8_sym {
+struct _hidpp10_dpi_mode_8 {
 	uint8_t res;
 	uint8_t led1:4;
 	uint8_t led2:4;
 	uint8_t led3:4;
 	uint8_t led4:4;
 } __attribute__((packed));
-_Static_assert(sizeof(struct _hidpp10_dpi_mode_8_sym) == 3, "Invalid size");
+_Static_assert(sizeof(struct _hidpp10_dpi_mode_8) == 3, "Invalid size");
 
-struct _hidpp10_dpi_mode_8 {
+struct _hidpp10_dpi_mode_8_dual {
 	uint8_t xres;
 	uint8_t yres;
 	uint8_t led1:4;
@@ -537,7 +537,7 @@ struct _hidpp10_dpi_mode_8 {
 	uint8_t led3:4;
 	uint8_t led4:4;
 } __attribute__((packed));
-_Static_assert(sizeof(struct _hidpp10_dpi_mode_8) == 4, "Invalid size");
+_Static_assert(sizeof(struct _hidpp10_dpi_mode_8_dual) == 4, "Invalid size");
 
 struct _hidpp10_dpi_mode_16 {
 	uint16_t xres;
@@ -616,7 +616,7 @@ static const uint8_t _hidpp10_profile_700_unknown1[3] = { 0x80, 0x01, 0x10 };
 static const uint8_t _hidpp10_profile_700_unknown2[10] = { 0x01, 0x2c, 0x02, 0x58, 0x64, 0xff, 0xbc, 0x00, 0x09, 0x31 };
 
 struct _hidpp10_profile_700 {
-	struct _hidpp10_dpi_mode_8 dpi_modes[PROFILE_NUM_DPI_MODES];
+	struct _hidpp10_dpi_mode_8_dual dpi_modes[PROFILE_NUM_DPI_MODES];
 	uint8_t default_dpi_mode;
 	uint8_t unknown1[3];
 	uint8_t usb_refresh_rate;
@@ -631,11 +631,11 @@ struct _hidpp10_profile_9 {
 	uint8_t green;
 	uint8_t blue;
 	uint8_t unknown1;
-	struct _hidpp10_dpi_mode_8_sym dpi_modes[PROFILE_NUM_DPI_MODES];
+	struct _hidpp10_dpi_mode_8 dpi_modes[PROFILE_NUM_DPI_MODES];
 	uint8_t default_dpi_mode;
 	uint8_t unknown2[2];
 	uint8_t usb_refresh_rate;
-	union _hidpp10_button_binding buttons[10];
+	union _hidpp10_button_binding buttons[PROFILE_NUM_BUTTONS_G9];
 	uint8_t unknown3[3];
 	union _hidpp10_profile_metadata metadata;
 } __attribute__((packed));
@@ -859,16 +859,16 @@ hidpp10_set_current_profile(struct hidpp10_device *dev, int16_t current_profile)
 }
 
 static void
-hidpp10_fill_dpi_modes_8_sym(struct hidpp10_device *dev,
-			     struct hidpp10_profile *profile,
-			     struct _hidpp10_dpi_mode_8_sym *dpi_list,
-			     unsigned int count)
+hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
+			 struct hidpp10_profile *profile,
+			 struct _hidpp10_dpi_mode_8 *dpi_list,
+			 unsigned int count)
 {
 	unsigned int i;
 
 	profile->num_dpi_modes = count;
 	for (i = 0; i < count; i++) {
-		struct _hidpp10_dpi_mode_8_sym *dpi = &dpi_list[i];
+		struct _hidpp10_dpi_mode_8 *dpi = &dpi_list[i];
 
 		profile->dpi_modes[i].xres = hidpp10_get_dpi_value(dev, dpi->res);
 		profile->dpi_modes[i].yres = hidpp10_get_dpi_value(dev, dpi->res);
@@ -881,16 +881,16 @@ hidpp10_fill_dpi_modes_8_sym(struct hidpp10_device *dev,
 }
 
 static void
-hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
-			 struct hidpp10_profile *profile,
-			 struct _hidpp10_dpi_mode_8 *dpi_list,
-			 unsigned int count)
+hidpp10_fill_dpi_modes_8_dual(struct hidpp10_device *dev,
+			      struct hidpp10_profile *profile,
+			      struct _hidpp10_dpi_mode_8_dual *dpi_list,
+			      unsigned int count)
 {
 	unsigned int i;
 
 	profile->num_dpi_modes = count;
 	for (i = 0; i < count; i++) {
-		struct _hidpp10_dpi_mode_8 *dpi = &dpi_list[i];
+		struct _hidpp10_dpi_mode_8_dual *dpi = &dpi_list[i];
 
 		profile->dpi_modes[i].xres = hidpp10_get_dpi_value(dev, dpi->xres);
 		profile->dpi_modes[i].yres = hidpp10_get_dpi_value(dev, dpi->yres);
@@ -903,15 +903,15 @@ hidpp10_fill_dpi_modes_8(struct hidpp10_device *dev,
 }
 
 static void
-hidpp10_write_dpi_modes_8(struct hidpp10_device *dev,
-			  struct hidpp10_profile *profile,
-			  struct _hidpp10_dpi_mode_8 *dpi_list,
-			  unsigned int count)
+hidpp10_write_dpi_modes_8_dual(struct hidpp10_device *dev,
+			       struct hidpp10_profile *profile,
+			       struct _hidpp10_dpi_mode_8_dual *dpi_list,
+			       unsigned int count)
 {
 	unsigned int i;
 
 	for (i = 0; i < count; i++) {
-		struct _hidpp10_dpi_mode_8 *dpi = &dpi_list[i];
+		struct _hidpp10_dpi_mode_8_dual *dpi = &dpi_list[i];
 
 		dpi->xres = hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres);
 		dpi->yres = hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].yres);
@@ -1437,6 +1437,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+		return -EINVAL;
 	}
 
 	profile = &dev->profiles[number];
@@ -1474,7 +1475,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			profile->default_dpi_mode = p700->default_dpi_mode;
 			profile->refresh_rate = p700->usb_refresh_rate ? 1000/p700->usb_refresh_rate : 0;
 
-			hidpp10_fill_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
+			hidpp10_fill_dpi_modes_8_dual(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 			hidpp10_profile_parse_names(dev, profile, number, &p700->metadata);
 			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 			break;
@@ -1482,9 +1483,9 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			profile->default_dpi_mode = p9->default_dpi_mode;
 			profile->refresh_rate = p9->usb_refresh_rate ? 1000/p9->usb_refresh_rate : 0;
 
-			hidpp10_fill_dpi_modes_8_sym(dev, profile, p9->dpi_modes, PROFILE_NUM_DPI_MODES);
+			hidpp10_fill_dpi_modes_8(dev, profile, p9->dpi_modes, PROFILE_NUM_DPI_MODES);
 			hidpp10_profile_parse_names(dev, profile, number, &p9->metadata);
-			hidpp10_fill_buttons(dev, profile, buttons, 10);
+			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS_G9);
 			break;
 		default:
 			hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
@@ -1676,7 +1677,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		p700->default_dpi_mode = profile->default_dpi_mode;
 		p700->usb_refresh_rate = 1000 / profile->refresh_rate;
 
-		hidpp10_write_dpi_modes_8(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
+		hidpp10_write_dpi_modes_8_dual(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 		hidpp10_profile_set_names(dev, profile, number, &p700->metadata);
 		break;
