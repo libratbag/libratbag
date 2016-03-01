@@ -275,6 +275,8 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_MODIFIER_KEY_CTRL			0x01
 #define HIDPP20_MODIFIER_KEY_SHIFT			0x02
 
+#define HIDPP20_DPI_COUNT				5
+
 union hidpp20_button_binding {
 	struct {
 		uint8_t type;
@@ -353,7 +355,7 @@ struct hidpp20_profile {
 	unsigned report_rate;
 	unsigned default_dpi;
 	unsigned switched_dpi;
-	uint16_t dpi[5];
+	uint16_t dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
 };
@@ -362,7 +364,7 @@ struct hidpp20_profiles {
 	uint8_t num_profiles;
 	uint8_t num_buttons;
 	uint8_t num_modes;
-	struct hidpp20_profile profiles[5];
+	struct hidpp20_profile profiles[0];
 };
 
 /**

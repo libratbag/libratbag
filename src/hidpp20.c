@@ -1130,11 +1130,12 @@ hidpp20_onboard_profiles_set_current_profile(struct hidpp20_device *device,
 
 static int
 hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
-				    unsigned profile_count,
-				    struct hidpp20_profiles *profiles_list)
+				    struct hidpp20_profiles **profiles_list)
 {
 	uint8_t feature_index;
+	uint8_t profiles_count;
 	int rc;
+	struct hidpp20_profiles *profiles;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
@@ -1152,10 +1153,16 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	profiles_list->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
-	profiles_list->num_profiles = profile_count;
-	/* FIXME: actually retrieve the correct values */
-	profiles_list->num_modes = 5;
+	profiles_count = msg.msg.parameters[3];
+
+	profiles = zalloc(sizeof(struct hidpp20_profiles) +
+			  profiles_count * sizeof(struct hidpp20_profile));
+
+	profiles->num_profiles = profiles_count;
+	profiles->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
+	profiles->num_modes = HIDPP20_DPI_COUNT;
+
+	*profiles_list = profiles;
 
 	return 0;
 }
@@ -1327,8 +1334,14 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	unsigned i;
 	int rc;
 	uint8_t data[16] = {0};
-	struct hidpp20_profiles *profiles;
-	unsigned profile_count = 0;
+	struct hidpp20_profiles *profiles = NULL;
+
+	rc = hidpp20_onboard_profiles_initialize(device,
+						 &profiles);
+	if (rc < 0)
+		return rc;
+
+	assert(profiles);
 
 	rc = hidpp20_onboard_profiles_read_memory(device,
 						  0x00,
@@ -1338,26 +1351,19 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	if (rc < 0)
 		return rc;
 
-	profiles = zalloc(sizeof(struct hidpp20_profiles));
-
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < profiles->num_profiles; i++) {
 		uint8_t *d = data + 4 * i;
 
 		if (d[0] == 0xFF && d[1] == 0xFF)
 			break;
 
-		profile_count++;
 		profiles->profiles[i].index = d[1];
 		profiles->profiles[i].enabled = d[2];
 	}
 
-	hidpp20_onboard_profiles_initialize(device,
-					    profile_count,
-					    profiles);
-
 	*profiles_list = profiles;
 
-	return profile_count;
+	return profiles->num_profiles;
 }
 
 void
