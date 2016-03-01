@@ -734,6 +734,7 @@ hidpp20drv_20_probe(struct ratbag_device *device)
 	struct hidpp20_device *dev = drv_data->dev;
 	struct hidpp20_feature *feature_list = dev->feature_list;
 	unsigned int i;
+	int rc;
 
 	log_raw(device->ratbag,
 		"'%s' has %d features\n",
@@ -744,7 +745,9 @@ hidpp20drv_20_probe(struct ratbag_device *device)
 		log_raw(device->ratbag, "Init feature %s (0x%04x) \n",
 			hidpp20_feature_get_name(feature_list[i].feature),
 			feature_list[i].feature);
-		hidpp20drv_init_feature(device, feature_list[i].feature);
+		rc = hidpp20drv_init_feature(device, feature_list[i].feature);
+		if (rc < 0)
+			return rc;
 	}
 
 	return 0;
