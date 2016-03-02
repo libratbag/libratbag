@@ -1618,9 +1618,15 @@ union hidpp20_internal_profile {
 		uint8_t report_rate;
 		uint8_t default_dpi;
 		uint8_t switched_dpi;
-		uint16_t dpi[7];
-		uint8_t zero;
-		uint8_t padding[14];
+		uint16_t dpi[5];
+		struct {
+			uint8_t red;
+			uint8_t green;
+			uint8_t blue;
+		} profile_color;
+		uint8_t power_mode;
+		uint8_t angle_snapping;
+		uint8_t reserved[14];
 		union hidpp20_button_binding buttons[16];
 		union hidpp20_button_binding alternate_buttons[16];
 		union {
