@@ -50,6 +50,7 @@ struct lur_receiver {
 struct lur_device {
 	struct lur_receiver *receiver;
 	int refcount;
+	void *userdata;
 
 	char *name;
 	uint16_t vid, pid;
@@ -346,4 +347,16 @@ lur_device_unref(struct lur_device *dev)
 	free(dev);
 
 	return NULL;
+}
+
+_EXPORT_ void
+lur_device_set_user_data(struct lur_device *dev, void *userdata)
+{
+	dev->userdata = userdata;
+}
+
+_EXPORT_ void*
+lur_device_get_user_data(const struct lur_device *dev)
+{
+	return dev->userdata;
 }
