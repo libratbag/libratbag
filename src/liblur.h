@@ -85,8 +85,8 @@ int
 lur_device_disconnect(struct lur_device *dev);
 
 /**
- * Returns non-zero if a device with the given vid/pid is a logitech
- * unifying receiver device.
+ * Returns non-zero if a device with the given vid/pid is a Logitech
+ * Unifying Receiver device.
  *
  * @param vid The vendor ID
  * @param pid The product ID
