@@ -7,8 +7,10 @@ global:
 	lur_device_get_product_id;
 	lur_device_get_serial;
 	lur_device_get_type;
+	lur_device_get_user_data;
 	lur_device_get_vendor_id;
 	lur_device_ref;
+	lur_device_set_user_data;
 	lur_device_unref;
 	lur_is_receiver;
 	lur_receiver_close;
