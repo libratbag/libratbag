@@ -111,6 +111,9 @@ lur_is_receiver(uint16_t vid, uint16_t pid);
  *
  * @return 0 on success or a negative errno on error
  * @retval -EINVAL The fd does not point to a lur receiver
+ *
+ * @note liblur does not have OOM handling. If an allocation fails, liblur
+ * will simply abort()
  */
 int
 lur_receiver_new_from_hidraw(int fd, void *userdata, struct lur_receiver **lur);
