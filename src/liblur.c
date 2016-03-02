@@ -24,6 +24,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -141,13 +142,13 @@ hidpp10_init(int fd)
 				  HIDPP10_PROFILE_UNKNOWN);
 }
 
-_EXPORT_ struct lur_receiver*
-lur_receiver_new_from_hidraw(int fd, void *userdata)
+_EXPORT_ int
+lur_receiver_new_from_hidraw(int fd, void *userdata, struct lur_receiver **out)
 {
 	struct lur_receiver *receiver;
 
 	if (!hidraw_is_receiver(fd))
-		return NULL;
+		return -EINVAL;
 
 	receiver = zalloc(sizeof(*receiver));
 	receiver->refcount = 1;
@@ -159,11 +160,12 @@ lur_receiver_new_from_hidraw(int fd, void *userdata)
 	if (!receiver->hidppdev)
 		goto error;
 
-	return receiver;
+	*out = receiver;
+	return 0;
 
 error:
 	free(receiver);
-	return NULL;
+	return -errno;
 
 }
 

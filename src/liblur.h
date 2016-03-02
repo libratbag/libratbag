@@ -107,11 +107,13 @@ lur_is_receiver(uint16_t vid, uint16_t pid);
  *
  * @param fd An O_RDWR file descriptor pointing to a /dev/hidraw node
  * @param userdata Caller-specific data
+ * @param lur Set to the lur object on success, otherwise unmodified
  *
- * @return A lur object, or NULL on error.
+ * @return 0 on success or a negative errno on error
+ * @retval -EINVAL The fd does not point to a lur receiver
  */
-struct lur_receiver*
-lur_receiver_new_from_hidraw(int fd, void *userdata);
+int
+lur_receiver_new_from_hidraw(int fd, void *userdata, struct lur_receiver **lur);
 
 /**
  * Enumerate devices currently paired with the given receiver.

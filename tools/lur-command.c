@@ -41,8 +41,9 @@ enum options {
 static struct lur_receiver *
 open_receiver(const char *path)
 {
-	struct lur_receiver *receiver;
+	struct lur_receiver *receiver = NULL;
 	int fd = -1;
+	int rc;
 
 	fd = open(path, O_RDWR);
 	if (fd < 0) {
@@ -50,8 +51,8 @@ open_receiver(const char *path)
 		return NULL;
 	}
 
-	receiver = lur_receiver_new_from_hidraw(fd, NULL);
-	if (!receiver)
+	rc = lur_receiver_new_from_hidraw(fd, NULL, &receiver);
+	if (rc != 0)
 		close(fd);
 
 	return receiver;
