@@ -239,6 +239,27 @@ lur_device_ref(struct lur_device *dev);
 struct lur_device *
 lur_device_unref(struct lur_device *dev);
 
+/**
+ * Set caller-specific data associated with this object. liblur does
+ * not manage, look at, or modify this data. The caller must ensure the
+ * data is valid.
+ *
+ * @param dev A valid device object
+ * @param userdata Caller-specific data
+ */
+void
+lur_device_set_user_data(struct lur_device *dev, void *userdata);
+
+/**
+ * Get the caller-specific data associated with this object, if any.
+ *
+ * @param dev A valid device object
+ * @return The caller-specific data previously assigned in
+ * lur_device_set_user_data().
+ */
+void*
+lur_device_get_user_data(const struct lur_device *dev);
+
 #ifdef __cplusplus
 }
 #endif
