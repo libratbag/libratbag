@@ -926,9 +926,9 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_ONBOARD_MODE				0x01
 #define HIDPP20_HOST_MODE				0x02
 
-#define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_PROTOSS	0x01
-#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_PROTOSS	0x01
-#define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_PROTOSS	0x01
+#define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_G402	0x01
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402	0x01
+#define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 struct hidpp20_onboard_profiles_info {
 	uint8_t memory_model_id;
@@ -1233,21 +1233,21 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 
 	info = (struct hidpp20_onboard_profiles_info *)msg.msg.parameters;
 
-	if (info->memory_model_id != HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_PROTOSS) {
+	if (info->memory_model_id != HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_G402) {
 		hidpp_log_error(&device->base,
 				"Memory layout not supported: 0x%02x.\n",
 				info->memory_model_id);
 		return -ENOTSUP;
 	}
 
-	if (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_PROTOSS) {
+	if (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
 		return -ENOTSUP;
 	}
 
-	if (info->macro_format_id != HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_PROTOSS) {
+	if (info->macro_format_id != HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402) {
 		hidpp_log_error(&device->base,
 				"Macro format not supported: 0x%02x.\n",
 				info->macro_format_id);
