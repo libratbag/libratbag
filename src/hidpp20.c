@@ -928,6 +928,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 
 #define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_G402	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402	0x01
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 struct hidpp20_onboard_profiles_info {
@@ -1240,7 +1241,8 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		return -ENOTSUP;
 	}
 
-	if (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) {
+	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -1625,7 +1627,9 @@ union hidpp20_internal_profile {
 			char txt[16 * 3];
 			uint8_t raw[16 * 3];
 		} name;
-		uint8_t padding1[46];
+		uint8_t logo_effect[11]; /* G303 only */
+		uint8_t side_effects[11]; /* G303 only */
+		uint8_t free[24];
 		uint16_t crc;
 	} __attribute__((packed)) profile;
 };
