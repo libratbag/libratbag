@@ -105,3 +105,8 @@ $(unit_DATA): $(unit_DATA).in
 
 EXTRA_DIST += ratbagd.service.in
 BUILT_SOURCES += ratbagd.service
+
+# ------------------------------------------------------------------------------
+# python module
+dist_pkgpython_DATA = \
+		      python/ratbagd/__init__.py

@@ -26,6 +26,6 @@ libtool
 *.m4
 !m4/attributes.m4
 ratbagctl
-ratbagd
+./ratbagd
 stamp-*
 ratbagd.service
