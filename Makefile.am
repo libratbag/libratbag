@@ -55,23 +55,6 @@ libshared_la_LIBADD = \
 	-lm
 
 # ------------------------------------------------------------------------------
-# ratbagctl
-
-bin_PROGRAMS += \
-	ratbagctl
-
-ratbagctl_SOURCES = \
-	src/ratbagctl.c
-
-ratbagctl_CFLAGS = \
-	$(AM_CFLAGS) \
-	$(LIBSYSTEMD_CFLAGS)
-
-ratbagctl_LDADD = \
-	libshared.la \
-	$(LIBSYSTEMD_LIBS)
-
-# ------------------------------------------------------------------------------
 # ratbagd
 
 bin_PROGRAMS += \
@@ -105,3 +88,14 @@ $(unit_DATA): $(unit_DATA).in
 
 EXTRA_DIST += ratbagd.service.in
 BUILT_SOURCES += ratbagd.service
+
+# ------------------------------------------------------------------------------
+# python module
+dist_pkgpython_DATA = \
+		      python/ratbagd/__init__.py
+
+bin_SCRIPTS = \
+	      python/ratbagctl
+
+python/ratbagctl: python/ratbagctl.py
+	$(AM_V_GEN)$(SED) -e "s/__VERSION__/$(PACKAGE_VERSION)/" < $^ > $@
