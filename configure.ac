@@ -132,6 +132,9 @@ PKG_CHECK_MODULES([LIBUDEV], [libudev])
 PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd >= 227])
 PKG_CHECK_MODULES([LIBRATBAG], [libratbag >= 0.2])
 
+libratbag_data_dir=`$PKG_CONFIG --variable pkgdatadir libratbag`
+AC_DEFINE_UNQUOTED([LIBRATBAG_DATA_DIR], ["$libratbag_data_dir"], [Directory for libratbag's SVG files])
+
 # ------------------------------------------------------------------------------
 # options
 AC_ARG_WITH([systemd-unit-dir],

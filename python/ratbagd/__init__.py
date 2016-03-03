@@ -84,6 +84,7 @@ class RatbagdDevice(_RatbagdDBus):
         self._devnode = self.dbus_property("Id")
         self._description = self.dbus_property("Description")
         self._svg = self.dbus_property("Svg")
+        self._svg_path = self.dbus_property("SvgPath")
 
         self._profiles = []
         self._active_profile = -1
@@ -124,6 +125,14 @@ class RatbagdDevice(_RatbagdDBus):
         absolute path to the file.
         """
         return self._svg
+
+    @property
+    def svg_path(self):
+        """
+        The absolute SVG path. This function returns the full path to the
+        svg file.
+        """
+        return self._svg_path
 
     @property
     def id(self):

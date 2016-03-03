@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <libratbag.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -167,6 +168,30 @@ static int ratbagd_device_get_svg(sd_bus *bus,
 	return sd_bus_message_append(reply, "s", svg);
 }
 
+static int ratbagd_device_get_svg_path(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       const char *property,
+				       sd_bus_message *reply,
+				       void *userdata,
+				       sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	char svg_path[PATH_MAX] = {0};
+	const char *svg;
+
+	svg = ratbag_device_get_svg_name(device->lib_device);
+	if (!svg) {
+		log_error("Unable to fetch SVG for %s\n",
+			  ratbagd_device_get_name(device));
+		goto out;
+	}
+
+	sprintf(svg_path, "%s/%s", LIBRATBAG_DATA_DIR, svg);
+
+out:
+	return sd_bus_message_append(reply, "s", svg_path);
+}
 
 static int ratbagd_device_get_profiles(sd_bus *bus,
 				       const char *path,
@@ -267,6 +292,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 			SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("SvgPath", "s", ratbagd_device_get_svg_path, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ActiveProfile", "u", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
