@@ -84,22 +84,22 @@ static int ratbagd_button_get_type(sd_bus *bus,
 			type = "thumb4";
 			break;
 		case RATBAG_BUTTON_TYPE_WHEEL_LEFT:
-			type = "wheel_left";
+			type = "wheel-left";
 			break;
 		case RATBAG_BUTTON_TYPE_WHEEL_RIGHT:
-			type = "wheel_right";
+			type = "wheel-right";
 			break;
 		case RATBAG_BUTTON_TYPE_WHEEL_CLICK:
-			type = "wheel_click";
+			type = "wheel-click";
 			break;
 		case RATBAG_BUTTON_TYPE_WHEEL_UP:
-			type = "wheel_up";
+			type = "wheel-up";
 			break;
 		case RATBAG_BUTTON_TYPE_WHEEL_DOWN:
-			type = "wheel_down";
+			type = "wheel-down";
 			break;
 		case RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT:
-			type = "wheel_ratchet_mode_shift";
+			type = "wheel-ratchet_mode_shift";
 			break;
 		case RATBAG_BUTTON_TYPE_EXTRA:
 			type = "extra";
@@ -114,22 +114,22 @@ static int ratbagd_button_get_type(sd_bus *bus,
 			type = "pinkie2";
 			break;
 		case RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP:
-			type = "resolution_cycle_up";
+			type = "resolution-cycle-up";
 			break;
 		case RATBAG_BUTTON_TYPE_RESOLUTION_UP:
-			type = "resolution_up";
+			type = "resolution-up";
 			break;
 		case RATBAG_BUTTON_TYPE_RESOLUTION_DOWN:
-			type = "resolution_down";
+			type = "resolution-down";
 			break;
 		case RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP:
-			type = "profile_cycle_up";
+			type = "profile-cycle-up";
 			break;
 		case RATBAG_BUTTON_TYPE_PROFILE_UP:
-			type = "profile_up";
+			type = "profile-up";
 			break;
 		case RATBAG_BUTTON_TYPE_PROFILE_DOWN:
-			type = "profile_down";
+			type = "profile-down";
 			break;
 	}
 
