@@ -98,4 +98,8 @@ bin_SCRIPTS = \
 	      python/ratbagctl
 
 python/ratbagctl: python/ratbagctl.py
+	$(AM_V_GEN)$(MKDIR_P) python
 	$(AM_V_GEN)$(SED) -e "s/__VERSION__/$(PACKAGE_VERSION)/" < $^ > $@
+
+EXTRA_DIST += python/ratbagctl.py
+BUILT_SOURCES += python/ratbagctl
