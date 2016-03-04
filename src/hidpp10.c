@@ -2039,18 +2039,28 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 			       uint16_t *yres)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_LONG_REGISTER_REQ);
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_REGISTER_REQ);
+	union hidpp10_message resolution_long = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_LONG_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Fetching current resolution\n");
 
-	res = hidpp10_request_command(dev, &resolution);
-	if (res)
-		return res;
-
-	/* resolution is in 50dpi multiples */
-	*xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution.data[4]));
-	*yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution.data[6]));
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G9:
+		res = hidpp10_request_command(dev, &resolution);
+		if (res)
+			return res;
+		/* resolution is in 50dpi multiples */
+		*xres = *yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution.data[4]));
+		break;
+        default:
+		res = hidpp10_request_command(dev, &resolution_long);
+		if (res)
+			return res;
+		/* resolution is in 50dpi multiples */
+		*xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution_long.data[4]));
+		*yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution_long.data[6]));
+        }
 
 	return 0;
 }
