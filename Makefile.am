@@ -90,6 +90,7 @@ dbusservicedir = $(DBUS_SYSTEM_SERVICES_DIR)
 dbusservice_DATA = dbus/org.freedesktop.ratbag1.service
 
 $(dbusservice_DATA): $(dbusservice_DATA).in
+	$(AM_V_GEN)$(MKDIR_P) dbus
 	$(AM_V_GEN)$(SED) -e 's|__BIN_PREFIX__|$(bindir)|g' < $< > $@
 
 dbusconfigdir = $(DBUS_SYSTEM_CONFIG_DIR)
