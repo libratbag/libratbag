@@ -80,6 +80,9 @@ ratbagd_LDADD = \
 	$(LIBSYSTEMD_LIBS) \
 	$(LIBRATBAG_LIBS)
 
+# ------------------------------------------------------------------------------
+# DBus and systemd configuration files
+
 unitdir = $(SYSTEMD_UNIT_DIR)
 unit_DATA = ratbagd.service
 
