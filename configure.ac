@@ -15,11 +15,9 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 
 AC_USE_SYSTEM_EXTENSIONS
-AC_SYS_LARGEFILE
 AM_MAINTAINER_MODE([enable])
 AM_INIT_AUTOMAKE([foreign 1.11 -Wall -Wno-portability silent-rules tar-pax no-dist-gzip dist-xz subdir-objects parallel-tests])
 AM_SILENT_RULES([yes])
-AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED([CANONICAL_HOST], "$host", [Canonical host string.])
 
 LT_PREREQ(2.2)
@@ -28,15 +26,11 @@ LT_INIT([disable-static])
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_SED
-AC_PROG_GREP
-AC_PROG_AWK
 AC_PROG_CC_C99
 
 AC_PATH_PROG([M4], [m4])
 AC_PATH_PROG([XSLTPROC], [xsltproc])
 AM_PATH_PYTHON
-
-AS_IF([! ln --relative --help > /dev/null 2>&1], [AC_MSG_ERROR([*** ln doesn't support --relative ***])])
 
 # ------------------------------------------------------------------------------
 # arguments
@@ -120,20 +114,14 @@ AC_SUBST([OUR_CPPFLAGS], "$with_cppflags")
 AC_SUBST([OUR_LDFLAGS], "$with_ldflags")
 
 # ------------------------------------------------------------------------------
-# system features
-
-# This makes sure pkg.m4 is available.
-m4_pattern_forbid([^_?PKG_[A-Z_]+$],[*** pkg.m4 missing, please install pkg-config])
-
-# ------------------------------------------------------------------------------
 # dependencies
 
 PKG_CHECK_MODULES([LIBUDEV], [libudev])
 PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd >= 227])
 PKG_CHECK_MODULES([LIBRATBAG], [libratbag >= 0.2])
 
-libratbag_data_dir=`$PKG_CONFIG --variable pkgdatadir libratbag`
-AC_DEFINE_UNQUOTED([LIBRATBAG_DATA_DIR], ["$libratbag_data_dir"], [Directory for libratbag's SVG files])
+PKG_CHECK_VAR([libratbag_data_dir], [libratbag], [pkgdatadir],
+	      [AC_DEFINE_UNQUOTED([LIBRATBAG_DATA_DIR], ["$libratbag_data_dir"], [Directory for libratbag's SVG files])])
 
 # ------------------------------------------------------------------------------
 # options
