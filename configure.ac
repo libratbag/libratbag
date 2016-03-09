@@ -139,6 +139,7 @@ AC_ARG_WITH([dbus-root-dir],
 	    [unitdir="$withval"],
 	    [unitdir="$datadir/dbus-1"])
 DBUS_SYSTEM_SERVICES_DIR="${datadir}/system-services"
+DBUS_SYSTEM_CONFIG_DIR="${datadir}/system.d"
 AC_SUBST(DBUS_SYSTEM_SERVICES_DIR)
 
 # ------------------------------------------------------------------------------
