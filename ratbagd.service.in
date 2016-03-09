@@ -1,10 +1,11 @@
 [Unit]
-Description=Daemon to introspect and modify configuable mice
+Description=Daemon to introspect and modify configurable mice
 
 [Service]
 Type=dbus
 BusName=org.freedesktop.ratbag1
 ExecStart=__BIN_PREFIX__/ratbagd
+Restart=on-abort
 
 [Install]
 WantedBy=multi-user.target

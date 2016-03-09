@@ -362,8 +362,23 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 
 struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile)
 {
+	unsigned int i;
+
 	if (!profile)
 		return NULL;
+
+	profile->resolution_vtable_slot = sd_bus_slot_unref(profile->resolution_vtable_slot);
+	profile->resolution_enum_slot = sd_bus_slot_unref(profile->resolution_enum_slot);
+	profile->button_vtable_slot = sd_bus_slot_unref(profile->button_vtable_slot);
+	profile->button_enum_slot = sd_bus_slot_unref(profile->button_enum_slot);
+
+	for (i = 0; i< profile->n_buttons; ++i)
+		ratbagd_button_free(profile->buttons[i]);
+	for (i = 0; i< profile->n_resolutions; ++i)
+		ratbagd_resolution_free(profile->resolutions[i]);
+
+	mfree(profile->buttons);
+	mfree(profile->resolutions);
 
 	profile->path = mfree(profile->path);
 
