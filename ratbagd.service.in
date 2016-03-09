@@ -1,5 +1,5 @@
 [Unit]
-Description=Daemon to introspect and modify configuable mice
+Description=Daemon to introspect and modify configurable mice
 
 [Service]
 Type=dbus
