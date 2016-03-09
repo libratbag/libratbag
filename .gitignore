@@ -30,3 +30,4 @@ ratbagctl
 stamp-*
 ratbagd.service
 ratbagctl
+org.freedesktop.ratbag1.service

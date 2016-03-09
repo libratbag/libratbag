@@ -86,8 +86,14 @@ unit_DATA = ratbagd.service
 $(unit_DATA): $(unit_DATA).in
 	$(AM_V_GEN)$(SED) -e 's|__BIN_PREFIX__|$(bindir)|g' < $< > $@
 
-EXTRA_DIST += ratbagd.service.in
-BUILT_SOURCES += ratbagd.service
+dbusdir = $(DBUS_SYSTEM_SERVICES_DIR)
+dbus_DATA = dbus/org.freedesktop.ratbag1.service
+
+$(dbus_DATA): $(dbus_DATA).in
+	$(AM_V_GEN)$(SED) -e 's|__BIN_PREFIX__|$(bindir)|g' < $< > $@
+
+EXTRA_DIST += ratbagd.service.in dbus/org.freedesktop.ratbag1.service.in
+BUILT_SOURCES += ratbagd.service dbus/org.freedesktop.ratbag1.service
 
 # ------------------------------------------------------------------------------
 # python module

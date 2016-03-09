@@ -8,4 +8,4 @@ ExecStart=__BIN_PREFIX__/ratbagd
 Restart=on-abort
 
 [Install]
-WantedBy=multi-user.target
+Alias=dbus-org.freedesktop.ratbag1.service
