@@ -557,10 +557,7 @@ struct ratbagd_button *ratbagd_button_free(struct ratbagd_button *button)
 		return NULL;
 
 	button->path = mfree(button->path);
-
-	/* we cannot assume the button is gone, so set NULL explicitly */
-	ratbag_button_unref(button->lib_button);
-	button->lib_button = NULL;
+	button->lib_button = ratbag_button_unref(button->lib_button);
 
 	return mfree(button);
 }

@@ -166,10 +166,7 @@ struct ratbagd_resolution *ratbagd_resolution_free(struct ratbagd_resolution *re
 		return NULL;
 
 	resolution->path = mfree(resolution->path);
-
-	/* we cannot assume the resolution is gone, so set NULL explicitly */
-	ratbag_resolution_unref(resolution->lib_resolution);
-	resolution->lib_resolution = NULL;
+	resolution->lib_resolution = ratbag_resolution_unref(resolution->lib_resolution);
 
 	return mfree(resolution);
 }

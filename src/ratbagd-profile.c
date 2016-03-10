@@ -381,10 +381,7 @@ struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile)
 	mfree(profile->resolutions);
 
 	profile->path = mfree(profile->path);
-
-	/* we cannot assume the profile is gone, so set NULL explicitly */
-	ratbag_profile_unref(profile->lib_profile);
-	profile->lib_profile = NULL;
+	profile->lib_profile = ratbag_profile_unref(profile->lib_profile);
 
 	return mfree(profile);
 }
