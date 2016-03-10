@@ -3,6 +3,16 @@ ratbagd
 
 ratbagd is a system daemon to introspect and modify configurable mice.
 
+ratbagd uses libratbag to access mice and exports the features over a DBus
+API to unprivileged proceses. ratbagd needs permissions to access device
+nodes (primarily /dev/hidraw nodes) and usually needs to run as root.
+
+ratbagd is a relatively thin wrapper arond libratbag. If a device is not
+detected or does not function as expected, the issue is usually in
+libratbag. libratbag can be found at
+   https://github.com/libratbag/libratbag
+
+
 Running ratbagd
 ---------------
 
