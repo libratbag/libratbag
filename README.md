@@ -24,7 +24,7 @@ installation of the following files:
     sudo cp ratbagd.service /etc/systemd/system/ratbagd.service
 
 The files are installed into the prefix by make install, see also the
-configure switches ---with-systemd-uint-dir and --with-dbus-root-dir.
+configure switches ---with-systemd-unit-dir and --with-dbus-root-dir.
 Developers are encouraged to simply symlink to the files in the git
 repository.
 
