@@ -6,10 +6,27 @@ ratbagd is a system daemon to introspect and modify configurable mice.
 Running ratbagd
 ---------------
 
-To be able to run ratbagd, you need to add a policy file to your dbus
-environment:
+ratbagd is intended to run as dbus-activated systemd service. This requires
+installation of the following files:
 
     sudo cp dbus/org.freedesktop.ratbag1.conf /etc/dbus-1/system.d/org.freedesktop.ratbag1.conf
+    sudo cp dbus/org.freedesktop.ratbag1.service /etc/dbus-1/systemd-services/org.freedesktop.ratbag1.conf
+    sudo cp ratbagd.service /etc/systemd/system/ratbagd.service
+
+The files are installed into the prefix by make install, see also the
+configure switches ---with-systemd-uint-dir and --with-dbus-root-dir.
+Developers are encouraged to simply symlink to the files in the git
+repository.
+
+For the files to take effect, you should run
+    sudo systemctl daemon-reload
+    sudo systemctl reload dbus.service
+
+And finally, to enable the service:
+    sudo systemctl enable ratbagd.service
+
+This places the required symlink into the systemd directory so that dbus
+activation is possible.
 
 Compiling ratbagd
 -----------------
