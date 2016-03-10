@@ -28,6 +28,9 @@ libtool
 ratbagctl
 ./ratbagd
 stamp-*
+ratbagd
 ratbagd.service
 ratbagctl
 org.freedesktop.ratbag1.service
+tags
+__pycache__
