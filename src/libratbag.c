@@ -172,6 +172,13 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 
 	list_insert(&ratbag->devices, &device->link);
 
+	/* We assume that most devices have this capability, so let's set it
+	 * by default. The few devices that miss this capability should
+	 * unset it instead.
+	 */
+	ratbag_device_set_capability(device,
+				     RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
+
 	return device;
 }
 
