@@ -125,6 +125,48 @@ struct ratbag_button;
  */
 struct ratbag_resolution;
 
+/**
+ * @ingroup base
+ *
+ * Error codes used by libratbag.
+ */
+enum ratbag_error_code {
+	RATBAG_SUCCESS = 0,
+
+	/**
+	 * An error occured on the device. Either the device is not a
+	 * libratbag device or communication with the device failed.
+	 */
+	RATBAG_ERROR_DEVICE = -1000,
+
+	/**
+	 * Insufficient capabilities. This error occurs when a requestd change is
+	 * beyond the device's capabilities.
+	 */
+	RATBAG_ERROR_CAPABILITY = -1001,
+
+	/**
+	 * Invalid value or value range. The provided value or value range
+	 * is outside of the legal or supported range.
+	 */
+	RATBAG_ERROR_VALUE = -1002,
+
+	/**
+	 * A low-level system error has occured, e.g. a failure to access
+	 * files that should be there. This error is usually unrecoverable
+	 * and libratbag will print a log message with details about the
+	 * error.
+	 */
+	RATBAG_ERROR_SYSTEM = -1003,
+
+	/**
+	 * Implementation bug, either in libratbag or in the caller. This
+	 * error is usually unrecoverable and libratbag will print a log
+	 * message with details about the
+	 * error.
+	 */
+	RATBAG_ERROR_IMPLEMENTATION = -1004,
+};
 
 /**
  * @ingroup base
@@ -325,12 +367,18 @@ ratbag_unref(struct ratbag *ratbag);
  * The device is refcounted with an initial value of at least 1.
  * Use ratbag_device_unref() to release the device.
  *
- * @return A new device based on the udev device, or NULL in case of
- * failure.
+ * @param ratbag A previously initialized ratbag context
+ * @param udev_device The udev device that points at the device
+ * @param device Set to a new device based on the udev device.
+ *
+ * @return 0 on success or the error.
+ * @retval RATBAG_ERROR_DEVICE The given device does not exist or is not
+ * supported by libratbag.
  */
-struct ratbag_device*
+enum ratbag_error_code
 ratbag_device_new_from_udev_device(struct ratbag *ratbag,
-				   struct udev_device *device);
+				   struct udev_device *udev_device,
+				   struct ratbag_device **device);
 
 /**
  * @ingroup device
@@ -600,9 +648,9 @@ ratbag_profile_is_active(struct ratbag_profile *profile);
  *
  * @param profile The profile to make the active profile.
  *
- * @return 0 on success or nonzero otherwise.
+ * @return 0 on success or an error code otherwise
  */
-int
+enum ratbag_error_code
 ratbag_profile_set_active(struct ratbag_profile *profile);
 
 /**
@@ -740,9 +788,9 @@ ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
  * @param resolution A previously initialized ratbag resolution
  * @param dpi Set to the resolution in dpi, 0 to disable
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 			  unsigned int dpi);
 
@@ -766,9 +814,9 @@ ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
  * @param x The x resolution in dpi
  * @param y The y resolution in dpi
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 			     unsigned int x, unsigned int y);
 
@@ -836,9 +884,9 @@ ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution);
  * @param resolution A previously initialized ratbag resolution
  * @param hz Set to the report rate in Hz, may be 0
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 				  unsigned int hz);
 
@@ -856,7 +904,7 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
  *
  * @param resolution A previously initialized ratbag resolution
  *
- * @return zero on success, non-zero otherwise
+ * @return The report rate for this resolution in Hz
  */
 int
 ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
@@ -872,9 +920,9 @@ ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
  *
  * @param resolution A previously initialized ratbag resolution
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_active(struct ratbag_resolution *resolution);
 
 /**
@@ -906,9 +954,9 @@ ratbag_resolution_is_active(const struct ratbag_resolution *resolution);
  *
  * @param resolution A previously initialized ratbag resolution
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_default(struct ratbag_resolution *resolution);
 
 /**
@@ -1165,12 +1213,12 @@ ratbag_button_get_button(struct ratbag_button *button);
  *
  * @param button A previously initialized ratbag button
  * @param btn The logical button number to assign to this button.
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_BUTTON.
  *
  * @see ratbag_button_get_button
  */
-int
+enum ratbag_error_code
 ratbag_button_set_button(struct ratbag_button *button,
 			 unsigned int btn);
 
@@ -1197,12 +1245,12 @@ ratbag_button_get_special(struct ratbag_button *button);
  *
  * @param button A previously initialized ratbag button
  * @param action The special action to assign to this button.
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_SPECIAL.
  *
  * @see ratbag_button_get_button
  */
-int
+enum ratbag_error_code
 ratbag_button_set_special(struct ratbag_button *button,
 			  enum ratbag_button_action_special action);
 
@@ -1243,10 +1291,10 @@ ratbag_button_get_key(struct ratbag_button *button,
  * @param sz The size of the modifiers array. sz may be 0 if no modifiers
  * are required.
  *
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_KEY.
  */
-int
+enum ratbag_error_code
 ratbag_button_set_key(struct ratbag_button *button,
 		      unsigned int key,
 		      unsigned int *modifiers,
@@ -1257,10 +1305,10 @@ ratbag_button_set_key(struct ratbag_button *button,
  *
  * @param button A previously initialized ratbag button
  *
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_NONE.
  */
-int
+enum ratbag_error_code
 ratbag_button_disable(struct ratbag_button *button);
 
 /**
@@ -1356,10 +1404,10 @@ ratbag_button_get_macro_event_timeout(struct ratbag_button *button, unsigned int
  * Sets the button's action to @ref RATBAG_BUTTON_ACTION_TYPE_MACRO and
  * allocates the required memory to store the macro.
  */
-int
+enum ratbag_error_code
 ratbag_button_set_macro(struct ratbag_button *button, const char *name);
 
-int
+enum ratbag_error_code
 ratbag_button_write_macro(struct ratbag_button *button);
 
 /**
@@ -1368,7 +1416,7 @@ ratbag_button_write_macro(struct ratbag_button *button);
  * Sets the macro's event at the given index to the given type with the
  * key code or timeout given.
  */
-int
+enum ratbag_error_code
 ratbag_button_set_macro_event(struct ratbag_button *button,
 			      unsigned int index,
 			      enum ratbag_macro_event_type type,

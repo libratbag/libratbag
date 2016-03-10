@@ -37,6 +37,23 @@
 #include "libratbag-private.h"
 #include "libratbag-util.h"
 
+static enum ratbag_error_code
+error_code(enum ratbag_error_code code)
+{
+	switch(code) {
+	case RATBAG_SUCCESS:
+	case RATBAG_ERROR_DEVICE:
+	case RATBAG_ERROR_CAPABILITY:
+	case RATBAG_ERROR_VALUE:
+	case RATBAG_ERROR_SYSTEM:
+	case RATBAG_ERROR_IMPLEMENTATION:
+		break;
+	default:
+		assert(!"Invalid error code. This is a library bug.");
+	}
+	return code;
+}
+
 static void
 ratbag_profile_destroy(struct ratbag_profile *profile);
 static void
@@ -353,43 +370,46 @@ get_product_id(struct udev_device *device, struct input_id *id)
 	return 0;
 }
 
-LIBRATBAG_EXPORT struct ratbag_device*
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_device_new_from_udev_device(struct ratbag *ratbag,
-				   struct udev_device *udev_device)
+				   struct udev_device *udev_device,
+				   struct ratbag_device **device_out)
 {
 	struct ratbag_device *device = NULL;
 	struct ratbag_driver *driver;
+	enum ratbag_error_code error = RATBAG_ERROR_DEVICE;
 	_cleanup_free_ char *name = NULL;
 	struct input_id id;
 
 	assert(ratbag != NULL);
 	assert(udev_device != NULL);
+	assert(device_out != NULL);
 
 	if (get_product_id(udev_device, &id) != 0)
 		goto out_err;
 
 	name = get_device_name(udev_device);
-	if (!name) {
-		errno = ENOMEM;
+	if (!name)
 		goto out_err;
-	}
 
 	device = ratbag_device_new(ratbag, udev_device, name, &id);
 	if (!device)
 		goto out_err;
 
 	driver = ratbag_find_driver(device, &device->ids, NULL);
-	if (!driver) {
-		errno = ENOTSUP;
+	if (!driver)
 		goto out_err;
-	}
 
-	return device;
+	error = RATBAG_SUCCESS;
 
 out_err:
-	ratbag_device_destroy(device);
 
-	return NULL;
+	if (error != RATBAG_SUCCESS)
+		ratbag_device_destroy(device);
+	else
+		*device_out = device;
+
+	return error_code(error);
 }
 
 LIBRATBAG_EXPORT struct ratbag_device *
@@ -693,31 +713,31 @@ ratbag_device_has_capability(const struct ratbag_device *device,
 	return !!(device->capabilities & (1UL << cap));
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_profile_set_active(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct ratbag_profile *p;
 	int rc;
 
+	if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE))
+		return RATBAG_ERROR_CAPABILITY;
+
 	assert(device->driver->write_profile);
 	rc = device->driver->write_profile(profile);
 	if (rc)
-		return rc;
+		return RATBAG_ERROR_DEVICE;
 
-	if (ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE)) {
-		assert(device->driver->set_active_profile);
-		rc = device->driver->set_active_profile(device, profile->index);
-	}
-
+	assert(device->driver->set_active_profile);
+	rc = device->driver->set_active_profile(device, profile->index);
 	if (rc)
-		return rc;
+		return RATBAG_ERROR_DEVICE;
 
 	list_for_each(p, &device->profiles, link)
 		p->is_active = false;
 
 	profile->is_active = true;
-	return rc;
+	return RATBAG_SUCCESS;
 }
 
 LIBRATBAG_EXPORT unsigned int
@@ -782,42 +802,48 @@ ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 	return !!(resolution->capabilities & (1 << cap));
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 			  unsigned int dpi)
 {
 	struct ratbag_profile *profile = resolution->profile;
+	int rc;
+
 	resolution->dpi_x = dpi;
 	resolution->dpi_y = dpi;
 
 	assert(profile->device->driver->write_resolution_dpi);
-	return profile->device->driver->write_resolution_dpi(resolution, dpi, dpi);
+	rc = profile->device->driver->write_resolution_dpi(resolution, dpi, dpi);
+
+	return rc == 0 ? RATBAG_SUCCESS : RATBAG_ERROR_DEVICE;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 			     unsigned int x, unsigned int y)
 {
 	struct ratbag_profile *profile = resolution->profile;
+	int rc;
 
 	if (!ratbag_resolution_has_capability(resolution,
 					      RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION))
-		return -1;
+		return RATBAG_ERROR_CAPABILITY;
 
 	if ((x == 0 && y != 0) || (x != 0 && y == 0))
-		return -1;
+		return RATBAG_ERROR_VALUE;
 
 	assert(profile->device->driver->write_resolution_dpi);
-	return profile->device->driver->write_resolution_dpi(resolution, x, y);
+	rc = profile->device->driver->write_resolution_dpi(resolution, x, y);
+	return rc == 0 ? RATBAG_SUCCESS : RATBAG_ERROR_DEVICE;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 				  unsigned int hz)
 {
 	resolution->hz = hz;
 	/* FIXME: call into the driver */
-	return 0;
+	return RATBAG_ERROR_IMPLEMENTATION;
 }
 
 LIBRATBAG_EXPORT int
@@ -850,12 +876,12 @@ ratbag_resolution_is_active(const struct ratbag_resolution *resolution)
 	return resolution->is_active;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 {
 	resolution->is_active = true;
 	/* FIXME: call into the driver */
-	return 0;
+	return RATBAG_ERROR_IMPLEMENTATION;
 }
 
 
@@ -865,12 +891,12 @@ ratbag_resolution_is_default(const struct ratbag_resolution *resolution)
 	return resolution->is_default;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 {
 	resolution->is_default = true;
 	/* FIXME: call into the driver */
-	return 0;
+	return RATBAG_ERROR_IMPLEMENTATION;
 }
 
 LIBRATBAG_EXPORT struct ratbag_button*
@@ -934,14 +960,14 @@ ratbag_button_get_button(struct ratbag_button *button)
 	return button->action.action.button;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 {
 	struct ratbag_button_action action;
 	int rc;
 
 	if (!button->profile->device->driver->write_button)
-		return -ENOTSUP;
+		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 	action.action.button = btn;
@@ -951,7 +977,7 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 	if (rc == 0)
 		button->action = action;
 
-	return rc;
+	return rc == 0 ? RATBAG_SUCCESS : RATBAG_ERROR_DEVICE;
 }
 
 LIBRATBAG_EXPORT enum ratbag_button_action_special
@@ -963,7 +989,7 @@ ratbag_button_get_special(struct ratbag_button *button)
 	return button->action.action.special;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_special(struct ratbag_button *button,
 			  enum ratbag_button_action_special act)
 {
@@ -973,7 +999,7 @@ ratbag_button_set_special(struct ratbag_button *button,
 	/* FIXME: range checks */
 
 	if (!button->profile->device->driver->write_button)
-		return -1;
+		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
 	action.action.special = act;
@@ -983,7 +1009,7 @@ ratbag_button_set_special(struct ratbag_button *button,
 	if (rc == 0)
 		button->action = action;
 
-	return rc;
+	return rc == 0 ? RATBAG_SUCCESS : RATBAG_ERROR_DEVICE;
 }
 
 LIBRATBAG_EXPORT unsigned int
@@ -999,7 +1025,7 @@ ratbag_button_get_key(struct ratbag_button *button,
 	return button->action.action.key.key;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_key(struct ratbag_button *button,
 		      unsigned int key,
 		      unsigned int *modifiers,
@@ -1011,7 +1037,7 @@ ratbag_button_set_key(struct ratbag_button *button,
 	/* FIXME: range checks */
 
 	if (!button->profile->device->driver->write_button)
-		return -1;
+		return RATBAG_ERROR_CAPABILITY;
 
 	/* FIXME: modifiers */
 
@@ -1022,17 +1048,17 @@ ratbag_button_set_key(struct ratbag_button *button,
 	if (rc == 0)
 		button->action = action;
 
-	return rc;
+	return rc == 0 ? RATBAG_SUCCESS : RATBAG_ERROR_DEVICE;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_disable(struct ratbag_button *button)
 {
 	struct ratbag_button_action action;
 	int rc;
 
 	if (!button->profile->device->driver->write_button)
-		return -1;
+		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 	rc = button->profile->device->driver->write_button(button, &action);
@@ -1040,7 +1066,7 @@ ratbag_button_disable(struct ratbag_button *button)
 	if (rc == 0)
 		button->action = action;
 
-	return rc;
+	return rc == 0 ? RATBAG_SUCCESS : RATBAG_ERROR_DEVICE;
 }
 
 LIBRATBAG_EXPORT struct ratbag_button *
@@ -1139,7 +1165,7 @@ ratbag_resolution_get_user_data(const struct ratbag_resolution *ratbag_resolutio
 	return ratbag_resolution->userdata;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_macro(struct ratbag_button *button, const char *name)
 {
 	if (!button->action.macro)
@@ -1153,10 +1179,10 @@ ratbag_button_set_macro(struct ratbag_button *button, const char *name)
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
 	button->action.macro->name = strdup_safe(name);
 
-	return 0;
+	return RATBAG_SUCCESS;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_macro_event(struct ratbag_button *button,
 			      unsigned int index,
 			      enum ratbag_macro_event_type type,
@@ -1166,7 +1192,7 @@ ratbag_button_set_macro_event(struct ratbag_button *button,
 
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO ||
 	    index >= MAX_MACRO_EVENTS)
-		return -EINVAL;
+		return RATBAG_ERROR_VALUE;
 
 	macro = button->action.macro;
 
@@ -1184,17 +1210,20 @@ ratbag_button_set_macro_event(struct ratbag_button *button,
 		macro->events[index].type = type;
 		break;
 	default:
-		return -EINVAL;
+		return RATBAG_ERROR_VALUE;
 	}
 
 	return 0;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_write_macro(struct ratbag_button *button)
 {
-	return button->profile->device->driver->write_button(button, &button->action);
+	int rc;
 
+	rc = button->profile->device->driver->write_button(button, &button->action);
+
+	return rc == 0 ? RATBAG_SUCCESS : RATBAG_ERROR_DEVICE;
 }
 
 LIBRATBAG_EXPORT enum ratbag_macro_event_type

@@ -236,13 +236,17 @@ ratbag_cmd_open_device(struct ratbag *ratbag, const char *path)
 	struct ratbag_device *device;
 	_cleanup_udev_unref_ struct udev *udev = NULL;
 	_cleanup_udev_device_unref_ struct udev_device *udev_device = NULL;
+	enum ratbag_error_code error;
 
 	udev = udev_new();
 	udev_device = udev_device_from_path(udev, path);
 	if (!udev_device)
 		return NULL;
 
-	device = ratbag_device_new_from_udev_device(ratbag, udev_device);
+	error = ratbag_device_new_from_udev_device(ratbag, udev_device,
+						   &device);
+	if (error != RATBAG_SUCCESS)
+		return NULL;
 
 	return device;
 }

@@ -1,6 +1,6 @@
 /* in alphabetical order! */
 
-LIBRATBAG_0.2.0 {
+LIBRATBAG_0.3.0 {
 global:
 	ratbag_create_context;
 	ratbag_button_disable;
