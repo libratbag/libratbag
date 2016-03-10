@@ -136,10 +136,10 @@ AC_SUBST(SYSTEMD_UNIT_DIR)
 AC_ARG_WITH([dbus-root-dir],
 	    AS_HELP_STRING([--with-dbus-root-dir=DIR],
 			   [dbus service directory [[default=$datadir/dbus-1]]]),
-	    [unitdir="$withval"],
-	    [unitdir="$datadir/dbus-1"])
-DBUS_SYSTEM_SERVICES_DIR="${datadir}/system-services"
-DBUS_SYSTEM_CONFIG_DIR="${datadir}/system.d"
+	    [dbusrootdir="$withval"],
+	    [dbusrootdir="$datadir/dbus-1"])
+DBUS_SYSTEM_SERVICES_DIR="${dbusrootdir}/system-services"
+DBUS_SYSTEM_CONFIG_DIR="${dbusrootdir}/system.d"
 AC_SUBST(DBUS_SYSTEM_SERVICES_DIR)
 
 # ------------------------------------------------------------------------------
