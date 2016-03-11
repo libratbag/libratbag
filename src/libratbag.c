@@ -158,9 +158,7 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	device->name = strdup_safe(name);
 	device->ratbag = ratbag_ref(ratbag);
 	device->refcount = 1;
-	if (udev_device)
-		device->udev_device = udev_device_ref(udev_device);
-
+	device->udev_device = udev_device_ref(udev_device);
 	device->ids = *id;
 	list_init(&device->profiles);
 
