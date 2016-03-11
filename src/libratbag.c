@@ -156,12 +156,6 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 
 	device = zalloc(sizeof(*device));
 	device->name = strdup_safe(name);
-
-	if (!name) {
-		free(device);
-		return NULL;
-	}
-
 	device->ratbag = ratbag_ref(ratbag);
 	device->refcount = 1;
 	if (udev_device)
