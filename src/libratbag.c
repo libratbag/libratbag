@@ -362,15 +362,8 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	char *name = NULL;
 	struct input_id id;
 
-	if (!ratbag) {
-		fprintf(stderr, "ratbag is NULL\n");
-		return NULL;
-	}
-
-	if (!udev_device) {
-		log_bug_client(ratbag, "udev device is NULL.\n");
-		return NULL;
-	}
+	assert(ratbag != NULL);
+	assert(udev_device != NULL);
 
 	if (get_product_id(udev_device, &id) != 0)
 		goto out_err;
@@ -464,10 +457,9 @@ ratbag_create_context(const struct ratbag_interface *interface,
 {
 	struct ratbag *ratbag;
 
-	if (interface == NULL ||
-	    interface->open_restricted == NULL ||
-	    interface->close_restricted == NULL)
-		return NULL;
+	assert(interface != NULL);
+	assert(interface->open_restricted != NULL);
+	assert(interface->close_restricted != NULL);
 
 	ratbag = zalloc(sizeof(*ratbag));
 	ratbag->refcount = 1;
