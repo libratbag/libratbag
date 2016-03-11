@@ -620,7 +620,7 @@ ratbag_profile_set_active(struct ratbag_profile *profile);
  *
  * @return The number of profiles available.
  */
-int
+unsigned int
 ratbag_profile_get_num_resolutions(struct ratbag_profile *profile);
 
 /**

@@ -728,7 +728,7 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	return rc;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT unsigned int
 ratbag_profile_get_num_resolutions(struct ratbag_profile *profile)
 {
 	return profile->resolution.num_modes;
@@ -738,9 +738,9 @@ LIBRATBAG_EXPORT struct ratbag_resolution *
 ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
 {
 	struct ratbag_resolution *res;
-	int max = ratbag_profile_get_num_resolutions(profile);
+	unsigned max = ratbag_profile_get_num_resolutions(profile);
 
-	if (max < 0 || idx >= (unsigned int)max)
+	if (idx >= max)
 		return NULL;
 
 	res = &profile->resolution.modes[idx];
