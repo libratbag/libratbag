@@ -460,7 +460,7 @@ ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 
 LIBRATBAG_EXPORT struct ratbag *
 ratbag_create_context(const struct ratbag_interface *interface,
-			 void *userdata)
+		      void *userdata)
 {
 	struct ratbag *ratbag;
 
@@ -721,9 +721,9 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	if (rc)
 		return rc;
 
-	list_for_each(p, &device->profiles, link) {
+	list_for_each(p, &device->profiles, link)
 		p->is_active = false;
-	}
+
 	profile->is_active = true;
 	return rc;
 }
