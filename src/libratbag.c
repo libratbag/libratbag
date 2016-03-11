@@ -643,8 +643,10 @@ ratbag_device_get_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct ratbag_profile *profile;
 
-	if (index >= ratbag_device_get_num_profiles(device))
+	if (index >= ratbag_device_get_num_profiles(device)) {
+		log_bug_client(device->ratbag, "Requested invalid profile %d\n", index);
 		return NULL;
+	}
 
 	list_for_each(profile, &device->profiles, link) {
 		if (profile->index == index)
@@ -730,8 +732,11 @@ ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
 	struct ratbag_resolution *res;
 	unsigned max = ratbag_profile_get_num_resolutions(profile);
 
-	if (idx >= max)
+	if (idx >= max) {
+		log_bug_client(profile->device->ratbag,
+			       "Requested invalid resolution %d\n", idx);
 		return NULL;
+	}
 
 	res = &profile->resolution.modes[idx];
 
@@ -875,8 +880,10 @@ ratbag_profile_get_button(struct ratbag_profile *profile,
 	struct ratbag_device *device = profile->device;
 	struct ratbag_button *button;
 
-	if (index >= ratbag_device_get_num_buttons(device))
+	if (index >= ratbag_device_get_num_buttons(device)) {
+		log_bug_client(device->ratbag, "Requested invalid button %d\n", index);
 		return NULL;
+	}
 
 	list_for_each(button, &profile->buttons, link) {
 		if (button->index == index)
