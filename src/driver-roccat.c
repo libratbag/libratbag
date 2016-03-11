@@ -532,6 +532,7 @@ roccat_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 	if (action && action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+		struct ratbag_button_macro *m = NULL;
 
 		roccat_set_config_profile(device,
 					  button->profile->index,
@@ -566,7 +567,7 @@ roccat_read_button(struct ratbag_button *button)
 				goto out_macro;
 			}
 
-			ratbag_button_set_macro(button, macro->name);
+			m = ratbag_button_macro_new(macro->name);
 			log_raw(device->ratbag,
 				"macro on button %d of profile %d is named '%s', and contains %d events:\n",
 				button->index, button->profile->index,
@@ -574,7 +575,7 @@ roccat_read_button(struct ratbag_button *button)
 			for (j = 0; j < macro->length; j++) {
 				unsigned int keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 								macro->keys[j].keycode);
-				ratbag_button_set_macro_event(button,
+				ratbag_button_macro_set_event(m,
 							      j * 2,
 							      macro->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
 							      keycode);
@@ -582,7 +583,7 @@ roccat_read_button(struct ratbag_button *button)
 					time = macro->keys[j].time;
 				else
 					time = macro->keys[j].flag & 0x01 ? 10 : 50;
-				ratbag_button_set_macro_event(button,
+				ratbag_button_macro_set_event(m,
 							      j * 2 + 1,
 							      RATBAG_MACRO_EVENT_WAIT,
 							      time);
@@ -592,9 +593,11 @@ roccat_read_button(struct ratbag_button *button)
 					libevdev_event_code_get_name(EV_KEY, keycode),
 					macro->keys[j].flag & 0x80 ? "released" : "pressed");
 			}
+			ratbag_button_copy_macro(button, m);
 		}
 out_macro:
 		msleep(10);
+		ratbag_button_macro_unref(m);
 	}
 }
 

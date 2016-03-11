@@ -174,18 +174,20 @@ static const char *strip_ev_key(int key)
 char *
 button_action_macro_to_str(struct ratbag_button *button)
 {
+	struct ratbag_button_macro *macro;
 	char str[4096] = {0};
 	const char *name;
 	int offset;
 	unsigned int i;
 
-	name = ratbag_button_get_macro_name(button);
+	macro = ratbag_button_get_macro(button);
+	name = ratbag_button_macro_get_name(macro);
 	offset = snprintf(str, sizeof(str), "macro \"%s\":",
 			  name ? name : "UNKNOWN");
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
-		enum ratbag_macro_event_type type = ratbag_button_get_macro_event_type(button, i);
-		int key = ratbag_button_get_macro_event_key(button, i);
-		int timeout = ratbag_button_get_macro_event_timeout(button, i);
+		enum ratbag_macro_event_type type = ratbag_button_macro_get_event_type(macro, i);
+		int key = ratbag_button_macro_get_event_key(macro, i);
+		int timeout = ratbag_button_macro_get_event_timeout(macro, i);
 
 		if (type == RATBAG_MACRO_EVENT_NONE)
 			break;
@@ -204,6 +206,8 @@ button_action_macro_to_str(struct ratbag_button *button)
 			offset += snprintf(str + offset, sizeof(str) - offset, " ###");
 		}
 	}
+
+	ratbag_button_macro_unref(macro);
 
 	return strdup_safe(str);
 }

@@ -430,6 +430,7 @@ etekcity_read_button(struct ratbag_button *button)
 {
 	const struct ratbag_button_action *action;
 	struct ratbag_device *device;
+	struct ratbag_button_macro *m;
 	struct etekcity_macro *macro;
 	struct etekcity_data *drv_data;
 	uint8_t *buf;
@@ -464,7 +465,7 @@ etekcity_read_button(struct ratbag_button *button)
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 		} else {
-			ratbag_button_set_macro(button, macro->name);
+			m = ratbag_button_macro_new(macro->name);
 			log_raw(device->ratbag,
 				"macro on button %d of profile %d is named '%s', and contains %d events:\n",
 				button->index, button->profile->index,
@@ -472,7 +473,7 @@ etekcity_read_button(struct ratbag_button *button)
 			for (j = 0; j < macro->length; j++) {
 				unsigned int keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 								macro->keys[j].keycode);
-				ratbag_button_set_macro_event(button,
+				ratbag_button_macro_set_event(m,
 							      j,
 							      macro->keys[j].flag & 0x80 ? RATBAG_MACRO_EVENT_KEY_RELEASED : RATBAG_MACRO_EVENT_KEY_PRESSED,
 							      keycode);
@@ -481,6 +482,8 @@ etekcity_read_button(struct ratbag_button *button)
 					libevdev_event_code_get_name(EV_KEY, keycode),
 					macro->keys[j].flag & 0x80 ? "released" : "pressed");
 			}
+			ratbag_button_copy_macro(button, m);
+			ratbag_button_macro_unref(m);
 		}
 		msleep(10);
 	}
