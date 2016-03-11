@@ -1345,7 +1345,7 @@ ratbag_button_get_macro_event_key(struct ratbag_button *button, unsigned int ind
  * @param button A previously initialized ratbag button
  * @param index An index of the event within the macro we are interested in.
  *
- * @return The tiemout of the event at the given index
+ * @return The timeout of the event at the given index
  */
 int
 ratbag_button_get_macro_event_timeout(struct ratbag_button *button, unsigned int index);

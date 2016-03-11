@@ -329,7 +329,7 @@ get_device_name(struct udev_device *device)
 	if (!prop)
 		return NULL;
 
-	/* udev name is inclosed by " */
+	/* udev name is enclosed by " */
 	return strndup(&prop[1], strlen(prop) - 2);
 }
 
