@@ -141,6 +141,7 @@ AC_ARG_WITH([dbus-root-dir],
 DBUS_SYSTEM_SERVICES_DIR="${dbusrootdir}/system-services"
 DBUS_SYSTEM_CONFIG_DIR="${dbusrootdir}/system.d"
 AC_SUBST(DBUS_SYSTEM_SERVICES_DIR)
+AC_SUBST(DBUS_SYSTEM_CONFIG_DIR)
 
 # ------------------------------------------------------------------------------
 # report
