@@ -71,7 +71,7 @@ ratbag_device_new_test_device(struct ratbag *ratbag,
 
 	device = ratbag_device_new(ratbag, NULL, "Test device", &id);
 
-	if (!ratbag_find_driver(device, &device->ids, test_device)) {
+	if (!ratbag_assign_driver(device, &device->ids, test_device)) {
 		ratbag_device_destroy(device);
 		return NULL;
 	}

@@ -424,10 +424,10 @@ const char *
 ratbag_device_get_udev_property(const struct ratbag_device* device,
 				const char *name);
 
-struct ratbag_driver *
-ratbag_find_driver(struct ratbag_device *device,
-		   const struct input_id *dev_id,
-		   struct ratbag_test_device *test_device);
+bool
+ratbag_assign_driver(struct ratbag_device *device,
+		     const struct input_id *dev_id,
+		     struct ratbag_test_device *test_device);
 
 void
 ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver);

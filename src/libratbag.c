@@ -283,10 +283,10 @@ out:
 	return rc;
 }
 
-struct ratbag_driver *
-ratbag_find_driver(struct ratbag_device *device,
-		   const struct input_id *dev_id,
-		   struct ratbag_test_device *test_device)
+bool
+ratbag_assign_driver(struct ratbag_device *device,
+		     const struct input_id *dev_id,
+		     struct ratbag_test_device *test_device)
 {
 	struct ratbag *ratbag = device->ratbag;
 	struct ratbag_driver *driver;
@@ -296,7 +296,7 @@ ratbag_find_driver(struct ratbag_device *device,
 	if (!test_device) {
 		driver_name = udev_prop_value(device->udev_device, "RATBAG_DRIVER");
 		if (!driver_name)
-			return NULL;
+			return false;
 	} else {
 		driver_name = "test_driver";
 	}
@@ -311,7 +311,7 @@ ratbag_find_driver(struct ratbag_device *device,
 	if (!device->driver) {
 		log_error(ratbag, "%s: driver '%s' does not exist\n",
 			  device->name, driver_name);
-		return NULL;
+		return false;
 	}
 
 	if (test_device)
@@ -320,21 +320,19 @@ ratbag_find_driver(struct ratbag_device *device,
 		rc = device->driver->probe(device);
 	if (rc == 0) {
 		if (!ratbag_sanity_check_device(device)) {
-			return NULL;
+			return false;
 		} else {
 			log_debug(ratbag, "driver match found: %s\n", driver->name);
-			return device->driver;
+			return true;
 		}
 	}
 
 	device->driver = NULL;
 
-	if (rc == -ENODEV) {
+	if (rc == -ENODEV)
 		log_error(ratbag, "%s: no hidraw device found\n", device->name);
-		return NULL;
-	}
 
-	return NULL;
+	return false;
 }
 
 static inline char*
@@ -376,7 +374,6 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 				   struct ratbag_device **device_out)
 {
 	struct ratbag_device *device = NULL;
-	struct ratbag_driver *driver;
 	enum ratbag_error_code error = RATBAG_ERROR_DEVICE;
 	_cleanup_free_ char *name = NULL;
 	struct input_id id;
@@ -396,8 +393,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	if (!device)
 		goto out_err;
 
-	driver = ratbag_find_driver(device, &device->ids, NULL);
-	if (!driver)
+	if (!ratbag_assign_driver(device, &device->ids, NULL))
 		goto out_err;
 
 	error = RATBAG_SUCCESS;
