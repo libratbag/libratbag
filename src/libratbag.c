@@ -216,7 +216,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	 * accidental negative */
 	if (device->num_profiles == 0 || device->num_profiles > 16) {
 		log_bug_libratbag(ratbag,
-				  "%s: invalid number of profiles %d\n",
+				  "%s: invalid number of profiles (%d)\n",
 				  device->name,
 				  device->num_profiles);
 		goto out;
@@ -242,8 +242,9 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		nres = ratbag_profile_get_num_resolutions(profile);
 		if (nres == 0 || nres > 16) {
 				log_bug_libratbag(ratbag,
-						  "%s: minimum 1 resolution required\n",
-						  device->name);
+						  "%s: invalid number of resolutions (%d)\n",
+						  device->name,
+						  nres);
 				goto out;
 		}
 
@@ -254,7 +255,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	/* Require 1 active profile */
 	if (!has_active) {
 		log_bug_libratbag(ratbag,
-				  "%s: no active profile found\n",
+				  "%s: no profile set as active profile\n",
 				  device->name);
 		goto out;
 	}
@@ -291,7 +292,7 @@ ratbag_find_driver(struct ratbag_device *device,
 	}
 
 	if (!device->driver) {
-		log_error(ratbag, "%s: driver specified in hwdb not found: %s\n",
+		log_error(ratbag, "%s: driver '%s' does not exist\n",
 			  device->name, driver_name);
 		return NULL;
 	}
