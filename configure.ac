@@ -4,7 +4,7 @@
 AC_PREREQ([2.64])
 
 AC_INIT([ratbagd],
-        [0.1],
+        [0.1.1],
         [http://www.github.com/libratbag/ratbagd],
         [ratbagd],
         [http://www.github.com/libratbag/ratbagd])
