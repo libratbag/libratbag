@@ -312,7 +312,7 @@ ratbag_find_driver(struct ratbag_device *device,
 
 	device->driver = NULL;
 
-	if (rc != -ENODEV) {
+	if (rc == -ENODEV) {
 		log_error(ratbag, "%s: no hidraw device found\n", device->name);
 		return NULL;
 	}
