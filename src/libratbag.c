@@ -359,7 +359,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 {
 	struct ratbag_device *device = NULL;
 	struct ratbag_driver *driver;
-	char *name = NULL;
+	_cleanup_free_ char *name = NULL;
 	struct input_id id;
 
 	assert(ratbag != NULL);
@@ -375,8 +375,6 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	}
 
 	device = ratbag_device_new(ratbag, udev_device, name, &id);
-	free(name);
-
 	if (!device)
 		goto out_err;
 
