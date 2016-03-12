@@ -156,17 +156,9 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 
 	device = zalloc(sizeof(*device));
 	device->name = strdup_safe(name);
-
-	if (!name) {
-		free(device);
-		return NULL;
-	}
-
 	device->ratbag = ratbag_ref(ratbag);
 	device->refcount = 1;
-	if (udev_device)
-		device->udev_device = udev_device_ref(udev_device);
-
+	device->udev_device = udev_device_ref(udev_device);
 	device->ids = *id;
 	list_init(&device->profiles);
 
@@ -224,7 +216,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	 * accidental negative */
 	if (device->num_profiles == 0 || device->num_profiles > 16) {
 		log_bug_libratbag(ratbag,
-				  "%s: invalid number of profiles %d\n",
+				  "%s: invalid number of profiles (%d)\n",
 				  device->name,
 				  device->num_profiles);
 		goto out;
@@ -250,8 +242,9 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		nres = ratbag_profile_get_num_resolutions(profile);
 		if (nres == 0 || nres > 16) {
 				log_bug_libratbag(ratbag,
-						  "%s: minimum 1 resolution required\n",
-						  device->name);
+						  "%s: invalid number of resolutions (%d)\n",
+						  device->name,
+						  nres);
 				goto out;
 		}
 
@@ -262,7 +255,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	/* Require 1 active profile */
 	if (!has_active) {
 		log_bug_libratbag(ratbag,
-				  "%s: no active profile found\n",
+				  "%s: no profile set as active profile\n",
 				  device->name);
 		goto out;
 	}
@@ -299,7 +292,7 @@ ratbag_find_driver(struct ratbag_device *device,
 	}
 
 	if (!device->driver) {
-		log_error(ratbag, "%s: driver specified in hwdb not found: %s\n",
+		log_error(ratbag, "%s: driver '%s' does not exist\n",
 			  device->name, driver_name);
 		return NULL;
 	}
@@ -319,7 +312,7 @@ ratbag_find_driver(struct ratbag_device *device,
 
 	device->driver = NULL;
 
-	if (rc != -ENODEV) {
+	if (rc == -ENODEV) {
 		log_error(ratbag, "%s: no hidraw device found\n", device->name);
 		return NULL;
 	}
@@ -336,7 +329,7 @@ get_device_name(struct udev_device *device)
 	if (!prop)
 		return NULL;
 
-	/* udev name is inclosed by " */
+	/* udev name is enclosed by " */
 	return strndup(&prop[1], strlen(prop) - 2);
 }
 
@@ -467,7 +460,7 @@ ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 
 LIBRATBAG_EXPORT struct ratbag *
 ratbag_create_context(const struct ratbag_interface *interface,
-			 void *userdata)
+		      void *userdata)
 {
 	struct ratbag *ratbag;
 
@@ -728,14 +721,14 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	if (rc)
 		return rc;
 
-	list_for_each(p, &device->profiles, link) {
+	list_for_each(p, &device->profiles, link)
 		p->is_active = false;
-	}
+
 	profile->is_active = true;
 	return rc;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT unsigned int
 ratbag_profile_get_num_resolutions(struct ratbag_profile *profile)
 {
 	return profile->resolution.num_modes;
@@ -745,9 +738,9 @@ LIBRATBAG_EXPORT struct ratbag_resolution *
 ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
 {
 	struct ratbag_resolution *res;
-	int max = ratbag_profile_get_num_resolutions(profile);
+	unsigned max = ratbag_profile_get_num_resolutions(profile);
 
-	if (max < 0 || idx >= (unsigned int)max)
+	if (idx >= max)
 		return NULL;
 
 	res = &profile->resolution.modes[idx];
