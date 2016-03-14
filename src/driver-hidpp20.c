@@ -123,32 +123,34 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 			   union hidpp20_button_binding *binding)
 {
 	struct ratbag_device *device = button->profile->device;
+	struct ratbag_button_macro *m;
 	union hidpp20_macro_data *macro;
 	unsigned int i, keycode;
 	bool delay = true;
 
 	macro = profile->macros[binding->macro.page];
 
-	ratbag_button_set_macro(button, "macro");
 	i = 0;
+
+	m = ratbag_button_macro_new("macro");
 
 	while (macro && macro->any.type != HIDPP20_MACRO_END && i < MAX_MACRO_EVENTS) {
 		switch (macro->any.type) {
 		case HIDPP20_MACRO_DELAY:
-			ratbag_button_set_macro_event(button,
-						   i++,
-						   RATBAG_MACRO_EVENT_WAIT,
-						   macro->delay.time);
+			ratbag_button_macro_set_event(m,
+						      i++,
+						      RATBAG_MACRO_EVENT_WAIT,
+						      macro->delay.time);
 			delay = true;
 			break;
 		case HIDPP20_MACRO_KEY_PRESS:
 			keycode = hidpp20drv_read_macro_key_8100(device, macro);
 			if (!delay)
-				ratbag_button_set_macro_event(button,
+				ratbag_button_macro_set_event(m,
 							      i++,
 							      RATBAG_MACRO_EVENT_WAIT,
 							      1);
-			ratbag_button_set_macro_event(button,
+			ratbag_button_macro_set_event(m,
 						      i++,
 						      RATBAG_MACRO_EVENT_KEY_PRESSED,
 						      keycode);
@@ -157,11 +159,11 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 		case HIDPP20_MACRO_KEY_RELEASE:
 			keycode = hidpp20drv_read_macro_key_8100(device, macro);
 			if (!delay)
-				ratbag_button_set_macro_event(button,
+				ratbag_button_macro_set_event(m,
 							      i++,
 							      RATBAG_MACRO_EVENT_WAIT,
 							      1);
-			ratbag_button_set_macro_event(button,
+			ratbag_button_macro_set_event(m,
 						      i++,
 						      RATBAG_MACRO_EVENT_KEY_RELEASED,
 						      keycode);
@@ -170,6 +172,9 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 		}
 		macro++;
 	}
+
+	ratbag_button_copy_macro(button, m);
+	ratbag_button_macro_unref(m);
 }
 
 static void

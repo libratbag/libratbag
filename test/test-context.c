@@ -26,11 +26,15 @@
 #include <check.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include "libratbag.h"
+
+#define _unused_ __attribute__ ((unused))
 
 static int
 open_restricted(const char *path, int flags, void *user_data)
@@ -65,23 +69,40 @@ END_TEST
 
 START_TEST(context_init_bad_iface)
 {
-	struct ratbag *lr;
+	struct ratbag *lr _unused_;
 	struct ratbag_interface iface = {
 		.open_restricted = NULL,
 		.close_restricted = NULL,
 	};
 
 	lr = ratbag_create_context(&iface, NULL);
-	ck_assert(lr == NULL);
+	/* abort */
+}
+END_TEST
 
-	iface.open_restricted = open_restricted;
-	lr = ratbag_create_context(&iface, NULL);
-	ck_assert(lr == NULL);
+START_TEST(context_init_bad_iface_open)
+{
+	struct ratbag *lr _unused_;
+	struct ratbag_interface iface = {
+		.open_restricted = open_restricted,
+		.close_restricted = NULL,
+	};
 
-	iface.open_restricted = NULL;
-	iface.close_restricted = close_restricted;
 	lr = ratbag_create_context(&iface, NULL);
-	ck_assert(lr == NULL);
+	/* abort */
+}
+END_TEST
+
+START_TEST(context_init_bad_iface_close)
+{
+	struct ratbag *lr _unused_;
+	struct ratbag_interface iface = {
+		.open_restricted = NULL,
+		.close_restricted = close_restricted,
+	};
+
+	lr = ratbag_create_context(&iface, NULL);
+	/* abort */
 }
 END_TEST
 
@@ -115,15 +136,19 @@ START_TEST(context_ref)
 END_TEST
 
 static Suite *
-test_context_suite(void)
+test_context_suite(bool using_valgrind)
 {
 	TCase *tc;
 	Suite *s;
 
 	s = suite_create("context");
 	tc = tcase_create("init");
-	tcase_add_test(tc, context_init_NULL);
-	tcase_add_test(tc, context_init_bad_iface);
+	if (!using_valgrind) {
+		tcase_add_test_raise_signal(tc, context_init_NULL, SIGABRT);
+		tcase_add_test_raise_signal(tc, context_init_bad_iface, SIGABRT);
+		tcase_add_test_raise_signal(tc, context_init_bad_iface_open, SIGABRT);
+		tcase_add_test_raise_signal(tc, context_init_bad_iface_close, SIGABRT);
+	}
 	tcase_add_test(tc, context_init);
 	tcase_add_test(tc, context_ref);
 	suite_add_tcase(s, tc);
@@ -136,9 +161,14 @@ int main(void)
 	int nfailed;
 	Suite *s;
 	SRunner *sr;
+	bool using_valgrind;
 
-	s = test_context_suite();
-        sr = srunner_create(s);
+	/* when running under valgrind we're using nofork mode, so a
+	 * signal raised by a test will fail in valgrind */
+	using_valgrind = !!getenv("USING_VALGRIND");
+
+	s = test_context_suite(using_valgrind);
+	sr = srunner_create(s);
 
 	srunner_run_all(sr, CK_ENV);
 	nfailed = srunner_ntests_failed(sr);

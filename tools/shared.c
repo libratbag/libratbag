@@ -174,18 +174,20 @@ static const char *strip_ev_key(int key)
 char *
 button_action_macro_to_str(struct ratbag_button *button)
 {
+	struct ratbag_button_macro *macro;
 	char str[4096] = {0};
 	const char *name;
 	int offset;
 	unsigned int i;
 
-	name = ratbag_button_get_macro_name(button);
+	macro = ratbag_button_get_macro(button);
+	name = ratbag_button_macro_get_name(macro);
 	offset = snprintf(str, sizeof(str), "macro \"%s\":",
 			  name ? name : "UNKNOWN");
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
-		enum ratbag_macro_event_type type = ratbag_button_get_macro_event_type(button, i);
-		int key = ratbag_button_get_macro_event_key(button, i);
-		int timeout = ratbag_button_get_macro_event_timeout(button, i);
+		enum ratbag_macro_event_type type = ratbag_button_macro_get_event_type(macro, i);
+		int key = ratbag_button_macro_get_event_key(macro, i);
+		int timeout = ratbag_button_macro_get_event_timeout(macro, i);
 
 		if (type == RATBAG_MACRO_EVENT_NONE)
 			break;
@@ -204,6 +206,8 @@ button_action_macro_to_str(struct ratbag_button *button)
 			offset += snprintf(str + offset, sizeof(str) - offset, " ###");
 		}
 	}
+
+	ratbag_button_macro_unref(macro);
 
 	return strdup_safe(str);
 }
@@ -236,13 +240,17 @@ ratbag_cmd_open_device(struct ratbag *ratbag, const char *path)
 	struct ratbag_device *device;
 	_cleanup_udev_unref_ struct udev *udev = NULL;
 	_cleanup_udev_device_unref_ struct udev_device *udev_device = NULL;
+	enum ratbag_error_code error;
 
 	udev = udev_new();
 	udev_device = udev_device_from_path(udev, path);
 	if (!udev_device)
 		return NULL;
 
-	device = ratbag_device_new_from_udev_device(ratbag, udev_device);
+	error = ratbag_device_new_from_udev_device(ratbag, udev_device,
+						   &device);
+	if (error != RATBAG_SUCCESS)
+		return NULL;
 
 	return device;
 }

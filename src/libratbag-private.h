@@ -250,6 +250,11 @@ struct ratbag_macro {
 	struct ratbag_macro_event events[MAX_MACRO_EVENTS];
 };
 
+struct ratbag_button_macro {
+	int refcount;
+	struct ratbag_macro macro;
+};
+
 struct ratbag_button_action {
 	enum ratbag_button_action_type type;
 	union ratbag_btn_action {
@@ -424,13 +429,17 @@ const char *
 ratbag_device_get_udev_property(const struct ratbag_device* device,
 				const char *name);
 
-struct ratbag_driver *
-ratbag_find_driver(struct ratbag_device *device,
-		   const struct input_id *dev_id,
-		   struct ratbag_test_device *test_device);
+bool
+ratbag_assign_driver(struct ratbag_device *device,
+		     const struct input_id *dev_id,
+		     struct ratbag_test_device *test_device);
 
 void
 ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver);
+
+void
+ratbag_button_copy_macro(struct ratbag_button *button,
+			 const struct ratbag_button_macro *macro);
 
 #endif /* LIBRATBAG_PRIVATE_H */
 

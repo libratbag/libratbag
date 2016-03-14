@@ -125,6 +125,59 @@ struct ratbag_button;
  */
 struct ratbag_resolution;
 
+/**
+ * @ingroup button
+ * @struct ratbag_macro
+ *
+ * Represents a macro that can be assigned to a button.
+ *
+ * This struct is refcounted, use ratbag_button_macro_ref() and
+ * ratbag_button_macro_unref().
+ */
+struct ratbag_button_macro;
+
+/**
+ * @ingroup base
+ *
+ * Error codes used by libratbag.
+ */
+enum ratbag_error_code {
+	RATBAG_SUCCESS = 0,
+
+	/**
+	 * An error occured on the device. Either the device is not a
+	 * libratbag device or communication with the device failed.
+	 */
+	RATBAG_ERROR_DEVICE = -1000,
+
+	/**
+	 * Insufficient capabilities. This error occurs when a requestd change is
+	 * beyond the device's capabilities.
+	 */
+	RATBAG_ERROR_CAPABILITY = -1001,
+
+	/**
+	 * Invalid value or value range. The provided value or value range
+	 * is outside of the legal or supported range.
+	 */
+	RATBAG_ERROR_VALUE = -1002,
+
+	/**
+	 * A low-level system error has occured, e.g. a failure to access
+	 * files that should be there. This error is usually unrecoverable
+	 * and libratbag will print a log message with details about the
+	 * error.
+	 */
+	RATBAG_ERROR_SYSTEM = -1003,
+
+	/**
+	 * Implementation bug, either in libratbag or in the caller. This
+	 * error is usually unrecoverable and libratbag will print a log
+	 * message with details about the
+	 * error.
+	 */
+	RATBAG_ERROR_IMPLEMENTATION = -1004,
+};
 
 /**
  * @ingroup base
@@ -325,12 +378,18 @@ ratbag_unref(struct ratbag *ratbag);
  * The device is refcounted with an initial value of at least 1.
  * Use ratbag_device_unref() to release the device.
  *
- * @return A new device based on the udev device, or NULL in case of
- * failure.
+ * @param ratbag A previously initialized ratbag context
+ * @param udev_device The udev device that points at the device
+ * @param device Set to a new device based on the udev device.
+ *
+ * @return 0 on success or the error.
+ * @retval RATBAG_ERROR_DEVICE The given device does not exist or is not
+ * supported by libratbag.
  */
-struct ratbag_device*
+enum ratbag_error_code
 ratbag_device_new_from_udev_device(struct ratbag *ratbag,
-				   struct udev_device *device);
+				   struct udev_device *udev_device,
+				   struct ratbag_device **device);
 
 /**
  * @ingroup device
@@ -600,9 +659,9 @@ ratbag_profile_is_active(struct ratbag_profile *profile);
  *
  * @param profile The profile to make the active profile.
  *
- * @return 0 on success or nonzero otherwise.
+ * @return 0 on success or an error code otherwise
  */
-int
+enum ratbag_error_code
 ratbag_profile_set_active(struct ratbag_profile *profile);
 
 /**
@@ -740,9 +799,9 @@ ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
  * @param resolution A previously initialized ratbag resolution
  * @param dpi Set to the resolution in dpi, 0 to disable
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 			  unsigned int dpi);
 
@@ -766,9 +825,9 @@ ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
  * @param x The x resolution in dpi
  * @param y The y resolution in dpi
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 			     unsigned int x, unsigned int y);
 
@@ -836,9 +895,9 @@ ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution);
  * @param resolution A previously initialized ratbag resolution
  * @param hz Set to the report rate in Hz, may be 0
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 				  unsigned int hz);
 
@@ -856,7 +915,7 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
  *
  * @param resolution A previously initialized ratbag resolution
  *
- * @return zero on success, non-zero otherwise
+ * @return The report rate for this resolution in Hz
  */
 int
 ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
@@ -872,9 +931,9 @@ ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
  *
  * @param resolution A previously initialized ratbag resolution
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_active(struct ratbag_resolution *resolution);
 
 /**
@@ -906,9 +965,9 @@ ratbag_resolution_is_active(const struct ratbag_resolution *resolution);
  *
  * @param resolution A previously initialized ratbag resolution
  *
- * @return zero on success, non-zero otherwise
+ * @return zero on success or an error code on failure
  */
-int
+enum ratbag_error_code
 ratbag_resolution_set_default(struct ratbag_resolution *resolution);
 
 /**
@@ -1165,12 +1224,12 @@ ratbag_button_get_button(struct ratbag_button *button);
  *
  * @param button A previously initialized ratbag button
  * @param btn The logical button number to assign to this button.
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_BUTTON.
  *
  * @see ratbag_button_get_button
  */
-int
+enum ratbag_error_code
 ratbag_button_set_button(struct ratbag_button *button,
 			 unsigned int btn);
 
@@ -1197,12 +1256,12 @@ ratbag_button_get_special(struct ratbag_button *button);
  *
  * @param button A previously initialized ratbag button
  * @param action The special action to assign to this button.
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_SPECIAL.
  *
  * @see ratbag_button_get_button
  */
-int
+enum ratbag_error_code
 ratbag_button_set_special(struct ratbag_button *button,
 			  enum ratbag_button_action_special action);
 
@@ -1243,10 +1302,10 @@ ratbag_button_get_key(struct ratbag_button *button,
  * @param sz The size of the modifiers array. sz may be 0 if no modifiers
  * are required.
  *
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_KEY.
  */
-int
+enum ratbag_error_code
 ratbag_button_set_key(struct ratbag_button *button,
 		      unsigned int key,
 		      unsigned int *modifiers,
@@ -1257,10 +1316,10 @@ ratbag_button_set_key(struct ratbag_button *button,
  *
  * @param button A previously initialized ratbag button
  *
- * @return 0 on success or nonzero otherwise. On success, the button's
+ * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_NONE.
  */
-int
+enum ratbag_error_code
 ratbag_button_disable(struct ratbag_button *button);
 
 /**
@@ -1279,100 +1338,174 @@ enum ratbag_macro_event_type {
 /**
  * @ingroup button
  *
- * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
- * this function returns the macro name.
+ * @param macro A previously initialized ratbag button macro
  *
- * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
- * this function returns NULL.
- *
- * @param button A previously initialized ratbag button
- *
- * @return The name of the macro associated to the button.
+ * @return The name of the macro
  */
 const char *
-ratbag_button_get_macro_name(struct ratbag_button *button);
+ratbag_button_macro_get_name(struct ratbag_button_macro *macro);
 
 /**
  * @ingroup button
  *
- * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
- * this function returns the macro event type configured for the event at the
+ * @param macro A previously initialized ratbag button macro
+ *
+ * @return The maximum number of events that can be assigned to this macro
+ */
+unsigned int
+ratbag_button_macro_get_num_events(struct ratbag_button_macro *macro);
+
+/**
+ * @ingroup button
+ *
+ * Returns the macro event type configured for the event at the
  * given index.
  *
- * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
- * this function returns @ref RATBAG_MACRO_EVENT_INVALID.
+ * The behavior of this function for an index equal to or greater than the
+ * return value of ratbag_button_macro_get_num_events() is undefined.
  *
- * @param button A previously initialized ratbag button
+ * @param macro A previously initialized ratbag button macro
  * @param index An index of the event within the macro we are interested in.
  *
  * @return The type of the event at the given index
  */
 enum ratbag_macro_event_type
-ratbag_button_get_macro_event_type(struct ratbag_button *button, unsigned int index);
+ratbag_button_macro_get_event_type(struct ratbag_button_macro *macro,
+				   unsigned int index);
 
 /**
  * @ingroup button
  *
- * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO, and if the
- * event stored at the given index is @ref RATBAG_MACRO_EVENT_KEY_PRESSED or
- * @ref RATBAG_MACRO_EVENT_KEY_RELEASED, this function returns the key code
- * configured for the event at the given index.
+ * If the event stored at the given index is @ref
+ * RATBAG_MACRO_EVENT_KEY_PRESSED or @ref RATBAG_MACRO_EVENT_KEY_RELEASED,
+ * this function returns the key code configured for the event at the given
+ * index.
  *
- * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
- * or if the event stored at the given index is not
- * @ref RATBAG_MACRO_EVENT_KEY_PRESSED or @ref RATBAG_MACRO_EVENT_KEY_RELEASED,
- * this function returns -EINVAL.
+ * The behavior of this function for an index equal to or greater than the
+ * return value of ratbag_button_macro_get_num_events() is undefined.
  *
- * @param button A previously initialized ratbag button
+ * @param macro A previously initialized ratbag button macro
  * @param index An index of the event within the macro we are interested in.
  *
  * @return The key of the event at the given index
  */
 int
-ratbag_button_get_macro_event_key(struct ratbag_button *button, unsigned int index);
+ratbag_button_macro_get_event_key(struct ratbag_button_macro*macro,
+				  unsigned int index);
 
 /**
  * @ingroup button
  *
- * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO, and if the
- * event stored at the given index is @ref RATBAG_MACRO_EVENT_WAIT, this
- * function returns the timeout configured for the event at the given index.
+ * If the event stored at the given index is @ref RATBAG_MACRO_EVENT_WAIT,
+ * this function returns the timeout configured for the event at the given
+ * index.
  *
- * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
- * or if the event stored at the given index is not
- * @ref RATBAG_MACRO_EVENT_WAIT, this function returns -EINVAL.
+ * The behavior of this function for an index equal to or greater than the
+ * return value of ratbag_button_macro_get_num_events() is undefined.
  *
- * @param button A previously initialized ratbag button
+ * @param macro A previously initialized ratbag button macro
  * @param index An index of the event within the macro we are interested in.
  *
  * @return The timeout of the event at the given index
  */
 int
-ratbag_button_get_macro_event_timeout(struct ratbag_button *button, unsigned int index);
+ratbag_button_macro_get_event_timeout(struct ratbag_button_macro *macro,
+				      unsigned int index);
 
 /**
  * @ingroup button
  *
  * Sets the button's action to @ref RATBAG_BUTTON_ACTION_TYPE_MACRO and
- * allocates the required memory to store the macro.
+ * assigns the given macro to this button.
+ *
+ * libratbag does not use the macro struct passed in, it extracts the
+ * required information from the struct. Changes to the macro after a call
+ * to ratbag_button_set_macro() are not reflected in the device until a
+ * subsequent call to ratbag_button_set_macro().
+ *
+ * @param button A previously intialized ratbag button
+ * @param macro A fully initialized macro
+ *
+ * @return 0 on success or nonzero otherwise
  */
-int
-ratbag_button_set_macro(struct ratbag_button *button, const char *name);
+enum ratbag_error_code
+ratbag_button_set_macro(struct ratbag_button *button,
+			const struct ratbag_button_macro *macro);
 
-int
-ratbag_button_write_macro(struct ratbag_button *button);
+/**
+ * @ingroup button
+ *
+ * Initialize a new button macro.
+ *
+ * The macro is refcounted with an initial value of at least 1.
+ * Use ratbag_button_macro_unref() to release the macro.
+ *
+ * Note that some devices have limited storage for the macro names.
+ * libratbag silently shortens macro names to the longest string the device
+ * is capable of storing.
+ *
+ * @param name The name to assign to this macro.
+ *
+ * @return An "empty" button macro
+ */
+struct ratbag_button_macro *
+ratbag_button_macro_new(const char *name);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * this function returns the current button macro. The macro is a copy of
+ * the one used on the device, changes to the macro are not reflected on the
+ * device until a subsequent call to ratbag_button_set_macro().
+ *
+ * If a button's action is not @ref RATBAG_BUTTON_ACTION_TYPE_MACRO,
+ * this function returns NULL.
+ *
+ * @param button A previously initialized ratbag button
+ */
+struct ratbag_button_macro *
+ratbag_button_get_macro(struct ratbag_button *button);
 
 /**
  * @ingroup button
  *
  * Sets the macro's event at the given index to the given type with the
  * key code or timeout given.
+ *
+ * The behavior of this function for an index equal to or greater than the
+ * return value of ratbag_button_macro_get_num_events() is undefined.
  */
-int
-ratbag_button_set_macro_event(struct ratbag_button *button,
+enum ratbag_error_code
+ratbag_button_macro_set_event(struct ratbag_button_macro *macro,
 			      unsigned int index,
 			      enum ratbag_macro_event_type type,
 			      unsigned int data);
+
+/**
+ * @ingroup button
+ *
+ * Add a reference to the macro. A macro is destroyed whenever the
+ * reference count reaches 0. See @ref ratbag_button_macro_unref.
+ *
+ * @param macro A previously initialized valid ratbag button macro
+ * @return The passed ratbag macro
+ */
+struct ratbag_button_macro *
+ratbag_button_macro_ref(struct ratbag_button_macro *macro);
+
+/**
+ * @ingroup button
+ *
+ * Dereference the ratbag button macro. When the internal refcount reaches
+ * zero, all resources associated with this object are released. The object
+ * must be considered invalid once unref is called.
+ *
+ * @param macro A previously initialized ratbag button macro
+ * @return Always NULL
+ */
+struct ratbag_button_macro *
+ratbag_button_macro_unref(struct ratbag_button_macro *macro);
 
 /**
  * @ingroup button

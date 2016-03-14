@@ -556,6 +556,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	struct ratbag_device *device;
 	struct ratbag_button *button = NULL;
 	struct ratbag_profile *profile = NULL;
+	struct ratbag_button_macro *m = NULL;
 	int button_index;
 	enum ratbag_button_action_type action_type;
 	int rc = ERR_DEVICE;
@@ -630,17 +631,18 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 		rc = ratbag_button_set_special(button, special);
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
-		rc = ratbag_button_set_macro(button, macro.name);
+		m = ratbag_button_macro_new(macro.name);
 		for (i = 0; i < ARRAY_LENGTH(macro.events); i++) {
 			if (macro.events[i].type == RATBAG_MACRO_EVENT_NONE)
 				break;
 
-			ratbag_button_set_macro_event(button,
+			ratbag_button_macro_set_event(m,
 						      i,
 						      macro.events[i].type,
 						      macro.events[i].data);
 		}
-		rc = ratbag_button_write_macro(button);
+		rc = ratbag_button_set_macro(button, m);
+		ratbag_button_macro_unref(m);
 		break;
 	default:
 		error("well, that shouldn't have happened\n");
@@ -1265,6 +1267,7 @@ ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
 {
 	struct ratbag_device *device;
 	struct ratbag_button *button;
+	struct ratbag_button_macro *m;
 	struct macro macro = {0};
 	int rc;
 	int i;
@@ -1289,17 +1292,18 @@ ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
 		return ERR_UNSUPPORTED;
 
 	button = options->button;
-	rc = ratbag_button_set_macro(button, macro.name);
+	m = ratbag_button_macro_new(macro.name);
 	for (i = 0; i < ARRAY_LENGTH(macro.events); i++) {
 		if (macro.events[i].type == RATBAG_MACRO_EVENT_NONE)
 			break;
 
-		ratbag_button_set_macro_event(button,
+		ratbag_button_macro_set_event(m,
 					      i,
 					      macro.events[i].type,
 					      macro.events[i].data);
 	}
-	rc = ratbag_button_write_macro(button);
+	rc = ratbag_button_set_macro(button, m);
+	ratbag_button_macro_unref(m);
 	if (rc != 0)
 		return ERR_DEVICE;
 
