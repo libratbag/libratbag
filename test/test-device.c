@@ -649,6 +649,73 @@ START_TEST(device_and_profile_and_resolution_freed_before_button)
 }
 END_TEST
 
+START_TEST(device_buttons)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	int nprofiles, nbuttons;
+	int i, j;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 10;
+
+	td.destroyed_data = &device_freed_count;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+
+	nprofiles = ratbag_device_get_num_profiles(d);
+	ck_assert_int_eq(nprofiles, 3);
+
+	nbuttons = ratbag_device_get_num_buttons(d);
+	ck_assert_int_eq(nbuttons, 10);
+
+	for (i = 0; i < nprofiles; i++) {
+		p = ratbag_device_get_profile(d, i);
+		ck_assert(p != NULL);
+
+		for (j = 0; j < nbuttons; j++) {
+			b = ratbag_profile_get_button(p, j);
+			ck_assert(b != NULL);
+
+			ratbag_button_unref(b);
+		}
+		ratbag_profile_unref(p);
+	}
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
+START_TEST(device_buttons_ref_unref)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 10;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 1);
+	b = ratbag_profile_get_button(p, 0);
+
+	ratbag_unref(r);
+	ratbag_device_unref(d);
+	ratbag_profile_unref(p);
+
+	ref_unref_test(ratbag_button, b);
+
+	ratbag_button_unref(b);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -679,6 +746,11 @@ test_context_suite(void)
 	tcase_add_test(tc, device_resolutions);
 	tcase_add_test(tc, device_resolutions_ref_unref);
 	tcase_add_test(tc, device_resolutions_num_0);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("buttons");
+	tcase_add_test(tc, device_buttons);
+	tcase_add_test(tc, device_buttons_ref_unref);
 	suite_add_tcase(s, tc);
 
 	return s;
