@@ -123,6 +123,15 @@ test_read_button(struct ratbag_button *button)
 }
 
 static int
+test_write_button(struct ratbag_button *button,
+		  const struct ratbag_button_action *action)
+{
+	/* check if the device is still valid */
+	assert(ratbag_get_drv_data(button->profile->device) != NULL);
+	return 0;
+}
+
+static int
 test_fake_probe(struct ratbag_device *device)
 {
 	return -ENODEV;
@@ -166,6 +175,6 @@ struct ratbag_driver test_driver = {
 	.write_profile = test_write_profile,
 	.set_active_profile = test_set_active_profile,
 	.read_button = test_read_button,
-	.write_button = NULL,
+	.write_button = test_write_button,
 	.write_resolution_dpi = NULL,
 };

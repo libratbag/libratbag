@@ -727,6 +727,30 @@ START_TEST(device_buttons_ref_unref)
 }
 END_TEST
 
+START_TEST(device_buttons_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 10;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 1);
+	b = ratbag_profile_get_button(p, 0);
+
+	ratbag_button_set_button(b, 3);
+
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -762,6 +786,7 @@ test_context_suite(void)
 	tc = tcase_create("buttons");
 	tcase_add_test(tc, device_buttons);
 	tcase_add_test(tc, device_buttons_ref_unref);
+	tcase_add_test(tc, device_buttons_set);
 	suite_add_tcase(s, tc);
 
 	return s;
