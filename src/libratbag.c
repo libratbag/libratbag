@@ -959,7 +959,7 @@ ratbag_button_get_button(struct ratbag_button *button)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 {
-	struct ratbag_button_action action;
+	struct ratbag_button_action action = {0};
 	int rc;
 
 	if (!button->profile->device->driver->write_button)
@@ -989,7 +989,7 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_special(struct ratbag_button *button,
 			  enum ratbag_button_action_special act)
 {
-	struct ratbag_button_action action;
+	struct ratbag_button_action action = {0};
 	int rc;
 
 	/* FIXME: range checks */
@@ -1027,7 +1027,7 @@ ratbag_button_set_key(struct ratbag_button *button,
 		      unsigned int *modifiers,
 		      size_t sz)
 {
-	struct ratbag_button_action action;
+	struct ratbag_button_action action = {0};
 	int rc;
 
 	/* FIXME: range checks */
