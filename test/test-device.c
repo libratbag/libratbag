@@ -655,12 +655,15 @@ START_TEST(device_buttons)
 	struct ratbag_device *d;
 	struct ratbag_profile *p;
 	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
 	int nprofiles, nbuttons;
 	int i, j;
 	int device_freed_count = 0;
 
 	struct ratbag_test_device td = sane_device;
 	td.num_buttons = 10;
+
+	td.profiles[0].buttons[8].type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
 
 	td.destroyed_data = &device_freed_count;
 
@@ -680,6 +683,14 @@ START_TEST(device_buttons)
 		for (j = 0; j < nbuttons; j++) {
 			b = ratbag_profile_get_button(p, j);
 			ck_assert(b != NULL);
+
+			if (ratbag_button_get_action_type(b) ==
+			    RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+				m = ratbag_button_get_macro(b);
+				ck_assert(m != NULL);
+
+				ratbag_button_macro_unref(m);
+			}
 
 			ratbag_button_unref(b);
 		}

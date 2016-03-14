@@ -24,6 +24,7 @@
 #include "config.h"
 
 #include <errno.h>
+#include <libevdev/libevdev.h>
 
 #include "libratbag-private.h"
 #include "libratbag-test.h"
@@ -73,6 +74,54 @@ test_set_active_profile(struct ratbag_device *device, unsigned int index)
 	return 0;
 }
 
+static void
+test_read_button(struct ratbag_button *button)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct ratbag_test_device *d = ratbag_get_drv_data(device);
+	struct ratbag_test_profile *p = &d->profiles[button->profile->index];
+	struct ratbag_button_macro *m;
+	const char data[] = "TEST";
+	const char *c;
+
+	switch (p->buttons[button->index].type) {
+	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+		button->action.action.button = p->buttons[button->index].button;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+		button->action.action.key.key = p->buttons[button->index].key;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+		m = ratbag_button_macro_new("test macro");
+
+		ARRAY_FOR_EACH(data, c) {
+			char str[6];
+			snprintf_safe(str, 6, "KEY_%c", *c);
+			ratbag_button_macro_set_event(m,
+						      0,
+						      RATBAG_MACRO_EVENT_KEY_PRESSED,
+						      libevdev_event_code_from_name(EV_KEY, str));
+			ratbag_button_macro_set_event(m,
+						      0,
+						      RATBAG_MACRO_EVENT_KEY_RELEASED,
+						      libevdev_event_code_from_name(EV_KEY, str));
+		}
+		ratbag_button_copy_macro(button, m);
+		ratbag_button_macro_unref(m);
+		break;
+	default:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
+	}
+
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+}
+
 static int
 test_fake_probe(struct ratbag_device *device)
 {
@@ -116,7 +165,7 @@ struct ratbag_driver test_driver = {
 	.read_profile = test_read_profile,
 	.write_profile = test_write_profile,
 	.set_active_profile = test_set_active_profile,
-	.read_button = NULL,
+	.read_button = test_read_button,
 	.write_button = NULL,
 	.write_resolution_dpi = NULL,
 };

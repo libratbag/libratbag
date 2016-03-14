@@ -32,6 +32,12 @@
 #define RATBAG_TEST_MAX_RESOLUTIONS 8
 
 struct ratbag_test_button {
+	enum ratbag_button_action_type type;
+	union {
+		int button;
+		int key;
+		enum ratbag_button_action_special special;
+	};
 };
 
 struct ratbag_test_resolution {
