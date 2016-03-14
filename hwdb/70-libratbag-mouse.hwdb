@@ -111,6 +111,7 @@ mouse:usb:v046dpc24e:name:*:
 # G502 over USB
 mouse:usb:v046dpc07d:name:*:
  RATBAG_DRIVER=hidpp20
+ RATBAG_SVG=logitech-g502.svg
 
 # G700 over USB
 mouse:usb:v046dpc06b:name:*:
