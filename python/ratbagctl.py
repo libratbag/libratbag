@@ -77,9 +77,17 @@ def find_button(r, args):
 def show_device(r, args):
     d = find_device(r, args)
 
+
+    caps = { RatbagdDevice.CAP_SWITCHABLE_RESOLUTION : "switchable-resolution",
+             RatbagdDevice.CAP_SWITCHABLE_PROFILE : "switchable-profile",
+             RatbagdDevice.CAP_BUTTON_KEY : "button-keys",
+             RatbagdDevice.CAP_BUTTON_MACROS : "button-macros",
+             RatbagdDevice.CAP_DEFAULT_PROFILE : "default-profile" }
+    capabilities = [caps[c] for c in d.capabilities]
+
     print("{} - {}".format(d.id, d.description))
     print("               SVG: {}".format(d.svg))
-    print("      Capabilities: {}".format(", ".join(d.capabilities)))
+    print("      Capabilities: {}".format(", ".join(capabilities)))
     print("Number of Profiles: {}".format(len(d.profiles)))
     active = -1
     for i, p in enumerate(d.profiles):

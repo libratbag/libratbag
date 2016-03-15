@@ -36,8 +36,7 @@ The **org.freedesktop.ratbag1.Manager** interface provides:
 The **org.freedesktop.ratbag1.Device** interface provides:
 - Properties:
   - Id -> unique ID of this device
-  - CapSwitchableResolution, CapSwitchableProfile, CapButtonKeys,
-    CapButtonMacros, CapDefaultProfile -> booleans to signal capabilities
+  - Capabilities -> array of uints with the capabilities enum from libratbag
   - Description -> device name
   - Svg -> device SVG name (file only)
   - SvgPath -> device SVG name (full absolute path)
