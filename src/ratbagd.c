@@ -212,10 +212,13 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	} else if (device) {
 		/* device already known, refresh our view of the device */
 	} else {
+		enum ratbag_error_code error;
+
 		/* device unknown, create new one and link it */
-		lib_device = ratbag_device_new_from_udev_device(ctx->lib_ctx,
-								udevice);
-		if (!lib_device)
+		error = ratbag_device_new_from_udev_device(ctx->lib_ctx,
+							   udevice,
+							   &lib_device);
+		if (error != RATBAG_SUCCESS)
 			return; /* unsupported device */
 
 		r = ratbagd_device_new(&device, ctx, name, lib_device);
