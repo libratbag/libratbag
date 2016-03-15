@@ -113,7 +113,7 @@ def show_resolution(r, args):
                                                           d.description))
     print("   Report Rate: {}Hz".format(r.report_rate))
     if "separate-xy-resolution" in r.capabilities:
-        print("    Resolution: {}x{}dpi".format(r.resolution))
+        print("    Resolution: {}x{}dpi".format(*r.resolution))
     else:
         print("    Resolution: {}dpi".format(r.resolution[0]))
 
