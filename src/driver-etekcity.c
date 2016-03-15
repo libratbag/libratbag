@@ -665,8 +665,8 @@ etekcity_probe(struct ratbag_device *device)
 	if (active_idx < 0) {
 		log_error(device->ratbag,
 			  "Can't talk to the mouse: '%s' (%d)\n",
-			  strerror(-rc),
-			  rc);
+			  strerror(-active_idx),
+			  active_idx);
 		rc = -ENODEV;
 		goto err;
 	}
