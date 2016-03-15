@@ -1424,7 +1424,6 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 
 skip:
 		ratbag_close_hidraw(device);
-		rc = -ENODEV;
 	}
 
 out:
