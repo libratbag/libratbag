@@ -34,7 +34,7 @@ import argparse
 
 def list_devices(r, args):
     for d in r.devices:
-        print("{:10s} {:32s}".format(d.id + ":", d.description))
+        print("{:10s} {:32s}".format(d.id + ":", d.name))
 
 def find_device(r, args):
     dev = None
@@ -85,7 +85,7 @@ def show_device(r, args):
              RatbagdDevice.CAP_DEFAULT_PROFILE : "default-profile" }
     capabilities = [caps[c] for c in d.capabilities]
 
-    print("{} - {}".format(d.id, d.description))
+    print("{} - {}".format(d.id, d.name))
     print("               SVG: {}".format(d.svg))
     print("      Capabilities: {}".format(", ".join(capabilities)))
     print("Number of Profiles: {}".format(len(d.profiles)))
@@ -99,7 +99,7 @@ def show_device(r, args):
 def show_profile(r, args):
     p, d = find_profile(r, args)
 
-    print("Profile {} on {} ({})".format(args.profile, d.id, d.description))
+    print("Profile {} on {} ({})".format(args.profile, d.id, d.name))
     print("    Number of Buttons: {}".format(len(p.buttons)))
     print("Number of Resolutions: {}".format(len(p.resolutions)))
     active, default = -1, -1
@@ -118,7 +118,7 @@ def show_resolution(r, args):
     print("Resolution {} on Profile {} on {} ({})".format(args.resolution,
                                                           args.profile,
                                                           d.id,
-                                                          d.description))
+                                                          d.name))
     print("   Report Rate: {}Hz".format(r.report_rate))
     if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
         print("    Resolution: {}x{}dpi".format(*r.resolution))
@@ -137,7 +137,7 @@ def show_button(r, args):
     print("Button {} on Profile {} on {} ({})".format(args.button,
                                                       args.profile,
                                                       d.id,
-                                                      d.description))
+                                                      d.name))
 
     print("           Type: {}".format(b.button_type))
     print("    Action Type: {}".format(b.action_type))

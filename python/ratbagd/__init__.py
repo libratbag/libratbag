@@ -88,7 +88,7 @@ class RatbagdDevice(_RatbagdDBus):
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Device", object_path)
         self._devnode = self.dbus_property("Id")
-        self._description = self.dbus_property("Description")
+        self._name = self.dbus_property("Name")
         self._svg = self.dbus_property("Svg")
         self._svg_path = self.dbus_property("SvgPath")
 
@@ -109,11 +109,11 @@ class RatbagdDevice(_RatbagdDBus):
         return self._profiles
 
     @property
-    def description(self):
+    def name(self):
         """
         The device name, usually provided by the kernel.
         """
-        return self._description
+        return self._name
 
     @property
     def svg(self):

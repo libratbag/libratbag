@@ -118,7 +118,7 @@ error:
 	return -ENOMEM;
 }
 
-static int ratbagd_device_get_description(sd_bus *bus,
+static int ratbagd_device_get_device_name(sd_bus *bus,
 					  const char *path,
 					  const char *interface,
 					  const char *property,
@@ -127,16 +127,16 @@ static int ratbagd_device_get_description(sd_bus *bus,
 					  sd_bus_error *error)
 {
 	struct ratbagd_device *device = userdata;
-	const char *description;
+	const char *name;
 
-	description = ratbag_device_get_name(device->lib_device);
-	if (!description) {
-		log_error("Unable to fetch description for %s\n",
+	name = ratbag_device_get_name(device->lib_device);
+	if (!name) {
+		log_error("Unable to fetch name for %s\n",
 			  ratbagd_device_get_name(device));
-		description = "";
+		name = "";
 	}
 
-	return sd_bus_message_append(reply, "s", description);
+	return sd_bus_message_append(reply, "s", name);
 }
 
 static int ratbagd_device_get_svg(sd_bus *bus,
@@ -317,7 +317,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("SvgPath", "s", ratbagd_device_get_svg_path, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
