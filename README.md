@@ -30,8 +30,6 @@ The **org.freedesktop.ratbag1.Manager** interface provides:
 - Signals:
   - DeviceNew -> new device available, carries object path
   - DeviceRemoved -> device removed, carries object path
--  Methods:
-  - GetDeviceByName(string) -> returns object path
 
 The **org.freedesktop.ratbag1.Device** interface provides:
 - Properties:
