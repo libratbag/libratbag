@@ -120,12 +120,16 @@ def show_resolution(r, args):
                                                           d.id,
                                                           d.description))
     print("   Report Rate: {}Hz".format(r.report_rate))
-    if "separate-xy-resolution" in r.capabilities:
+    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
         print("    Resolution: {}x{}dpi".format(*r.resolution))
     else:
         print("    Resolution: {}dpi".format(r.resolution[0]))
 
-    print("  Capabilities: {}".format(", ".join(r.capabilities)))
+
+    caps = { RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE : "individual-report-rate",
+             RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION : "separate-xy-resolution" }
+    capabilities = [caps[c] for c in r.capabilities]
+    print("  Capabilities: {}".format(", ".join(capabilities)))
 
 def show_button(r, args):
     b, p, d = find_button(r, args)

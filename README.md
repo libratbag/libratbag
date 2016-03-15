@@ -59,8 +59,7 @@ The **org.freedesktop.ratbag1.Profile** interface provides:
 The **org.freedesktop.ratbag1.Resolution** interface provides:
 - Properties:
   - Index -> index of the resolution
-  - CapIndividualReportRate, CapSeparateXYResolution -> booleans to signal
-    capabilities
+  - Capabilities -> array of uints with the capabilities enum from libratbag
   - XResolution -> uint for the x resolution assigned to this entry
   - YResolution -> uint for the y resolution assigned to this entry
   - ReportRate -> uint for the report rate in Hz assigned to this entry
