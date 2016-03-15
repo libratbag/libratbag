@@ -310,6 +310,13 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 			return r;
 	}
 
+	cap = RATBAG_DEVICE_CAP_QUERY_CONFIGURATION;
+	if (ratbag_device_has_capability(lib_device, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
 	return sd_bus_message_close_container(reply);
 }
 
