@@ -504,16 +504,8 @@ hidpp10drv_probe(struct ratbag_device *device)
 	int nread = 0;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
-	if (rc == -ENODEV) {
-		return rc;
-	} else if (rc) {
-		log_error(device->ratbag,
-			  "Can't open corresponding hidraw node: '%s' (%d)\n",
-			  strerror(-rc),
-			  rc);
-		rc = -ENODEV;
+	if (rc)
 		goto err;
-	}
 
 	drv_data = zalloc(sizeof(*drv_data));
 	hidpp_device_init(&base, device->hidraw.fd);

@@ -329,8 +329,9 @@ ratbag_assign_driver(struct ratbag_device *device,
 
 	device->driver = NULL;
 
-	if (rc == -ENODEV)
-		log_error(ratbag, "%s: no hidraw device found\n", device->name);
+	if (rc != -ENODEV)
+		log_error(ratbag, "%s: error opening hidraw node (%s)\n",
+			  device->name, strerror(-rc));
 
 	return false;
 }
