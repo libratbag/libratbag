@@ -7,6 +7,13 @@ libratbag is a configuration library for gaming mice. It provides a generic
 way to access the various features exposed by these mice and abstracts away
 hardware-specific and kernel-specific quirks.
 
+Documentation
+-------------
+
+API documentation is available here:
+
+	http://libratbag.github.io/libratbag/
+
 Architecture
 ------------
 
