@@ -40,11 +40,6 @@ struct ratbagd_resolution {
 	char *path;
 	unsigned int xres, yres;
 	unsigned int rate;
-
-	struct {
-		bool individual_report_rate;
-		bool separate_xy_res;
-	} capabilities;
 };
 
 static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
@@ -92,15 +87,45 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
+static int
+ratbagd_resolution_get_capabilities(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *reply,
+				    void *userdata,
+				    sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	enum ratbag_device_capability cap;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	cap = RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE;
+	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
+	cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
+	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("CapIndividualReportRate", "b", NULL,
-			offsetof(struct ratbagd_resolution, capabilities.individual_report_rate),
-			SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("CapSeparateXYResolution", "b", NULL,
-			offsetof(struct ratbagd_resolution, capabilities.separate_xy_res),
-			SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("XResolution", "u", NULL, offsetof(struct ratbagd_resolution, xres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("YResolution", "u", NULL, offsetof(struct ratbagd_resolution, yres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
@@ -132,12 +157,6 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 	resolution->xres = ratbag_resolution_get_dpi_x(lib_resolution);
 	resolution->yres = ratbag_resolution_get_dpi_y(lib_resolution);
 	resolution->rate = ratbag_resolution_get_report_rate(lib_resolution);
-	resolution->capabilities.individual_report_rate =
-			ratbag_resolution_has_capability(lib_resolution,
-							 RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE);
-	resolution->capabilities.separate_xy_res =
-			ratbag_resolution_has_capability(lib_resolution,
-							 RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(resolution_buffer, "r%u", index);

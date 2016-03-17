@@ -34,7 +34,7 @@ import argparse
 
 def list_devices(r, args):
     for d in r.devices:
-        print("{:10s} {:32s}".format(d.id + ":", d.description))
+        print("{:10s} {:32s}".format(d.id + ":", d.name))
 
 def find_device(r, args):
     dev = None
@@ -77,9 +77,17 @@ def find_button(r, args):
 def show_device(r, args):
     d = find_device(r, args)
 
-    print("{} - {}".format(d.id, d.description))
+
+    caps = { RatbagdDevice.CAP_SWITCHABLE_RESOLUTION : "switchable-resolution",
+             RatbagdDevice.CAP_SWITCHABLE_PROFILE : "switchable-profile",
+             RatbagdDevice.CAP_BUTTON_KEY : "button-keys",
+             RatbagdDevice.CAP_BUTTON_MACROS : "button-macros",
+             RatbagdDevice.CAP_DEFAULT_PROFILE : "default-profile" }
+    capabilities = [caps[c] for c in d.capabilities]
+
+    print("{} - {}".format(d.id, d.name))
     print("               SVG: {}".format(d.svg))
-    print("      Capabilities: {}".format(", ".join(d.capabilities)))
+    print("      Capabilities: {}".format(", ".join(capabilities)))
     print("Number of Profiles: {}".format(len(d.profiles)))
     active = -1
     for i, p in enumerate(d.profiles):
@@ -91,7 +99,7 @@ def show_device(r, args):
 def show_profile(r, args):
     p, d = find_profile(r, args)
 
-    print("Profile {} on {} ({})".format(args.profile, d.id, d.description))
+    print("Profile {} on {} ({})".format(args.profile, d.id, d.name))
     print("    Number of Buttons: {}".format(len(p.buttons)))
     print("Number of Resolutions: {}".format(len(p.resolutions)))
     active, default = -1, -1
@@ -110,14 +118,18 @@ def show_resolution(r, args):
     print("Resolution {} on Profile {} on {} ({})".format(args.resolution,
                                                           args.profile,
                                                           d.id,
-                                                          d.description))
+                                                          d.name))
     print("   Report Rate: {}Hz".format(r.report_rate))
-    if "separate-xy-resolution" in r.capabilities:
-        print("    Resolution: {}x{}dpi".format(r.resolution))
+    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
+        print("    Resolution: {}x{}dpi".format(*r.resolution))
     else:
         print("    Resolution: {}dpi".format(r.resolution[0]))
 
-    print("  Capabilities: {}".format(", ".join(r.capabilities)))
+
+    caps = { RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE : "individual-report-rate",
+             RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION : "separate-xy-resolution" }
+    capabilities = [caps[c] for c in r.capabilities]
+    print("  Capabilities: {}".format(", ".join(capabilities)))
 
 def show_button(r, args):
     b, p, d = find_button(r, args)
@@ -125,7 +137,7 @@ def show_button(r, args):
     print("Button {} on Profile {} on {} ({})".format(args.button,
                                                       args.profile,
                                                       d.id,
-                                                      d.description))
+                                                      d.name))
 
     print("           Type: {}".format(b.button_type))
     print("    Action Type: {}".format(b.action_type))

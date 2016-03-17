@@ -47,14 +47,6 @@ struct ratbagd_device {
 	sd_bus_slot *profile_enum_slot;
 	unsigned int n_profiles;
 	struct ratbagd_profile **profiles;
-
-	struct {
-		bool switchable_resolution;
-		bool switchable_profile;
-		bool button_keys;
-		bool button_macros;
-		bool default_profile;
-	} capabilities;
 };
 
 #define ratbagd_device_from_node(_ptr) \
@@ -126,7 +118,7 @@ error:
 	return -ENOMEM;
 }
 
-static int ratbagd_device_get_description(sd_bus *bus,
+static int ratbagd_device_get_device_name(sd_bus *bus,
 					  const char *path,
 					  const char *interface,
 					  const char *property,
@@ -135,16 +127,16 @@ static int ratbagd_device_get_description(sd_bus *bus,
 					  sd_bus_error *error)
 {
 	struct ratbagd_device *device = userdata;
-	const char *description;
+	const char *name;
 
-	description = ratbag_device_get_name(device->lib_device);
-	if (!description) {
-		log_error("Unable to fetch description for %s\n",
+	name = ratbag_device_get_name(device->lib_device);
+	if (!name) {
+		log_error("Unable to fetch name for %s\n",
 			  ratbagd_device_get_name(device));
-		description = "";
+		name = "";
 	}
 
-	return sd_bus_message_append(reply, "s", description);
+	return sd_bus_message_append(reply, "s", name);
 }
 
 static int ratbagd_device_get_svg(sd_bus *bus,
@@ -272,25 +264,67 @@ static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
 					  ratbagd_profile_get_path(profile));
 }
 
+static int
+ratbagd_device_get_capabilities(sd_bus *bus,
+				const char *path,
+				const char *interface,
+				const char *property,
+				sd_bus_message *reply,
+				void *userdata,
+				sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	struct ratbag_device *lib_device = device->lib_device;
+	enum ratbag_device_capability cap;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	cap = RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION;
+	if (ratbag_device_has_capability(lib_device, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
+	cap = RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE;
+	if (ratbag_device_has_capability(lib_device, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
+	cap = RATBAG_DEVICE_CAP_BUTTON_MACROS;
+	if (ratbag_device_has_capability(lib_device, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
+	cap = RATBAG_DEVICE_CAP_DEFAULT_PROFILE;
+	if (ratbag_device_has_capability(lib_device, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
+	cap = RATBAG_DEVICE_CAP_QUERY_CONFIGURATION;
+	if (ratbag_device_has_capability(lib_device, cap)) {
+		r = sd_bus_message_append(reply, "u", cap);
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("CapSwitchableResolution", "b", NULL,
-			offsetof(struct ratbagd_device, capabilities.switchable_resolution),
-			SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("CapSwitchableProfile", "b", NULL,
-			offsetof(struct ratbagd_device, capabilities.switchable_profile),
-			SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("CapButtonKeys", "b", NULL,
-			offsetof(struct ratbagd_device, capabilities.button_keys),
-			SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("CapButtonMacros", "b", NULL,
-			offsetof(struct ratbagd_device, capabilities.button_macros),
-			SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("CapDefaultProfile", "b", NULL,
-			offsetof(struct ratbagd_device, capabilities.default_profile),
-			SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Description", "s", ratbagd_device_get_description, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("SvgPath", "s", ratbagd_device_get_svg_path, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
@@ -357,23 +391,6 @@ int ratbagd_device_new(struct ratbagd_device **out,
 				  device->name);
 		}
 	}
-
-
-	device->capabilities.switchable_resolution =
-		ratbag_device_has_capability(lib_device,
-					     RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
-	device->capabilities.switchable_profile =
-		ratbag_device_has_capability(lib_device,
-					     RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
-	device->capabilities.button_keys =
-		ratbag_device_has_capability(lib_device,
-					     RATBAG_DEVICE_CAP_BUTTON_MACROS);
-	device->capabilities.button_macros =
-		ratbag_device_has_capability(lib_device,
-					     RATBAG_DEVICE_CAP_BUTTON_MACROS);
-	device->capabilities.default_profile =
-		ratbag_device_has_capability(lib_device,
-					     RATBAG_DEVICE_CAP_DEFAULT_PROFILE);
 
 	*out = device;
 	device = NULL;

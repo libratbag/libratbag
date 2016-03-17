@@ -76,13 +76,19 @@ class Ratbagd(_RatbagdDBus):
         return self._devices
 
 class RatbagdDevice(_RatbagdDBus):
+    CAP_SWITCHABLE_RESOLUTION = 1
+    CAP_SWITCHABLE_PROFILE = 2
+    CAP_BUTTON_KEY = 3
+    CAP_BUTTON_MACROS = 4
+    CAP_DEFAULT_PROFILE = 5
+
     """
     Represents a ratbagd device.
     """
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Device", object_path)
         self._devnode = self.dbus_property("Id")
-        self._description = self.dbus_property("Description")
+        self._name = self.dbus_property("Name")
         self._svg = self.dbus_property("Svg")
         self._svg_path = self.dbus_property("SvgPath")
 
@@ -93,16 +99,7 @@ class RatbagdDevice(_RatbagdDBus):
             self._profiles = [RatbagdProfile(objpath) for objpath in result]
             self._active_profile = self.dbus_property("ActiveProfile")
 
-        caps = [ "switchable-resolution",
-                 "switchable-profile",
-                 "button-keys",
-                 "button-macros",
-                 "default-profile"]
-        self._caps = []
-        for c in caps:
-            cname = "Cap" + "".join([n.capitalize() for n in c.split("-")])
-            if self.dbus_property(cname):
-                self._caps.append(c)
+        self._caps = self.dbus_property("Capabilities")
 
     @property
     def profiles(self):
@@ -112,11 +109,11 @@ class RatbagdDevice(_RatbagdDBus):
         return self._profiles
 
     @property
-    def description(self):
+    def name(self):
         """
         The device name, usually provided by the kernel.
         """
-        return self._description
+        return self._name
 
     @property
     def svg(self):
@@ -154,14 +151,11 @@ class RatbagdDevice(_RatbagdDBus):
     @property
     def capabilities(self):
         """
-        Return the capabilities of this device as a list of identifier strings.
+        Return the capabilities of this device as an array.
         Capabilities not present on the device are not in the list. Thus use
-            if "capability" is in deivce.caps:
+        e.g.
+            if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.caps:
                  do something
-
-        Capabilities supported: "switchable-resolution",
-        "switchable-profile", "button-keys", "button-macros",
-        "default-profile"
         """
         return self._caps
 
@@ -236,6 +230,8 @@ class RatbagdProfile(_RatbagdDBus):
         return self._objpath == other._objpath
 
 class RatbagdResolution(_RatbagdDBus):
+    CAP_INDIVIDUAL_REPORT_RATE = 1
+    CAP_SEPARATE_XY_RESOLUTION = 2
     """
     Represents a ratbagd resolution.
     """
@@ -247,13 +243,7 @@ class RatbagdResolution(_RatbagdDBus):
         self._rate = self.dbus_property("ReportRate")
         self._objpath = object_path
 
-        caps = [ "individual-report-rate",
-                 "separate-xy-resolution" ]
-        self._caps = []
-        for c in caps:
-            cname = "Cap" + "".join([n.capitalize() for n in c.split("-")])
-            if self.dbus_property(cname):
-                self._caps.append(c)
+        self._caps = self.dbus_property("Capabilities")
 
     @property
     def resolution(self):
@@ -278,13 +268,11 @@ class RatbagdResolution(_RatbagdDBus):
     @property
     def capabilities(self):
         """
-        Return the capabilities of this device as a list of identifier strings.
+        Return the capabilities of this device as a list.
         Capabilities not present on the device are not in the list. Thus use
-            if "capability" is in resolution.caps:
+        e.g.
+            if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION is in resolution.caps:
                  do something
-
-        Capabilities supported: "individual-report-rate",
-        "separate-xy-resolution"
         """
         return self._caps
 
