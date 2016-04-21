@@ -161,6 +161,10 @@ mouse:usb:v046dp400a:name:*:
 mouse:usb:v046dpc080:name:*:
  RATBAG_DRIVER=hidpp20
 
+# Wireless Touchpad (Unifying)
+mouse:usb:v046dp4011:name:*:
+ RATBAG_DRIVER=hidpp20
+
 ##########################################
 # Roccat
 ##########################################
