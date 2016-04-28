@@ -19,7 +19,8 @@ libratbag_la_SOURCES =			\
 	libratbag-hidraw.h		\
 	libratbag-private.h		\
 	libratbag-test.c		\
-	libratbag-test.h
+	libratbag-test.h		\
+	usb-ids.h
 
 libratbag_la_LIBADD = 			\
 	libhidpp.la			\
@@ -66,7 +67,8 @@ libhidpp_la_SOURCES = \
 			hidpp10.h	\
 			hidpp10.c	\
 			hidpp20.h	\
-			hidpp20.c
+			hidpp20.c 	\
+			usb-ids.h
 libhidpp_la_LDFLAGS = -lm
 libutil_la_SOURCES = \
 		     libratbag-util.c \
