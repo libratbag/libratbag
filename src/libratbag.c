@@ -283,23 +283,15 @@ out:
 	return rc;
 }
 
-bool
-ratbag_assign_driver(struct ratbag_device *device,
-		     const struct input_id *dev_id,
-		     struct ratbag_test_device *test_device)
+static inline bool
+ratbag_test_driver(struct ratbag_device *device,
+		   const struct input_id *dev_id,
+		   const char *driver_name,
+		   struct ratbag_test_device *test_device)
 {
 	struct ratbag *ratbag = device->ratbag;
 	struct ratbag_driver *driver;
 	int rc;
-	const char *driver_name;
-
-	if (!test_device) {
-		driver_name = udev_prop_value(device->udev_device, "RATBAG_DRIVER");
-		if (!driver_name)
-			return false;
-	} else {
-		driver_name = "test_driver";
-	}
 
 	list_for_each(driver, &ratbag->drivers, link) {
 		if (streq(driver->id, driver_name)) {
@@ -311,7 +303,7 @@ ratbag_assign_driver(struct ratbag_device *device,
 	if (!device->driver) {
 		log_error(ratbag, "%s: driver '%s' does not exist\n",
 			  device->name, driver_name);
-		return false;
+		goto error;
 	}
 
 	if (test_device)
@@ -320,20 +312,44 @@ ratbag_assign_driver(struct ratbag_device *device,
 		rc = device->driver->probe(device);
 	if (rc == 0) {
 		if (!ratbag_sanity_check_device(device)) {
-			return false;
+			goto error;
 		} else {
-			log_debug(ratbag, "driver match found: %s\n", driver->name);
+			log_debug(ratbag,
+				  "driver match found: %s\n",
+				  device->driver->name);
 			return true;
 		}
 	}
-
-	device->driver = NULL;
 
 	if (rc != -ENODEV)
 		log_error(ratbag, "%s: error opening hidraw node (%s)\n",
 			  device->name, strerror(-rc));
 
+error:
+	device->driver = NULL;
+
 	return false;
+}
+
+bool
+ratbag_assign_driver(struct ratbag_device *device,
+		     const struct input_id *dev_id,
+		     struct ratbag_test_device *test_device)
+{
+	bool rc;
+	const char *driver_name;
+
+	if (!test_device) {
+		driver_name = udev_prop_value(device->udev_device, "RATBAG_DRIVER");
+		if (!driver_name)
+			return false;
+	} else {
+		driver_name = "test_driver";
+	}
+
+	rc = ratbag_test_driver(device, dev_id, driver_name, test_device);
+
+	return rc;
 }
 
 static inline char*
