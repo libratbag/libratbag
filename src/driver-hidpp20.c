@@ -808,11 +808,9 @@ hidpp20drv_probe(struct ratbag_device *device)
 	drv_data->num_resolutions = 1;
 	drv_data->num_buttons = 8;
 
-	if (dev->proto_major >= 2) {
-		rc = hidpp20drv_20_probe(device);
-		if (rc)
-			goto err;
-	}
+	rc = hidpp20drv_20_probe(device);
+	if (rc)
+		goto err;
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
@@ -823,6 +821,8 @@ hidpp20drv_probe(struct ratbag_device *device)
 err:
 	free(drv_data);
 	ratbag_set_drv_data(device, NULL);
+	if (dev)
+		hidpp20_device_destroy(dev);
 	return rc;
 }
 

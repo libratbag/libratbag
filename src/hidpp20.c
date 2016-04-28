@@ -1892,6 +1892,9 @@ hidpp20_device_new(const struct hidpp_device *base, unsigned int idx)
 		goto err;
 	}
 
+	if (dev->proto_major < 2)
+		goto err;
+
 	rc = hidpp20_feature_set_get(dev);
 	if (rc < 0)
 		goto err;
