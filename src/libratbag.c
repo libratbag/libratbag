@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include "usb-ids.h"
 #include "libratbag-private.h"
 #include "libratbag-util.h"
 
@@ -331,6 +332,22 @@ error:
 	return false;
 }
 
+static inline bool
+ratbag_driver_fallback_logitech(struct ratbag_device *device,
+				const struct input_id *dev_id)
+{
+	int rc;
+
+	if (dev_id->vendor != USB_VENDOR_ID_LOGITECH)
+		return false;
+
+	rc = ratbag_test_driver(device, dev_id, "hidpp20", NULL);
+	if (!rc)
+		rc = ratbag_test_driver(device, dev_id, "hidpp10", NULL);
+
+	return rc;
+}
+
 bool
 ratbag_assign_driver(struct ratbag_device *device,
 		     const struct input_id *dev_id,
@@ -341,13 +358,15 @@ ratbag_assign_driver(struct ratbag_device *device,
 
 	if (!test_device) {
 		driver_name = udev_prop_value(device->udev_device, "RATBAG_DRIVER");
-		if (!driver_name)
-			return false;
 	} else {
 		driver_name = "test_driver";
 	}
 
-	rc = ratbag_test_driver(device, dev_id, driver_name, test_device);
+	if (driver_name) {
+		rc = ratbag_test_driver(device, dev_id, driver_name, test_device);
+	} else {
+		rc = ratbag_driver_fallback_logitech(device, dev_id);
+	}
 
 	return rc;
 }
