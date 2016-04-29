@@ -1417,10 +1417,9 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 			goto skip;
 
 		matched = match(device);
-		if (matched == 1) {
-			rc = 0;
+		rc = matched ? 0 : -ENODEV;
+		if (matched == 1)
 			goto out;
-		}
 
 skip:
 		ratbag_close_hidraw(device);
