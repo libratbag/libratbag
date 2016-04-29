@@ -30,13 +30,13 @@
 #include <sys/ioctl.h>
 #include <linux/hidraw.h>
 
+#include "usb-ids.h"
 #include "hidpp10.h"
 #include "libratbag-util.h"
 #include "liblur.h"
 
 #define _EXPORT_ __attribute__ ((visibility("default")))
 #define MAX_DEVICES 6
-#define VENDOR_ID_LOGITECH 0x046d
 
 struct lur_receiver {
 	int refcount;
@@ -113,7 +113,7 @@ lur_device_disconnect(struct lur_device *dev)
 _EXPORT_ int
 lur_is_receiver(uint16_t vid, uint16_t pid)
 {
-	return (vid == VENDOR_ID_LOGITECH && (pid == 0xc52b || pid == 0xc532));
+	return (vid == USB_VENDOR_ID_LOGITECH && (pid == 0xc52b || pid == 0xc532));
 }
 
 static bool
@@ -232,7 +232,7 @@ lur_receiver_enumerate(struct lur_receiver *lur,
 			lur_receiver_ref(lur);
 			dev->refcount = 1;
 			dev->name = strdup_safe(name);
-			dev->vid = VENDOR_ID_LOGITECH;
+			dev->vid = USB_VENDOR_ID_LOGITECH;
 			dev->pid = wpid;
 			dev->type = type;
 			dev->serial = serial;

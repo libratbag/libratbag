@@ -35,8 +35,6 @@
 
 #include "config.h"
 
-#define USB_VENDOR_ID_LOGITECH			0x046d
-
 #include <linux/types.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -45,6 +43,7 @@
 #include <unistd.h>
 
 #include "hidpp10.h"
+#include "usb-ids.h"
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"

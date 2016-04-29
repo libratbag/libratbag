@@ -773,6 +773,26 @@ hidpp20_log(void *userdata, enum hidpp_log_priority priority, const char *format
 	log_msg_va(device->ratbag, priority, format, args);
 }
 
+static void
+hidpp20drv_remove(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_device *dev = drv_data->dev;
+
+	if (!device)
+		return;
+
+	ratbag_close_hidraw(device);
+
+	if (drv_data->profiles)
+		hidpp20_onboard_profiles_destroy(dev, drv_data->profiles);
+	free(drv_data->controls);
+	free(drv_data->sensors);
+	if (drv_data->dev)
+		hidpp20_device_destroy(drv_data->dev);
+	free(drv_data);
+}
+
 static int
 hidpp20drv_probe(struct ratbag_device *device)
 {
@@ -792,9 +812,6 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	dev = hidpp20_device_new(&base, HIDPP_RECEIVER_IDX);
 	if (!dev) {
-		log_error(device->ratbag,
-			  "Failed to get HID++2.0 device for %s\n",
-			  device->name);
 		rc = -ENODEV;
 		goto err;
 	}
@@ -808,11 +825,9 @@ hidpp20drv_probe(struct ratbag_device *device)
 	drv_data->num_resolutions = 1;
 	drv_data->num_buttons = 8;
 
-	if (dev->proto_major >= 2) {
-		rc = hidpp20drv_20_probe(device);
-		if (rc)
-			goto err;
-	}
+	rc = hidpp20drv_20_probe(device);
+	if (rc)
+		goto err;
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
@@ -821,25 +836,8 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	return rc;
 err:
-	free(drv_data);
-	ratbag_set_drv_data(device, NULL);
+	hidpp20drv_remove(device);
 	return rc;
-}
-
-static void
-hidpp20drv_remove(struct ratbag_device *device)
-{
-	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
-	struct hidpp20_device *dev = drv_data->dev;
-
-	ratbag_close_hidraw(device);
-
-	if (drv_data->profiles)
-		hidpp20_onboard_profiles_destroy(dev, drv_data->profiles);
-	free(drv_data->controls);
-	free(drv_data->sensors);
-	hidpp20_device_destroy(drv_data->dev);
-	free(drv_data);
 }
 
 struct ratbag_driver hidpp20_driver = {
