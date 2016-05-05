@@ -418,6 +418,9 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	assert(udev_device != NULL);
 	assert(device_out != NULL);
 
+	if (udev_prop_value(udev_device, "ID_INPUT_MOUSE") == NULL)
+		goto out_err;
+
 	if (get_product_id(udev_device, &id) != 0)
 		goto out_err;
 
