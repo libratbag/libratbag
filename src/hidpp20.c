@@ -1283,6 +1283,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 			  info->profile_count * sizeof(struct hidpp20_profile));
 
 	profiles->num_profiles = info->profile_count;
+	profiles->num_rom_profiles = info->profile_count_oob;
 	profiles->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
 	profiles->num_modes = HIDPP20_DPI_COUNT;
 	profiles->has_g_shift = (info->mechanical_layout & 0x03) == 2;
@@ -1532,7 +1533,8 @@ hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
 static int
 hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 					       unsigned int index,
-					       uint8_t *data)
+					       uint8_t *data,
+					       unsigned int num_rom_profiles)
 {
 	int rc;
 	unsigned i;
@@ -1565,6 +1567,12 @@ hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 	}
 
 	/* something went wrong, the mouse is using the factory profile in ROM */
+	if (num_rom_profiles == 0)
+		return -EINVAL;
+
+	if (index >= num_rom_profiles)
+		index = num_rom_profiles - 1;
+
 	for (i = 0; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
 		rc = hidpp20_onboard_profiles_read_memory(device,
 							  1,
@@ -1760,7 +1768,10 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
-	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
+	rc = hidpp20_onboard_profiles_find_and_read_profile(device,
+							    index,
+							    data,
+							    profiles_list->num_rom_profiles);
 	if (rc != 0)
 		return rc;
 
@@ -1802,7 +1813,10 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
-	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
+	rc = hidpp20_onboard_profiles_find_and_read_profile(device,
+							    index,
+							    data,
+							    profiles_list->num_rom_profiles);
 	if (rc < 0)
 		return rc;
 
