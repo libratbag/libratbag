@@ -929,6 +929,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_G402	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 struct hidpp20_onboard_profiles_info {
@@ -1242,7 +1243,8 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	}
 
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -1300,8 +1302,6 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		profiles->wireless = 1;
 		break;
 	}
-
-	
 
 	*profiles_list = profiles;
 
