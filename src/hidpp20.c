@@ -1571,7 +1571,7 @@ hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 							  index + 1,
 							  i * 0x10,
 							  data + i * 0x10);
-		if (rc < 0)
+		if (rc != 0)
 			return rc;
 	}
 
@@ -1761,7 +1761,7 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 		return -EINVAL;
 
 	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
-	if (rc < 0)
+	if (rc != 0)
 		return rc;
 
 	profile->report_rate = 1000 / max(1, pdata.profile.report_rate);
