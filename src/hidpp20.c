@@ -1468,13 +1468,29 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 	return 0;
 }
 
+static unsigned int
+hidpp20_onboard_profiles_compute_dict_size(struct hidpp20_device *device,
+					   struct hidpp20_profiles *profiles)
+{
+	unsigned p, num_offset;
+
+	num_offset = 0;
+	p = profiles->num_profiles;
+	while (p) {
+		p >>= 2;
+		num_offset += 16;
+	}
+
+	return num_offset;
+}
+
 int
 hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 				  struct hidpp20_profiles **profiles_list)
 {
-	unsigned i;
+	unsigned i, offset, num_offset;
 	int rc;
-	uint8_t data[16] = {0};
+	uint8_t data[HIDPP20_PAGE_SIZE] = {0};
 	struct hidpp20_profiles *profiles = NULL;
 
 	rc = hidpp20_onboard_profiles_initialize(device,
@@ -1484,16 +1500,21 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 
 	assert(profiles);
 
-	rc = hidpp20_onboard_profiles_read_memory(device,
-						  0x00,
-						  0x00,
-						  0x00,
-						  data);
-	if (rc < 0)
-		return rc;
+	num_offset = hidpp20_onboard_profiles_compute_dict_size(device,
+								profiles);
+
+	for (offset = 0; offset < num_offset; offset += 16) {
+		rc = hidpp20_onboard_profiles_read_memory(device,
+							  0x00,
+							  0x00,
+							  offset,
+							  data + offset);
+		if (rc < 0)
+			return rc;
+	}
 
 	for (i = 0; i < profiles->num_profiles; i++) {
-		uint8_t *d = data + 4 * i;
+		uint8_t *d = data + offset + 4 * i;
 
 		if (d[0] == 0xFF && d[1] == 0xFF)
 			break;
@@ -1600,7 +1621,7 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 	profiles_list->profiles[index].index = index + 1;
 	profiles_list->profiles[index].enabled = 0x01;
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < profiles_list->num_profiles; i++) {
 		data[buffer_index++] = 0x00;
 		data[buffer_index++] = i + 1;
 		data[buffer_index++] = profiles_list->profiles[i].enabled;
@@ -1615,7 +1636,11 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 
 	memset(data + buffer_index, 0xff, sizeof(data) - buffer_index);
 
-	hidpp_log_buf_error(&device->base, "dictionary: ", data, 16);
+	hidpp_log_buf_debug(&device->base,
+			   "dictionary: ",
+			   data,
+			   hidpp20_onboard_profiles_compute_dict_size(device,
+								      profiles_list));
 
 	return hidpp20_onboard_profiles_write_page(device, 0x00, data);
 }
