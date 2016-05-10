@@ -592,13 +592,17 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_resolution *res;
 	struct hidpp20_profile *p;
-	unsigned i, dpi;
+	unsigned i, dpi = 0;
 
 	hidpp20drv_read_onboard_profile(device, profile->index);
 
 	profile->is_active = false;
 	if ((int)index == hidpp20drv_current_profile(device))
 		profile->is_active = true;
+
+	/* retrieve the resolution through 220X as the profile doesn't has it */
+	if (profile->is_active)
+		hidpp20drv_read_resolution_dpi(profile);
 
 	dpi = ratbag_resolution_get_dpi(profile->resolution.modes);
 
