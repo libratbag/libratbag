@@ -362,6 +362,7 @@ struct hidpp20_profile {
 
 struct hidpp20_profiles {
 	uint8_t num_profiles;
+	uint8_t num_rom_profiles;
 	uint8_t num_buttons;
 	uint8_t num_modes;
 	uint8_t has_g_shift;

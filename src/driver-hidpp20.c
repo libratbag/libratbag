@@ -117,7 +117,7 @@ hidpp20drv_read_macro_key_8100(struct ratbag_device *device, union hidpp20_macro
 	return ratbag_hidraw_get_keycode_from_keyboard_usage(device, macro->key.key);
 }
 
-static void
+static int
 hidpp20drv_read_macro_8100(struct ratbag_button *button,
 			   struct hidpp20_profile *profile,
 			   union hidpp20_button_binding *binding)
@@ -129,6 +129,9 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 	bool delay = true;
 
 	macro = profile->macros[binding->macro.page];
+
+	if (!macro)
+		return -EINVAL;
 
 	i = 0;
 
@@ -175,6 +178,8 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 
 	ratbag_button_copy_macro(button, m);
 	ratbag_button_macro_unref(m);
+
+	return 0;
 }
 
 static void
@@ -183,6 +188,7 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
+	int rc;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
 		return;
@@ -213,7 +219,9 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 		button->action.action.special = hidpp20_onboard_profiles_get_special(profile->buttons[button->index].special.special);
 		break;
 	case HIDPP20_BUTTON_MACRO:
-		hidpp20drv_read_macro_8100(button, profile, &profile->buttons[button->index]);
+		rc = hidpp20drv_read_macro_8100(button, profile, &profile->buttons[button->index]);
+		if (rc)
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
@@ -584,13 +592,17 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_resolution *res;
 	struct hidpp20_profile *p;
-	unsigned i, dpi;
+	unsigned i, dpi = 0;
 
 	hidpp20drv_read_onboard_profile(device, profile->index);
 
 	profile->is_active = false;
 	if ((int)index == hidpp20drv_current_profile(device))
 		profile->is_active = true;
+
+	/* retrieve the resolution through 220X as the profile doesn't has it */
+	if (profile->is_active)
+		hidpp20drv_read_resolution_dpi(profile);
 
 	dpi = ratbag_resolution_get_dpi(profile->resolution.modes);
 

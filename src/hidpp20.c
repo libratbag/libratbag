@@ -929,6 +929,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_G402	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 struct hidpp20_onboard_profiles_info {
@@ -1242,7 +1243,8 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	}
 
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -1283,6 +1285,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 			  info->profile_count * sizeof(struct hidpp20_profile));
 
 	profiles->num_profiles = info->profile_count;
+	profiles->num_rom_profiles = info->profile_count_oob;
 	profiles->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
 	profiles->num_modes = HIDPP20_DPI_COUNT;
 	profiles->has_g_shift = (info->mechanical_layout & 0x03) == 2;
@@ -1299,8 +1302,6 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		profiles->wireless = 1;
 		break;
 	}
-
-	
 
 	*profiles_list = profiles;
 
@@ -1467,13 +1468,29 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 	return 0;
 }
 
+static unsigned int
+hidpp20_onboard_profiles_compute_dict_size(struct hidpp20_device *device,
+					   struct hidpp20_profiles *profiles)
+{
+	unsigned p, num_offset;
+
+	num_offset = 0;
+	p = profiles->num_profiles;
+	while (p) {
+		p >>= 2;
+		num_offset += 16;
+	}
+
+	return num_offset;
+}
+
 int
 hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 				  struct hidpp20_profiles **profiles_list)
 {
-	unsigned i;
+	unsigned i, offset, num_offset;
 	int rc;
-	uint8_t data[16] = {0};
+	uint8_t data[HIDPP20_PAGE_SIZE] = {0};
 	struct hidpp20_profiles *profiles = NULL;
 
 	rc = hidpp20_onboard_profiles_initialize(device,
@@ -1483,16 +1500,21 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 
 	assert(profiles);
 
-	rc = hidpp20_onboard_profiles_read_memory(device,
-						  0x00,
-						  0x00,
-						  0x00,
-						  data);
-	if (rc < 0)
-		return rc;
+	num_offset = hidpp20_onboard_profiles_compute_dict_size(device,
+								profiles);
+
+	for (offset = 0; offset < num_offset; offset += 16) {
+		rc = hidpp20_onboard_profiles_read_memory(device,
+							  0x00,
+							  0x00,
+							  offset,
+							  data + offset);
+		if (rc < 0)
+			return rc;
+	}
 
 	for (i = 0; i < profiles->num_profiles; i++) {
-		uint8_t *d = data + 4 * i;
+		uint8_t *d = data + offset + 4 * i;
 
 		if (d[0] == 0xFF && d[1] == 0xFF)
 			break;
@@ -1532,7 +1554,8 @@ hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
 static int
 hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 					       unsigned int index,
-					       uint8_t *data)
+					       uint8_t *data,
+					       unsigned int num_rom_profiles)
 {
 	int rc;
 	unsigned i;
@@ -1565,13 +1588,19 @@ hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 	}
 
 	/* something went wrong, the mouse is using the factory profile in ROM */
+	if (num_rom_profiles == 0)
+		return -EINVAL;
+
+	if (index >= num_rom_profiles)
+		index = num_rom_profiles - 1;
+
 	for (i = 0; i < HIDPP20_PROFILE_SIZE / 0x10; i++) {
 		rc = hidpp20_onboard_profiles_read_memory(device,
 							  1,
 							  index + 1,
 							  i * 0x10,
 							  data + i * 0x10);
-		if (rc < 0)
+		if (rc != 0)
 			return rc;
 	}
 
@@ -1592,7 +1621,7 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 	profiles_list->profiles[index].index = index + 1;
 	profiles_list->profiles[index].enabled = 0x01;
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < profiles_list->num_profiles; i++) {
 		data[buffer_index++] = 0x00;
 		data[buffer_index++] = i + 1;
 		data[buffer_index++] = profiles_list->profiles[i].enabled;
@@ -1607,7 +1636,11 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 
 	memset(data + buffer_index, 0xff, sizeof(data) - buffer_index);
 
-	hidpp_log_buf_error(&device->base, "dictionary: ", data, 16);
+	hidpp_log_buf_debug(&device->base,
+			   "dictionary: ",
+			   data,
+			   hidpp20_onboard_profiles_compute_dict_size(device,
+								      profiles_list));
 
 	return hidpp20_onboard_profiles_write_page(device, 0x00, data);
 }
@@ -1760,8 +1793,11 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
-	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
-	if (rc < 0)
+	rc = hidpp20_onboard_profiles_find_and_read_profile(device,
+							    index,
+							    data,
+							    profiles_list->num_rom_profiles);
+	if (rc != 0)
 		return rc;
 
 	profile->report_rate = 1000 / max(1, pdata.profile.report_rate);
@@ -1802,7 +1838,10 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
-	rc = hidpp20_onboard_profiles_find_and_read_profile(device, index, data);
+	rc = hidpp20_onboard_profiles_find_and_read_profile(device,
+							    index,
+							    data,
+							    profiles_list->num_rom_profiles);
 	if (rc < 0)
 		return rc;
 
