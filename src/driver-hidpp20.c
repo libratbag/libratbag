@@ -812,6 +812,9 @@ hidpp20drv_probe(struct ratbag_device *device)
 	struct hidpp20drv_data *drv_data;
 	struct hidpp_device base;
 	struct hidpp20_device *dev;
+	const char *prop;
+	int device_idx = HIDPP_RECEIVER_IDX;
+	int nread = 0;
 
 	rc = ratbag_find_hidraw(device, hidpp20drv_test_hidraw);
 	if (rc)
@@ -822,7 +825,27 @@ hidpp20drv_probe(struct ratbag_device *device)
 	hidpp_device_init(&base, device->hidraw.fd);
 	hidpp_device_set_log_handler(&base, hidpp20_log, HIDPP_LOG_PRIORITY_RAW, device);
 
-	dev = hidpp20_device_new(&base, HIDPP_RECEIVER_IDX);
+	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP20_INDEX");
+	if (prop) {
+		sscanf(prop, "%d%n", &device_idx, &nread);
+		if (!nread || (prop[nread]) != '\0' || device_idx < 0) {
+			log_error(device->ratbag,
+				  "Error parsing RATBAG_HIDPP20_INDEX: '%s' for %s\n",
+				  prop,
+				  device->name);
+			device_idx = HIDPP_RECEIVER_IDX;
+		}
+	}
+
+	/* In the general case, we can treat all devices as wired devices
+	 * here. If we talk to the correct hidraw device the kernel adjusts
+	 * the device index for us, so even for unifying receiver devices
+	 * we can just use 0xff as device index.
+	 *
+	 * If there is a special need like for G900, we can pass a
+	 * udev prop RATBAG_HIDPP20_INDEX.
+	 */
+	dev = hidpp20_device_new(&base, device_idx);
 	if (!dev) {
 		rc = -ENODEV;
 		goto err;
