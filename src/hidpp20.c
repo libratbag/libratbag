@@ -1884,8 +1884,9 @@ static const enum ratbag_button_action_special hidpp20_profiles_specials[] = {
 	[0x09] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
 	[0x0a] = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,
 	[0x0b] = RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE,
+	[0x0c] = RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL,
 
-	[0x0c ... 0xff] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
+	[0x0d ... 0xff] = RATBAG_BUTTON_ACTION_SPECIAL_INVALID,
 };
 
 enum ratbag_button_action_special

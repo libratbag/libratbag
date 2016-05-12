@@ -165,6 +165,12 @@ mouse:usb:v046dpc080:name:*:
 mouse:usb:v046dp4011:name:*:
  RATBAG_DRIVER=hidpp20
 
+# G900 over wireless USB
+mouse:usb:v046dpc539:name:*:
+ RATBAG_DRIVER=hidpp20
+ RATBAG_HIDPP20_INDEX=1
+
+
 ##########################################
 # Roccat
 ##########################################
