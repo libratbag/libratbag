@@ -863,8 +863,9 @@ int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device,
 	*sensors_list = s_list;
 	return num_sensors;
 err:
+	num_sensors = 0;
 	free(s_list);
-	return rc;
+	return rc > 0 ? -EPROTO : rc;
 }
 
 int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
