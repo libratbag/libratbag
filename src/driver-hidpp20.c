@@ -668,13 +668,13 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {
 		log_debug(ratbag, "device has adjustable dpi\n");
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
-		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		/* we read the profile once to get the correct number of
 		 * supported resolutions. */
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
-			return rc;
+			return 0; /* this is not a hard failure */
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
