@@ -111,6 +111,8 @@ main(int argc, char **argv)
 
 	hidpp_device_init(&base, fd);
 	dev = hidpp20_device_new(&base, 0xff);
+	if (!dev)
+		error(1, 0, "Failed to open %s as a HID++ 2.0 device", path);
 
 	if (argc == 2)
 		rc = dump_everything(dev);
