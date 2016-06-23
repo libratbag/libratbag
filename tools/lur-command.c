@@ -243,7 +243,7 @@ main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 
-		index = atoi(argv[3]);
+		index = atoi(argv[2]);
 		disconnect_device(receiver, index);
 	} else {
 		usage();
