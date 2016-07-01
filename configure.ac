@@ -62,7 +62,7 @@ AC_ARG_WITH(udev-base-dir, AS_HELP_STRING([--with-udev-base-dir=DIR], [where ude
 if test -n "$with_udev_base_dir" ; then
 	UDEV_BASE_DIR="$with_udev_base_dir"
 else
-	UDEV_BASE_DIR="$libdir/udev"
+	UDEV_BASE_DIR="$prefix/lib/udev"
 fi
 AC_SUBST(UDEV_BASE_DIR)
 
