@@ -200,4 +200,10 @@ hidpp_cpu_to_le_u16(uint16_t data)
 	return result;
 }
 
+static inline uint32_t
+hidpp_get_unaligned_be_u32(uint8_t *buf)
+{
+	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+}
+
 #endif /* HIDPP_GENERIC_H */

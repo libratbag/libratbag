@@ -2555,8 +2555,7 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 	if (res)
 		return -1;
 
-	*serial = hidpp_get_unaligned_be_u16(&info.msg.string[2]) << 16;
-	*serial |= hidpp_get_unaligned_be_u16(&info.msg.string[4]);
+	*serial = hidpp_get_unaligned_be_u32(&info.msg.string[1]);
 
 	return 0;
 }
