@@ -1286,7 +1286,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	profiles->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
 	profiles->num_modes = HIDPP20_DPI_COUNT;
 	profiles->has_g_shift = (info->mechanical_layout & 0x03) == 2;
-	profiles->has_dpi_shift = (info->mechanical_layout & 0x0c) == 2;
+	profiles->has_dpi_shift = ((info->mechanical_layout & 0x0c) >> 2) == 2;
 	switch(info->various_info & 0x07) {
 	case 1:
 		profiles->corded = 1;
