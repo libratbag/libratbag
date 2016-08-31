@@ -116,6 +116,7 @@ mouse:usb:v046dpc07d:name:*:
 # G502 Proteus Spectrum over USB
 mouse:usb:v046dpc332:name:*:
  RATBAG_DRIVER=hidpp20
+ RATBAG_SVG=logitech-g502.svg
 
 # G700 over USB
 mouse:usb:v046dpc06b:name:*:
