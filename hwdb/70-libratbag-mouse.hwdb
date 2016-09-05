@@ -182,3 +182,12 @@ mouse:usb:v046dpc539:name:*:
 mouse:usb:v1e7dp2e22:name:*:
  RATBAG_DRIVER=roccat
  RATBAG_SVG=roccat-kone-xtd.svg
+
+
+##########################################
+# G.Skill
+##########################################
+
+# MX-780
+mouse:usb:v28dap3101:name:*:
+ RATBAG_DRIVER=gskill
