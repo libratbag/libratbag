@@ -12,6 +12,7 @@ libratbag_la_SOURCES =			\
 	driver-hidpp20.c		\
 	driver-hidpp10.c		\
 	driver-roccat.c			\
+	driver-gskill.c			\
 	driver-test.c			\
 	libratbag.c			\
 	libratbag.h			\
