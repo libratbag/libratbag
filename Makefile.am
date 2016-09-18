@@ -27,6 +27,8 @@ lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 bin_PROGRAMS =
 noinst_PROGRAMS =
+dist_man1_MANS =
+dist_man8_MANS =
 
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
@@ -80,6 +82,8 @@ ratbagd_LDADD = \
 	$(LIBSYSTEMD_LIBS) \
 	$(LIBRATBAG_LIBS)
 
+dist_man8_MANS += doc/ratbagd.8
+
 # ------------------------------------------------------------------------------
 # DBus and systemd configuration files
 
@@ -119,3 +123,5 @@ python/ratbagctl: python/ratbagctl.py
 
 EXTRA_DIST += python/ratbagctl.py
 BUILT_SOURCES += python/ratbagctl
+
+dist_man1_MANS += doc/ratbagctl.1
