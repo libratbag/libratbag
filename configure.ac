@@ -121,6 +121,11 @@ AC_ARG_ENABLE(tests,
 	      [build_tests="$enableval"],
 	      [build_tests="auto"])
 
+AC_ARG_ENABLE(valgrind,
+	      AS_HELP_STRING([--enable-valgrind], [Test with valgrind (default=auto)]),
+	      [use_valgrind="$enableval"],
+	      [use_valgrind="auto"])
+
 PKG_CHECK_MODULES(CHECK, [check >= 0.9.10], [HAVE_CHECK="yes"], [HAVE_CHECK="no"])
 
 if test "x$build_tests" = "xauto"; then
@@ -132,6 +137,13 @@ if test "x$build_tests" = "xyes"; then
 	fi
 
 	AC_PATH_PROG(VALGRIND, [valgrind])
+	if test "x$use_valgrind" = "xyes"; then
+		if test "x$VALGRIND" = "x"; then
+			AC_MSG_ERROR([Cannot use valgrind])
+		fi
+	elif test "x$use_valgrind" = "xno"; then
+		VALGRIND=""
+	fi
 fi
 
 AC_DEFINE(BUILD_TESTS, [1], ["Build the test suite])
