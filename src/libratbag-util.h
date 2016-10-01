@@ -200,4 +200,21 @@ long_set_bit_state(unsigned long *array, int bit, int state)
 const char *
 udev_prop_value(struct udev_device *device,
 		const char *property_name);
+
+/**
+ * Converts a string from UTF-8 to the encoding specified. Returns the number
+ * of bytes written to buf on success, or negative errno value on failure.
+ */
+ssize_t
+ratbag_utf8_to_enc(char *buf, size_t buf_len, const char *to_enc,
+		   const char *format, ...) __attribute__((format(printf, 4, 5)));
+/**
+ * Converts a string from the given encoding into UTF-8. The memory for the
+ * result is allocated and a pointer to the result is placed in *out. Returns
+ * the number of bytes in the UTF-8 version of the string on success, negative
+ * errno value on failure.
+ */
+ssize_t
+ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
+		     char **out);
 #endif /* LIBRATBAG_UTIL_H */

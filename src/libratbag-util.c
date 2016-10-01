@@ -35,6 +35,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iconv.h>
+#include <errno.h>
 
 #include "libratbag-util.h"
 #include "libratbag-private.h"
@@ -84,4 +86,94 @@ udev_prop_value(struct udev_device *device,
 	}
 
 	return prop_value;
+}
+
+ssize_t
+ratbag_utf8_to_enc(char *buf, size_t buf_len, const char *to_enc,
+		   const char *format, ...)
+{
+	va_list args;
+	iconv_t converter;
+	char str[buf_len];
+	char *in_buf = str, *out_buf = (char*)buf;
+	size_t in_bytes_left, out_bytes_left = buf_len;
+	int ret;
+
+	memset(buf, 0, buf_len);
+
+	va_start(args, format);
+	ret = vsnprintf(str, buf_len, format, args);
+	va_end(args);
+
+	if (ret < 0)
+		return ret;
+
+	in_bytes_left = ret;
+
+	converter = iconv_open(to_enc, "UTF-8");
+	if (converter == (iconv_t)-1)
+		return errno;
+
+	ret = iconv(converter, &in_buf, &in_bytes_left, &out_buf,
+		    &out_bytes_left);
+	if (ret)
+		ret = errno;
+	else
+		ret = buf_len - out_bytes_left;
+
+	iconv_close(converter);
+
+	return ret;
+}
+
+ssize_t
+ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
+		     char **out)
+{
+	iconv_t converter;
+	size_t len = in_len * 6,
+	       in_bytes_left = in_len,
+	       out_bytes_left = len;
+	char *pos;
+	ssize_t ret;
+
+	converter = iconv_open("UTF-8", from_enc);
+	if (converter == (iconv_t)-1)
+		return errno;
+
+	/*
+	 * We *could* dynamically allocate the out buffer. However iconv's
+	 * obnoxious semantics, mainly the fact that it modifies every pointer
+	 * given to it, would make this code a lot larger and complex then it
+	 * needs to be for a mouse with blinking lights.
+	 *
+	 * So, since there's no encoding that takes more then 6 bytes per
+	 * character, allocate for that and just fail if that's not enough.
+	 */
+	*out = zalloc(len);
+	pos = *out;
+	if (!*out) {
+		ret = errno;
+		goto err;
+	}
+
+	ret = iconv(converter, &in_buf, &in_bytes_left, &pos, &out_bytes_left);
+	if (ret) {
+		ret = errno;
+		goto err;
+	}
+
+	/* Now get rid of any space in the buffer we don't need */
+	*out = realloc(*out, (len - out_bytes_left) + 1);
+	if (!*out)
+		ret = errno;
+
+err:
+	if (ret < 0 && *out) {
+		free(*out);
+		*out = NULL;
+	}
+
+	iconv_close(converter);
+	return ret;
 }
