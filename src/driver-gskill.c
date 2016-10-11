@@ -571,8 +571,6 @@ gskill_do_write_profile(struct ratbag_device *device,
 	uint8_t *buf = (uint8_t*)report;
 	int rc;
 
-	report->checksum = gskill_calculate_checksum(buf, sizeof(*report));
-
 	/*
 	 * The G.Skill configuration software doesn't take kindly to blank
 	 * profile names, so ensure we have one
@@ -588,6 +586,8 @@ gskill_do_write_profile(struct ratbag_device *device,
 		if (rc < 0)
 			return rc;
 	}
+
+	report->checksum = gskill_calculate_checksum(buf, sizeof(*report));
 
 	rc = gskill_select_profile(device, report->profile_num, true);
 	if (rc)
