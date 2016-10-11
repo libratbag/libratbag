@@ -540,6 +540,18 @@ ratbag_device_has_capability(const struct ratbag_device *device,
 /**
  * @ingroup device
  *
+ * Write any changes to the device. Depending on the device, this may take
+ * a couple of seconds.
+ *
+ * @param device A previously initialized ratbag device
+ * @return 0 on success or an error code otherwise
+ */
+enum ratbag_error_code
+ratbag_device_commit(struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
  * Return the number of profiles supported by this device.
  *
  * Note that the number of profiles available may be different to the number

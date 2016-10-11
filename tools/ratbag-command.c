@@ -1701,6 +1701,10 @@ main(int argc, char **argv)
 			    ratbag,
 			    &options,
 			    argc, argv);
+
+	if (options.device)
+		rc = ratbag_device_commit(options.device);
+
 out:
 	ratbag_resolution_unref(options.resolution);
 	ratbag_button_unref(options.button);

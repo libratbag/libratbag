@@ -1,6 +1,6 @@
 /* in alphabetical order! */
 
-LIBRATBAG_0.3.0 {
+LIBRATBAG_0.5.0 {
 global:
 	ratbag_create_context;
 	ratbag_button_disable;
@@ -28,6 +28,7 @@ global:
 	ratbag_button_set_special;
 	ratbag_button_set_user_data;
 	ratbag_button_unref;
+	ratbag_device_commit;
 	ratbag_device_get_name;
 	ratbag_device_get_num_buttons;
 	ratbag_device_get_num_profiles;

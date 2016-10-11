@@ -131,6 +131,18 @@ struct ratbag_driver {
 	void (*remove)(struct ratbag_device *device);
 
 	/**
+	 * Callback called when the driver should write any profiles that
+	 * were modified back to the device.
+	 *
+	 * Both profile and button structs have a dirty variable that can
+	 * be used to tell whether or not they've actually changed since
+	 * the last commit. In order to reduce the amount of time
+	 * committing takes, drivers should use this information to avoid
+	 * writing back profiles and buttons that haven't actually changed.
+	 */
+	int (*commit)(struct ratbag_device *device);
+
+	/**
 	 * Callback called when a read profile is requested by the
 	 * caller of the library.
 	 *
@@ -141,9 +153,10 @@ struct ratbag_driver {
 	 */
 	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
 
-	/**
-	 * Here, the driver should actually write the profile to the
-	 * device.
+	/*
+	 * FIXME: This function is deprecated and should not be removed. Once
+	 * we've updated all the device drivers to stop using it we'll remove
+	 * it. Look at commit() instead.
 	 */
 	int (*write_profile)(struct ratbag_profile *profile);
 
@@ -168,18 +181,18 @@ struct ratbag_driver {
 	 */
 	void (*read_button)(struct ratbag_button *button);
 
-	/**
-	 * For the given button, store in the profile and in the device
-	 * the given struct ratbag_button.
+	/*
+	 * FIXME: This function is deprecated and should not be removed. Once
+	 * we've updated all the device drivers to stop using it we'll remove
+	 * it. Look at commit() instead.
 	 */
 	int (*write_button)(struct ratbag_button *button,
 			    const struct ratbag_button_action *action);
 
-	/**
-	 * For the given profile, overwrite the current resolution
-	 * of the sensor expressed in DPI, and commit it to the hardware.
-	 *
-	 * Mandatory if the driver exports RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION.
+	/*
+	 * FIXME: This function is deprecated and should not be removed. Once
+	 * we've updated all the device drivers to stop using it we'll remove
+	 * it. Look at commit() instead.
 	 */
 	int (*write_resolution_dpi)(struct ratbag_resolution *resolution,
 				    int dpi_x, int dpi_y);
@@ -218,6 +231,7 @@ struct ratbag_profile {
 	} resolution;
 
 	bool is_active;		/**< profile is the currently active one */
+	bool dirty;       /**< profile changed since last commit */
 };
 
 #define BUTTON_ACTION_NONE \
@@ -277,6 +291,7 @@ struct ratbag_button {
 	enum ratbag_button_type type;
 	struct ratbag_button_action action;
 	uint32_t action_caps;
+	bool dirty; /* changed since last commit to device */
 };
 
 static inline void
