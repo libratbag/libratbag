@@ -565,8 +565,8 @@ gskill_reload_profile_data(struct ratbag_device *device)
 }
 
 static int
-gskill_do_write_profile(struct ratbag_device *device,
-			struct gskill_profile_report *report)
+gskill_write_profile(struct ratbag_device *device,
+		     struct gskill_profile_report *report)
 {
 	uint8_t *buf = (uint8_t*)report;
 	int rc;
@@ -1141,23 +1141,14 @@ gskill_read_profile(struct ratbag_profile *profile, unsigned int index)
 }
 
 static int
-gskill_write_resolution_dpi(struct ratbag_resolution *resolution,
-			    int dpi_x, int dpi_y)
+gskill_update_resolutions(struct ratbag_profile *profile)
 {
-	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
 	struct gskill_data *drv_data = ratbag_get_drv_data(device);
 	struct gskill_profile_data *pdata =
 		&drv_data->profile_data[profile->index];
 	struct gskill_profile_report *report = &pdata->report;
-	unsigned int res_idx = resolution - profile->resolution.modes;
-	int i, rc;
-
-	if ((dpi_x && dpi_y) &&
-	    (dpi_x < GSKILL_MIN_DPI || dpi_y < GSKILL_MIN_DPI ||
-	     dpi_x > GSKILL_MAX_DPI || dpi_y > GSKILL_MAX_DPI ||
-	     dpi_x % GSKILL_DPI_UNIT || dpi_y % GSKILL_DPI_UNIT))
-		return -EINVAL;
+	int i;
 
 	report->dpi_num = 0;
 	memset(&report->dpi_levels, 0, sizeof(report->dpi_levels));
@@ -1187,44 +1178,6 @@ gskill_write_resolution_dpi(struct ratbag_resolution *resolution,
 
 		report->dpi_num++;
 	}
-
-	rc = gskill_do_write_profile(device, report);
-	if (rc < 0)
-		return rc;
-
-	/*
-	 * The active resolution is now going to be the first resolution on the
-	 * device
-	 */
-	pdata->report.current_dpi_level = 0;
-	for (i = 0; i < report->dpi_num; i++) {
-		struct ratbag_resolution *res = &profile->resolution.modes[i];
-		uint8_t dev_idx = pdata->res_idx_to_dev_idx[i];
-
-		res->is_active = (dev_idx == 0);
-	}
-
-	log_debug(device->ratbag, "Profile %d resolution count set to %d\n",
-		  profile->index, report->dpi_num);
-	log_debug(device->ratbag, "Profile %d resolution %d set to %dx%dHz\n",
-		  profile->index, res_idx, dpi_x, dpi_y);
-
-	return 0;
-}
-
-static int
-gskill_write_profile(struct ratbag_profile *profile)
-{
-	struct ratbag_device *device = profile->device;
-	struct gskill_data *drv_data = ratbag_get_drv_data(device);
-	struct gskill_profile_data *pdata =
-		&drv_data->profile_data[profile->index];
-	struct gskill_profile_report *report = &pdata->report;
-	int rc;
-
-	rc = gskill_do_write_profile(device, report);
-	if (rc)
-		return rc;
 
 	return 0;
 }
@@ -1349,18 +1302,17 @@ err:
 }
 
 static int
-gskill_write_button(struct ratbag_button *button,
-		    const struct ratbag_button_action *action)
+gskill_update_button(struct ratbag_button *button)
 {
 	struct ratbag_profile *profile = button->profile;
 	struct ratbag_device *device = profile->device;
+	struct ratbag_button_action *action = &button->action;
 	struct ratbag_button_macro *macro = NULL;
 	struct gskill_data *drv_data = ratbag_get_drv_data(device);
 	struct gskill_profile_data *pdata =
 		&drv_data->profile_data[profile->index];
 	struct gskill_button_cfg *bcfg = &pdata->report.btn_cfgs[button->index];
 	uint16_t code = 0;
-	int rc;
 
 	macro = container_of(action->macro, macro, macro);
 	memset(&bcfg->params, 0, sizeof(bcfg->params));
@@ -1441,9 +1393,64 @@ gskill_write_button(struct ratbag_button *button,
 		break;
 	}
 
-	rc = gskill_do_write_profile(device, &pdata->report);
-	if (rc < 0)
+	return 0;
+}
+
+static int
+gskill_update_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag_button *button;
+	struct gskill_data *drv_data = ratbag_get_drv_data(device);
+	struct gskill_profile_data *pdata =
+		&drv_data->profile_data[profile->index];
+	struct gskill_profile_report *report = &pdata->report;
+	int rc;
+
+	gskill_update_resolutions(profile);
+
+	list_for_each(button, &profile->buttons, link) {
+		if (!button->dirty)
+			continue;
+
+		rc = gskill_update_button(button);
+		if (rc)
+			return rc;
+	}
+
+	rc = gskill_write_profile(device, report);
+	if (rc)
 		return rc;
+
+	return 0;
+}
+
+static int
+gskill_commit(struct ratbag_device *device)
+{
+	struct ratbag_profile *profile;
+	bool reload = false;
+	int rc;
+
+	list_for_each(profile, &device->profiles, link) {
+		if (!profile->dirty)
+			continue;
+
+		reload = true;
+
+		log_debug(device->ratbag,
+			  "Profile %d changed, rewriting\n", profile->index);
+
+		rc = gskill_update_profile(profile);
+		if (rc)
+			return rc;
+	}
+
+	if (reload) {
+		rc = gskill_reload_profile_data(device);
+		if (rc)
+			return rc;
+	}
 
 	return 0;
 }
@@ -1461,9 +1468,7 @@ struct ratbag_driver gskill_driver = {
 	.probe = gskill_probe,
 	.remove = gskill_remove,
 	.read_profile = gskill_read_profile,
-	.write_profile = gskill_write_profile,
+	.commit = gskill_commit,
 	.set_active_profile = gskill_set_active_profile,
-	.write_resolution_dpi = gskill_write_resolution_dpi,
 	.read_button = gskill_read_button,
-	.write_button = gskill_write_button,
 };
