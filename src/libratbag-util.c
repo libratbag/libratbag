@@ -112,12 +112,12 @@ ratbag_utf8_to_enc(char *buf, size_t buf_len, const char *to_enc,
 
 	converter = iconv_open(to_enc, "UTF-8");
 	if (converter == (iconv_t)-1)
-		return errno;
+		return -errno;
 
 	ret = iconv(converter, &in_buf, &in_bytes_left, &out_buf,
 		    &out_bytes_left);
 	if (ret)
-		ret = errno;
+		ret = -errno;
 	else
 		ret = buf_len - out_bytes_left;
 
@@ -139,7 +139,7 @@ ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
 
 	converter = iconv_open("UTF-8", from_enc);
 	if (converter == (iconv_t)-1)
-		return errno;
+		return -errno;
 
 	/*
 	 * We *could* dynamically allocate the out buffer. However iconv's
@@ -153,20 +153,20 @@ ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
 	*out = zalloc(len);
 	pos = *out;
 	if (!*out) {
-		ret = errno;
+		ret = -errno;
 		goto err;
 	}
 
 	ret = iconv(converter, &in_buf, &in_bytes_left, &pos, &out_bytes_left);
 	if (ret) {
-		ret = errno;
+		ret = -errno;
 		goto err;
 	}
 
 	/* Now get rid of any space in the buffer we don't need */
 	*out = realloc(*out, (len - out_bytes_left) + 1);
 	if (!*out)
-		ret = errno;
+		ret = -errno;
 
 err:
 	if (ret < 0 && *out) {
