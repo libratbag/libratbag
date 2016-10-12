@@ -313,6 +313,14 @@ struct gskill_data {
 	struct gskill_profile_data profile_data[GSKILL_PROFILE_MAX];
 };
 
+static inline struct gskill_profile_data *
+profile_to_pdata(struct ratbag_profile *profile)
+{
+	struct gskill_data *drv_data = profile->device->drv_data;
+
+	return &drv_data->profile_data[profile->index];
+}
+
 static const struct ratbag_button_action *
 gskill_button_function_to_action(enum gskill_button_function_type type)
 {
@@ -1037,9 +1045,7 @@ static void
 gskill_read_resolutions(struct ratbag_profile *profile,
 			struct gskill_profile_report *report)
 {
-	struct gskill_data *drv_data = ratbag_get_drv_data(profile->device);
-	struct gskill_profile_data *pdata =
-		&drv_data->profile_data[profile->index];
+	struct gskill_profile_data *pdata = profile_to_pdata(profile);
 	struct ratbag_resolution *resolution;
 	int dpi_x, dpi_y, hz, i;
 
@@ -1089,7 +1095,7 @@ gskill_read_profile(struct ratbag_profile *profile, unsigned int index)
 {
 	struct ratbag_device *device = profile->device;
 	struct gskill_data *drv_data = ratbag_get_drv_data(device);
-	struct gskill_profile_data *pdata = &drv_data->profile_data[index];
+	struct gskill_profile_data *pdata = profile_to_pdata(profile);
 	struct gskill_profile_report *report = &pdata->report;
 	uint8_t checksum;
 	int rc, retries;
@@ -1144,9 +1150,7 @@ static int
 gskill_update_resolutions(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
-	struct gskill_data *drv_data = ratbag_get_drv_data(device);
-	struct gskill_profile_data *pdata =
-		&drv_data->profile_data[profile->index];
+	struct gskill_profile_data *pdata = profile_to_pdata(profile);
 	struct gskill_profile_report *report = &pdata->report;
 	int i;
 
@@ -1207,9 +1211,8 @@ gskill_read_button(struct ratbag_button *button)
 {
 	struct ratbag_profile *profile = button->profile;
 	struct ratbag_device *device = profile->device;
-	struct gskill_data *drv_data = ratbag_get_drv_data(device);
 	struct gskill_profile_report *report =
-		&drv_data->profile_data[profile->index].report;
+		&profile_to_pdata(profile)->report;
 	struct gskill_macro_report *macro_report;
 	struct ratbag_button_macro *macro;
 	struct gskill_button_cfg *bcfg;
@@ -1308,9 +1311,7 @@ gskill_update_button(struct ratbag_button *button)
 	struct ratbag_device *device = profile->device;
 	struct ratbag_button_action *action = &button->action;
 	struct ratbag_button_macro *macro = NULL;
-	struct gskill_data *drv_data = ratbag_get_drv_data(device);
-	struct gskill_profile_data *pdata =
-		&drv_data->profile_data[profile->index];
+	struct gskill_profile_data *pdata = profile_to_pdata(profile);
 	struct gskill_button_cfg *bcfg = &pdata->report.btn_cfgs[button->index];
 	uint16_t code = 0;
 
@@ -1401,9 +1402,7 @@ gskill_update_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct ratbag_button *button;
-	struct gskill_data *drv_data = ratbag_get_drv_data(device);
-	struct gskill_profile_data *pdata =
-		&drv_data->profile_data[profile->index];
+	struct gskill_profile_data *pdata = profile_to_pdata(profile);
 	struct gskill_profile_report *report = &pdata->report;
 	int rc;
 
