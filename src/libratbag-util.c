@@ -167,6 +167,8 @@ ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
 	*out = realloc(*out, (len - out_bytes_left) + 1);
 	if (!*out)
 		ret = -errno;
+	else
+		ret = (len - out_bytes_left) + 1;
 
 err:
 	if (ret < 0 && *out) {
