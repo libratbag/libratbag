@@ -580,7 +580,7 @@ gskill_do_write_profile(struct ratbag_device *device,
 			  "Setting profile name to \"Ratbag profile %d\"\n",
 			  report->profile_num);
 		rc = ratbag_utf8_to_enc(report->name, sizeof(report->name),
-					"UTF16-LE",
+					"UTF-16LE",
 					"Ratbag profile %d",
 					report->profile_num);
 		if (rc < 0)
