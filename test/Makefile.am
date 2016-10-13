@@ -11,7 +11,8 @@ TEST_LIBS = $(CHECK_LIBS) $(LIBEVDEV_LIBS) $(top_builddir)/src/libratbag.la
 
 run_tests = \
 	test-context \
-	test-device
+	test-device \
+	test-iconv-helper
 
 build_tests = \
 	test-build-cxx \
@@ -30,6 +31,10 @@ test_context_LDFLAGS = -no-install
 test_device_SOURCES = test-device.c
 test_device_LDADD = $(TEST_LIBS)
 test_device_LDFLAGS = -no-install
+
+test_iconv_helper_SOURCES = test-iconv-helper.c
+test_iconv_helper_LDADD = $(TEST_LIBS) $(top_builddir)/src/libutil.la
+test_iconv_helper_LDFLAGS = -no-install
 
 # build-test only
 test_build_pedantic_c99_SOURCES = build-pedantic.c
