@@ -1247,6 +1247,10 @@ ratbag_button_set_macro(struct ratbag_button *button,
 {
 	int rc;
 
+	if (!ratbag_device_has_capability(button->profile->device,
+					  RATBAG_DEVICE_CAP_BUTTON_MACROS))
+		return RATBAG_ERROR_CAPABILITY;
+
 	ratbag_button_copy_macro(button, macro);
 
 	rc = button->profile->device->driver->write_button(button, &button->action);
