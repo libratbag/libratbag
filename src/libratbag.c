@@ -1002,7 +1002,8 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 	struct ratbag_button_action action = {0};
 	int rc;
 
-	if (!button->profile->device->driver->write_button)
+	if (!ratbag_device_has_capability(button->profile->device,
+					  RATBAG_DEVICE_CAP_BUTTON_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
@@ -1034,7 +1035,8 @@ ratbag_button_set_special(struct ratbag_button *button,
 
 	/* FIXME: range checks */
 
-	if (!button->profile->device->driver->write_button)
+	if (!ratbag_device_has_capability(button->profile->device,
+					  RATBAG_DEVICE_CAP_BUTTON_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
@@ -1072,7 +1074,8 @@ ratbag_button_set_key(struct ratbag_button *button,
 
 	/* FIXME: range checks */
 
-	if (!button->profile->device->driver->write_button)
+	if (!ratbag_device_has_capability(button->profile->device,
+					  RATBAG_DEVICE_CAP_BUTTON_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
 	/* FIXME: modifiers */
@@ -1093,7 +1096,8 @@ ratbag_button_disable(struct ratbag_button *button)
 	struct ratbag_button_action action;
 	int rc;
 
-	if (!button->profile->device->driver->write_button)
+	if (!ratbag_device_has_capability(button->profile->device,
+					  RATBAG_DEVICE_CAP_BUTTON_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
