@@ -1072,7 +1072,7 @@ gskill_read_profile_name(struct ratbag_device *device,
 
 	ret = ratbag_utf8_from_enc(report->name, sizeof(report->name),
 				   "UTF-16LE", &name);
-	if (ret) {
+	if (ret < 0) {
 		log_debug(device->ratbag,
 			  "Couldn't read profile name? Error %d\n", ret);
 		return;
