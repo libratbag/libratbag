@@ -95,6 +95,10 @@ mouse:usb:v046dpc249:name:*:
  RATBAG_HIDPP10_DPI=0:5700@23.53
  RATBAG_HIDPP10_PROFILE=G500
 
+# G300
+mouse:usb:v046dpc246:name:*:
+ RATBAG_DRIVER=logitech_g300
+
 # G500
 mouse:usb:v046dpc068:name:*:
  RATBAG_DRIVER=hidpp10
