@@ -11,6 +11,7 @@ libratbag_la_SOURCES =			\
 	driver-etekcity.c		\
 	driver-hidpp20.c		\
 	driver-hidpp10.c		\
+	driver-logitech-g300.c		\
 	driver-roccat.c			\
 	driver-gskill.c			\
 	driver-test.c			\
