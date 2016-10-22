@@ -151,7 +151,7 @@ enum ratbag_error_code {
 	RATBAG_ERROR_DEVICE = -1000,
 
 	/**
-	 * Insufficient capabilities. This error occurs when a requestd change is
+	 * Insufficient capabilities. This error occurs when a requested change is
 	 * beyond the device's capabilities.
 	 */
 	RATBAG_ERROR_CAPABILITY = -1001,
@@ -689,7 +689,7 @@ ratbag_profile_set_active(struct ratbag_profile *profile);
  *
  * @param profile A previously initialized ratbag profile
  *
- * @return The number of profiles available.
+ * @return The number of resolutions available.
  */
 unsigned int
 ratbag_profile_get_num_resolutions(struct ratbag_profile *profile);
@@ -897,7 +897,7 @@ ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution);
 /**
  * @ingroup resolution
  *
- * Set the the report rate in Hz for the resolution mode.
+ * Set the report rate in Hz for the resolution mode.
  *
  * A value of 0 hz disables the mode.
  *
@@ -916,7 +916,7 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 /**
  * @ingroup resolution
  *
- * Get the the report rate in Hz for the resolution mode.
+ * Get the report rate in Hz for the resolution mode.
  *
  * A value of 0 hz indicates the mode is disabled.
  *
