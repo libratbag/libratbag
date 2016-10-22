@@ -904,6 +904,11 @@ ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution);
  * If the resolution mode is the currently active mode and the profile is
  * the currently active profile, the change takes effect immediately.
  *
+ * If the resolution does not have the @ref
+ * RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE capability, changing the
+ * report rate on one resolution changes the report rate for all resolutions
+ * in this profile.
+ *
  * @param resolution A previously initialized ratbag resolution
  * @param hz Set to the report rate in Hz, may be 0
  *
@@ -919,11 +924,6 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
  * Get the report rate in Hz for the resolution mode.
  *
  * A value of 0 hz indicates the mode is disabled.
- *
- * If the resolution does not have the @ref
- * RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE capability, changing the
- * report rate on one resolution changes the report rate for all resolutions
- * in this profile.
  *
  * @param resolution A previously initialized ratbag resolution
  *
