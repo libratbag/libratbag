@@ -1011,9 +1011,23 @@ ratbag_resolution_is_default(const struct ratbag_resolution *resolution)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 {
+	struct ratbag_profile *profile = resolution->profile;
+	unsigned int i;
+
+	/* Unset the default on the other resolutions */
+	for (i = 0; i < profile->resolution.num_modes; i++) {
+		struct ratbag_resolution *other = &profile->resolution.modes[i];
+
+		if (other == resolution || !other->is_default)
+			continue;
+
+		other->is_default = false;
+		profile->dirty = true;
+	}
+
 	if (!resolution->is_default) {
-		resolution->profile->dirty = true;
 		resolution->is_default = true;
+		profile->dirty = true;
 	}
 
 	return RATBAG_SUCCESS;
