@@ -955,9 +955,25 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 				  unsigned int hz)
 {
-	if (resolution->hz != hz) {
-		resolution->hz = hz;
-		resolution->profile->dirty = true;
+	if (ratbag_resolution_has_capability(resolution,
+					      RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE)) {
+		if (resolution->hz != hz) {
+			resolution->hz = hz;
+			resolution->profile->dirty = true;
+		}
+	} else {
+		struct ratbag_profile *profile = resolution->profile;
+		unsigned int i;
+
+		/* No indvidual report rate per resolution. Loop through all of
+		 * them and update. */
+		for (i = 0; i < profile->resolution.num_modes; i++) {
+			struct ratbag_resolution *res = &profile->resolution.modes[i];
+			if (res->hz != hz) {
+				res->hz = hz;
+				profile->dirty = true;
+			}
+		}
 	}
 
 	return RATBAG_SUCCESS;
