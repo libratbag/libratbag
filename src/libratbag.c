@@ -920,9 +920,11 @@ ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 {
 	struct ratbag_profile *profile = resolution->profile;
 
-	resolution->dpi_x = dpi;
-	resolution->dpi_y = dpi;
-	profile->dirty = true;
+	if (resolution->dpi_x != dpi || resolution->dpi_y != dpi) {
+		resolution->dpi_x = dpi;
+		resolution->dpi_y = dpi;
+		profile->dirty = true;
+	}
 
 	return RATBAG_SUCCESS;
 }
@@ -940,9 +942,11 @@ ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 	if ((x == 0 && y != 0) || (x != 0 && y == 0))
 		return RATBAG_ERROR_VALUE;
 
-	resolution->dpi_x = x;
-	resolution->dpi_y = y;
-	profile->dirty = true;
+	if (resolution->dpi_x != x || resolution->dpi_y != y) {
+		resolution->dpi_x = x;
+		resolution->dpi_y = y;
+		profile->dirty = true;
+	}
 
 	return RATBAG_SUCCESS;
 }
@@ -951,8 +955,10 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 				  unsigned int hz)
 {
-	resolution->profile->dirty = true;
-	resolution->hz = hz;
+	if (resolution->hz != hz) {
+		resolution->hz = hz;
+		resolution->profile->dirty = true;
+	}
 
 	return RATBAG_SUCCESS;
 }
@@ -1005,8 +1011,10 @@ ratbag_resolution_is_default(const struct ratbag_resolution *resolution)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 {
-	resolution->profile->dirty = true;
-	resolution->is_default = true;
+	if (!resolution->is_default) {
+		resolution->profile->dirty = true;
+		resolution->is_default = true;
+	}
 
 	return RATBAG_SUCCESS;
 }
