@@ -42,6 +42,7 @@ test-build-cxx
 test-build-linker
 test-build-pedantic-c99
 test-build-std-gnuc90
+test-iconv-helper
 test-suite.log
 test-context
 test-device
