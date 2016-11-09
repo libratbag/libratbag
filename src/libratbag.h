@@ -30,6 +30,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <libudev.h>
 
 #define LIBRATBAG_ATTRIBUTE_PRINTF(_format, _args) \
@@ -519,6 +520,15 @@ enum ratbag_device_capability {
 	 * libratbag can be used to query the device as normal.
 	 */
 	RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
+
+	/**
+	 * The device has the capability to disable and enable profiles.  While
+	 * profiles are not immediately deleted after being disabled, it is not
+	 * guaranteed that the device will remember any disabled profiles the
+	 * next time ratbag runs. Furthermore, the order of profiles may get
+	 * changed the next time ratbag runs if profiles are disabled.
+	 */
+	RATBAG_DEVICE_CAP_DISABLE_PROFILE,
 };
 
 /**
@@ -602,6 +612,34 @@ ratbag_profile_ref(struct ratbag_profile *profile);
  */
 struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Enable/disable the ratbag profile. For this to work, the device must support
+ * @ref RATBAG_DEVICE_CAP_DISABLE_PROFILE.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param enable Whether to enable or disable the profile
+ *
+ * @return 0 on success or an error code otherwise
+ */
+enum ratbag_error_code
+ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled);
+
+/**
+ * @ingroup profile
+ *
+ * Check whether the ratbag profile is enabled or not. For devices that don't
+ * support @ref RATBAG_DEVICE_CAP_DISABLE_PROFILE the profile will always be
+ * set to enabled.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Whether the profile is enabled or not.
+ */
+bool
+ratbag_profile_is_enabled(const struct ratbag_profile *profile);
 
 /**
  * @ingroup profile

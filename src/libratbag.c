@@ -610,6 +610,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->resolution.modes = zalloc(num_resolutions *
 					   sizeof(*profile->resolution.modes));
 	profile->resolution.num_modes = num_resolutions;
+	profile->is_enabled = true;
 
 	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
@@ -714,10 +715,29 @@ ratbag_device_get_profile(struct ratbag_device *device, unsigned int index)
 	return NULL;
 }
 
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
+{
+	if (!ratbag_device_has_capability(profile->device,
+					  RATBAG_DEVICE_CAP_DISABLE_PROFILE))
+		return RATBAG_ERROR_CAPABILITY;
+
+	profile->is_enabled = enabled;
+	profile->dirty = true;
+
+	return RATBAG_SUCCESS;
+}
+
 LIBRATBAG_EXPORT int
 ratbag_profile_is_active(struct ratbag_profile *profile)
 {
 	return profile->is_active;
+}
+
+LIBRATBAG_EXPORT bool
+ratbag_profile_is_enabled(const struct ratbag_profile *profile)
+{
+	return profile->is_enabled;
 }
 
 LIBRATBAG_EXPORT unsigned int

@@ -231,6 +231,7 @@ struct ratbag_profile {
 	} resolution;
 
 	bool is_active;		/**< profile is the currently active one */
+	bool is_enabled;
 	bool dirty;       /**< profile changed since last commit */
 };
 

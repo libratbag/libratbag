@@ -310,6 +310,7 @@ struct gskill_profile_data {
 };
 
 struct gskill_data {
+	uint8_t profile_count;
 	struct gskill_profile_data profile_data[GSKILL_PROFILE_MAX];
 };
 
@@ -499,6 +500,8 @@ gskill_get_profile_count(struct ratbag_device *device)
 		return rc;
 	}
 
+	log_debug(device->ratbag, "Profile count: %d\n", buf[3]);
+
 	return buf[3];
 }
 
@@ -508,6 +511,8 @@ gskill_set_profile_count(struct ratbag_device *device, unsigned int count)
 	uint8_t buf[GSKILL_REPORT_SIZE_CMD] = { GSKILL_GENERAL_CMD, 0xc4, 0x12,
 		count, 0x0 };
 	int rc;
+
+	log_debug(device->ratbag, "Setting profile count to %d\n", count);
 
 	rc = gskill_general_cmd(device, buf);
 	if (rc) {
@@ -612,10 +617,6 @@ gskill_write_profile(struct ratbag_device *device,
 			  "Error while writing profile: %d\n", rc);
 		return rc < 0 ? rc : -EPROTO;
 	}
-
-	rc = gskill_reload_profile_data(device);
-	if (rc)
-		return rc;
 
 	return 0;
 }
@@ -960,30 +961,6 @@ gskill_write_button_macro(struct ratbag_device *device,
 	return 0;
 }
 
-/*
- * FIXME: Unfortunately if we ever try to get a profile that's above the
- * current profile limit of the mouse, we end up making it cry and barf up
- * garbage. No one likes barfing up garbage, so we unfortunately have to work
- * around this until we have the ability to enable/disable profiles in ratbag.
- */
-static int
-gskill_workaround_profile_count(struct ratbag_device *device)
-{
-	int ret;
-
-	ret = gskill_get_profile_count(device);
-	if (ret == GSKILL_PROFILE_MAX)
-		return 0;
-	if (ret < 0)
-		return ret;
-
-	log_info(device->ratbag,
-		 "We don't support dynamically enabling/disabling profiles yet, sorry! Setting profile count of mouse to 5\n");
-
-	ret = gskill_set_profile_count(device, GSKILL_PROFILE_MAX);
-	return ret;
-}
-
 static int
 gskill_probe(struct ratbag_device *device)
 {
@@ -999,10 +976,6 @@ gskill_probe(struct ratbag_device *device)
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
 
-	ret = gskill_workaround_profile_count(device);
-	if (ret)
-		goto err;
-
 	ret = gskill_get_firmware_version(device);
 	if (ret < 0)
 		goto err;
@@ -1010,12 +983,18 @@ gskill_probe(struct ratbag_device *device)
 	log_debug(device->ratbag,
 		 "Firmware version: %d\n", ret);
 
+	ret = gskill_get_profile_count(device);
+	if (ret < 0)
+		goto err;
+	drv_data->profile_count = ret;
+
 	ratbag_device_init_profiles(device, GSKILL_PROFILE_MAX, GSKILL_NUM_DPI,
 				    GSKILL_BUTTON_MAX);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
 
 	ret = gskill_get_active_profile_idx(device);
 	if (ret < 0)
@@ -1099,6 +1078,11 @@ gskill_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct gskill_profile_report *report = &pdata->report;
 	uint8_t checksum;
 	int rc, retries;
+
+	if (index >= drv_data->profile_count) {
+		profile->is_enabled = false;
+		return;
+	}
 
 	/*
 	 * There's a couple of situations where after various commands, the
@@ -1215,16 +1199,24 @@ gskill_read_button(struct ratbag_button *button)
 		&profile_to_pdata(profile)->report;
 	struct gskill_macro_report *macro_report;
 	struct ratbag_button_macro *macro;
-	struct gskill_button_cfg *bcfg;
+	struct gskill_button_cfg *bcfg = &report->btn_cfgs[button->index];
 	struct ratbag_button_action *act = &button->action;
 
 	button->type = gskill_button_type_mapping[button->index];
-	bcfg = &report->btn_cfgs[button->index];
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+
+	/*
+	 * G.Skill mice can't save disabled profiles, so buttons from disabled
+	 * profiles shouldn't be set to anything
+	 */
+	if (!profile->is_enabled) {
+		act->type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		return;
+	}
 
 	/* Parse any parameters that might accompany the action type */
 	switch (bcfg->type) {
@@ -1428,17 +1420,52 @@ static int
 gskill_commit(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
+	struct gskill_data *drv_data = ratbag_get_drv_data(device);
+	struct gskill_profile_report *report;
+	uint8_t profile_count = 0, new_idx, i;
 	bool reload = false;
 	int rc;
 
-	list_for_each(profile, &device->profiles, link) {
-		if (!profile->dirty)
+	/*
+	 * G.Skill mice only have a concept of how many profiles are enabled,
+	 * not which ones are and aren't enabled. So in order to provide the
+	 * ability to disable individual profiles we need to only write the
+	 * enabled profiles and make sure no holes are left inbetween profiles
+	 */
+	for (i = 0; i < GSKILL_PROFILE_MAX; i++) {
+		profile = ratbag_device_get_profile(device, i);
+
+		if (!profile->is_enabled)
 			continue;
 
-		reload = true;
+		report = &drv_data->profile_data[profile->index].report;
+		new_idx = profile_count++;
+
+		if (new_idx == report->profile_num)
+			continue;
+
+		log_debug(device->ratbag,
+			  "Profile %d remapped to %d\n",
+			  profile->index, new_idx);
+
+		profile->dirty = true;
+		report->profile_num = new_idx;
+	}
+
+	if (profile_count != drv_data->profile_count) {
+		rc = gskill_set_profile_count(device, profile_count);
+		if (rc < 0)
+			return rc;
+		drv_data->profile_count = profile_count;
+	}
+
+	list_for_each(profile, &device->profiles, link) {
+		if (!profile->is_enabled || !profile->dirty)
+			continue;
 
 		log_debug(device->ratbag,
 			  "Profile %d changed, rewriting\n", profile->index);
+		reload = true;
 
 		rc = gskill_update_profile(profile);
 		if (rc)
