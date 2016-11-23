@@ -203,7 +203,7 @@ struct ratbag_driver {
 	struct list link;
 };
 
-struct ratbag_resolution{
+struct ratbag_resolution {
 	struct ratbag_profile *profile;
 	int refcount;
 	void *userdata;
