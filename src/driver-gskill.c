@@ -210,7 +210,12 @@ struct gskill_profile_report {
 	uint8_t angle_snap_ratio  :4;
 	uint8_t liftoff_value     :5;
 	bool liftoff_enabled      :1;
-	uint16_t                  :10; /* unused */
+	bool disable_leds_in_sleep:1;
+	enum {
+		GSKILL_LED_PROFILE_MODE_BACKGROUND = 0,
+		GSKILL_LED_PROFILE_MODE_OTHER = 1,
+	} led_profile_mode :1;
+	uint8_t                   :8; /* unused */
 
 	uint8_t current_dpi_level :4;
 	uint8_t dpi_num           :4;
