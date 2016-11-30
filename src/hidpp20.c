@@ -1653,11 +1653,7 @@ union hidpp20_internal_profile {
 		uint8_t default_dpi;
 		uint8_t switched_dpi;
 		uint16_t dpi[5];
-		struct {
-			uint8_t red;
-			uint8_t green;
-			uint8_t blue;
-		} profile_color;
+		struct hidpp20_color profile_color;
 		uint8_t power_mode;
 		uint8_t angle_snapping;
 		uint8_t reserved[14];
@@ -1667,8 +1663,7 @@ union hidpp20_internal_profile {
 			char txt[16 * 3];
 			uint8_t raw[16 * 3];
 		} name;
-		uint8_t logo_effect[11]; /* G303 only */
-		uint8_t side_effects[11]; /* G303 only */
+		struct hidpp20_internal_led leds[2]; /* G303, g502, g900 only */
 		uint8_t free[24];
 		uint16_t crc;
 	} __attribute__((packed)) profile;
