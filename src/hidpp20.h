@@ -317,6 +317,36 @@ union hidpp20_button_binding {
 } __attribute__((packed));
 _Static_assert(sizeof(union hidpp20_button_binding) == 4, "Invalid size");
 
+struct hidpp20_color {
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_color) == 3, "Invalid size");
+
+struct hidpp20_internal_led {
+	uint8_t mode; /* 00 - off; 01 - on; 03 - cycle; 0a - breath */
+	struct hidpp20_color color;
+	union {
+		struct hidpp20_led_cycle {
+			uint16_t pad_1;
+			uint16_t rate;  /* 16000 - 20000Hz */
+			uint8_t brightness; /* 0 - 100 percent */
+			uint16_t pad_2;
+		} __attribute__((packed)) cycle;
+		struct hidpp20_led_breath {
+			uint16_t rate;
+			uint8_t pad_1;
+			uint8_t brightness;
+			uint8_t pad_2;
+			uint16_t pad_3;
+		} __attribute__((packed)) breath;
+	} __attribute__((packed)) effect;
+};
+_Static_assert(sizeof(struct hidpp20_led_cycle) == 7, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_breath) == 7, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_internal_led) == 11, "Invalid size");
+
 #define HIDPP20_MACRO_NOOP			0x01
 #define HIDPP20_MACRO_DELAY			0x40
 #define HIDPP20_MACRO_KEY_PRESS			0x43
