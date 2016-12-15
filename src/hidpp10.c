@@ -278,14 +278,12 @@ out_err:
 /* 0x00: Enable HID++ Notifications                                           */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_HIDPP_NOTIFICATIONS		0x00
-
 #define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_HIDPP_NOTIFICATIONS, \
+		.address = HIDPP_REGISTER_HIDPP_NOTIFICATIONS, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -334,14 +332,12 @@ hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 /* 0x01: Enable Individual Features                                           */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_ENABLE_INDIVIDUAL_FEATURES	0x01
-
 #define CMD_ENABLE_INDIVIDUAL_FEATURES(idx, sub)	{ \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_ENABLE_INDIVIDUAL_FEATURES, \
+		.address = HIDPP_REGISTER_ENABLE_INDIVIDUAL_FEATURES, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -393,14 +389,13 @@ hidpp10_set_individual_features(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x07: Battery status                                                       */
 /* -------------------------------------------------------------------------- */
-#define __CMD_BATTERY_STATUS			0x07
 
 #define CMD_BATTERY_STATUS(idx, sub) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_BATTERY_STATUS, \
+		.address = HIDPP_REGISTER_BATTERY_STATUS, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -434,14 +429,13 @@ hidpp10_get_battery_status(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x0D: Battery mileage                                                      */
 /* -------------------------------------------------------------------------- */
-#define __CMD_BATTERY_MILEAGE			0x0D
 
 #define CMD_BATTERY_MILEAGE(idx, sub) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_BATTERY_MILEAGE, \
+		.address = HIDPP_REGISTER_BATTERY_MILEAGE, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -503,7 +497,6 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x0F: Profile queries                                                      */
 /* -------------------------------------------------------------------------- */
-#define __CMD_PROFILE				0x0F
 
 #define PROFILE_TYPE_INDEX			0x00
 #define PROFILE_TYPE_ADDRESS			0x01
@@ -515,7 +508,7 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_PROFILE, \
+		.address = HIDPP_REGISTER_PROFILE, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -1787,14 +1780,12 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 /* 0x51: LED Status                                                           */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_LED_STATUS			0x51
-
 #define CMD_LED_STATUS(idx, sub) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_LED_STATUS, \
+		.address = HIDPP_REGISTER_LED_STATUS, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -1864,14 +1855,12 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 /* 0x54: LED Intensity                                                        */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_LED_INTENSITY			0x54
-
 #define CMD_LED_INTENSITY(idx, sub) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_LED_INTENSITY, \
+		.address = HIDPP_REGISTER_LED_INTENSITY, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -1927,14 +1916,12 @@ hidpp10_set_led_intensity(struct hidpp10_device *dev,
 /* 0x57: LED Color                                                            */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_LED_COLOR				0x57
-
 #define CMD_LED_COLOR(idx, sub) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_LED_COLOR, \
+		.address = HIDPP_REGISTER_LED_COLOR, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -1985,14 +1972,13 @@ hidpp10_set_led_color(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x61: Optical Sensor Settings                                              */
 /* -------------------------------------------------------------------------- */
-#define __CMD_OPTICAL_SENSOR_SETTINGS		0x61
 
 #define CMD_OPTICAL_SENSOR_SETTINGS(idx, sub) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_OPTICAL_SENSOR_SETTINGS, \
+		.address = HIDPP_REGISTER_OPTICAL_SENSOR_SETTINGS, \
 		.parameters = {0x00, 0x00, 0x00}, \
 	} \
 }
@@ -2021,14 +2007,13 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x63: Current Resolution                                                   */
 /* -------------------------------------------------------------------------- */
-#define __CMD_CURRENT_RESOLUTION		0x63
 
 #define CMD_CURRENT_RESOLUTION(id, idx, sub) { \
 	.msg = { \
 		.report_id = id, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_CURRENT_RESOLUTION, \
+		.address = HIDPP_REGISTER_CURRENT_RESOLUTION, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -2082,14 +2067,13 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x64: USB Refresh Rate                                                     */
 /* -------------------------------------------------------------------------- */
-#define __CMD_USB_REFRESH_RATE			0x64
 
 #define CMD_USB_REFRESH_RATE(idx, sub) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_USB_REFRESH_RATE, \
+		.address = HIDPP_REGISTER_USB_REFRESH_RATE, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -2130,14 +2114,13 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0xA0: Generic Memory Management                                            */
 /* -------------------------------------------------------------------------- */
-#define __CMD_GENERIC_MEMORY_MANAGEMENT			0xA0
 
 #define CMD_ERASE_MEMORY(idx, page) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_LONG, \
 		.device_idx = idx, \
 		.sub_id = HIDPP_SET_LONG_REGISTER_REQ, \
-		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.address = HIDPP_REGISTER_GENERIC_MEMORY_MANAGEMENT, \
 		.string = {0x02, 0x00, \
 			   0x00, 0x00, 0x00, 0x00, \
 			   page, 0x00, 0x00, 0x00,\
@@ -2150,7 +2133,7 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 		.report_id = HIDPP_REPORT_ID_LONG, \
 		.device_idx = idx, \
 		.sub_id = HIDPP_SET_LONG_REGISTER_REQ, \
-		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.address = HIDPP_REGISTER_GENERIC_MEMORY_MANAGEMENT, \
 		.string = {0x03, 0x00, \
 			   src_page, src_woffset, 0x00, 0x00, \
 			   dst_page, dst_woffset, 0x00, 0x00,\
@@ -2200,14 +2183,13 @@ hidpp10_write_flash(struct hidpp10_device *dev,
 /* 0x9x: HOT payload                                                          */
 /* 0xA1: HOT Control Register                                                 */
 /* -------------------------------------------------------------------------- */
-#define __CMD_HOT_CONTROL			0xA1
 
 #define CMD_HOT_RESET(idx) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = HIDPP_SET_REGISTER_REQ, \
-		.address = __CMD_HOT_CONTROL, \
+		.address = HIDPP_REGISTER_HOT_CONTROL, \
 		.parameters = {0x01, 0x00, 0x00 }, \
 	} \
 }
@@ -2371,14 +2353,13 @@ hidpp10_send_hot_payload(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0xA2: Read Sector                                                          */
 /* -------------------------------------------------------------------------- */
-#define __CMD_READ_MEMORY			0xA2
 
 #define CMD_READ_MEMORY(idx, page, offset) { \
 	.msg = { \
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = HIDPP_GET_LONG_REGISTER_REQ, \
-		.address = __CMD_READ_MEMORY, \
+		.address = HIDPP_REGISTER_READ_MEMORY, \
 		.parameters = {page, offset, 0x00 }, \
 	} \
 }
@@ -2437,7 +2418,6 @@ hidpp10_read_page(struct hidpp10_device *dev, uint8_t page,
 /* 0xB2: Device Connection and Disconnection (Pairing)                        */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_DEVICE_CONNECTION_DISCONNECTION	0xB2
 #define CONNECT_DEVICES_OPEN_LOCK			1
 #define CONNECT_DEVICES_CLOSE_LOCK			2
 #define CONNECT_DEVICES_DISCONNECT			3
@@ -2447,7 +2427,7 @@ hidpp10_read_page(struct hidpp10_device *dev, uint8_t page,
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = HIDPP_RECEIVER_IDX, \
 		.sub_id = HIDPP_SET_REGISTER_REQ, \
-		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
+		.address = HIDPP_REGISTER_DEVICE_CONNECTION_DISCONNECTION, \
 		.parameters = {cmd, idx - 1, timeout }, \
 	} \
 }
@@ -2483,7 +2463,6 @@ int hidpp10_disconnect(struct hidpp10_device *device, int idx) {
 /* 0xB5: Pairing Information                                                  */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_PAIRING_INFORMATION		0xB5
 #define DEVICE_PAIRING_INFORMATION			0x20
 #define DEVICE_EXTENDED_PAIRING_INFORMATION		0x30
 #define DEVICE_NAME					0x40
@@ -2493,7 +2472,7 @@ int hidpp10_disconnect(struct hidpp10_device *device, int idx) {
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = HIDPP_RECEIVER_IDX, \
 		.sub_id = HIDPP_GET_LONG_REGISTER_REQ, \
-		.address = __CMD_PAIRING_INFORMATION, \
+		.address = HIDPP_REGISTER_PAIRING_INFORMATION, \
 		.parameters = {type + idx - 1, 0x00, 0x00 }, \
 	} \
 }
@@ -2564,7 +2543,6 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_DEVICE_FIRMWARE_INFORMATION	0xF1
 #define FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(MCU)	((MCU - 1) << 4 | 0x01)
 #define FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(MCU)		((MCU - 1) << 4 | 0x02)
 #define FIRMWARE_INFO_ITEM_HW_VERSION(MCU)		((MCU - 1) << 4 | 0x03)
@@ -2575,7 +2553,7 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = HIDPP_GET_REGISTER_REQ, \
-		.address = __CMD_DEVICE_FIRMWARE_INFORMATION, \
+		.address = HIDPP_REGISTER_DEVICE_FIRMWARE_INFORMATION, \
 		.parameters = {fw_info_item, 0x00, 0x00 }, \
 	} \
 }
