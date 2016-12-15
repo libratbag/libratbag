@@ -38,12 +38,12 @@ struct _hidpp20_message {
 	uint8_t device_idx;
 	uint8_t sub_id;
 	uint8_t address;
-	uint8_t parameters[LONG_MESSAGE_LENGTH - 4U];
+	uint8_t parameters[HIDPP_LONG_MESSAGE_LENGTH - 4U];
 } __attribute__((packed));
 
 union hidpp20_message {
 	struct _hidpp20_message msg;
-	uint8_t data[LONG_MESSAGE_LENGTH];
+	uint8_t data[HIDPP_LONG_MESSAGE_LENGTH];
 };
 
 struct hidpp20_feature {
@@ -228,7 +228,7 @@ struct hidpp20_sensor {
 	uint16_t dpi_max;
 	uint16_t dpi_steps;
 	uint16_t default_dpi;
-	uint16_t dpi_list[LONG_MESSAGE_LENGTH / 2 + 1];
+	uint16_t dpi_list[HIDPP_LONG_MESSAGE_LENGTH / 2 + 1];
 };
 
 /**
