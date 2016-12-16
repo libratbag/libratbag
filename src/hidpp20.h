@@ -117,6 +117,13 @@ enum hidpp20_battery_status {
 	BATTERY_STATUS_INVALID,
 };
 
+enum hidpp20_led_mode {
+	HIDPP20_LED_OFF = 0x00,
+	HIDPP20_LED_ON = 0x01,
+	HIDPP20_LED_CYCLE = 0x03,
+	HIDPP20_LED_BREATHING = 0x0a,
+};
+
 /**
  * Retrieves the battery level status.
  *
@@ -276,6 +283,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 #define HIDPP20_MODIFIER_KEY_SHIFT			0x02
 
 #define HIDPP20_DPI_COUNT				5
+#define HIDPP20_LED_COUNT				2
 
 union hidpp20_button_binding {
 	struct {
@@ -324,6 +332,12 @@ struct hidpp20_color {
 } __attribute__((packed));
 _Static_assert(sizeof(struct hidpp20_color) == 3, "Invalid size");
 
+enum hidpp20_led_type {
+	HIDPP20_LED_UNKNOWN = -1,
+	HIDPP20_LED_LOGO = 0,
+	HIDPP20_LED_SIDE,
+};
+
 struct hidpp20_internal_led {
 	uint8_t mode; /* 00 - off; 01 - on; 03 - cycle; 0a - breath */
 	struct hidpp20_color color;
@@ -346,6 +360,15 @@ struct hidpp20_internal_led {
 _Static_assert(sizeof(struct hidpp20_led_cycle) == 7, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_led_breath) == 7, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_internal_led) == 11, "Invalid size");
+
+typedef uint8_t percent_t;
+
+struct hidpp20_led {
+	enum hidpp20_led_mode mode;
+	struct hidpp20_color color;
+	uint16_t rate;
+	percent_t brightness;
+};
 
 #define HIDPP20_MACRO_NOOP			0x01
 #define HIDPP20_MACRO_DELAY			0x40
@@ -388,6 +411,7 @@ struct hidpp20_profile {
 	uint16_t dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
+	struct hidpp20_led leds[32];
 };
 
 struct hidpp20_profiles {
@@ -395,6 +419,7 @@ struct hidpp20_profiles {
 	uint8_t num_rom_profiles;
 	uint8_t num_buttons;
 	uint8_t num_modes;
+	uint8_t num_leds;
 	uint8_t has_g_shift;
 	uint8_t has_dpi_shift;
 	uint8_t corded;
