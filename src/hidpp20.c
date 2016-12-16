@@ -1289,6 +1289,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	profiles->num_rom_profiles = info->profile_count_oob;
 	profiles->num_buttons = msg.msg.parameters[5] <= 16 ? msg.msg.parameters[5] : 16;
 	profiles->num_modes = HIDPP20_DPI_COUNT;
+	profiles->num_leds = HIDPP20_LED_COUNT;
 	profiles->has_g_shift = (info->mechanical_layout & 0x03) == 2;
 	profiles->has_dpi_shift = ((info->mechanical_layout & 0x0c) >> 2) == 2;
 	switch(info->various_info & 0x07) {
@@ -1776,6 +1777,30 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 	}
 }
 
+static void
+hidpp20_onboard_profile_read_led(struct hidpp20_led *led,
+			struct hidpp20_internal_led internal_led)
+{
+	uint16_t rate = 0;
+	uint8_t brightness = 0;
+
+	switch (internal_led.mode) {
+	case HIDPP20_LED_CYCLE:
+		rate = internal_led.effect.cycle.rate;
+		brightness = internal_led.effect.cycle.brightness;
+		break;
+	case HIDPP20_LED_BREATHING:
+		rate = internal_led.effect.breath.rate;
+		brightness = internal_led.effect.breath.brightness;
+		break;
+	}
+
+	led->mode = (enum hidpp20_led_mode)internal_led.mode;
+	led->color = internal_led.color;
+	led->rate = rate;
+	led->brightness = brightness;
+}
+
 int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 				  unsigned int index,
 				  struct hidpp20_profiles *profiles_list)
@@ -1804,6 +1829,9 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 		profile->dpi[i] = hidpp_get_unaligned_le_u16(&data[2 * i + 3]);
 	}
 
+	for (i = 0; i < profiles_list->num_leds; i++)
+		hidpp20_onboard_profile_read_led(&profile->leds[i], pdata.profile.leds[i]);
+
 	hidpp20_buttons_to_cpu(device, profile, pdata.profile.buttons, profiles_list->num_buttons);
 
 	memcpy(profile->name, pdata.profile.name.txt, sizeof(profile->name));
@@ -1819,6 +1847,33 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 		memset(profile->name, 0, sizeof(profile->name));
 
 	return 0;
+}
+
+static void
+hidpp20_onboard_write_profile_led(struct hidpp20_internal_led *internal_led,
+				  struct hidpp20_led *led)
+{
+	uint16_t rate = led->rate;
+	uint8_t brightness = led->brightness;
+
+	internal_led->mode = (uint8_t)led->mode;
+	internal_led->color.red = led->color.red;
+	internal_led->color.blue = led->color.blue;
+	internal_led->color.green = led->color.green;
+
+	switch (led->mode) {
+	case HIDPP20_LED_CYCLE:
+		internal_led->effect.cycle.rate = rate;
+		internal_led->effect.cycle.brightness = brightness;
+		break;
+	case HIDPP20_LED_BREATHING:
+		internal_led->effect.breath.rate = rate;
+		internal_led->effect.breath.brightness = brightness;
+		break;
+	case HIDPP20_LED_ON:
+	case HIDPP20_LED_OFF:
+		break;
+	}
 }
 
 int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
@@ -1852,6 +1907,9 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	for (i = 0; i < 5; i++) {
 		pdata.profile.dpi[i] = hidpp_cpu_to_le_u16(profile->dpi[i]);
 	}
+
+	for (i = 0; i < profiles_list->num_leds; i++)
+		hidpp20_onboard_write_profile_led(&pdata.profile.leds[i], &profile->leds[i]);
 
 	hidpp20_buttons_from_cpu(profile, pdata.profile.buttons, profiles_list->num_buttons);
 
