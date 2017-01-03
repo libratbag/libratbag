@@ -305,7 +305,7 @@ hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
 		return res;
 
 	*reporting_flags = notifications.msg.parameters[0];
-	*reporting_flags |= (notifications.msg.parameters[0] & 0x1F) << 8;
+	*reporting_flags |= (notifications.msg.parameters[1] & 0x1F) << 8;
 	*reporting_flags |= (notifications.msg.parameters[2] & 0x7 ) << 16;
 
 	return res;
