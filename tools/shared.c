@@ -102,6 +102,7 @@ const static struct map {
 
 	/* DPI switch */
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,	"resolution cycle up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN,	"resolution cycle down" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP,		"resolution up" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN,		"resolution down" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE,	"resolution alternate" },
@@ -109,6 +110,7 @@ const static struct map {
 
 	/* Profile */
 	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP,	"profile cycle up" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_DOWN,	"profile cycle down" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP,		"profile up" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN,		"profile down" },
 
