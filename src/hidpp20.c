@@ -501,6 +501,118 @@ err:
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x8070 - Color LED effects                                                 */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_COLOR_LED_EFFECTS_GET_INFO 0x00
+#define CMD_COLOR_LED_EFFECTS_GET_ZONE_INFO 0x10
+
+static int
+hidpp20_color_led_zones_get_count(struct hidpp20_device *device, uint8_t reg)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_COLOR_LED_EFFECTS_GET_INFO,
+	};
+	struct hidpp20_color_led_info *info;
+	uint8_t feature_index;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_COLOR_LED_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	info = (struct hidpp20_color_led_info *)msg.msg.parameters;
+
+	return info->zone_count;
+}
+
+int
+hidpp20_color_led_effects_get_zone_info(struct hidpp20_device *device,
+					uint8_t reg,
+					struct hidpp20_color_led_zone_info *info)
+{
+	int rc;
+	struct hidpp20_color_led_zone_info *msg_info;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.sub_id = reg,
+		.msg.address = CMD_COLOR_LED_EFFECTS_GET_ZONE_INFO,
+		.msg.parameters[0] = info->index,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	msg_info = (struct hidpp20_color_led_zone_info *)msg.msg.parameters;
+	info->location = msg_info->location;
+	info->num_effects = msg_info->num_effects;
+	info->persistency_caps = msg_info->persistency_caps;
+
+	return 0;
+}
+
+int
+hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
+					 struct hidpp20_color_led_zone_info **infos_list)
+{
+	uint8_t feature_index;
+	struct hidpp20_color_led_zone_info *i_list, *info;
+	uint8_t num_infos;
+	unsigned i;
+	int rc;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_COLOR_LED_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	rc = hidpp20_color_led_zones_get_count(device, feature_index);
+	if (rc < 0)
+		return rc;
+
+	num_infos = rc;
+	if (num_infos == 0) {
+		*infos_list = NULL;
+		return 0;
+	}
+
+	i_list = zalloc(num_infos * sizeof(struct hidpp20_color_led_zone_info));
+
+	for (i = 0; i < num_infos; i++) {
+		info = &i_list[i];
+		info->index = i;
+		rc = hidpp20_color_led_effects_get_zone_info(device, feature_index, info);
+		if (rc)
+			goto err;
+
+		hidpp_log_raw(&device->base,
+			      "led_info %d: location: %d type %s num_effects: %d persistency_caps: 0x%02x\n",
+			      info->index,
+			      info->location,
+			      hidpp20_8070_get_location_mapping_name(info->location),
+			      info->num_effects,
+			      info->persistency_caps);
+	}
+
+	*infos_list = i_list;
+	return num_infos;
+err:
+	free(i_list);
+	return rc;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x1b04: Special keys and mouse buttons                                     */
 /* -------------------------------------------------------------------------- */
 

@@ -106,6 +106,12 @@ hidpp20_1b04_get_physical_mapping_name(uint16_t value);
 enum ratbag_button_type
 hidpp20_1b04_get_physical_mapping(uint16_t value);
 
+enum ratbag_led_type
+hidpp20_8070_get_location_mapping(uint16_t value);
+
+const char *
+hidpp20_8070_get_location_mapping_name(uint16_t value);
+
 const char *
 hidpp20_1b04_get_logical_mapping_name(uint16_t value);
 
