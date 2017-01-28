@@ -265,6 +265,41 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 
 #define HIDPP_PAGE_COLOR_LED_EFFECTS			0x8070
 
+
+struct hidpp20_color_led_info;
+
+struct hidpp20_color_led_zone_info;
+
+int
+hidpp20_color_led_effects_get_zone_info(struct hidpp20_device *device,
+					uint8_t reg, struct hidpp20_color_led_zone_info *info);
+
+int
+hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
+					 struct hidpp20_color_led_zone_info **infos_list);
+
+enum hidpp20_color_led_location {
+	HIDPP20_COLOR_LED_LOCATION_UNDEFINED = 0,
+	HIDPP20_COLOR_LED_LOCATION_PRIMARY,
+	HIDPP20_COLOR_LED_LOCATION_LOGO,
+	HIDPP20_COLOR_LED_LOCATION_LEFT,
+	HIDPP20_COLOR_LED_LOCATION_RIGHT,
+	HIDPP20_COLOR_LED_LOCATION_COMBINED,
+	HIDPP20_COLOR_LED_LOCATION_PRIMARY_1,
+	HIDPP20_COLOR_LED_LOCATION_PRIMARY_2,
+	HIDPP20_COLOR_LED_LOCATION_PRIMARY_3,
+	HIDPP20_COLOR_LED_LOCATION_PRIMARY_4,
+	HIDPP20_COLOR_LED_LOCATION_PRIMARY_5,
+	HIDPP20_COLOR_LED_LOCATION_PRIMARY_6,
+};
+
+enum hidpp20_color_led_persistency {
+	HIDPP20_COLOR_LED_PERSISTENCY_UNSUPPORTED,
+	HIDPP20_COLOR_LED_PERSISTENCY_ON,
+	HIDPP20_COLOR_LED_PERSISTENCY_OFF,
+	HIDPP20_COLOR_LED_PERSISTENCY_ON_OFF,
+};
+
 /* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
 /* -------------------------------------------------------------------------- */
@@ -324,6 +359,23 @@ union hidpp20_button_binding {
 	} disabled;
 } __attribute__((packed));
 _Static_assert(sizeof(union hidpp20_button_binding) == 4, "Invalid size");
+
+struct hidpp20_color_led_info {
+	uint8_t zone_count;
+	/* we don't care about NV capabilities for libratbag, they just
+	 * indicate sale demo effects */
+	uint16_t nv_caps;
+	uint16_t ext_caps;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_color_led_info) == 5, "Invalid size");
+
+struct hidpp20_color_led_zone_info {
+	uint8_t index;
+	uint16_t location;
+	uint8_t num_effects;
+	uint8_t persistency_caps;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_color_led_zone_info) == 5, "Invalid size");
 
 struct hidpp20_color {
 	uint8_t red;

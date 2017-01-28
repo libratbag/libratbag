@@ -138,6 +138,21 @@ static const struct hidpp20_1b04_physical_mapping hidpp20_1b04_physical_mapping[
 	BUTTON_PHYS_MAPPING(221, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN),
 };
 
+struct hidpp20_8070_location_mapping {
+	uint16_t value;
+	const char *name;
+	enum ratbag_led_type type;
+};
+
+#define LED_LOC_MAPPING(v_, n_, t_) \
+ { v_, n_, t_ }
+
+static const struct hidpp20_8070_location_mapping hidpp20_8070_location_mapping[] = {
+	LED_LOC_MAPPING(0, "None", RATBAG_LED_TYPE_UNKNOWN),
+	LED_LOC_MAPPING(256, "Logo LED", RATBAG_LED_TYPE_LOGO),
+	LED_LOC_MAPPING(512, "Side LED", RATBAG_LED_TYPE_SIDE),
+};
+
 const struct ratbag_button_action *
 hidpp20_1b04_get_logical_mapping(uint16_t value)
 {
@@ -196,6 +211,32 @@ hidpp20_1b04_get_physical_mapping_name(uint16_t value)
 	const struct hidpp20_1b04_physical_mapping *map;
 
 	ARRAY_FOR_EACH(hidpp20_1b04_physical_mapping, map) {
+		if (map->value == value)
+			return map->name;
+	}
+
+	return "UNKNOWN";
+}
+
+enum ratbag_led_type
+hidpp20_8070_get_location_mapping(uint16_t value)
+{
+	const struct hidpp20_8070_location_mapping *map;
+
+	ARRAY_FOR_EACH(hidpp20_8070_location_mapping, map) {
+		if (map->value == value)
+			return map->type;
+	}
+
+	return RATBAG_LED_TYPE_UNKNOWN;
+}
+
+const char *
+hidpp20_8070_get_location_mapping_name(uint16_t value)
+{
+	const struct hidpp20_8070_location_mapping *map;
+
+	ARRAY_FOR_EACH(hidpp20_8070_location_mapping, map) {
 		if (map->value == value)
 			return map->name;
 	}

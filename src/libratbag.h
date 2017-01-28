@@ -1318,6 +1318,16 @@ enum ratbag_button_action_special
 ratbag_button_get_special(struct ratbag_button *button);
 
 /**
+ * @ingroup led
+ *
+ * LED types, usually based on their physical location
+ */
+enum ratbag_led_type {
+	RATBAG_LED_TYPE_UNKNOWN = -1,
+	RATBAG_LED_TYPE_LOGO = 0,
+	RATBAG_LED_TYPE_SIDE
+};
+/**
  * @ingroup button
  *
  * This function sets the special function assigned to this button.
