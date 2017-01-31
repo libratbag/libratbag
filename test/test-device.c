@@ -53,6 +53,7 @@ const struct ratbag_test_device sane_device = {
 	.num_profiles = 3,
 	.num_resolutions = 3,
 	.num_buttons = 1,
+	.num_leds = 2,
 	.profiles = {
 		{
 		.resolutions = {
@@ -110,7 +111,7 @@ START_TEST(device_init)
 {
 	struct ratbag *r;
 	struct ratbag_device *d;
-	int nprofiles, nbuttons;
+	int nprofiles, nbuttons, nleds;
 	struct ratbag_test_device td = sane_device;
 	int device_freed_count = 0;
 
@@ -124,6 +125,8 @@ START_TEST(device_init)
 	ck_assert_int_eq(nprofiles, 3);
 	nbuttons = ratbag_device_get_num_buttons(d);
 	ck_assert_int_eq(nbuttons, 1);
+	nleds = ratbag_device_get_num_leds(d);
+	ck_assert_int_eq(nleds, 2);
 
 	ratbag_device_unref(d);
 	ratbag_unref(r);

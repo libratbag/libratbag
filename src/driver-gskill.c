@@ -31,6 +31,7 @@
 #define GSKILL_PROFILE_MAX  5
 #define GSKILL_NUM_DPI      5
 #define GSKILL_BUTTON_MAX  10
+#define GSKILL_NUM_LED      0
 
 #define GSKILL_MAX_POLLING_RATE 1000
 
@@ -994,7 +995,7 @@ gskill_probe(struct ratbag_device *device)
 	drv_data->profile_count = ret;
 
 	ratbag_device_init_profiles(device, GSKILL_PROFILE_MAX, GSKILL_NUM_DPI,
-				    GSKILL_BUTTON_MAX);
+				    GSKILL_BUTTON_MAX, GSKILL_NUM_LED);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);

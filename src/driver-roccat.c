@@ -36,6 +36,7 @@
 #define ROCCAT_PROFILE_MAX			4
 #define ROCCAT_BUTTON_MAX			23
 #define ROCCAT_NUM_DPI				5
+#define ROCCAT_LED_MAX				0
 
 #define ROCCAT_MAX_RETRY_READY			10
 
@@ -795,7 +796,8 @@ roccat_probe(struct ratbag_device *device)
 	ratbag_device_init_profiles(device,
 				    ROCCAT_PROFILE_MAX + 1,
 				    ROCCAT_NUM_DPI,
-				    ROCCAT_BUTTON_MAX + 1);
+				    ROCCAT_BUTTON_MAX + 1,
+				    ROCCAT_LED_MAX);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 

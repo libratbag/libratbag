@@ -465,7 +465,8 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 	ratbag_device_init_profiles(device,
 				    count,
 				    profile.num_dpi_modes,
-				    profile.num_buttons);
+				    profile.num_buttons,
+				    profile.num_leds);
 
 	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
@@ -584,7 +585,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 		/* Fall back to something that every mouse has */
 		struct ratbag_profile *profile;
 
-		ratbag_device_init_profiles(device, 1, 1, 3);
+		ratbag_device_init_profiles(device, 1, 1, 3, 0);
 		profile = ratbag_device_get_profile(device, 0);
 		profile->is_active = true;
 		ratbag_profile_unref(profile);

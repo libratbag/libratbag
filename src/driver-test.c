@@ -146,7 +146,8 @@ test_probe(struct ratbag_device *device, void *data)
 	ratbag_device_init_profiles(device,
 				    test_device->num_profiles,
 				    test_device->num_resolutions,
-				    test_device->num_buttons);
+				    test_device->num_buttons,
+				    test_device->num_leds);
 	if (test_device->num_profiles > 1)
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 

@@ -65,6 +65,7 @@ struct hidpp20drv_data {
 	unsigned int num_profiles;
 	unsigned int num_resolutions;
 	unsigned int num_buttons;
+	unsigned int num_leds;
 };
 
 static void
@@ -718,6 +719,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_COLOR_LED_EFFECTS: {
 		log_debug(ratbag, "device has color effects\n");
+		device->num_leds = drv_data->num_leds;
 		break;
 	}
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
@@ -731,6 +733,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->num_profiles = drv_data->profiles->num_profiles;
 		drv_data->num_resolutions = drv_data->profiles->num_modes;
 		drv_data->num_buttons = drv_data->profiles->num_buttons;
+		drv_data->num_leds = drv_data->profiles->num_leds;
 
 		break;
 	}
@@ -859,6 +862,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 	drv_data->num_profiles = 1;
 	drv_data->num_resolutions = 1;
 	drv_data->num_buttons = 8;
+	drv_data->num_leds = 2;
 
 	rc = hidpp20drv_20_probe(device);
 	if (rc)
@@ -867,7 +871,8 @@ hidpp20drv_probe(struct ratbag_device *device)
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
 				    drv_data->num_resolutions,
-				    drv_data->num_buttons);
+				    drv_data->num_buttons,
+				    drv_data->num_leds);
 
 	return rc;
 err:

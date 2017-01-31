@@ -494,6 +494,7 @@ struct hidpp10_profile {
 	} buttons[PROFILE_NUM_BUTTONS];
 	union hidpp10_macro_data *macros[PROFILE_NUM_BUTTONS];
 	size_t num_buttons;
+	size_t num_leds;
 
 	unsigned int initialized;
 };

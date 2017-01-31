@@ -492,6 +492,11 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_BUTTON_KEY,
 
 	/**
+	* The device supports assigning LED colors and effects
+	*/
+	RATBAG_DEVICE_CAP_LED,
+
+	/**
 	 * The device supports user-defined key or button sequences.
 	 */
 	RATBAG_DEVICE_CAP_BUTTON_MACROS,
@@ -587,6 +592,17 @@ ratbag_device_get_num_profiles(struct ratbag_device *device);
  */
 unsigned int
 ratbag_device_get_num_buttons(struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Return the number of LEDs available on this device.
+ *
+ * @param device A previously initialized ratbag device
+ * @return The number of LEDs available on this device.
+ */
+unsigned int
+ratbag_device_get_num_leds(struct ratbag_device *device);
 
 /**
  * @ingroup profile
