@@ -30,6 +30,7 @@
 #define RATBAG_TEST_MAX_PROFILES 12
 #define RATBAG_TEST_MAX_BUTTONS 25
 #define RATBAG_TEST_MAX_RESOLUTIONS 8
+#define RATBAG_TEST_MAX_LEDS 8
 
 struct ratbag_test_button {
 	enum ratbag_button_action_type type;
@@ -59,6 +60,7 @@ struct ratbag_test_device {
 	unsigned int num_profiles;
 	unsigned int num_resolutions;
 	unsigned int num_buttons;
+	unsigned int num_leds;
 	struct ratbag_test_profile profiles[RATBAG_TEST_MAX_PROFILES];
 	void (*destroyed)(struct ratbag_device *device, void *data);
 	void *destroyed_data;

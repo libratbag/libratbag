@@ -595,11 +595,20 @@ ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
 	return 0;
 }
 
+static int
+ratbag_profile_init_leds(struct ratbag_profile *profile, unsigned int count)
+{
+	profile->device->num_leds = count;
+
+	return 0;
+}
+
 static struct ratbag_profile *
 ratbag_create_profile(struct ratbag_device *device,
 		      unsigned int index,
 		      unsigned int num_resolutions,
-		      unsigned int num_buttons)
+		      unsigned int num_buttons,
+		      unsigned int num_leds)
 {
 	struct ratbag_profile *profile;
 	unsigned i;
@@ -623,6 +632,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	device->driver->read_profile(profile, index);
 
 	ratbag_profile_init_buttons(profile, num_buttons);
+	ratbag_profile_init_leds(profile, num_leds);
 
 	return profile;
 }
@@ -631,12 +641,13 @@ int
 ratbag_device_init_profiles(struct ratbag_device *device,
 			    unsigned int num_profiles,
 			    unsigned int num_resolutions,
-			    unsigned int num_buttons)
+			    unsigned int num_buttons,
+			    unsigned int num_leds)
 {
 	unsigned int i;
 
 	for (i = 0; i < num_profiles; i++) {
-		ratbag_create_profile(device, i, num_resolutions, num_buttons);
+		ratbag_create_profile(device, i, num_resolutions, num_buttons, num_leds);
 	}
 
 	device->num_profiles = num_profiles;
@@ -651,6 +662,9 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 
 	if (num_resolutions > 1)
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+
+	if (num_leds > 1)
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
 
 	return 0;
 }
@@ -751,6 +765,12 @@ LIBRATBAG_EXPORT unsigned int
 ratbag_device_get_num_buttons(struct ratbag_device *device)
 {
 	return device->num_buttons;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_device_get_num_leds(struct ratbag_device *device)
+{
+	return device->num_leds;
 }
 
 void

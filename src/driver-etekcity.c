@@ -36,6 +36,7 @@
 #define ETEKCITY_PROFILE_MAX			4
 #define ETEKCITY_BUTTON_MAX			10
 #define ETEKCITY_NUM_DPI			6
+#define ETEKCITY_LED			0
 
 #define ETEKCITY_REPORT_ID_CONFIGURE_PROFILE	4
 #define ETEKCITY_REPORT_ID_PROFILE		5
@@ -657,7 +658,8 @@ etekcity_probe(struct ratbag_device *device)
 	ratbag_device_init_profiles(device,
 				    ETEKCITY_PROFILE_MAX + 1,
 				    ETEKCITY_NUM_DPI,
-				    ETEKCITY_BUTTON_MAX + 1);
+				    ETEKCITY_BUTTON_MAX + 1,
+				    ETEKCITY_LED);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
