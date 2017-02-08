@@ -99,6 +99,7 @@ const static struct map {
 	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT,		"wheel right" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP,		"wheel up" },
 	{ RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN,		"wheel down" },
+	{ RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH,	"ratchet mode switch" },
 
 	/* DPI switch */
 	{ RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP,	"resolution cycle up" },
