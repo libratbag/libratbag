@@ -58,14 +58,14 @@ struct _hidpp10_message {
 
 union hidpp10_message {
 	struct _hidpp10_message msg;
-	uint8_t data[LONG_MESSAGE_LENGTH];
+	uint8_t data[HIDPP_LONG_MESSAGE_LENGTH];
 };
 
 #define ERROR_MSG(__hidpp_msg, idx)	{ \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
-		.sub_id = __ERROR_MSG, \
+		.sub_id = HIDPP_ERROR_MSG, \
 		.address = __hidpp_msg->msg.sub_id, \
 		.parameters = {__hidpp_msg->msg.address, 0x00, 0x00 }, \
 	} \
@@ -194,11 +194,11 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	int command_size;
 
 	switch (msg->msg.report_id) {
-	case REPORT_ID_SHORT:
-		command_size = SHORT_MESSAGE_LENGTH;
+	case HIDPP_REPORT_ID_SHORT:
+		command_size = HIDPP_SHORT_MESSAGE_LENGTH;
 		break;
-	case REPORT_ID_LONG:
-		command_size = LONG_MESSAGE_LENGTH;
+	case HIDPP_REPORT_ID_LONG:
+		command_size = HIDPP_LONG_MESSAGE_LENGTH;
 		break;
 	default:
 		abort();
@@ -209,7 +209,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 
 	/* response message length doesn't depend on request length */
 	hidpp_log_buf_raw(&dev->base, "  expected_header:		?? ", &expected_header.data[1], 3);
-	hidpp_log_buf_raw(&dev->base, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
+	hidpp_log_buf_raw(&dev->base, "  expected_error_dev:	", expected_error_dev.data, HIDPP_SHORT_MESSAGE_LENGTH);
 
 	/* Send the message to the Device */
 	ret = hidpp_write_command(&dev->base, msg->data, command_size);
@@ -221,12 +221,12 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	 * loop until we get the actual answer or an error code.
 	 */
 	do {
-		ret = hidpp_read_response(&dev->base, read_buffer.data, LONG_MESSAGE_LENGTH);
+		ret = hidpp_read_response(&dev->base, read_buffer.data, HIDPP_LONG_MESSAGE_LENGTH);
 
 		/* Wait and retry if the USB timed out */
 		if (ret == -ETIMEDOUT) {
 			msleep(10);
-			ret = hidpp_read_response(&dev->base, read_buffer.data, LONG_MESSAGE_LENGTH);
+			ret = hidpp_read_response(&dev->base, read_buffer.data, HIDPP_LONG_MESSAGE_LENGTH);
 		}
 
 		/* Overwrite the return device index with ours. The kernel
@@ -278,14 +278,12 @@ out_err:
 /* 0x00: Enable HID++ Notifications                                           */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_HIDPP_NOTIFICATIONS		0x00
-
 #define CMD_HIDPP_NOTIFICATIONS(idx, sub)	{ \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_HIDPP_NOTIFICATIONS, \
+		.address = HIDPP_REGISTER_HIDPP_NOTIFICATIONS, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -295,7 +293,7 @@ hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
 				uint32_t *reporting_flags)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
+	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Fetching HID++ notifications\n");
@@ -316,7 +314,7 @@ hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 				uint32_t reporting_flags)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, SET_REGISTER_REQ);
+	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, HIDPP_SET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Setting HID++ notifications\n");
@@ -334,14 +332,12 @@ hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 /* 0x01: Enable Individual Features                                           */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_ENABLE_INDIVIDUAL_FEATURES	0x01
-
 #define CMD_ENABLE_INDIVIDUAL_FEATURES(idx, sub)	{ \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_ENABLE_INDIVIDUAL_FEATURES, \
+		.address = HIDPP_REGISTER_ENABLE_INDIVIDUAL_FEATURES, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -351,7 +347,7 @@ hidpp10_get_individual_features(struct hidpp10_device *dev,
 				uint32_t *feature_mask)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
+	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Fetching individual features\n");
@@ -374,7 +370,7 @@ hidpp10_set_individual_features(struct hidpp10_device *dev,
 				uint32_t feature_mask)
 {
 	unsigned idx = HIDPP_RECEIVER_IDX;
-	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, SET_REGISTER_REQ);
+	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, HIDPP_SET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Setting individual features\n");
@@ -393,14 +389,13 @@ hidpp10_set_individual_features(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x07: Battery status                                                       */
 /* -------------------------------------------------------------------------- */
-#define __CMD_BATTERY_STATUS			0x07
 
 #define CMD_BATTERY_STATUS(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_BATTERY_STATUS, \
+		.address = HIDPP_REGISTER_BATTERY_STATUS, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -412,7 +407,7 @@ hidpp10_get_battery_status(struct hidpp10_device *dev,
 			   uint8_t *low_threshold_in_percent)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message battery = CMD_BATTERY_STATUS(idx, GET_REGISTER_REQ);
+	union hidpp10_message battery = CMD_BATTERY_STATUS(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 
 	res = hidpp10_request_command(dev, &battery);
@@ -434,14 +429,13 @@ hidpp10_get_battery_status(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x0D: Battery mileage                                                      */
 /* -------------------------------------------------------------------------- */
-#define __CMD_BATTERY_MILEAGE			0x0D
 
 #define CMD_BATTERY_MILEAGE(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_BATTERY_MILEAGE, \
+		.address = HIDPP_REGISTER_BATTERY_MILEAGE, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -453,7 +447,7 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 			    enum hidpp10_battery_charge_state *state)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message battery = CMD_BATTERY_MILEAGE(idx, GET_REGISTER_REQ);
+	union hidpp10_message battery = CMD_BATTERY_MILEAGE(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 	int max;
 
@@ -503,7 +497,6 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x0F: Profile queries                                                      */
 /* -------------------------------------------------------------------------- */
-#define __CMD_PROFILE				0x0F
 
 #define PROFILE_TYPE_INDEX			0x00
 #define PROFILE_TYPE_ADDRESS			0x01
@@ -512,10 +505,10 @@ hidpp10_get_battery_mileage(struct hidpp10_device *dev,
 
 #define CMD_PROFILE(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_PROFILE, \
+		.address = HIDPP_REGISTER_PROFILE, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -752,7 +745,7 @@ int
 hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message profile = CMD_PROFILE(idx, GET_REGISTER_REQ);
+	union hidpp10_message profile = CMD_PROFILE(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 	unsigned i;
 	int8_t type, page, offset;
@@ -810,7 +803,7 @@ hidpp10_set_internal_current_profile(struct hidpp10_device *dev,
 				     uint8_t profile_type)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message profile = CMD_PROFILE(idx, SET_REGISTER_REQ);
+	union hidpp10_message profile = CMD_PROFILE(idx, HIDPP_SET_REGISTER_REQ);
 	int8_t page, offset;
 	struct hidpp10_directory directory[16]; /* completely random profile count */
 	int count = 0;
@@ -1789,14 +1782,12 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 /* 0x51: LED Status                                                           */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_LED_STATUS			0x51
-
 #define CMD_LED_STATUS(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_LED_STATUS, \
+		.address = HIDPP_REGISTER_LED_STATUS, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -1806,7 +1797,7 @@ hidpp10_get_led_status(struct hidpp10_device *dev,
 		       enum hidpp10_led_status led[6])
 {
 	unsigned idx = dev->index;
-	union hidpp10_message led_status = CMD_LED_STATUS(idx, GET_REGISTER_REQ);
+	union hidpp10_message led_status = CMD_LED_STATUS(idx, HIDPP_GET_REGISTER_REQ);
 	uint8_t *status = led_status.msg.parameters;
 	int res;
 
@@ -1831,7 +1822,7 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 		       const enum hidpp10_led_status led[6])
 {
 	unsigned idx = dev->index;
-	union hidpp10_message led_status = CMD_LED_STATUS(idx, SET_REGISTER_REQ);
+	union hidpp10_message led_status = CMD_LED_STATUS(idx, HIDPP_SET_REGISTER_REQ);
 	uint8_t *status = led_status.msg.parameters;
 	int res;
 	int i;
@@ -1866,14 +1857,12 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 /* 0x54: LED Intensity                                                        */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_LED_INTENSITY			0x54
-
 #define CMD_LED_INTENSITY(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_LED_INTENSITY, \
+		.address = HIDPP_REGISTER_LED_INTENSITY, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -1883,7 +1872,7 @@ hidpp10_get_led_intensity(struct hidpp10_device *dev,
 			  uint8_t led_intensity_in_percent[6])
 {
 	unsigned idx = dev->index;
-	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, GET_REGISTER_REQ);
+	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, HIDPP_GET_REGISTER_REQ);
 	uint8_t *intensity = led_intensity.msg.parameters;
 	int res;
 
@@ -1908,7 +1897,7 @@ hidpp10_set_led_intensity(struct hidpp10_device *dev,
 			  const uint8_t led_intensity_in_percent[6])
 {
 	unsigned idx = dev->index;
-	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, SET_REGISTER_REQ);
+	union hidpp10_message led_intensity = CMD_LED_INTENSITY(idx, HIDPP_SET_REGISTER_REQ);
 	uint8_t *intensity = led_intensity.msg.parameters;
 	int res;
 
@@ -1929,14 +1918,12 @@ hidpp10_set_led_intensity(struct hidpp10_device *dev,
 /* 0x57: LED Color                                                            */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_LED_COLOR				0x57
-
 #define CMD_LED_COLOR(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_LED_COLOR, \
+		.address = HIDPP_REGISTER_LED_COLOR, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -1948,7 +1935,7 @@ hidpp10_get_led_color(struct hidpp10_device *dev,
 		      uint8_t *blue)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message led_color = CMD_LED_COLOR(idx, GET_REGISTER_REQ);
+	union hidpp10_message led_color = CMD_LED_COLOR(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Fetching LED color\n");
@@ -1971,7 +1958,7 @@ hidpp10_set_led_color(struct hidpp10_device *dev,
 		      uint8_t blue)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message led_color = CMD_LED_COLOR(idx, SET_REGISTER_REQ);
+	union hidpp10_message led_color = CMD_LED_COLOR(idx, HIDPP_SET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Setting LED color\n");
@@ -1987,14 +1974,13 @@ hidpp10_set_led_color(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x61: Optical Sensor Settings                                              */
 /* -------------------------------------------------------------------------- */
-#define __CMD_OPTICAL_SENSOR_SETTINGS		0x61
 
 #define CMD_OPTICAL_SENSOR_SETTINGS(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_OPTICAL_SENSOR_SETTINGS, \
+		.address = HIDPP_REGISTER_OPTICAL_SENSOR_SETTINGS, \
 		.parameters = {0x00, 0x00, 0x00}, \
 	} \
 }
@@ -2004,7 +1990,7 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 				    uint8_t *surface_reflectivity)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message sensor = CMD_OPTICAL_SENSOR_SETTINGS(idx, GET_REGISTER_REQ);
+	union hidpp10_message sensor = CMD_OPTICAL_SENSOR_SETTINGS(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Fetching optical sensor settings\n");
@@ -2023,14 +2009,13 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x63: Current Resolution                                                   */
 /* -------------------------------------------------------------------------- */
-#define __CMD_CURRENT_RESOLUTION		0x63
 
 #define CMD_CURRENT_RESOLUTION(id, idx, sub) { \
 	.msg = { \
 		.report_id = id, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_CURRENT_RESOLUTION, \
+		.address = HIDPP_REGISTER_CURRENT_RESOLUTION, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -2041,8 +2026,8 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 			       uint16_t *yres)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_REGISTER_REQ);
-	union hidpp10_message resolution_long = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_LONG_REGISTER_REQ);
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(HIDPP_REPORT_ID_SHORT, idx, HIDPP_GET_REGISTER_REQ);
+	union hidpp10_message resolution_long = CMD_CURRENT_RESOLUTION(HIDPP_REPORT_ID_SHORT, idx, HIDPP_GET_LONG_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Fetching current resolution\n");
@@ -2073,7 +2058,7 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 			       uint16_t yres)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(HIDPP_REPORT_ID_LONG, idx, HIDPP_SET_LONG_REGISTER_REQ);
 
 	hidpp_set_unaligned_le_u16(&resolution.data[4], hidpp10_get_dpi_mapping(dev, xres));
 	hidpp_set_unaligned_le_u16(&resolution.data[6], hidpp10_get_dpi_mapping(dev, yres));
@@ -2084,14 +2069,13 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0x64: USB Refresh Rate                                                     */
 /* -------------------------------------------------------------------------- */
-#define __CMD_USB_REFRESH_RATE			0x64
 
 #define CMD_USB_REFRESH_RATE(idx, sub) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
 		.sub_id = sub, \
-		.address = __CMD_USB_REFRESH_RATE, \
+		.address = HIDPP_REGISTER_USB_REFRESH_RATE, \
 		.parameters = {0x00, 0x00, 0x00 }, \
 	} \
 }
@@ -2101,7 +2085,7 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t *rate)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
+	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, HIDPP_GET_REGISTER_REQ);
 	int res;
 
 	hidpp_log_raw(&dev->base, "Fetching USB refresh rate\n");
@@ -2120,7 +2104,7 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 			     uint16_t rate)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
+	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, HIDPP_GET_REGISTER_REQ);
 
 	hidpp_log_raw(&dev->base, "Setting USB refresh rate\n");
 
@@ -2132,14 +2116,13 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0xA0: Generic Memory Management                                            */
 /* -------------------------------------------------------------------------- */
-#define __CMD_GENERIC_MEMORY_MANAGEMENT			0xA0
 
 #define CMD_ERASE_MEMORY(idx, page) { \
 	.msg = { \
-		.report_id = REPORT_ID_LONG, \
+		.report_id = HIDPP_REPORT_ID_LONG, \
 		.device_idx = idx, \
-		.sub_id = SET_LONG_REGISTER_REQ, \
-		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.sub_id = HIDPP_SET_LONG_REGISTER_REQ, \
+		.address = HIDPP_REGISTER_GENERIC_MEMORY_MANAGEMENT, \
 		.string = {0x02, 0x00, \
 			   0x00, 0x00, 0x00, 0x00, \
 			   page, 0x00, 0x00, 0x00,\
@@ -2149,10 +2132,10 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 
 #define CMD_WRITE_FLASH(idx, src_page, src_woffset, dst_page, dst_woffset, size) { \
 	.msg = { \
-		.report_id = REPORT_ID_LONG, \
+		.report_id = HIDPP_REPORT_ID_LONG, \
 		.device_idx = idx, \
-		.sub_id = SET_LONG_REGISTER_REQ, \
-		.address = __CMD_GENERIC_MEMORY_MANAGEMENT, \
+		.sub_id = HIDPP_SET_LONG_REGISTER_REQ, \
+		.address = HIDPP_REGISTER_GENERIC_MEMORY_MANAGEMENT, \
 		.string = {0x03, 0x00, \
 			   src_page, src_woffset, 0x00, 0x00, \
 			   dst_page, dst_woffset, 0x00, 0x00,\
@@ -2202,14 +2185,13 @@ hidpp10_write_flash(struct hidpp10_device *dev,
 /* 0x9x: HOT payload                                                          */
 /* 0xA1: HOT Control Register                                                 */
 /* -------------------------------------------------------------------------- */
-#define __CMD_HOT_CONTROL			0xA1
 
 #define CMD_HOT_RESET(idx) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
-		.sub_id = SET_REGISTER_REQ, \
-		.address = __CMD_HOT_CONTROL, \
+		.sub_id = HIDPP_SET_REGISTER_REQ, \
+		.address = HIDPP_REGISTER_HOT_CONTROL, \
 		.parameters = {0x01, 0x00, 0x00 }, \
 	} \
 }
@@ -2228,18 +2210,18 @@ hidpp10_hot_ctrl_reset(struct hidpp10_device *dev)
 }
 
 static int
-hidpp10_hot_request_command(struct hidpp10_device *dev, uint8_t data[LONG_MESSAGE_LENGTH])
+hidpp10_hot_request_command(struct hidpp10_device *dev, uint8_t data[HIDPP_LONG_MESSAGE_LENGTH])
 {
-	uint8_t read_buffer[LONG_MESSAGE_LENGTH] = {0};
+	uint8_t read_buffer[HIDPP_LONG_MESSAGE_LENGTH] = {0};
 	int ret;
 	uint8_t id = data[3];
 
-	if ((data[0] != REPORT_ID_LONG) ||
+	if ((data[0] != HIDPP_REPORT_ID_LONG) ||
 	    ((data[2] != HOT_WRITE) && (data[2] != HOT_CONTINUE)))
 		return -EINVAL;
 
 	/* Send the message to the Device */
-	ret = hidpp_write_command(&dev->base, data, LONG_MESSAGE_LENGTH);
+	ret = hidpp_write_command(&dev->base, data, HIDPP_LONG_MESSAGE_LENGTH);
 	if (ret)
 		goto out_err;
 
@@ -2248,12 +2230,12 @@ hidpp10_hot_request_command(struct hidpp10_device *dev, uint8_t data[LONG_MESSAG
 	 * loop until we get the actual answer or an error code.
 	 */
 	do {
-		ret = hidpp_read_response(&dev->base, read_buffer, LONG_MESSAGE_LENGTH);
+		ret = hidpp_read_response(&dev->base, read_buffer, HIDPP_LONG_MESSAGE_LENGTH);
 
 		/* Wait and retry if the USB timed out */
 		if (ret == -ETIMEDOUT) {
 			msleep(10);
-			ret = hidpp_read_response(&dev->base, read_buffer, LONG_MESSAGE_LENGTH);
+			ret = hidpp_read_response(&dev->base, read_buffer, HIDPP_LONG_MESSAGE_LENGTH);
 		}
 
 		/* actual answer */
@@ -2299,12 +2281,12 @@ hidpp10_send_hot_chunk(struct hidpp10_device *dev,
 		       unsigned size)
 {
 	struct hot_header header = {0};
-	uint8_t buffer[LONG_MESSAGE_LENGTH] = {0};
+	uint8_t buffer[HIDPP_LONG_MESSAGE_LENGTH] = {0};
 	unsigned offset = 0;
 	unsigned count;
 	int res;
 
-	buffer[offset++] = REPORT_ID_LONG;
+	buffer[offset++] = HIDPP_REPORT_ID_LONG;
 	buffer[offset++] = dev->index;
 
 	if (first) {
@@ -2325,7 +2307,7 @@ hidpp10_send_hot_chunk(struct hidpp10_device *dev,
 		buffer[offset++] = index;
 	}
 
-	count = min(LONG_MESSAGE_LENGTH - offset, size);
+	count = min(HIDPP_LONG_MESSAGE_LENGTH - offset, size);
 	if (count <= 0)
 		return -EINVAL;
 
@@ -2373,14 +2355,13 @@ hidpp10_send_hot_payload(struct hidpp10_device *dev,
 /* -------------------------------------------------------------------------- */
 /* 0xA2: Read Sector                                                          */
 /* -------------------------------------------------------------------------- */
-#define __CMD_READ_MEMORY			0xA2
 
 #define CMD_READ_MEMORY(idx, page, offset) { \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
-		.sub_id = GET_LONG_REGISTER_REQ, \
-		.address = __CMD_READ_MEMORY, \
+		.sub_id = HIDPP_GET_LONG_REGISTER_REQ, \
+		.address = HIDPP_REGISTER_READ_MEMORY, \
 		.parameters = {page, offset, 0x00 }, \
 	} \
 }
@@ -2439,17 +2420,16 @@ hidpp10_read_page(struct hidpp10_device *dev, uint8_t page,
 /* 0xB2: Device Connection and Disconnection (Pairing)                        */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_DEVICE_CONNECTION_DISCONNECTION	0xB2
 #define CONNECT_DEVICES_OPEN_LOCK			1
 #define CONNECT_DEVICES_CLOSE_LOCK			2
 #define CONNECT_DEVICES_DISCONNECT			3
 
 #define CMD_DEVICE_CONNECTION_DISCONNECTION(idx, cmd, timeout)	{ \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = HIDPP_RECEIVER_IDX, \
-		.sub_id = SET_REGISTER_REQ, \
-		.address = __CMD_DEVICE_CONNECTION_DISCONNECTION, \
+		.sub_id = HIDPP_SET_REGISTER_REQ, \
+		.address = HIDPP_REGISTER_DEVICE_CONNECTION_DISCONNECTION, \
 		.parameters = {cmd, idx - 1, timeout }, \
 	} \
 }
@@ -2485,17 +2465,16 @@ int hidpp10_disconnect(struct hidpp10_device *device, int idx) {
 /* 0xB5: Pairing Information                                                  */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_PAIRING_INFORMATION		0xB5
 #define DEVICE_PAIRING_INFORMATION			0x20
 #define DEVICE_EXTENDED_PAIRING_INFORMATION		0x30
 #define DEVICE_NAME					0x40
 
 #define CMD_PAIRING_INFORMATION(idx, type)	{ \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = HIDPP_RECEIVER_IDX, \
-		.sub_id = GET_LONG_REGISTER_REQ, \
-		.address = __CMD_PAIRING_INFORMATION, \
+		.sub_id = HIDPP_GET_LONG_REGISTER_REQ, \
+		.address = HIDPP_REGISTER_PAIRING_INFORMATION, \
 		.parameters = {type + idx - 1, 0x00, 0x00 }, \
 	} \
 }
@@ -2566,7 +2545,6 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */
 
-#define __CMD_DEVICE_FIRMWARE_INFORMATION	0xF1
 #define FIRMWARE_INFO_ITEM_FW_NAME_AND_VERSION(MCU)	((MCU - 1) << 4 | 0x01)
 #define FIRMWARE_INFO_ITEM_FW_BUILD_NUMBER(MCU)		((MCU - 1) << 4 | 0x02)
 #define FIRMWARE_INFO_ITEM_HW_VERSION(MCU)		((MCU - 1) << 4 | 0x03)
@@ -2574,10 +2552,10 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 
 #define CMD_DEVICE_FIRMWARE_INFORMATION(idx, fw_info_item)	{ \
 	.msg = { \
-		.report_id = REPORT_ID_SHORT, \
+		.report_id = HIDPP_REPORT_ID_SHORT, \
 		.device_idx = idx, \
-		.sub_id = GET_REGISTER_REQ, \
-		.address = __CMD_DEVICE_FIRMWARE_INFORMATION, \
+		.sub_id = HIDPP_GET_REGISTER_REQ, \
+		.address = HIDPP_REGISTER_DEVICE_FIRMWARE_INFORMATION, \
 		.parameters = {fw_info_item, 0x00, 0x00 }, \
 	} \
 }

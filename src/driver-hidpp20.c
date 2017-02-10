@@ -264,7 +264,7 @@ hidpp20drv_write_button_1b04(struct ratbag_button *button,
 	control->reporting.updated = 1;
 
 	rc = hidpp20_special_key_mouse_set_control(drv_data->dev, control);
-	if (rc == ERR_INVALID_ADDRESS)
+	if (rc == HIDPP_ERR_INVALID_ADDRESS)
 		return -EINVAL;
 
 	if (rc)
@@ -777,7 +777,7 @@ hidpp20drv_20_probe(struct ratbag_device *device)
 static int
 hidpp20drv_test_hidraw(struct ratbag_device *device)
 {
-	return ratbag_hidraw_has_report(device, REPORT_ID_LONG);
+	return ratbag_hidraw_has_report(device, HIDPP_REPORT_ID_LONG);
 }
 
 static void

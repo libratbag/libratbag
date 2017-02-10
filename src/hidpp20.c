@@ -91,7 +91,9 @@ hidpp20_request_command_allow_error(struct hidpp20_device *device, union hidpp20
 	}
 	msg->msg.address |= DEVICE_SW_ID;
 
-	msg_len = msg->msg.report_id == REPORT_ID_SHORT ? SHORT_MESSAGE_LENGTH : LONG_MESSAGE_LENGTH;
+	msg_len = msg->msg.report_id == HIDPP_REPORT_ID_SHORT ?
+						HIDPP_SHORT_MESSAGE_LENGTH :
+						HIDPP_LONG_MESSAGE_LENGTH;
 
 	/* Send the message to the Device */
 	ret = hidpp_write_command(&device->base, msg->data, msg_len);
@@ -103,16 +105,16 @@ hidpp20_request_command_allow_error(struct hidpp20_device *device, union hidpp20
 	 * loop until we get the actual answer or an error code.
 	 */
 	do {
-		ret = hidpp_read_response(&device->base, read_buffer.data, LONG_MESSAGE_LENGTH);
+		ret = hidpp_read_response(&device->base, read_buffer.data, HIDPP_LONG_MESSAGE_LENGTH);
 
 		/* Wait and retry if the USB timed out */
 		if (ret == -ETIMEDOUT) {
 			msleep(10);
-			ret = hidpp_read_response(&device->base, read_buffer.data, LONG_MESSAGE_LENGTH);
+			ret = hidpp_read_response(&device->base, read_buffer.data, HIDPP_LONG_MESSAGE_LENGTH);
 		}
 
-		if (read_buffer.msg.report_id != REPORT_ID_SHORT &&
-		    read_buffer.msg.report_id != REPORT_ID_LONG)
+		if (read_buffer.msg.report_id != HIDPP_REPORT_ID_SHORT &&
+		    read_buffer.msg.report_id != HIDPP_REPORT_ID_LONG)
 			continue;
 
 		/* actual answer */
@@ -121,7 +123,7 @@ hidpp20_request_command_allow_error(struct hidpp20_device *device, union hidpp20
 			break;
 
 		/* error */
-		if ((read_buffer.msg.sub_id == __ERROR_MSG ||
+		if ((read_buffer.msg.sub_id == HIDPP_ERROR_MSG ||
 		     read_buffer.msg.sub_id == 0xff) &&
 		    read_buffer.msg.address == msg->msg.sub_id &&
 		    read_buffer.msg.parameters[0] == msg->msg.address) {
@@ -206,7 +208,7 @@ hidpp_root_get_feature(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_FEATURE,
@@ -233,7 +235,7 @@ hidpp20_root_get_protocol_version(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_PROTOCOL_VERSION,
@@ -241,7 +243,7 @@ hidpp20_root_get_protocol_version(struct hidpp20_device *device,
 
 	rc = hidpp20_request_command_allow_error(device, &msg, true);
 
-	if (rc == ERR_INVALID_SUBID) {
+	if (rc == HIDPP_ERR_INVALID_SUBID) {
 		*major = 1;
 		*minor = 0;
 		return 0;
@@ -267,7 +269,7 @@ hidpp20_feature_set_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_FEATURE_SET_GET_COUNT,
@@ -289,7 +291,7 @@ hidpp20_feature_set_get_feature_id(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_FEATURE_SET_GET_FEATURE_ID,
@@ -372,7 +374,7 @@ hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_LEVEL_STATUS,
 	};
@@ -406,7 +408,7 @@ static int
 hidpp20_kbd_reprogrammable_keys_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_COUNT,
@@ -427,7 +429,7 @@ hidpp20_kbd_reprogrammable_keys_get_info(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_CTRL_ID_INFO,
@@ -514,7 +516,7 @@ hidpp20_special_keys_buttons_get_count(struct hidpp20_device *device, uint8_t re
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT,
@@ -534,7 +536,7 @@ hidpp20_special_keys_buttons_get_info(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_INFO,
@@ -564,7 +566,7 @@ hidpp20_special_keys_buttons_get_reporting(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING,
@@ -659,7 +661,7 @@ hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_SET_REPORTING,
 	};
@@ -696,7 +698,7 @@ hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_MOUSE_POINTER_BASIC_GET_INFO,
 	};
@@ -733,7 +735,7 @@ hidpp20_adjustable_dpi_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_COUNT,
@@ -754,7 +756,7 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 	int rc;
 	unsigned i = 1, dpi_index = 0;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
@@ -768,7 +770,7 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 	sensor->dpi_min = 0xffff;
 
 	sensor->index = msg.msg.parameters[0];
-	while (i < LONG_MESSAGE_LENGTH - 4U &&
+	while (i < HIDPP_LONG_MESSAGE_LENGTH - 4U &&
 	       hidpp_get_unaligned_be_u16(&msg.msg.parameters[i]) != 0) {
 		uint16_t value = hidpp_get_unaligned_be_u16(&msg.msg.parameters[i]);
 
@@ -794,7 +796,7 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI,
@@ -875,7 +877,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 	uint16_t returned_parameters;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI,
 		.msg.parameters[0] = sensor->index,
@@ -958,7 +960,7 @@ hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_READ,
 		.msg.parameters[0] = read_rom,
@@ -995,7 +997,7 @@ hidpp20_onboard_profiles_write_start(struct hidpp20_device *device,
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_ADDR_WRITE,
 		.msg.parameters[0] = 0x00,
@@ -1025,7 +1027,7 @@ hidpp20_onboard_profiles_write_end(struct hidpp20_device *device)
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_SHORT,
+		.msg.report_id = HIDPP_REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_WRITE_END,
 	};
@@ -1055,7 +1057,7 @@ hidpp20_onboard_profiles_write_data(struct hidpp20_device *device,
 	int transfered = 0;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = HIDPP_REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_WRITE,
 	};
@@ -1110,7 +1112,7 @@ hidpp20_onboard_profiles_get_onboard_mode(struct hidpp20_device *device)
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_SHORT,
+		.msg.report_id = HIDPP_REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_GET_ONBOARD_MODE,
 	};
@@ -1136,7 +1138,7 @@ hidpp20_onboard_profiles_set_onboard_mode(struct hidpp20_device *device,
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_SHORT,
+		.msg.report_id = HIDPP_REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_SET_ONBOARD_MODE,
 		.msg.parameters[1] = onboard_mode,
@@ -1162,7 +1164,7 @@ hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_SHORT,
+		.msg.report_id = HIDPP_REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_GET_CURRENT_PROFILE,
 	};
@@ -1188,7 +1190,7 @@ hidpp20_onboard_profiles_set_current_profile(struct hidpp20_device *device,
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_SHORT,
+		.msg.report_id = HIDPP_REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_SET_CURRENT_PROFILE,
 		.msg.parameters[1] = index + 1,
@@ -1216,7 +1218,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	int rc;
 	struct hidpp20_profiles *profiles;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_SHORT,
+		.msg.report_id = HIDPP_REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_GET_PROFILES_DESCR,
 	};

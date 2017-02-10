@@ -38,12 +38,12 @@ struct _hidpp20_message {
 	uint8_t device_idx;
 	uint8_t sub_id;
 	uint8_t address;
-	uint8_t parameters[LONG_MESSAGE_LENGTH - 4U];
+	uint8_t parameters[HIDPP_LONG_MESSAGE_LENGTH - 4U];
 } __attribute__((packed));
 
 union hidpp20_message {
 	struct _hidpp20_message msg;
-	uint8_t data[LONG_MESSAGE_LENGTH];
+	uint8_t data[HIDPP_LONG_MESSAGE_LENGTH];
 };
 
 struct hidpp20_feature {
@@ -78,8 +78,6 @@ hidpp20_device_destroy(struct hidpp20_device *device);
 /* 0x0000: Root                                                               */
 /* -------------------------------------------------------------------------- */
 
-#define HIDPP_PAGE_ROOT					0x0000
-
 int hidpp_root_get_feature(struct hidpp20_device *device,
 			   uint16_t feature,
 			   uint8_t *feature_index,
@@ -88,22 +86,10 @@ int hidpp_root_get_feature(struct hidpp20_device *device,
 int hidpp20_root_get_protocol_version(struct hidpp20_device *dev,
 				      unsigned *major,
 				      unsigned *minor);
-/* -------------------------------------------------------------------------- */
-/* 0x0001: Feature Set                                                        */
-/* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_FEATURE_SET				0x0001
-
-/* -------------------------------------------------------------------------- */
-/* 0x0003: Device Info                                                        */
-/* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_DEVICE_INFO				0x0003
 
 /* -------------------------------------------------------------------------- */
 /* 0x1000: Battery level status                                               */
 /* -------------------------------------------------------------------------- */
-#define HIDPP_PAGE_BATTERY_LEVEL_STATUS			0x1000
 
 enum hidpp20_battery_status {
 	BATTERY_STATUS_DISCHARGING = 0,
@@ -136,8 +122,6 @@ int hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 /* -------------------------------------------------------------------------- */
 /* 0x1b00: KBD reprogrammable keys and mouse buttons                          */
 /* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS		0x1b00
 
 enum hidpp2_controL_id_flags {
 	HIDPP20_CONTROL_ID_FLAG_NONE = 0,
@@ -174,8 +158,6 @@ int hidpp20_kbd_reprogrammable_keys_get_controls(struct hidpp20_device *device,
 /* 0x1b04: Special keys and mouse buttons                                     */
 /* -------------------------------------------------------------------------- */
 
-#define HIDPP_PAGE_SPECIAL_KEYS_BUTTONS			0x1b04
-
 /**
  * allocates a list of controls that has to be freed by the caller.
  *
@@ -203,8 +185,6 @@ const char *hidpp20_1b04_get_physical_mapping_name(uint16_t value);
 /* 0x2200: Mouse Pointer Basic Optical Sensors                                */
 /* -------------------------------------------------------------------------- */
 
-#define HIDPP_PAGE_MOUSE_POINTER_BASIC			0x2200
-
 #define HIDDP20_MOUSE_POINTER_FLAGS_VERTICAL_TUNING	(1 << 4)
 #define HIDDP20_MOUSE_POINTER_FLAGS_OS_BALLISTICS	(1 << 3)
 
@@ -222,8 +202,6 @@ int hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 /* 0x2201: Adjustable DPI                                                     */
 /* -------------------------------------------------------------------------- */
 
-#define HIDPP_PAGE_ADJUSTABLE_DPI			0x2201
-
 /**
  * either dpi_steps is not null or the values are stored in the null terminated
  * array dpi_list.
@@ -235,7 +213,7 @@ struct hidpp20_sensor {
 	uint16_t dpi_max;
 	uint16_t dpi_steps;
 	uint16_t default_dpi;
-	uint16_t dpi_list[LONG_MESSAGE_LENGTH / 2 + 1];
+	uint16_t dpi_list[HIDPP_LONG_MESSAGE_LENGTH / 2 + 1];
 };
 
 /**
@@ -254,22 +232,8 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi);
 
 /* -------------------------------------------------------------------------- */
-/* 0x8060 - Adjustable Report Rate                                            */
-/* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_ADJUSTABLE_REPORT_RATE		0x8060
-
-/* -------------------------------------------------------------------------- */
-/* 0x8070v4 - Color LED effects                                               */
-/* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_COLOR_LED_EFFECTS			0x8070
-
-/* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
 /* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_ONBOARD_PROFILES			0x8100
 
 #define HIDPP20_BUTTON_HID_TYPE				0x80
 #define HIDPP20_BUTTON_HID_TYPE_MOUSE			0x01
@@ -484,13 +448,5 @@ hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint8_t page,
 				     uint8_t section,
 				     uint8_t result[16]);
-
-/* -------------------------------------------------------------------------- */
-/* 0x8110 - Mouse Button Spy                                                  */
-/* -------------------------------------------------------------------------- */
-
-#define HIDPP_PAGE_MOUSE_BUTTON_SPY			0x8110
-
-
 
 #endif /* HIDPP_20_H */

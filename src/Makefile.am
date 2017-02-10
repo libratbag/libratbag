@@ -64,6 +64,7 @@ EXTRA_DIST = libratbag-version.h.in libratbag.sym liblur.sym
 # The hidpp libraries are static libraries only for in-tree tools. No API
 # stability is guaranteed here.
 libhidpp_la_SOURCES = \
+			hidpp-constants.h	\
 			hidpp-generic.h	\
 			hidpp-generic.c	\
 			hidpp10.h	\
