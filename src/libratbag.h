@@ -492,8 +492,8 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_BUTTON_KEY,
 
 	/**
-	* The device supports assigning LED colors and effects
-	*/
+	 * The device supports assigning LED colors and effects
+	 */
 	RATBAG_DEVICE_CAP_LED,
 
 	/**
