@@ -51,7 +51,8 @@
 #define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
 #define HIDPP_CAP_BATTERY_LEVEL_1000			(1 << 3)
 #define HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00		(1 << 4)
-#define HIDPP_CAP_ONBOARD_PROFILES_8100			(1 << 5)
+#define HIDPP_CAP_COLOR_LED_EFFECTS_8070			(1 << 5)
+#define HIDPP_CAP_ONBOARD_PROFILES_8100			(1 << 6)
 
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
@@ -61,6 +62,7 @@ struct hidpp20drv_data {
 	unsigned num_controls;
 	struct hidpp20_control_id *controls;
 	struct hidpp20_profiles *profiles;
+	struct hidpp20_color_led_zone_info *led_infos;
 
 	unsigned int num_profiles;
 	unsigned int num_resolutions;
@@ -226,6 +228,7 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
+		break;
 	}
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
@@ -239,6 +242,44 @@ hidpp20drv_read_button(struct ratbag_button *button)
 {
 	hidpp20drv_read_button_1b04(button);
 	hidpp20drv_read_button_8100(button);
+}
+
+static void
+hidpp20drv_read_led(struct ratbag_led *led)
+{
+	struct ratbag_device *device = led->profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *profile;
+	struct hidpp20_color_led_zone_info *led_info;
+	struct hidpp20_led *h_led;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		return;
+
+	led_info = &drv_data->led_infos[led->index];
+	profile = &drv_data->profiles->profiles[led->profile->index];
+	h_led = &profile->leds[led->index];
+
+	switch (h_led->mode) {
+	case HIDPP20_LED_ON:
+		led->mode = RATBAG_LED_ON;
+		break;
+	case HIDPP20_LED_CYCLE:
+		led->mode = RATBAG_LED_CYCLE;
+		break;
+	case HIDPP20_LED_BREATHING:
+		led->mode = RATBAG_LED_BREATHING;
+		break;
+	default:
+		led->mode = RATBAG_LED_OFF;
+		break;
+	}
+	led->type = hidpp20_8070_get_location_mapping(led_info->location);
+	led->color.red = h_led->color.red;
+	led->color.green = h_led->color.green;
+	led->color.blue = h_led->color.blue;
+	led->hz = h_led->rate;
+	led->brightness = h_led->brightness * 255.0 / 100;
 }
 
 static int
@@ -342,6 +383,52 @@ hidpp20drv_write_button(struct ratbag_button *button,
 		return hidpp20drv_write_button_1b04(button, action);
 
 	return -ENOTSUP;
+}
+
+static int
+hidpp20drv_write_led(struct ratbag_led *led,
+		     enum ratbag_led_mode mode,
+		     struct ratbag_color color, unsigned int hz,
+		     unsigned int brightness)
+{
+	struct ratbag_profile *profile = led->profile;
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *h_profile;
+	struct hidpp20_led *h_led;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070))
+		return -ENOTSUP;
+
+	h_profile = &drv_data->profiles->profiles[profile->index];
+
+	h_led = &(h_profile->leds[led->index]);
+
+	if (!h_led)
+		return -EINVAL;
+
+	switch (mode) {
+	case RATBAG_LED_ON:
+		h_led->mode = HIDPP20_LED_ON;
+		break;
+	case RATBAG_LED_CYCLE:
+		h_led->mode = HIDPP20_LED_CYCLE;
+		break;
+	case RATBAG_LED_BREATHING:
+		h_led->mode = HIDPP20_LED_BREATHING;
+		break;
+	default:
+		h_led->mode = HIDPP20_LED_OFF;
+		break;
+	}
+	h_led->color.red = color.red;
+	h_led->color.green = color.green;
+	h_led->color.blue = color.blue;
+	h_led->rate = hz;
+	h_led->brightness = brightness / 255.0 * 100;
+
+	return hidpp20_onboard_profiles_write(drv_data->dev, profile->index,
+					      drv_data->profiles);
 }
 
 static int
@@ -571,6 +658,29 @@ hidpp20drv_read_kbd_reprogrammable_key(struct ratbag_device *device)
 }
 
 static int
+hidpp20drv_read_color_leds(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070))
+		return 0;
+
+	free(drv_data->led_infos);
+	drv_data->led_infos = NULL;
+	drv_data->num_leds = 0;
+
+	rc = hidpp20_color_led_effects_get_zone_infos(drv_data->dev, &drv_data->led_infos);
+
+	if (rc > 0) {
+		drv_data->num_leds = rc;
+		rc = 0;
+	}
+
+	return rc;
+}
+
+static int
 hidpp20drv_read_onboard_profile(struct ratbag_device *device, unsigned index)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -719,6 +829,14 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	}
 	case HIDPP_PAGE_COLOR_LED_EFFECTS: {
 		log_debug(ratbag, "device has color effects\n");
+		drv_data->capabilities |= HIDPP_CAP_COLOR_LED_EFFECTS_8070;
+
+		/* we read the profile once to get the correct number of
+		 * supported leds. */
+		if (hidpp20drv_read_color_leds(device))
+			return 0;
+
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
 		device->num_leds = drv_data->num_leds;
 		break;
 	}
@@ -889,6 +1007,8 @@ struct ratbag_driver hidpp20_driver = {
 	.write_profile = hidpp20drv_write_profile,
 	.set_active_profile = hidpp20drv_set_current_profile,
 	.read_button = hidpp20drv_read_button,
+	.read_led = hidpp20drv_read_led,
 	.write_button = hidpp20drv_write_button,
 	.write_resolution_dpi = hidpp20drv_write_resolution_dpi,
+	.write_led = hidpp20drv_write_led,
 };
