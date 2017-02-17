@@ -58,7 +58,12 @@ cmds+=("profile 0 button 0 action set key KEY_ENTER")
 cmds+=("button 0 action set special doubleclick")
 cmds+=("profile 0 button 0 action set special doubleclick")
 cmds+=("profile 0 button 0 action set macro +KEY_ENTER t05 -KEY_ENTER")
-
+cmds+=("profile 0 led 0 get")
+cmds+=("profile 0 led side get")
+cmds+=("profile 0 led 0 set mode on")
+cmds+=("profile 0 led 0 set color ffffff")
+cmds+=("profile 0 led 0 set rate 1")
+cmds+=("profile 0 led 0 set brightness 1")
 for i in "${cmds[@]}"; do
 	echo "Testing arguments '$i $device'"
 	eval $command "$i" $device
