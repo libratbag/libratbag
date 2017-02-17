@@ -79,6 +79,20 @@ const struct ratbag_test_device sane_device = {
 			{ .xres = 2200, .yres = 2300, .hz = 3000 },
 			{ .xres = 2300, .yres = 2400, .hz = 3000 },
 		},
+		.leds = {
+			{
+				.mode = RATBAG_LED_ON,
+				.color = { .red = 255, .green = 0,	.blue = 0 },
+				.hz = 1,
+				.brightness = 20
+			},
+			{
+				.mode = RATBAG_LED_CYCLE,
+				.color = { .red = 255, .green = 255, .blue = 0 },
+				.hz = 3,
+				.brightness = 40
+			}
+		},
 		.active = false,
 		.dflt = false,
 		},
@@ -754,6 +768,119 @@ START_TEST(device_buttons_set)
 }
 END_TEST
 
+static void
+assert_led_equals(struct ratbag_led *l, struct ratbag_test_led e_l)
+{
+	enum ratbag_led_mode mode;
+	struct ratbag_color color;
+	int brightness, hz;
+
+	ck_assert(l != NULL);
+	mode = ratbag_led_get_mode(l);
+	color = ratbag_led_get_color(l);
+	hz = ratbag_led_get_effect_rate(l);
+	brightness = ratbag_led_get_brightness(l);
+	ck_assert_int_eq(mode, e_l.mode);
+	ck_assert_int_eq(color.red, e_l.color.red);
+	ck_assert_int_eq(color.green, e_l.color.green);
+	ck_assert_int_eq(color.blue, e_l.color.blue);
+	ck_assert_int_eq(hz, e_l.hz);
+	ck_assert_int_eq(brightness, e_l.brightness);
+}
+
+START_TEST(device_leds)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_led *led_logo, *led_side;
+	int nprofiles;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+
+	td.destroyed_data = &device_freed_count;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+
+	nprofiles = ratbag_device_get_num_profiles(d);
+	ck_assert_int_eq(nprofiles, 3);
+
+	p = ratbag_device_get_profile(d, 2);
+	ck_assert(p != NULL);
+
+	led_logo = ratbag_profile_get_led(p, RATBAG_LED_TYPE_LOGO);
+	assert_led_equals(led_logo, td.profiles[2].leds[RATBAG_LED_TYPE_LOGO]);
+	led_side = ratbag_profile_get_led(p, RATBAG_LED_TYPE_SIDE);
+	assert_led_equals(led_side, td.profiles[2].leds[RATBAG_LED_TYPE_SIDE]);
+
+	ratbag_led_unref(led_logo);
+	ratbag_led_unref(led_side);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
+START_TEST(device_leds_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_led *l;
+	int nprofiles;
+	int device_freed_count = 0;
+
+	struct ratbag_test_device td = sane_device;
+
+	struct ratbag_color c = {
+		.red = 0,
+		.green = 111,
+		.blue = 222
+	};
+
+	td.destroyed_data = &device_freed_count;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+
+	nprofiles = ratbag_device_get_num_profiles(d);
+	ck_assert_int_eq(nprofiles, 3);
+
+	p = ratbag_device_get_profile(d, 0);
+	ck_assert(p != NULL);
+
+	l = ratbag_profile_get_led(p, RATBAG_LED_TYPE_LOGO);
+
+	ratbag_led_set_mode(l, RATBAG_LED_BREATHING);
+	ratbag_led_set_color(l, c);
+	ratbag_led_set_effect_rate(l, 11);
+	ratbag_led_set_brightness(l, 22);
+
+	l = ratbag_profile_get_led(p, RATBAG_LED_TYPE_LOGO);
+	struct ratbag_test_led e_l = {
+		.mode = RATBAG_LED_BREATHING,
+		.color = {
+			.red = c.red,
+			.green = c.green,
+			.blue = c.blue
+		},
+		.hz = 11,
+		.brightness = 22
+	};
+	assert_led_equals(l, e_l);
+
+	ratbag_led_unref(l);
+	ratbag_led_unref(l);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+	ck_assert_int_eq(device_freed_count, 1);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -790,6 +917,11 @@ test_context_suite(void)
 	tcase_add_test(tc, device_buttons);
 	tcase_add_test(tc, device_buttons_ref_unref);
 	tcase_add_test(tc, device_buttons_set);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("led");
+	tcase_add_test(tc, device_leds);
+	tcase_add_test(tc, device_leds_set);
 	suite_add_tcase(s, tc);
 
 	return s;

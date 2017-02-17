@@ -45,6 +45,18 @@ global:
 	ratbag_log_get_priority;
 	ratbag_log_set_handler;
 	ratbag_log_set_priority;
+	ratbag_profile_get_led;
+	ratbag_led_get_mode;
+	ratbag_led_get_type;
+	ratbag_led_get_color;
+	ratbag_led_get_effect_rate;
+	ratbag_led_get_brightness;
+	ratbag_led_ref;
+	ratbag_led_set_mode;
+	ratbag_led_set_color;
+	ratbag_led_set_effect_rate;
+	ratbag_led_set_brightness;
+	ratbag_led_unref;
 	ratbag_device_get_num_leds;
 	ratbag_profile_get_button;
 	ratbag_profile_get_num_resolutions;

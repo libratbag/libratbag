@@ -55,6 +55,8 @@ extern "C" {
  *
  * @defgroup button Button configuration
  *
+ * @defgroup led LED configuration
+ *
  * @defgroup resolution Resolution and frequency mappings
  *
  * A device's sensor resolution and report rate can be configured per
@@ -125,6 +127,28 @@ struct ratbag_button;
  * ratbag_resolution_unref().
  */
 struct ratbag_resolution;
+
+/**
+ * @ingroup led
+ * @struct ratbag_color
+ *
+ * Represents LED color in RGB format.
+ * each color component is integer 0 - 255
+ */
+
+struct ratbag_color {
+	unsigned int red;
+	unsigned int green;
+	unsigned int blue;
+};
+
+/**
+ * @ingroup led
+ * @struct ratbag_led
+ *
+ * Represents a led on the device.
+ */
+struct ratbag_led;
 
 /**
  * @ingroup button
@@ -1320,6 +1344,23 @@ ratbag_button_get_special(struct ratbag_button *button);
 /**
  * @ingroup led
  *
+ * RATBAG_LED_OFF - led is now off,
+ * RATBAG_LED_ON - led is on with static color,
+ * RATBAG_LED_CYCLE - led is cycling between all colors.
+ * RATBAG_LED_BREATHING - led is pulsating with static color
+ *
+ * Each LED mode has different properties, e.g. the brightness and rate are only
+ * available in modes @ref RATBAG_LED_CYCLE and @ref RATBAG_LED_BREATHING modes
+ */
+enum ratbag_led_mode {
+	RATBAG_LED_OFF = 0,
+	RATBAG_LED_ON,
+	RATBAG_LED_CYCLE,
+	RATBAG_LED_BREATHING,
+};
+/**
+ * @ingroup led
+ *
  * LED types, usually based on their physical location
  */
 enum ratbag_led_type {
@@ -1327,6 +1368,145 @@ enum ratbag_led_type {
 	RATBAG_LED_TYPE_LOGO = 0,
 	RATBAG_LED_TYPE_SIDE
 };
+
+/**
+ * @ingroup led
+ *
+ * Return a reference to the LED given by the index. The order of the
+ * LEDs is device-specific though.
+ *
+ * The LED is refcounted with an initial value of at least 1.
+ * Use ratbag_led_unref() to release the LED.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param index The index of the LED
+ *
+ * @return A LED context, or NULL if the LED does not exist.
+ *
+ * @see ratbag_device_get_profile
+ */
+struct ratbag_led *
+ratbag_profile_get_led(struct ratbag_profile *profile, unsigned int index);
+/**
+ * @ingroup led
+ *
+ * This function returns the type for ratbag_led.
+ *
+ * @param led A previously initialized ratbag LED
+ * @return The LED type @ref enum ratbag_led_type
+ *
+ * @see ratbag_led_set_mode
+ */
+enum ratbag_led_type
+ratbag_led_get_type(struct ratbag_led *led);
+/**
+ * @ingroup led
+ *
+ * This function returns the mode for ratbag_led.
+ *
+ * @param led A previously initialized ratbag LED
+ * @return The LED mod @ref enum ratbag_led_mode
+ *
+ * @see ratbag_led_set_mode
+ */
+enum ratbag_led_mode
+ratbag_led_get_mode(struct ratbag_led *led);
+/**
+ * @ingroup led
+ *
+ * This function returns the led color.
+ *
+ * @param led A previously initialized ratbag LED
+ * @return The LED color in @ref enum ratbag_led_mode
+ *
+ * @see ratbag_led_set_color
+ */
+struct ratbag_color
+ratbag_led_get_color(struct ratbag_led *led);
+/**
+ * @ingroup led
+ *
+ * This function returns the LED effect rate.
+ *
+ * @param led A previously initialized ratbag LED
+ * @return The LED rate in Hz, can be 100 - 20000
+ *
+ * @see ratbag_led_set_effect_rate
+ */
+int
+ratbag_led_get_effect_rate(struct ratbag_led *led);
+/**
+ * @ingroup led
+ *
+ * This function returns the LED brightness.
+ *
+ * @param led A previously initialized ratbag LED
+ * @return The LED brightness 0 - 255
+ *
+ * @see ratbag_led_get_brightness
+ */
+unsigned int
+ratbag_led_get_brightness(struct ratbag_led *led);
+
+/**
+ * @ingroup led
+ *
+ * this function sets the LED mode.
+ *
+ * @param led A previously initialized ratbag LED
+ * @param mode LED mode @ref enum ratbag_led_mode.
+ * @return 0 on success or an error code otherwise.
+ *
+ * @see ratbag_led_get_mode
+ */
+enum ratbag_error_code
+ratbag_led_set_mode(struct ratbag_led *led, enum ratbag_led_mode mode);
+
+/**
+ * @ingroup led
+ *
+ * If the LED's mode is @ref RATBAG_LED_ON or @ref RATBAG_LED_BREATHING
+ * then this function sets the LED color, otherwise it has no effect.
+ *
+ * @param led A previously initialized ratbag LED
+ * @param color A LED color.
+ * @return 0 on success or an error code otherwise.
+ *
+ * @see ratbag_led_get_color
+ */
+enum ratbag_error_code
+ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color);
+
+/**
+ * @ingroup led
+ *
+ * If the LED's mode is @ref RATBAG_LED_CYCLE or @ref RATBAG_LED_BREATHING
+ * then this function sets the LED rate in Hz
+ *
+ * @param led A previously initialized ratbag LED
+ * @param rate Effect rate in hz, 100 - 20000
+ * @return 0 on success or an error code otherwise.
+ *
+ * @see ratbag_led_get_effect_rate
+ */
+enum ratbag_error_code
+ratbag_led_set_effect_rate(struct ratbag_led *led, unsigned int rate);
+
+/**
+ * @ingroup led
+ *
+ * If the LED's mode is @ref RATBAG_LED_CYCLE or @ref RATBAG_LED_BREATHING
+ * then this function sets the LED brightness, otherwise it has no effect.
+ *
+ * @param led A previously initialized ratbag LED
+ * @param brightness Effect brightness 0 - 255
+ * @return 0 on success or an error code otherwise.
+ *
+ * @see ratbag_led_get_brightness
+ */
+enum ratbag_error_code
+ratbag_led_set_brightness(struct ratbag_led *led, unsigned int brightness);
+
 /**
  * @ingroup button
  *
@@ -1609,6 +1789,31 @@ ratbag_button_ref(struct ratbag_button *button);
  */
 struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button);
+
+/**
+ * @ingroup led
+ *
+ * Add a reference to the led. A led is destroyed whenever the
+ * reference count reaches 0. See @ref ratbag_led_unref.
+ *
+ * @param led A previously initialized valid ratbag led
+ * @return The passed ratbag led
+ */
+struct ratbag_led *
+ratbag_led_ref(struct ratbag_led *led);
+
+/**
+ * @ingroup led
+ *
+ * Dereference the ratbag led. When the internal refcount reaches
+ * zero, all resources associated with this object are released. The object
+ * must be considered invalid once unref is called.
+ *
+ * @param led A previously initialized ratbag led
+ * @return Always NULL
+ */
+struct ratbag_led *
+ratbag_led_unref(struct ratbag_led *led);
 
 #ifdef __cplusplus
 }
