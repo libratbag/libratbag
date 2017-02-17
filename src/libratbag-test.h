@@ -49,9 +49,24 @@ struct ratbag_test_resolution {
 	uint32_t caps;
 };
 
+struct ratbag_test_color {
+	unsigned short red;
+	unsigned short green;
+	unsigned short blue;
+};
+
+struct ratbag_test_led {
+	enum ratbag_led_type type;
+	enum ratbag_led_mode mode;
+	struct ratbag_test_color color;
+	unsigned int hz;
+	unsigned int brightness;
+};
+
 struct ratbag_test_profile {
 	struct ratbag_test_button buttons[RATBAG_TEST_MAX_BUTTONS];
 	struct ratbag_test_resolution resolutions[RATBAG_TEST_MAX_RESOLUTIONS];
+	struct ratbag_test_led leds[RATBAG_TEST_MAX_LEDS];
 	bool active;
 	bool dflt;
 };

@@ -59,6 +59,8 @@ static void
 ratbag_profile_destroy(struct ratbag_profile *profile);
 static void
 ratbag_button_destroy(struct ratbag_button *button);
+static void
+ratbag_led_destroy(struct ratbag_led *led);
 
 static void
 ratbag_default_log_func(struct ratbag *ratbag,
@@ -582,6 +584,25 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 	return button;
 }
 
+static struct ratbag_led *
+ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag_led *led;
+
+	led = zalloc(sizeof(*led));
+	led->refcount = 0;
+	led->profile = profile;
+	led->index = index;
+
+	list_insert(&profile->leds, &led->link);
+
+	if (device->driver->read_led)
+		device->driver->read_led(led);
+
+	return led;
+}
+
 static int
 ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
 {
@@ -598,6 +619,11 @@ ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
 static int
 ratbag_profile_init_leds(struct ratbag_profile *profile, unsigned int count)
 {
+	unsigned int i;
+
+	for (i = 0; i < count; i++)
+		ratbag_create_led(profile, i);
+
 	profile->device->num_leds = count;
 
 	return 0;
@@ -624,6 +650,7 @@ ratbag_create_profile(struct ratbag_device *device,
 
 	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
+	list_init(&profile->leds);
 
 	for (i = 0; i < num_resolutions; i++)
 		ratbag_resolution_init(profile, i, 0, 0, 0);
@@ -682,13 +709,17 @@ ratbag_profile_ref(struct ratbag_profile *profile)
 static void
 ratbag_profile_destroy(struct ratbag_profile *profile)
 {
-	struct ratbag_button *button, *next;
+	struct ratbag_button *button, *b_next;
+	struct ratbag_led *led, *l_next;
 
 	/* if we get to the point where the profile is destroyed, buttons,
 	 * resolutions , etc. are at a refcount of 0, so we can destroy
 	 * everything */
-	list_for_each_safe(button, next, &profile->buttons, link)
+	list_for_each_safe(button, b_next, &profile->buttons, link)
 		ratbag_button_destroy(button);
+
+	list_for_each_safe(led, l_next, &profile->leds, link)
+		ratbag_led_destroy(led);
 
 	free(profile->resolution.modes);
 
@@ -790,6 +821,12 @@ ratbag_device_has_capability(const struct ratbag_device *device,
 	return !!(device->capabilities & (1UL << cap));
 }
 
+static inline enum ratbag_error_code
+write_led_helper(struct ratbag_device *device, struct ratbag_led *led)
+{
+	return device->driver->write_led(led, led->mode, led->color, led->hz, led->brightness);
+}
+
 /* FIXME: This is a temporary fix for all of the drivers that have yet to be
  * converted to the new profile-oriented API. Once all of the drivers have been
  * converted, this code should be removed.
@@ -799,6 +836,7 @@ ratbag_old_write_profile(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
+	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	int rc;
 	unsigned int i;
@@ -835,6 +873,17 @@ ratbag_old_write_profile(struct ratbag_device *device)
 
 				rc = device->driver->write_button(button,
 								  &action);
+				if (rc)
+					return RATBAG_ERROR_DEVICE;
+			}
+		}
+
+		if (device->driver->write_led) {
+			list_for_each(led, &profile->leds, link) {
+				if (!led->dirty)
+					continue;
+
+				rc = write_led_helper(device, led);
 				if (rc)
 					return RATBAG_ERROR_DEVICE;
 			}
@@ -1268,6 +1317,16 @@ ratbag_button_ref(struct ratbag_button *button)
 	return button;
 }
 
+LIBRATBAG_EXPORT struct ratbag_led *
+ratbag_led_ref(struct ratbag_led *led)
+{
+	assert(led->refcount < INT_MAX);
+
+	ratbag_profile_ref(led->profile);
+	led->refcount++;
+	return led;
+}
+
 static void
 ratbag_button_destroy(struct ratbag_button *button)
 {
@@ -1280,6 +1339,13 @@ ratbag_button_destroy(struct ratbag_button *button)
 	free(button);
 }
 
+static void
+ratbag_led_destroy(struct ratbag_led *led)
+{
+	list_remove(&led->link);
+	free(led);
+}
+
 LIBRATBAG_EXPORT struct ratbag_button *
 ratbag_button_unref(struct ratbag_button *button)
 {
@@ -1290,6 +1356,126 @@ ratbag_button_unref(struct ratbag_button *button)
 	button->refcount--;
 
 	ratbag_profile_unref(button->profile);
+
+	return NULL;
+}
+
+LIBRATBAG_EXPORT struct ratbag_led *
+ratbag_led_unref(struct ratbag_led *led)
+{
+	if (led == NULL)
+		return NULL;
+
+	assert(led->refcount > 0);
+	led->refcount--;
+
+	ratbag_profile_unref(led->profile);
+
+	return NULL;
+}
+
+LIBRATBAG_EXPORT enum ratbag_led_mode
+ratbag_led_get_mode(struct ratbag_led *led)
+{
+	return led->mode;
+}
+
+LIBRATBAG_EXPORT enum ratbag_led_type
+ratbag_led_get_type(struct ratbag_led *led)
+{
+	return led->type;
+}
+
+LIBRATBAG_EXPORT struct ratbag_color
+ratbag_led_get_color(struct ratbag_led *led)
+{
+	return led->color;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_led_get_effect_rate(struct ratbag_led *led)
+{
+	return led->hz;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_led_get_brightness(struct ratbag_led *led)
+{
+	return led->brightness;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_led_set_mode(struct ratbag_led *led, enum ratbag_led_mode mode)
+{
+
+	if (!ratbag_device_has_capability(led->profile->device,
+					  RATBAG_DEVICE_CAP_LED))
+		return RATBAG_ERROR_CAPABILITY;
+
+	led->mode = mode;
+	led->dirty = true;
+	led->profile->dirty = true;
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color)
+{
+	if (!ratbag_device_has_capability(led->profile->device,
+					  RATBAG_DEVICE_CAP_LED))
+		return RATBAG_ERROR_CAPABILITY;
+
+	led->color = color;
+	led->dirty = true;
+	led->profile->dirty = true;
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_led_set_effect_rate(struct ratbag_led *led, unsigned int hz)
+{
+	if (!ratbag_device_has_capability(led->profile->device,
+					  RATBAG_DEVICE_CAP_LED))
+		return RATBAG_ERROR_CAPABILITY;
+
+	led->hz = hz;
+	led->dirty = true;
+	led->profile->dirty = true;
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_led_set_brightness(struct ratbag_led *led, unsigned int brightness)
+{
+	if (!ratbag_device_has_capability(led->profile->device,
+					  RATBAG_DEVICE_CAP_LED))
+		return RATBAG_ERROR_CAPABILITY;
+
+	led->brightness = brightness;
+	led->dirty = true;
+	led->profile->dirty = true;
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT struct ratbag_led *
+ratbag_profile_get_led(struct ratbag_profile *profile,
+		       unsigned int index)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag_led *led;
+
+	if (index >= ratbag_device_get_num_leds(device)) {
+		log_bug_client(device->ratbag, "Requested invalid led %d\n", index);
+		return NULL;
+	}
+
+	list_for_each(led, &profile->leds, link) {
+		if (led->index == index)
+			return ratbag_led_ref(led);
+	}
+
+	log_bug_libratbag(device->ratbag, "Led %d, profile %d not found\n",
+			  index, profile->index);
 
 	return NULL;
 }
