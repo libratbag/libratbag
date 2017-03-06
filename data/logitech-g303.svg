@@ -119,8 +119,7 @@
       <path
          id="path5589"
          style="fill-rule:evenodd;stroke-width:0.625;stroke-linejoin:round;stroke:#000000;stroke-opacity:1;fill:#000000;fill-opacity:1"
-         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
-         transform="scale(1.1) rotate(180) translate(1,0)" />
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "         transform="scale(1.1) rotate(180) translate(1,0)" />
     </marker>
     <marker
        inkscape:stockid="Arrow1Lend"
@@ -516,7 +515,7 @@
          y="122.63442"
          x="20.689524"
          sodipodi:role="line"
-         id="tspan4995">Button 3</tspan></text>
+         id="tspan4995">Button 4</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:4.23333311px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
@@ -527,7 +526,7 @@
          x="55.262302"
          y="153.98589"
          style="stroke-width:0.26458332"
-         id="tspan5003">Button 4</tspan></text>
+         id="tspan5003">Button 3</tspan></text>
     <text
        id="text5009"
        y="63.37672"
