@@ -98,6 +98,7 @@ mouse:usb:v046dpc249:name:*:
 # G300
 mouse:usb:v046dpc246:name:*:
  RATBAG_DRIVER=logitech_g300
+ RATBAG_SVG=logitech-g300.svg
 
 # G500
 mouse:usb:v046dpc068:name:*:
@@ -169,6 +170,7 @@ mouse:usb:v046dp400a:name:*:
 # G303 over USB
 mouse:usb:v046dpc080:name:*:
  RATBAG_DRIVER=hidpp20
+ RATBAG_SVG=logitech-g303.svg
 
 # Wireless Touchpad (Unifying)
 mouse:usb:v046dp4011:name:*:
@@ -181,6 +183,7 @@ mouse:usb:v046dpc537:name:*:
 # G900 over wireless USB
 mouse:usb:v046dpc539:name:*:
  RATBAG_DRIVER=hidpp20
+ RATBAG_SVG=logitech-g900.svg
  RATBAG_HIDPP20_INDEX=1
 
 
