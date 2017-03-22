@@ -660,7 +660,7 @@ ratbag_profile_unref(struct ratbag_profile *profile);
  * @ref RATBAG_DEVICE_CAP_DISABLE_PROFILE.
  *
  * @param profile A previously initialized ratbag profile
- * @param enable Whether to enable or disable the profile
+ * @param enabled Whether to enable or disable the profile
  *
  * @return 0 on success or an error code otherwise
  */
@@ -1393,7 +1393,7 @@ ratbag_profile_get_led(struct ratbag_profile *profile, unsigned int index);
  * This function returns the type for ratbag_led.
  *
  * @param led A previously initialized ratbag LED
- * @return The LED type @ref enum ratbag_led_type
+ * @return The LED type @ref ratbag_led_type
  *
  * @see ratbag_led_set_mode
  */
@@ -1405,7 +1405,7 @@ ratbag_led_get_type(struct ratbag_led *led);
  * This function returns the mode for ratbag_led.
  *
  * @param led A previously initialized ratbag LED
- * @return The LED mod @ref enum ratbag_led_mode
+ * @return The LED mod @ref ratbag_led_mode
  *
  * @see ratbag_led_set_mode
  */
@@ -1417,7 +1417,7 @@ ratbag_led_get_mode(struct ratbag_led *led);
  * This function returns the led color.
  *
  * @param led A previously initialized ratbag LED
- * @return The LED color in @ref enum ratbag_led_mode
+ * @return The LED color in @ref ratbag_led_mode
  *
  * @see ratbag_led_set_color
  */
@@ -1454,7 +1454,7 @@ ratbag_led_get_brightness(struct ratbag_led *led);
  * this function sets the LED mode.
  *
  * @param led A previously initialized ratbag LED
- * @param mode LED mode @ref enum ratbag_led_mode.
+ * @param mode LED mode @ref ratbag_led_mode.
  * @return 0 on success or an error code otherwise.
  *
  * @see ratbag_led_get_mode
