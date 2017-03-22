@@ -786,6 +786,10 @@ gskill_macro_from_report(struct ratbag_device *device,
 			type = RATBAG_MACRO_EVENT_KEY_PRESSED;
 			event_data = KEY_SCROLLUP;
 			break;
+		default:
+			/* should never get there */
+			type = RATBAG_MACRO_EVENT_INVALID;
+			event_data = 0;
 		}
 
 		ratbag_button_macro_set_event(macro, event_idx, type,
