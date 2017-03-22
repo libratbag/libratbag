@@ -180,6 +180,10 @@ mouse:usb:v046dp4011:name:*:
 mouse:usb:v046dpc537:name:*:
  RATBAG_HIDPP20_INDEX=1
 
+# G900 over USB
+mouse:usb:v046dpc081:name:*:
+ RATBAG_SVG=logitech-g900.svg
+
 # G900 over wireless USB
 mouse:usb:v046dpc539:name:*:
  RATBAG_DRIVER=hidpp20
