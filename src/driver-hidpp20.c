@@ -300,7 +300,7 @@ hidpp20drv_write_button_1b04(struct ratbag_button *button,
 	if (!mapping)
 		return -EINVAL;
 
-	control->reporting.divert = 1;
+	control->reporting.divert = 0;
 	control->reporting.remapped = mapping;
 	control->reporting.updated = 1;
 
