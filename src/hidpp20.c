@@ -785,12 +785,15 @@ hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 		return -ENOTSUP;
 
 	msg.msg.sub_id = feature_index;
+	msg.msg.parameters[2] |= 0x02;
 	if (control->reporting.divert)
-		msg.msg.parameters[2] |= 0x03;
+		msg.msg.parameters[2] |= 0x01;
+	msg.msg.parameters[2] |= 0x08;
 	if (control->reporting.persist)
-		msg.msg.parameters[2] |= 0x0c;
+		msg.msg.parameters[2] |= 0x04;
+	msg.msg.parameters[2] |= 0x20;
 	if (control->reporting.raw_XY)
-		msg.msg.parameters[2] |= 0x20;
+		msg.msg.parameters[2] |= 0x10;
 
 	return hidpp20_request_command(device, &msg);
 }
