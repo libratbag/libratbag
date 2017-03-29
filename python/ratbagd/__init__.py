@@ -35,13 +35,20 @@ class RatbagdDBusUnavailable(BaseException):
 class _RatbagdDBus(object):
     def __init__(self, interface, object_path):
         self._dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
-        self._proxy = Gio.DBusProxy.new_sync(self._dbus,
-                                             Gio.DBusProxyFlags.NONE,
-                                             None,
-                                             'org.freedesktop.ratbag1',
-                                             object_path,
-                                             'org.freedesktop.ratbag1.{}'.format(interface),
-                                             None)
+        if self._dbus is None:
+            raise RatbagdDBusUnavailable()
+
+        try:
+            self._proxy = Gio.DBusProxy.new_sync(self._dbus,
+                                                 Gio.DBusProxyFlags.NONE,
+                                                 None,
+                                                 'org.freedesktop.ratbag1',
+                                                 object_path,
+                                                 'org.freedesktop.ratbag1.{}'.format(interface),
+                                                 None)
+        except GLib.GError:
+            raise RatbagdDBusUnavailable()
+
         if self._proxy.get_name_owner() == None:
             raise RatbagdDBusUnavailable()
 
@@ -60,6 +67,8 @@ class Ratbagd(_RatbagdDBus):
     The ratbagd top-level object. Provides a list of devices available
     through ratbagd, actual interaction with the devices is via the
     RatbagdDevice, RatbagdProfile and RatbagdResolution objects.
+
+    Throws RatbagdDBusUnavailable when the DBus service is not available.
     """
     def __init__(self):
         _RatbagdDBus.__init__(self, "Manager", '/org/freedesktop/ratbag1')
