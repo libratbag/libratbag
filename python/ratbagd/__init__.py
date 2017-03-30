@@ -49,7 +49,7 @@ class _RatbagdDBus(object):
         except GLib.GError:
             raise RatbagdDBusUnavailable()
 
-        if self._proxy.get_name_owner() == None:
+        if self._proxy.get_name_owner() is None:
             raise RatbagdDBusUnavailable()
 
     def dbus_property(self, property):
