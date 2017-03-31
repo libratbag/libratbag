@@ -1593,6 +1593,7 @@ ratbag_cmd_led_set_mode(const struct ratbag_cmd *cmd,
 {
 	struct ratbag_led *led;
 	struct ratbag_color color;
+	enum ratbag_led_mode mode;
 	char *str;
 	int rc;
 
@@ -1601,8 +1602,6 @@ ratbag_cmd_led_set_mode(const struct ratbag_cmd *cmd,
 
 	led = options->led;
 	str = argv[0];
-
-	enum ratbag_led_mode mode;
 
 	if (streq(str, "off"))
 		mode = RATBAG_LED_OFF;
