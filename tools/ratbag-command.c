@@ -1563,7 +1563,7 @@ ratbag_cmd_led_set_color(const struct ratbag_cmd *cmd,
 
 	led = options->led;
 
-	sscanf(argv[0], "%2s%2s%2s", &red, &green, &blue);
+	sscanf(argv[0], "%2s%2s%2s", red, green, blue);
 
 	color.red = strtoul(red, &p, 16);
 	color.green = strtoul(green, &p, 16);
