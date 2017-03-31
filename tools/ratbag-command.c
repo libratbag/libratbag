@@ -1628,6 +1628,9 @@ ratbag_cmd_led_set_mode(const struct ratbag_cmd *cmd,
 	case RATBAG_LED_BREATHING:
 		ratbag_led_set_effect_rate(led, 20);
 		ratbag_led_set_brightness(led, 100);
+		break;
+	case RATBAG_LED_OFF:
+		break;
 	}
 
 	rc = ratbag_led_set_mode(led, mode);
