@@ -1483,10 +1483,8 @@ ratbag_cmd_led_set_brightness(const struct ratbag_cmd *cmd,
 			      struct ratbag_cmd_options *options,
 			      int argc, char **argv)
 {
-	struct ratbag_device *device;
 	struct ratbag_led *led;
-	char *str, *endptr;
-	int brightness, b;
+	int brightness;
 	int rc;
 
 	if (argc < 1)
@@ -1494,8 +1492,6 @@ ratbag_cmd_led_set_brightness(const struct ratbag_cmd *cmd,
 
 	led = options->led;
 	brightness = atoi(argv[0]);
-
-	device = options->device;
 
 	rc = ratbag_led_set_brightness(led, brightness);
 	if (rc != 0)
@@ -1520,10 +1516,9 @@ ratbag_cmd_led_set_effect_rate(const struct ratbag_cmd *cmd,
 			int argc, char **argv)
 {
 
-	struct ratbag_device *device;
 	struct ratbag_led *led;
 	char *str, *endptr;
-	int hz, b;
+	int hz;
 	int rc;
 
 	if (argc < 1)
@@ -1557,10 +1552,8 @@ ratbag_cmd_led_set_color(const struct ratbag_cmd *cmd,
 			 struct ratbag_cmd_options *options,
 			 int argc, char **argv)
 {
-	struct ratbag_device *device;
 	struct ratbag_led *led;
 	struct ratbag_color color;
-	char *str, *endptr;
 	int rc;
 	char red[2], green[2], blue[2];
 	char *p;
@@ -1598,10 +1591,9 @@ ratbag_cmd_led_set_mode(const struct ratbag_cmd *cmd,
 			struct ratbag_cmd_options *options,
 			int argc, char **argv)
 {
-	struct ratbag_device *device;
 	struct ratbag_led *led;
 	struct ratbag_color color;
-	char *str, *endptr;
+	char *str;
 	int rc;
 
 	if (argc < 1)
