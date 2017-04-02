@@ -9,7 +9,7 @@ EXTRACT_STATIC         = YES
 MAX_INITIALIZER_LINES  = 0
 QUIET                  = YES
 INPUT                  = @top_srcdir@/src/libratbag.h \
-			 @top_srcdir@/README.txt
+			 @top_srcdir@/README.md
 GENERATE_HTML          = YES
 HTML_TIMESTAMP         = YES
 USE_MATHJAX            = YES

@@ -13,9 +13,7 @@ style_files = \
 	      style/bootstrap.css
 
 html/index.html: libratbag.doxygen $(header_files) $(diagram_files) $(style_files)
-	$(AM_V_GEN)(cat $<; \
-          echo "INPUT = $(header_files)"; \
-          ) | $(DOXYGEN) -
+	$(AM_V_GEN)$(DOXYGEN) $<
 
 clean-local:
 	$(AM_V_at)rm -rf html
