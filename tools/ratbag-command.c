@@ -217,9 +217,8 @@ static inline struct ratbag_profile *
 ratbag_cmd_get_active_profile(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile = NULL;
-	int i;
 
-	for (i = 0; i < ratbag_device_get_num_profiles(device); i++) {
+	for (unsigned int i = 0; i < ratbag_device_get_num_profiles(device); i++) {
 		profile = ratbag_device_get_profile(device, i);
 		if (ratbag_profile_is_active(profile))
 			return profile;
@@ -238,9 +237,8 @@ static inline struct ratbag_resolution *
 ratbag_cmd_get_active_resolution(struct ratbag_profile *profile)
 {
 	struct ratbag_resolution *resolution = NULL;
-	int i;
 
-	for (i = 0; i < ratbag_profile_get_num_resolutions(profile); i++) {
+	for (unsigned int i = 0; i < ratbag_profile_get_num_resolutions(profile); i++) {
 		resolution = ratbag_profile_get_resolution(profile, i);
 		if (ratbag_resolution_is_active(resolution))
 			return resolution;
@@ -342,7 +340,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 	struct ratbag_led *led;
 	char *action;
 	int num_profiles, num_buttons, num_leds;
-	int i, j, b, l;
+	int b, l;
 	struct ratbag_color color;
 
 	device = options->device;
@@ -376,7 +374,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 	num_profiles = ratbag_device_get_num_profiles(device);
 	printf("Profiles supported: %d\n", num_profiles);
 
-	for (i = 0; i < num_profiles; i++) {
+	for (int i = 0; i < num_profiles; i++) {
 		int dpi, rate;
 		profile = ratbag_device_get_profile(device, i);
 		if (!profile)
@@ -386,7 +384,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		       ratbag_profile_is_enabled(profile) ? "enabled" : "disabled",
 		       ratbag_profile_is_active(profile) ? " (active)" : "");
 		printf("    Resolutions:\n");
-		for (j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
+		for (unsigned int j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
 			struct ratbag_resolution *res;
 
 			res = ratbag_profile_get_resolution(profile, j);
@@ -519,7 +517,7 @@ str_to_macro(const char *action_arg, struct macro *m)
 	char *str, *s;
 	enum ratbag_macro_event_type type;
 	int code;
-	int idx = 0;
+	unsigned int idx = 0;
 	int rc = ERR_USAGE;
 
 	/* FIXME: handle per-device maximum lengths of macros */
@@ -610,7 +608,6 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	unsigned int btnkey;
 	enum ratbag_button_action_special special;
 	struct macro macro = {0};
-	int i;
 
 	if (argc != 3)
 		return ERR_USAGE;
@@ -679,7 +676,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 		m = ratbag_button_macro_new(macro.name);
-		for (i = 0; i < ARRAY_LENGTH(macro.events); i++) {
+		for (size_t i = 0; i < ARRAY_LENGTH(macro.events); i++) {
 			if (macro.events[i].type == RATBAG_MACRO_EVENT_NONE)
 				break;
 
@@ -1317,13 +1314,12 @@ ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
 	struct ratbag_button_macro *m;
 	struct macro macro = {0};
 	int rc;
-	int i;
 	char macro_str[PATH_MAX] = {0};
 
 	if (argc < 1)
 		return ERR_USAGE;
 
-	for (i = 0; i < argc; i++) {
+	for (int i = 0; i < argc; i++) {
 		strncat(macro_str, argv[i], sizeof(macro_str) - strlen(macro_str) - 1);
 		strcat(macro_str, " ");
 	}
@@ -1340,7 +1336,7 @@ ratbag_cmd_button_set_macro(const struct ratbag_cmd *cmd,
 
 	button = options->button;
 	m = ratbag_button_macro_new(macro.name);
-	for (i = 0; i < ARRAY_LENGTH(macro.events); i++) {
+	for (size_t i = 0; i < ARRAY_LENGTH(macro.events); i++) {
 		if (macro.events[i].type == RATBAG_MACRO_EVENT_NONE)
 			break;
 
