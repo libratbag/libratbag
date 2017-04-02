@@ -1,4 +1,4 @@
-.TH RATBAG_COMMAND "1"
+.TH RATBAG_COMMAND "1" "@version@"
 .SH NAME
 ratbag-command \- Query or change a device's settings
 .SH SYNOPSIS

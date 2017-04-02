@@ -67,6 +67,28 @@ Source
 
     git clone https://github.com/libratbag/libratbag.git
 
+Building
+--------
+
+libratbag uses the meson build system, see http://mesonbuild.com which in
+turn uses ninja to invoke the compiler (`ninja` may be `ninja-build` on your
+distribution). From a fresh git checkout, run the
+following commands to init the repository:
+
+    meson builddir --prefix=/usr/
+
+And to build or re-build after code-changes, run:
+
+    ninja -C builddir
+    sudo ninja -C builddir install
+
+Note: 'builddir' is the build output directory and can be changed to any
+other directory name. To set configure-time options, use e.g.
+
+    mesonconf builddir -Denable-documentation=no
+
+Run 'mesonconf builddir' to list the options.
+
 Bugs
 ----
 

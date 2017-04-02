@@ -1,0 +1,14 @@
+option('udev-dir',
+       type: 'string',
+       default: '',
+       description: 'udev base directory [default=$prefix/lib/udev]')
+
+option('enable-tests',
+	type: 'boolean',
+	value: true,
+	description: 'Build the tests (default=yes)')
+
+option('enable-documentation',
+	type: 'boolean',
+	value: true,
+	description: 'Build the documentation (default=yes)')
