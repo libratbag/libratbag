@@ -71,7 +71,7 @@ dump_all_pages(struct hidpp10_device *dev)
 	return rc;
 }
 
-void
+static void
 usage(void)
 {
 	printf("Usage: %s [page] [offset] /dev/hidraw0\n", program_invocation_short_name);

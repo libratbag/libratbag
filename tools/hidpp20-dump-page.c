@@ -83,7 +83,7 @@ dump_everything(struct hidpp20_device *dev)
 	return dump_all_pages(dev, 1);
 }
 
-void
+static void
 usage(void)
 {
 	printf("Usage: %s [page] [offset] /dev/hidraw0\n", program_invocation_short_name);
