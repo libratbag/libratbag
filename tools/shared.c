@@ -129,7 +129,7 @@ button_type_to_str(enum ratbag_button_type type)
 	return str;
 }
 
-const static struct map {
+static const struct map {
 	enum ratbag_button_action_special special;
 	const char *str;
 } special_map[] =  {
