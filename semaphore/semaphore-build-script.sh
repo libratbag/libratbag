@@ -11,3 +11,18 @@ sudo apt-get install -y valgrind check libevdev-dev libudev-dev doxygen graphviz
 autoreconf -ivf
 ./configure --prefix=$PWD/_build --with-udev-base-dir=$PWD/_build
 DISTCHECK_CONFIGURE_FLAGS="--with-udev-base-dir=$PWD/_build" make distcheck
+
+# no meson on 14.04
+sudo apt-get install -y python3-pip
+sudo pip3 install meson
+
+# ninja on 14.04 is too old
+git clone git://github.com/ninja-build/ninja.git
+cd ninja
+git checkout release
+./configure.py --bootstrap
+sudo cp ninja /usr/bin/ninja
+cd ..
+
+meson builddir
+ninja -C builddir test
