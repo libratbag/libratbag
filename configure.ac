@@ -68,51 +68,41 @@ AC_SUBST(UDEV_BASE_DIR)
 
 AC_ARG_ENABLE([documentation],
 	      [AC_HELP_STRING([--enable-documentation],
-		              [Enable building the documentation (default=auto)])],
+		              [Enable building the documentation (default=yes)])],
 	      [build_documentation="$enableval"],
-	      [build_documentation="auto"])
+	      [build_documentation="yes"])
 
-if test "x$build_documentation" = "xyes" -o "x$build_documentation" = "xauto"; then
+if test "x$build_documentation" = "xyes"; then
 	AC_PATH_PROG(DOXYGEN, doxygen)
 	if test "x$DOXYGEN" = "x"; then
-		if test "x$build_documentation" = "xyes"; then
-			AC_MSG_ERROR([Documentation build requested but doxygen not found. Install doxygen or disable the documentation using --disable-documentation])
-		fi
-	else
-		AC_MSG_CHECKING([for compatible doxygen version])
-		doxygen_version=`$DOXYGEN --version`
-		AS_VERSION_COMPARE([$doxygen_version], [1.6.0],
-		                   [AC_MSG_RESULT([no])
-		                    DOXYGEN=""],
-		                   [AC_MSG_RESULT([yes])],
-		                   [AC_MSG_RESULT([yes])])
-		if test "x$DOXYGEN" = "x" -a "x$build_documentation" = "xyes"; then
-			AC_MSG_ERROR([Doxygen $doxygen_version too old. Doxygen 1.6+ required for documentation build. Install required doxygen version or disable the documentation using --disable-documentation])
-		fi
+		AC_MSG_ERROR([Documentation build requested but doxygen not found. Install doxygen or disable the documentation using --disable-documentation])
+	fi
+
+	AC_MSG_CHECKING([for compatible doxygen version])
+	doxygen_version=`$DOXYGEN --version`
+	AS_VERSION_COMPARE([$doxygen_version], [1.6.0],
+			   [AC_MSG_RESULT([no])
+			    DOXYGEN=""],
+			   [AC_MSG_RESULT([yes])],
+			   [AC_MSG_RESULT([yes])])
+	if test "x$DOXYGEN" = "x"; then
+		AC_MSG_ERROR([Doxygen $doxygen_version too old. Doxygen 1.6+ required for documentation build. Install required doxygen version or disable the documentation using --disable-documentation])
 	fi
 
 	AC_PATH_PROG(DOT, dot)
 	if test "x$DOT" = "x"; then
-		if test "x$build_documentation" = "xyes"; then
-			AC_MSG_ERROR([Documentation build requested but graphviz's dot not found. Install graphviz or disable the documentation using --disable-documentation])
-		fi
-	else
-		AC_MSG_CHECKING([for compatible dot version])
-		dot_version=`$DOT -V 2>&1|$GREP -oP '(?<=version\W)@<:@0-9.@:>@*(?=\W(.*))'`
-		AS_VERSION_COMPARE([$dot_version], [2.26.0],
-		                   [AC_MSG_RESULT([no])
-		                    DOT=""],
-		                   [AC_MSG_RESULT([yes])],
-		                   [AC_MSG_RESULT([yes])])
-		if test "x$DOT" = "x" -a "x$build_documentation" = "xyes"; then
-			AC_MSG_ERROR([Graphviz dot $dot_version too old. Graphviz 2.26+ required for documentation build. Install required graphviz version or disable the documentation using --disable-documentation])
-		fi
+		AC_MSG_ERROR([Documentation build requested but graphviz's dot not found. Install graphviz or disable the documentation using --disable-documentation])
 	fi
 
-	if test "x$DOXYGEN" != "x" -a "x$DOT" != "x"; then
-		build_documentation="yes"
-	else
-		build_documentation="no"
+	AC_MSG_CHECKING([for compatible dot version])
+	dot_version=`$DOT -V 2>&1|$GREP -oP '(?<=version\W)@<:@0-9.@:>@*(?=\W(.*))'`
+	AS_VERSION_COMPARE([$dot_version], [2.26.0],
+			   [AC_MSG_RESULT([no])
+			    DOT=""],
+			   [AC_MSG_RESULT([yes])],
+			   [AC_MSG_RESULT([yes])])
+	if test "x$DOT" = "x"; then
+		AC_MSG_ERROR([Graphviz dot $dot_version too old. Graphviz 2.26+ required for documentation build. Install required graphviz version or disable the documentation using --disable-documentation])
 	fi
 fi
 
