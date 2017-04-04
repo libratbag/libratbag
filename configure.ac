@@ -107,20 +107,12 @@ if test "x$build_documentation" = "xyes"; then
 fi
 
 AC_ARG_ENABLE(tests,
-	      AS_HELP_STRING([--enable-tests], [Build the tests (default=auto)]),
+	      AS_HELP_STRING([--enable-tests], [Build the tests (default=yes)]),
 	      [build_tests="$enableval"],
-	      [build_tests="auto"])
+	      [build_tests="yes"])
 
-PKG_CHECK_MODULES(CHECK, [check >= 0.9.10], [HAVE_CHECK="yes"], [HAVE_CHECK="no"])
-
-if test "x$build_tests" = "xauto"; then
-	build_tests="$HAVE_CHECK"
-fi
 if test "x$build_tests" = "xyes"; then
-	if test "x$HAVE_CHECK" = "xno"; then
-		AC_MSG_ERROR([Cannot build tests, check is missing])
-	fi
-
+	PKG_CHECK_MODULES(CHECK, [check >= 0.9.10])
 	AC_PATH_PROG(VALGRIND, [valgrind])
 fi
 
