@@ -1,3 +1,8 @@
+noinst_SCRIPTS = symbols-leak-test
+TESTS = symbols-leak-test
+
+AM_TESTS_ENVIRONMENT=RATBAG_TEST=1; export RATBAG_TEST; TOP_SRCDIR="$(top_srcdir)"; export TOP_SRCDIR;
+
 if BUILD_TESTS
 AM_CPPFLAGS = -I$(top_srcdir)/include \
               -I$(top_srcdir)/src \
@@ -21,8 +26,7 @@ build_tests = \
 	test-build-std-gnuc90
 
 noinst_PROGRAMS = $(build_tests) $(run_tests)
-noinst_SCRIPTS = symbols-leak-test
-TESTS = $(run_tests) symbols-leak-test
+TESTS += $(run_tests)
 
 test_context_SOURCES = test-context.c
 test_context_LDADD = $(TEST_LIBS)
@@ -52,7 +56,6 @@ test_build_linker_LDADD = $(top_builddir)/src/libratbag.la
 test_build_cxx_SOURCES = build-cxx.cc
 test_build_cxx_CXXFLAGS = -Wall -Wextra -Wno-unused-parameter $(AM_CXXFLAGS)
 
-AM_TESTS_ENVIRONMENT=RATBAG_TEST=1; export RATBAG_TEST; TOP_SRCDIR="$(top_srcdir)"; export TOP_SRCDIR;
 
 if HAVE_VALGRIND
 VALGRIND_FLAGS=--leak-check=full \
