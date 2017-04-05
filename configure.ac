@@ -131,9 +131,9 @@ AC_CONFIG_FILES([Makefile
 		 src/libratbag-version.h
 		 src/liblur.pc
 		 test/Makefile
-		 tools/Makefile])
-AC_CONFIG_FILES([test/symbols-leak-test],
-		[chmod +x test/symbols-leak-test])
+		 tools/Makefile],
+		 [chmod +x test/symbols-leak-test])
+
 AC_OUTPUT
 
 AC_MSG_RESULT([

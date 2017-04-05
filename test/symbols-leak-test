@@ -2,16 +2,23 @@
 
 ### simple check for exported symbols
 
+if [ -z "$TOP_SRCDIR" ]; then
+	TOP_SRCDIR="$1"
+fi
+
+if [ -z "$TOP_SRCDIR" ]; then
+	echo "usage: $0 path/to/top_srcdir"
+	exit 1
+fi
+
 # make bash exit if any command will exit with non-0 return value
 set -e
 
 # make sure the paths are alright
-cd `dirname $0`
-
 diff -a -u \
-	<(cat @top_srcdir@/src/libratbag.sym | \
+	<(cat "$TOP_SRCDIR"/src/libratbag.sym | \
 		grep '^\s\+ratbag_.*' | \
 		sed -e 's/^\s\+\(.*\);/\1/' |  sort) \
-	<(cat @top_srcdir@/src/*.c | \
+	<(cat "$TOP_SRCDIR"/src/*.c | \
 		grep LIBRATBAG_EXPORT -A 1 | grep '^ratbag_.*' | \
 		sed -e 's/(.*//' | sort)

@@ -52,7 +52,7 @@ test_build_linker_LDADD = $(top_builddir)/src/libratbag.la
 test_build_cxx_SOURCES = build-cxx.cc
 test_build_cxx_CXXFLAGS = -Wall -Wextra -Wno-unused-parameter $(AM_CXXFLAGS)
 
-AM_TESTS_ENVIRONMENT=RATBAG_TEST=1; export RATBAG_TEST;
+AM_TESTS_ENVIRONMENT=RATBAG_TEST=1; export RATBAG_TEST; TOP_SRCDIR="$(top_srcdir)"; export TOP_SRCDIR;
 
 if HAVE_VALGRIND
 VALGRIND_FLAGS=--leak-check=full \
@@ -67,4 +67,4 @@ check: valgrind
 
 endif
 endif
-EXTRA_DIST=valgrind.suppressions
+EXTRA_DIST=valgrind.suppressions symbols-leak-test

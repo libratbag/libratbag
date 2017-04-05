@@ -36,7 +36,6 @@ tags
 test-driver
 compile
 m4
-symbols-leak-test
 symbols-leak-test.log
 test-build-cxx
 test-build-linker
