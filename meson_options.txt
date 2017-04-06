@@ -1,0 +1,9 @@
+option('systemd-unit-dir',
+	type : 'string',
+	default : '',
+	description : 'systemd unit directory [default=$libdir/systemd/system]')
+
+option('dbus-root-dir',
+	type : 'string',
+	default : '',
+	description : 'dbus service directory [default=$datadir/dbus-1]')
