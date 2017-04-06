@@ -15,7 +15,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 
 AC_USE_SYSTEM_EXTENSIONS
-AM_MAINTAINER_MODE([enable])
 AM_INIT_AUTOMAKE([foreign 1.11 -Wall -Wno-portability silent-rules tar-pax no-dist-gzip dist-xz subdir-objects parallel-tests])
 AM_SILENT_RULES([yes])
 AC_DEFINE_UNQUOTED([CANONICAL_HOST], "$host", [Canonical host string.])
