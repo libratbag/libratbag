@@ -154,7 +154,7 @@ def show_button(r, args):
 
 def make_parser():
     parser = argparse.ArgumentParser(description="Inspect and modify configurable mice")
-    parser.add_argument("-V", "--version", action="version", version="__VERSION__")
+    parser.add_argument("-V", "--version", action="version", version="@version@")
     subs = parser.add_subparsers(title="COMMANDS", help=None)
 
     list = subs.add_parser("list-devices", help="List available configurable mice")

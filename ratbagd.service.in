@@ -4,7 +4,7 @@ Description=Daemon to introspect and modify configurable mice
 [Service]
 Type=dbus
 BusName=org.freedesktop.ratbag1
-ExecStart=__BIN_PREFIX__/ratbagd
+ExecStart=@bindir@/ratbagd
 Restart=on-abort
 
 [Install]

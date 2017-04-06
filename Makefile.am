@@ -91,14 +91,14 @@ unitdir = $(SYSTEMD_UNIT_DIR)
 unit_DATA = ratbagd.service
 
 $(unit_DATA): $(unit_DATA).in
-	$(AM_V_GEN)$(SED) -e 's|__BIN_PREFIX__|$(bindir)|g' < $< > $@
+	$(AM_V_GEN)$(SED) -e 's|@bindir@|$(bindir)|g' < $< > $@
 
 dbusservicedir = $(DBUS_SYSTEM_SERVICES_DIR)
 dbusservice_DATA = dbus/org.freedesktop.ratbag1.service
 
 $(dbusservice_DATA): $(dbusservice_DATA).in
 	$(AM_V_GEN)$(MKDIR_P) dbus
-	$(AM_V_GEN)$(SED) -e 's|__BIN_PREFIX__|$(bindir)|g' < $< > $@
+	$(AM_V_GEN)$(SED) -e 's|@bindir@|$(bindir)|g' < $< > $@
 
 dbusconfigdir = $(DBUS_SYSTEM_CONFIG_DIR)
 dbusconfig_DATA = dbus/org.freedesktop.ratbag1.conf
@@ -119,7 +119,7 @@ bin_SCRIPTS = \
 
 python/ratbagctl: python/ratbagctl.py
 	$(AM_V_GEN)$(MKDIR_P) python
-	$(AM_V_GEN)$(SED) -e "s/__VERSION__/$(PACKAGE_VERSION)/" < $^ > $@
+	$(AM_V_GEN)$(SED) -e "s/@version@/$(PACKAGE_VERSION)/" < $^ > $@
 
 EXTRA_DIST += python/ratbagctl.py
 BUILT_SOURCES += python/ratbagctl
