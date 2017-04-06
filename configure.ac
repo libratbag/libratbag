@@ -28,7 +28,6 @@ AC_PROG_SED
 AC_PROG_CC_C99
 
 AC_PATH_PROG([M4], [m4])
-AC_PATH_PROG([XSLTPROC], [xsltproc])
 AM_PATH_PYTHON
 
 # ------------------------------------------------------------------------------
