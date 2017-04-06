@@ -2,9 +2,7 @@
 
 ### simple check for exported symbols
 
-if [ -z "$TOP_SRCDIR" ]; then
-	TOP_SRCDIR="$1"
-fi
+TOP_SRCDIR="$1"
 
 if [ -z "$TOP_SRCDIR" ]; then
 	echo "usage: $0 path/to/top_srcdir"
