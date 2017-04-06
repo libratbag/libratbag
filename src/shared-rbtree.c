@@ -28,6 +28,8 @@
  * file do not contain a full prove for correctness.
  */
 
+#include "config.h"
+
 #include "shared-rbtree.h"
 
 RBNode *rbnode_leftmost(RBNode *n) {

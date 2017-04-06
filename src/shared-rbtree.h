@@ -19,6 +19,8 @@
   along with rbtree; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
