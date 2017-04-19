@@ -25,3 +25,4 @@ HTML_HEADER = @top_srcdir@/doc/style/header.html
 HTML_FOOTER = @top_srcdir@/doc/style/footer.html
 HTML_EXTRA_STYLESHEET = @top_srcdir@/doc/style/customdoxygen.css \
 			@top_srcdir@/doc/style/bootstrap.css
+USE_MDFILE_AS_MAINPAGE = README.md
