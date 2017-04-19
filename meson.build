@@ -350,8 +350,8 @@ if enable_doc
 	cmd_dot = find_program('dot')
 
 	v = run_command(cmd_doxygen, ['--version']).stdout()
-	if not v.version_compare('>1.6.0')
-		error('Doxygen $doxygen_version too old. Doxygen 1.6+ required for documentation build. Install required doxygen version or disable the documentation using --disable-documentation')
+	if not v.version_compare('>=1.8.3')
+		error('Doxygen $doxygen_version too old. Doxygen 1.8.3+ required for documentation build. Install required doxygen version or disable the documentation using --disable-documentation')
 	endif
 
 	v = run_command(cmd_dot, ['-V']).stderr()
