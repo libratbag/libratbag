@@ -351,13 +351,19 @@ if enable_doc
 
 	v = run_command(cmd_doxygen, ['--version']).stdout()
 	if not v.version_compare('>=1.8.3')
-		error('Doxygen $doxygen_version too old. Doxygen 1.8.3+ required for documentation build. Install required doxygen version or disable the documentation using --disable-documentation')
+		error('Doxygen $doxygen_version too old. ' +
+		      'Doxygen 1.8.3+ required for documentation build. ' +
+		      'Install required doxygen version or ' +
+		      'disable the documentation using --disable-documentation')
 	endif
 
 	v = run_command(cmd_dot, ['-V']).stderr()
 	v = v.split(' ')[4]
 	if v.version_compare('<2.26.0')
-		error('Graphviz dot $dot_version too old. Graphviz 2.26+ required for documentation build. Install required graphviz version or disable the documentation using --disable-documentation')
+		error('Graphviz dot $dot_version too old. ' +
+		      'Graphviz 2.26+ required for documentation build. ' +
+		      'Install required graphviz version or ' +
+		      'disable the documentation using --disable-documentation')
 	endif
 
 	doc_config = configuration_data()
