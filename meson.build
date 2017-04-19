@@ -369,8 +369,11 @@ if enable_doc
 				  output : 'libratbag.doxygen',
 				  configuration : doc_config,
 				  install : false)
+	src_doxygen = [ doxyfile,
+			'src/libratbag.h',
+			'README.md']
 	custom_target('doxygen',
-			input : [ doxyfile ],
+			input : src_doxygen,
 			output : [ 'html' ],
 			command : [ cmd_doxygen, doxyfile ],
 			install : false,
