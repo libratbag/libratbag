@@ -342,19 +342,9 @@ process_module() {
 	return 1
     fi
 
-    # Run 'make dist/distcheck' to ensure the tarball matches the git module content
-    # Important to run make dist/distcheck before looking in Makefile, may need to reconfigure
-    echo "Info: running \"make $MAKE_DIST_CMD\" to create tarballs:"
-    ${MAKE} $MAKEFLAGS $MAKE_DIST_CMD > /dev/null
-    if [ $? -ne 0 ]; then
-	echo "Error: \"$MAKE $MAKEFLAGS $MAKE_DIST_CMD\" failed."
-	cd $top_src
-	return 1
-    fi
-
-    # Find out the tarname from the makefile
-    pkg_name=`$GREP '^PACKAGE = ' Makefile | sed 's|PACKAGE = ||'`
-    pkg_version=`$GREP '^VERSION = ' Makefile | sed 's|VERSION = ||'`
+    # Find out the tarname from meson.build
+    pkg_name=$($GREP '^project(' meson.build | sed 's|project(\([^\s,]*\).*|\1|' | sed "s/'//g")
+    pkg_version=$($GREP -m 1 '^	version : ' meson.build | sed 's|	version : \([^\s,]*\).*|\1|' | sed "s/'//g")
     tar_name="$pkg_name-$pkg_version"
     targz=$tar_name.tar.gz
     tag_name=$(echo "v$pkg_version" | sed 's|.0$||')
@@ -497,16 +487,10 @@ Usage: $basename [options] path...
 Where "path" is a relative path to a git module, including '.'.
 
 Options:
-  --dist              make 'dist' instead of 'distcheck'; use with caution
-  --distcheck         Default, ignored for compatibility
   --dry-run           Does everything except tagging and uploading tarballs
   --force             Force overwriting an existing release
   --help              Display this help and exit successfully
   --no-quit           Do not quit after error; just print error message
-
-Environment variables defined by the "make" program and used by release.sh:
-  MAKE        The name of the make command [make]
-  MAKEFLAGS:  Options to pass to all \$(MAKE) invocations
 
 HELP
 }
@@ -515,9 +499,6 @@ HELP
 #			Script main line
 #------------------------------------------------------------------------------
 #
-
-# Choose which make program to use (could be gmake)
-MAKE=${MAKE:="make"}
 
 # Choose which grep program to use (on Solaris, must be gnu grep)
 if [ "x$GREP" = "x" ] ; then
@@ -528,23 +509,10 @@ if [ "x$GREP" = "x" ] ; then
     fi
 fi
 
-# Set the default make tarball creation command
-MAKE_DIST_CMD=distcheck
-
 # Process command line args
 while [ $# != 0 ]
 do
     case $1 in
-    # Use 'dist' rather than 'distcheck' to create tarballs
-    # You really only want to do this if you're releasing a module you can't
-    # possibly build-test.  Please consider carefully the wisdom of doing so.
-    --dist)
-	MAKE_DIST_CMD=dist
-	;;
-    # Use 'distcheck' to create tarballs
-    --distcheck)
-	MAKE_DIST_CMD=distcheck
-	;;
     # Does everything except uploading tarball
     --dry-run)
 	DRY_RUN=yes
