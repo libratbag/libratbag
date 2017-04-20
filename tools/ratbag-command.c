@@ -605,7 +605,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	int button_index;
 	enum ratbag_button_action_type action_type;
 	int rc = ERR_DEVICE;
-	unsigned int btnkey;
+	unsigned int btnkey = 0;
 	enum ratbag_button_action_special special;
 	struct macro macro = {0};
 
