@@ -1405,7 +1405,7 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 	udev_enumerate_add_match_parent(e, parent_udev);
 	udev_enumerate_scan_devices(e);
 	udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
-		_cleanup_udev_device_unref_ struct udev_device *udev_device;
+		_cleanup_udev_device_unref_ struct udev_device *udev_device = NULL;
 
 		path = udev_list_entry_get_name(entry);
 		udev_device = udev_device_new_from_syspath(udev, path);

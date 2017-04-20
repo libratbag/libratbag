@@ -80,7 +80,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	_cleanup_close_ int fd;
+	_cleanup_close_ int fd = 0;
 	const char *path;
 	size_t page = 0, offset = 0;
 	struct hidpp10_device *dev = NULL;
