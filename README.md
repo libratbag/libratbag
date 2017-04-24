@@ -113,31 +113,12 @@ activation is possible.
 Compiling ratbagd
 -----------------
 
-ratbagd needs systemd >= 227. If you are running Fedora 23, you might find the
-following instruction valuable:
+    ./autogen.sh && ./configure --prefix=/usr/ --libdir=/usr/lib64
+    make
+    sudo make install
 
-Download systemd v229 (master caused troubles with gcrypt and gpg-error last
-time I tried).
-
-    $ git clone --branch v229 https://github.com/systemd/systemd
-
-
-Configure it with:
-
-    $ ./autogen.sh && ./configure --prefix=/opt/systemd \
-                                  --libdir=/opt/systemd/lib \
-                                  --disable-gcrypt \
-                                  --without-bashcompletiondir \
-                                  --with-rootprefix=/opt/systemd \
-                                  --with-sysvinit-path=/opt/systemd/etc \
-                                  --with-sysvrcnd-path=/opt/systemd/etc/rc.d
-
-Then run make and make install.
-
-In ratbagd, you will need to add the newly installed libsystemd in the
-pkg_config path:
-
-    $ PKG_CONFIG_PATH=/opt/systemd/lib/pkgconfig ./configure
+Depending on your distribution, you can omit the --libdir argument. Fedora
+and related require it, Debian and related do not.
 
 License
 -------
