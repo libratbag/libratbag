@@ -113,12 +113,24 @@ activation is possible.
 Compiling ratbagd
 -----------------
 
-    ./autogen.sh && ./configure --prefix=/usr/ --libdir=/usr/lib64
-    make
-    sudo make install
+ratbagd uses the meson build system (see http://mesonbuild.com) which in
+turn uses ninja to invoke the compiler (`ninja` may be `ninja-build` on your
+distribution). From a fresh git checkout, run the following commands to init
+the repository:
 
-Depending on your distribution, you can omit the --libdir argument. Fedora
-and related require it, Debian and related do not.
+    meson builddir --prefix=/usr/
+
+And to build or re-build after code-changes, run:
+
+    ninja -C builddir
+    sudo ninja -C builddir install
+
+Note: 'builddir' is the build output directory and can be changed to any
+other directory name. To set configure-time options, use e.g.
+
+    mesonconf builddir -Denable-documentation=no
+
+Run 'mesonconf builddir' to list the options.
 
 License
 -------
