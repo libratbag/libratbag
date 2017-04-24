@@ -144,7 +144,8 @@ AC_SUBST(DBUS_SYSTEM_CONFIG_DIR)
 # ------------------------------------------------------------------------------
 # report
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+		 python/ratbagctl])
 
 AC_OUTPUT
 AC_MSG_RESULT([

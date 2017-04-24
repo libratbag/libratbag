@@ -111,17 +111,9 @@ BUILT_SOURCES += ratbagd.service dbus/org.freedesktop.ratbag1.service
 
 # ------------------------------------------------------------------------------
 # python module
-dist_pkgpython_DATA = \
-		      python/ratbagd/__init__.py
+dist_pkgpython_DATA = python/ratbagd/__init__.py
+bin_SCRIPTS = python/ratbagctl
 
-bin_SCRIPTS = \
-	      python/ratbagctl
-
-python/ratbagctl: python/ratbagctl.py
-	$(AM_V_GEN)$(MKDIR_P) python
-	$(AM_V_GEN)$(SED) -e "s/@version@/$(PACKAGE_VERSION)/" < $^ > $@
-
-EXTRA_DIST += python/ratbagctl.py
-BUILT_SOURCES += python/ratbagctl
+EXTRA_DIST += python/ratbagctl.in
 
 dist_man1_MANS += doc/ratbagctl.1
