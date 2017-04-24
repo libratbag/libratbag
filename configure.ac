@@ -116,7 +116,7 @@ AC_SUBST([OUR_LDFLAGS], "$with_ldflags")
 
 PKG_CHECK_MODULES([LIBUDEV], [libudev])
 PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd >= 227])
-PKG_CHECK_MODULES([LIBRATBAG], [libratbag >= 0.4])
+PKG_CHECK_MODULES([LIBRATBAG], [libratbag >= 0.6])
 
 PKG_CHECK_VAR([libratbag_data_dir], [libratbag], [pkgdatadir],
 	      [AC_DEFINE_UNQUOTED([LIBRATBAG_DATA_DIR], ["$libratbag_data_dir"], [Directory for libratbag's SVG files])])

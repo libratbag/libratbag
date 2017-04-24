@@ -82,7 +82,10 @@ def show_device(r, args):
              RatbagdDevice.CAP_SWITCHABLE_PROFILE : "switchable-profile",
              RatbagdDevice.CAP_BUTTON_KEY : "button-keys",
              RatbagdDevice.CAP_BUTTON_MACROS : "button-macros",
-             RatbagdDevice.CAP_DEFAULT_PROFILE : "default-profile" }
+             RatbagdDevice.CAP_DEFAULT_PROFILE : "default-profile",
+             RatbagdDevice.CAP_QUERY_CONFIGURATION : "query-configuration",
+             RatbagdDevice.CAP_DISABLE_PROFILE : "disable-profile",
+             RatbagdDevice.CAP_LED : "led" }
     capabilities = [caps[c] for c in d.capabilities]
 
     print("{} - {}".format(d.id, d.name))

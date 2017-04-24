@@ -88,8 +88,11 @@ class RatbagdDevice(_RatbagdDBus):
     CAP_SWITCHABLE_RESOLUTION = 1
     CAP_SWITCHABLE_PROFILE = 2
     CAP_BUTTON_KEY = 3
-    CAP_BUTTON_MACROS = 4
-    CAP_DEFAULT_PROFILE = 5
+    CAP_LED = 4
+    CAP_BUTTON_MACROS = 5
+    CAP_DEFAULT_PROFILE = 6
+    CAP_QUERY_CONFIGURATION = 7
+    CAP_DISABLE_PROFILE = 8
 
     """
     Represents a ratbagd device.
