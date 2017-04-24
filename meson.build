@@ -172,12 +172,18 @@ dep_libratbag = declare_dependency(
 	dependencies : deps_libratbag
 )
 
-pkgconfig.generate(
-        filebase: 'libratbag',
-        name: 'Libratbag',
-        description: 'Mouse configuration library',
-        version: meson.project_version(),
-        libraries: lib_libratbag
+pkgconfigdata = configuration_data()
+pkgconfigdata.set('prefix', get_option('prefix'))
+pkgconfigdata.set('libdir', get_option('libdir'))
+pkgconfigdata.set('datadir', get_option('datadir'))
+pkgconfigdata.set('includedir', get_option('includedir'))
+pkgconfigdata.set('LIBRATBAG_VERSION', meson.project_version())
+pkgconfigfile = configure_file(
+	input : 'src/libratbag.pc.in',
+	output : 'libratbag.pc',
+	configuration : pkgconfigdata,
+	install : true,
+	install_dir : get_option('libdir') + '/pkgconfig'
 )
 
 #### libshared.a ####

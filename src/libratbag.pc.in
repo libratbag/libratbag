@@ -1,9 +1,8 @@
 prefix=@prefix@
-exec_prefix=@exec_prefix@
-datarootdir=@datarootdir@
-pkgdatadir=@datadir@/@PACKAGE@
-libdir=@libdir@
-includedir=@includedir@
+datadir=${prefix}/@datadir@
+pkgdatadir=${datadir}/libratbag
+libdir=${prefix}/@libdir@
+includedir=${prefix}/@includedir@
 
 Name: Libratbag
 Description: Mouse configuration library
