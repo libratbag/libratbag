@@ -516,11 +516,6 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_BUTTON_KEY,
 
 	/**
-	 * The device supports assigning LED colors and effects
-	 */
-	RATBAG_DEVICE_CAP_LED,
-
-	/**
 	 * The device supports user-defined key or button sequences.
 	 */
 	RATBAG_DEVICE_CAP_BUTTON_MACROS,
@@ -558,6 +553,11 @@ enum ratbag_device_capability {
 	 * changed the next time ratbag runs if profiles are disabled.
 	 */
 	RATBAG_DEVICE_CAP_DISABLE_PROFILE,
+
+	/**
+	 * The device supports assigning LED colors and effects
+	 */
+	RATBAG_DEVICE_CAP_LED,
 };
 
 /**
