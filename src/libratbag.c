@@ -1292,7 +1292,7 @@ ratbag_button_set_key(struct ratbag_button *button,
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_disable(struct ratbag_button *button)
 {
-	struct ratbag_button_action action;
+	struct ratbag_button_action action = {0};
 
 	if (!ratbag_device_has_capability(button->profile->device,
 					  RATBAG_DEVICE_CAP_BUTTON_KEY))
