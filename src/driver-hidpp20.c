@@ -909,11 +909,14 @@ hidpp20_log(void *userdata, enum hidpp_log_priority priority, const char *format
 static void
 hidpp20drv_remove(struct ratbag_device *device)
 {
-	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
-	struct hidpp20_device *dev = drv_data->dev;
+	struct hidpp20drv_data *drv_data;
+	struct hidpp20_device *dev;
 
 	if (!device)
 		return;
+
+	drv_data = ratbag_get_drv_data(device);
+	dev = drv_data->dev;
 
 	ratbag_close_hidraw(device);
 
