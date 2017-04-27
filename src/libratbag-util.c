@@ -144,7 +144,7 @@ ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
 	/*
 	 * We *could* dynamically allocate the out buffer. However iconv's
 	 * obnoxious semantics, mainly the fact that it modifies every pointer
-	 * given to it, would make this code a lot larger and complex then it
+	 * given to it, would make this code a lot larger and complex than it
 	 * needs to be for a mouse with blinking lights.
 	 *
 	 * So, since there's no encoding that takes more then 6 bytes per
