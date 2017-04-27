@@ -119,7 +119,7 @@ disconnect_device(struct lur_receiver *receiver, int index)
 		return;
 	}
 
-	if (index >= ndevices) {
+	if (index < 0 || index >= ndevices) {
 		fprintf(stderr, "Invalid index %d, only %d devices connected\n",
 			index, ndevices);
 	} else {
