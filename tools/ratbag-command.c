@@ -435,7 +435,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 			led = ratbag_led_unref(led);
 		}
 
-		profile = ratbag_profile_unref(profile);
+		ratbag_profile_unref(profile);
 	}
 
 	return SUCCESS;
@@ -755,7 +755,7 @@ ratbag_cmd_list_supported_devices(const struct ratbag_cmd *cmd,
 		device = ratbag_cmd_open_device(ratbag, path);
 		if (device) {
 			printf("%s:\t%s\n", path, ratbag_device_get_name(device));
-			device = ratbag_device_unref(device);
+			ratbag_device_unref(device);
 			supported++;
 		}
 		free(input_list[i]);
