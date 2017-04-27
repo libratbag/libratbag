@@ -1583,8 +1583,8 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 }
 
 static unsigned int
-hidpp20_onboard_profiles_compute_dict_size(struct hidpp20_device *device,
-					   struct hidpp20_profiles *profiles)
+hidpp20_onboard_profiles_compute_dict_size(const struct hidpp20_device *device,
+					   const struct hidpp20_profiles *profiles)
 {
 	unsigned p, num_offset;
 
