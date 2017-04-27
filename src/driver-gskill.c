@@ -731,8 +731,10 @@ gskill_macro_from_report(struct ratbag_device *device,
 	ret = ratbag_utf8_from_enc(report->macro_name,
 				   report->macro_name_length, "UTF-16LE",
 				   &macro->macro.name);
-	if (ret < 0)
+	if (ret < 0) {
+		ratbag_button_macro_unref(macro);
 		return NULL;
+	}
 
 	for (i = 0, event_idx = 0, increment = 1;
 	     i < report->macro_length;
