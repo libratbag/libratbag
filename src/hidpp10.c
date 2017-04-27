@@ -1397,7 +1397,7 @@ hidpp10_profile_set_names(struct hidpp10_device *dev, struct hidpp10_profile *pr
 	memcpy(metadata->lgs02.marker, "LGS02", sizeof(metadata->lgs02.marker));
 	hidpp10_uchar8_to_uchar16(metadata->lgs02.name,
 				  profile->name,
-				  sizeof(metadata->lgs02.name));
+				  ARRAY_LENGTH(metadata->lgs02.name));
 	for (i = 0; i < ARRAY_LENGTH(metadata->lgs02.macro_names); i++) {
 		hidpp10_uchar8_to_uchar16(metadata->lgs02.macro_names[i],
 					  profile->macro_names[i],
