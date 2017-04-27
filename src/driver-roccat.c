@@ -303,6 +303,7 @@ roccat_wait_ready(struct ratbag_device *device)
 			return 2;
 
 		msleep(10);
+		count++;
 	}
 
 	return -ETIMEDOUT;
