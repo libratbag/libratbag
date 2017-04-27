@@ -38,6 +38,13 @@
 #define _EXPORT_ __attribute__ ((visibility("default")))
 #define MAX_DEVICES 6
 
+static inline void
+cleanup_hidpp10_device_destroy(struct hidpp10_device **hidpp10_device) {
+	if (*hidpp10_device)
+		hidpp10_device_destroy(*hidpp10_device);
+}
+#define _cleanup_hidpp10_device_destroy_ _cleanup_(cleanup_hidpp10_device_destroy)
+
 struct lur_receiver {
 	int refcount;
 	int fd;
@@ -186,7 +193,7 @@ lur_receiver_enumerate(struct lur_receiver *lur,
 		dev->present = false;
 
 	for (i = 0; i < MAX_DEVICES; i++) {
-		struct hidpp10_device *d;
+		_cleanup_hidpp10_device_destroy_ struct hidpp10_device *d;
 		size_t name_size = 64;
 		char name[name_size];
 		uint8_t interval, type;
@@ -240,8 +247,6 @@ lur_receiver_enumerate(struct lur_receiver *lur,
 			dev->present = true;
 			list_insert(&lur->devices, &dev->node);
 		}
-
-		hidpp10_device_destroy(d);
 	}
 
 	devices = zalloc(MAX_DEVICES * sizeof(*devices));
