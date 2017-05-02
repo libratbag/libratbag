@@ -2,7 +2,7 @@ project('ratbagd', 'c',
 	version : '0.2',
 	license : 'MIT/Expat',
 	meson_version : '>= 0.40.0',
-	default_options : [ 'c_std=gnu99' ])
+	default_options : [ 'c_std=gnu99', 'warning_level=2' ])
 
 ratbagd_version = meson.project_version().split('.')
 
@@ -10,8 +10,6 @@ ratbagd_version = meson.project_version().split('.')
 cc = meson.get_compiler('c')
 cflags = [
 	'-pipe',
-	'-Wall',
-	'-Wextra',
 	'-Wno-inline',
 	'-Wundef',
 	'-Wformat=2',
