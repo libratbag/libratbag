@@ -21,8 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBRATBAG_HIDRAW_H
-#define LIBRATBAG_HIDRAW_H
+#pragma once
 
 #include <linux/hid.h>
 #include <stdint.h>
@@ -186,4 +185,3 @@ ratbag_hidraw_get_keycode_from_consumer_usage(struct ratbag_device *device,
 uint16_t
 ratbag_hidraw_get_consumer_usage_from_keycode(struct ratbag_device *device,
 					      unsigned keycode);
-#endif /* LIBRATBAG_HIDRAW_H */

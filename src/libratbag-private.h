@@ -21,8 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBRATBAG_PRIVATE_H
-#define LIBRATBAG_PRIVATE_H
+#pragma once
 
 #include <linux/input.h>
 #include <stdint.h>
@@ -490,6 +489,4 @@ ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver);
 void
 ratbag_button_copy_macro(struct ratbag_button *button,
 			 const struct ratbag_button_macro *macro);
-
-#endif /* LIBRATBAG_PRIVATE_H */
 

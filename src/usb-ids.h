@@ -20,10 +20,7 @@
  * OF THIS SOFTWARE.
  */
 
-#ifndef USB_IDS_H
-#define USB_IDS_H
+#pragma once
 
 #define USB_VENDOR_ID_LOGITECH			0x046d
-
-#endif
 

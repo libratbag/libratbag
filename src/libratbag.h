@@ -21,8 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBRATBAG_H
-#define LIBRATBAG_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -1818,4 +1817,3 @@ ratbag_led_unref(struct ratbag_led *led);
 #ifdef __cplusplus
 }
 #endif
-#endif /* LIBRATBAG_H */

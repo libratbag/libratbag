@@ -21,8 +21,7 @@
  * OF THIS SOFTWARE.
  */
 
-#ifndef LIBRATBAG_UTIL_H
-#define LIBRATBAG_UTIL_H
+#pragma once
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -217,4 +216,3 @@ ratbag_utf8_to_enc(char *buf, size_t buf_len, const char *to_enc,
 ssize_t
 ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
 		     char **out);
-#endif /* LIBRATBAG_UTIL_H */

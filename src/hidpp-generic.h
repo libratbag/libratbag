@@ -26,12 +26,11 @@
  *   https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28&usp=sharing
  */
 
+#pragma once
+
 #include <stdint.h>
 #include <stdarg.h>
 #include <stddef.h>
-
-#ifndef HIDPP_GENERIC_H
-#define HIDPP_GENERIC_H
 
 #define HIDPP_RECEIVER_IDX			0xFF
 #define HIDPP_WIRED_DEVICE_IDX			0x00
@@ -211,5 +210,3 @@ hidpp_get_unaligned_be_u32(uint8_t *buf)
 {
 	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 }
-
-#endif /* HIDPP_GENERIC_H */
