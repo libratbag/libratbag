@@ -2040,6 +2040,7 @@ main(int argc, char **argv)
 		static struct option opts[] = {
 			{ "verbose", optional_argument, 0, OPT_VERBOSE },
 			{ "help", no_argument, 0, OPT_HELP },
+			{ 0, 0, 0, 0 },
 		};
 
 		c = getopt_long(argc, argv, "+h", opts, &option_index);
