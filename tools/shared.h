@@ -21,6 +21,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#pragma once
+
 #include "config.h"
 
 #include <errno.h>

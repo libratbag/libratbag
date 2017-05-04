@@ -23,8 +23,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _LIBLUR_H_
-#define _LIBLUR_H_ 1
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -267,5 +266,4 @@ lur_device_get_user_data(const struct lur_device *dev);
 
 #ifdef __cplusplus
 }
-#endif
 #endif

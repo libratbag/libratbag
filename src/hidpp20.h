@@ -26,8 +26,7 @@
  *   https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28&usp=sharing
  */
 
-#ifndef HIDPP_20_H
-#define HIDPP_20_H
+#pragma once
 
 #include <stdint.h>
 
@@ -544,5 +543,3 @@ hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 #define HIDPP_PAGE_MOUSE_BUTTON_SPY			0x8110
 
 
-
-#endif /* HIDPP_20_H */

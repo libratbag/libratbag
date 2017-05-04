@@ -22,8 +22,7 @@
  */
 
 
-#ifndef LIBRATBAG_TEST_H
-#define LIBRATBAG_TEST_H
+#pragma once
 
 #include "libratbag.h"
 
@@ -84,4 +83,3 @@ struct ratbag_test_device {
 struct ratbag_device* ratbag_device_new_test_device(struct ratbag *ratbag,
 						    struct ratbag_test_device *test_device);
 
-#endif /* LIBRATBAG_TEST_H */
