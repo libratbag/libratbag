@@ -149,7 +149,6 @@ libratbag_version_h_config.set('LIBRATBAG_VERSION_MICRO', libratbag_version[2])
 libratbag_version_h_config.set('LIBRATBAG_VERSION', meson.project_version())
 
 libratbag_version_h = configure_file(
-	ratbag : 'src/libratbag-version.h.in',
 	output : 'libratbag-version.h',
 	configuration : libratbag_version_h_config,
 	install: false,
