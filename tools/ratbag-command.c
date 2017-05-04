@@ -2038,8 +2038,8 @@ main(int argc, char **argv)
 		int c;
 		int option_index = 0;
 		static struct option opts[] = {
-			{ "verbose", 2, 0, OPT_VERBOSE },
-			{ "help", 0, 0, OPT_HELP },
+			{ "verbose", optional_argument, 0, OPT_VERBOSE },
+			{ "help", no_argument, 0, OPT_HELP },
 		};
 
 		c = getopt_long(argc, argv, "+h", opts, &option_index);
