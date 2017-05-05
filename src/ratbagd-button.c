@@ -200,6 +200,7 @@ static int ratbagd_button_get_special(sd_bus *bus,
 	switch(special) {
 	default:
 		log_error("Unknown special type %d\n", special);
+		/* fallthrough */
 	case RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN:
 		type = "unknown";
 		break;
