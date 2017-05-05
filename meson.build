@@ -9,7 +9,6 @@ ratbagd_version = meson.project_version().split('.')
 # Compiler setup
 cc = meson.get_compiler('c')
 cflags = [
-	'-pipe',
 	'-Wno-inline',
 	'-Wundef',
 	'-Wformat=2',
@@ -40,17 +39,6 @@ cflags = [
 	'-Werror=overflow',
 	'-Wdate-time',
 	'-Wnested-externs',
-	'-ffast-math',
-	'-fno-common',
-	'-fdiagnostics-show-option',
-	'-fno-strict-aliasing',
-	'-fvisibility=hidden',
-	'-ffunction-sections',
-	'-fdata-sections',
-	'-fstack-protector',
-	'-fstack-protector-strong',
-	'-fPIE',
-	'--param=ssp-buffer-size=4'
 ]
 add_project_arguments(cflags, language: 'c')
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
