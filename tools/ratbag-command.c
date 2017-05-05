@@ -35,9 +35,11 @@
 #include <sys/stat.h>
 #include <linux/input.h>
 
+#include "libratbag-version.h"
 #include "shared.h"
 
 enum options {
+	OPT_VERSION,
 	OPT_VERBOSE,
 	OPT_HELP,
 };
@@ -185,6 +187,12 @@ usage(void)
 		program_invocation_short_name,
 		program_invocation_short_name,
 		program_invocation_short_name);
+}
+
+static void
+version(void)
+{
+	printf("%s\n", LIBRATBAG_VERSION);
 }
 
 static inline int
@@ -2039,6 +2047,7 @@ main(int argc, char **argv)
 		int option_index = 0;
 		static struct option opts[] = {
 			{ "verbose", optional_argument, 0, OPT_VERBOSE },
+			{ "version", no_argument, 0, OPT_VERSION },
 			{ "help", no_argument, 0, OPT_HELP },
 			{ 0, 0, 0, 0 },
 		};
@@ -2050,6 +2059,9 @@ main(int argc, char **argv)
 		case 'h':
 		case OPT_HELP:
 			usage();
+			goto out;
+		case OPT_VERSION:
+			version();
 			goto out;
 		case OPT_VERBOSE:
 			if (optarg && streq(optarg, "raw"))
