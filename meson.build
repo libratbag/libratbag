@@ -128,16 +128,16 @@ configure_file(input : 'ratbagd.service.in',
 
 dbusdir = get_option('dbus-root-dir')
 if dbusdir == ''
-	dbusdir = get_option('datadir') + '/dbus-1'
+	dbusdir = join_paths(get_option('datadir'), 'dbus-1')
 endif
 
 configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
 	       output : 'org.freedesktop.ratbag1.service',
 	       configuration : config_bindir,
-	       install_dir : dbusdir + '/system-services')
+	       install_dir : join_paths(dbusdir, 'system-services'))
 install_data('dbus/org.freedesktop.ratbag1.conf',
 	     configuration : config_bindir,
-	     install_dir : dbusdir + '/system.d')
+	     install_dir : join_paths(dbusdir, 'system.d'))
 
 #### python bindings ####
 
