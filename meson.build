@@ -119,20 +119,22 @@ if unitdir == ''
 endif
 
 config_bindir = configuration_data()
-config_bindir.set('bindir', get_option('bindir'))
+config_bindir.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
 
-install_data('ratbagd.service.in',
-	     configuration : config_bindir,
-	     install_dir : unitdir)
+configure_file(input : 'ratbagd.service.in',
+	       output : 'ratbagd.service',
+	       configuration : config_bindir,
+	       install_dir : unitdir)
 
 dbusdir = get_option('dbus-root-dir')
 if dbusdir == ''
 	dbusdir = get_option('datadir') + '/dbus-1'
 endif
 
-install_data('dbus/org.freedesktop.ratbag1.service.in',
-	     configuration : config_bindir,
-	     install_dir : dbusdir + '/system-services')
+configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
+	       output : 'org.freedesktop.ratbag1.service',
+	       configuration : config_bindir,
+	       install_dir : dbusdir + '/system-services')
 install_data('dbus/org.freedesktop.ratbag1.conf',
 	     configuration : config_bindir,
 	     install_dir : dbusdir + '/system.d')
