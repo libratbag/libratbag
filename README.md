@@ -72,7 +72,7 @@ The **org.freedesktop.ratbag1.Button** interface provides:
   - ButtonMapping -> uint of the current button mapping (if mapping to button)
   - SpecialMapping -> string of the current special mapping (if mapped to special)
   - KeyMapping -> array of uints, first entry is the keycode, other entries, if any, are modifiers (if mapped to key)
-  - ActionType -> string describing the action type of the button ("none", "button", "key", "special", "macro", "unknown"). This decides which *Mapping  property has a value
+  - ActionType -> string describing the action type of the button ("none", "button", "key", "special", "macro", "unknown"). This decides which \*Mapping  property has a value
   - ActionTypes -> array of strings, possible values for ActionType
 - Methods:
   - SetButtonMapping(uint) -> set the button mapping to the given button
@@ -92,19 +92,21 @@ ratbagd is intended to run as dbus-activated systemd service. This requires
 installation of the following files:
 
     sudo cp dbus/org.freedesktop.ratbag1.conf /etc/dbus-1/system.d/org.freedesktop.ratbag1.conf
-    sudo cp dbus/org.freedesktop.ratbag1.service /etc/dbus-1/systemd-services/org.freedesktop.ratbag1.conf
+    sudo cp dbus/org.freedesktop.ratbag1.service /etc/dbus-1/system-services/org.freedesktop.ratbag1.conf
     sudo cp ratbagd.service /etc/systemd/system/ratbagd.service
 
 The files are installed into the prefix by make install, see also the
-configure switches ---with-systemd-unit-dir and --with-dbus-root-dir.
+configure switches `--with-systemd-unit-dir` and `--with-dbus-root-dir`.
 Developers are encouraged to simply symlink to the files in the git
 repository.
 
 For the files to take effect, you should run
+
     sudo systemctl daemon-reload
     sudo systemctl reload dbus.service
 
 And finally, to enable the service:
+
     sudo systemctl enable ratbagd.service
 
 This places the required symlink into the systemd directory so that dbus
@@ -125,12 +127,12 @@ And to build or re-build after code-changes, run:
     ninja -C builddir
     sudo ninja -C builddir install
 
-Note: 'builddir' is the build output directory and can be changed to any
+Note: `builddir` is the build output directory and can be changed to any
 other directory name. To set configure-time options, use e.g.
 
     mesonconf builddir -Denable-documentation=no
 
-Run 'mesonconf builddir' to list the options.
+Run `mesonconf builddir` to list the options.
 
 License
 -------
