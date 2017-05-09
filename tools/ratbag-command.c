@@ -1560,7 +1560,7 @@ ratbag_cmd_led_set_color(const struct ratbag_cmd *cmd,
 	struct ratbag_led *led;
 	struct ratbag_color color;
 	int rc;
-	char red[2], green[2], blue[2];
+	char red[3], green[3], blue[3];
 	char *p;
 
 	if (argc < 1)
