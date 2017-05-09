@@ -1,5 +1,5 @@
 project('libratbag', 'c', 'cpp',
-	version : '0.7.0',
+	version : '0.8.0',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ])
 
@@ -14,10 +14,10 @@ libratbag_version = meson.project_version().split('.')
 #    been preserved, change to C+1:0:A+1
 # c) If the interface is the same as the previous version, change to C:R+1:A
 libratbag_so_c=4
-libratbag_so_r=1
+libratbag_so_r=2
 libratbag_so_a=0
 liblur_so_c=3
-liblur_so_r=1
+liblur_so_r=2
 liblur_so_a=0
 
 # convert to sonames
