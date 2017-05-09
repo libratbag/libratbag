@@ -95,10 +95,10 @@ installation of the following files:
     sudo cp dbus/org.freedesktop.ratbag1.service /etc/dbus-1/system-services/org.freedesktop.ratbag1.conf
     sudo cp ratbagd.service /etc/systemd/system/ratbagd.service
 
-The files are installed into the prefix by make install, see also the
-configure-time options `-Dsystemd-unit-dir` and `-Ddbus-root-dir`.
-Developers are encouraged to simply symlink to the files in the git
-repository.
+The files are installed into the prefix by `ninja install`, see also the
+configure-time options `-Dsystemd-unit-dir` and `-Ddbus-root-dir` (see
+"Compiling ratbagd" below). Developers are encouraged to simply symlink to the
+files in the git repository.
 
 For the files to take effect, you should run
 
