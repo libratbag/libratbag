@@ -288,39 +288,6 @@ process_module() {
 	return 1
     fi
 
-    # Change directory to be in the git build directory (could be out-of-source)
-    # More than one can be found when distcheck has run and failed
-    configNum=`find . -name config.status -type f | wc -l | sed 's:^ *::'`
-    if [ $? -ne 0 ]; then
-	echo "Error: failed to locate config.status."
-	echo "Has the module been configured?"
-	return 1
-    fi
-    if [ x"$configNum" = x0 ]; then
-	echo "Error: failed to locate config.status, has the module been configured?"
-	return 1
-    fi
-    if [ x"$configNum" != x1 ]; then
-	echo "Error: more than one config.status file was found,"
-	echo "       clean-up previously failed attempts at distcheck"
-	return 1
-    fi
-    status_file=`find . -name config.status -type f`
-    if [ $? -ne 0 ]; then
-	echo "Error: failed to locate config.status."
-	echo "Has the module been configured?"
-	return 1
-    fi
-    build_dir=`dirname $status_file`
-    cd $build_dir
-    if [ $? -ne 0 ]; then
-	echo "Error: failed to cd to $MODULE_RPATH/$build_dir."
-	cd $top_src
-	return 1
-    fi
-
-    # ----- Now in the git module *build* directory ----- #
-
     # Check for uncommitted/queued changes.
     check_local_changes
     if [ $? -ne 0 ]; then
