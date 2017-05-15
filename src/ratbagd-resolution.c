@@ -86,6 +86,14 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 		resolution->xres = xres;
 		resolution->yres = yres;
 	}
+
+	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
+				  "/org/freedesktop/ratbag1",
+				  "/org.freedesktop.ratbag1.Resolution",
+				  "ActiveResolutionChanged",
+				  "u",
+				  resolution->index);
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -133,6 +141,7 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_SIGNAL("ActiveResolutionChanged", "u", 0),
 	SD_BUS_VTABLE_END,
 };
 
