@@ -53,6 +53,8 @@ The **org.freedesktop.ratbag1.Profile** interface provides:
 - Methods:
   - SetActive(void) -> set this profile to be the active profile
   - GetResolutionByIndex(uint) -> returns the object path for the given index
+- Signals:
+  - ActiveProfileChanged -> active profile changed, carries index of the currently active profile
 
 The **org.freedesktop.ratbag1.Resolution** interface provides:
 - Properties:

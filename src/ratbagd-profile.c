@@ -245,6 +245,13 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 	if (r < 0)
 		return r;
 
+	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
+				  "/org/freedesktop/ratbag1",
+				  "/org.freedesktop.ratbag1.Profile",
+				  "ActiveProfileChanged",
+				  "u",
+				  profile->index);
+
         return sd_bus_reply_method_return(m, "u",
                                           ratbag_profile_set_active(profile->lib_profile));
 }
@@ -279,6 +286,7 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetResolutionByIndex", "u", "o", ratbagd_profile_get_resolution_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_SIGNAL("ActiveProfileChanged", "u", 0),
 	SD_BUS_VTABLE_END,
 };
 
