@@ -54,7 +54,7 @@ The **org.freedesktop.ratbag1.Profile** interface provides:
   - SetActive(void) -> set this profile to be the active profile
   - GetResolutionByIndex(uint) -> returns the object path for the given index
 - Signals:
-  - ActiveProfileChanged -> active profile changed, carries index of the currently active profile
+  - ActiveProfileChanged -> active profile changed, carries index of the new active profile
 
 The **org.freedesktop.ratbag1.Resolution** interface provides:
 - Properties:
@@ -67,7 +67,7 @@ The **org.freedesktop.ratbag1.Resolution** interface provides:
   - SetResolution(uint, uint) -> x/y resolution to assign
   - SetReportRate(uint) -> uint for the report rate to assign
 - Signals:
-  - ActiveResolutionChanged -> active resolution changed, carries index of the currently active resolution
+  - ActiveResolutionChanged -> active resolution changed, carries index of the new active resolution
 
 The **org.freedesktop.ratbag1.Button** interface provides:
 - Properties:
