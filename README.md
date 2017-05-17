@@ -66,8 +66,10 @@ The **org.freedesktop.ratbag1.Resolution** interface provides:
 - Methods:
   - SetResolution(uint, uint) -> x/y resolution to assign
   - SetReportRate(uint) -> uint for the report rate to assign
+  - SetDefault -> set this resolution to be the default
 - Signals:
   - ActiveResolutionChanged -> active resolution changed, carries index of the new active resolution
+  - DefaultResolutionChanged -> default resolution changed, carries index of the new default resolution
 
 The **org.freedesktop.ratbag1.Button** interface provides:
 - Properties:

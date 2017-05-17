@@ -97,6 +97,25 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
+static int ratbagd_resolution_set_default(sd_bus_message *m,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	int r;
+
+	r = ratbag_resolution_set_default(resolution->lib_resolution);
+
+	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
+				  "/org/freedesktop/ratbag1",
+				  "/org.freedesktop.ratbag1.Resolution",
+				  "DefaultResolutionChanged",
+				  "u",
+				  resolution->index);
+
+	return sd_bus_reply_method_return(m, "u", r);
+}
+
 static int
 ratbagd_resolution_get_capabilities(sd_bus *bus,
 				    const char *path,
@@ -141,7 +160,9 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_SIGNAL("ActiveResolutionChanged", "u", 0),
+	SD_BUS_SIGNAL("DefaultResolutionChanged", "u", 0),
 	SD_BUS_VTABLE_END,
 };
 
