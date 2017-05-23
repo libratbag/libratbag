@@ -149,8 +149,8 @@ struct hidpp20_8070_location_mapping {
 
 static const struct hidpp20_8070_location_mapping hidpp20_8070_location_mapping[] = {
 	LED_LOC_MAPPING(0, "None", RATBAG_LED_TYPE_UNKNOWN),
-	LED_LOC_MAPPING(256, "Logo LED", RATBAG_LED_TYPE_LOGO),
-	LED_LOC_MAPPING(512, "Side LED", RATBAG_LED_TYPE_SIDE),
+	LED_LOC_MAPPING(1, "Logo LED", RATBAG_LED_TYPE_LOGO),
+	LED_LOC_MAPPING(2, "Side LED", RATBAG_LED_TYPE_SIDE),
 };
 
 const struct ratbag_button_action *

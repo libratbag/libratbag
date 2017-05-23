@@ -555,7 +555,7 @@ hidpp20_color_led_effects_get_zone_info(struct hidpp20_device *device,
 		return rc;
 
 	msg_info = (struct hidpp20_color_led_zone_info *)msg.msg.parameters;
-	info->location = msg_info->location;
+	info->location = hidpp_be_u16_to_cpu(msg_info->location);
 	info->num_effects = msg_info->num_effects;
 	info->persistency_caps = msg_info->persistency_caps;
 
