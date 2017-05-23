@@ -157,7 +157,7 @@ usage(void)
 	       "  led N {COMMAND}\n"
 	       "                      get                                print the LED properties\n"
 	       "                      set {COMMAND}                      sets LED properties\n"
-	       "                           mode [on|off|cycle|breath]    sets LED mode\n"
+	       "                           mode [on|off|cycle|breathing] sets LED mode\n"
 	       "                           color COLOR                   sets LED's color in hex format\n"
 	       "                           rate N                        sets LED's effect rate in Hz\n"
 	       "                           brightness N                  sets LED's effect brightness\n"
