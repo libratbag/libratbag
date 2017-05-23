@@ -100,6 +100,11 @@ mouse:usb:v046dpc246:name:*:
  RATBAG_DRIVER=logitech_g300
  RATBAG_SVG=logitech-g300.svg
 
+# G403 over USB
+mouse:usb:v046dpc082:name:*:
+ RATBAG_DRIVER=hidpp20
+ RATBAG_SVG=logitech-g403.svg
+
 # G500
 mouse:usb:v046dpc068:name:*:
  RATBAG_DRIVER=hidpp10
@@ -184,7 +189,7 @@ mouse:usb:v046dpc537:name:*:
 mouse:usb:v046dpc081:name:*:
  RATBAG_SVG=logitech-g900.svg
 
-# G900 over wireless USB
+# G900, G403 over wireless USB
 mouse:usb:v046dpc539:name:*:
  RATBAG_DRIVER=hidpp20
  RATBAG_SVG=logitech-g900.svg
