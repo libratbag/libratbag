@@ -273,7 +273,7 @@ fill_options(struct ratbag *ratbag,
 	struct ratbag_button *button = options->button;
 	int rc;
 
-	if ((flags & (FLAG_NEED_DEVICE|FLAG_NEED_PROFILE|FLAG_NEED_RESOLUTION)) &&
+	if ((flags & (FLAG_NEED_DEVICE|FLAG_NEED_PROFILE|FLAG_NEED_RESOLUTION|FLAG_NEED_LED)) &&
 	    device == NULL) {
 		rc = ratbag_cmd_device_from_arg(ratbag, argc, argv,
 						&device);
@@ -282,7 +282,7 @@ fill_options(struct ratbag *ratbag,
 		options->device = device;
 	}
 
-	if ((flags & (FLAG_NEED_PROFILE|FLAG_NEED_RESOLUTION)) &&
+	if ((flags & (FLAG_NEED_PROFILE|FLAG_NEED_RESOLUTION|FLAG_NEED_LED)) &&
 	     profile == NULL) {
 		profile = ratbag_cmd_get_active_profile(device);
 		if (!profile)
@@ -2019,6 +2019,7 @@ static const struct ratbag_cmd top_level_commands = {
 		&cmd_profile,
 		&cmd_resolution_dpi,
 		&cmd_resolution_rate,
+		&cmd_led,
 		NULL,
 	},
 };
