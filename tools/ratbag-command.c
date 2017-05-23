@@ -337,6 +337,55 @@ run_subcommand(const char *command,
 }
 
 static int
+ratbag_printf_led(struct ratbag_led *led, const char *prefix_format, ...)
+{
+	va_list arg;
+	enum ratbag_led_mode mode;
+	struct ratbag_color color;
+	int hz;
+	int brightness;
+	enum ratbag_led_type type;
+
+	type = ratbag_led_get_type(led);
+	mode = ratbag_led_get_mode(led);
+	color = ratbag_led_get_color(led);
+	hz = ratbag_led_get_effect_rate(led);
+	brightness = ratbag_led_get_brightness(led);
+
+	va_start(arg, prefix_format);
+	vprintf(prefix_format, arg);
+	va_end(arg);
+	switch (mode) {
+	case RATBAG_LED_OFF:
+		printf("type: %s, mode: %s\n",
+		       led_type_to_str(type),
+		       led_mode_to_str(mode));
+		break;
+	case RATBAG_LED_ON:
+		printf("type: %s, mode: %s, color: %02x%02x%02x\n",
+		       led_type_to_str(type),
+		       led_mode_to_str(mode),
+		       color.red, color.green, color.blue);
+		break;
+	case RATBAG_LED_CYCLE:
+		printf("type: %s, mode: %s, rate: %d, brightness: %d\n",
+		       led_type_to_str(type),
+		       led_mode_to_str(mode),
+		       hz, brightness);
+		break;
+	case RATBAG_LED_BREATHING:
+		printf("type: %s, mode: %s, color: %02x%02x%02x, rate: %d, brightness: %d\n",
+		       led_type_to_str(type),
+		       led_mode_to_str(mode),
+		       color.red, color.green, color.blue,
+		       hz, brightness);
+		break;
+	}
+
+	return SUCCESS;
+}
+
+static int
 ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		struct ratbag *ratbag,
 		struct ratbag_cmd_options *options,
@@ -349,7 +398,6 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 	char *action;
 	int num_profiles, num_buttons, num_leds;
 	int b, l;
-	struct ratbag_color color;
 
 	device = options->device;
 
@@ -430,16 +478,7 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 
 		for (l = 0; l < num_leds; l++) {
 			led = ratbag_profile_get_led(profile, l);
-			color = ratbag_led_get_color(led);
-
-			printf("    LED: %d type %s mode %s color %02x%02x%02x rate %d brightness: %d\n",
-			       l,
-			       led_type_to_str(ratbag_led_get_type(led)),
-			       led_mode_to_str(ratbag_led_get_mode(led)),
-			       color.red, color.green, color.blue,
-			       ratbag_led_get_effect_rate(led),
-			       ratbag_led_get_brightness(led));
-
+			ratbag_printf_led(led, "    LED: %d ", l);
 			led = ratbag_led_unref(led);
 		}
 
@@ -1686,25 +1725,9 @@ ratbag_cmd_led_get(const struct ratbag_cmd *cmd,
 		   struct ratbag_cmd_options *options,
 		   int argc, char **argv)
 {
-	struct ratbag_led *led;
-	enum ratbag_led_mode mode;
-	struct ratbag_color color;
-	int hz;
-	int brightness;
-	enum ratbag_led_type type;
+	struct ratbag_led *led = options->led;
 
-	led = options->led;
-
-	type = ratbag_led_get_type(led);
-	mode = ratbag_led_get_mode(led);
-	color = ratbag_led_get_color(led);
-	hz = ratbag_led_get_effect_rate(led);
-	brightness = ratbag_led_get_brightness(led);
-	printf("type: %s, mode: %s, color: %02x%02x%02x, rate: %d, brightness: %d\n",
-	       led_type_to_str(type),
-	       led_mode_to_str(mode),
-	       color.red, color.green, color.blue,
-	       hz, brightness);
+	ratbag_printf_led(led, "");
 
 	return SUCCESS;
 }
