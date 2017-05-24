@@ -1899,7 +1899,9 @@ hidpp20_onboard_profile_read_led(struct hidpp20_led *led,
 	uint16_t rate = 0;
 	uint8_t brightness = 0;
 
-	switch (internal_led.mode) {
+	led->mode = (enum hidpp20_led_mode)internal_led.mode;
+
+	switch (led->mode) {
 	case HIDPP20_LED_CYCLE:
 		rate = internal_led.effect.cycle.rate;
 		brightness = internal_led.effect.cycle.brightness;
@@ -1908,9 +1910,12 @@ hidpp20_onboard_profile_read_led(struct hidpp20_led *led,
 		rate = internal_led.effect.breath.rate;
 		brightness = internal_led.effect.breath.brightness;
 		break;
+	case HIDPP20_LED_ON:
+		break;
+	case HIDPP20_LED_OFF:
+		break;
 	}
 
-	led->mode = (enum hidpp20_led_mode)internal_led.mode;
 	led->color = internal_led.color;
 	led->rate = rate;
 	led->brightness = brightness;
