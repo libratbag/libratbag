@@ -1525,10 +1525,10 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 			profile->dpi_modes[i].yres);
 		hidpp_log_raw(&dev->base,
 			"LED status: 1:%s 2:%s 3:%s 4:%s\n",
-			(profile->dpi_modes[i].led[0] & 0x2) ? "on" : "off",
-			(profile->dpi_modes[i].led[1] & 0x2) ? "on" : "off",
-			(profile->dpi_modes[i].led[2] & 0x2) ? "on" : "off",
-			(profile->dpi_modes[i].led[3] & 0x2) ? "on" : "off");
+			profile->dpi_modes[i].led[0] ? "on" : "off",
+			profile->dpi_modes[i].led[1] ? "on" : "off",
+			profile->dpi_modes[i].led[2] ? "on" : "off",
+			profile->dpi_modes[i].led[3] ? "on" : "off");
 	}
 	hidpp_log_raw(&dev->base, "Angle correction: %d\n", profile->angle_correction);
 	hidpp_log_raw(&dev->base, "Default DPI mode: %d\n", profile->default_dpi_mode);
