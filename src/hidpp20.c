@@ -1896,28 +1896,33 @@ static void
 hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
 				  struct hidpp20_internal_led internal_led)
 {
-	uint16_t rate = 0;
+	uint16_t period = 0;
 	uint8_t brightness = 0;
 
 	led->mode = (enum hidpp20_led_mode)internal_led.mode;
 
 	switch (led->mode) {
 	case HIDPP20_LED_CYCLE:
-		rate = hidpp_be_u16_to_cpu(internal_led.effect.cycle.rate);
-		brightness = internal_led.effect.cycle.brightness;
+		period = hidpp_be_u16_to_cpu(internal_led.effect.cycle.period_or_speed);
+		brightness = internal_led.effect.cycle.intensity;
+		if (brightness == 0)
+			brightness = 100;
 		break;
 	case HIDPP20_LED_BREATHING:
-		rate = hidpp_be_u16_to_cpu(internal_led.effect.breath.rate);
-		brightness = internal_led.effect.breath.brightness;
+		period = hidpp_be_u16_to_cpu(internal_led.effect.breath.period_or_speed);
+		brightness = internal_led.effect.breath.intensity;
+		if (brightness == 0)
+			brightness = 100;
+		led->color = internal_led.effect.breath.color;
 		break;
 	case HIDPP20_LED_ON:
+		led->color = internal_led.effect.fixed.color;
 		break;
 	case HIDPP20_LED_OFF:
 		break;
 	}
 
-	led->color = internal_led.color;
-	led->rate = rate;
+	led->period = period;
 	led->brightness = brightness;
 }
 
@@ -1973,24 +1978,35 @@ static void
 hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 				   struct hidpp20_led *led)
 {
-	uint16_t rate = led->rate;
+	uint16_t period = led->period;
 	uint8_t brightness = led->brightness;
 
 	internal_led->mode = (uint8_t)led->mode;
-	internal_led->color.red = led->color.red;
-	internal_led->color.blue = led->color.blue;
-	internal_led->color.green = led->color.green;
 
 	switch (led->mode) {
 	case HIDPP20_LED_CYCLE:
-		internal_led->effect.cycle.rate = hidpp_cpu_to_be_u16(rate);
-		internal_led->effect.cycle.brightness = brightness;
+		internal_led->effect.cycle.period_or_speed = hidpp_cpu_to_be_u16(period);
+		if (brightness < 100)
+			internal_led->effect.cycle.intensity = brightness;
+		else
+			internal_led->effect.cycle.intensity = 0;
 		break;
 	case HIDPP20_LED_BREATHING:
-		internal_led->effect.breath.rate = hidpp_cpu_to_be_u16(rate);
-		internal_led->effect.breath.brightness = brightness;
+		internal_led->effect.breath.color.red = led->color.red;
+		internal_led->effect.breath.color.blue = led->color.blue;
+		internal_led->effect.breath.color.green = led->color.green;
+		internal_led->effect.breath.period_or_speed = hidpp_cpu_to_be_u16(period);
+		if (brightness < 100)
+			internal_led->effect.breath.intensity = brightness;
+		else
+			internal_led->effect.breath.intensity = 0;
 		break;
 	case HIDPP20_LED_ON:
+		internal_led->effect.fixed.color.red = led->color.red;
+		internal_led->effect.fixed.color.blue = led->color.blue;
+		internal_led->effect.fixed.color.green = led->color.green;
+		internal_led->effect.fixed.effect = 0;
+		break;
 	case HIDPP20_LED_OFF:
 		break;
 	}

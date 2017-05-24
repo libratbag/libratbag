@@ -278,7 +278,7 @@ hidpp20drv_read_led(struct ratbag_led *led)
 	led->color.red = h_led->color.red;
 	led->color.green = h_led->color.green;
 	led->color.blue = h_led->color.blue;
-	led->hz = h_led->rate;
+	led->hz = h_led->period;  /* FIXME: should be ceil(1000.0 / h_led->period), but that would be very small */
 	led->brightness = h_led->brightness * 255 / 100;
 }
 
@@ -421,7 +421,7 @@ hidpp20drv_update_led(struct ratbag_led *led)
 	h_led->color.red = led->color.red;
 	h_led->color.green = led->color.green;
 	h_led->color.blue = led->color.blue;
-	h_led->rate = led->hz;
+	h_led->period = led->hz; /* FIXME: should be 1000 / led->hz, but that would be very small */
 	h_led->brightness = led->brightness * 100 / 255;
 
 	return RATBAG_SUCCESS;
