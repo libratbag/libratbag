@@ -253,7 +253,7 @@ hidpp20drv_read_led(struct ratbag_led *led)
 	struct hidpp20_color_led_zone_info *led_info;
 	struct hidpp20_led *h_led;
 
-	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+	if (!(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070))
 		return;
 
 	led_info = &drv_data->led_infos[led->index];
