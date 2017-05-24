@@ -318,8 +318,8 @@ hidpp20drv_write_button_1b04(struct ratbag_button *button,
 }
 
 static int
-hidpp20drv_write_button_8100(struct ratbag_button *button,
-			     const struct ratbag_button_action *action)
+hidpp20drv_update_button_8100(struct ratbag_button *button,
+			      const struct ratbag_button_action *action)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -370,14 +370,14 @@ hidpp20drv_write_button_8100(struct ratbag_button *button,
 }
 
 static int
-hidpp20drv_write_button(struct ratbag_button *button,
+hidpp20drv_update_button(struct ratbag_button *button,
 			const struct ratbag_button_action *action)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
-		return hidpp20drv_write_button_8100(button, action);
+		return hidpp20drv_update_button_8100(button, action);
 
 	if (drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04)
 		return hidpp20drv_write_button_1b04(button, action);
@@ -386,10 +386,7 @@ hidpp20drv_write_button(struct ratbag_button *button,
 }
 
 static int
-hidpp20drv_write_led(struct ratbag_led *led,
-		     enum ratbag_led_mode mode,
-		     struct ratbag_color color, unsigned int hz,
-		     unsigned int brightness)
+hidpp20drv_update_led(struct ratbag_led *led)
 {
 	struct ratbag_profile *profile = led->profile;
 	struct ratbag_device *device = profile->device;
@@ -407,7 +404,7 @@ hidpp20drv_write_led(struct ratbag_led *led,
 	if (!h_led)
 		return -EINVAL;
 
-	switch (mode) {
+	switch (led->mode) {
 	case RATBAG_LED_ON:
 		h_led->mode = HIDPP20_LED_ON;
 		break;
@@ -421,14 +418,13 @@ hidpp20drv_write_led(struct ratbag_led *led,
 		h_led->mode = HIDPP20_LED_OFF;
 		break;
 	}
-	h_led->color.red = color.red;
-	h_led->color.green = color.green;
-	h_led->color.blue = color.blue;
-	h_led->rate = hz;
-	h_led->brightness = brightness / 255.0 * 100;
+	h_led->color.red = led->color.red;
+	h_led->color.green = led->color.green;
+	h_led->color.blue = led->color.blue;
+	h_led->rate = led->hz;
+	h_led->brightness = led->brightness / 255.0 * 100;
 
-	return hidpp20_onboard_profiles_write(drv_data->dev, profile->index,
-					      drv_data->profiles);
+	return RATBAG_SUCCESS;
 }
 
 static int
@@ -548,8 +544,8 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 }
 
 static int
-hidpp20drv_write_resolution_dpi_8100(struct ratbag_resolution *resolution,
-				     int dpi_x, int dpi_y)
+hidpp20drv_update_resolution_dpi_8100(struct ratbag_resolution *resolution,
+				      int dpi_x, int dpi_y)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
@@ -564,12 +560,12 @@ hidpp20drv_write_resolution_dpi_8100(struct ratbag_resolution *resolution,
 	h_profile = &drv_data->profiles->profiles[profile->index];
 	h_profile->dpi[index] = dpi;
 
-	return hidpp20_onboard_profiles_write(drv_data->dev, profile->index, drv_data->profiles);
+	return RATBAG_SUCCESS;
 }
 
 static int
-hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution,
-				int dpi_x, int dpi_y)
+hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
+				 int dpi_x, int dpi_y)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
@@ -579,7 +575,7 @@ hidpp20drv_write_resolution_dpi(struct ratbag_resolution *resolution,
 	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
-		return hidpp20drv_write_resolution_dpi_8100(resolution, dpi_x, dpi_y);
+		return hidpp20drv_update_resolution_dpi_8100(resolution, dpi_x, dpi_y);
 
 	if (!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201))
 		return -ENOTSUP;
@@ -749,12 +745,6 @@ hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 }
 
 static int
-hidpp20drv_write_profile(struct ratbag_profile *profile)
-{
-	return 0;
-}
-
-static int
 hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -863,6 +853,60 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		log_raw(device->ratbag, "unknown feature 0x%04x\n", feature);
 	}
 	return 0;
+}
+
+static int
+hidpp20_commit(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag_profile *profile;
+	struct ratbag_button *button;
+	struct ratbag_led *led;
+	struct ratbag_resolution *resolution;
+	int rc;
+	unsigned int i;
+
+	list_for_each(profile, &device->profiles, link) {
+		if (!profile->dirty)
+			continue;
+
+		for (i = 0; i < profile->resolution.num_modes; i++) {
+			resolution = &profile->resolution.modes[i];
+
+			rc = hidpp20drv_update_resolution_dpi(resolution,
+							      resolution->dpi_x,
+							      resolution->dpi_y);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+
+		list_for_each(button, &profile->buttons, link) {
+			struct ratbag_button_action action = button->action;
+
+			if (!button->dirty)
+				continue;
+
+			rc = hidpp20drv_update_button(button, &action);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+
+		list_for_each(led, &profile->leds, link) {
+			if (!led->dirty)
+				continue;
+
+			rc = hidpp20drv_update_led(led);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+
+		if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+			hidpp20_onboard_profiles_write(drv_data->dev,
+						       profile->index,
+						       drv_data->profiles);
+	}
+
+	return RATBAG_SUCCESS;
 }
 
 static int
@@ -1006,12 +1050,9 @@ struct ratbag_driver hidpp20_driver = {
 	.id = "hidpp20",
 	.probe = hidpp20drv_probe,
 	.remove = hidpp20drv_remove,
+	.commit = hidpp20_commit,
 	.read_profile = hidpp20drv_read_profile,
-	.write_profile = hidpp20drv_write_profile,
 	.set_active_profile = hidpp20drv_set_current_profile,
 	.read_button = hidpp20drv_read_button,
 	.read_led = hidpp20drv_read_led,
-	.write_button = hidpp20drv_write_button,
-	.write_resolution_dpi = hidpp20drv_write_resolution_dpi,
-	.write_led = hidpp20drv_write_led,
 };
