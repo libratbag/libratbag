@@ -1981,6 +1981,8 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 	uint16_t period = led->period;
 	uint8_t brightness = led->brightness;
 
+	memset(internal_led, 0, sizeof(*internal_led));
+
 	internal_led->mode = (uint8_t)led->mode;
 
 	switch (led->mode) {
