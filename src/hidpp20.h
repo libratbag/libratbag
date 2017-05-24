@@ -116,13 +116,6 @@ enum hidpp20_battery_status {
 	BATTERY_STATUS_INVALID,
 };
 
-enum hidpp20_led_mode {
-	HIDPP20_LED_OFF = 0x00,
-	HIDPP20_LED_ON = 0x01,
-	HIDPP20_LED_CYCLE = 0x03,
-	HIDPP20_LED_BREATHING = 0x0a,
-};
-
 /**
  * Retrieves the battery level status.
  *
@@ -389,26 +382,46 @@ enum hidpp20_led_type {
 	HIDPP20_LED_SIDE,
 };
 
+enum hidpp20_led_mode {
+	HIDPP20_LED_OFF = 0x00,
+	HIDPP20_LED_ON = 0x01,
+	HIDPP20_LED_CYCLE = 0x03,
+	HIDPP20_LED_BREATHING = 0x0a,
+};
+
+enum hidpp20_led_waveform {
+	HIDPP20_LED_WF_DEFAULT = 0x00,
+	HIDPP20_LED_WF_SINE = 0x01,
+	HIDPP20_LED_WF_SQUARE = 0x02,
+	HIDPP20_LED_WF_TRIANGLE = 0x03,
+	HIDPP20_LED_WF_SAWTOOTH = 0x04,
+	HIDPP20_LED_WF_SHARKFIN = 0x05,
+	HIDPP20_LED_WF_EXPONENTIAL = 0x06,
+};
+
 struct hidpp20_internal_led {
-	uint8_t mode; /* 00 - off; 01 - on; 03 - cycle; 0a - breath */
-	struct hidpp20_color color;
+	uint8_t mode; /* enum hidpp20_led_mode */
 	union {
+		struct hidpp20_led_fixed {
+			struct hidpp20_color color;
+			uint8_t effect;
+		} __attribute__((packed)) fixed;
 		struct hidpp20_led_cycle {
-			uint16_t pad_1;
-			uint16_t rate;  /* 16000 - 20000Hz */
-			uint8_t brightness; /* 0 - 100 percent */
-			uint16_t pad_2;
+			uint8_t unused[5];
+			uint16_t period_or_speed; /* period in ms, speed is device dependent */
+			uint8_t intensity; /* 1 - 100 percent, 0 means 100 */
 		} __attribute__((packed)) cycle;
 		struct hidpp20_led_breath {
-			uint16_t rate;
-			uint8_t pad_1;
-			uint8_t brightness;
-			uint8_t pad_2;
-			uint16_t pad_3;
+			struct hidpp20_color color;
+			uint16_t period_or_speed; /* period in ms, speed is device dependent */
+			uint8_t waveform; /* enum hidpp20_led_waveform */
+			uint8_t intensity; /* 1 - 100 percent, 0 means 100 */
 		} __attribute__((packed)) breath;
+		uint8_t padding[10];
 	} __attribute__((packed)) effect;
 };
-_Static_assert(sizeof(struct hidpp20_led_cycle) == 7, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_fixed) == 4, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_cycle) == 8, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_led_breath) == 7, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_internal_led) == 11, "Invalid size");
 
@@ -417,7 +430,7 @@ typedef uint8_t percent_t;
 struct hidpp20_led {
 	enum hidpp20_led_mode mode;
 	struct hidpp20_color color;
-	uint16_t rate;
+	uint16_t period;
 	percent_t brightness;
 };
 
