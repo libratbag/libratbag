@@ -1903,11 +1903,11 @@ hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
 
 	switch (led->mode) {
 	case HIDPP20_LED_CYCLE:
-		rate = internal_led.effect.cycle.rate;
+		rate = hidpp_be_u16_to_cpu(internal_led.effect.cycle.rate);
 		brightness = internal_led.effect.cycle.brightness;
 		break;
 	case HIDPP20_LED_BREATHING:
-		rate = internal_led.effect.breath.rate;
+		rate = hidpp_be_u16_to_cpu(internal_led.effect.breath.rate);
 		brightness = internal_led.effect.breath.brightness;
 		break;
 	case HIDPP20_LED_ON:
@@ -1983,11 +1983,11 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 
 	switch (led->mode) {
 	case HIDPP20_LED_CYCLE:
-		internal_led->effect.cycle.rate = rate;
+		internal_led->effect.cycle.rate = hidpp_cpu_to_be_u16(rate);
 		internal_led->effect.cycle.brightness = brightness;
 		break;
 	case HIDPP20_LED_BREATHING:
-		internal_led->effect.breath.rate = rate;
+		internal_led->effect.breath.rate = hidpp_cpu_to_be_u16(rate);
 		internal_led->effect.breath.brightness = brightness;
 		break;
 	case HIDPP20_LED_ON:
