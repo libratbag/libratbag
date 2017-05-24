@@ -1893,8 +1893,8 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 }
 
 static void
-hidpp20_onboard_profile_read_led(struct hidpp20_led *led,
-			struct hidpp20_internal_led internal_led)
+hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
+				  struct hidpp20_internal_led internal_led)
 {
 	uint16_t rate = 0;
 	uint8_t brightness = 0;
@@ -1950,7 +1950,7 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 	}
 
 	for (i = 0; i < profiles_list->num_leds; i++)
-		hidpp20_onboard_profile_read_led(&profile->leds[i], pdata.profile.leds[i]);
+		hidpp20_onboard_profiles_read_led(&profile->leds[i], pdata.profile.leds[i]);
 
 	hidpp20_buttons_to_cpu(device, profile, pdata.profile.buttons, profiles_list->num_buttons);
 
@@ -1970,8 +1970,8 @@ int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
 }
 
 static void
-hidpp20_onboard_write_profile_led(struct hidpp20_internal_led *internal_led,
-				  struct hidpp20_led *led)
+hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
+				   struct hidpp20_led *led)
 {
 	uint16_t rate = led->rate;
 	uint8_t brightness = led->brightness;
@@ -2029,7 +2029,7 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	}
 
 	for (i = 0; i < profiles_list->num_leds; i++)
-		hidpp20_onboard_write_profile_led(&pdata.profile.leds[i], &profile->leds[i]);
+		hidpp20_onboard_profiles_write_led(&pdata.profile.leds[i], &profile->leds[i]);
 
 	hidpp20_buttons_from_cpu(profile, pdata.profile.buttons, profiles_list->num_buttons);
 
