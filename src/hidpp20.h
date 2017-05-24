@@ -533,7 +533,7 @@ int
 hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint8_t read_rom,
 				     uint8_t page,
-				     uint8_t section,
+				     uint16_t section,
 				     uint8_t result[16]);
 
 /* -------------------------------------------------------------------------- */

@@ -1064,7 +1064,7 @@ int
 hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 				     uint8_t read_rom,
 				     uint8_t page,
-				     uint8_t section,
+				     uint16_t section,
 				     uint8_t result[16])
 {
 	uint8_t feature_index;
@@ -1075,12 +1075,12 @@ hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_READ,
 		.msg.parameters[0] = read_rom,
 		.msg.parameters[1] = page,
-		.msg.parameters[2] = 0,
-		.msg.parameters[3] = section,
 	};
 
 	if (read_rom > 1)
 		return -EINVAL;
+
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[2], section);
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ONBOARD_PROFILES);
@@ -1101,8 +1101,9 @@ hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
 
 static int
 hidpp20_onboard_profiles_write_start(struct hidpp20_device *device,
-				     uint8_t page,
-				     uint8_t section)
+				     uint16_t page,
+				     uint16_t section,
+				     uint16_t size)
 {
 	uint8_t feature_index;
 	int rc;
@@ -1110,12 +1111,11 @@ hidpp20_onboard_profiles_write_start(struct hidpp20_device *device,
 		.msg.report_id = REPORT_ID_LONG,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_ADDR_WRITE,
-		.msg.parameters[0] = 0x00,
-		.msg.parameters[1] = page,
-		.msg.parameters[2] = 0,
-		.msg.parameters[3] = section,
-		.msg.parameters[4] = 0x01,
 	};
+
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[0], page);
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[2], section);
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[4], size);
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ONBOARD_PROFILES);
@@ -1158,8 +1158,8 @@ hidpp20_onboard_profiles_write_end(struct hidpp20_device *device)
 
 static int
 hidpp20_onboard_profiles_write_data(struct hidpp20_device *device,
-				    uint8_t page,
-				    uint8_t section,
+				    uint16_t page,
+				    uint16_t section,
 				    uint8_t *data,
 				    size_t len)
 {
@@ -1179,7 +1179,10 @@ hidpp20_onboard_profiles_write_data(struct hidpp20_device *device,
 
 	msg.msg.sub_id = feature_index;
 
-	rc = hidpp20_onboard_profiles_write_start(device, page, section);
+	rc = hidpp20_onboard_profiles_write_start(device,
+						  page,
+						  section,
+						  HIDPP20_PAGE_SIZE);
 	if (rc)
 		return rc;
 
@@ -1205,7 +1208,7 @@ hidpp20_onboard_profiles_write_data(struct hidpp20_device *device,
 
 static int
 hidpp20_onboard_profiles_write_page(struct hidpp20_device *device,
-				    uint8_t page,
+				    uint16_t page,
 				    uint8_t data[HIDPP20_PAGE_SIZE])
 {
 	uint16_t crc;
@@ -1756,7 +1759,7 @@ hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
 			   hidpp20_onboard_profiles_compute_dict_size(device,
 								      profiles_list));
 
-	return hidpp20_onboard_profiles_write_page(device, 0x00, data);
+	return hidpp20_onboard_profiles_write_page(device, 0x0000, data);
 }
 
 union hidpp20_internal_profile {
