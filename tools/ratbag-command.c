@@ -155,12 +155,12 @@ usage(void)
 	       "  active profile if none is given.\n"
 	       "\n"
 	       "  led N {COMMAND}\n"
-	       "                      get                                print the LED properties\n"
-	       "                      set {COMMAND}                      sets LED properties\n"
-	       "                           mode [on|off|cycle|breathing] sets LED mode\n"
-	       "                           color COLOR                   sets LED's color in hex format\n"
-	       "                           rate N                        sets LED's effect rate in Hz\n"
-	       "                           brightness N                  sets LED's effect brightness\n"
+	       "        get                                print the LED properties\n"
+	       "        set {COMMAND} ...                  sets LED properties (one or more)\n"
+	       "             mode [on|off|cycle|breathing] sets LED mode\n"
+	       "             color COLOR                   sets LED's color in hex format\n"
+	       "             rate N                        sets LED's effect rate in Hz\n"
+	       "             brightness N                  sets LED's effect brightness\n"
 	       "\n"
 	       "Examples:\n"
 	       "  %s profile active get\n"
@@ -1541,14 +1541,23 @@ ratbag_cmd_led_set_brightness(const struct ratbag_cmd *cmd,
 	if (rc != 0)
 		return ERR_DEVICE;
 
-	return SUCCESS;
+	if (argc == 1)
+		return SUCCESS;
+
+	return run_subcommand(argv[1], cmd, ratbag, options,
+			      argc - 1, argv + 1);
 }
+
+static const struct ratbag_cmd cmd_led_set_color;
+static const struct ratbag_cmd cmd_led_set_effect_rate;
 
 static const struct ratbag_cmd cmd_led_set_brightness = {
 	.name = "brightness",
 	.cmd = ratbag_cmd_led_set_brightness,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_LED,
 	.subcommands = {
+		&cmd_led_set_color,
+		&cmd_led_set_effect_rate,
 		NULL,
 	},
 };
@@ -1578,7 +1587,11 @@ ratbag_cmd_led_set_effect_rate(const struct ratbag_cmd *cmd,
 	if (rc != 0)
 		return ERR_DEVICE;
 
-	return SUCCESS;
+	if (argc == 1)
+		return SUCCESS;
+
+	return run_subcommand(argv[1], cmd, ratbag, options,
+			      argc - 1, argv + 1);
 }
 
 static const struct ratbag_cmd cmd_led_set_effect_rate = {
@@ -1586,6 +1599,8 @@ static const struct ratbag_cmd cmd_led_set_effect_rate = {
 	.cmd = ratbag_cmd_led_set_effect_rate,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_LED,
 	.subcommands = {
+		&cmd_led_set_color,
+		&cmd_led_set_brightness,
 		NULL,
 	},
 };
@@ -1617,7 +1632,11 @@ ratbag_cmd_led_set_color(const struct ratbag_cmd *cmd,
 	if (rc != 0)
 		return ERR_DEVICE;
 
-	return SUCCESS;
+	if (argc == 1)
+		return SUCCESS;
+
+	return run_subcommand(argv[1], cmd, ratbag, options,
+			      argc - 1, argv + 1);
 }
 
 static const struct ratbag_cmd cmd_led_set_color = {
@@ -1625,6 +1644,8 @@ static const struct ratbag_cmd cmd_led_set_color = {
 	.cmd = ratbag_cmd_led_set_color,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_LED,
 	.subcommands = {
+		&cmd_led_set_effect_rate,
+		&cmd_led_set_brightness,
 		NULL,
 	},
 };
@@ -1681,7 +1702,11 @@ ratbag_cmd_led_set_mode(const struct ratbag_cmd *cmd,
 	if (rc != 0)
 		return ERR_DEVICE;
 
-	return SUCCESS;
+	if (argc == 1)
+		return SUCCESS;
+
+	return run_subcommand(argv[1], cmd, ratbag, options,
+			      argc - 1, argv + 1);
 }
 
 static const struct ratbag_cmd cmd_led_set_mode = {
@@ -1689,6 +1714,9 @@ static const struct ratbag_cmd cmd_led_set_mode = {
 	.cmd = ratbag_cmd_led_set_mode,
 	.flags = FLAG_NEED_DEVICE | FLAG_NEED_PROFILE | FLAG_NEED_LED,
 	.subcommands = {
+		&cmd_led_set_color,
+		&cmd_led_set_effect_rate,
+		&cmd_led_set_brightness,
 		NULL,
 	},
 };
