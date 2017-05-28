@@ -1,26 +1,29 @@
 .TH RATBAG_COMMAND "1" "@version@"
 .SH NAME
-ratbag-command \- Query or change a device's settings
+ratbag\-command \- query or change a device's settings
 .SH SYNOPSIS
-.B ratbag-command [OPTIONS] {COMMAND} ... /path/to/device
+.B ratbag\-command [OPTIONS] {COMMAND} ... /path/to/device
 .SH DESCRIPTION
 .PP
 The
-.I ratbag-commandq
-tool query or change a device's settings.
+.I ratbag\-command
+tool queries or changes a device's settings.
 .PP
 This tool usually needs to be run as root to have access to the
 /dev/input/eventX nodes.
 .SH OPTIONS
 .TP 8
-.B --verbose
-Print debugging output
+.B \-\-verbose
+Print debugging output.
 .TP 8
-.B --verbose=raw
+.B \-\-verbose=raw
 Print debugging output with protocol output. No guarantees are given regarding
 the output format when this flag is on.
 .TP 8
-.B --help
+.B \-\-version
+Print the tool's version.
+.TP 8
+.B \-\-help
 Print the help.
 .SH General Commands
 .TP 8
@@ -98,7 +101,7 @@ Press and release 'a'
 .B +KEY_A
 Press 'a'
 .TP 8
-.B -KEY_A
+.B \-KEY_A
 Release 'a'
 .TP 8
 .B t300
@@ -107,19 +110,19 @@ Wait 300ms
 .SH Special Commands
 These commands are for testing purposes and may be removed without notice
 .TP 8
-.B switch-etekcity
+.B switch\-etekcity
 Switch the Etekcity mouse active profile
 .SH Examples
 .TP 8
-ratbag-command profile active get
+ratbag\-command profile active get
 .TP 8
-ratbag-command profile 0 resolution active set 4
+ratbag\-command profile 0 resolution active set 4
 .TP 8
-ratbag-command profile 0 resolution 1 dpi get
+ratbag\-command profile 0 resolution 1 dpi get
 .TP 8
-ratbag-command resolution 4 rate get
+ratbag\-command resolution 4 rate get
 .TP 8
-ratbag-command dpi set 800
+ratbag\-command dpi set 800
 .SH Exit codes
 .TP 8
 .B 0
@@ -136,6 +139,6 @@ Invalid device or a command failed on the device
 .SH NOTES
 .PP
 There is currently no guarantees that the output format of
-.B ratbag-command
+.B ratbag\-command
 will not change in the future. There should be some stability with the commands
 mentioned in this man page, but do not expect it to stay the same.
