@@ -256,6 +256,14 @@ executable('lur-command',
 	install : true,
 )
 
+man_lur_command = configure_file (
+	input: 'tools/lur-command.man',
+	output: 'lur-command.1',
+	configuration: man_config,
+	install : true,
+	install_dir : join_paths(get_option('mandir'), 'man1')
+)
+
 #### hwdb ####
 udev_dir = get_option('udev-dir')
 if udev_dir == ''
