@@ -1,0 +1,49 @@
+.TH lur\-command 1 "@version@" lur\-command
+.SH NAME
+lur\-command \- list, pair and unpair Logitech Unifying devices
+.SH SYNOPSIS
+.B lur\-command find
+.br
+.B lur\-command list
+.RI < device >
+.br
+.B lur\-command open
+.RI < device >
+.br
+.B lur\-command close
+.RI < device >
+.br
+.B lur\-command disconnect
+.RI < index "> <" device >
+.SH DESCRIPTION
+.SS Common options
+.TP
+.BR \-h
+displays a short help message.
+.SS Listing receivers
+.TP
+.B find
+lists all identified receivers on the system (scanning
+.BI /dev/hidraw n
+devices).
+.SS Listing connected devices
+.TP
+.BR list " <" \fIdevice\fP >
+lists the devices connected to the given receiver device.
+.SS Pairing devices
+.TP
+.BR open " <" \fIdevice\fP >
+opens the given receiver for pairing, for 30s.
+.SS Closing a receiver
+.TP
+.BR close " <" \fIdevice\fP >
+closes the given receiver, if it is currently open for pairing.
+.SS Disconnecting a device
+.TP
+.BR disconnect " <" \fIindex\fP "> <" \fIdevice\fP >
+disconnects the device matching the given index from the given
+receiver. The index is as determined by the
+.B list
+command.
+.SH SEE ALSO
+.BR ratbag\-command (1)
