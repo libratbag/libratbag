@@ -1,5 +1,5 @@
 project('ratbagd', 'c',
-	version : '0.3',
+	version : '0.4',
 	license : 'MIT/Expat',
 	meson_version : '>= 0.40.0',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ])
