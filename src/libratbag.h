@@ -491,48 +491,6 @@ ratbag_device_get_svg_name(const struct ratbag_device* device);
 enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_NONE = 0,
 	/**
-	 * The device can change resolution, either software-controlled or
-	 * by a hardware button.
-	 *
-	 * FIXME: what about devices that only have hw buttons? can we
-	 * query that, even if we can't switch it ourselves? Maybe better to
-	 * have a separate cap for that then.
-	 */
-	RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION,
-	/**
-	 * The device can switch between hardware profiles.
-	 * A device with this capability can store multiple profiles in the
-	 * hardware and provides the ability to switch between the profiles,
-	 * possibly with a button.
-	 * Devices without this capability will only have a single profile.
-	 */
-	RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE,
-
-	/**
-	 * The device supports assigning button numbers, key events or key +
-	 * modifier combinations.
-	 */
-	RATBAG_DEVICE_CAP_BUTTON_KEY,
-
-	/**
-	 * The device supports assigning LED colors and effects
-	 */
-	RATBAG_DEVICE_CAP_LED,
-
-	/**
-	 * The device supports user-defined key or button sequences.
-	 */
-	RATBAG_DEVICE_CAP_BUTTON_MACROS,
-
-	/**
-	 * The device can have one profile assigned as a default profile.
-	 * A default profile is the profile that is selected when the device
-	 * is plugged in. Devices without this capability may select the
-	 * last-used profile or a specific profile (usually the first).
-	 */
-	RATBAG_DEVICE_CAP_DEFAULT_PROFILE,
-
-	/**
 	 * The device has the capability to query the current hardware
 	 * configuration. If this capability is missing, libratbag cannot
 	 * query the device for its current configuration and the
@@ -550,6 +508,37 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
 
 	/**
+	 * The device provides read and/or write access to one or more
+	 * resolutions.
+	 */
+	RATBAG_DEVICE_CAP_RESOLUTION = 100,
+
+	/**
+	 * The device can change resolution, either software-controlled or
+	 * by a hardware button.
+	 *
+	 * FIXME: what about devices that only have hw buttons? can we
+	 * query that, even if we can't switch it ourselves? Maybe better to
+	 * have a separate cap for that then.
+	 */
+	RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION,
+
+	/**
+	 * The device provides read and/or write access to one or more
+	 * profiles.
+	 */
+	RATBAG_DEVICE_CAP_PROFILE = 200,
+
+	/**
+	 * The device can switch between hardware profiles.
+	 * A device with this capability can store multiple profiles in the
+	 * hardware and provides the ability to switch between the profiles,
+	 * possibly with a button.
+	 * Devices without this capability will only have a single profile.
+	 */
+	RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE,
+
+	/**
 	 * The device has the capability to disable and enable profiles.  While
 	 * profiles are not immediately deleted after being disabled, it is not
 	 * guaranteed that the device will remember any disabled profiles the
@@ -557,6 +546,36 @@ enum ratbag_device_capability {
 	 * changed the next time ratbag runs if profiles are disabled.
 	 */
 	RATBAG_DEVICE_CAP_DISABLE_PROFILE,
+
+	/**
+	 * The device can have one profile assigned as a default profile.
+	 * A default profile is the profile that is selected when the device
+	 * is plugged in. Devices without this capability may select the
+	 * last-used profile or a specific profile (usually the first).
+	 */
+	RATBAG_DEVICE_CAP_DEFAULT_PROFILE,
+
+	/**
+	 * The device provides read and/or write access to one or more
+	 * buttons.
+	 */
+	RATBAG_DEVICE_CAP_BUTTON = 300,
+
+	/**
+	 * The device supports assigning button numbers, key events or key +
+	 * modifier combinations.
+	 */
+	RATBAG_DEVICE_CAP_BUTTON_KEY,
+
+	/**
+	 * The device supports user-defined key or button sequences.
+	 */
+	RATBAG_DEVICE_CAP_BUTTON_MACROS,
+
+	/**
+	 * The device supports assigning LED colors and effects
+	 */
+	RATBAG_DEVICE_CAP_LED = 400,
 };
 
 /**
