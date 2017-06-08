@@ -127,26 +127,13 @@ install_data('dbus/org.freedesktop.ratbag1.conf',
 	     configuration : config_bindir,
 	     install_dir : join_paths(dbusdir, 'system.d'))
 
-#### python bindings ####
-
-py3_mod = import('python3')
-py3 = py3_mod.find_python()
-py3_dep = dependency('python3', required : true)
-
-pysrc_ratbagd =  [ 'python/ratbagd/__init__.py' ]
-
-py3_purelib = py3_mod.sysconfig_path('purelib')
-
-install_data(pysrc_ratbagd,
-	     install_dir : py3_purelib + '/ratbagd')
-
+#### tools ####
 config_ratbagctl = configuration_data()
 config_ratbagctl.set('version', meson.project_version())
-configure_file(input : 'python/ratbagctl.in',
+configure_file(input : 'tools/ratbagctl.in',
 	       output : 'ratbagctl',
 	       configuration : config_ratbagctl,
 	       install_dir : get_option('bindir'))
-
 install_man('doc/ratbagctl.1')
 
 #### output files ####
