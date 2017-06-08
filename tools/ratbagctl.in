@@ -500,6 +500,8 @@ def make_parser():
     return parser
 
 def main(argv):
+    if not argv:
+        argv = ["list-devices"]
     cmd = make_parser().parse_args(argv)
 
     try:
