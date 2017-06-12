@@ -278,45 +278,33 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 	struct ratbagd_device *device = userdata;
 	struct ratbag_device *lib_device = device->lib_device;
 	enum ratbag_device_capability cap;
+	enum ratbag_device_capability caps[] = {
+		RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
+		RATBAG_DEVICE_CAP_RESOLUTION,
+		RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION,
+		RATBAG_DEVICE_CAP_PROFILE,
+		RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE,
+		RATBAG_DEVICE_CAP_DISABLE_PROFILE,
+		RATBAG_DEVICE_CAP_DEFAULT_PROFILE,
+		RATBAG_DEVICE_CAP_BUTTON,
+		RATBAG_DEVICE_CAP_BUTTON_KEY,
+		RATBAG_DEVICE_CAP_BUTTON_MACROS,
+		RATBAG_DEVICE_CAP_LED,
+	};
 	int r;
+	size_t i;
 
 	r = sd_bus_message_open_container(reply, 'a', "u");
 	if (r < 0)
 		return r;
 
-	cap = RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION;
-	if (ratbag_device_has_capability(lib_device, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
-		if (r < 0)
-			return r;
-	}
-
-	cap = RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE;
-	if (ratbag_device_has_capability(lib_device, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
-		if (r < 0)
-			return r;
-	}
-
-	cap = RATBAG_DEVICE_CAP_BUTTON_MACROS;
-	if (ratbag_device_has_capability(lib_device, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
-		if (r < 0)
-			return r;
-	}
-
-	cap = RATBAG_DEVICE_CAP_DEFAULT_PROFILE;
-	if (ratbag_device_has_capability(lib_device, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
-		if (r < 0)
-			return r;
-	}
-
-	cap = RATBAG_DEVICE_CAP_QUERY_CONFIGURATION;
-	if (ratbag_device_has_capability(lib_device, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
-		if (r < 0)
-			return r;
+	for (i = 0; i < ELEMENTSOF(caps); i++) {
+		cap = caps[i];
+		if (ratbag_device_has_capability(lib_device, cap)) {
+			r = sd_bus_message_append(reply, "u", cap);
+			if (r < 0)
+				return r;
+		}
 	}
 
 	return sd_bus_message_close_container(reply);
