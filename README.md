@@ -98,13 +98,14 @@ ratbagd is intended to run as dbus-activated systemd service. This requires
 installation of the following files:
 
     sudo cp dbus/org.freedesktop.ratbag1.conf /etc/dbus-1/system.d/org.freedesktop.ratbag1.conf
-    sudo cp dbus/org.freedesktop.ratbag1.service /etc/dbus-1/system-services/org.freedesktop.ratbag1.conf
-    sudo cp ratbagd.service /etc/systemd/system/ratbagd.service
+    sudo cp builddir/org.freedesktop.ratbag1.service /etc/dbus-1/system-services/org.freedesktop.ratbag1.conf
+    sudo cp builddir/ratbagd.service /etc/systemd/system/ratbagd.service
 
 The files are installed into the prefix by `ninja install`, see also the
 configure-time options `-Dsystemd-unit-dir` and `-Ddbus-root-dir` (see
 "Compiling ratbagd" below). Developers are encouraged to simply symlink to the
-files in the git repository.
+files in the git repository. If you used any other build directory than
+`builddir`, adjust accordingly.
 
 For the files to take effect, you should run
 
