@@ -777,7 +777,7 @@ ratbag_profile_set_active(struct ratbag_profile *profile);
  *
  * Get the number of @ref ratbag_resolution available in this profile. A
  * resolution mode is a tuple of (resolution, report rate), each mode can be
- * fetched with ratbag_profile_get_resolution_by_idx().
+ * fetched with ratbag_profile_get_resolution().
  *
  * The returned value is the maximum number of modes available and thus
  * identical for all profiles. However, some of the modes may not be
