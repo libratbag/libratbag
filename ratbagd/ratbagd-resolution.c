@@ -42,6 +42,7 @@ struct ratbagd_resolution {
 	char *path;
 	unsigned int xres, yres;
 	unsigned int rate;
+	unsigned int maxres, minres;
 };
 
 static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
@@ -158,6 +159,8 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_PROPERTY("XResolution", "u", NULL, offsetof(struct ratbagd_resolution, xres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("YResolution", "u", NULL, offsetof(struct ratbagd_resolution, yres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("Maximum", "u", NULL, offsetof(struct ratbagd_resolution, maxres), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Minimum", "u", NULL, offsetof(struct ratbagd_resolution, minres), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
@@ -189,6 +192,8 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 	resolution->xres = ratbag_resolution_get_dpi_x(lib_resolution);
 	resolution->yres = ratbag_resolution_get_dpi_y(lib_resolution);
 	resolution->rate = ratbag_resolution_get_report_rate(lib_resolution);
+	resolution->maxres = ratbag_resolution_get_dpi_maximum(lib_resolution);
+	resolution->minres = ratbag_resolution_get_dpi_minimum(lib_resolution);
 
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(resolution_buffer, "r%u", index);

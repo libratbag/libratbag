@@ -51,6 +51,8 @@ The **org.freedesktop.ratbag1.Resolution** interface provides:
   - XResolution -> uint for the x resolution assigned to this entry
   - YResolution -> uint for the y resolution assigned to this entry
   - ReportRate -> uint for the report rate in Hz assigned to this entry
+  - Maximum -> uint for the maximum possible resolution
+  - Minimum -> uint for the minimum possible resolution
 - Methods:
   - SetResolution(uint, uint) -> x/y resolution to assign
   - SetReportRate(uint) -> uint for the report rate to assign
