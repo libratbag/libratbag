@@ -58,7 +58,7 @@ struct hidpp10_device  {
 	struct hidpp_device base;
 	unsigned index;
 	uint8_t dpi_count;
-	struct hidpp10_dpi_mapping *dpi_table; /* must be null terminated */
+	struct hidpp10_dpi_mapping *dpi_table;
 	struct hidpp10_directory  *profile_directory; /* must be null terminated */
 	enum hidpp10_profile_type profile_type;
 	struct hidpp10_profile *profiles;
