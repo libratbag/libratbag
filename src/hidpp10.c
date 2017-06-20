@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <assert.h>
 #include <linux/types.h>
 #include <errno.h>
 #include <stdio.h>
@@ -84,6 +85,32 @@ const char *device_types[0xFF] = {
 	[0x09] = "Touchpad",
 	[0x0A ... 0xFE] = NULL,
 };
+
+unsigned int
+hidpp10_dpi_table_get_max_dpi(struct hidpp10_device *dev)
+{
+	struct hidpp10_dpi_mapping *dpi;
+
+	assert(dev->dpi_count > 0);
+
+	/* We assume a sorted list */
+	dpi = &dev->dpi_table[dev->dpi_count - 1];
+
+	return dpi->dpi;
+}
+
+unsigned int
+hidpp10_dpi_table_get_min_dpi(struct hidpp10_device *dev)
+{
+	struct hidpp10_dpi_mapping *dpi;
+
+	assert(dev->dpi_count > 0);
+
+	/* We assume a sorted list, index 0 is always 0 */
+	dpi = &dev->dpi_table[1];
+
+	return dpi->dpi;
+}
 
 int
 hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,

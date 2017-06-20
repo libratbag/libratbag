@@ -1076,6 +1076,18 @@ ratbag_resolution_get_dpi(struct ratbag_resolution *resolution)
 }
 
 LIBRATBAG_EXPORT int
+ratbag_resolution_get_dpi_maximum(struct ratbag_resolution *resolution)
+{
+	return resolution->dpi_max;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_resolution_get_dpi_minimum(struct ratbag_resolution *resolution)
+{
+	return resolution->dpi_min;
+}
+
+LIBRATBAG_EXPORT int
 ratbag_resolution_get_dpi_x(struct ratbag_resolution *resolution)
 {
 	return resolution->dpi_x;
