@@ -222,6 +222,8 @@ struct ratbag_resolution {
 	struct ratbag_profile *profile;
 	int refcount;
 	void *userdata;
+	unsigned int dpi_max;	/**< max resolution in dpi */
+	unsigned int dpi_min;	/**< min resolution in dpi */
 	unsigned int dpi_x;	/**< x resolution in dpi */
 	unsigned int dpi_y;	/**< y resolution in dpi */
 	unsigned int hz;	/**< report rate in Hz */
@@ -419,8 +421,17 @@ ratbag_resolution_init(struct ratbag_profile *profile, int index,
 	res->is_active = false;
 	res->is_default = false;
 	res->capabilities = 0;
+	res->dpi_min = 0;
+	res->dpi_max = 0;
 
 	return res;
+}
+
+static inline void
+ratbag_resolution_set_range(struct ratbag_resolution *res, int min, int max)
+{
+	res->dpi_min = min;
+	res->dpi_max = max;
 }
 
 static inline void

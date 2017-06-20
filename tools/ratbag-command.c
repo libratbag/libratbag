@@ -432,6 +432,8 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 
 	for (int i = 0; i < num_profiles; i++) {
 		int dpi, rate;
+		struct ratbag_resolution *res;
+
 		profile = ratbag_device_get_profile(device, i);
 		if (!profile)
 			continue;
@@ -440,9 +442,14 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		       ratbag_profile_is_enabled(profile) ? "enabled" : "disabled",
 		       ratbag_profile_is_active(profile) ? " (active)" : "");
 		printf("    Resolutions:\n");
-		for (unsigned int j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
-			struct ratbag_resolution *res;
 
+		res = ratbag_profile_get_resolution(profile, 0);
+		printf("      Range: [%d, %d]\n",
+		       ratbag_resolution_get_dpi_minimum(res),
+		       ratbag_resolution_get_dpi_maximum(res));
+		ratbag_resolution_unref(res);
+
+		for (unsigned int j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
 			res = ratbag_profile_get_resolution(profile, j);
 			dpi = ratbag_resolution_get_dpi(res);
 			rate = ratbag_resolution_get_report_rate(res);

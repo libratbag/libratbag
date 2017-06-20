@@ -378,6 +378,8 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 		xres = 0xffff;
 
 	for (i = 0; i < profile->resolution.num_modes; i++) {
+		unsigned int min, max;
+
 		res = ratbag_resolution_init(profile, i,
 					     p.dpi_modes[i].xres,
 					     p.dpi_modes[i].yres,
@@ -390,6 +392,10 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 			res->is_active = true;
 		if (i == p.default_dpi_mode)
 			res->is_default = true;
+
+		min = hidpp10_dpi_table_get_min_dpi(hidpp10);
+		max = hidpp10_dpi_table_get_max_dpi(hidpp10);
+		ratbag_resolution_set_range(res, min, max);
 	}
 }
 

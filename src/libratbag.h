@@ -959,6 +959,32 @@ ratbag_resolution_get_dpi(struct ratbag_resolution *resolution);
 /**
  * @ingroup resolution
  *
+ * Get the maximum allowed resolution in DPI for the resolution mode.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return The maximum resolution in dpi
+ * @retval 0 The maximum resolution is unknown to libratbag
+ */
+int
+ratbag_resolution_get_dpi_maximum(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
+ * Get the minimum allowed resolution in DPI for the resolution mode.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return The minimum resolution in dpi
+ * @retval 0 The minimum resolution is unknown to libratbag
+ */
+int
+ratbag_resolution_get_dpi_minimum(struct ratbag_resolution *resolution);
+
+/**
+ * @ingroup resolution
+ *
  * Get the x resolution in DPI for the resolution mode. If the resolution
  * does not have the @ref RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION
  * capability, this function is identical to ratbag_resolution_get_dpi().

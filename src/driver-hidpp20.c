@@ -527,10 +527,17 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return rc;
+
 		for (i = 0; i < profile->resolution.num_modes; i++) {
-			int dpi = drv_data->sensors[i].dpi;
+			struct hidpp20_sensor *sensor;
+
+			/* We only look at the first sensor. Multiple
+			 * sensors is too niche to care about right now */
+			sensor = &drv_data->sensors[0];
+
 			/* FIXME: retrieve the refresh rate */
-			res = ratbag_resolution_init(profile, i, dpi, dpi, 0);
+			res = ratbag_resolution_init(profile, i, sensor->dpi, sensor->dpi, 0);
+			ratbag_resolution_set_range(res, sensor->dpi_min, sensor->dpi_max);
 
 			/* FIXME: we mark all resolutions as active because
 			 * they are from different sensors */
@@ -716,6 +723,12 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	p = &drv_data->profiles->profiles[index];
 
 	for (i = 0; i < profile->resolution.num_modes; i++) {
+		struct hidpp20_sensor *sensor;
+
+		/* We only look at the first sensor. Multiple
+		 * sensors is too niche to care about right now */
+		sensor = &drv_data->sensors[0];
+
 		res = ratbag_resolution_init(profile, i,
 					     p->dpi[i],
 					     p->dpi[i],
@@ -726,6 +739,8 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 			res->is_active = true;
 		if (i == p->default_dpi)
 			res->is_default = true;
+
+		ratbag_resolution_set_range(res, sensor->dpi_min, sensor->dpi_max);
 	}
 }
 

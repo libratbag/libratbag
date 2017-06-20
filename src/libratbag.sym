@@ -70,6 +70,8 @@ global:
 	ratbag_profile_set_enabled;
 	ratbag_profile_unref;
 	ratbag_resolution_get_dpi;
+	ratbag_resolution_get_dpi_maximum;
+	ratbag_resolution_get_dpi_minimum;
 	ratbag_resolution_get_dpi_x;
 	ratbag_resolution_get_dpi_y;
 	ratbag_resolution_get_report_rate;
