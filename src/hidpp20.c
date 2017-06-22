@@ -887,8 +887,8 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 		if (value > 0xe000) {
 			sensor->dpi_steps = value - 0xe000;
 		} else {
-			sensor->dpi_min = value < sensor->dpi_min ? value : sensor->dpi_min;
-			sensor->dpi_max = value > sensor->dpi_max ? value : sensor->dpi_max;
+			sensor->dpi_min = min(value, sensor->dpi_min);
+			sensor->dpi_max = max(value, sensor->dpi_max);
 			sensor->dpi_list[dpi_index++] = value;
 		}
 		assert(sensor->dpi_list[dpi_index] == 0x0000);
