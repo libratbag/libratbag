@@ -78,6 +78,7 @@ dep_libshared = declare_dependency(link_with: lib_libshared)
 src_ratbagd = [
 	'src/ratbagd.h',
 	'src/ratbagd.c',
+	'src/ratbagd-led.c',
 	'src/ratbagd-button.c',
 	'src/ratbagd-device.c',
 	'src/ratbagd-profile.c',

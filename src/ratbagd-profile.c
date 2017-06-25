@@ -51,6 +51,11 @@ struct ratbagd_profile {
 	sd_bus_slot *button_enum_slot;
 	unsigned int n_buttons;
 	struct ratbagd_button **buttons;
+
+	sd_bus_slot *led_vtable_slot;
+	sd_bus_slot *led_enum_slot;
+	unsigned int n_leds;
+	struct ratbagd_led **leds;
 };
 
 static int ratbagd_profile_find_resolution(sd_bus *bus,
@@ -148,6 +153,37 @@ static int ratbagd_profile_get_buttons(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+static int ratbagd_profile_get_leds(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *reply,
+				    void *userdata,
+				    sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbagd_led *led;
+	unsigned int i;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "o");
+	if (r < 0)
+		return r;
+
+	for (i = 0; i < profile->n_leds; ++i) {
+		led = profile->leds[i];
+		if (!led)
+			continue;
+
+		r = sd_bus_message_append(reply,
+					  "o",
+					  ratbagd_led_get_path(led));
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
 
 static int ratbagd_profile_get_active_resolution(sd_bus *bus,
 						 const char *path,
@@ -234,6 +270,37 @@ static int ratbagd_profile_find_button(sd_bus *bus,
 	return 1;
 }
 
+static int ratbagd_profile_find_led(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    void *userdata,
+				    void **found,
+				    sd_bus_error *error)
+{
+	_cleanup_(freep) char *name = NULL;
+	struct ratbagd_profile *profile = userdata;
+	unsigned int index;
+	int r;
+
+	r = sd_bus_path_decode_many(path,
+				    "/org/freedesktop/ratbag1/led/%/p%/b%",
+				    NULL,
+				    NULL,
+				    &name);
+	if (r <= 0)
+		return r;
+
+	r = safe_atou(name, &index);
+	if (r < 0)
+		return 0;
+
+	if (index >= profile->n_leds || !profile->leds[index])
+		return 0;
+
+	*found = profile->leds[index];
+	return 1;
+}
+
 static int ratbagd_profile_set_active(sd_bus_message *m,
 				      void *userdata,
 				      sd_bus_error *error)
@@ -282,6 +349,7 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
+	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),
 	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
 	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
@@ -298,6 +366,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	_cleanup_(ratbagd_profile_freep) struct ratbagd_profile *profile = NULL;
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
+	struct ratbag_led *led;
 	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
 	unsigned int i;
 	int r;
@@ -329,6 +398,11 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	profile->n_buttons = ratbagd_device_get_num_buttons(device);
 	profile->buttons = calloc(profile->n_buttons, sizeof(*profile->buttons));
 	if (!profile->buttons)
+		return -ENOMEM;
+
+	profile->n_leds = ratbagd_device_get_num_leds(device);
+	profile->leds = calloc(profile->n_leds, sizeof(*profile->leds));
+	if (!profile->leds)
 		return -ENOMEM;
 
 	for (i = 0; i < profile->n_resolutions; ++i) {
@@ -365,6 +439,23 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 		}
 	}
 
+	for (i = 0; i < profile->n_leds; ++i) {
+		led = ratbag_profile_get_led(profile->lib_profile, i);
+		if (!led)
+			continue;
+
+		r = ratbagd_led_new(&profile->leds[i],
+				    device,
+				    profile,
+				    led,
+				    i);
+		if (r < 0) {
+			errno = -r;
+			log_error("Cannot allocate led for '%s': %m\n",
+				  ratbagd_device_get_name(device));
+		}
+	}
+
 	*out = profile;
 	profile = NULL;
 	return 0;
@@ -381,12 +472,17 @@ struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile)
 	profile->resolution_enum_slot = sd_bus_slot_unref(profile->resolution_enum_slot);
 	profile->button_vtable_slot = sd_bus_slot_unref(profile->button_vtable_slot);
 	profile->button_enum_slot = sd_bus_slot_unref(profile->button_enum_slot);
+	profile->led_vtable_slot = sd_bus_slot_unref(profile->led_vtable_slot);
+	profile->led_enum_slot = sd_bus_slot_unref(profile->led_enum_slot);
 
+	for (i = 0; i< profile->n_leds; ++i)
+		ratbagd_led_free(profile->leds[i]);
 	for (i = 0; i< profile->n_buttons; ++i)
 		ratbagd_button_free(profile->buttons[i]);
 	for (i = 0; i< profile->n_resolutions; ++i)
 		ratbagd_resolution_free(profile->resolutions[i]);
 
+	mfree(profile->leds);
 	mfree(profile->buttons);
 	mfree(profile->resolutions);
 
@@ -467,7 +563,6 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 				    ratbagd_device_get_name(device),
 				    index_buffer);
 
-
 	if (r >= 0) {
 		r = sd_bus_add_fallback_vtable(bus,
 					       &profile->resolution_vtable_slot,
@@ -544,7 +639,6 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 				    ratbagd_device_get_name(device),
 				    index_buffer);
 
-
 	if (r >= 0) {
 		r = sd_bus_add_fallback_vtable(bus,
 					       &profile->button_vtable_slot,
@@ -563,6 +657,82 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 	if (r < 0) {
 		errno = -r;
 		log_error("Cannot register buttons for '%s': %m\n",
+			  ratbagd_device_get_name(device));
+	}
+
+	return 0;
+}
+
+static int ratbagd_profile_list_leds(sd_bus *bus,
+				     const char *path,
+				     void *userdata,
+				     char ***paths,
+				     sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbagd_led *led;
+	char **leds;
+	unsigned int i;
+
+	leds = calloc(profile->n_leds + 1, sizeof(char *));
+	if (!leds)
+		return -ENOMEM;
+
+	for (i = 0; i < profile->n_leds; ++i) {
+		led = profile->leds[i];
+		if (!led)
+			continue;
+
+		leds[i] = strdup(ratbagd_led_get_path(led));
+		if (!leds[i])
+			goto error;
+	}
+
+	leds[i] = NULL;
+	*paths = leds;
+	return 1;
+
+error:
+	for (i = 0; leds[i]; ++i)
+		free(leds[i]);
+	free(leds);
+	return -ENOMEM;
+}
+
+int ratbagd_profile_register_leds(struct sd_bus *bus,
+				  struct ratbagd_device *device,
+				  struct ratbagd_profile *profile)
+{
+	_cleanup_(freep) char *prefix = NULL;
+	char index_buffer[DECIMAL_TOKEN_MAX(unsigned int) + 1];
+	int r;
+
+	sprintf(index_buffer, "p%u", profile->index);
+
+	/* register led interfaces */
+	r = sd_bus_path_encode_many(&prefix,
+				    "/org/freedesktop/ratbag1/led/%/%",
+				    ratbagd_device_get_name(device),
+				    index_buffer);
+
+	if (r >= 0) {
+		r = sd_bus_add_fallback_vtable(bus,
+					       &profile->led_vtable_slot,
+					       prefix,
+					       "org.freedesktop.ratbag1.Led",
+					       ratbagd_led_vtable,
+					       ratbagd_profile_find_led,
+					       profile);
+		if (r >= 0)
+			r = sd_bus_add_node_enumerator(bus,
+						       &profile->led_enum_slot,
+						       prefix,
+						       ratbagd_profile_list_leds,
+						       profile);
+	}
+	if (r < 0) {
+		errno = -r;
+		log_error("Cannot register leds for '%s': %m\n",
 			  ratbagd_device_get_name(device));
 	}
 

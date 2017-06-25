@@ -23,6 +23,7 @@ Interfaces:
 -  org.freedesktop.ratbag1.Profile
 -  org.freedesktop.ratbag1.Resolution
 -  org.freedesktop.ratbag1.Button
+-  org.freedesktop.ratbag1.Led
 
 The **org.freedesktop.ratbag1.Manager** interface provides:
 - Properties:
@@ -48,6 +49,7 @@ The **org.freedesktop.ratbag1.Profile** interface provides:
   - Index -> index of the profile
   - Resolutions -> array of object paths with interface Resolution
   - Buttons -> array of object paths with interface Button
+  - Leds -> array of object paths with interface Led
   - ActiveResolution -> index of the currently active resolution in Resolutions
   - DefaultResolution -> index of the default resolution in Resolutions
 - Methods:
@@ -85,6 +87,20 @@ The **org.freedesktop.ratbag1.Button** interface provides:
   - SetSpecialMapping(string) -> set the button mapping to the given special entry
   - SetKeyMapping(uint[]) -> set the key mapping, first entry is the keycode, other entries, if any, are modifier keycodes
   - Disable(void) -> disable this button
+
+The **org.freedesktop.ratbag1.Led** interface provides:
+- Properties:
+  - Index -> index of the LED
+  - Mode -> uint mapping to the mode enum from libratbag
+  - Type -> string describing the LED type
+  - Color -> uint triplet (RGB) of the LED's color
+  - EffectRate -> the effect rate in Hz, possible values are in the range 100 - 20000
+  - Brightness -> the brightness of the LED, possible values are in the range 0 - 255
+- Methods:
+  - SetMode(uint) -> set the mode to the given mode enum value from libratbag
+  - SetColor((uuu)) -> set the color to the given uint triplet (RGB)
+  - SetEffectRate(uint) -> set the effect rate in Hz, possible values are in the range 100 - 20000
+  - SetBrightness(int) -> set the brightness, possible values are in the range 0 - 255
 
 For easier debugging, objects paths are constructed from the device. e.g.
 `/org/freedesktop/ratbag/button/event5/p0/b10` is the button interface for

@@ -427,6 +427,12 @@ unsigned int ratbagd_device_get_num_buttons(struct ratbagd_device *device)
 	return ratbag_device_get_num_buttons(device->lib_device);
 }
 
+unsigned int ratbagd_device_get_num_leds(struct ratbagd_device *device)
+{
+	assert(device);
+	return ratbag_device_get_num_leds(device->lib_device);
+}
+
 bool ratbagd_device_linked(struct ratbagd_device *device)
 {
 	return device && rbnode_linked(&device->node);
@@ -502,6 +508,18 @@ void ratbagd_device_link(struct ratbagd_device *device)
 		r = ratbagd_profile_register_buttons(device->ctx->bus,
 						     device,
 						     device->profiles[i]);
+		if (r < 0) {
+			log_error("Cannot register buttons for '%s': %m\n",
+				  device->name);
+		}
+
+		r = ratbagd_profile_register_leds(device->ctx->bus,
+						  device,
+						  device->profiles[i]);
+		if (r < 0) {
+			log_error("Cannot register leds for '%s': %m\n",
+				  device->name);
+		}
 	}
 }
 
