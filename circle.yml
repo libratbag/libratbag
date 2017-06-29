@@ -1,0 +1,17 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/libratbag
+    docker:
+      - image: fedora:rawhide
+    steps:
+      - run:
+          command: |
+            dnf install -y git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz
+      - checkout
+      - run:
+          command: |
+            meson build
+            ninja -C build test
+      - store_artifacts:
+          path: ~/libratbag/build/meson-logs
