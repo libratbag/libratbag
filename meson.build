@@ -38,11 +38,14 @@ add_project_arguments(cppflags, language: 'cpp')
 # is generated at the end of this file
 config_h = configuration_data()
 config_h.set('_GNU_SOURCE', '1')
+libratbag_data_dir = join_paths(get_option('datadir'), 'libratbag')
+config_h.set_quoted('LIBRATBAG_DATA_DIR', libratbag_data_dir)
 
 # dependencies
 pkgconfig = import('pkgconfig')
 dep_udev = dependency('libudev')
 dep_libevdev = dependency('libevdev')
+dep_systemd = dependency('libsystemd', version : '>=227')
 dep_lm = cc.find_library('m')
 
 #### libutil.a ####
@@ -143,9 +146,6 @@ deps_libratbag = [
 ]
 
 libratbag_version_h_config = configuration_data()
-libratbag_version_h_config.set('LIBRATBAG_VERSION_MAJOR', libratbag_version[0])
-libratbag_version_h_config.set('LIBRATBAG_VERSION_MINOR', libratbag_version[1])
-libratbag_version_h_config.set('LIBRATBAG_VERSION_MICRO', libratbag_version[2])
 libratbag_version_h_config.set_quoted('LIBRATBAG_VERSION', meson.project_version())
 
 libratbag_version_h = configure_file(
@@ -399,5 +399,71 @@ if enable_doc
 			build_by_default : true)
 endif
 
+#### ratbagd ####
+src_ratbagd = [
+	'ratbagd/shared-macro.h',
+	'ratbagd/shared-rbtree.h',
+	'ratbagd/shared-rbtree.c',
+	'ratbagd/ratbagd.h',
+	'ratbagd/ratbagd.c',
+	'ratbagd/ratbagd-led.c',
+	'ratbagd/ratbagd-button.c',
+	'ratbagd/ratbagd-device.c',
+	'ratbagd/ratbagd-profile.c',
+	'ratbagd/ratbagd-resolution.c'
+]
+
+deps_ratbagd = [
+	dep_udev,
+	dep_systemd,
+	dep_libratbag,
+]
+
+executable('ratbagd',
+	   src_ratbagd,
+	   dependencies : deps_ratbagd,
+	   include_directories : include_directories('src'),
+	   install : true,
+)
+
+install_man('ratbagd/ratbagd.8')
+
+#### unit file ####
+unitdir = get_option('systemd-unit-dir')
+if unitdir == ''
+	unitdir = get_option('libdir') + '/systemd/system'
+endif
+
+config_bindir = configuration_data()
+config_bindir.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
+
+configure_file(input : 'ratbagd/ratbagd.service.in',
+	       output : 'ratbagd.service',
+	       configuration : config_bindir,
+	       install_dir : unitdir)
+
+dbusdir = get_option('dbus-root-dir')
+if dbusdir == ''
+	dbusdir = join_paths(get_option('datadir'), 'dbus-1')
+endif
+
+configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
+	       output : 'org.freedesktop.ratbag1.service',
+	       configuration : config_bindir,
+	       install_dir : join_paths(dbusdir, 'system-services'))
+install_data('dbus/org.freedesktop.ratbag1.conf',
+	     configuration : config_bindir,
+	     install_dir : join_paths(dbusdir, 'system.d'))
+
+#### tools ####
+config_ratbagctl = configuration_data()
+config_ratbagctl.set('version', meson.project_version())
+configure_file(input : 'tools/ratbagctl.in',
+	       output : 'ratbagctl',
+	       configuration : config_ratbagctl,
+	       install_dir : get_option('bindir'))
+install_man('tools/ratbagctl.1')
+
 #### output files ####
 configure_file(output: 'config.h', install: false, configuration: config_h)
+
