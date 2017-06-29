@@ -195,7 +195,7 @@ executable('ratbag-command',
 	src_ratbag_command,
 	dependencies : deps_ratbag_command,
 	include_directories : include_directories('src'),
-	install : true,
+	install : false,
 )
 
 man_config = configuration_data()
