@@ -31,21 +31,21 @@ other directory name. To set configure-time options, use e.g.
 
 Run `mesonconf builddir` to list the options.
 
-Running ratbagd
----------------
+Running ratbagd as DBus-activated systemd service
+-------------------------------------------------
 
-ratbagd is intended to run as dbus-activated systemd service. This requires
-installation of the following files:
+To run ratbagd, simply run it as root `sudo ratbagd`. However,
+ratbagd is intended to run as dbus-activated systemd service and installs
+the following files:
 
-    sudo cp dbus/org.freedesktop.ratbag1.conf /etc/dbus-1/system.d/org.freedesktop.ratbag1.conf
-    sudo cp builddir/org.freedesktop.ratbag1.service /etc/dbus-1/system-services/org.freedesktop.ratbag1.conf
-    sudo cp builddir/ratbagd.service /etc/systemd/system/ratbagd.service
+    /usr/share/dbus-1/system.d/org.freedesktop.ratbag1.conf
+    /usr/share/dbus-1/system-services/org.freedesktop.ratbag1.conf
+    /usr/share/systemd/system/ratbagd.service
 
 These files are installed into the prefix by `ninja install`, see also the
-configure-time options `-Dsystemd-unit-dir` and `-Ddbus-root-dir` (see
-"Compiling ratbagd" below). Developers are encouraged to simply symlink to the
-files in the git repository. If you used any other build directory than
-`builddir`, adjust accordingly.
+configure-time options `-Dsystemd-unit-dir` and `-Ddbus-root-dir`.
+Developers are encouraged to simply symlink to the files in the git
+repository.
 
 For the files to take effect, you should run
 
