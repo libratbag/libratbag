@@ -45,7 +45,8 @@ config_h.set_quoted('LIBRATBAG_DATA_DIR', libratbag_data_dir)
 pkgconfig = import('pkgconfig')
 dep_udev = dependency('libudev')
 dep_libevdev = dependency('libevdev')
-dep_systemd = dependency('libsystemd', version : '>=227')
+dep_libsystemd = dependency('libsystemd', version : '>=227')
+dep_systemd = dependency('systemd')
 dep_lm = cc.find_library('m')
 
 #### libutil.a ####
@@ -415,7 +416,7 @@ src_ratbagd = [
 
 deps_ratbagd = [
 	dep_udev,
-	dep_systemd,
+	dep_libsystemd,
 	dep_libratbag,
 ]
 
@@ -431,7 +432,24 @@ install_man('ratbagd/ratbagd.8')
 #### unit file ####
 unitdir = get_option('systemd-unit-dir')
 if unitdir == ''
-	unitdir = get_option('libdir') + '/systemd/system'
+	libdir = get_option('libdir')
+	default_unitdir = dep_systemd.get_pkgconfig_variable('systemdsystemunitdir')
+	# Fedora uses lib64 but systemd is in lib. Hack around this so it
+	# works out of the box.
+	intended_unitdir = join_paths(get_option('prefix'), get_option('libdir'), 'systemd')
+	if get_option('prefix') == '/usr' and intended_unitdir != default_unitdir
+		message('
+		systemd unitdir libdir mismatch detected, changing unitdir to
+			@0@
+		or specify with
+			mesonconf -Dsystemd-unit-dir=<path>
+
+		See https://github.com/libratbag/libratbag/issues/188
+		'.format(default_unitdir))
+		unitdir = default_unitdir
+	else
+		unitdir = intended_unitdir
+	endif
 endif
 
 config_bindir = configuration_data()
