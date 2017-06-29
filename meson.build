@@ -146,9 +146,6 @@ deps_libratbag = [
 ]
 
 libratbag_version_h_config = configuration_data()
-libratbag_version_h_config.set('LIBRATBAG_VERSION_MAJOR', libratbag_version[0])
-libratbag_version_h_config.set('LIBRATBAG_VERSION_MINOR', libratbag_version[1])
-libratbag_version_h_config.set('LIBRATBAG_VERSION_MICRO', libratbag_version[2])
 libratbag_version_h_config.set_quoted('LIBRATBAG_VERSION', meson.project_version())
 
 libratbag_version_h = configure_file(
