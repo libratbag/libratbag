@@ -465,22 +465,22 @@ if dbusdir == ''
 	dbusdir = join_paths(get_option('datadir'), 'dbus-1')
 endif
 
-configure_file(input : 'ratbagd/dbus/org.freedesktop.ratbag1.service.in',
+configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
 	       output : 'org.freedesktop.ratbag1.service',
 	       configuration : config_bindir,
 	       install_dir : join_paths(dbusdir, 'system-services'))
-install_data('ratbagd/dbus/org.freedesktop.ratbag1.conf',
+install_data('dbus/org.freedesktop.ratbag1.conf',
 	     configuration : config_bindir,
 	     install_dir : join_paths(dbusdir, 'system.d'))
 
 #### tools ####
 config_ratbagctl = configuration_data()
 config_ratbagctl.set('version', meson.project_version())
-configure_file(input : 'ratbagd/tools/ratbagctl.in',
+configure_file(input : 'tools/ratbagctl.in',
 	       output : 'ratbagctl',
 	       configuration : config_ratbagctl,
 	       install_dir : get_option('bindir'))
-install_man('ratbagd/doc/ratbagctl.1')
+install_man('tools/ratbagctl.1')
 
 #### output files ####
 configure_file(output: 'config.h', install: false, configuration: config_h)
