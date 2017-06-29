@@ -59,8 +59,8 @@ And finally, to enable the service:
 This places the required symlink into the systemd directory so that dbus
 activation is possible.
 
-Architecture
-------------
+libratbag Internal Architecture
+-------------------------------
 
 libratbag has two main components, libratbag and ratbagd.
 The former is a library to access the devices. It consists of
@@ -77,8 +77,8 @@ implemented. The HW driver then only accesses the bits required for
 libratbag. This allows us to optionally export the protocol as separate
 library in the future, if other projects require it.
 
-Adding Devices
---------------
+Adding Devices to libratbag
+---------------------------
 
 As of commit 3605bede4 libratbag now uses a hwdb entry to match the device
 with the drivers. To access a device through libratbag, the udev property
