@@ -399,25 +399,11 @@ if enable_doc
 			build_by_default : true)
 endif
 
-#### librbdshared.a ####
-src_librbdshared = [
+#### ratbagd ####
+src_ratbagd = [
 	'ratbagd/shared-macro.h',
 	'ratbagd/shared-rbtree.h',
 	'ratbagd/shared-rbtree.c',
-]
-
-deps_librbdshared = [
-	dep_lm,
-]
-
-lib_librbdshared = static_library('rbdshared',
-	src_librbdshared,
-	dependencies : deps_librbdshared
-)
-dep_librbdshared = declare_dependency(link_with: lib_librbdshared)
-
-#### ratbagd ####
-src_ratbagd = [
 	'ratbagd/ratbagd.h',
 	'ratbagd/ratbagd.c',
 	'ratbagd/ratbagd-led.c',
@@ -430,7 +416,6 @@ src_ratbagd = [
 deps_ratbagd = [
 	dep_udev,
 	dep_systemd,
-	dep_librbdshared,
 	dep_libratbag,
 ]
 
