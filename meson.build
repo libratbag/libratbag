@@ -404,9 +404,9 @@ endif
 
 #### librbdshared.a ####
 src_librbdshared = [
-	'ratbagd/src/shared-macro.h',
-	'ratbagd/src/shared-rbtree.h',
-	'ratbagd/src/shared-rbtree.c',
+	'ratbagd/shared-macro.h',
+	'ratbagd/shared-rbtree.h',
+	'ratbagd/shared-rbtree.c',
 ]
 
 deps_librbdshared = [
@@ -421,13 +421,13 @@ dep_librbdshared = declare_dependency(link_with: lib_librbdshared)
 
 #### ratbagd ####
 src_ratbagd = [
-	'ratbagd/src/ratbagd.h',
-	'ratbagd/src/ratbagd.c',
-	'ratbagd/src/ratbagd-led.c',
-	'ratbagd/src/ratbagd-button.c',
-	'ratbagd/src/ratbagd-device.c',
-	'ratbagd/src/ratbagd-profile.c',
-	'ratbagd/src/ratbagd-resolution.c'
+	'ratbagd/ratbagd.h',
+	'ratbagd/ratbagd.c',
+	'ratbagd/ratbagd-led.c',
+	'ratbagd/ratbagd-button.c',
+	'ratbagd/ratbagd-device.c',
+	'ratbagd/ratbagd-profile.c',
+	'ratbagd/ratbagd-resolution.c'
 ]
 
 deps_ratbagd = [
@@ -444,7 +444,7 @@ executable('ratbagd',
 	   install : true,
 )
 
-install_man('ratbagd/doc/ratbagd.8')
+install_man('ratbagd/ratbagd.8')
 
 #### unit file ####
 unitdir = get_option('systemd-unit-dir')
