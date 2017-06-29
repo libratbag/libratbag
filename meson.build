@@ -17,16 +17,11 @@ ratbagd_sha = r.stdout().strip()
 # b) If interfaces have been changed or added, but binary compatibility has
 #    been preserved, change to C+1:0:A+1
 # c) If the interface is the same as the previous version, change to C:R+1:A
-libratbag_so_c=4
-libratbag_so_r=3
-libratbag_so_a=0
 liblur_so_c=3
 liblur_so_r=3
 liblur_so_a=0
 
 # convert to sonames
-libratbag_so_version = '@0@.@1@.@2@'.format((libratbag_so_c - libratbag_so_a),
-					    libratbag_so_a, libratbag_so_r)
 liblur_so_version = '@0@.@1@.@2@'.format((liblur_so_c-liblur_so_a),
 					 liblur_so_a, liblur_so_r)
 
@@ -125,9 +120,8 @@ pkgconfig.generate (
 )
 
 #### libratbag.so ####
-install_headers('src/libratbag.h')
-
 src_libratbag = [
+	'src/libratbag.h',
 	'src/driver-etekcity.c',
 	'src/driver-hidpp20.c',
 	'src/driver-hidpp10.c',
@@ -161,35 +155,15 @@ libratbag_version_h = configure_file(
 	install: false,
 )
 
-mapfile = 'src/libratbag.sym'
-version_flag = '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), mapfile)
-lib_libratbag = shared_library('ratbag',
+lib_libratbag = static_library('ratbag',
 	src_libratbag,
 	include_directories : include_directories('.'),
 	dependencies : deps_libratbag,
-	version : libratbag_so_version,
-	link_args : version_flag,
-	link_depends : mapfile,
-	install : true,
 )
 
 dep_libratbag = declare_dependency(
 	link_with : lib_libratbag,
 	dependencies : deps_libratbag
-)
-
-pkgconfigdata = configuration_data()
-pkgconfigdata.set('prefix', get_option('prefix'))
-pkgconfigdata.set('libdir', get_option('libdir'))
-pkgconfigdata.set('datadir', get_option('datadir'))
-pkgconfigdata.set('includedir', get_option('includedir'))
-pkgconfigdata.set('LIBRATBAG_VERSION', meson.project_version())
-pkgconfigfile = configure_file(
-	input : 'src/libratbag.pc.in',
-	output : 'libratbag.pc',
-	configuration : pkgconfigdata,
-	install : true,
-	install_dir : get_option('libdir') + '/pkgconfig'
 )
 
 #### libshared.a ####
