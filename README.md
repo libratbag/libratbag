@@ -263,3 +263,5 @@ libratbag is licensed under the MIT license.
 See the COPYING file for the full license information.
 
 [![Build Status](https://semaphoreci.com/api/v1/projects/7905244a-c0b5-468b-9071-d846de3ce9f1/545192/badge.svg)](https://semaphoreci.com/libratbag/libratbag)
+
+[![Build Status](https://circleci.com/gh/libratbag/libratbag.svg?style=shield&circle-token=d7c782e10d2d934b176da754f11b5105ea074f4a)](https://circleci.com/gh/bentiss/libratbag)
