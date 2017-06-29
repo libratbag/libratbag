@@ -5,9 +5,31 @@ libratbag is a configuration library for gaming mice. It provides a generic
 way to access the various features exposed by these mice and abstracts away
 hardware-specific and kernel-specific quirks.
 
-libratbag exports the devices over a DBus daemon called ratbagd. ratbagd
-needs permissions to access device nodes (primarily /dev/hidraw nodes) and
-usually needs to run as root.
+libratbag exports the devices over a DBus daemon called **ratbagd**. The
+DBus interface description is detailed below.
+
+Compiling libratbag
+-------------------
+
+libratbag uses the [meson build system](http://mesonbuild.com) which in
+turn uses ninja to invoke the compiler. Run the following commands to clone
+libratbag and initialize the build:
+
+    git clone https://github.com/libratbag/libratbag.git
+    cd libratbag
+    meson builddir --prefix=/usr/
+
+And to build or re-build after code-changes, run:
+
+    ninja -C builddir
+    sudo ninja -C builddir install
+
+Note: `builddir` is the build output directory and can be changed to any
+other directory name. To set configure-time options, use e.g.
+
+    mesonconf builddir -Denable-documentation=false
+
+Run `mesonconf builddir` to list the options.
 
 Running ratbagd
 ---------------
@@ -19,7 +41,7 @@ installation of the following files:
     sudo cp builddir/org.freedesktop.ratbag1.service /etc/dbus-1/system-services/org.freedesktop.ratbag1.conf
     sudo cp builddir/ratbagd.service /etc/systemd/system/ratbagd.service
 
-The files are installed into the prefix by `ninja install`, see also the
+These files are installed into the prefix by `ninja install`, see also the
 configure-time options `-Dsystemd-unit-dir` and `-Ddbus-root-dir` (see
 "Compiling ratbagd" below). Developers are encouraged to simply symlink to the
 files in the git repository. If you used any other build directory than
@@ -37,30 +59,8 @@ And finally, to enable the service:
 This places the required symlink into the systemd directory so that dbus
 activation is possible.
 
-Compiling ratbagd
------------------
-
-ratbagd uses the meson build system (see http://mesonbuild.com) which in
-turn uses ninja to invoke the compiler (`ninja` may be `ninja-build` on your
-distribution). From a fresh git checkout, run the following commands to init
-the repository:
-
-    meson builddir --prefix=/usr/
-
-And to build or re-build after code-changes, run:
-
-    ninja -C builddir
-    sudo ninja -C builddir install
-
-Note: `builddir` is the build output directory and can be changed to any
-other directory name. To set configure-time options, use e.g.
-
-    mesonconf builddir -Denable-documentation=false
-
-Run `mesonconf builddir` to list the options.
-
-The DBus-Interface
-------------------
+The ratbagd DBus-Interface
+--------------------------
 
 Note: **the DBus interface is subject to change**
 
@@ -207,28 +207,6 @@ Source
 ------
 
     git clone https://github.com/libratbag/libratbag.git
-
-Building
---------
-
-libratbag uses the meson build system, see http://mesonbuild.com which in
-turn uses ninja to invoke the compiler (`ninja` may be `ninja-build` on your
-distribution). From a fresh git checkout, run the
-following commands to init the repository:
-
-    meson builddir --prefix=/usr/
-
-And to build or re-build after code-changes, run:
-
-    ninja -C builddir
-    sudo ninja -C builddir install
-
-Note: 'builddir' is the build output directory and can be changed to any
-other directory name. To set configure-time options, use e.g.
-
-    mesonconf builddir -Denable-documentation=false
-
-Run 'mesonconf builddir' to list the options.
 
 Bugs
 ----
