@@ -1,0 +1,12 @@
+*.a
+*.log
+*.o
+*.stamp
+*.swp
+*.trs
+*~
+.dirstamp
+.libs/
+/*.tar.xz
+tags
+__pycache__

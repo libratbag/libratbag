@@ -1,0 +1,75 @@
+.TH ratbagctl 1 "Apr 13, 2016" ratbagctl
+.SH NAME
+ratbagctl \- inspect and modify configurable mice
+.SH SYNOPSIS
+.B ratbagctl
+.RB [ \-h ]
+.RB [ \-V ]
+.br
+.B ratbagctl list-devices
+.br
+.B ratbagctl show-device
+.RI < device >
+.br
+.B ratbagctl show-profile
+.RI < device "> <" profile >
+.br
+.B ratbagctl show-resolution
+.RI < device "> <" profile "> <" resolution >
+.br
+.B ratbagctl show-button
+.RI < device "> <" profile "> <" button >
+.SH DESCRIPTION
+.SS Common options
+.TP
+.BR \-h
+displays a short help message (it can be used with any form of the
+.B ratbagctl
+command).
+.TP
+.BR \-V
+displays the version of
+.B ratbagctl
+and exits.
+.SS Listing devices
+.TP
+.B list-devices
+lists all identified devices on the system.
+.SS Displaying a device
+.TP
+.BR show-device " <" \fIdevice\fP >
+displays the device information for the given
+.I device
+(as identified by
+.BR list-devices ).
+.SS Displaying profiles
+.TP
+.IR \fBshow-profile\fP " <" device "> <" profile >
+displays the profile information for the given
+.I device
+and
+.IR "profile index" .
+.SS Displaying resolution information
+.TP
+.IR \fBshow-resolution\fP " <" device "> <" profile "> <" resolution >
+displays the resolution information for the given
+.IR device ,
+.IR "profile index" ,
+and
+.IR "resolution index" .
+.SS Displaying button information
+.TP
+.IR \fBshow-button\fP " <" device "> <" profile "> <" button >
+displays the resolution information for the given
+.IR device ,
+.IR "profile index" ,
+and
+.IR "button index" .
+.SH SEE ALSO
+.BR ratbagd (8)
+.SH AUTHORS
+.B ratbagctl
+was written by David Herrmann, Peter Hutterer and Benjamin Tissoires.
+.PP
+This manual page was written by Stephen Kitt <skitt@debian.org> for
+the Debian GNU/Linux system (but may be used by others).
