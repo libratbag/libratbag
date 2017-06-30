@@ -1,17 +1,64 @@
+libratbag_references:
+  default_settings: &default_settings
+    working_directory: ~/libratbag
+  build_and_test: &build_and_test
+    run:
+      name: Build and test
+      command: |
+        meson build --prefix=/usr
+        ninja -C build test
+  export_logs: &export_logs
+    store_artifacts:
+      path: ~/libratbag/build/meson-logs
+
+
+fedora_settings: &fedora_settings
+  <<: *default_settings
+  steps:
+    - run:
+        name: Install prerequisites
+        command: dnf install -y git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz
+    - checkout
+    - *build_and_test
+    - *export_logs
+
+
+ubuntu_settings: &ubuntu_settings
+  <<: *default_settings
+  steps:
+    - run:
+        name: Install prerequisites
+        command: |
+          apt-get update
+          apt-get install -y software-properties-common
+          add-apt-repository universe
+          apt-get update
+          apt-get install -y git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz
+    - checkout
+    - *build_and_test
+    - *export_logs
+
+
 version: 2
 jobs:
-  build:
-    working_directory: ~/libratbag
+  fedora_rawhide:
+    <<: *fedora_settings
     docker:
       - image: fedora:rawhide
-    steps:
-      - run:
-          command: |
-            dnf install -y git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz
-      - checkout
-      - run:
-          command: |
-            meson build
-            ninja -C build test
-      - store_artifacts:
-          path: ~/libratbag/build/meson-logs
+  fedora_latest:
+    <<: *fedora_settings
+    docker:
+      - image: fedora:latest
+  ubuntu_17_04:
+    <<: *ubuntu_settings
+    docker:
+      - image: ubuntu:zesty
+
+
+workflows:
+  version: 2
+  compile_and_test:
+    jobs:
+      - fedora_rawhide
+      - ubuntu_17_04
+      #- fedora_latest
