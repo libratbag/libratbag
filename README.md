@@ -145,4 +145,4 @@ libratbag is licensed under the MIT license.
 
 See the COPYING file for the full license information.
 
-[![Build Status](https://circleci.com/gh/libratbag/libratbag.svg?style=shield&circle-token=d7c782e10d2d934b176da754f11b5105ea074f4a)](https://circleci.com/gh/bentiss/libratbag)
+[![Build Status](https://circleci.com/gh/libratbag/libratbag.svg?style=shield&circle-token=d7c782e10d2d934b176da754f11b5105ea074f4a)](https://circleci.com/gh/libratbag/libratbag)
