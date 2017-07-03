@@ -6,7 +6,12 @@ libratbag_references:
       name: Build and test
       command: |
         meson build --prefix=/usr
+        mesonconf build
         ninja -C build test
+  install: &install
+    run:
+      name: Installing
+      command: ninja -C build install
   export_logs: &export_logs
     store_artifacts:
       path: ~/libratbag/build/meson-logs
@@ -20,6 +25,7 @@ fedora_settings: &fedora_settings
         command: dnf install -y git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz
     - checkout
     - *build_and_test
+    - *install
     - *export_logs
 
 
@@ -36,6 +42,7 @@ ubuntu_settings: &ubuntu_settings
           apt-get install -y git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz
     - checkout
     - *build_and_test
+    - *install
     - *export_logs
 
 
