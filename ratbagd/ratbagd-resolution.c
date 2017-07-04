@@ -74,6 +74,34 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 					     sd_bus_error *error)
 {
 	struct ratbagd_resolution *resolution = userdata;
+	unsigned int dpi;
+	int r;
+
+	r = sd_bus_message_read(m, "u", &dpi);
+	if (r < 0)
+		return r;
+
+	r = ratbag_resolution_set_dpi(resolution->lib_resolution, dpi);
+	if (r == 0) {
+		resolution->xres = dpi;
+		resolution->yres = dpi;
+	}
+
+	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
+				  "/org/freedesktop/ratbag1",
+				  "/org.freedesktop.ratbag1.Resolution",
+				  "ActiveResolutionChanged",
+				  "u",
+				  resolution->index);
+
+	return sd_bus_reply_method_return(m, "u", r);
+}
+
+static int ratbagd_resolution_set_resolution_xy(sd_bus_message *m,
+						void *userdata,
+						sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
 	unsigned int xres, yres;
 	int r;
 
@@ -162,7 +190,8 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_PROPERTY("Maximum", "u", NULL, offsetof(struct ratbagd_resolution, maxres), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Minimum", "u", NULL, offsetof(struct ratbagd_resolution, minres), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("SetResolution", "u", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("SetResolutionXY", "uu", "u", ratbagd_resolution_set_resolution_xy, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_SIGNAL("ActiveResolutionChanged", "u", 0),
 	SD_BUS_SIGNAL("DefaultResolutionChanged", "u", 0),
