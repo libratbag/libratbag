@@ -266,6 +266,18 @@ static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
 					  ratbagd_profile_get_path(profile));
 }
 
+static int ratbagd_device_commit(sd_bus_message *m,
+				 void *userdata,
+				 sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	int r;
+
+	r = ratbag_device_commit(device->lib_device);
+
+	return sd_bus_reply_method_return(m, "u", r);
+}
+
 static int
 ratbagd_device_get_capabilities(sd_bus *bus,
 				const char *path,
@@ -320,6 +332,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ActiveProfile", "u", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
 

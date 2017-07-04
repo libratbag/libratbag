@@ -29,6 +29,7 @@ The **org.freedesktop.ratbag1.Device** interface provides:
   - ActiveProfile -> index of the currently active profile in Profiles
 - Methods:
   - GetProfileByIndex(uint) -> returns the object path for the given index
+  - Commit() -> commit the changes to the device
 
 The **org.freedesktop.ratbag1.Profile** interface provides:
 - Properties:
