@@ -22,7 +22,7 @@ fedora_settings: &fedora_settings
   steps:
     - run:
         name: Install prerequisites
-        command: dnf install -y git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz
+        command: dnf install -y git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz valgrind
     - checkout
     - *build_and_test
     - *install
@@ -39,7 +39,7 @@ ubuntu_settings: &ubuntu_settings
           apt-get install -y software-properties-common
           add-apt-repository universe
           apt-get update
-          apt-get install -y git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz
+          apt-get install -y git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz valgrind
     - checkout
     - *build_and_test
     - *install

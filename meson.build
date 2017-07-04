@@ -301,11 +301,8 @@ if enable_tests
 	dep_check = dependency('check', version: '>= 0.9.10')
 
 	config_h.set('BUILD_TESTS', '1')
-	env_test = ['RATBAG_TEST=1']
-	valgrind_args = [ '--leak-check=full',
-			  '--quiet',
-			  '--error-exitcode=3',
-			  '--suppressions=@0@/test/valgrind.suppressions'.format(meson.current_source_dir()) ]
+	env_test = environment()
+	env_test.set('RATBAG_TEST', '1')
 
 	test_context = executable('test-context',
 				  ['test/test-context.c'],
@@ -324,9 +321,21 @@ if enable_tests
 						 dep_libutil],
 				include_directories : include_directories('src'),
 				install : false)
-	test('test-context', test_context, env : env_test, valgrind_args : valgrind_args)
-	test('test-device', test_device, env : env_test, valgrind_args : valgrind_args)
-	test('test-iconv-helper', test_iconv_helper, env : env_test, valgrind_args : valgrind_args)
+	test('test-context', test_context, env : env_test)
+	test('test-device', test_device, env : env_test)
+	test('test-iconv-helper', test_iconv_helper, env : env_test)
+
+	valgrind = find_program('valgrind')
+	valgrind_suppressions_file = join_paths(meson.source_root(), 'test', 'valgrind.suppressions')
+	add_test_setup('valgrind',
+		       exe_wrapper : [
+			       valgrind,
+			       '--leak-check=full',
+			       '--quiet',
+			       '--error-exitcode=3',
+			       '--suppressions=' + valgrind_suppressions_file ],
+		       env : env_test,
+		       timeout_multiplier: 100)
 
 	executable('test-build-cxx',
 		   ['test/build-cxx.cc'],
