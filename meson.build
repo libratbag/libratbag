@@ -472,7 +472,6 @@ configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
 	       configuration : config_bindir,
 	       install_dir : join_paths(dbusdir, 'system-services'))
 install_data('dbus/org.freedesktop.ratbag1.conf',
-	     configuration : config_bindir,
 	     install_dir : join_paths(dbusdir, 'system.d'))
 
 #### tools ####
