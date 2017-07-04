@@ -17,7 +17,10 @@ libratbag_references:
       name: Checking if any files are left after uninstall
       command: |
         PREFIX=/root/test_install
-        meson build_install --prefix=$PREFIX
+        # workaround until https://github.com/mesonbuild/meson/pull/2033 is merged
+        # and a new release appears
+        git clone https://github.com/whot/meson -b wip/remove-directories-on-uninstall
+        ./meson/meson.py build_install --prefix=$PREFIX
         ninja -C build_install install
         ninja -C build_install uninstall
         if [ -d $PREFIX ]
