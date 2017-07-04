@@ -12,6 +12,19 @@ libratbag_references:
     run:
       name: Installing
       command: ninja -C build install
+  check_uninstall: &check_uninstall
+    run:
+      name: Checking if any files are left after uninstall
+      command: |
+        PREFIX=/root/test_install
+        meson build_install --prefix=$PREFIX
+        ninja -C build_install install
+        ninja -C build_install uninstall
+        if [ -d $PREFIX ]
+        then
+          tree $PREFIX
+          exit 1
+        fi
   export_logs: &export_logs
     store_artifacts:
       path: ~/libratbag/build/meson-logs
@@ -22,10 +35,11 @@ fedora_settings: &fedora_settings
   steps:
     - run:
         name: Install prerequisites
-        command: dnf install -y git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz
+        command: dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz
     - checkout
     - *build_and_test
     - *install
+    - *check_uninstall
     - *export_logs
 
 
@@ -39,10 +53,11 @@ ubuntu_settings: &ubuntu_settings
           apt-get install -y software-properties-common
           add-apt-repository universe
           apt-get update
-          apt-get install -y git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz
+          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz
     - checkout
     - *build_and_test
     - *install
+    - *check_uninstall
     - *export_logs
 
 
