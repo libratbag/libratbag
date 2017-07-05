@@ -301,6 +301,8 @@ install_data(default_svg_files,
 
 gnome_svg_files = [
 	'data/gnome/logitech-g403.svg',
+	'data/gnome/logitech-g500.svg',
+	'data/gnome/logitech-g500s.svg',
 	'data/gnome/logitech-g502.svg',
 	'data/gnome/logitech-g700.svg',
 ]
