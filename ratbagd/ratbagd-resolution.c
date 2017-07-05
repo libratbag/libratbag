@@ -74,6 +74,8 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 					     sd_bus_error *error)
 {
 	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	const enum ratbag_device_capability cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
 	unsigned int xres, yres;
 	int r;
 
@@ -81,8 +83,13 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 	if (r < 0)
 		return r;
 
-	r = ratbag_resolution_set_dpi_xy(resolution->lib_resolution,
-					 xres, yres);
+	if (!ratbag_resolution_has_capability(lib_resolution, cap)) {
+		yres = xres;
+		r = ratbag_resolution_set_dpi(resolution->lib_resolution, xres);
+	} else {
+		r = ratbag_resolution_set_dpi_xy(resolution->lib_resolution,
+						 xres, yres);
+	}
 	if (r == 0) {
 		resolution->xres = xres;
 		resolution->yres = yres;
