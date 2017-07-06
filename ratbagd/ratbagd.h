@@ -174,4 +174,6 @@ struct ratbagd {
 
 	RBTree device_map;
 	size_t n_devices;
+
+	const char **themes; /* NULL-terminated */
 };

@@ -14,6 +14,8 @@ Interfaces:
 The **org.freedesktop.ratbag1.Manager** interface provides:
 - Properties:
   - Devices -> array of object paths with interface Device
+  - Themes -> array of strings with theme names. The theme 'default' is
+              guaranteed to be available.
 - Signals:
   - DeviceNew -> new device available, carries object path
   - DeviceRemoved -> device removed, carries object path
@@ -30,6 +32,12 @@ The **org.freedesktop.ratbag1.Device** interface provides:
 - Methods:
   - GetProfileByIndex(uint) -> returns the object path for the given index
   - Commit() -> commit the changes to the device
+  - GetSvg(string) -> returns the full path to the SVG for the given theme
+       or an empty string if none is available.  The theme must be one of
+       org.freedesktop.ratbag1.Manager.Themes. The theme 'default' is
+       guaranteed to be available. ratbagd may return the path to a
+       file that doesn't exist. This is the case if the device has SVGs
+       available but not for the given theme.
 
 The **org.freedesktop.ratbag1.Profile** interface provides:
 - Properties:

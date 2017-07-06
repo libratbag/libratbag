@@ -38,6 +38,12 @@
 
 static bool verbose = false;
 
+static const char *SVG_THEMES[] = {
+	"default",
+	"gnome",
+	NULL
+};
+
 void log_verbose(const char *fmt, ...)
 {
 	va_list args;
@@ -146,9 +152,39 @@ static int ratbagd_get_devices(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+static int ratbagd_get_themes(sd_bus *bus,
+			      const char *path,
+			      const char *interface,
+			      const char *property,
+			      sd_bus_message *reply,
+			      void *userdata,
+			      sd_bus_error *error)
+{
+	struct ratbagd *ctx = userdata;
+	const char **theme;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "s");
+	if (r < 0)
+		return r;
+
+	theme = ctx->themes;
+	while(*theme) {
+		r = sd_bus_message_append(reply,
+					  "s",
+					  *theme);
+		if (r < 0)
+			return r;
+		theme++;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
 static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, 0),
+	SD_BUS_PROPERTY("Themes", "as", ratbagd_get_themes, 0, 0),
 	SD_BUS_SIGNAL("DeviceNew", "o", 0),
 	SD_BUS_SIGNAL("DeviceRemoved", "o", 0),
 	SD_BUS_VTABLE_END,
@@ -322,6 +358,8 @@ static int ratbagd_new(struct ratbagd **out)
 	ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
 		return -ENOMEM;
+
+	ctx->themes = SVG_THEMES;
 
 	r = sd_event_default(&ctx->event);
 	if (r < 0)
