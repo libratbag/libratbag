@@ -1,0 +1,26 @@
+<?xml version="1.0"?> <!--*-nxml-*-->
+<!DOCTYPE busconfig PUBLIC
+        "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+        "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+
+<!--
+	WARNING: this file is for testing of libratbag during development.
+	If you don't know why this file is in your dbus configuration
+	folder, remove it.
+-->
+
+<busconfig>
+
+        <policy user="root">
+                <allow own="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
+                <allow send_destination="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
+                <allow receive_sender="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
+        </policy>
+
+	<!-- allow everyone to talk to the daemon -->
+        <policy context="default">
+                <allow send_destination="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
+                <allow receive_sender="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
+        </policy>
+
+</busconfig>

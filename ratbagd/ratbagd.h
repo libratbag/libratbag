@@ -38,6 +38,13 @@
 #include "shared-macro.h"
 #include "shared-rbtree.h"
 
+#ifndef RATBAG_DBUS_INTERFACE
+#define RATBAG_DBUS_INTERFACE	"ratbag1"
+#endif
+
+#define RATBAGD_OBJ_ROOT "/org/freedesktop/" RATBAG_DBUS_INTERFACE
+#define RATBAGD_NAME_ROOT "org.freedesktop." RATBAG_DBUS_INTERFACE
+
 struct ratbagd;
 struct ratbagd_device;
 struct ratbagd_profile;

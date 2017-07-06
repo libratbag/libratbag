@@ -72,7 +72,7 @@ static int ratbagd_find_device(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/device/%",
+				    RATBAGD_OBJ_ROOT "/device/%",
 				    &name);
 	if (r <= 0)
 		return r;
@@ -181,8 +181,8 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		/* device was removed, unlink it and destroy our context */
 		if (device) {
 			(void) sd_bus_emit_signal(ctx->bus,
-						  "/org/freedesktop/ratbag1",
-						  "org.freedesktop.ratbag1.Manager",
+						  RATBAGD_OBJ_ROOT,
+						  RATBAGD_NAME_ROOT ".Manager",
 						  "DeviceRemoved",
 						  "o",
 						  ratbagd_device_get_path(device));
@@ -213,8 +213,8 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 
 		ratbagd_device_link(device);
 		(void) sd_bus_emit_signal(ctx->bus,
-					  "/org/freedesktop/ratbag1",
-					  "org.freedesktop.ratbag1.Manager",
+					  RATBAGD_OBJ_ROOT,
+					  RATBAGD_NAME_ROOT ".Manager",
 					  "DeviceNew",
 					  "o",
 					  ratbagd_device_get_path(device));
@@ -349,8 +349,8 @@ static int ratbagd_new(struct ratbagd **out)
 
 	r = sd_bus_add_object_vtable(ctx->bus,
 				     NULL,
-				     "/org/freedesktop/ratbag1",
-				     "org.freedesktop.ratbag1.Manager",
+				     RATBAGD_OBJ_ROOT,
+				     RATBAGD_NAME_ROOT ".Manager",
 				     ratbagd_vtable,
 				     ctx);
 	if (r < 0)
@@ -358,8 +358,8 @@ static int ratbagd_new(struct ratbagd **out)
 
 	r = sd_bus_add_fallback_vtable(ctx->bus,
 				       NULL,
-				       "/org/freedesktop/ratbag1/device",
-				       "org.freedesktop.ratbag1.Device",
+				       RATBAGD_OBJ_ROOT "/device",
+				       RATBAGD_NAME_ROOT ".Device",
 				       ratbagd_device_vtable,
 				       ratbagd_find_device,
 				       ctx);
@@ -368,13 +368,13 @@ static int ratbagd_new(struct ratbagd **out)
 
 	r = sd_bus_add_node_enumerator(ctx->bus,
 				       NULL,
-				       "/org/freedesktop/ratbag1/device",
+				       RATBAGD_OBJ_ROOT "/device",
 				       ratbagd_list_devices,
 				       ctx);
 	if (r < 0)
 		return r;
 
-	r = sd_bus_request_name(ctx->bus, "org.freedesktop.ratbag1", 0);
+	r = sd_bus_request_name(ctx->bus, RATBAGD_NAME_ROOT, 0);
 	if (r < 0)
 		return r;
 

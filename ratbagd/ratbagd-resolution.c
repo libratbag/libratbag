@@ -108,8 +108,8 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 	r = ratbag_resolution_set_default(resolution->lib_resolution);
 
 	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
-				  "/org/freedesktop/ratbag1",
-				  "org.freedesktop.ratbag1.Resolution",
+				  RATBAGD_OBJ_ROOT,
+				  RATBAGD_NAME_ROOT ".Resolution",
 				  "DefaultResolutionChanged",
 				  "u",
 				  resolution->index);
@@ -198,7 +198,7 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(resolution_buffer, "r%u", index);
 	r = sd_bus_path_encode_many(&resolution->path,
-				    "/org/freedesktop/ratbag1/resolution/%/%/%",
+				    RATBAGD_OBJ_ROOT "/resolution/%/%/%",
 				    ratbagd_device_get_name(device),
 				    profile_buffer,
 				    resolution_buffer);
