@@ -95,13 +95,6 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 		resolution->yres = yres;
 	}
 
-	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
-				  "/org/freedesktop/ratbag1",
-				  "/org.freedesktop.ratbag1.Resolution",
-				  "ActiveResolutionChanged",
-				  "u",
-				  resolution->index);
-
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -116,7 +109,7 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 
 	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
 				  "/org/freedesktop/ratbag1",
-				  "/org.freedesktop.ratbag1.Resolution",
+				  "org.freedesktop.ratbag1.Resolution",
 				  "DefaultResolutionChanged",
 				  "u",
 				  resolution->index);

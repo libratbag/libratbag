@@ -314,7 +314,7 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 
 	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
 				  "/org/freedesktop/ratbag1",
-				  "/org.freedesktop.ratbag1.Profile",
+				  "org.freedesktop.ratbag1.Profile",
 				  "ActiveProfileChanged",
 				  "u",
 				  profile->index);
