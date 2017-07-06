@@ -187,6 +187,34 @@ out:
 	return sd_bus_message_append(reply, "s", svg_path);
 }
 
+static int ratbagd_device_get_theme_svg(sd_bus_message *m,
+					void *userdata,
+					sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	char svg_path[PATH_MAX] = {0};
+	const char *theme;
+	const char *svg;
+	int r;
+
+	r = sd_bus_message_read(m, "s", &theme);
+	if (r < 0)
+		return r;
+
+
+	svg = ratbag_device_get_svg_name(device->lib_device);
+	if (!svg) {
+		log_error("Unable to fetch SVG for %s\n",
+			  ratbagd_device_get_name(device));
+		goto out;
+	}
+
+	sprintf(svg_path, "%s/%s/%s", LIBRATBAG_DATA_DIR, theme, svg);
+
+out:
+	return sd_bus_reply_method_return(m, "s", svg_path);
+}
+
 static int ratbagd_device_get_profiles(sd_bus *bus,
 				       const char *path,
 				       const char *interface,
@@ -332,6 +360,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ActiveProfile", "u", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("GetSvg", "s", "s", ratbagd_device_get_theme_svg, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
