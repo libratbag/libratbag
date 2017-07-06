@@ -240,7 +240,7 @@ int ratbagd_led_new(struct ratbagd_led **out,
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(led_buffer, "b%u", index);
 	r = sd_bus_path_encode_many(&led->path,
-				    "/org/freedesktop/ratbag1/led/%/%/%",
+				    RATBAGD_OBJ_ROOT "/led/%/%/%",
 				    ratbagd_device_get_name(device),
 				    profile_buffer,
 				    led_buffer);

@@ -175,7 +175,7 @@ static int ratbagd_button_set_button(sd_bus_message *m,
 		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       button->path,
-					       "org.freedesktop.ratbag1.Button",
+					       RATBAGD_NAME_ROOT ".Button",
 					       "ButtonMapping",
 					       NULL);
 	}
@@ -316,7 +316,7 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       button->path,
-					       "org.freedesktop.ratbag1.Button",
+					       RATBAGD_NAME_ROOT ".Button",
 					       "SpecialMapping",
 					       NULL);
 	}
@@ -536,7 +536,7 @@ int ratbagd_button_new(struct ratbagd_button **out,
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(button_buffer, "b%u", index);
 	r = sd_bus_path_encode_many(&button->path,
-				    "/org/freedesktop/ratbag1/button/%/%/%",
+				    RATBAGD_OBJ_ROOT "/button/%/%/%",
 				    ratbagd_device_get_name(device),
 				    profile_buffer,
 				    button_buffer);

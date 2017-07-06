@@ -71,7 +71,7 @@ static int ratbagd_profile_find_resolution(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/resolution/%/p%/r%",
+				    RATBAGD_OBJ_ROOT "/resolution/%/p%/r%",
 				    NULL,
 				    NULL,
 				    &name);
@@ -252,7 +252,7 @@ static int ratbagd_profile_find_button(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/button/%/p%/b%",
+				    RATBAGD_OBJ_ROOT "/button/%/p%/b%",
 				    NULL,
 				    NULL,
 				    &name);
@@ -283,7 +283,7 @@ static int ratbagd_profile_find_led(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/led/%/p%/b%",
+				    RATBAGD_OBJ_ROOT "/led/%/p%/b%",
 				    NULL,
 				    NULL,
 				    &name);
@@ -313,8 +313,8 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 		return r;
 
 	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
-				  "/org/freedesktop/ratbag1",
-				  "org.freedesktop.ratbag1.Profile",
+				  RATBAGD_OBJ_ROOT,
+				  RATBAGD_NAME_ROOT ".Profile",
 				  "ActiveProfileChanged",
 				  "u",
 				  profile->index);
@@ -384,7 +384,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 
 	sprintf(index_buffer, "p%u", index);
 	r = sd_bus_path_encode_many(&profile->path,
-				    "/org/freedesktop/ratbag1/profile/%/%",
+				    RATBAGD_OBJ_ROOT "/profile/%/%",
 				    ratbagd_device_get_name(device),
 				    index_buffer);
 	if (r < 0)
@@ -559,7 +559,7 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 
 	/* register resolution interfaces */
 	r = sd_bus_path_encode_many(&prefix,
-				    "/org/freedesktop/ratbag1/resolution/%/%",
+				    RATBAGD_OBJ_ROOT "/resolution/%/%",
 				    ratbagd_device_get_name(device),
 				    index_buffer);
 
@@ -567,7 +567,7 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 		r = sd_bus_add_fallback_vtable(bus,
 					       &profile->resolution_vtable_slot,
 					       prefix,
-					       "org.freedesktop.ratbag1.Resolution",
+					       RATBAGD_NAME_ROOT ".Resolution",
 					       ratbagd_resolution_vtable,
 					       ratbagd_profile_find_resolution,
 					       profile);
@@ -635,7 +635,7 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 
 	/* register button interfaces */
 	r = sd_bus_path_encode_many(&prefix,
-				    "/org/freedesktop/ratbag1/button/%/%",
+				    RATBAGD_OBJ_ROOT "/button/%/%",
 				    ratbagd_device_get_name(device),
 				    index_buffer);
 
@@ -643,7 +643,7 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 		r = sd_bus_add_fallback_vtable(bus,
 					       &profile->button_vtable_slot,
 					       prefix,
-					       "org.freedesktop.ratbag1.Button",
+					       RATBAGD_NAME_ROOT ".Button",
 					       ratbagd_button_vtable,
 					       ratbagd_profile_find_button,
 					       profile);
@@ -711,7 +711,7 @@ int ratbagd_profile_register_leds(struct sd_bus *bus,
 
 	/* register led interfaces */
 	r = sd_bus_path_encode_many(&prefix,
-				    "/org/freedesktop/ratbag1/led/%/%",
+				    RATBAGD_OBJ_ROOT "/led/%/%",
 				    ratbagd_device_get_name(device),
 				    index_buffer);
 
@@ -719,7 +719,7 @@ int ratbagd_profile_register_leds(struct sd_bus *bus,
 		r = sd_bus_add_fallback_vtable(bus,
 					       &profile->led_vtable_slot,
 					       prefix,
-					       "org.freedesktop.ratbag1.Led",
+					       RATBAGD_NAME_ROOT ".Led",
 					       ratbagd_led_vtable,
 					       ratbagd_profile_find_led,
 					       profile);

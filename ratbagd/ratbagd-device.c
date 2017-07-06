@@ -67,7 +67,7 @@ static int ratbagd_device_find_profile(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    "/org/freedesktop/ratbag1/profile/%/p%",
+				    RATBAGD_OBJ_ROOT "/profile/%/p%",
 				    NULL,
 				    &name);
 	if (r <= 0)
@@ -362,7 +362,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	if (!device->name)
 		return -ENOMEM;
 
-	r = sd_bus_path_encode("/org/freedesktop/ratbag1/device",
+	r = sd_bus_path_encode(RATBAGD_OBJ_ROOT "/device",
 			       device->name,
 			       &device->path);
 	if (r < 0)
@@ -485,13 +485,13 @@ void ratbagd_device_link(struct ratbagd_device *device)
 
 	/* register profile interfaces */
 	r = sd_bus_path_encode_many(&prefix,
-				    "/org/freedesktop/ratbag1/profile/%",
+				    RATBAGD_OBJ_ROOT "/profile/%",
 				    device->name);
 	if (r >= 0) {
 		r = sd_bus_add_fallback_vtable(device->ctx->bus,
 					       &device->profile_vtable_slot,
 					       prefix,
-					       "org.freedesktop.ratbag1.Profile",
+					       RATBAGD_NAME_ROOT ".Profile",
 					       ratbagd_profile_vtable,
 					       ratbagd_device_find_profile,
 					       device);
