@@ -508,10 +508,10 @@ def main(argv):
         r = Ratbagd()
         if not r.devices:
             print("No devices available.")
+
+        cmd.func(r, cmd)
     except RatbagdDBusUnavailable:
         print("Unable to connect to ratbagd over dbus")
-
-    cmd.func(r, cmd)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
