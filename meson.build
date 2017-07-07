@@ -285,19 +285,19 @@ install_data('hwdb/70-libratbag-mouse.hwdb',
 	     install_dir : udev_hwdb_dir)
 
 #### svg files ####
-svg_files = [
-	'data/etekcity.svg',
-	'data/logitech-g300.svg',
-	'data/logitech-g303.svg',
-	'data/logitech-g500s.svg',
-	'data/logitech-g502.svg',
-	'data/logitech-g700.svg',
-	'data/logitech-g900.svg',
-	'data/logitech-mx_master.svg',
-	'data/roccat-kone-xtd.svg'
+default_svg_files = [
+	'data/default/etekcity.svg',
+	'data/default/logitech-g300.svg',
+	'data/default/logitech-g303.svg',
+	'data/default/logitech-g500s.svg',
+	'data/default/logitech-g502.svg',
+	'data/default/logitech-g700.svg',
+	'data/default/logitech-g900.svg',
+	'data/default/logitech-mx_master.svg',
+	'data/default/roccat-kone-xtd.svg'
 ]
-install_data(svg_files,
-	     install_dir : '@0@/libratbag'.format(get_option('datadir')))
+install_data(default_svg_files,
+	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'default'))
 
 #### tests ####
 enable_tests = get_option('enable-tests')
