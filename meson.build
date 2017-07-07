@@ -299,6 +299,14 @@ default_svg_files = [
 install_data(default_svg_files,
 	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'default'))
 
+gnome_svg_files = [
+	'data/gnome/logitech-g403.svg',
+	'data/gnome/logitech-g502.svg',
+	'data/gnome/logitech-g700.svg',
+]
+install_data(gnome_svg_files,
+	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'gnome'))
+
 #### tests ####
 enable_tests = get_option('enable-tests')
 if enable_tests
