@@ -1,20 +1,11 @@
 libratbag data files
 ====================
 
-These SVG files should approximate the device to make it immediately
-recognizable. Detail work not required, the graphic is an illustration only.
+This directory contains the SVG files for each theme. In general, device SVGs
+should approximate the device to make it immediately recognizable. Detail work
+not required, the graphic is an illustration only.
 
-Requirements
-------------
-
-- Canvas size: 750x750 pixels
-- Two layers in the final SVG: a lower layer named "Device" with the device
-  itself, "Leaders" with the buttons and leader-lines
-- The device should be approximately centered on the canvas and occupy a
-  meaningful portion of the canvas without making it look cramped
-- Button labels must be in 12pt Sans, starting with Button0
-- Wheel buttons may be labeled separately if required (look at the Etekcity
-  for an example)
+For theme-specific requirements, consult the README in the subdirectories.
 
 Technique
 ---------
