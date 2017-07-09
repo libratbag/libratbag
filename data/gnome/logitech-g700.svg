@@ -14,7 +14,7 @@
    viewBox="0 0 467.83105 401.98727"
    version="1.1"
    id="svg8"
-   inkscape:version="0.92.1 r"
+   inkscape:version="0.92+devel unknown"
    sodipodi:docname="logitech-g700.svg"
    inkscape:export-filename="/home/jimmac/logitech-g403.png"
    inkscape:export-xdpi="96"
@@ -28,11 +28,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="16"
-     inkscape:cx="448.44799"
-     inkscape:cy="381.5888"
+     inkscape:zoom="2.8284271"
+     inkscape:cx="187.43137"
+     inkscape:cy="258.73512"
      inkscape:document-units="px"
-     inkscape:current-layer="Buttons"
+     inkscape:current-layer="Device"
      inkscape:document-rotation="0"
      showgrid="false"
      units="px"
@@ -40,9 +40,9 @@
      inkscape:showpageshadow="false"
      inkscape:pagecheckerboard="false"
      showguides="true"
-     inkscape:window-width="1366"
-     inkscape:window-height="704"
-     inkscape:window-x="0"
+     inkscape:window-width="1853"
+     inkscape:window-height="1016"
+     inkscape:window-x="1507"
      inkscape:window-y="27"
      inkscape:window-maximized="1"
      inkscape:snap-global="false"
@@ -200,6 +200,18 @@
            id="path1418"
            inkscape:connector-curvature="0"
            sodipodi:nodetypes="ccscccccc" />
+        <path
+           sodipodi:nodetypes="ccsccccccccccsssc"
+           inkscape:connector-curvature="0"
+           id="button1"
+           d="m 674.1855,590.4286 -4.08726,-12.49046 c 0,0 2.54921,-4.39682 3.08963,-6.83936 1.19851,-5.41691 0.18619,-16.64269 0.18619,-16.64269 l -10.87259,-0.44848 -0.60938,-17.27195 6.24524,-0.76363 c 4.06456,0.38511 6.77965,-4.10902 6.66305,-6.86494 l -0.33252,-39.01044 c 0.28048,-3.6366 -2.07788,-7.62472 -5.83705,-7.98954 l -8.47677,-0.49546 0.62854,-18.36184 13.79884,0.89971 c 0,0 6.34522,-14.40167 10.99085,-13.74957 4.64563,0.6521 24.41467,6.6986 27.51233,10.86999 3.09765,4.17138 18.99439,49.84112 18.07202,75.55481 -0.46118,12.85684 -2.85453,42.02774 -5.13257,70.79203"
+           style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#eeeeec;fill-opacity:1;stroke:#babdb6;stroke-width:2;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal" />
+        <path
+           style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#eeeeec;fill-opacity:1;stroke:#babdb6;stroke-width:2;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+           d="m 590.48316,608.5506 c -12.66468,-31.04352 -15.74874,-51.61667 -15.74874,-51.61667 l 23.05147,-8.93851 c 0,0 -7.96118,-20.18219 -6.17273,-34.80102 1.78845,-14.61884 8.3562,-33.93274 8.3562,-33.93274 l -21.43054,-2.36243 c 0,0 5.83261,-22.58934 16.60092,-28.15233 10.76831,-5.56298 19.23914,-5.81466 28.58237,-6.42699 7.5605,-0.4955 15.97198,18.16221 15.97198,18.16221 l 16.26808,2.17394 -0.32704,18.44984 -5.25454,-0.5654 c -3.67431,-0.56751 -4.4221,1.65708 -4.4841,3.99801 l 0.59236,44.46703 c 0.17877,3.31112 2.72713,6.15312 5.36572,6.27812 l 5.67576,0.87203 1.14008,17.91322 -11.71232,-0.0529 c 0,0 0.46941,10.73577 1.62541,15.95522 0.58121,2.62422 2.64643,7.61678 2.64643,7.61678 l -5.41105,14.14438"
+           id="button0"
+           inkscape:connector-curvature="0"
+           sodipodi:nodetypes="cccsccssccccccccccscc" />
       </g>
       <path
          style="color:#000000;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#888a85;fill-opacity:1;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
