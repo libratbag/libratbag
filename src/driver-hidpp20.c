@@ -737,8 +737,11 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 		if (profile->is_active &&
 		    res->dpi_x == dpi)
 			res->is_active = true;
-		if (i == p->default_dpi)
+		if (i == p->default_dpi) {
 			res->is_default = true;
+			if (!profile->is_active)
+				res->is_active = true;
+		}
 
 		ratbag_resolution_set_range(res, sensor->dpi_min, sensor->dpi_max);
 	}
