@@ -504,8 +504,7 @@ int hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
  * free a list of profiles allocated by hidpp20_onboard_profiles_allocate()
  */
 void
-hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
-				 struct hidpp20_profiles *profiles_list);
+hidpp20_onboard_profiles_destroy(struct hidpp20_profiles *profiles_list);
 
 /**
  * return the current profile index or a negative error.
