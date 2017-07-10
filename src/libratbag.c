@@ -643,8 +643,9 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->refcount = 0;
 	profile->device = device;
 	profile->index = index;
-	profile->resolution.modes = zalloc(num_resolutions *
-					   sizeof(*profile->resolution.modes));
+	if (num_resolutions)
+		profile->resolution.modes = zalloc(num_resolutions *
+						   sizeof(*profile->resolution.modes));
 	profile->resolution.num_modes = num_resolutions;
 	profile->is_enabled = true;
 
