@@ -128,6 +128,9 @@ static int ratbagd_led_set_color(sd_bus_message *m,
 	if (r < 0)
 		return r;
 
+	if (c.red > 255 || c.green > 255 || c.blue > 255)
+		return RATBAG_ERROR_VALUE;
+
 	r = ratbag_led_set_color(led->lib_led, c);
 	return sd_bus_reply_method_return(m, "u", r);
 }
