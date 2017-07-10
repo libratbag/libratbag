@@ -67,7 +67,7 @@ static int ratbagd_profile_find_resolution(sd_bus *bus,
 {
 	_cleanup_(freep) char *name = NULL;
 	struct ratbagd_profile *profile = userdata;
-	unsigned int index;
+	unsigned int index = 0;
 	int r;
 
 	r = sd_bus_path_decode_many(path,
@@ -248,7 +248,7 @@ static int ratbagd_profile_find_button(sd_bus *bus,
 {
 	_cleanup_(freep) char *name = NULL;
 	struct ratbagd_profile *profile = userdata;
-	unsigned int index;
+	unsigned int index = 0;
 	int r;
 
 	r = sd_bus_path_decode_many(path,
@@ -279,7 +279,7 @@ static int ratbagd_profile_find_led(sd_bus *bus,
 {
 	_cleanup_(freep) char *name = NULL;
 	struct ratbagd_profile *profile = userdata;
-	unsigned int index;
+	unsigned int index = 0;
 	int r;
 
 	r = sd_bus_path_decode_many(path,
@@ -329,7 +329,7 @@ static int ratbagd_profile_get_resolution_by_index(sd_bus_message *m,
 {
 	struct ratbagd_profile *profile = userdata;
 	struct ratbagd_resolution *resolution;
-	unsigned int index;
+	unsigned int index = 0;
 	int r;
 
 	r = sd_bus_message_read(m, "u", &index);
