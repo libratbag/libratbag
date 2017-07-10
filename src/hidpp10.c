@@ -1691,6 +1691,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+		return -ENOTSUP;
 	}
 
 
@@ -1711,6 +1712,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+		return -ENOTSUP;
 	}
 
 	switch (dev->profile_type) {
@@ -1747,6 +1749,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		break;
 	default:
 		hidpp_log_error(&dev->base, "This should never happen, complain to your maintainer.\n");
+		return -ENOTSUP;
 	}
 
 	crc = hidpp_crc_ccitt(page_data, HIDPP10_PAGE_SIZE - 2);
