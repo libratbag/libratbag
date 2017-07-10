@@ -652,6 +652,9 @@ etekcity_probe(struct ratbag_device *device)
 	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_SPEED_SETTING,
 			drv_data->speed_setting, ETEKCITY_REPORT_SIZE_SPEED_SETTING,
 			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	if (rc)
+		return rc;
+
 	log_debug(device->ratbag, "device is at %d ms of latency\n", drv_data->speed_setting[2]);
 
 	/* profiles are 0-indexed */

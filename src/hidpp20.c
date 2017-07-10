@@ -975,7 +975,6 @@ int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device,
 	*sensors_list = s_list;
 	return num_sensors;
 err:
-	num_sensors = 0;
 	free(s_list);
 	return rc > 0 ? -EPROTO : rc;
 }
@@ -1457,7 +1456,6 @@ hidpp20_onboard_profiles_macro_next(struct hidpp20_device *device,
 		rc = -EAGAIN;
 		break;
 	case HIDPP20_MACRO_END:
-		step = 1;
 		return 0;
 	default:
 		hidpp_log_error(&device->base, "unknown tag: 0x%02x\n", macro->any.type);

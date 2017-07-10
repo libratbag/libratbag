@@ -488,7 +488,7 @@ START_TEST(device_freed_before_profile)
 	is_active = ratbag_profile_is_active(p);
 	ck_assert_int_eq(is_active, 1);
 
-	p = ratbag_profile_unref(p);
+	ratbag_profile_unref(p);
 	ratbag_unref(r);
 	ck_assert_int_eq(device_freed_count, 1);
 }

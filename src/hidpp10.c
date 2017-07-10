@@ -1080,7 +1080,6 @@ hidpp10_onboard_profiles_macro_next(struct hidpp10_device *device,
 		break;
 
 	case HIDPP10_MACRO_END:
-		step = 1;
 		return 0;
 	default:
 		if (macro->any.type >= 0x80 && macro->any.type <= 0xFE) {
