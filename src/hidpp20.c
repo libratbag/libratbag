@@ -1644,8 +1644,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 }
 
 void
-hidpp20_onboard_profiles_destroy(struct hidpp20_device *device,
-				 struct hidpp20_profiles *profiles_list)
+hidpp20_onboard_profiles_destroy(struct hidpp20_profiles *profiles_list)
 {
 	struct hidpp20_profile *profile;
 	union hidpp20_macro_data **macro;
