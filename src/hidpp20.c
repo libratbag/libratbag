@@ -1624,8 +1624,10 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 							  0x00,
 							  offset,
 							  data + offset);
-		if (rc < 0)
+		if (rc < 0) {
+			hidpp20_onboard_profiles_destroy(profiles);
 			return rc;
+		}
 	}
 
 	for (i = 0; i < profiles->num_profiles; i++) {
