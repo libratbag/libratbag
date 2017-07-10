@@ -808,17 +808,20 @@ void
 ratbag_device_set_capability(struct ratbag_device *device,
 			     enum ratbag_device_capability cap)
 {
-	device->capabilities |= (1UL << cap);
+	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
+		abort();
+
+	long_set_bit(device->capabilities, cap);
 }
 
 LIBRATBAG_EXPORT int
 ratbag_device_has_capability(const struct ratbag_device *device,
 			     enum ratbag_device_capability cap)
 {
-	if (cap == RATBAG_DEVICE_CAP_NONE)
+	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
 		abort();
 
-	return !!(device->capabilities & (1UL << cap));
+	return long_bit_is_set(device->capabilities, cap);
 }
 
 static inline enum ratbag_error_code
