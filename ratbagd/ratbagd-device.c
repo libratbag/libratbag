@@ -63,7 +63,7 @@ static int ratbagd_device_find_profile(sd_bus *bus,
 {
 	_cleanup_(freep) char *name = NULL;
 	struct ratbagd_device *device = userdata;
-	unsigned int index;
+	unsigned int index = 0;
 	int r;
 
 	r = sd_bus_path_decode_many(path,
