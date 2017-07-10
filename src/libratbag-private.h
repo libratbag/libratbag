@@ -78,6 +78,8 @@ struct ratbag {
 	enum ratbag_log_priority log_priority;
 };
 
+#define MAX_CAP 1000
+
 struct ratbag_device {
 	char *name;
 	void *userdata;
@@ -88,7 +90,7 @@ struct ratbag_device {
 	struct input_id ids;
 	struct ratbag_driver *driver;
 	struct ratbag *ratbag;
-	unsigned long capabilities;
+	unsigned long capabilities[NLONGS(MAX_CAP)];
 
 	unsigned num_profiles;
 	struct list profiles;
