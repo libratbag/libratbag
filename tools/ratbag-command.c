@@ -480,13 +480,13 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 			printf("    Button: %d type %s is mapped to '%s'\n",
 			       b, button_type_to_str(type), action);
 			free(action);
-			button = ratbag_button_unref(button);
+			ratbag_button_unref(button);
 		}
 
 		for (l = 0; l < num_leds; l++) {
 			led = ratbag_profile_get_led(profile, l);
 			ratbag_printf_led(led, "    LED: %d ", l);
-			led = ratbag_led_unref(led);
+			ratbag_led_unref(led);
 		}
 
 		ratbag_profile_unref(profile);
@@ -540,8 +540,8 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 		commit = 2;
 	}
 
-	button_6 = ratbag_button_unref(button_6);
-	button_7 = ratbag_button_unref(button_7);
+	ratbag_button_unref(button_6);
+	ratbag_button_unref(button_7);
 
 	printf("Switched the current profile of '%s' to %sreport the volume keys\n",
 	       ratbag_device_get_name(device),
@@ -673,6 +673,9 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	argc -= 3;
 	argv += 3;
 
+	(void)argc;
+	(void)argv;
+
 	if (streq(action_str, "button")) {
 		action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 		btnkey = atoi(action_arg);
@@ -766,7 +769,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 	}
 
 out:
-	button = ratbag_button_unref(button);
+	ratbag_button_unref(button);
 
 	return rc;
 }
@@ -1869,7 +1872,7 @@ ratbag_cmd_profile_active_set(const struct ratbag_cmd *cmd,
 	}
 
 out:
-	profile = ratbag_profile_unref(profile);
+	ratbag_profile_unref(profile);
 
 	return rc;
 }

@@ -772,6 +772,8 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 				    &feature_index,
 				    &feature_type,
 				    &feature_version);
+	if (rc < 0)
+		return rc;
 
 	switch (feature) {
 	case HIDPP_PAGE_ROOT:
