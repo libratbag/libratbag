@@ -188,7 +188,7 @@ static int ratbagd_get_themes(sd_bus *bus,
 /* A pre-setup sane device. Use for sanity testing by toggling the various
  * error conditions.
  */
-static struct ratbag_test_device ratbagd_test_device_descr = {
+static const struct ratbag_test_device ratbagd_test_device_descr = {
 	.num_profiles = 3,
 	.num_resolutions = 3,
 	.num_buttons = 4,
@@ -290,11 +290,25 @@ static struct ratbag_test_device ratbagd_test_device_descr = {
 	.destroyed_data = NULL,
 };
 
-static int ratbagd_create_test_device(struct ratbagd *ctx)
+static int ratbagd_reset_test_device(sd_bus_message *m,
+				     void *userdata,
+				     sd_bus_error *error)
 {
-	struct ratbagd_device *ratbagd_test_device = NULL;
+	static struct ratbagd_device *ratbagd_test_device = NULL;
+	struct ratbagd *ctx = userdata;
 	struct ratbag_device *device;
 	int r;
+
+	if (ratbagd_test_device) {
+		(void) sd_bus_emit_signal(ctx->bus,
+					  RATBAGD_OBJ_ROOT,
+					  RATBAGD_NAME_ROOT ".Manager",
+					  "DeviceRemoved",
+					  "o",
+					  ratbagd_device_get_path(ratbagd_test_device));
+		ratbagd_device_unlink(ratbagd_test_device);
+		ratbagd_device_free(ratbagd_test_device);
+	}
 
 	device = ratbag_device_new_test_device(ctx->lib_ctx, &ratbagd_test_device_descr);
 
@@ -309,6 +323,15 @@ static int ratbagd_create_test_device(struct ratbagd *ctx)
 	}
 
 	ratbagd_device_link(ratbagd_test_device);
+	if (m) {
+		(void) sd_bus_emit_signal(ctx->bus,
+					  RATBAGD_OBJ_ROOT,
+					  RATBAGD_NAME_ROOT ".Manager",
+					  "DeviceNew",
+					  "o",
+					  ratbagd_device_get_path(ratbagd_test_device));
+		sd_bus_reply_method_return(m, "u", r);
+	}
 
 	return 0;
 }
@@ -317,7 +340,7 @@ static void ratbagd_init_test_device(struct ratbagd *ctx)
 {
 	setenv("RATBAG_TEST", "1", 0);
 
-	ratbagd_create_test_device(ctx);
+	ratbagd_reset_test_device(NULL, ctx, NULL);
 }
 
 #else /* RATBAG_DEVELOPER_EDITION */
@@ -330,6 +353,9 @@ static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_PROPERTY("Themes", "as", ratbagd_get_themes, 0, 0),
 	SD_BUS_SIGNAL("DeviceNew", "o", 0),
 	SD_BUS_SIGNAL("DeviceRemoved", "o", 0),
+#ifdef RATBAG_DEVELOPER_EDITION
+	SD_BUS_METHOD("ResetTestDevice", "", "u", ratbagd_reset_test_device, SD_BUS_VTABLE_UNPRIVILEGED),
+#endif /* RATBAG_DEVELOPER_EDITION */
 	SD_BUS_VTABLE_END,
 };
 

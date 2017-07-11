@@ -290,7 +290,7 @@ static inline bool
 ratbag_test_driver(struct ratbag_device *device,
 		   const struct input_id *dev_id,
 		   const char *driver_name,
-		   struct ratbag_test_device *test_device)
+		   const struct ratbag_test_device *test_device)
 {
 	struct ratbag *ratbag = device->ratbag;
 	struct ratbag_driver *driver;
@@ -353,7 +353,7 @@ ratbag_driver_fallback_logitech(struct ratbag_device *device,
 bool
 ratbag_assign_driver(struct ratbag_device *device,
 		     const struct input_id *dev_id,
-		     struct ratbag_test_device *test_device)
+		     const struct ratbag_test_device *test_device)
 {
 	bool rc;
 	const char *driver_name;
