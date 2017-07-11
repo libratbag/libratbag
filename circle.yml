@@ -1,13 +1,21 @@
 libratbag_references:
   default_settings: &default_settings
     working_directory: ~/libratbag
+  build_default: &build_default
+    name: Build
+    command: |
+      rm -rf build
+      meson build ${MESON_PARAMS}
+      mesonconf build
+      ninja -v -C build ${NINJA_ARGS}
+    environment:
+      MESON_PARAMS: --prefix=/usr
   build_and_test: &build_and_test
     run:
+      <<: *build_default
       name: Build and test
-      command: |
-        meson build --prefix=/usr
-        mesonconf build
-        ninja -C build test
+      environment:
+        NINJA_ARGS: test
   install: &install
     run:
       name: Installing
@@ -33,12 +41,16 @@ libratbag_references:
       path: ~/libratbag/build/meson-logs
 
 
+fedora_install: &fedora_install
+  run:
+    name: Install prerequisites
+    command: dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz valgrind
+
+
 fedora_settings: &fedora_settings
   <<: *default_settings
   steps:
-    - run:
-        name: Install prerequisites
-        command: dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz valgrind
+    - *fedora_install
     - checkout
     - *build_and_test
     - *install
