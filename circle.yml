@@ -39,6 +39,12 @@ libratbag_references:
   export_logs: &export_logs
     store_artifacts:
       path: ~/libratbag/build/meson-logs
+  ninja_scan_build: &ninja_scan_build
+    run:
+      <<: *build_default
+      name: Ninja scan-build
+      environment:
+        NINJA_ARGS: scan-build
 
 
 fedora_install: &fedora_install
@@ -76,6 +82,21 @@ ubuntu_settings: &ubuntu_settings
     - *export_logs
 
 
+scan_build_run: &scan_build_run
+  <<: *default_settings
+  steps:
+    - *fedora_install
+    - run:
+        name: Install clang and find
+        command: dnf install -y clang-analyzer findutils
+    - checkout
+    - *ninja_scan_build
+    - *export_logs
+    - run:
+        name: Check scan-build results
+        command: test ! -d ~/libratbag/build/meson-logs/scanbuild || test $(find ~/libratbag/build/meson-logs/scanbuild -maxdepth 0 ! -empty -exec echo "not empty" \; | wc -l) -eq 0 || (echo "Check scan-build results" && false)
+
+
 version: 2
 jobs:
   fedora_rawhide:
@@ -90,6 +111,10 @@ jobs:
     <<: *ubuntu_settings
     docker:
       - image: ubuntu:zesty
+  scan_build:
+    <<: *scan_build_run
+    docker:
+      - image: fedora:latest
 
 
 workflows:
@@ -97,5 +122,6 @@ workflows:
   compile_and_test:
     jobs:
       - fedora_rawhide
+      - scan_build
       - ubuntu_17_04
       #- fedora_latest
