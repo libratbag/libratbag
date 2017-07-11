@@ -373,17 +373,21 @@ ratbag_assign_driver(struct ratbag_device *device,
 	return rc;
 }
 
-static inline char*
-get_device_name(struct udev_device *device)
+static int
+get_device_name(struct udev_device *device,
+		char *name, size_t sz)
 {
 	const char *prop;
 
 	prop = udev_prop_value(device, "NAME");
 	if (!prop)
-		return NULL;
+		return -EINVAL;
 
 	/* udev name is enclosed by " */
-	return strndup(&prop[1], strlen(prop) - 2);
+	sz = min(sz, strlen(prop) - 1);
+	snprintf(name, sz, "%s", &prop[1]);
+
+	return 0;
 }
 
 static inline int
@@ -413,7 +417,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 {
 	struct ratbag_device *device = NULL;
 	enum ratbag_error_code error = RATBAG_ERROR_DEVICE;
-	_cleanup_free_ char *name = NULL;
+	char name[128];
 	struct input_id id;
 
 	assert(ratbag != NULL);
@@ -426,8 +430,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	if (get_product_id(udev_device, &id) != 0)
 		goto out_err;
 
-	name = get_device_name(udev_device);
-	if (!name)
+	if (get_device_name(udev_device, name, sizeof(name)) != 0)
 		goto out_err;
 
 	device = ratbag_device_new(ratbag, udev_device, name, &id);
