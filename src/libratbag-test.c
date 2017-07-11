@@ -50,7 +50,7 @@ ratbag_register_test_drivers(struct ratbag *ratbag)
 
 LIBRATBAG_EXPORT struct ratbag_device*
 ratbag_device_new_test_device(struct ratbag *ratbag,
-			      struct ratbag_test_device *test_device)
+			      const struct ratbag_test_device *test_device)
 {
 	struct ratbag_device* device = NULL;
 #if BUILD_TESTS

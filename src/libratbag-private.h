@@ -224,7 +224,7 @@ struct ratbag_driver {
 			 unsigned int brightness);
 
 	/* private */
-	int (*test_probe)(struct ratbag_device *device, void *data);
+	int (*test_probe)(struct ratbag_device *device, const void *data);
 
 	struct list link;
 };
@@ -503,7 +503,7 @@ ratbag_device_get_udev_property(const struct ratbag_device* device,
 bool
 ratbag_assign_driver(struct ratbag_device *device,
 		     const struct input_id *dev_id,
-		     struct ratbag_test_device *test_device);
+		     const struct ratbag_test_device *test_device);
 
 void
 ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver);

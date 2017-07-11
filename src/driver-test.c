@@ -184,9 +184,12 @@ test_fake_probe(struct ratbag_device *device)
 }
 
 static int
-test_probe(struct ratbag_device *device, void *data)
+test_probe(struct ratbag_device *device, const void *data)
 {
-	struct ratbag_test_device *test_device = data;
+	struct ratbag_test_device *test_device;
+
+	test_device = zalloc(sizeof(*test_device));
+	memcpy(test_device, data, sizeof(*test_device));
 
 	ratbag_set_drv_data(device, test_device);
 	ratbag_device_init_profiles(device,
@@ -210,6 +213,7 @@ test_remove(struct ratbag_device *device)
 	if (d->destroyed)
 		d->destroyed(device, d->destroyed_data);
 	ratbag_set_drv_data(device, NULL);
+	free(d);
 }
 
 struct ratbag_driver test_driver = {
