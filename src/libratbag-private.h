@@ -145,6 +145,15 @@ struct ratbag_driver {
 	int (*commit)(struct ratbag_device *device);
 
 	/**
+	 * Callback called when the device doesn't have the udev property
+	 * RATBAG_SVG.
+	 *
+	 * The returned value must not be free by the caller, the driver
+	 * has to free it during .remove().
+	 */
+	const char *(*get_svg_name)(const struct ratbag_device *device);
+
+	/**
 	 * Callback called when a read profile is requested by the
 	 * caller of the library.
 	 *
@@ -359,7 +368,7 @@ ratbag_set_drv_data(struct ratbag_device *device, void *drv_data)
 }
 
 static inline void *
-ratbag_get_drv_data(struct ratbag_device *device)
+ratbag_get_drv_data(const struct ratbag_device *device)
 {
 	return device->drv_data;
 }

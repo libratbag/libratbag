@@ -75,6 +75,7 @@ struct ratbag_test_device {
 	unsigned int num_resolutions;
 	unsigned int num_buttons;
 	unsigned int num_leds;
+	const char *svg;
 	struct ratbag_test_profile profiles[RATBAG_TEST_MAX_PROFILES];
 	void (*destroyed)(struct ratbag_device *device, void *data);
 	void *destroyed_data;
