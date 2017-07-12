@@ -64,7 +64,16 @@ static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
 	r = ratbag_resolution_set_report_rate(resolution->lib_resolution,
 					      rate);
 	if (r == 0) {
+		sd_bus *bus;
+
 		resolution->rate = rate;
+
+		bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       resolution->path,
+					       RATBAGD_NAME_ROOT ".Resolution",
+					       "ReportRate",
+					       NULL);
 	}
 	return sd_bus_reply_method_return(m, "u", r);
 }
@@ -91,8 +100,18 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 						 xres, yres);
 	}
 	if (r == 0) {
+		sd_bus *bus;
+
 		resolution->xres = xres;
 		resolution->yres = yres;
+
+		bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       resolution->path,
+					       RATBAGD_NAME_ROOT ".Resolution",
+					       "XResolution",
+					       "YResolution",
+					       NULL);
 	}
 
 	return sd_bus_reply_method_return(m, "u", r);
