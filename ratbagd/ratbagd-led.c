@@ -66,6 +66,16 @@ static int ratbagd_led_set_mode(sd_bus_message *m,
 		return r;
 
 	r = ratbag_led_set_mode(led->lib_led, mode);
+
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       led->path,
+					       RATBAGD_NAME_ROOT ".Led",
+					       "Mode",
+					       NULL);
+	}
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -132,6 +142,16 @@ static int ratbagd_led_set_color(sd_bus_message *m,
 		return RATBAG_ERROR_VALUE;
 
 	r = ratbag_led_set_color(led->lib_led, c);
+
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       led->path,
+					       RATBAGD_NAME_ROOT ".Led",
+					       "Color",
+					       NULL);
+	}
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -166,6 +186,16 @@ static int ratbagd_led_set_effect_rate(sd_bus_message *m,
 		return 0;
 
 	r = ratbag_led_set_effect_rate(led->lib_led, rate);
+
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       led->path,
+					       RATBAGD_NAME_ROOT ".Led",
+					       "EffectRate",
+					       NULL);
+	}
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
@@ -200,6 +230,16 @@ static int ratbagd_led_set_brightness(sd_bus_message *m,
 		return 0;
 
 	r = ratbag_led_set_brightness(led->lib_led, brightness);
+
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       led->path,
+					       RATBAGD_NAME_ROOT ".Led",
+					       "Brightness",
+					       NULL);
+	}
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
