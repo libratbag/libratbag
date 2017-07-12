@@ -40,7 +40,7 @@ SCRIPT_DIR = @MESON_BUILD_ROOT@
 shutil.copy(os.path.join(SCRIPT_DIR, 'org.freedesktop.ratbag_devel1.conf'),
             '/etc/dbus-1/system.d/')
 
-ratbagd = subprocess.Popen([os.path.join(SCRIPT_DIR, "ratbagd.devel")])
+ratbagd = subprocess.Popen([os.path.join(SCRIPT_DIR, "ratbagd.devel")], shell=True)
 
 try:
     ratbagctl = subprocess.Popen(" ".join([os.path.join(SCRIPT_DIR, "ratbagctl"), *sys.argv[1:]]),

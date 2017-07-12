@@ -181,6 +181,148 @@ static int ratbagd_get_themes(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+#ifdef RATBAG_DEVELOPER_EDITION
+
+#include "libratbag-test.h"
+
+/* A pre-setup sane device. Use for sanity testing by toggling the various
+ * error conditions.
+ */
+static struct ratbag_test_device ratbagd_test_device_descr = {
+	.num_profiles = 3,
+	.num_resolutions = 3,
+	.num_buttons = 4,
+	.num_leds = 3,
+	.profiles = {
+		{
+			.buttons = {
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				  .button = 0 },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				  .key = 4 },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO },
+			},
+			.resolutions = {
+				{ .xres = 100, .yres = 200, .hz = 1000 },
+				{ .xres = 200, .yres = 300, .hz = 1000, .active = true, .dflt = true },
+				{ .xres = 300, .yres = 400, .hz = 1000 },
+			},
+			.active = true,
+			.dflt = false,
+			.leds = {
+				{
+					.mode = RATBAG_LED_OFF,
+					.color = { .red = 255, .green = 0, .blue = 0 },
+					.hz = 1,
+					.brightness = 20
+				},
+				{
+					.mode = RATBAG_LED_ON,
+					.color = { .red = 255, .green = 0, .blue = 0 },
+					.hz = 1,
+					.brightness = 20
+				},
+				{
+					.mode = RATBAG_LED_CYCLE,
+					.color = { .red = 255, .green = 255, .blue = 0 },
+					.hz = 3,
+					.brightness = 40
+				}
+			},
+		},
+		{
+			.buttons = {
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				  .key = 4 },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				  .key = 5 },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				  .key = 6 },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				  .key = 7 },
+			},
+			.resolutions = {
+				{ .xres = 1100, .yres = 1200, .hz = 2000 },
+				{ .xres = 1200, .yres = 1300, .hz = 2000, .dflt = true },
+				{ .xres = 1300, .yres = 1400, .hz = 2000, .active = true },
+			},
+			.active = false,
+			.dflt = true,
+		},
+		{
+			.buttons = {
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
+				  .button = 1 },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				  .button = 2 },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				  .button = 3 },
+			},
+			.resolutions = {
+				{ .xres = 2100, .yres = 2200, .hz = 3000, .active = true },
+				{ .xres = 2200, .yres = 2300, .hz = 3000, .dflt = true },
+				{ .xres = 2300, .yres = 2400, .hz = 3000 },
+			},
+			.leds = {
+				{
+					.mode = RATBAG_LED_ON,
+					.color = { .red = 255, .green = 0, .blue = 0 },
+					.hz = 1,
+					.brightness = 20
+				},
+				{
+					.mode = RATBAG_LED_CYCLE,
+					.color = { .red = 255, .green = 255, .blue = 0 },
+					.hz = 3,
+					.brightness = 40
+				}
+		},
+		.active = false,
+		.dflt = false,
+		},
+	},
+	.destroyed = NULL,
+	.destroyed_data = NULL,
+};
+
+static int ratbagd_create_test_device(struct ratbagd *ctx)
+{
+	struct ratbagd_device *ratbagd_test_device = NULL;
+	struct ratbag_device *device;
+	int r;
+
+	device = ratbag_device_new_test_device(ctx->lib_ctx, &ratbagd_test_device_descr);
+
+	r = ratbagd_device_new(&ratbagd_test_device, ctx, "test_device", device);
+
+	/* the ratbagd_device takes its own reference, drop ours */
+	ratbag_device_unref(device);
+
+	if (r < 0) {
+		log_error("Cannot track test device\n");
+		return r;
+	}
+
+	ratbagd_device_link(ratbagd_test_device);
+
+	return 0;
+}
+
+static void ratbagd_init_test_device(struct ratbagd *ctx)
+{
+	setenv("RATBAG_TEST", "1", 0);
+
+	ratbagd_create_test_device(ctx);
+}
+
+#else /* RATBAG_DEVELOPER_EDITION */
+static inline void ratbagd_init_test_device(struct ratbagd *ctx) {}
+#endif /* RATBAG_DEVELOPER_EDITION */
+
 static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, 0),
@@ -511,6 +653,8 @@ int main(int argc, char *argv[])
 	r = ratbagd_new(&ctx);
 	if (r < 0)
 		goto exit;
+
+	ratbagd_init_test_device(ctx);
 
 	r = ratbagd_run(ctx);
 
