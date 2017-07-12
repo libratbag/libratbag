@@ -1,0 +1,423 @@
+#!/usr/bin/env python3
+#
+# vim: set expandtab shiftwidth=4 tabstop=4:
+#
+# This file is part of libratbag.
+#
+# Copyright 2017 Red Hat, Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice (including the next
+# paragraph) shall be included in all copies or substantial portions of the
+# Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+import os
+import shutil
+import subprocess
+import sys
+import unittest
+
+# various constants
+RATBAGCTL_NAME = 'ratbagctl'
+RATBAGCTL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_NAME)
+DBUS_CONF_DIR = '/etc/dbus-1/system.d'
+DBUS_CONF_NAME = 'org.freedesktop.ratbag_devel1.conf'
+DBUS_CONF_PATH = os.path.join(DBUS_CONF_DIR, DBUS_CONF_NAME)
+
+class TestRatbagCtl(unittest.TestCase):
+    @classmethod
+    def run_ratbagctl(cls, params):
+        ratbagctl = subprocess.Popen(" ".join([RATBAGCTL_PATH, params]),
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     shell=True,
+                                     env={"RATBAGCTL_DEVEL": "org.freedesktop.ratbag_devel1_@ratbagd_sha@"})
+
+        (stdout, stderr) = ratbagctl.communicate()
+        return (ratbagctl.returncode,
+                stdout.decode('ascii').rstrip('\n'),
+                stderr.decode('ascii').rstrip('\n'))
+
+    def launch_good_test(self, params):
+        returncode, stdout, stderr = self.run_ratbagctl(params)
+        self.assertEqual(returncode, 0)
+        return stdout
+
+    def launch_fail_test(self, params):
+        returncode, stdout, stderr = self.run_ratbagctl(params)
+        self.assertNotEqual(returncode, 0)
+        return stdout
+
+    @classmethod
+    def setProfile(cls, profile):
+        cls.run_ratbagctl("Profile active set {} test_device".format(profile))
+
+
+class TestRatbagCtlList(TestRatbagCtl):
+    def test_list(self):
+        r = self.launch_good_test("list")
+        self.assertIn('test_device', r)
+        self.launch_fail_test("list test_device")
+
+
+class TestRatbagCtlInfo(TestRatbagCtl):
+    def test_info(self):
+        self.launch_good_test("info test_device")
+        self.launch_fail_test("info test_device X")
+        self.launch_fail_test("info X")
+
+
+class TestRatbgagCtlProfile(TestRatbagCtl):
+    @classmethod
+    def setUpClass(cls):
+        super(TestRatbgagCtlProfile, cls).setUpClass()
+        cls.setProfile(0)
+
+    def test_profile_active_get(self):
+        command = "profile active get"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(int(r), 0)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+
+    def test_profile_active_set(self):
+        command = "profile active set"
+        r = self.launch_good_test(command + " 1 test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("profile active get test_device")
+        self.assertEqual(int(r), 1)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 1 test_device X")
+
+    def test_profile_n(self):
+        r0 = self.launch_good_test("Profile 0 get test_device")
+        r1 = self.launch_good_test("Profile 1 get test_device")
+        self.assertNotEqual(r0, r1)
+        self.launch_fail_test("Profile 0 get")
+        self.launch_fail_test("Profile 0 test_device")
+        self.launch_fail_test("Profile 0 get test_device X")
+        self.launch_fail_test("Profile 10 get test_device")
+
+    @unittest.skip("profile doesn't show enabled/disabled")
+    def test_profile_enable(self):
+        command = "profile enable"
+        self.launch_good_test(command + " 1 test_device")
+        r = self.launch_good_test("profile 0 get test_device")
+        # FIXME: show when the profile is disabled in ratbagctl
+        self.assertNotIn('enabled', r)
+        r = self.launch_good_test("profile 1 get test_device")
+        self.assertIn('enabled', r)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 1 test_device X")
+        self.launch_fail_test(command + " 10 test_device")
+
+    @unittest.skip("profile doesn't show enabled/disabled")
+    def test_profile_disable(self):
+        command = "profile disable"
+        self.launch_good_test(command + " 1 test_device")
+        r = self.launch_good_test("profile 0 get test_device")
+        # FIXME: show when the profile is disabled in ratbagctl
+        self.assertIn('enabled', r)
+        r = self.launch_good_test("profile 1 get test_device")
+        self.assertNotIn('enabled', r)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 1 test_device X")
+        self.launch_fail_test(command + " 10 test_device")
+
+
+class TestRatbgagCtlResolution(TestRatbagCtl):
+    @classmethod
+    def setUpClass(cls):
+        super(TestRatbgagCtlResolution, cls).setUpClass()
+        cls.setProfile(1)
+
+    def test_resolution_active_get(self):
+        command = "Resolution active get"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(int(r), 2)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 10 test_device")
+        self.launch_fail_test(command + " test_device x")
+
+    @unittest.skip("Resolution active set not implemented")
+    def test_resolution_active_set(self):
+        command = "Resolution active set"
+        r = self.launch_good_test(command + " 2 test_device")
+        self.assertNotEqual(r, '')
+        r = self.launch_good_test("Resolution active get test_device")
+        self.assertEqual(int(r), 2)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 1 test_device X")
+
+    def test_resolution_n_get(self):
+        r = self.launch_good_test("Resolution 1 get test_device")
+        self.assertEqual(r, "1: 1200dpi @ 2000Hz (default)")
+        self.launch_fail_test("Resolution 10 get test_device")
+        self.launch_fail_test("Resolution 1 get test_device X")
+        self.launch_fail_test("Resolution 1 get X")
+
+    def test_profile_resolution(self):
+        r = self.launch_good_test("Profile 2 Resolution 2 get test_device")
+        self.assertEqual(r, "2: 2300dpi @ 3000Hz")
+
+
+class TestRatbgagCtlDPI(TestRatbagCtl):
+    @classmethod
+    def setUpClass(cls):
+        super(TestRatbgagCtlDPI, cls).setUpClass()
+        cls.setProfile(0)
+
+    def test_dpi_get(self):
+        command = "DPI get"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(int(r), 200)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " 1 test_device")
+        self.launch_fail_test(command + " test_device X")
+
+    def test_dpi_set(self):
+        command = "DPI set"
+        r = self.launch_good_test("DPI get test_device")
+        res = int(r) + 50
+        r = self.launch_good_test(command + " {} test_device".format(res))
+        self.assertEqual(r, '')
+        r = self.launch_good_test("DPI get test_device")
+        self.assertEqual(int(r), res)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 100 test_device X")
+
+    def test_prefix_dpi(self):
+        r = self.launch_good_test("Profile 1 DPI get test_device")
+        self.assertEqual(int(r), 1300)
+        r = self.launch_good_test("Profile 1 Resolution 1 DPI get test_device")
+        self.assertEqual(int(r), 1200)
+        r = self.launch_good_test("Resolution 2 DPI get test_device")
+        self.assertEqual(int(r), 300)
+        self.launch_fail_test("Profile 1 Profile 1 DPI get test_device")
+        self.launch_fail_test("Profile 1 Resolution 1 Resolution 2 DPI get test_device")
+
+
+class TestRatbgagCtlButton(TestRatbagCtl):
+    @classmethod
+    def setUpClass(cls):
+        super(TestRatbgagCtlButton, cls).setUpClass()
+        cls.setProfile(0)
+
+    def test_button_count(self):
+        command = "button count"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(int(r), 4)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " 1 test_device")
+        self.launch_fail_test(command + " test_device X")
+
+    def test_button_n_get(self):
+        self.setProfile(0)
+        r = self.launch_good_test("button 0 get test_device")
+        self.assertEqual(r, "Button: 0 type unknown is mapped to 'button 0'")
+        r = self.launch_good_test("button 1 get test_device")
+        # FIXME: we should probably have keys here, not int
+        self.assertEqual(r, "Button: 1 type unknown is mapped to '[4]'")
+        r = self.launch_good_test("button 2 get test_device")
+        # FIXME: special maps to UNKNOWN????
+        self.assertEqual(r, "Button: 2 type unknown is mapped to UNKOWN")
+        r = self.launch_good_test("button 3 get test_device")
+        # FIXME: macro maps to UNKNOWN????
+        self.assertEqual(r, "Button: 3 type unknown is mapped to UNKOWN")
+        self.launch_fail_test("button 1 get 10 test_device")
+        self.launch_fail_test("button 10 get test_device")
+        self.launch_fail_test("button 1 get test_device X")
+
+    def test_button_n_action_get(self):
+        self.setProfile(0)
+        r = self.launch_good_test("button 0 action get test_device")
+        self.assertEqual(r, "Button: 0 type unknown is mapped to 'button 0'")
+        self.launch_fail_test("button 1 action get 10 test_device")
+        self.launch_fail_test("button 10 action get test_device")
+        self.launch_fail_test("button 1 action get test_device X")
+
+    def test_button_n_action_set_button(self):
+        self.setProfile(2)
+        command = "button 2 action set button"
+        r = self.launch_good_test("button 2 action get test_device")
+        self.assertEqual(r, "Button: 2 type unknown is mapped to 'button 2'")
+        r = self.launch_good_test(command + " 1 test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("button 2 action get test_device")
+        self.assertEqual(r, "Button: 2 type unknown is mapped to 'button 1'")
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 100 test_device X")
+
+    @unittest.skip("Button action set special not implemented")
+    def test_button_n_action_set_special(self):
+        pass
+        # FIXME
+
+    @unittest.skip("Button action set macro not implemented")
+    def test_button_n_action_set_macro(self):
+        pass
+        # FIXME
+
+    def test_prefix_button(self):
+        r = self.launch_good_test("Profile 2 Button 3 get test_device")
+        self.assertEqual(r, "Button: 3 type unknown is mapped to 'button 3'")
+        self.launch_fail_test("Profile 2 Profile 2 Button 3 get test_device")
+        self.launch_fail_test("Profile 2 Resolution 2 Button 3 get test_device")
+
+
+class TestRatbgagCtlLED(TestRatbagCtl):
+    @classmethod
+    def setUpClass(cls):
+        super(TestRatbgagCtlLED, cls).setUpClass()
+        cls.setProfile(0)
+
+    def test_led_n_get(self):
+        self.setProfile(0)
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: off")
+        r = self.launch_good_test("led 1 get test_device")
+        self.assertEqual(r, "LED: 1 type: logo, mode: on, color: ff0000")
+        r = self.launch_good_test("led 2 get test_device")
+        self.assertEqual(r, "LED: 2 type: logo, mode: cycle, rate: 3, brightness: 40")
+        self.launch_fail_test("led 0 get 10 test_device")
+        self.launch_fail_test("led 10 get test_device")
+        self.launch_fail_test("led 0 get test_device X")
+
+    def test_led_n_set_mode(self):
+        self.setProfile(0)
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: off")
+        r = self.launch_good_test("led 0 set mode cycle test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: cycle, rate: 1, brightness: 20")
+        self.launch_fail_test("led 0 set mode bicycle test_device")
+        self.launch_fail_test("led 0 set mode test_device")
+        self.launch_fail_test("led 0 set mode cycle test_device X")
+        self.launch_fail_test("led 0 set mode cycle X test_device")
+
+    def test_led_n_set_color(self):
+        self.setProfile(0)
+        r = self.launch_good_test("led 1 get test_device")
+        self.assertEqual(r, "LED: 1 type: logo, mode: on, color: ff0000")
+        r = self.launch_good_test("led 1 set color 00ff00 test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("led 1 get test_device")
+        self.assertEqual(r, "LED: 1 type: logo, mode: on, color: 00ff00")
+        r = self.launch_good_test("led 1 set color 0x0000ff test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("led 1 get test_device")
+        self.assertEqual(r, "LED: 1 type: logo, mode: on, color: 0000ff")
+        self.launch_fail_test("led 1 set color g0ff00 test_device")
+        self.launch_fail_test("led 1 set color test_device")
+        self.launch_fail_test("led 1 set color 00ff00 test_device X")
+        self.launch_fail_test("led 1 set color 00ff00 X test_device")
+
+    def test_led_n_set_rate(self):
+        self.setProfile(0)
+        r = self.launch_good_test("led 2 get test_device")
+        self.assertEqual(r, "LED: 2 type: logo, mode: cycle, rate: 3, brightness: 40")
+        r = self.launch_good_test("led 2 set rate 100 test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("led 2 get test_device")
+        self.assertEqual(r, "LED: 2 type: logo, mode: cycle, rate: 100, brightness: 40")
+        self.launch_fail_test("led 2 set rate this_is_not_an_int test_device")
+        self.launch_fail_test("led 2 set rate test_device")
+        self.launch_fail_test("led 2 set rate 100 test_device X")
+        self.launch_fail_test("led 2 set rate 100 X test_device")
+
+    def test_led_n_set_brightness(self):
+        self.setProfile(2)
+        r = self.launch_good_test("led 1 get test_device")
+        self.assertEqual(r, "LED: 1 type: logo, mode: cycle, rate: 3, brightness: 40")
+        r = self.launch_good_test("led 1 set brightness 100 test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("led 1 get test_device")
+        self.assertEqual(r, "LED: 1 type: logo, mode: cycle, rate: 3, brightness: 100")
+        self.launch_fail_test("led 1 set brightness this_is_not_an_int test_device")
+        self.launch_fail_test("led 1 set brightness test_device")
+        self.launch_fail_test("led 1 set brightness 100 test_device X")
+        self.launch_fail_test("led 1 set brightness 100 X test_device")
+        self.launch_fail_test("led 1 set brightness this_is_not_an_int test_device")
+        self.launch_fail_test("led 1 set brightness 256 test_device")
+        self.launch_fail_test("led 1 set brightness -10 test_device")
+
+    def test_led_n_set_combination(self):
+        self.setProfile(2)
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: on, color: ff0000")
+        r = self.launch_good_test("led 0 set mode cycle brightness 100 test_device")
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: cycle, rate: 1, brightness: 100")
+        r = self.launch_good_test("led 0 set mode cycle rate 100 brightness 255 test_device")
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: cycle, rate: 100, brightness: 255")
+        r = self.launch_good_test("led 0 set mode on color 00ff00 test_device")
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: on, color: 00ff00")
+        r = self.launch_good_test("led 0 set rate 100 brightness 200 mode cycle test_device")
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: cycle, rate: 100, brightness: 200")
+        r = self.launch_good_test("led 0 set rate 100 brightness 200 mode cycle brightness 100 test_device")
+        r = self.launch_good_test("led 0 get test_device")
+        self.assertEqual(r, "LED: 0 type: logo, mode: cycle, rate: 100, brightness: 100")
+        self.launch_fail_test("led 0 set brightness 10 mode bicycle test_device")
+
+    def test_prefix_led(self):
+        self.setProfile(2)
+        r = self.launch_good_test("Profile 1 Led 1 get test_device")
+        self.assertEqual(r, "LED: 1 type: logo, mode: off")
+        self.launch_fail_test("Profile 1 Profile 2 Led 1 get test_device")
+        self.launch_fail_test("Profile 1 Resolution 2 Led 1 get test_device")
+
+
+def setUpModule():
+    global ratbagd_process
+    # first copy the policy for the ratbagd daemon to be allowed to run
+    shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME), DBUS_CONF_PATH)
+
+    # FIXME: kill any running ratabgd.devel
+
+    ratbagd_process = subprocess.Popen([os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")], shell=True)
+
+
+def tearDownModule():
+    global ratbagd_process
+    ratbagd_process.terminate()
+    try:
+        ratbagd_process.terminate()
+        ratbagd_process.wait(5)
+    except subprocess.TimeoutExpired:
+        ratbagd_process.kill()
+    os.unlink(DBUS_CONF_PATH)
+
+
+def main(argv):
+    if not os.geteuid() == 0:
+        sys.exit('Script must be run as root')
+
+    unittest.main()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
