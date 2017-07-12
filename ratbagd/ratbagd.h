@@ -40,6 +40,8 @@
 
 #ifndef RATBAG_DBUS_INTERFACE
 #define RATBAG_DBUS_INTERFACE	"ratbag1"
+#else
+#define RATBAG_DEVELOPER_EDITION
 #endif
 
 #define RATBAGD_OBJ_ROOT "/org/freedesktop/" RATBAG_DBUS_INTERFACE
