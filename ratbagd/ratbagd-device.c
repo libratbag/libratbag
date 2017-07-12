@@ -385,7 +385,8 @@ int ratbagd_device_new(struct ratbagd_device **out,
 
 	device->ctx = ctx;
 	rbnode_init(&device->node);
-	device->lib_device = ratbag_device_ref(lib_device);
+	/* note: we steal the reference here */
+	device->lib_device = lib_device;
 
 	device->name = strdup(name);
 	if (!device->name)
