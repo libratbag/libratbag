@@ -1599,6 +1599,18 @@ class RatbagParserRoot(object):
         self.parser.print_help()
 
 
+def open_ratbagd():
+    try:
+        r = Ratbagd()
+    except RatbagdDBusUnavailable:
+        print("Unable to connect to ratbagd over dbus")
+        return None
+    else:
+        if not r.devices:
+            print("No devices available.")
+        return r
+
+
 def main(argv):
     if not argv:
         argv = ["list"]
@@ -1606,14 +1618,9 @@ def main(argv):
     parser = RatbagParserRoot(parser_def)
     cmd = parser.parse(argv)
 
-    try:
-        r = Ratbagd()
-        if not r.devices:
-            print("No devices available.")
-
+    r = open_ratbagd()
+    if r is not None:
         cmd.func(r, cmd)
-    except RatbagdDBusUnavailable:
-        print("Unable to connect to ratbagd over dbus")
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -25,6 +25,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import imp
 import os
 import shutil
 import subprocess
@@ -38,7 +39,31 @@ DBUS_CONF_DIR = '/etc/dbus-1/system.d'
 DBUS_CONF_NAME = 'org.freedesktop.ratbag_devel1.conf'
 DBUS_CONF_PATH = os.path.join(DBUS_CONF_DIR, DBUS_CONF_NAME)
 
+
+def import_non_standard_path(name, path):
+    # Fast path: see if the module has already been imported.
+    try:
+        return sys.modules[name]
+    except KeyError:
+        pass
+
+    # If any of the following calls raises an exception,
+    # there's a problem we can't handle -- let the caller handle it.
+
+    with open(path, 'rb') as fp:
+        module = imp.load_module(name, fp, os.path.basename(path), ('.py', 'rb', imp.PY_SOURCE))
+
+    return module
+
+ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
+
+
 class TestRatbagCtl(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestRatbagCtl, cls).setUpClass()
+        cls.reset_test_device()
+
     @classmethod
     def run_ratbagctl(cls, params):
         ratbagctl = subprocess.Popen(" ".join([RATBAGCTL_PATH, params]),
@@ -51,6 +76,11 @@ class TestRatbagCtl(unittest.TestCase):
         return (ratbagctl.returncode,
                 stdout.decode('ascii').rstrip('\n'),
                 stderr.decode('ascii').rstrip('\n'))
+
+    @classmethod
+    def reset_test_device(cls):
+        global ratbagd
+        ratbagd._dbus_call("ResetTestDevice", "")
 
     def launch_good_test(self, params):
         returncode, stdout, stderr = self.run_ratbagctl(params)
@@ -392,13 +422,18 @@ class TestRatbgagCtlLED(TestRatbagCtl):
 
 
 def setUpModule():
-    global ratbagd_process
+    global ratbagd_process, ratbagd
     # first copy the policy for the ratbagd daemon to be allowed to run
     shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME), DBUS_CONF_PATH)
 
     # FIXME: kill any running ratabgd.devel
 
     ratbagd_process = subprocess.Popen([os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")], shell=True)
+
+    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1_@ratbagd_sha@"
+
+    ratbagd = ratbagctl.open_ratbagd()
+    assert ratbagd is not None
 
 
 def tearDownModule():
