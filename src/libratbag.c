@@ -484,7 +484,13 @@ ratbag_device_get_name(const struct ratbag_device* device)
 LIBRATBAG_EXPORT const char *
 ratbag_device_get_svg_name(const struct ratbag_device* device)
 {
-	return udev_prop_value(device->udev_device, "RATBAG_SVG");
+	const char *name;
+
+	name = udev_prop_value(device->udev_device, "RATBAG_SVG");
+	if (!name && device->driver->get_svg_name)
+		name = device->driver->get_svg_name(device);
+
+	return name;
 }
 
 const char *
