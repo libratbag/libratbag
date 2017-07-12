@@ -615,35 +615,129 @@ def find_device(r, args):
 def find_profile(r, args):
     d = find_device(r, args)
     try:
-        p = d.profiles[args.profile]
+        p = d.profiles[args.profile_n]
     except IndexError:
-        print("Invalid profile index {}".format(args.profile))
+        print("Invalid profile index {}".format(args.profile_n))
         sys.exit(1)
+    except AttributeError:
+        p = d.active_profile
     return p, d
 
 
 def find_resolution(r, args):
     p, d = find_profile(r, args)
     try:
-        r = p.resolutions[args.resolution]
+        r = p.resolutions[args.resolution_n]
     except IndexError:
-        print("Invalid resolution index {}".format(args.resolution))
+        print("Invalid resolution index {}".format(args.resolution_n))
         sys.exit(1)
+    except AttributeError:
+        r = p.active_resolution
     return r, p, d
 
 
 def find_button(r, args):
     p, d = find_profile(r, args)
     try:
-        b = p.buttons[args.button]
+        b = p.buttons[args.button_n]
     except IndexError:
-        print("Invalid button index {}".format(args.button))
+        print("Invalid button index {}".format(args.button_n))
         sys.exit(1)
     return b, p, d
 
 
-def show_device(r, args):
-    d = find_device(r, args)
+def find_led(r, args):
+    p, d = find_profile(r, args)
+    try:
+        l = p.leds[args.led_n]
+    except IndexError:
+        print("Invalid LED index {}".format(args.led_n))
+        sys.exit(1)
+    return l, p, d
+
+
+def print_led(d, p, l, level):
+    leds = {
+        RatbagdLed.LED_MODE_BREATHING: "breathing",
+        RatbagdLed.LED_MODE_CYCLE: "cycle",
+        RatbagdLed.LED_MODE_OFF: "off",
+        RatbagdLed.LED_MODE_ON: "on",
+    }
+    if l.mode == RatbagdLed.LED_MODE_OFF:
+        print(" " * level + "LED: {} type: {}, mode: {}".format(l.index,
+                                                                l.type,
+                                                                leds[l.mode]))
+    elif l.mode == RatbagdLed.LED_MODE_ON:
+        print(" " * level + "LED: {} type: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(l.index,
+                                                                                           l.type,
+                                                                                           leds[l.mode],
+                                                                                           l.color[0],
+                                                                                           l.color[1],
+                                                                                           l.color[2]))
+    elif l.mode == RatbagdLed.LED_MODE_CYCLE:
+        print(" " * level + "LED: {} type: {}, mode: {}, rate: {}, brightness: {}".format(l.index,
+                                                                                          l.type,
+                                                                                          leds[l.mode],
+                                                                                          l.effect_rate,
+                                                                                          l.brightness))
+    elif l.mode == RatbagdLed.LED_MODE_BREATHING:
+        print(" " * level + "LED: {} type: {}, mode: {}, color: {:02x}{:02x}{:02x}, rate: {}, brightness: {}".format(l.index,
+                                                                                                                     l.type,
+                                                                                                                     leds[l.mode],
+                                                                                                                     l.color[0],
+                                                                                                                     l.color[1],
+                                                                                                                     l.color[2],
+                                                                                                                     l.effect_rate,
+                                                                                                                     l.brightness))
+
+
+def print_button(d, p, b, level):
+    header = " " * level + "Button: {} type {} is mapped to ".format(b.index,
+                                                                     b.button_type)
+
+    if b.action_type == "button":
+        print("{}'button {}'".format(header, b.button_mapping))
+    elif b.action_type == "key":
+        print("{}'{}'".format(header, b.key))
+    elif b.action_type == "special":
+        print("{}'{}'".format(header, b.special))
+    else:
+        print("{}UNKOWN".format(header))
+
+
+def print_resolution(d, p, r, level):
+    if r.resolution == (0, 0):
+        print(" " * level + "{}: <disabled>".format(r.index))
+        return
+    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
+        print(" " * level + "{}: {}x{}dpi @ {}Hz{}{}".format(r.index,
+                                                             r.resolution[0],
+                                                             r.resolution[1],
+                                                             r.report_rate,
+                                                             " (active)" if p.active_resolution == r else "",
+                                                             " (default)" if p.default_resolution == r else "",
+                                                             ))
+        return
+    print(" " * level + "{}: {}dpi @ {}Hz{}{}".format(r.index,
+                                                      r.resolution[0],
+                                                      r.report_rate,
+                                                      " (active)" if p.active_resolution == r else "",
+                                                      " (default)" if p.default_resolution == r else "",
+                                                      ))
+
+
+def print_profile(d, p, level):
+    print(" " * level + "Resolutions:")
+    for r in p.resolutions:
+        print_resolution(d, p, r, level + 2)
+    for b in p.buttons:
+        print_button(d, p, b, level)
+    for l in p.leds:
+        print_led(d, p, l, level)
+
+
+def print_device(d, level):
+    p = d.profiles[0]  # there should be always one
 
     caps = {RatbagdDevice.CAP_SWITCHABLE_RESOLUTION: "switchable-resolution",
             RatbagdDevice.CAP_SWITCHABLE_PROFILE: "switchable-profile",
@@ -655,48 +749,34 @@ def show_device(r, args):
             RatbagdDevice.CAP_LED: "led"}
     capabilities = [caps[c] for c in d.capabilities]
 
-    print("{} - {}".format(d.id, d.name))
-    print("               SVG: {}".format(d.svg))
-    print("      Capabilities: {}".format(", ".join(capabilities)))
-    print("Number of Profiles: {}".format(len(d.profiles)))
-    active = -1
-    for i, p in enumerate(d.profiles):
-        if p == d.active_profile:
-            active = i
-            break
-    print("    Active Profile: {}".format(active))
+    print(" " * level + "{} - {}".format(d.id, d.name))
+    print(" " * level + "               SVG: {}".format(d.get_svg('gnome')))
+    print(" " * level + "      Capabilities: {}".format(", ".join(capabilities)))
+    print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))
+    print(" " * level + "    Number of Leds: {}".format(len(p.leds)))
+    print(" " * level + "Number of Profiles: {}".format(len(d.profiles)))
+    for p in d.profiles:
+        print_profile(d, p, level + 2)
+
+
+def show_device(r, args):
+    d = find_device(r, args)
+    print_device(d, 0)
 
 
 def show_profile(r, args):
     p, d = find_profile(r, args)
-
     print("Profile {} on {} ({})".format(args.profile, d.id, d.name))
-    print("    Number of Buttons: {}".format(len(p.buttons)))
-    print("Number of Resolutions: {}".format(len(p.resolutions)))
-    active, default = -1, -1
-    for i, r in enumerate(p.resolutions):
-        if p.active_resolution == r:
-            active = i
-        if p.default_resolution == r:
-            default = i
-
-    print("    Active Resolution: {}".format(active))
-    print("   Default Resolution: {}".format(default))
+    print_profile(d, p, 0)
 
 
 def show_resolution(r, args):
     r, p, d = find_resolution(r, args)
-
     print("Resolution {} on Profile {} on {} ({})".format(args.resolution,
                                                           args.profile,
                                                           d.id,
                                                           d.name))
-    print("   Report Rate: {}Hz".format(r.report_rate))
-    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
-        print("    Resolution: {}x{}dpi".format(*r.resolution))
-    else:
-        print("    Resolution: {}dpi".format(r.resolution[0]))
-
+    print_resolution(d, p, r, 0)
     caps = {RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE: "individual-report-rate",
             RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION: "separate-xy-resolution"}
     capabilities = [caps[c] for c in r.capabilities]
@@ -705,59 +785,826 @@ def show_resolution(r, args):
 
 def show_button(r, args):
     b, p, d = find_button(r, args)
-
     print("Button {} on Profile {} on {} ({})".format(args.button,
                                                       args.profile,
                                                       d.id,
                                                       d.name))
-
-    print("           Type: {}".format(b.button_type))
-    print("    Action Type: {}".format(b.action_type))
-
-    if b.action_type == "button":
-        print(" Button Mapping: {}".format(b.button))
-    elif b.action_type == "key":
-        print("    Key Mapping: {}".format(b.key))
-    elif b.action_type == "special":
-        print("Special Mapping: {}".format(b.special))
+    print_button(d, p, b, 0)
 
 
-def make_parser():
-    parser = argparse.ArgumentParser(description="Inspect and modify configurable mice")
-    parser.add_argument("-V", "--version", action="version", version="@version@")
-    subs = parser.add_subparsers(title="COMMANDS", help=None)
+def func_led_get(r, args):
+    l, p, d = find_led(r, args)
+    print_led(d, p, l, 0)
 
-    list = subs.add_parser("list-devices", help="List available configurable mice")
-    list.set_defaults(func=list_devices)
 
-    show = subs.add_parser("show-device", help="Show device information")
-    show.add_argument("device", metavar="event0", help="The device node")
-    show.set_defaults(func=show_device)
+def func_led_set(r, args):
+    l, p, d = find_led(r, args)
+    try:
+        mode = args.mode
+    except AttributeError:
+        pass
+    else:
+        leds = {
+            "breathing": RatbagdLed.LED_MODE_BREATHING,
+            "cycle": RatbagdLed.LED_MODE_CYCLE,
+            "off": RatbagdLed.LED_MODE_OFF,
+            "on": RatbagdLed.LED_MODE_ON,
+        }
+        l.mode = leds[mode]
+    try:
+        color = args.color
+    except AttributeError:
+        pass
+    else:
+        l.color = color
+    try:
+        rate = args.rate
+    except AttributeError:
+        pass
+    else:
+        l.effect_rate = rate
+    try:
+        brightness = args.brightness
+    except AttributeError:
+        pass
+    else:
+        l.brightness = brightness
 
-    profile = subs.add_parser("show-profile", help="Show profile information")
-    profile.add_argument("device", metavar="event0", help="The device node")
-    profile.add_argument("profile", metavar="0", help="The profile index", type=int)
-    profile.set_defaults(func=show_profile)
 
-    resolution = subs.add_parser("show-resolution", help="Show resolution information")
-    resolution.add_argument("device", metavar="event0", help="The device node")
-    resolution.add_argument("profile", metavar="0", help="The profile index", type=int)
-    resolution.add_argument("resolution", metavar="0", help="The resolution index", type=int)
-    resolution.set_defaults(func=show_resolution)
+def func_led_get_all(r, args):
+    p, d = find_profile(r, args)
+    for l in p.leds:
+        print_led(d, p, l, 0)
 
-    button = subs.add_parser("show-button", help="Show button information")
-    button.add_argument("device", metavar="event0", help="The device node")
-    button.add_argument("profile", metavar="0", help="The profile index", type=int)
-    button.add_argument("button", metavar="0", help="The button index", type=int)
-    button.set_defaults(func=show_button)
 
-    return parser
+def func_button_get(r, args):
+    b, p, d = find_button(r, args)
+    print_button(b, p, b, 0)
+
+
+def func_button_action_set_button(r, args):
+    b, p, d = find_button(r, args)
+    b.button_mapping = args.target_button
+
+
+def func_button_count(r, args):
+    p, d = find_profile(r, args)
+    print(len(p.buttons))
+
+
+def func_dpi_get(r, args):
+    r, p, d = find_resolution(r, args)
+    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
+        print("{}x{}dpi".format(r.resolution[0], r.resolution[1]))
+    else:
+        print(r.resolution[0])
+
+
+def func_dpi_set(r, args):
+    r, p, d = find_resolution(r, args)
+    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
+        print(args)
+    else:
+        r.resolution = (args.dpi_n, args.dpi_n)
+
+
+def func_resolution_get(r, args):
+    r, p, d = find_resolution(r, args)
+    print_resolution(d, p, r, 0)
+
+
+def func_resolution_active_get(r, args):
+    p, d = find_profile(r, args)
+    print(p.active_resolution.index)
+
+
+def func_profile_get(r, args):
+    p, d = find_profile(r, args)
+    print_profile(d, p, 0)
+
+
+def func_profile_active_get(r, args):
+    d = find_device(r, args)
+    print(d.active_profile.index)
+
+
+def func_profile_active_set(r, args):
+    p, d = find_profile(r, args)
+    p.set_active()
+
+
+def func_dummy(r, args):
+    print("uh, oh, not implemented")
+    pr_debug(args, r, args)
+
+
+################################################################################
+# these are definitions to be reused in the dict that defines our language
+
+# key elements
+"""the type of the element (see 'types' below)"""
+of_type = 'type'
+"""the name of the element, it'll be the one matching the args on the CLI"""
+name = 'name'
+"""list of positional arguments for the given command"""
+pos_args = 'pos_args'
+"""a tag that we can refer latrer in an element of type 'link'"""
+tag = 'tag'
+"""the element pointed to in an element of type 'link'"""
+dest = 'dest'
+"""the function to associate to the switch or command"""
+func = 'func'
+"""this is a particular command that is an integer, but not an terminating argument.
+example:
+ profile active get
+ profile **2** button 3 get
+ - "profile" needs to be a switch
+ - "2" needs to be translated as a N_access, given it is a requirement to be able to call 'button'
+ """
+N_access = 'N_access'
+
+# argparse.add_argument parameters (forwarded as such)
+"""'type' of the argument"""
+arg_type = 'arg_type'
+"""'metavar' of the argument"""
+metavar = 'metavar'
+"""'help' of the argument"""
+help_str = 'help'
+"""'nargs' of the argument"""
+nargs = 'nargs'
+"""'choices' of the argument"""
+choices = 'choices'
+
+# types
+"""an option to interprete as a command (example 'list', 'info')"""
+command = 'command'
+"""an argument that is required for the given command arguments are leaf nodes
+and can not have children
+"""
+argument = 'argument'
+"""provides a list of choice of commands for instance, a switch of [A, B] means
+we can have A or B only when parsing the command line
+"""
+switch = 'switch'
+"""same as list, except we can loop inside the list for instance, a set of
+[A, B] means we can have A and B (and A, ...) one after the other, no matter
+the order
+"""
+set = 'set'
+"""a reference to any other element in the tree marked with a tag"""
+link = 'link'
+
+################################################################################
+
+
+def color(string):
+    try:
+        int_value = int(string, 16)
+    except ValueError:
+        msg = "%r is not a color in hex format" % string
+        raise argparse.ArgumentTypeError(msg)
+    r = (int_value >> 16) & 0xff
+    g = (int_value >> 8) & 0xff
+    b = (int_value >> 0) & 0xff
+    return (r, g, b)
+
+
+def u8(string):
+    int_value = int(string)
+    msg = "%r is not a single byte" % string
+    if int_value < 0 or int_value > 255:
+        raise argparse.ArgumentTypeError(msg)
+    return int_value
+
+# note: 'eventX' is assumed at the end of each command
+parser_def = [
+    {
+        of_type: command,
+        name: 'list',
+        help_str: 'List available configurable devices',
+        func: list_devices,
+    },
+    {
+        of_type: command,
+        name: 'info',
+        help_str: 'Show device information',
+        func: show_device,
+    },
+    {
+        of_type: switch,
+        name: 'profile',
+        help_str: 'Access profile information',
+        tag: 'profile',
+        switch: [
+            {
+                of_type: switch,
+                name: 'active',
+                help_str: 'access active profile information',
+                switch: [
+                    {
+                        of_type: command,
+                        name: 'get',
+                        help_str: 'Show current active profile',
+                        func: func_profile_active_get,
+                    },
+                    {
+                        of_type: command,
+                        name: 'set',
+                        help_str: 'Set current active profile',
+                        pos_args: [
+                            {
+                                of_type: argument,
+                                name: 'profile_n',
+                                metavar: 'N',
+                                help_str: 'The profile to set as current',
+                                arg_type: int,
+                            },
+                        ],
+                        func: func_profile_active_set,
+                    },
+                ],
+            },
+            {
+                of_type: command,
+                name: 'enable',
+                help_str: 'Enable a profile',
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: 'profile_n',
+                        metavar: 'N',
+                        help_str: 'The profile to enable',
+                        arg_type: int,
+                    },
+                ],
+                func: func_dummy,  # FIXME: func_profile_enable,
+            },
+            {
+                of_type: command,
+                name: 'disable',
+                help_str: 'Disable a profile',
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: 'profile_n',
+                        metavar: 'N',
+                        help_str: 'The profile to disable',
+                        arg_type: int,
+                    },
+                ],
+                func: func_dummy,  # FIXME: func_profile_disable,
+            },
+        ],
+        N_access: {
+            of_type: N_access,
+            name: 'profile_n',
+            metavar: 'N',
+            help_str: 'The profile to act on',
+            switch: [
+                {
+                    of_type: command,
+                    name: 'get',
+                    help_str: 'Show current active profile',
+                    func: func_profile_get,
+                },
+                {
+                    of_type: link,
+                    dest: 'resolution',
+                },
+                {
+                    of_type: link,
+                    dest: 'dpi',
+                },
+                {
+                    of_type: link,
+                    dest: 'button',
+                },
+                {
+                    of_type: link,
+                    dest: 'led',
+                },
+            ],
+        },
+    },
+    {
+        of_type: switch,
+        name: 'resolution',
+        help_str: 'Access resolution information',
+        tag: 'resolution',
+        switch: [
+            {
+                of_type: switch,
+                name: 'active',
+                help_str: 'access active resolution information',
+                switch: [
+                    {
+                        of_type: command,
+                        name: 'get',
+                        help_str: 'Show current active resolution',
+                        func: func_resolution_active_get,
+                    },
+                    {
+                        of_type: command,
+                        name: 'set',
+                        help_str: 'Set current active resolution',
+                        pos_args: [
+                            {
+                                of_type: argument,
+                                name: 'resolution_n',
+                                metavar: 'N',
+                                help_str: 'The resolution to set as current',
+                                arg_type: int,
+                            },
+                        ],
+                        func: func_dummy,  # FIXME: func_active_resolution_set,
+                    },
+                ],
+            },
+        ],
+        N_access: {
+            of_type: N_access,
+            name: 'resolution_n',
+            metavar: 'N',
+            help_str: 'The resolution to act on',
+            switch: [
+                {
+                    of_type: command,
+                    name: 'get',
+                    help_str: 'Show selected resolution',
+                    func: func_resolution_get,
+                },
+                {
+                    of_type: link,
+                    dest: 'dpi',
+                },
+            ],
+        },
+    },
+    {
+        of_type: switch,
+        name: 'dpi',
+        help_str: 'Access DPI information',
+        tag: 'dpi',
+        switch: [
+            {
+                of_type: command,
+                name: 'get',
+                help_str: 'Show current DPI value',
+                func: func_dpi_get,
+            },
+            {
+                of_type: command,
+                name: 'set',
+                help_str: 'Set the DPI value to N',
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: 'dpi_n',
+                        metavar: 'N',
+                        help_str: 'The resolution to set as current',
+                        arg_type: int,
+                    },
+                ],
+                func: func_dpi_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: 'button',
+        help_str: 'Access Button information',
+        tag: 'button',
+        switch: [
+            {
+                of_type: command,
+                name: 'count',
+                help_str: 'Print the number of buttons',
+                func: func_button_count,
+            },
+        ],
+        N_access: {
+            of_type: N_access,
+            name: 'button_n',
+            metavar: 'N',
+            help_str: 'The button to act on',
+            switch: [
+                {
+                    of_type: command,
+                    name: 'get',
+                    help_str: 'Show selected button',
+                    func: func_button_get,
+                },
+                {
+                    of_type: switch,
+                    name: 'action',
+                    help_str: 'Act on the selected button',
+                    switch: [
+                        {
+                            of_type: command,
+                            name: 'get',
+                            help_str: 'Print the button action',
+                            func: func_button_get,
+                        },
+                        {
+                            of_type: switch,
+                            name: 'set',
+                            help_str: 'Set an action on the selected button',
+                            switch: [
+                                {
+                                    of_type: command,
+                                    name: 'button',
+                                    help_str: 'Set the button action to button B',
+                                    pos_args: [
+                                        {
+                                            of_type: argument,
+                                            name: 'target_button',
+                                            metavar: 'B',
+                                            help_str: 'The new buton value to assign',
+                                            arg_type: int,
+                                        },
+                                    ],
+                                    func: func_button_action_set_button,
+                                },
+                                {
+                                    of_type: command,
+                                    name: 'special',
+                                    help_str: 'Set the button action to special action S',
+                                    pos_args: [
+                                        {
+                                            of_type: argument,
+                                            name: 'target_special',
+                                            metavar: 'S',
+                                            help_str: 'The new special value to assign',
+                                        },
+                                    ],
+                                    func: func_dummy,  # FIXME: func_button_action_set_special,
+                                },
+                                {
+                                    of_type: command,
+                                    name: 'macro',
+                                    help_str: 'Set the button action to the given macro',
+                                    pos_args: [
+                                        {
+                                            of_type: argument,
+                                            name: 'target_macro',
+                                            metavar: 'macro',
+                                            help_str: 'The new macro to assign',
+                                            nargs: argparse.REMAINDER,
+                                        },
+                                    ],
+                                    func: func_dummy,  # FIXME: func_button_action_set_macro,
+                                },
+                            ]
+                        },
+                    ]
+                },
+            ],
+        },
+    },
+    {
+        of_type: switch,
+        name: 'led',
+        help_str: 'Access LED information',
+        tag: 'led',
+        switch: [
+            {
+                of_type: command,
+                name: 'get',
+                help_str: 'Show current LED value',
+                func: func_led_get_all,
+            },
+        ],
+        N_access: {
+            of_type: N_access,
+            name: 'led_n',
+            metavar: 'N',
+            help_str: 'The LED to act on',
+            switch: [
+                {
+                    of_type: command,
+                    name: 'get',
+                    help_str: 'Show current LED value',
+                    func: func_led_get,
+                },
+                {
+                    of_type: set,
+                    name: 'set',
+                    help_str: 'Act on the selected LED',
+                    switch: [
+                        {
+                            of_type: command,
+                            name: 'mode',
+                            help_str: 'The mode to set as current',
+                            pos_args: [
+                                {
+                                    of_type: argument,
+                                    name: 'mode',
+                                    metavar: 'mode',
+                                    help_str: 'The mode to set as current',
+                                    choices: ['on', 'off', 'cycle', 'breathing'],
+                                },
+                            ],
+                        },
+                        {
+                            of_type: command,
+                            name: 'color',
+                            help_str: 'The color to set as current',
+                            pos_args: [
+                                {
+                                    of_type: argument,
+                                    name: 'color',
+                                    metavar: 'RRGGBB',
+                                    help_str: 'The color in hex format to set as current',
+                                    arg_type: color,
+                                },
+                            ],
+                        },
+                        {
+                            of_type: command,
+                            name: 'rate',
+                            help_str: 'The rate to set as current',
+                            pos_args: [
+                                {
+                                    of_type: argument,
+                                    name: 'rate',
+                                    metavar: 'rate',
+                                    help_str: 'The rate in Hz to set as current',
+                                    arg_type: int,
+                                },
+                            ],
+                        },
+                        {
+                            of_type: command,
+                            name: 'brightness',
+                            help_str: 'The brightness to set as current',
+                            pos_args: [
+                                {
+                                    of_type: argument,
+                                    name: 'brightness',
+                                    metavar: 'brightness',
+                                    help_str: 'The brightness to set as current',
+                                    arg_type: u8,
+                                },
+                            ],
+                        },
+                    ],
+                    func: func_led_set,
+                },
+            ],
+        },
+    },
+]
+
+
+def pr_debug(ns, *args):
+    try:
+        if ns.verbose > 2:
+            print(*args)
+    except AttributeError:
+        print(ns)
+
+
+class ParseError(Exception):
+    pass
+
+
+class RatbagParser(object):
+    tagged = {}
+
+    def __init__(self, type, name, tag=None, func=None, help=None):
+        self.type = type
+        self.name = name
+        self.tag = tag
+        if tag is not None:
+            RatbagParser.tagged[tag] = self
+        self.func = func
+        self.help = help
+
+    def repr_args(self):
+        return "name='{}', tag='{}', func='{}', help='{}'".format(self.name, self.tag, self.func, self.help)
+
+    def __repr__(self):
+        return "{}({})".format(type(self), self.repr_args())
+
+    def store_function(self, parser):
+        if self.func is not None:
+            parser.set_defaults(func=self.func)
+            if 'list' not in self.name:
+                parser.add_argument("device", metavar='eventX')
+
+    def _parse(self, parent, input_string, ns):
+        raise ParseError("please implement _parse on {}".format(type(self)))
+
+    def parse(self, parent, input_string, ns):
+        pr_debug(ns, ">>> {}: {} | {}".format(self.type, self.name, input_string))
+        self._parse(parent, input_string, ns)
+        pr_debug(ns, "<<< {}: {} | {}".format(self.type, self.name, input_string))
+
+    def _sub_parse(self, input_string, ns):
+        raise ParseError("please implement _sub_parse on {}".format(type(self)))
+
+    def sub_parse(self, input_string, ns):
+        pr_debug(ns, ">.. {}: {} | {}".format(self.type, self.name, input_string))
+        r = self._sub_parse(input_string, ns)
+        pr_debug(ns, "<.. {}: {} | {}".format(self.type, self.name, input_string))
+        return r
+
+    def print_help(self):
+        return str(type(self))
+
+    def build_cmd_args_name(self):
+        """uniquely tag the arguments of the command in the namespace"""
+        return "{}_args_{}".format(self.name)
+
+
+class RatbagParserSwitch(RatbagParser):
+    def __init__(self, type, name, switch=[], N_access=None, tag=None, func=None, help=None):
+        super(RatbagParserSwitch, self).__init__(type, name, tag, func, help)
+        self.switch = [classes[obj[of_type]](**obj) for obj in switch]
+        if N_access is not None:
+            self.N_access = RatbagParserNAccess(**N_access)
+        else:
+            self.N_access = None
+
+    def repr_args(self):
+        return """switch='{}', N_access='{}', {}""".format([repr(o) for o in self.switch], self.N_access, RatbagParser.repr_args(self))
+
+    def _parse(self, parent, input_string, ns):
+        parser = parent.add_parser(self.name, help=self.help)
+        parser.set_defaults(subparse=self.sub_parse)
+
+    def _sub_parse(self, input_string, ns):
+        if len(input_string) >= 0 and self.N_access is not None:
+            # retrieve first numbered element if any
+            try:
+                int(input_string[0])
+            except ValueError:
+                # there are arguments, but they look like commands
+                pass
+            else:
+                # we have a single int as first argument, switch to the
+                # N_access subtree of the command
+                return self.N_access.sub_parse(input_string, ns)
+
+        parser = argparse.ArgumentParser()
+
+        # create a new subparser to handle all commands
+        subs = parser.add_subparsers(title="COMMANDS", help=None)
+        for e in self.switch:
+            e.parse(subs, input_string, ns)
+
+        return parser
+
+    def __repr__(self):
+        return "switch({})".format(self.repr_args())
+
+
+class RatbagParserNAccess(RatbagParserSwitch):
+    def __init__(self, type, name, switch=[], metavar=None, tag=None, func=None, help=None):
+        super(RatbagParserNAccess, self).__init__(type, name, switch, None, tag, func, help)
+        self.metavar = metavar
+
+    def _sub_parse(self, input_string, ns):
+        parser = argparse.ArgumentParser()
+        parser.add_argument(self.name, help=self.help, type=int)
+        # create a new subparser to handle all commands
+        subs = parser.add_subparsers(title="COMMANDS", help=None)
+        for e in self.switch:
+            e.parse(subs, input_string, ns)
+        return parser
+
+    def repr_args(self):
+        return """switch='{}', metavar = '{}', {}""".format([repr(o) for o in self.switch], self.metavar, RatbagParser.repr_args(self))
+
+    def __repr__(self):
+        return "N_Access({})".format(self.repr_args())
+
+
+class RatbagParserSet(RatbagParserSwitch):
+    def __init__(self, type, name, switch=[], N_access=None, tag=None, func=None, help=None):
+        super(RatbagParserSet, self).__init__(type, name, switch, N_access, tag, func, help)
+
+    def _parse(self, parent, input_string, ns):
+        parser = parent.add_parser(self.name, help=self.help)
+        parser.set_defaults(subparse=self.sub_parse)
+
+    def _sub_parse(self, input_string, ns):
+        parser = argparse.ArgumentParser()
+        # create a new subparser to handle all commands
+        subs = parser.add_subparsers(title="COMMANDS", help=None)
+        for e in self.switch:
+            e.parse(subs, input_string, ns)
+        if len(input_string) == 3:
+            self.store_function(parser)
+        else:
+            parser.set_defaults(subparse=self.sub_parse)
+        return parser
+
+    def __repr__(self):
+        return "set({})".format(self.repr_args())
+
+
+class RatbagParserCommand(RatbagParser):
+    def __init__(self, type, name, pos_args=[], tag=None, func=None, help=None):
+        super(RatbagParserCommand, self).__init__(type, name, tag, func, help)
+        self.pos_args = [classes[obj[of_type]](**obj) for obj in pos_args]
+
+    def _parse(self, parent, input_string, ns):
+        parser = parent.add_parser(self.name, help=self.help)
+        for a in self.pos_args:
+            a.parse(parser, input_string, ns)
+        self.store_function(parser)
+
+    def __repr__(self):
+        return "command({})".format(self.repr_args())
+
+
+class RatbagParserArgument(RatbagParser):
+    def __init__(self, type, name, arg_type=None, metavar=None, nargs=None, choices=None, tag=None, func=None, help=None):
+        super(RatbagParserArgument, self).__init__(type, name, tag, func, help)
+        self.arg_type = arg_type
+        self.metavar = metavar
+        self.nargs = nargs
+        self.choices = choices
+
+    def _parse(self, parent, input_string, ns):
+        parent.add_argument(self.name, metavar=self.metavar, help=self.help, type=self.arg_type, nargs=self.nargs, choices=self.choices)
+
+
+class RatbagParserLink(RatbagParser):
+    def __init__(self, type, dest=None, tag=None, func=None, help=None):
+        super(RatbagParserLink, self).__init__(type, dest, tag, func, help)
+        self.dest = dest
+
+    def _parse(self, parent, input_string, ns):
+        try:
+            e = RatbagParser.tagged[self.dest]
+        except KeyError:
+            raise ParseError("link '{}' points to nothing".format(self.dest))
+        else:
+            e.parse(parent, input_string, ns)
+
+classes = {
+    switch: RatbagParserSwitch,
+    set: RatbagParserSet,
+    command: RatbagParserCommand,
+    argument: RatbagParserArgument,
+    link: RatbagParserLink,
+    N_access: RatbagParserNAccess,
+}
+
+
+class RatbagParserRoot(object):
+    def __init__(self, commands):
+        self.children = [classes[def_parser[of_type]](**def_parser) for def_parser in commands]
+
+    def parse(self, input_string):
+        # we do not care about case, use lower case for the input string
+        for i, string in enumerate(input_string):
+            if not string.startswith('-'):
+                input_string[i] = string.lower()
+
+        self.parser = argparse.ArgumentParser(description="Inspect and modify configurable mice")
+        self.parser.add_argument("-V", "--version", action="version", version="@version@")
+        self.parser.add_argument('--verbose', '-v', action='count', default=0)
+
+        ns, rest = self.parser.parse_known_args(input_string)
+
+        subs = self.parser.add_subparsers(title="COMMANDS", help='sub-command help')
+
+        subparser = self.parser
+        rest = input_string
+
+        for child in self.children:
+            child.parse(subs, input_string, ns)
+
+        while subparser:
+            ns, rest = subparser.parse_known_args(rest, namespace=ns)
+            if not rest:
+                break
+            pr_debug(ns, ns, rest)
+            try:
+                subparse_call = ns.subparse
+            except AttributeError:
+                break
+            else:
+                subparser = subparse_call(rest, ns)
+
+        if rest:
+            self.parser.error("extra arguments: '{}'".format(" ".join(rest)))
+
+        return ns
+
+    def print_help(self):
+        self.parser.print_help()
 
 
 def main(argv):
     if not argv:
-        argv = ["list-devices"]
-    cmd = make_parser().parse_args(argv)
+        argv = ["list"]
+
+    parser = RatbagParserRoot(parser_def)
+    cmd = parser.parse(argv)
 
     try:
         r = Ratbagd()
