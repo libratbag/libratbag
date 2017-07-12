@@ -40,9 +40,6 @@ struct ratbagd_resolution {
 	struct ratbag_resolution *lib_resolution;
 	unsigned int index;
 	char *path;
-	unsigned int xres, yres;
-	unsigned int rate;
-	unsigned int maxres, minres;
 };
 
 static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
@@ -64,11 +61,7 @@ static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
 	r = ratbag_resolution_set_report_rate(resolution->lib_resolution,
 					      rate);
 	if (r == 0) {
-		sd_bus *bus;
-
-		resolution->rate = rate;
-
-		bus = sd_bus_message_get_bus(m);
+		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       resolution->path,
 					       RATBAGD_NAME_ROOT ".Resolution",
@@ -93,19 +86,13 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 		return r;
 
 	if (!ratbag_resolution_has_capability(lib_resolution, cap)) {
-		yres = xres;
 		r = ratbag_resolution_set_dpi(resolution->lib_resolution, xres);
 	} else {
 		r = ratbag_resolution_set_dpi_xy(resolution->lib_resolution,
 						 xres, yres);
 	}
 	if (r == 0) {
-		sd_bus *bus;
-
-		resolution->xres = xres;
-		resolution->yres = yres;
-
-		bus = sd_bus_message_get_bus(m);
+		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       resolution->path,
 					       RATBAGD_NAME_ROOT ".Resolution",
@@ -171,15 +158,100 @@ ratbagd_resolution_get_capabilities(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+static int
+ratbagd_resolution_get_resolution_x(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *reply,
+				    void *userdata,
+				    sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	int xres;
+
+	xres = ratbag_resolution_get_dpi_x(lib_resolution);
+	return sd_bus_message_append(reply, "u", xres);
+}
+
+static int
+ratbagd_resolution_get_resolution_y(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *reply,
+				    void *userdata,
+				    sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	int yres;
+
+	yres = ratbag_resolution_get_dpi_y(lib_resolution);
+	return sd_bus_message_append(reply, "u", yres);
+}
+
+static int
+ratbagd_resolution_get_rate(sd_bus *bus,
+			    const char *path,
+			    const char *interface,
+			    const char *property,
+			    sd_bus_message *reply,
+			    void *userdata,
+			    sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	int rate;
+
+	rate = ratbag_resolution_get_report_rate(lib_resolution);
+	return sd_bus_message_append(reply, "u", rate);
+}
+
+static int
+ratbagd_resolution_get_minimum(sd_bus *bus,
+			       const char *path,
+			       const char *interface,
+			       const char *property,
+			       sd_bus_message *reply,
+			       void *userdata,
+			       sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	int min;
+
+	min = ratbag_resolution_get_dpi_minimum(lib_resolution);
+	return sd_bus_message_append(reply, "u", min);
+}
+
+static int
+ratbagd_resolution_get_maximum(sd_bus *bus,
+			       const char *path,
+			       const char *interface,
+			       const char *property,
+			       sd_bus_message *reply,
+			       void *userdata,
+			       sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	int max;
+
+	max = ratbag_resolution_get_dpi_maximum(lib_resolution);
+	return sd_bus_message_append(reply, "u", max);
+}
+
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("XResolution", "u", NULL, offsetof(struct ratbagd_resolution, xres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("YResolution", "u", NULL, offsetof(struct ratbagd_resolution, yres), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("ReportRate", "u", NULL, offsetof(struct ratbagd_resolution, rate), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("Maximum", "u", NULL, offsetof(struct ratbagd_resolution, maxres), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Minimum", "u", NULL, offsetof(struct ratbagd_resolution, minres), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("XResolution", "u", ratbagd_resolution_get_resolution_x, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("YResolution", "u", ratbagd_resolution_get_resolution_y, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("ReportRate", "u", ratbagd_resolution_get_rate, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("Maximum", "u", ratbagd_resolution_get_maximum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Minimum", "u", ratbagd_resolution_get_minimum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
@@ -208,11 +280,6 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 
 	resolution->lib_resolution = lib_resolution;
 	resolution->index = index;
-	resolution->xres = ratbag_resolution_get_dpi_x(lib_resolution);
-	resolution->yres = ratbag_resolution_get_dpi_y(lib_resolution);
-	resolution->rate = ratbag_resolution_get_report_rate(lib_resolution);
-	resolution->maxres = ratbag_resolution_get_dpi_maximum(lib_resolution);
-	resolution->minres = ratbag_resolution_get_dpi_minimum(lib_resolution);
 
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(resolution_buffer, "r%u", index);
