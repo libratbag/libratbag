@@ -528,6 +528,9 @@ config_ratbagctl_devel.set('MESON_BUILD_ROOT', meson.build_root())
 configure_file(input : 'tools/ratbagctl.devel.in',
 	       output : 'ratbagctl.devel',
 	       configuration : config_ratbagctl_devel)
+configure_file(input : 'tools/ratbagctl.test.in',
+	       output : 'ratbagctl.test',
+	       configuration : config_ratbagctl_devel)
 
 #### output files ####
 configure_file(output: 'config.h', install: false, configuration: config_h)
