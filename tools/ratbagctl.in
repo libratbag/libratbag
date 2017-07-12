@@ -594,20 +594,23 @@ class RatbagdLed(_RatbagdDBus):
         """
         return self._dbus_call("SetBrightness", "u", brightness)
 
+
 def list_devices(r, args):
     for d in r.devices:
         print("{:10s} {:32s}".format(d.id + ":", d.name))
+
 
 def find_device(r, args):
     dev = None
     for d in r.devices:
         if d.id == args.device:
             dev = d
-            break;
+            break
     if dev is None:
         print("Unable to find device {}".format(args.device))
         sys.exit(1)
     return dev
+
 
 def find_profile(r, args):
     d = find_device(r, args)
@@ -618,6 +621,7 @@ def find_profile(r, args):
         sys.exit(1)
     return p, d
 
+
 def find_resolution(r, args):
     p, d = find_profile(r, args)
     try:
@@ -626,6 +630,7 @@ def find_resolution(r, args):
         print("Invalid resolution index {}".format(args.resolution))
         sys.exit(1)
     return r, p, d
+
 
 def find_button(r, args):
     p, d = find_profile(r, args)
@@ -636,18 +641,18 @@ def find_button(r, args):
         sys.exit(1)
     return b, p, d
 
+
 def show_device(r, args):
     d = find_device(r, args)
 
-
-    caps = { RatbagdDevice.CAP_SWITCHABLE_RESOLUTION : "switchable-resolution",
-             RatbagdDevice.CAP_SWITCHABLE_PROFILE : "switchable-profile",
-             RatbagdDevice.CAP_BUTTON_KEY : "button-keys",
-             RatbagdDevice.CAP_BUTTON_MACROS : "button-macros",
-             RatbagdDevice.CAP_DEFAULT_PROFILE : "default-profile",
-             RatbagdDevice.CAP_QUERY_CONFIGURATION : "query-configuration",
-             RatbagdDevice.CAP_DISABLE_PROFILE : "disable-profile",
-             RatbagdDevice.CAP_LED : "led" }
+    caps = {RatbagdDevice.CAP_SWITCHABLE_RESOLUTION: "switchable-resolution",
+            RatbagdDevice.CAP_SWITCHABLE_PROFILE: "switchable-profile",
+            RatbagdDevice.CAP_BUTTON_KEY: "button-keys",
+            RatbagdDevice.CAP_BUTTON_MACROS: "button-macros",
+            RatbagdDevice.CAP_DEFAULT_PROFILE: "default-profile",
+            RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration",
+            RatbagdDevice.CAP_DISABLE_PROFILE: "disable-profile",
+            RatbagdDevice.CAP_LED: "led"}
     capabilities = [caps[c] for c in d.capabilities]
 
     print("{} - {}".format(d.id, d.name))
@@ -660,6 +665,7 @@ def show_device(r, args):
             active = i
             break
     print("    Active Profile: {}".format(active))
+
 
 def show_profile(r, args):
     p, d = find_profile(r, args)
@@ -677,6 +683,7 @@ def show_profile(r, args):
     print("    Active Resolution: {}".format(active))
     print("   Default Resolution: {}".format(default))
 
+
 def show_resolution(r, args):
     r, p, d = find_resolution(r, args)
 
@@ -690,11 +697,11 @@ def show_resolution(r, args):
     else:
         print("    Resolution: {}dpi".format(r.resolution[0]))
 
-
-    caps = { RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE : "individual-report-rate",
-             RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION : "separate-xy-resolution" }
+    caps = {RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE: "individual-report-rate",
+            RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION: "separate-xy-resolution"}
     capabilities = [caps[c] for c in r.capabilities]
     print("  Capabilities: {}".format(", ".join(capabilities)))
+
 
 def show_button(r, args):
     b, p, d = find_button(r, args)
@@ -713,6 +720,7 @@ def show_button(r, args):
         print("    Key Mapping: {}".format(b.key))
     elif b.action_type == "special":
         print("Special Mapping: {}".format(b.special))
+
 
 def make_parser():
     parser = argparse.ArgumentParser(description="Inspect and modify configurable mice")
@@ -744,6 +752,7 @@ def make_parser():
     button.set_defaults(func=show_button)
 
     return parser
+
 
 def main(argv):
     if not argv:
