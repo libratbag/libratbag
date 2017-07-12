@@ -664,6 +664,7 @@ etekcity_probe(struct ratbag_device *device)
 				    ETEKCITY_BUTTON_MAX + 1,
 				    ETEKCITY_LED);
 
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 	active_idx = etekcity_current_profile(device);

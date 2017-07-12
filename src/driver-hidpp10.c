@@ -377,6 +377,9 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	if (rc)
 		xres = 0xffff;
 
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+
 	for (i = 0; i < profile->resolution.num_modes; i++) {
 		unsigned int min, max;
 
@@ -475,7 +478,9 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 				    profile.num_leds);
 
 	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 	}

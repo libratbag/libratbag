@@ -1004,6 +1004,7 @@ gskill_probe(struct ratbag_device *device)
 				    GSKILL_BUTTON_MAX, GSKILL_NUM_LED);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
