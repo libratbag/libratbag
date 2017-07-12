@@ -29,12 +29,11 @@ import os
 import shutil
 import subprocess
 import sys
-import time
 
 if not os.geteuid() == 0:
     sys.exit('Script must be run as root')
 
-SCRIPT_DIR = @MESON_BUILD_ROOT@
+SCRIPT_DIR = '@MESON_BUILD_ROOT@'
 
 # first copy the policy for the ratbagd daemon to be allowed to run
 shutil.copy(os.path.join(SCRIPT_DIR, 'org.freedesktop.ratbag_devel1.conf'),

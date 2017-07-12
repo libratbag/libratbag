@@ -524,7 +524,7 @@ install_man('tools/ratbagctl.1')
 
 config_ratbagctl_devel = configuration_data()
 config_ratbagctl_devel.set('ratbagd_sha', ratbagd_sha)
-config_ratbagctl_devel.set_quoted('MESON_BUILD_ROOT', meson.build_root())
+config_ratbagctl_devel.set('MESON_BUILD_ROOT', meson.build_root())
 configure_file(input : 'tools/ratbagctl.devel.in',
 	       output : 'ratbagctl.devel',
 	       configuration : config_ratbagctl_devel)
