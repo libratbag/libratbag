@@ -76,6 +76,27 @@
 #define _weak_ __attribute__((weak))
 #define _weakref_(_x) __attribute__((weakref(#_x)))
 
+/* container_of macro */
+#ifdef __GNUC__
+#define container_of(ptr, sample, member)				\
+	(__typeof__(sample))((char *)(ptr)	-			\
+		 ((char *)&(sample)->member - (char *)(sample)))
+#else
+#define container_of(ptr, sample, member)				\
+	(void *)((char *)(ptr)	-				        \
+		 ((char *)&(sample)->member - (char *)(sample)))
+#endif
+
+#define LONG_BITS (sizeof(long) * 8)
+#define NLONGS(x) (((x) + LONG_BITS - 1) / LONG_BITS)
+#define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
+#define ARRAY_FOR_EACH(_arr, _elem) \
+	for (size_t _i = 0; _i < ARRAY_LENGTH(_arr) && (_elem = &_arr[_i]); _i++)
+#define AS_MASK(v) (1 << (v))
+
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+
 /*
  * DECIMAL_TOKEN_MAX() - calculate maximum length of the decimal representation
  *                       of an integer
