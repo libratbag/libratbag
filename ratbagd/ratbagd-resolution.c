@@ -35,6 +35,7 @@
 #include <systemd/sd-event.h>
 #include "ratbagd.h"
 #include "shared-macro.h"
+#include "libratbag-util.h"
 
 struct ratbagd_resolution {
 	struct ratbag_resolution *lib_resolution;

@@ -31,6 +31,7 @@
 #include <systemd/sd-bus.h>
 #include "ratbagd.h"
 #include "shared-macro.h"
+#include "libratbag-util.h"
 
 struct ratbagd_led {
 	struct ratbag_led *lib_led;
@@ -273,10 +274,7 @@ int ratbagd_led_new(struct ratbagd_led **out,
 	assert(out);
 	assert(lib_led);
 
-	led = calloc(1, sizeof(*led));
-	if (!led)
-		return -ENOMEM;
-
+	led = zalloc(sizeof(*led));
 	led->lib_led = lib_led;
 	led->index = index;
 

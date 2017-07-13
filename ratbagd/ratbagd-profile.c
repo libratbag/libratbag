@@ -36,6 +36,7 @@
 #include "ratbagd.h"
 #include "libratbag-util.h"
 #include "shared-macro.h"
+#include "libratbag-util.h"
 
 struct ratbagd_profile {
 	struct ratbagd_device *device;
@@ -375,9 +376,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	assert(out);
 	assert(lib_profile);
 
-	profile = calloc(1, sizeof(*profile));
-	if (!profile)
-		return -ENOMEM;
+	profile = zalloc(sizeof(*profile));
 
 	profile->device = device;
 	profile->lib_profile = lib_profile;
@@ -392,19 +391,13 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 		return r;
 
 	profile->n_resolutions = ratbag_profile_get_num_resolutions(profile->lib_profile);
-	profile->resolutions = calloc(profile->n_resolutions, sizeof(*profile->resolutions));
-	if (!profile->resolutions)
-		return -ENOMEM;
+	profile->resolutions = zalloc(profile->n_resolutions * sizeof(*profile->resolutions));
 
 	profile->n_buttons = ratbagd_device_get_num_buttons(device);
-	profile->buttons = calloc(profile->n_buttons, sizeof(*profile->buttons));
-	if (!profile->buttons)
-		return -ENOMEM;
+	profile->buttons = zalloc(profile->n_buttons * sizeof(*profile->buttons));
 
 	profile->n_leds = ratbagd_device_get_num_leds(device);
-	profile->leds = calloc(profile->n_leds, sizeof(*profile->leds));
-	if (!profile->leds)
-		return -ENOMEM;
+	profile->leds = zalloc(profile->n_leds * sizeof(*profile->leds));
 
 	for (i = 0; i < profile->n_resolutions; ++i) {
 		resolution = ratbag_profile_get_resolution(profile->lib_profile, i);
@@ -522,9 +515,7 @@ static int ratbagd_profile_list_resolutions(sd_bus *bus,
 	char **resolutions;
 	unsigned int i;
 
-	resolutions = calloc(profile->n_resolutions + 1, sizeof(char *));
-	if (!resolutions)
-		return -ENOMEM;
+	resolutions = zalloc((profile->n_resolutions + 1) * sizeof(char *));
 
 	for (i = 0; i < profile->n_resolutions; ++i) {
 		resolution = profile->resolutions[i];
@@ -591,9 +582,7 @@ static int ratbagd_profile_list_buttons(sd_bus *bus,
 	char **buttons;
 	unsigned int i;
 
-	buttons = calloc(profile->n_buttons + 1, sizeof(char *));
-	if (!buttons)
-		return -ENOMEM;
+	buttons = zalloc((profile->n_buttons + 1) * sizeof(char *));
 
 	for (i = 0; i < profile->n_buttons; ++i) {
 		button = profile->buttons[i];
@@ -659,9 +648,7 @@ static int ratbagd_profile_list_leds(sd_bus *bus,
 	char **leds;
 	unsigned int i;
 
-	leds = calloc(profile->n_leds + 1, sizeof(char *));
-	if (!leds)
-		return -ENOMEM;
+	leds = zalloc((profile->n_leds + 1) * sizeof(char *));
 
 	for (i = 0; i < profile->n_leds; ++i) {
 		led = profile->leds[i];
