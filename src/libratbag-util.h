@@ -46,16 +46,6 @@ void list_insert(struct list *list, struct list *elm);
 void list_remove(struct list *elm);
 int list_empty(const struct list *list);
 
-#ifdef __GNUC__
-#define container_of(ptr, sample, member)				\
-	(__typeof__(sample))((char *)(ptr)	-			\
-		 ((char *)&(sample)->member - (char *)(sample)))
-#else
-#define container_of(ptr, sample, member)				\
-	(void *)((char *)(ptr)	-				        \
-		 ((char *)&(sample)->member - (char *)(sample)))
-#endif
-
 #define list_for_each(pos, head, member)				\
 	for (pos = 0, pos = container_of((head)->next, pos, member);	\
 	     &pos->member != (head);					\
@@ -68,16 +58,6 @@ int list_empty(const struct list *list);
 	     &pos->member != (head);					\
 	     pos = tmp,							\
 	     tmp = container_of(pos->member.next, tmp, member))
-
-#define LONG_BITS (sizeof(long) * 8)
-#define NLONGS(x) (((x) + LONG_BITS - 1) / LONG_BITS)
-#define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
-#define ARRAY_FOR_EACH(_arr, _elem) \
-	for (size_t _i = 0; _i < ARRAY_LENGTH(_arr) && (_elem = &_arr[_i]); _i++)
-#define AS_MASK(v) (1 << (v))
-
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#define max(a, b) (((a) > (b)) ? (a) : (b))
 
 static inline void
 cleanup_free(void *p) {
