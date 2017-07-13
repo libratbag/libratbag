@@ -38,6 +38,8 @@
 #include "shared-macro.h"
 #include "shared-rbtree.h"
 
+#include "libratbag-util.h"
+
 struct ratbagd_device {
 	struct ratbagd *ctx;
 	RBNode node;
@@ -104,20 +106,12 @@ static int ratbagd_device_list_profiles(sd_bus *bus,
 		if (!profile)
 			continue;
 
-		profiles[i] = strdup(ratbagd_profile_get_path(profile));
-		if (!profiles[i])
-			goto error;
+		profiles[i] = strdup_safe(ratbagd_profile_get_path(profile));
 	}
 
 	profiles[i] = NULL;
 	*paths = profiles;
 	return 1;
-
-error:
-	for (i = 0; profiles[i]; ++i)
-		free(profiles[i]);
-	free(profiles);
-	return -ENOMEM;
 }
 
 static int ratbagd_device_get_device_name(sd_bus *bus,
@@ -387,9 +381,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	rbnode_init(&device->node);
 	device->lib_device = ratbag_device_ref(lib_device);
 
-	device->name = strdup(name);
-	if (!device->name)
-		return -ENOMEM;
+	device->name = strdup_safe(name);
 
 	r = sd_bus_path_encode(RATBAGD_OBJ_ROOT "/device",
 			       device->name,

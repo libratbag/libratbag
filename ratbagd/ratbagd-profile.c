@@ -34,6 +34,7 @@
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
 #include "ratbagd.h"
+#include "libratbag-util.h"
 #include "shared-macro.h"
 
 struct ratbagd_profile {
@@ -530,20 +531,12 @@ static int ratbagd_profile_list_resolutions(sd_bus *bus,
 		if (!resolution)
 			continue;
 
-		resolutions[i] = strdup(ratbagd_resolution_get_path(resolution));
-		if (!resolutions[i])
-			goto error;
+		resolutions[i] = strdup_safe(ratbagd_resolution_get_path(resolution));
 	}
 
 	resolutions[i] = NULL;
 	*paths = resolutions;
 	return 1;
-
-error:
-	for (i = 0; resolutions[i]; ++i)
-		free(resolutions[i]);
-	free(resolutions);
-	return -ENOMEM;
 }
 
 
@@ -607,20 +600,12 @@ static int ratbagd_profile_list_buttons(sd_bus *bus,
 		if (!button)
 			continue;
 
-		buttons[i] = strdup(ratbagd_button_get_path(button));
-		if (!buttons[i])
-			goto error;
+		buttons[i] = strdup_safe(ratbagd_button_get_path(button));
 	}
 
 	buttons[i] = NULL;
 	*paths = buttons;
 	return 1;
-
-error:
-	for (i = 0; buttons[i]; ++i)
-		free(buttons[i]);
-	free(buttons);
-	return -ENOMEM;
 }
 
 int ratbagd_profile_register_buttons(struct sd_bus *bus,
@@ -683,20 +668,12 @@ static int ratbagd_profile_list_leds(sd_bus *bus,
 		if (!led)
 			continue;
 
-		leds[i] = strdup(ratbagd_led_get_path(led));
-		if (!leds[i])
-			goto error;
+		leds[i] = strdup_safe(ratbagd_led_get_path(led));
 	}
 
 	leds[i] = NULL;
 	*paths = leds;
 	return 1;
-
-error:
-	for (i = 0; leds[i]; ++i)
-		free(leds[i]);
-	free(leds);
-	return -ENOMEM;
 }
 
 int ratbagd_profile_register_leds(struct sd_bus *bus,
