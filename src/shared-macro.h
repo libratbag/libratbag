@@ -118,6 +118,8 @@ static inline void reset_errno(int *saved_errno)
 }
 #define PROTECT_ERRNO _cleanup_(reset_errno) _unused_ int saved_errno = errno
 
+#define _cleanup_free_ _cleanup_(freep)
+#define _cleanup_close_ _cleanup_(safe_closep)
 /*
  * DEFINE_TRIVIAL_CLEANUP_FUNC() - define helper suitable for _cleanup_()
  * @_type: type of object to cleanup
@@ -130,6 +132,9 @@ static inline void reset_errno(int *saved_errno)
 			_func(*_p);				\
 	}							\
 	struct __useless_struct_to_allow_trailing_semicolon__
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct udev*, udev_unref);
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct udev_device*, udev_device_unref);
 
 /*
  * ELEMENTSOF() - number of array elements

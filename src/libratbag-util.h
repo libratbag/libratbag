@@ -59,32 +59,6 @@ int list_empty(const struct list *list);
 	     pos = tmp,							\
 	     tmp = container_of(pos->member.next, tmp, member))
 
-static inline void
-cleanup_free(void *p) {
-	free(*(void**)p);
-}
-
-static inline void
-cleanup_close(int *p) {
-	close(*p);
-}
-static inline void
-cleanup_udev_unref(struct udev **udev) {
-	if (*udev)
-		udev_unref(*udev);
-}
-
-static inline void
-cleanup_udev_device_unref(struct udev_device **udev_device) {
-	if (*udev_device)
-		udev_device_unref(*udev_device);
-}
-
-#define _cleanup_free_ _cleanup_(cleanup_free)
-#define _cleanup_close_ _cleanup_(cleanup_close)
-#define _cleanup_udev_unref_ _cleanup_(cleanup_udev_unref)
-#define _cleanup_udev_device_unref_ _cleanup_(cleanup_udev_device_unref)
-
 static inline char*
 strncpy_safe(char *dest, const char *src, size_t n)
 {
