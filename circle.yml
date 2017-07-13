@@ -121,7 +121,7 @@ workflows:
   version: 2
   compile_and_test:
     jobs:
-      - fedora_rawhide
+      # - fedora_rawhide
       - scan_build
       - ubuntu_17_04
-      #- fedora_latest
+      - fedora_latest
