@@ -690,15 +690,19 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 	device->num_profiles = num_profiles;
 
 	if (num_profiles > 1) {
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
 
 		/* having more than one profile means we can remap the buttons
 		 * at least */
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 	}
 
-	if (num_resolutions > 1)
+	if (num_resolutions > 1) {
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+	}
 
 	if (num_leds > 1)
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
@@ -820,6 +824,17 @@ ratbag_device_set_capability(struct ratbag_device *device,
 {
 	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
 		abort();
+
+	if (cap != RATBAG_DEVICE_CAP_QUERY_CONFIGURATION && cap % 100) {
+		enum ratbag_device_capability parent_cap = (cap/100) * 100;
+
+		if (!long_bit_is_set(device->capabilities, parent_cap)) {
+			log_bug_libratbag(device->ratbag,
+					  "Cap %d requires setting %d\n",
+					  cap, parent_cap);
+			abort();
+		}
+	}
 
 	long_set_bit(device->capabilities, cap);
 }

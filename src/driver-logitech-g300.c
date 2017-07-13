@@ -369,8 +369,11 @@ logitech_g300_probe(struct ratbag_device *device)
 				    LOGITECH_G300_BUTTON_MAX + 1,
 				    LOGITECH_G300_NUM_LED);
 
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 
 	active_idx = logitech_g300_current_profile(device);
