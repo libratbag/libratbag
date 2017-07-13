@@ -428,9 +428,9 @@ endif
 
 #### ratbagd ####
 src_ratbagd = [
-	'ratbagd/shared-macro.h',
-	'ratbagd/shared-rbtree.h',
-	'ratbagd/shared-rbtree.c',
+	'src/shared-macro.h',
+	'src/shared-rbtree.h',
+	'src/shared-rbtree.c',
 	'ratbagd/ratbagd.h',
 	'ratbagd/ratbagd.c',
 	'ratbagd/ratbagd-led.c',
