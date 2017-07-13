@@ -436,7 +436,8 @@ src_ratbagd = [
 	'ratbagd/ratbagd-button.c',
 	'ratbagd/ratbagd-device.c',
 	'ratbagd/ratbagd-profile.c',
-	'ratbagd/ratbagd-resolution.c'
+	'ratbagd/ratbagd-resolution.c',
+	'src/libratbag-util.h'
 ]
 
 deps_ratbagd = [
