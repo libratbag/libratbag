@@ -187,7 +187,8 @@ static inline void safe_closep(int *fd)
  * @_a: string A
  * @_b: string B
  */
-#define streq(_a, _b) (!strcmp((_a), (_b)))
+#define streq(_a, _b) (strcmp((_a), (_b)) == 0)
+#define strneq(s1, s2, n) (strncmp((s1), (s2), (n)) == 0)
 
 /*
  * streq_ptr() - test whether two strings are equal, considering NULL valid
