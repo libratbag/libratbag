@@ -112,9 +112,11 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 	int r;
 
 	r = ratbag_resolution_set_default(resolution->lib_resolution);
+	if (r < 0)
+		return r;
 
 	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
-				  RATBAGD_OBJ_ROOT,
+				  resolution->path,
 				  RATBAGD_NAME_ROOT ".Resolution",
 				  "DefaultResolutionChanged",
 				  "u",
