@@ -283,8 +283,8 @@ struct ratbag_device *
 ratbag_cmd_open_device(struct ratbag *ratbag, const char *path)
 {
 	struct ratbag_device *device;
-	_cleanup_udev_unref_ struct udev *udev = NULL;
-	_cleanup_udev_device_unref_ struct udev_device *udev_device = NULL;
+	_cleanup_(udev_unrefp) struct udev *udev = NULL;
+	_cleanup_(udev_device_unrefp) struct udev_device *udev_device = NULL;
 	enum ratbag_error_code error;
 
 	udev = udev_new();
