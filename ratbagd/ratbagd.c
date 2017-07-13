@@ -35,6 +35,7 @@
 #include <systemd/sd-event.h>
 #include "ratbagd.h"
 #include "shared-macro.h"
+#include "libratbag-util.h"
 
 static bool verbose = false;
 
@@ -524,10 +525,7 @@ static int ratbagd_new(struct ratbagd **out)
 	_cleanup_(ratbagd_freep) struct ratbagd *ctx = NULL;
 	int r;
 
-	ctx = calloc(1, sizeof(*ctx));
-	if (!ctx)
-		return -ENOMEM;
-
+	ctx = zalloc(sizeof(*ctx));
 	ctx->themes = SVG_THEMES;
 
 	r = sd_event_default(&ctx->event);

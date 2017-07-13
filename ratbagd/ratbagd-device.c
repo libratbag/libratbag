@@ -97,9 +97,7 @@ static int ratbagd_device_list_profiles(sd_bus *bus,
 	char **profiles;
 	unsigned int i;
 
-	profiles = calloc(device->n_profiles + 1, sizeof(char *));
-	if (!profiles)
-		return -ENOMEM;
+	profiles = zalloc((device->n_profiles + 1) * sizeof(char *));
 
 	for (i = 0; i < device->n_profiles; ++i) {
 		profile = device->profiles[i];
@@ -373,10 +371,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	assert(ctx);
 	assert(name);
 
-	device = calloc(1, sizeof(*device));
-	if (!device)
-		return -ENOMEM;
-
+	device = zalloc(sizeof(*device));
 	device->ctx = ctx;
 	rbnode_init(&device->node);
 	device->lib_device = ratbag_device_ref(lib_device);
@@ -391,9 +386,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 
 
 	device->n_profiles = ratbag_device_get_num_profiles(device->lib_device);
-	device->profiles = calloc(device->n_profiles, sizeof(*device->profiles));
-	if (!device->profiles)
-		return -ENOMEM;
+	device->profiles = zalloc(device->n_profiles * sizeof(*device->profiles));
 
 	log_verbose("%s: \"%s\", %d profiles\n",
 		    name,

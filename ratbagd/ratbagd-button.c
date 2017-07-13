@@ -36,6 +36,7 @@
 #include <linux/input.h>
 #include "ratbagd.h"
 #include "shared-macro.h"
+#include "libratbag-util.h"
 
 struct ratbagd_button {
 	struct ratbag_button *lib_button;
@@ -526,10 +527,7 @@ int ratbagd_button_new(struct ratbagd_button **out,
 	assert(out);
 	assert(lib_button);
 
-	button = calloc(1, sizeof(*button));
-	if (!button)
-		return -ENOMEM;
-
+	button = zalloc(sizeof(*button));
 	button->lib_button = lib_button;
 	button->index = index;
 
