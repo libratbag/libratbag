@@ -1639,6 +1639,10 @@ class RatbagParserRoot(object):
         self.parser.print_help()
 
 
+def get_parser():
+    return RatbagParserRoot(parser_def)
+
+
 def open_ratbagd():
     try:
         r = Ratbagd()
@@ -1655,7 +1659,7 @@ def main(argv):
     if not argv:
         argv = ["list"]
 
-    parser = RatbagParserRoot(parser_def)
+    parser = get_parser()
     cmd = parser.parse(argv)
 
     r = open_ratbagd()

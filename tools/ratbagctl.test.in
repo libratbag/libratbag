@@ -25,7 +25,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import argparse
 import imp
+import io
 import os
 import shutil
 import subprocess
@@ -38,6 +40,8 @@ RATBAGCTL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_NAME)
 DBUS_CONF_DIR = '/etc/dbus-1/system.d'
 DBUS_CONF_NAME = 'org.freedesktop.ratbag_devel1.conf'
 DBUS_CONF_PATH = os.path.join(DBUS_CONF_DIR, DBUS_CONF_NAME)
+
+run_ratbagctl_in_subprocess = False
 
 
 def import_non_standard_path(name, path):
@@ -65,7 +69,7 @@ class TestRatbagCtl(unittest.TestCase):
         cls.reset_test_device()
 
     @classmethod
-    def run_ratbagctl(cls, params):
+    def run_ratbagctl_subprocess(cls, params):
         ratbagctl = subprocess.Popen(" ".join([RATBAGCTL_PATH, params]),
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
@@ -76,6 +80,32 @@ class TestRatbagCtl(unittest.TestCase):
         return (ratbagctl.returncode,
                 stdout.decode('ascii').rstrip('\n'),
                 stderr.decode('ascii').rstrip('\n'))
+
+    @classmethod
+    def run_ratbagctl_fast(cls, params):
+        global parser, ratbagd
+        stdout = sys.stdout
+        stderr = sys.stderr
+        returncode = 0
+
+        sys.stdout = io.StringIO()
+        sys.stderr = io.StringIO()
+        try:
+            cmd = parser.parse(params.split())
+            cmd.func(ratbagd, cmd)
+        except SystemExit as e:
+            returncode = e.code
+        output = sys.stdout.getvalue()
+        error = sys.stderr.getvalue()
+        sys.stdout = stdout
+        sys.stderr = stderr
+        return returncode, output.rstrip('\n'), error.rstrip('\n')
+
+    @classmethod
+    def run_ratbagctl(cls, params):
+        if run_ratbagctl_in_subprocess:
+            return cls.run_ratbagctl_subprocess(params)
+        return cls.run_ratbagctl_fast(params)
 
     @classmethod
     def reset_test_device(cls):
@@ -422,7 +452,7 @@ class TestRatbgagCtlLED(TestRatbagCtl):
 
 
 def setUpModule():
-    global ratbagd_process, ratbagd
+    global ratbagd_process, ratbagd, parser
     # first copy the policy for the ratbagd daemon to be allowed to run
     shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME), DBUS_CONF_PATH)
 
@@ -434,6 +464,8 @@ def setUpModule():
 
     ratbagd = ratbagctl.open_ratbagd()
     assert ratbagd is not None
+
+    parser = ratbagctl.get_parser()
 
 
 def tearDownModule():
@@ -447,11 +479,22 @@ def tearDownModule():
     os.unlink(DBUS_CONF_PATH)
 
 
+def parse(input_string):
+    global run_ratbagctl_in_subprocess
+    parser_test = argparse.ArgumentParser(description="Testsuite for ratbagd/ratbagctl", add_help=False)
+    parser_test.add_argument("--subprocess", action='store_true', default=False)
+    ns, rest = parser_test.parse_known_args(input_string)
+    run_ratbagctl_in_subprocess = ns.subprocess
+    return rest
+
+
 def main(argv):
     if not os.geteuid() == 0:
         sys.exit('Script must be run as root')
 
-    unittest.main()
+    args = parse(argv)
+
+    unittest.main(argv=[sys.argv[0], *args])
 
 
 if __name__ == "__main__":
