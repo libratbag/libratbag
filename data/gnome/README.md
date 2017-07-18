@@ -44,6 +44,14 @@ and the Logitech G700 for an example of a device with a large amount of buttons.
 - The canvas should be resized so that there is a 20px gap between the device
   and the edge of the canvas and no gap between the 1x1 pixels and the canvas.
 
+Please note that due to the way the SVG is drawn, you cannot rely on the
+z-ordering of elements to line up or cover elements (as noted in [this
+issue](https://github.com/libratbag/piper/issues/48), which includes links to
+examples). As such, please make sure that you align the elements appropriately;
+[this
+comment](https://github.com/libratbag/piper/issues/48#issuecomment-315979109)
+includes some helpful tips.
+
 Technique
 ---------
 
