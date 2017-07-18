@@ -501,7 +501,7 @@
          transform="scale(-1)" />
       <rect
          transform="scale(-1)"
-         style="color:#000000;text-align:end;display:inline;overflow:visible;vector-effect:none;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
+         style="color:#000000;text-align:start;display:inline;overflow:visible;vector-effect:none;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
          id="button5-leader"
          width="1"
          height="1"
