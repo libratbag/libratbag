@@ -112,12 +112,10 @@
            inkscape:connector-curvature="0"
            sodipodi:nodetypes="cssccsccssccccccccccsccccccccccsccccccccccsssscsc" />
         <path
-           inkscape:label="#path1498"
-           sodipodi:nodetypes="ccccscc"
-           inkscape:connector-curvature="0"
-           id="button4"
-           d="m 566.54193,558.21712 9.41003,52.65846 -3.01355,-0.10922 -11.98281,-9.30922 c 0,0 -9.31513,-30.54323 -8.31513,-34.04299 1,-3.49975 1.88019,-4.05885 1.88019,-4.05885 z"
-           style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal" />
+           style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+           d="M 142.66406 158.2168 L 130.64258 163.35547 C 130.64258 163.35547 129.76172 163.91431 128.76172 167.41406 C 127.76172 170.91382 137.07617 201.45703 137.07617 201.45703 L 149.06055 210.76562 L 152.07422 210.875 L 152.07227 210.86523 L 149.33594 210.76562 L 144.33008 201.45703 C 144.33008 201.45703 133.88281 169.16187 134.88281 165.66211 C 135.88281 162.16236 137.75195 160.85547 137.75195 160.85547 L 142.72266 158.54492 L 142.66406 158.2168 z "
+           transform="translate(423.87867,400)"
+           id="button4" />
         <path
            inkscape:label="#path1389"
            sodipodi:nodetypes="ccccscc"
@@ -126,12 +124,10 @@
            id="button6"
            inkscape:connector-curvature="0" />
         <path
-           inkscape:label="#path1500"
-           sodipodi:nodetypes="ccsccc"
-           inkscape:connector-curvature="0"
-           id="button3"
-           d="m 577.68136,612.93874 -3.58529,-0.0618 c 0,0 -7.82824,1.76049 -7.99111,6.45696 -0.16287,4.69647 7.57883,34.3726 10.80142,37.34714 3.2226,2.97453 15.58342,3.22825 15.58342,3.22825 z"
-           style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal" />
+           style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+           d="M 150.2168 212.87695 C 150.2168 212.87695 142.38943 214.63751 142.22656 219.33398 C 142.06369 224.03045 149.80475 253.7071 153.02734 256.68164 C 156.24994 259.65617 168.61133 259.91016 168.61133 259.91016 L 168.60352 259.88281 C 167.54083 259.83165 160.96579 259.42094 157.99805 256.68164 C 154.77546 253.7071 147.0344 224.03045 147.19727 219.33398 C 147.35939 214.65909 150.57195 212.89894 150.60156 212.88281 L 150.2168 212.87695 z "
+           transform="translate(423.87867,400)"
+           id="button3" />
         <path
            inkscape:label="#path1396"
            style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
