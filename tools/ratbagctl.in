@@ -62,6 +62,51 @@ class RatbagdDBusUnavailable(BaseException):
     pass
 
 
+class RatbagdDBusTimeout(BaseException):
+    """Signals that a timeout occurred during a DBus method call."""
+    pass
+
+
+class RatbagError(BaseException):
+    """A common base exception to catch any ratbag exception."""
+    pass
+
+
+class RatbagErrorDevice(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_DEVICE."""
+    pass
+
+
+class RatbagErrorCapability(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_CAPABILITY."""
+    pass
+
+
+class RatbagErrorValue(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_Value."""
+    pass
+
+
+class RatbagErrorSystem(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_System."""
+    pass
+
+
+class RatbagErrorImplementation(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_IMPLEMENTATION."""
+    pass
+
+
+"""A table mapping RatbagErrorCode values to RatbagError* exceptions."""
+EXCEPTION_TABLE = {
+    RatbagErrorCode.RATBAG_ERROR_DEVICE: RatbagErrorDevice,
+    RatbagErrorCode.RATBAG_ERROR_CAPABILITY: RatbagErrorCapability,
+    RatbagErrorCode.RATBAG_ERROR_VALUE: RatbagErrorValue,
+    RatbagErrorCode.RATBAG_ERROR_SYSTEM: RatbagErrorSystem,
+    RatbagErrorCode.RATBAG_ERROR_IMPLEMENTATION: RatbagErrorImplementation
+}
+
+
 class _RatbagdDBus(GObject.GObject):
     _dbus = None
 
@@ -80,6 +125,8 @@ class _RatbagdDBus(GObject.GObject):
         if object_path is None:
             object_path = "/" + ratbag1.replace('.', '/')
 
+        self._object_path = object_path
+
         try:
             self._proxy = Gio.DBusProxy.new_sync(_RatbagdDBus._dbus,
                                                  Gio.DBusProxyFlags.NONE,
@@ -94,25 +141,46 @@ class _RatbagdDBus(GObject.GObject):
         if self._proxy.get_name_owner() is None:
             raise RatbagdDBusUnavailable()
 
-    def _dbus_property(self, property):
+    def _get_dbus_property(self, property):
         # Retrieves a cached property from the bus, or None.
         p = self._proxy.get_cached_property(property)
         if p is not None:
             return p.unpack()
         return p
 
+    def _set_dbus_property(self, property, type, value):
+        # Sets a cached property on the bus.
+        val = GLib.Variant("{}".format(type), value)
+        self._proxy.set_cached_property(property, val)
+
     def _dbus_call(self, method, type, *value):
         # Calls a method synchronously on the bus, using the given method name,
-        # type signature and values. Returns the returned result, or None.
+        # type signature and values.
+        #
+        # It the result is valid, it is returned. Invalid results raise the
+        # appropriate RatbagError* or RatbagdDBus* exception, or GLib.Error if
+        # it is an unexpected exception that probably shouldn't be passed up to
+        # the UI.
         val = GLib.Variant("({})".format(type), value)
         try:
             res = self._proxy.call_sync(method, val,
                                         Gio.DBusCallFlags.NO_AUTO_START,
                                         500, None)
+            global EXCEPTION_TABLE
+            if res in EXCEPTION_TABLE:
+                raise EXCEPTION_TABLE[res]
             return res.unpack()[0]  # Result is always a tuple
         except GLib.Error as e:
-            print(e.message, file=sys.stderr)
-            return None
+            if e.code == Gio.IOErrorEnum.TIMED_OUT:
+                raise RatbagdDBusTimeout(e.message)
+            else:
+                # Unrecognized error code; print the message to stderr and raise
+                # the GLib.Error.
+                print(e.message, file=sys.stderr)
+                raise
+
+    def __eq__(self, other):
+        return other and self._object_path == other._object_path
 
 
 class Ratbagd(_RatbagdDBus):
@@ -133,11 +201,6 @@ class Ratbagd(_RatbagdDBus):
     def __init__(self):
         _RatbagdDBus.__init__(self, "Manager", None)
         self._proxy.connect("g-signal", self._on_g_signal)
-        self._devices = []
-        result = self._dbus_property("Devices")
-        if result is not None:
-            self._devices = [RatbagdDevice(objpath) for objpath in result]
-        self._themes = self._dbus_property("Themes")
 
     def _on_g_signal(self, proxy, sender, signal, params):
         params = params.unpack()
@@ -149,13 +212,17 @@ class Ratbagd(_RatbagdDBus):
     @GObject.Property
     def devices(self):
         """A list of RatbagdDevice objects supported by ratbagd."""
-        return self._devices
+        devices = []
+        result = self._get_dbus_property("Devices")
+        if result is not None:
+            devices = [RatbagdDevice(objpath) for objpath in result]
+        return devices
 
     @GObject.Property
     def themes(self):
         """A list of theme names. The theme 'default' is guaranteed to be
         available."""
-        return self._themes
+        return self._get_dbus_property("Themes")
 
 
 class RatbagdDevice(_RatbagdDBus):
@@ -176,22 +243,11 @@ class RatbagdDevice(_RatbagdDBus):
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Device", object_path)
-        self._objpath = object_path
-        self._devnode = self._dbus_property("Id")
-        self._caps = self._dbus_property("Capabilities")
-        self._name = self._dbus_property("Name")
-
-        self._profiles = []
-        self._active_profile = -1
-        result = self._dbus_property("Profiles")
-        if result is not None:
-            self._profiles = [RatbagdProfile(objpath) for objpath in result]
-            self._active_profile = self._dbus_property("ActiveProfile")
 
     @GObject.Property
     def id(self):
         """The unique identifier of this device."""
-        return self._devnode
+        return self._get_dbus_property("Id")
 
     @GObject.Property
     def capabilities(self):
@@ -201,25 +257,29 @@ class RatbagdDevice(_RatbagdDBus):
         if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.capabilities:
             do something
         """
-        return self._caps
+        return self._get_dbus_property("Capabilities")
 
     @GObject.Property
     def name(self):
         """The device name, usually provided by the kernel."""
-        return self._name
+        return self._get_dbus_property("Name")
 
     @GObject.Property
     def profiles(self):
         """A list of RatbagdProfile objects provided by this device."""
-        return self._profiles
+        profiles = []
+        result = self._get_dbus_property("Profiles")
+        if result is not None:
+            profiles = [RatbagdProfile(objpath) for objpath in result]
+        return profiles
 
     @GObject.Property
     def active_profile(self):
         """The currently active profile. This function returns a RatbagdProfile
         or None if no active profile was found."""
-        if self._active_profile == -1:
-            return None
-        return self._profiles[self._active_profile]
+        profiles = self.profiles
+        active_index = self._get_dbus_property("ActiveProfile")
+        return profiles[active_index] if len(profiles) > active_index else None
 
     def get_svg(self, theme):
         """Gets the full path to the SVG for the given theme, or the empty
@@ -244,9 +304,6 @@ class RatbagdDevice(_RatbagdDBus):
         """Commits all changes made to the device."""
         return self._dbus_call("Commit", "")
 
-    def __eq__(self, other):
-        return other and self._objpath == other._objpath
-
 
 class RatbagdProfile(_RatbagdDBus):
     """Represents a ratbagd profile."""
@@ -259,27 +316,6 @@ class RatbagdProfile(_RatbagdDBus):
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Profile", object_path)
         self._proxy.connect("g-signal", self._on_g_signal)
-        self._objpath = object_path
-        self._index = self._dbus_property("Index")
-        self._resolutions = []
-        self._buttons = []
-        self._leds = []
-        self._active_resolution_index = -1
-        self._default_resolution_index = -1
-
-        result = self._dbus_property("Resolutions")
-        if result is not None:
-            self._resolutions = [RatbagdResolution(objpath) for objpath in result]
-            self._active_resolution_index = self._dbus_property("ActiveResolution")
-            self._default_resolution_index = self._dbus_property("DefaultResolution")
-
-        result = self._dbus_property("Buttons")
-        if result is not None:
-            self._buttons = [RatbagdButton(objpath) for objpath in result]
-
-        result = self._dbus_property("Leds")
-        if result is not None:
-            self._leds = [RatbagdLed(objpath) for objpath in result]
 
     def _on_g_signal(self, proxy, sender, signal, params):
         params = params.unpack()
@@ -289,41 +325,53 @@ class RatbagdProfile(_RatbagdDBus):
     @GObject.Property
     def index(self):
         """The index of this profile."""
-        return self._index
+        return self._get_dbus_property("Index")
 
     @GObject.Property
     def resolutions(self):
         """A list of RatbagdResolution objects with this profile's resolutions.
         """
-        return self._resolutions
+        resolutions = []
+        result = self._get_dbus_property("Resolutions")
+        if result is not None:
+            resolutions = [RatbagdResolution(objpath) for objpath in result]
+        return resolutions
 
     @GObject.Property
     def buttons(self):
         """A list of RatbagdButton objects with this profile's button mappings.
         Note that the list of buttons differs between profiles but the number
         of buttons is identical across profiles."""
-        return self._buttons
+        buttons = []
+        result = self._get_dbus_property("Buttons")
+        if result is not None:
+            buttons = [RatbagdButton(objpath) for objpath in result]
+        return buttons
 
     @GObject.Property
     def leds(self):
         """A list of RatbagdLed objects with this profile's leds."""
-        return self._leds
+        leds = []
+        result = self._get_dbus_property("Leds")
+        if result is not None:
+            leds = [RatbagdLed(objpath) for objpath in result]
+        return leds
 
     @GObject.Property
     def active_resolution(self):
         """The currently active resolution. This function returns a
         RatbagdResolution object or None."""
-        if self._active_resolution_index == -1:
-            return None
-        return self._resolutions[self._active_resolution_index]
+        resolutions = self.resolutions
+        active_index = self._get_dbus_property("ActiveResolution")
+        return resolutions[active_index] if len(resolutions) > active_index else None
 
     @GObject.Property
     def default_resolution(self):
         """The default resolution. This function returns a RatbagdResolution
         object or None."""
-        if self._default_resolution_index == -1:
-            return None
-        return self._resolutions[self._default_resolution_index]
+        resolutions = self.resolutions
+        default_index = self._get_dbus_property("DefaultResolution")
+        return resolutions[default_index] if len(resolutions) > default_index else None
 
     def set_active(self):
         """Set this profile to be the active profile."""
@@ -333,9 +381,6 @@ class RatbagdProfile(_RatbagdDBus):
         """Returns the resolution found at the given index. This function
         returns a RatbagdResolution or None if no resolution was found."""
         return self._dbus_call("GetResolutionByIndex", "u", index)
-
-    def __eq__(self, other):
-        return self._objpath == other._objpath
 
 
 class RatbagdResolution(_RatbagdDBus):
@@ -354,14 +399,6 @@ class RatbagdResolution(_RatbagdDBus):
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Resolution", object_path)
         self._proxy.connect("g-signal", self._on_g_signal)
-        self._objpath = object_path
-        self._index = self._dbus_property("Index")
-        self._caps = self._dbus_property("Capabilities")
-        self._xres = self._dbus_property("XResolution")
-        self._yres = self._dbus_property("YResolution")
-        self._rate = self._dbus_property("ReportRate")
-        self._max_res = self._dbus_property("Maximum")
-        self._min_res = self._dbus_property("Minimum")
 
     def _on_g_signal(self, proxy, sender, signal, params):
         params = params.unpack()
@@ -373,7 +410,7 @@ class RatbagdResolution(_RatbagdDBus):
     @GObject.Property
     def index(self):
         """The index of this resolution."""
-        return self._index
+        return self._get_dbus_property("Index")
 
     @GObject.Property
     def capabilities(self):
@@ -383,12 +420,12 @@ class RatbagdResolution(_RatbagdDBus):
         if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION is in resolution.capabilities:
             do something
         """
-        return self._caps
+        return self._get_dbus_property("Capabilities")
 
     @GObject.Property
     def resolution(self):
         """The tuple (xres, yres) with each resolution in DPI."""
-        return self._xres, self._yres
+        return self._get_dbus_property("XResolution"), self._get_dbus_property("YResolution")
 
     @resolution.setter
     def resolution(self, res):
@@ -396,22 +433,24 @@ class RatbagdResolution(_RatbagdDBus):
 
         @param res The new resolution, as (int, int)
         """
-        return self._dbus_call("SetResolution", "uu", *res)
+        ret = self._dbus_call("SetResolution", "uu", *res)
+        self._set_dbus_property("Resolution", "(uu)", res)
+        return ret
 
     @GObject.Property
     def report_rate(self):
         """The report rate in Hz."""
-        return self._rate
+        return self._get_dbus_property("ReportRate")
 
     @GObject.Property
-    def max_res(self):
+    def maximum(self):
         """The maximum possible resolution."""
-        return self._max_res
+        return self._get_dbus_property("Maximum")
 
     @GObject.Property
-    def min_res(self):
+    def minimum(self):
         """The minimum possible resolution."""
-        return self._min_res
+        return self._get_dbus_property("Minimum")
 
     @report_rate.setter
     def report_rate(self, rate):
@@ -419,14 +458,13 @@ class RatbagdResolution(_RatbagdDBus):
 
         @param rate The new report rate, as int
         """
-        return self._dbus_call("SetReportRate", "u", rate)
+        ret = self._dbus_call("SetReportRate", "u", rate)
+        self._set_dbus_property("ReportRate", "u", rate)
+        return ret
 
     def set_default(self):
         """Set this resolution to be the default."""
         return self._dbus_call("SetDefault", "")
-
-    def __eq__(self, other):
-        return self._objpath == other._objpath
 
 
 class RatbagdButton(_RatbagdDBus):
@@ -434,42 +472,36 @@ class RatbagdButton(_RatbagdDBus):
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Button", object_path)
-        self._objpath = object_path
-        self._index = self._dbus_property("Index")
-        self._type = self._dbus_property("Type")
-        self._button = self._dbus_property("ButtonMapping")
-        self._special = self._dbus_property("SpecialMapping")
-        self._key = self._dbus_property("KeyMapping")
-        self._action = self._dbus_property("ActionType")
-        self._types = self._dbus_property("ActionTypes")
 
     @GObject.Property
     def index(self):
         """The index of this button."""
-        return self._index
+        return self._get_dbus_property("Index")
 
     @GObject.Property
-    def button_type(self):
+    def type(self):
         """A string describing this button's type."""
-        return self._type
+        return self._get_dbus_property("Type")
 
     @GObject.Property
-    def button_mapping(self):
+    def mapping(self):
         """An integer of the current button mapping, if mapping to a button."""
-        return self._button
+        return self._get_dbus_property("ButtonMapping")
 
-    @button_mapping.setter
-    def button_mapping(self, button):
+    @mapping.setter
+    def mapping(self, button):
         """Set the button mapping to the given button.
 
         @param button The button to map to, as int
         """
-        return self._dbus_call("SetButtonMapping", "u", button)
+        ret = self._dbus_call("SetButtonMapping", "u", button)
+        self._set_dbus_property("ButtonMapping", "u", button)
+        return ret
 
     @GObject.Property
     def special(self):
         """A string of the current special mapping, if mapped to special."""
-        return self._special
+        return self._get_dbus_property("SpecialMapping")
 
     @special.setter
     def special(self, special):
@@ -477,13 +509,15 @@ class RatbagdButton(_RatbagdDBus):
 
         @param special The special entry, as str
         """
-        return self._dbus_call("SetSpecialMapping", "s", special)
+        ret = self._dbus_call("SetSpecialMapping", "s", special)
+        self._set_dbus_property("SpecialMapping", "s", special)
+        return ret
 
     @GObject.Property
     def key(self):
         """A list of integers, the first being the keycode and the other
         entries, if any, are modifiers (if mapped to key)."""
-        return self._key
+        return self._get_dbus_property("KeyMapping")
 
     @key.setter
     def key(self, keys):
@@ -492,7 +526,9 @@ class RatbagdButton(_RatbagdDBus):
         @param keys A list of integers, the first being the keycode and the rest
                     modifiers.
         """
-        return self._dbus_call("SetKeyMapping", "au", keys)
+        ret = self._dbus_call("SetKeyMapping", "au", keys)
+        self._set_dbus_property("KeyMapping", "au", keys)
+        return ret
 
     @GObject.Property
     def action_type(self):
@@ -500,12 +536,12 @@ class RatbagdButton(_RatbagdDBus):
         "button", "key", "special", "macro" or "unknown". This decides which
         *Mapping property has a value.
         """
-        return self._action
+        return self._get_dbus_property("ActionType")
 
     @GObject.Property
     def action_types(self):
         """An array of possible values for ActionType."""
-        return self._types
+        return self._get_dbus_property("ActionTypes")
 
     def disable(self):
         """Disables this button."""
@@ -515,50 +551,45 @@ class RatbagdButton(_RatbagdDBus):
 class RatbagdLed(_RatbagdDBus):
     """Represents a ratbagd led."""
 
-    LED_MODE_OFF = 0
-    LED_MODE_ON = 1
-    LED_MODE_CYCLE = 2
-    LED_MODE_BREATHING = 3
+    MODE_OFF = 0
+    MODE_ON = 1
+    MODE_CYCLE = 2
+    MODE_BREATHING = 3
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Led", object_path)
-        self._objpath = object_path
-        self._index = self._dbus_property("Index")
-        self._mode = self._dbus_property("Mode")
-        self._type = self._dbus_property("Type")
-        self._color = self._dbus_property("Color")
-        self._effect_rate = self._dbus_property("EffectRate")
-        self._brightness = self._dbus_property("Brightness")
 
     @GObject.Property
     def index(self):
         """The index of this led."""
-        return self._index
+        return self._get_dbus_property("Index")
 
     @GObject.Property
     def mode(self):
-        """This led's mode, one of LED_MODE_OFF, LED_MODE_ON, LED_MODE_CYCLE and
-        LED_MODE_BREATHING."""
-        return self._mode
+        """This led's mode, one of MODE_OFF, MODE_ON, MODE_CYCLE and
+        MODE_BREATHING."""
+        return self._get_dbus_property("Mode")
 
     @mode.setter
     def mode(self, mode):
         """Set the led's mode to the given mode.
 
-        @param mode The new mode, as one of LED_MODE_OFF, LED_MODE_ON,
-                                  LED_MODE_CYCLE and LED_MODE_BREATHING.
+        @param mode The new mode, as one of MODE_OFF, MODE_ON, MODE_CYCLE and
+                    MODE_BREATHING.
         """
-        return self._dbus_call("SetMode", "u", mode)
+        ret = self._dbus_call("SetMode", "u", mode)
+        self._set_dbus_property("Mode", "u", mode)
+        return ret
 
     @GObject.Property
     def type(self):
         """A string describing this led's type."""
-        return self._type
+        return self._get_dbus_property("Type")
 
     @GObject.Property
     def color(self):
         """An integer triple of the current LED color."""
-        return self._color
+        return self._get_dbus_property("Color")
 
     @color.setter
     def color(self, color):
@@ -566,12 +597,14 @@ class RatbagdLed(_RatbagdDBus):
 
         @param color An RGB color, as an integer triplet with values 0-255.
         """
-        return self._dbus_call("SetColor", "(uuu)", color)
+        ret = self._dbus_call("SetColor", "(uuu)", color)
+        self._set_dbus_property("Color", "(uuu)", color)
+        return ret
 
     @GObject.Property
     def effect_rate(self):
         """The LED's effect rate in Hz, values range from 100 to 20000."""
-        return self._effect_rate
+        return self._get_dbus_property("EffectRate")
 
     @effect_rate.setter
     def effect_rate(self, effect_rate):
@@ -579,12 +612,14 @@ class RatbagdLed(_RatbagdDBus):
 
         @param effect_rate The new effect rate, as int
         """
-        return self._dbus_call("SetEffectRate", "u", effect_rate)
+        ret = self._dbus_call("SetEffectRate", "u", effect_rate)
+        self._set_dbus_property("EffectRate", "u", effect_rate)
+        return ret
 
     @GObject.Property
     def brightness(self):
         """The LED's brightness, values range from 0 to 255."""
-        return self._brightness
+        return self._get_dbus_property("Brightness")
 
     @brightness.setter
     def brightness(self, brightness):
@@ -592,7 +627,9 @@ class RatbagdLed(_RatbagdDBus):
 
         @param brightness The new brightness, as int
         """
-        return self._dbus_call("SetBrightness", "u", brightness)
+        ret = self._dbus_call("SetBrightness", "u", brightness)
+        self._set_dbus_property("Brightness", "u", brightness)
+        return ret
 
 
 def list_devices(r, args):
@@ -658,29 +695,29 @@ def find_led(r, args):
 
 def print_led(d, p, l, level):
     leds = {
-        RatbagdLed.LED_MODE_BREATHING: "breathing",
-        RatbagdLed.LED_MODE_CYCLE: "cycle",
-        RatbagdLed.LED_MODE_OFF: "off",
-        RatbagdLed.LED_MODE_ON: "on",
+        RatbagdLed.MODE_BREATHING: "breathing",
+        RatbagdLed.MODE_CYCLE: "cycle",
+        RatbagdLed.MODE_OFF: "off",
+        RatbagdLed.MODE_ON: "on",
     }
-    if l.mode == RatbagdLed.LED_MODE_OFF:
+    if l.mode == RatbagdLed.MODE_OFF:
         print(" " * level + "LED: {} type: {}, mode: {}".format(l.index,
                                                                 l.type,
                                                                 leds[l.mode]))
-    elif l.mode == RatbagdLed.LED_MODE_ON:
+    elif l.mode == RatbagdLed.MODE_ON:
         print(" " * level + "LED: {} type: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(l.index,
                                                                                            l.type,
                                                                                            leds[l.mode],
                                                                                            l.color[0],
                                                                                            l.color[1],
                                                                                            l.color[2]))
-    elif l.mode == RatbagdLed.LED_MODE_CYCLE:
+    elif l.mode == RatbagdLed.MODE_CYCLE:
         print(" " * level + "LED: {} type: {}, mode: {}, rate: {}, brightness: {}".format(l.index,
                                                                                           l.type,
                                                                                           leds[l.mode],
                                                                                           l.effect_rate,
                                                                                           l.brightness))
-    elif l.mode == RatbagdLed.LED_MODE_BREATHING:
+    elif l.mode == RatbagdLed.MODE_BREATHING:
         print(" " * level + "LED: {} type: {}, mode: {}, color: {:02x}{:02x}{:02x}, rate: {}, brightness: {}".format(l.index,
                                                                                                                      l.type,
                                                                                                                      leds[l.mode],
@@ -693,10 +730,10 @@ def print_led(d, p, l, level):
 
 def print_button(d, p, b, level):
     header = " " * level + "Button: {} type {} is mapped to ".format(b.index,
-                                                                     b.button_type)
+                                                                     b.type)
 
     if b.action_type == "button":
-        print("{}'button {}'".format(header, b.button_mapping))
+        print("{}'button {}'".format(header, b.mapping))
     elif b.action_type == "key":
         print("{}'{}'".format(header, b.key))
     elif b.action_type == "special":
@@ -808,10 +845,10 @@ def func_led_set(r, args):
         pass
     else:
         leds = {
-            "breathing": RatbagdLed.LED_MODE_BREATHING,
-            "cycle": RatbagdLed.LED_MODE_CYCLE,
-            "off": RatbagdLed.LED_MODE_OFF,
-            "on": RatbagdLed.LED_MODE_ON,
+            "breathing": RatbagdLed.MODE_BREATHING,
+            "cycle": RatbagdLed.MODE_CYCLE,
+            "off": RatbagdLed.MODE_OFF,
+            "on": RatbagdLed.MODE_ON,
         }
         l.mode = leds[mode]
     try:
@@ -847,7 +884,7 @@ def func_button_get(r, args):
 
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
-    b.button_mapping = args.target_button
+    b.mapping = args.target_button
 
 
 def func_button_count(r, args):
