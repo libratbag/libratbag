@@ -739,7 +739,10 @@ def print_profile(d, p, level):
 def print_device(d, level):
     p = d.profiles[0]  # there should be always one
 
-    caps = {RatbagdDevice.CAP_SWITCHABLE_RESOLUTION: "switchable-resolution",
+    caps = {RatbagdDevice.CAP_RESOLUTION: "resolution",
+            RatbagdDevice.CAP_PROFILE: "profile",
+            RatbagdDevice.CAP_BUTTON: "button",
+            RatbagdDevice.CAP_SWITCHABLE_RESOLUTION: "switchable-resolution",
             RatbagdDevice.CAP_SWITCHABLE_PROFILE: "switchable-profile",
             RatbagdDevice.CAP_BUTTON_KEY: "button-keys",
             RatbagdDevice.CAP_BUTTON_MACROS: "button-macros",
