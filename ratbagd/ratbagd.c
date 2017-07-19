@@ -309,6 +309,12 @@ static int ratbagd_reset_test_device(sd_bus_message *m,
 					  ratbagd_device_get_path(ratbagd_test_device));
 		ratbagd_device_unlink(ratbagd_test_device);
 		ratbagd_device_free(ratbagd_test_device);
+
+		(void) sd_bus_emit_properties_changed(ctx->bus,
+						      RATBAGD_OBJ_ROOT,
+						      RATBAGD_NAME_ROOT ".Manager",
+						      "Devices",
+						      NULL);
 	}
 
 	device = ratbag_device_new_test_device(ctx->lib_ctx, &ratbagd_test_device_descr);
@@ -332,6 +338,11 @@ static int ratbagd_reset_test_device(sd_bus_message *m,
 					  "o",
 					  ratbagd_device_get_path(ratbagd_test_device));
 		sd_bus_reply_method_return(m, "u", r);
+		(void) sd_bus_emit_properties_changed(ctx->bus,
+						      RATBAGD_OBJ_ROOT,
+						      RATBAGD_NAME_ROOT ".Manager",
+						      "Devices",
+						      NULL);
 	}
 
 	return 0;
@@ -350,7 +361,7 @@ static inline void ratbagd_init_test_device(struct ratbagd *ctx) {}
 
 static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_START(0),
-	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, 0),
+	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Themes", "as", ratbagd_get_themes, 0, 0),
 	SD_BUS_SIGNAL("DeviceNew", "o", 0),
 	SD_BUS_SIGNAL("DeviceRemoved", "o", 0),
@@ -386,6 +397,11 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	if (streq_ptr("remove", udev_device_get_action(udevice))) {
 		/* device was removed, unlink it and destroy our context */
 		if (device) {
+			(void) sd_bus_emit_properties_changed(ctx->bus,
+							      RATBAGD_OBJ_ROOT,
+							      RATBAGD_NAME_ROOT ".Manager",
+							      "Devices",
+							      NULL);
 			(void) sd_bus_emit_signal(ctx->bus,
 						  RATBAGD_OBJ_ROOT,
 						  RATBAGD_NAME_ROOT ".Manager",
@@ -418,6 +434,11 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		}
 
 		ratbagd_device_link(device);
+		(void) sd_bus_emit_properties_changed(ctx->bus,
+						      RATBAGD_OBJ_ROOT,
+						      RATBAGD_NAME_ROOT ".Manager",
+						      "Devices",
+						      NULL);
 		(void) sd_bus_emit_signal(ctx->bus,
 					  RATBAGD_OBJ_ROOT,
 					  RATBAGD_NAME_ROOT ".Manager",
