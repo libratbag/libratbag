@@ -347,11 +347,6 @@ class RatbagdProfile(_RatbagdDBus):
         """Set this profile to be the active profile."""
         return self._dbus_call("SetActive", "")
 
-    def get_resolution_by_index(self, index):
-        """Returns the resolution found at the given index. This function
-        returns a RatbagdResolution or None if no resolution was found."""
-        return self._dbus_call("GetResolutionByIndex", "u", index)
-
 
 class RatbagdResolution(_RatbagdDBus):
     """Represents a ratbagd resolution."""
