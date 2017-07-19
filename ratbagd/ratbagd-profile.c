@@ -302,27 +302,6 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
                                           ratbag_profile_set_active(profile->lib_profile));
 }
 
-static int ratbagd_profile_get_resolution_by_index(sd_bus_message *m,
-						   void *userdata,
-						   sd_bus_error *error)
-{
-	struct ratbagd_profile *profile = userdata;
-	struct ratbagd_resolution *resolution;
-	unsigned int index = 0;
-	int r;
-
-	r = sd_bus_message_read(m, "u", &index);
-	if (r < 0)
-		return r;
-
-	if (index >= profile->n_resolutions || !profile->resolutions[index])
-		return 0;
-
-	resolution = profile->resolutions[index];
-	return sd_bus_reply_method_return(m, "o",
-					  ratbagd_resolution_get_path(resolution));
-}
-
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
@@ -331,7 +310,6 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_profile_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("GetResolutionByIndex", "u", "o", ratbagd_profile_get_resolution_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
 
