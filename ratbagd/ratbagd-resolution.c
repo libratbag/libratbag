@@ -38,6 +38,7 @@
 #include "libratbag-util.h"
 
 struct ratbagd_resolution {
+	struct ratbagd_profile *profile;
 	struct ratbag_resolution *lib_resolution;
 	unsigned int index;
 	char *path;
@@ -105,6 +106,24 @@ static int ratbagd_resolution_set_resolution(sd_bus_message *m,
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
+static int ratbagd_resolution_default_signal_cb(sd_bus *bus,
+						struct ratbagd_resolution *resolution)
+{
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+
+	/* FIXME: we should cache is default and only send the signal for
+	 * those resolutions where it changed */
+
+	(void) sd_bus_emit_signal(bus,
+				  resolution->path,
+				  RATBAGD_NAME_ROOT ".Resolution",
+				  "IsDefault",
+				  "b",
+				  ratbag_resolution_is_default(lib_resolution));
+
+	return 0;
+}
+
 static int ratbagd_resolution_set_default(sd_bus_message *m,
 					  void *userdata,
 					  sd_bus_error *error)
@@ -116,12 +135,9 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 	if (r < 0)
 		return r;
 
-	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
-				  resolution->path,
-				  RATBAGD_NAME_ROOT ".Resolution",
-				  "DefaultResolutionChanged",
-				  "u",
-				  resolution->index);
+	ratbagd_for_each_resolution_signal(sd_bus_message_get_bus(m),
+					   resolution->profile,
+					   ratbagd_resolution_default_signal_cb);
 
 	return sd_bus_reply_method_return(m, "u", r);
 }
@@ -159,6 +175,42 @@ ratbagd_resolution_get_capabilities(sd_bus *bus,
 	}
 
 	return sd_bus_message_close_container(reply);
+}
+
+static int
+ratbagd_resolution_is_active(sd_bus *bus,
+			     const char *path,
+			     const char *interface,
+			     const char *property,
+			     sd_bus_message *reply,
+			     void *userdata,
+			     sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	bool is_active;
+
+	is_active = !!ratbag_resolution_is_active(lib_resolution);
+
+	return sd_bus_message_append(reply, "b", is_active);
+}
+
+static int
+ratbagd_resolution_is_default(sd_bus *bus,
+			     const char *path,
+			     const char *interface,
+			     const char *property,
+			     sd_bus_message *reply,
+			     void *userdata,
+			     sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	bool is_default;
+
+	is_default = !!ratbag_resolution_is_default(lib_resolution);
+
+	return sd_bus_message_append(reply, "b", is_default);
 }
 
 static int
@@ -250,6 +302,8 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("IsActive", "b", ratbagd_resolution_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("IsDefault", "b", ratbagd_resolution_is_default, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("XResolution", "u", ratbagd_resolution_get_resolution_x, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("YResolution", "u", ratbagd_resolution_get_resolution_y, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ReportRate", "u", ratbagd_resolution_get_rate, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
@@ -258,8 +312,6 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_SIGNAL("ActiveResolutionChanged", "u", 0),
-	SD_BUS_SIGNAL("DefaultResolutionChanged", "u", 0),
 	SD_BUS_VTABLE_END,
 };
 
@@ -281,6 +333,7 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 	if (!resolution)
 		return -ENOMEM;
 
+	resolution->profile = profile;
 	resolution->lib_resolution = lib_resolution;
 	resolution->index = index;
 
@@ -314,16 +367,4 @@ struct ratbagd_resolution *ratbagd_resolution_free(struct ratbagd_resolution *re
 	resolution->lib_resolution = ratbag_resolution_unref(resolution->lib_resolution);
 
 	return mfree(resolution);
-}
-
-bool ratbagd_resolution_is_active(struct ratbagd_resolution *resolution)
-{
-	assert(resolution);
-	return ratbag_resolution_is_active(resolution->lib_resolution) != 0;
-}
-
-bool ratbagd_resolution_is_default(struct ratbagd_resolution *resolution)
-{
-	assert(resolution);
-	return ratbag_resolution_is_default(resolution->lib_resolution) != 0;
 }

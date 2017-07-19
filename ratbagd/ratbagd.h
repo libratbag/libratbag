@@ -85,7 +85,10 @@ int ratbagd_for_each_profile_signal(sd_bus *bus,
 				    struct ratbagd_device *device,
 				    int (*func)(sd_bus *bus,
 						struct ratbagd_profile *profile));
-
+int ratbagd_for_each_resolution_signal(sd_bus *bus,
+				       struct ratbagd_profile *profile,
+				       int (*func)(sd_bus *bus,
+						   struct ratbagd_resolution *resolution));
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_profile *, ratbagd_profile_free);
 
@@ -101,8 +104,6 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 			   unsigned int index);
 struct ratbagd_resolution *ratbagd_resolution_free(struct ratbagd_resolution *resolution);
 const char *ratbagd_resolution_get_path(struct ratbagd_resolution *resolution);
-bool ratbagd_resolution_is_active(struct ratbagd_resolution *resolution);
-bool ratbagd_resolution_is_default(struct ratbagd_resolution *resolution);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_resolution *, ratbagd_resolution_free);
 

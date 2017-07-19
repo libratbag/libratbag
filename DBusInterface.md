@@ -155,6 +155,27 @@ Index of the resolution
 - type: `au`, read-only, constant
 
 Array of uints with the capabilities enum from libratbag
+
+#### `IsActive`
+- type: `b`, read-only, mutable
+
+True if this is the currently active resolution, false otherwise.
+
+Resolutions can only be set to active, but never to not active - at least
+one resoultion must be active at all times. This property is read-only, use the
+`SetActive()` method to set a resolution as the active resolution.
+
+#### `IsDefault`
+- type: `b`, read-only, mutable
+
+True if this is the currently default resolution, false otherwise. If the
+device does not have the default resolution capability, this property is
+always false.
+
+Resolutions can only be set to default, but never to not default - at least
+one resolution must be default at all times. This property is read-only, use the
+`SetDefault()` method to set a resolution as the default resolution.
+
 #### `XResolution`
 - type: `u`, read-only, mutable
 
@@ -187,13 +208,6 @@ uint for the report rate to assign
 #### `SetDefault() → () `
 
 Set this resolution to be the default
-
-### Signals:
-
-#### `ActiveResolutionChanged(u)`
-Active resolution changed, carries index of the new active resolution
-#### `DefaultResolutionChanged(u)`
-Default resolution changed, carries index of the new default resolution
 
 org.freedesktop.ratbag1.Button
 ==============================
