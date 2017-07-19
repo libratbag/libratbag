@@ -69,7 +69,6 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 			unsigned int index);
 struct ratbagd_profile *ratbagd_profile_free(struct ratbagd_profile *profile);
 const char *ratbagd_profile_get_path(struct ratbagd_profile *profile);
-bool ratbagd_profile_is_active(struct ratbagd_profile *profile);
 bool ratbagd_profile_is_default(struct ratbagd_profile *profile);
 unsigned int ratbagd_profile_get_index(struct ratbagd_profile *profile);
 int ratbagd_profile_register_resolutions(struct sd_bus *bus,
@@ -81,6 +80,12 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 int ratbagd_profile_register_leds(struct sd_bus *bus,
 				  struct ratbagd_device *device,
 				  struct ratbagd_profile *profile);
+
+int ratbagd_for_each_profile_signal(sd_bus *bus,
+				    struct ratbagd_device *device,
+				    int (*func)(sd_bus *bus,
+						struct ratbagd_profile *profile));
+
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_profile *, ratbagd_profile_free);
 

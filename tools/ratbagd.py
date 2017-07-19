@@ -281,14 +281,6 @@ class RatbagdDevice(_RatbagdDBus):
             profiles = [RatbagdProfile(objpath) for objpath in result]
         return profiles
 
-    @GObject.Property
-    def active_profile(self):
-        """The currently active profile. This function returns a RatbagdProfile
-        or None if no active profile was found."""
-        profiles = self.profiles
-        active_index = self._get_dbus_property("ActiveProfile")
-        return profiles[active_index] if len(profiles) > active_index else None
-
     def get_svg(self, theme):
         """Gets the full path to the SVG for the given theme, or the empty
         string if none is available.
@@ -316,19 +308,8 @@ class RatbagdDevice(_RatbagdDBus):
 class RatbagdProfile(_RatbagdDBus):
     """Represents a ratbagd profile."""
 
-    __gsignals__ = {
-        "active-profile-changed":
-            (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, [int]),
-    }
-
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Profile", object_path)
-        self._proxy.connect("g-signal", self._on_g_signal)
-
-    def _on_g_signal(self, proxy, sender, signal, params):
-        params = params.unpack()
-        if signal == "ActiveProfileChanged":
-            self.emit("active-profile-changed", params[0])
 
     @GObject.Property
     def index(self):
@@ -380,6 +361,11 @@ class RatbagdProfile(_RatbagdDBus):
         resolutions = self.resolutions
         default_index = self._get_dbus_property("DefaultResolution")
         return resolutions[default_index] if len(resolutions) > default_index else None
+
+    @GObject.Property
+    def is_active(self):
+        """Returns True if the profile is currenly active, false otherwise."""
+        return self._get_dbus_property("IsActive")
 
     def set_active(self):
         """Set this profile to be the active profile."""

@@ -84,11 +84,6 @@ profiles.
 Provides the list of profile paths for all profiles on this device, see
 **org.freedesktop.ratbag1.Profile**.
 
-#### `ActiveProfile`
-- type: `u`, read-only, mutable
-
-The index of the currently active profile in `Profiles`.
-
 ### Methods
 
 #### `GetProfileByIndex(u) → (o)`
@@ -140,28 +135,19 @@ Provides the object paths of all buttons in this profile, see
 Provides the object paths of all LEDs in this profile, see
 **org.freedesktop.ratbag1.Led**
 
-#### `ActiveResolution`
-- type: `u`, read-only, mutable
+### `IsActive`
+- type: `b`, read-only, mutable
 
-Index of the currently active resolution in `Resolutions`
+True if this is the currently active profile, false otherwise.
 
-#### `DefaultResolution`
-- type: `u`, read-only, mutable
-
-Index of the default resolution in `Resolutions`
+Profiles can only be set to active, but never to not active - at least one
+profile must be active at all times. This property is read-only, use the
+`SetActive()` method to activate a profile.
 
 ### Methods
 
 #### `SetActive() → ()`
 Set this profile to be the active profile
-
-#### `GetResolutionByIndex(u) → (o)`
-Returns the object path for the given index
-
-### Signals
-
-#### `ActiveProfileChanged(u)`
-Active profile changed, carries index of the new active profile
 
 org.freedesktop.ratbag1.Resolution
 ==================================
