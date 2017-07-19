@@ -214,6 +214,22 @@ static int ratbagd_profile_get_active_resolution(sd_bus *bus,
 	return sd_bus_message_append(reply, "u", 0);
 }
 
+static int ratbagd_profile_is_active(sd_bus *bus,
+				     const char *path,
+				     const char *interface,
+				     const char *property,
+				     sd_bus_message *reply,
+				     void *userdata,
+				     sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	bool is_active;
+
+	is_active = !!ratbag_profile_is_active(profile->lib_profile);
+
+	return sd_bus_message_append(reply, "b", is_active);
+}
+
 static int ratbagd_profile_get_default_resolution(sd_bus *bus,
 						  const char *path,
 						  const char *interface,
@@ -303,6 +319,24 @@ static int ratbagd_profile_find_led(sd_bus *bus,
 	return 1;
 }
 
+static int ratbagd_profile_active_signal_cb(sd_bus *bus,
+					    struct ratbagd_profile *profile)
+{
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+
+	/* FIXME: we should cache is active and only send the signal for
+	 * those profiles where it changed */
+
+	(void) sd_bus_emit_signal(bus,
+				  profile->path,
+				  RATBAGD_NAME_ROOT ".Profile",
+				  "IsActive",
+				  "b",
+				  ratbag_profile_is_active(lib_profile));
+
+	return 0;
+}
+
 static int ratbagd_profile_set_active(sd_bus_message *m,
 				      void *userdata,
 				      sd_bus_error *error)
@@ -314,12 +348,9 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 	if (r < 0)
 		return r;
 
-	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
-				  RATBAGD_OBJ_ROOT,
-				  RATBAGD_NAME_ROOT ".Profile",
-				  "ActiveProfileChanged",
-				  "u",
-				  profile->index);
+	ratbagd_for_each_profile_signal(sd_bus_message_get_bus(m),
+					profile->device,
+					ratbagd_profile_active_signal_cb);
 
         return sd_bus_reply_method_return(m, "u",
                                           ratbag_profile_set_active(profile->lib_profile));
@@ -353,10 +384,10 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),
 	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
+	SD_BUS_PROPERTY("IsActive", "b", ratbagd_profile_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetResolutionByIndex", "u", "o", ratbagd_profile_get_resolution_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_SIGNAL("ActiveProfileChanged", "u", 0),
 	SD_BUS_VTABLE_END,
 };
 
@@ -490,12 +521,6 @@ const char *ratbagd_profile_get_path(struct ratbagd_profile *profile)
 {
 	assert(profile);
 	return profile->path;
-}
-
-bool ratbagd_profile_is_active(struct ratbagd_profile *profile)
-{
-	assert(profile);
-	return ratbag_profile_is_active(profile->lib_profile) != 0;
 }
 
 unsigned int ratbagd_profile_get_index(struct ratbagd_profile *profile)

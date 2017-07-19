@@ -214,32 +214,6 @@ static int ratbagd_device_get_profiles(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
-static int ratbagd_device_get_active_profile(sd_bus *bus,
-					     const char *path,
-					     const char *interface,
-					     const char *property,
-					     sd_bus_message *reply,
-					     void *userdata,
-					     sd_bus_error *error)
-{
-	struct ratbagd_device *device = userdata;
-	struct ratbagd_profile *profile;
-	unsigned int i;
-
-	for (i = 0; i < device->n_profiles; ++i) {
-		profile = device->profiles[i];
-		if (!profile)
-			continue;
-		if (!ratbagd_profile_is_active(profile))
-			continue;
-
-		return sd_bus_message_append(reply, "u", i);
-	}
-
-	log_error("Unable to find active profile for %s\n", device->name);
-	return sd_bus_message_append(reply, "u", 0);
-}
-
 static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
 					       void *userdata,
 					       sd_bus_error *error)
@@ -324,7 +298,6 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("ActiveProfile", "u", ratbagd_device_get_active_profile, 0, 0),
 	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetSvg", "s", "s", ratbagd_device_get_theme_svg, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
@@ -581,4 +554,17 @@ struct ratbagd_device *ratbagd_device_next(struct ratbagd_device *device)
 
 	node = rbnode_next(&device->node);
 	return node ? ratbagd_device_from_node(node) : NULL;
+}
+
+int ratbagd_for_each_profile_signal(sd_bus *bus,
+				    struct ratbagd_device *device,
+				    int (*func)(sd_bus *bus,
+						struct ratbagd_profile *profile))
+{
+	int rc = 0;
+
+	for (size_t i = 0; rc == 0 && i < device->n_profiles; i++)
+		rc = func(bus, device->profiles[i]);
+
+	return rc;
 }
