@@ -393,8 +393,11 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 		    res->dpi_x == xres &&
 		    res->dpi_y == yres)
 			res->is_active = true;
-		if (i == p.default_dpi_mode)
+		if (i == p.default_dpi_mode) {
 			res->is_default = true;
+			if (!profile->is_active)
+				res->is_active = true;
+		}
 
 		min = hidpp10_dpi_table_get_min_dpi(hidpp10);
 		max = hidpp10_dpi_table_get_max_dpi(hidpp10);
