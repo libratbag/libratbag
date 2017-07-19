@@ -190,7 +190,7 @@ static int ratbagd_get_themes(sd_bus *bus,
  * error conditions.
  */
 static const struct ratbag_test_device ratbagd_test_device_descr = {
-	.num_profiles = 3,
+	.num_profiles = 4,
 	.num_resolutions = 3,
 	.num_buttons = 4,
 	.num_leds = 3,
@@ -282,9 +282,12 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 					.hz = 3,
 					.brightness = 40
 				}
+			},
+			.active = false,
+			.dflt = false,
 		},
-		.active = false,
-		.dflt = false,
+		{
+			.disabled = true,
 		},
 	},
 	.destroyed = NULL,

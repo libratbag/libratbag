@@ -174,33 +174,29 @@ class TestRatbgagCtlProfile(TestRatbagCtl):
         self.launch_fail_test("Profile 0 get test_device X")
         self.launch_fail_test("Profile 10 get test_device")
 
-    @unittest.skip("profile doesn't show enabled/disabled")
     def test_profile_enable(self):
-        command = "profile enable"
-        self.launch_good_test(command + " 1 test_device")
         r = self.launch_good_test("profile 0 get test_device")
-        # FIXME: show when the profile is disabled in ratbagctl
-        self.assertNotIn('enabled', r)
-        r = self.launch_good_test("profile 1 get test_device")
-        self.assertIn('enabled', r)
-        self.launch_fail_test(command)
-        self.launch_fail_test(command + " X test_device")
-        self.launch_fail_test(command + " 1 test_device X")
-        self.launch_fail_test(command + " 10 test_device")
+        self.assertNotIn('disabled', r)
+        r = self.launch_good_test("profile 3 get test_device")
+        self.assertIn('disabled', r)
+        self.launch_good_test("profile 3 enable test_device")
+        r = self.launch_good_test("profile 3 get test_device")
+        self.assertNotIn('Profile 3: <disabled>', r)
+        self.launch_fail_test("profile enable")
+        self.launch_fail_test("profile X enable test_device")
+        self.launch_fail_test("profile 1 enable test_device X")
+        self.launch_fail_test("profile 10 enable test_device")
 
-    @unittest.skip("profile doesn't show enabled/disabled")
     def test_profile_disable(self):
-        command = "profile disable"
-        self.launch_good_test(command + " 1 test_device")
-        r = self.launch_good_test("profile 0 get test_device")
-        # FIXME: show when the profile is disabled in ratbagctl
-        self.assertIn('enabled', r)
-        r = self.launch_good_test("profile 1 get test_device")
-        self.assertNotIn('enabled', r)
-        self.launch_fail_test(command)
-        self.launch_fail_test(command + " X test_device")
-        self.launch_fail_test(command + " 1 test_device X")
-        self.launch_fail_test(command + " 10 test_device")
+        r = self.launch_good_test("profile 2 get test_device")
+        self.assertNotIn('disabled', r)
+        self.launch_good_test("profile 2 disable test_device")
+        r = self.launch_good_test("profile 2 get test_device")
+        self.assertEqual('Profile 2: <disabled>', r)
+        self.launch_fail_test("profile disable")
+        self.launch_fail_test("profile X disable test_device")
+        self.launch_fail_test("profile 1 disable test_device X")
+        self.launch_fail_test("profile 10 disable test_device")
 
 
 class TestRatbgagCtlResolution(TestRatbagCtl):

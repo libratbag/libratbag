@@ -108,6 +108,15 @@ org.freedesktop.ratbag1.Profile
 
 The index of this profile
 
+#### `Enabled`
+- type: `b`, read-write, mutable
+
+True if this is the profile is enabled, false otherwise.
+
+Note that a disabled profile might not have correct bindings, so it's
+a good thing to rebind everything before calling `Commit()` on the
+**org.freedesktop.ratbag1.Device**.
+
 #### `Resolutions`
 - type: `ao`, read-only, mutable
 
