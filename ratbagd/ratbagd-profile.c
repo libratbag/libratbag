@@ -187,33 +187,6 @@ static int ratbagd_profile_get_leds(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
-static int ratbagd_profile_get_active_resolution(sd_bus *bus,
-						 const char *path,
-						 const char *interface,
-						 const char *property,
-						 sd_bus_message *reply,
-						 void *userdata,
-						 sd_bus_error *error)
-{
-	struct ratbagd_profile *profile = userdata;
-	struct ratbagd_resolution *resolution;
-	unsigned int i;
-
-	for (i = 0; i < profile->n_resolutions; ++i) {
-		resolution = profile->resolutions[i];
-		if (!resolution)
-			continue;
-		if (!ratbagd_resolution_is_active(resolution))
-			continue;
-
-		return sd_bus_message_append(reply, "u", i);
-	}
-
-	log_error("Unable to find active resolution for %s\n",
-		  ratbagd_device_get_name(profile->device));
-	return sd_bus_message_append(reply, "u", 0);
-}
-
 static int ratbagd_profile_is_active(sd_bus *bus,
 				     const char *path,
 				     const char *interface,
@@ -228,33 +201,6 @@ static int ratbagd_profile_is_active(sd_bus *bus,
 	is_active = !!ratbag_profile_is_active(profile->lib_profile);
 
 	return sd_bus_message_append(reply, "b", is_active);
-}
-
-static int ratbagd_profile_get_default_resolution(sd_bus *bus,
-						  const char *path,
-						  const char *interface,
-						  const char *property,
-						  sd_bus_message *reply,
-						  void *userdata,
-						  sd_bus_error *error)
-{
-	struct ratbagd_profile *profile = userdata;
-	struct ratbagd_resolution *resolution;
-	unsigned int i;
-
-	for (i = 0; i < profile->n_resolutions; ++i) {
-		resolution = profile->resolutions[i];
-		if (!resolution)
-			continue;
-		if (!ratbagd_resolution_is_default(resolution))
-			continue;
-
-		return sd_bus_message_append(reply, "u", i);
-	}
-
-	log_error("Unable to find default resolution for %s\n",
-		  ratbagd_device_get_name(profile->device));
-	return sd_bus_message_append(reply, "u", 0);
 }
 
 static int ratbagd_profile_find_button(sd_bus *bus,
@@ -383,9 +329,7 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),
-	SD_BUS_PROPERTY("ActiveResolution", "u", ratbagd_profile_get_active_resolution, 0, 0),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_profile_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("DefaultResolution", "u", ratbagd_profile_get_default_resolution, 0, 0),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetResolutionByIndex", "u", "o", ratbagd_profile_get_resolution_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
@@ -726,4 +670,17 @@ int ratbagd_profile_register_leds(struct sd_bus *bus,
 	}
 
 	return 0;
+}
+
+int ratbagd_for_each_resolution_signal(sd_bus *bus,
+				       struct ratbagd_profile *profile,
+				       int (*func)(sd_bus *bus,
+						   struct ratbagd_resolution *resolution))
+{
+	int rc = 0;
+
+	for (size_t i = 0; rc == 0 && i < profile->n_resolutions; i++)
+		rc = func(bus, profile->resolutions[i]);
+
+	return rc;
 }

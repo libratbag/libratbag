@@ -339,22 +339,6 @@ class RatbagdProfile(_RatbagdDBus):
         return leds
 
     @GObject.Property
-    def active_resolution(self):
-        """The currently active resolution. This function returns a
-        RatbagdResolution object or None."""
-        resolutions = self.resolutions
-        active_index = self._get_dbus_property("ActiveResolution")
-        return resolutions[active_index] if len(resolutions) > active_index else None
-
-    @GObject.Property
-    def default_resolution(self):
-        """The default resolution. This function returns a RatbagdResolution
-        object or None."""
-        resolutions = self.resolutions
-        default_index = self._get_dbus_property("DefaultResolution")
-        return resolutions[default_index] if len(resolutions) > default_index else None
-
-    @GObject.Property
     def is_active(self):
         """Returns True if the profile is currenly active, false otherwise."""
         return self._get_dbus_property("IsActive")
@@ -375,23 +359,8 @@ class RatbagdResolution(_RatbagdDBus):
     CAP_INDIVIDUAL_REPORT_RATE = 1
     CAP_SEPARATE_XY_RESOLUTION = 2
 
-    __gsignals__ = {
-        "active-resolution-changed":
-            (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, [int]),
-        "default-resolution-changed":
-            (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, [int]),
-    }
-
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Resolution", object_path)
-        self._proxy.connect("g-signal", self._on_g_signal)
-
-    def _on_g_signal(self, proxy, sender, signal, params):
-        params = params.unpack()
-        if signal == "ActiveResolutionChanged":
-            self.emit("active-resolution-changed", params[0])
-        elif signal == "DefaultResolutionChanged":
-            self.emit("default-resolution-changed", params[0])
 
     @GObject.Property
     def index(self):
@@ -447,6 +416,18 @@ class RatbagdResolution(_RatbagdDBus):
         ret = self._dbus_call("SetReportRate", "u", rate)
         self._set_dbus_property("ReportRate", "u", rate)
         return ret
+
+    @GObject.Property
+    def is_active(self):
+        """True if this is the currently active resolution, False
+        otherwise"""
+        return self._get_dbus_property("IsActive")
+
+    @GObject.Property
+    def is_default(self):
+        """True if this is the currently default resolution, False
+        otherwise"""
+        return self._get_dbus_property("IsDefault")
 
     def set_default(self):
         """Set this resolution to be the default."""
