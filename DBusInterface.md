@@ -84,12 +84,6 @@ profiles.
 Provides the list of profile paths for all profiles on this device, see
 **org.freedesktop.ratbag1.Profile**.
 
-### Methods
-
-#### `GetProfileByIndex(u) → (o)`
-
-Returns the object path for the profile with the given index
-
 #### `Commit() → ()`
 
 Commits the changes to the device. Changes to the device are batched; they
