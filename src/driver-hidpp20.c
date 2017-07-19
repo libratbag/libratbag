@@ -708,6 +708,8 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	struct hidpp20_profile *p;
 	unsigned i, dpi = 0;
 
+	profile->is_enabled = drv_data->profiles->profiles[index].enabled;
+
 	hidpp20drv_read_onboard_profile(device, profile->index);
 
 	profile->is_active = false;
@@ -856,6 +858,8 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
 
 		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
 		if (rc < 0)
@@ -879,7 +883,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 }
 
 static int
-hidpp20_commit(struct ratbag_device *device)
+hidpp20drv_commit(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_profile *profile;
@@ -892,6 +896,8 @@ hidpp20_commit(struct ratbag_device *device)
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
 			continue;
+
+		drv_data->profiles->profiles[profile->index].enabled = profile->is_enabled;
 
 		for (i = 0; i < profile->resolution.num_modes; i++) {
 			resolution = &profile->resolution.modes[i];
@@ -1071,7 +1077,7 @@ struct ratbag_driver hidpp20_driver = {
 	.id = "hidpp20",
 	.probe = hidpp20drv_probe,
 	.remove = hidpp20drv_remove,
-	.commit = hidpp20_commit,
+	.commit = hidpp20drv_commit,
 	.read_profile = hidpp20drv_read_profile,
 	.set_active_profile = hidpp20drv_set_current_profile,
 	.read_button = hidpp20drv_read_button,

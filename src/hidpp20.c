@@ -1634,7 +1634,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	}
 
 	for (i = 0; i < profiles->num_profiles; i++) {
-		uint8_t *d = data + offset + 4 * i;
+		uint8_t *d = data + 4 * i;
 
 		if (d[0] == 0xFF && d[1] == 0xFF)
 			break;
@@ -1727,18 +1727,14 @@ hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
 }
 
 static int
-hidpp20_onboard_profiles_enable_profile(struct hidpp20_device *device,
-					unsigned int index,
-					struct hidpp20_profiles *profiles_list)
+hidpp20_onboard_profiles_set_enable_profile(struct hidpp20_device *device,
+					    unsigned int index,
+					    struct hidpp20_profiles *profiles_list)
 {
 	unsigned int i, buffer_index = 0;
 	uint8_t data[HIDPP20_PROFILE_SIZE] = {0};
 
-	if (profiles_list->profiles[index].enabled)
-		return 0;
-
 	profiles_list->profiles[index].index = index + 1;
-	profiles_list->profiles[index].enabled = 0x01;
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
 		data[buffer_index++] = 0x00;
@@ -2036,7 +2032,7 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	if (rc < 0)
 		return rc;
 
-	rc = hidpp20_onboard_profiles_enable_profile(device, index, profiles_list);
+	rc = hidpp20_onboard_profiles_set_enable_profile(device, index, profiles_list);
 	if (rc < 0)
 		return rc;
 
