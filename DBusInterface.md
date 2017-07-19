@@ -75,11 +75,6 @@ capabilities.
 
 The device's SVG file name, without path.
 
-#### `SvgPath`
-- type: `s`, read-only, constant
-
-The device's SVG file name including the absolute path.
-
 #### `Profiles`
 - type: `ao`, read-only, mutable
 
