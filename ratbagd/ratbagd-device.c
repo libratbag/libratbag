@@ -214,27 +214,6 @@ static int ratbagd_device_get_profiles(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
-static int ratbagd_device_get_profile_by_index(sd_bus_message *m,
-					       void *userdata,
-					       sd_bus_error *error)
-{
-	struct ratbagd_device *device = userdata;
-	struct ratbagd_profile *profile;
-	unsigned int index;
-	int r;
-
-	r = sd_bus_message_read(m, "u", &index);
-	if (r < 0)
-		return r;
-
-	if (index >= device->n_profiles || !device->profiles[index])
-		return -ENXIO;
-
-	profile = device->profiles[index];
-	return sd_bus_reply_method_return(m, "o",
-					  ratbagd_profile_get_path(profile));
-}
-
 static int ratbagd_device_commit(sd_bus_message *m,
 				 void *userdata,
 				 sd_bus_error *error)
@@ -298,7 +277,6 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_METHOD("GetProfileByIndex", "u", "o", ratbagd_device_get_profile_by_index, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetSvg", "s", "s", ratbagd_device_get_theme_svg, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,

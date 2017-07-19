@@ -292,14 +292,6 @@ class RatbagdDevice(_RatbagdDBus):
         """
         return self._dbus_call("GetSvg", "s", theme)
 
-    def get_profile_by_index(self, index):
-        """Returns the profile found at the given index, or None if no profile
-        was found.
-
-        @param index The index to find the profile at, as int
-        """
-        return self._dbus_call("GetProfileByIndex", "u", index)
-
     def commit(self):
         """Commits all changes made to the device."""
         return self._dbus_call("Commit", "")
