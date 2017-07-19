@@ -106,8 +106,8 @@ usage(void)
 	       "Profile Commands:\n"
 	       "  profile active get            Print the currently active profile\n"
 	       "  profile active set N          Set profile N as to the  active profile\n"
-	       "  profile enable N              Enable profile N\n"
-	       "  profile disable N             Disable profile N\n"
+	       "  profile N enable              Enable profile N\n"
+	       "  profile N disable             Disable profile N\n"
 	       "  profile N {COMMAND}           Use profile N for COMMAND\n"
 	       "\n"
 	       "Resolution Commands\n"
@@ -441,6 +441,9 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		printf("  Profile %d (%s)%s\n", i,
 		       ratbag_profile_is_enabled(profile) ? "enabled" : "disabled",
 		       ratbag_profile_is_active(profile) ? " (active)" : "");
+		if (!ratbag_profile_is_enabled(profile))
+			continue;
+
 		printf("    Resolutions:\n");
 
 		res = ratbag_profile_get_resolution(profile, 0);
