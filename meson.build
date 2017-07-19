@@ -515,12 +515,21 @@ install_data('dbus/org.freedesktop.ratbag1.conf',
 	     install_dir : join_paths(dbusdir, 'system.d'))
 
 #### tools ####
-config_ratbagctl = configuration_data()
-config_ratbagctl.set('version', meson.project_version())
-configure_file(input : 'tools/ratbagctl.in',
-	       output : 'ratbagctl',
-	       configuration : config_ratbagctl,
-	       install_dir : get_option('bindir'))
+
+python = import('python3')
+py3 = python.find_python()
+
+custom_target('ratbagctl',
+  output : 'ratbagctl',
+  input : 'tools/ratbagctl.in',
+  build_by_default : true,
+  command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
+				'@INPUT@',
+				join_paths(meson.source_root(), 'tools', 'ratbagd.py'),
+				'--output', '@OUTPUT@',
+				'--version', meson.project_version()],
+  install: true,
+  install_dir: get_option('bindir'))
 install_man('tools/ratbagctl.1')
 
 config_ratbagctl_devel = configuration_data()
