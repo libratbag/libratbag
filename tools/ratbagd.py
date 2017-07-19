@@ -300,6 +300,18 @@ class RatbagdProfile(_RatbagdDBus):
         return self._get_dbus_property("Index")
 
     @GObject.Property
+    def enabled(self):
+        """tells if the profile is enabled."""
+        return self._get_dbus_property("Enabled")
+
+    @enabled.setter
+    def enabled(self, enabled):
+        """Enable/Disable this profile.
+
+        @param enabled The new state, as boolean"""
+        return self._set_dbus_property("Enabled", "b", enabled)
+
+    @GObject.Property
     def resolutions(self):
         """A list of RatbagdResolution objects with this profile's resolutions.
         """

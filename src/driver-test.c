@@ -35,24 +35,41 @@ test_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag_test_device *d = ratbag_get_drv_data(profile->device);
 	struct ratbag_test_profile *p;
 	struct ratbag_test_resolution *r;
+	struct ratbag_resolution *res;
 	unsigned int i;
+	bool active_set = false;
+	bool default_set = false;
 
 	assert(index < d->num_profiles);
 
 	p = &d->profiles[index];
 	for (i = 0; i < d->num_resolutions; i++) {
-		struct ratbag_resolution *res;
-
 		r = &p->resolutions[i];
 		res = ratbag_resolution_init(profile, i, r->xres, r->yres, r->hz);
 		res->is_active = r->active;
+		if (r->active)
+			active_set = true;
 		res->is_default = r->dflt;
+		if (r->dflt)
+			default_set = true;
 		res->capabilities = r->caps;
 		res->hz = r->hz;
 		assert(res);
 	}
 
+	/* special case triggered by the test suite when num_resolutions is 0 */
+	if (d->num_resolutions) {
+		res = ratbag_profile_get_resolution(profile, 0);
+		assert(res);
+		if (!active_set)
+			res->is_active = true;
+		if (!default_set)
+			res->is_default = true;
+		ratbag_resolution_unref(res);
+	}
+
 	profile->is_active = p->active;
+	profile->is_enabled = !p->disabled;
 }
 
 static int
@@ -197,8 +214,10 @@ test_probe(struct ratbag_device *device, const void *data)
 				    test_device->num_resolutions,
 				    test_device->num_buttons,
 				    test_device->num_leds);
-	if (test_device->num_profiles > 1)
+	if (test_device->num_profiles > 1) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
+	}
 
 	return 0;
 }

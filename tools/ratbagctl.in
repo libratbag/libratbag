@@ -165,13 +165,15 @@ def print_resolution(d, p, r, level):
 
 
 def print_profile(d, p, level):
-    print(" " * level + "Resolutions:")
-    for r in p.resolutions:
-        print_resolution(d, p, r, level + 2)
-    for b in p.buttons:
-        print_button(d, p, b, level)
-    for l in p.leds:
-        print_led(d, p, l, level)
+    print(" " * (level - 2) + "Profile {}:{}".format(p.index, " <disabled>" if not p.enabled else ""))
+    if p.enabled:
+        print(" " * level + "Resolutions:")
+        for r in p.resolutions:
+            print_resolution(d, p, r, level + 2)
+        for b in p.buttons:
+            print_button(d, p, b, level)
+        for l in p.leds:
+            print_led(d, p, l, level)
 
 
 def print_device(d, level):
@@ -358,6 +360,18 @@ def func_profile_active_set(r, args):
     d.commit()
 
 
+def func_profile_enable(r, args):
+    p, d = find_profile(r, args)
+    p.enabled = True
+    d.commit()
+
+
+def func_profile_disable(r, args):
+    p, d = find_profile(r, args)
+    p.enabled = False
+    d.commit()
+
+
 def func_dummy(r, args):
     print("uh, oh, not implemented")
     pr_debug(args, r, args)
@@ -489,36 +503,6 @@ parser_def = [
                     },
                 ],
             },
-            {
-                of_type: command,
-                name: 'enable',
-                help_str: 'Enable a profile',
-                pos_args: [
-                    {
-                        of_type: argument,
-                        name: 'profile_n',
-                        metavar: 'N',
-                        help_str: 'The profile to enable',
-                        arg_type: int,
-                    },
-                ],
-                func: func_dummy,  # FIXME: func_profile_enable,
-            },
-            {
-                of_type: command,
-                name: 'disable',
-                help_str: 'Disable a profile',
-                pos_args: [
-                    {
-                        of_type: argument,
-                        name: 'profile_n',
-                        metavar: 'N',
-                        help_str: 'The profile to disable',
-                        arg_type: int,
-                    },
-                ],
-                func: func_dummy,  # FIXME: func_profile_disable,
-            },
         ],
         N_access: {
             of_type: N_access,
@@ -531,6 +515,18 @@ parser_def = [
                     name: 'get',
                     help_str: 'Show current active profile',
                     func: func_profile_get,
+                },
+                {
+                    of_type: command,
+                    name: 'enable',
+                    help_str: 'Enable a profile',
+                    func: func_profile_enable,
+                },
+                {
+                    of_type: command,
+                    name: 'disable',
+                    help_str: 'Disable a profile',
+                    func: func_profile_disable,
                 },
                 {
                     of_type: link,

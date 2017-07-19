@@ -68,6 +68,7 @@ struct ratbag_test_profile {
 	struct ratbag_test_led leds[RATBAG_TEST_MAX_LEDS];
 	bool active;
 	bool dflt;
+	bool disabled;
 };
 
 struct ratbag_test_device {
