@@ -290,27 +290,22 @@ hidpp10drv_read_button(struct ratbag_button *button)
 }
 
 static int
-hidpp10drv_write_button(struct ratbag_button *button,
+hidpp10drv_write_button(struct hidpp10_profile *profile,
+			struct ratbag_button *button,
 			const struct ratbag_button_action *action)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp10_device *hidpp10 = drv_data->dev;
-	struct hidpp10_profile profile;
 	uint8_t code;
-	int ret;
 
 	if (hidpp10->profile_type == HIDPP10_PROFILE_UNKNOWN)
 		return -ENOTSUP;
 
-	ret = hidpp10_get_profile(hidpp10, button->profile->index, &profile);
-	if (ret)
-		return ret;
-
 	switch (action->type) {
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-		profile.buttons[button->index].button.type = PROFILE_BUTTON_TYPE_BUTTON;
-		profile.buttons[button->index].button.button = action->action.button;
+		profile->buttons[button->index].button.type = PROFILE_BUTTON_TYPE_BUTTON;
+		profile->buttons[button->index].button.button = action->action.button;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key.key);
@@ -319,26 +314,26 @@ hidpp10drv_write_button(struct ratbag_button *button,
 			if (code == 0)
 				return -EINVAL;
 
-			profile.buttons[button->index].consumer_control.type = PROFILE_BUTTON_TYPE_CONSUMER_CONTROL;
-			profile.buttons[button->index].consumer_control.consumer_control = code;
+			profile->buttons[button->index].consumer_control.type = PROFILE_BUTTON_TYPE_CONSUMER_CONTROL;
+			profile->buttons[button->index].consumer_control.consumer_control = code;
 		} else {
-			profile.buttons[button->index].keys.type = PROFILE_BUTTON_TYPE_KEYS;
-			profile.buttons[button->index].keys.key = code;
+			profile->buttons[button->index].keys.type = PROFILE_BUTTON_TYPE_KEYS;
+			profile->buttons[button->index].keys.key = code;
 		}
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		code = hidpp10_onboard_profiles_get_code_from_special(action->action.special);
 		if (code == 0)
 			return -EINVAL;
-		profile.buttons[button->index].special.type = PROFILE_BUTTON_TYPE_SPECIAL;
-		profile.buttons[button->index].special.special = code;
+		profile->buttons[button->index].special.type = PROFILE_BUTTON_TYPE_SPECIAL;
+		profile->buttons[button->index].special.special = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 	default:
 		return -ENOTSUP;
 	}
 
-	return hidpp10_set_profile(drv_data->dev, button->profile->index, &profile);
+	return 0;
 }
 
 static int
@@ -414,21 +409,17 @@ hidpp10drv_write_profile(struct ratbag_profile *profile)
 }
 
 static int
-hidpp10drv_write_resolution_dpi(struct ratbag_resolution *resolution,
+hidpp10drv_write_resolution_dpi(struct hidpp10_profile *p,
+				struct ratbag_resolution *resolution,
 				int dpi_x, int dpi_y)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
 	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp10_device *hidpp10 = drv_data->dev;
-	struct hidpp10_profile p;
 	unsigned int index;
 	uint16_t cur_dpi_x, cur_dpi_y;
 	int rc;
-
-	rc = hidpp10_get_profile(hidpp10, profile->index, &p);
-	if (rc)
-		return rc;
 
 	/* store the current resolution */
 	rc = hidpp10_get_current_resolution(hidpp10, &cur_dpi_x, &cur_dpi_y);
@@ -444,13 +435,8 @@ hidpp10drv_write_resolution_dpi(struct ratbag_resolution *resolution,
 	/* retrieve which resolution is asked to be changed */
 	index = resolution - profile->resolution.modes;
 
-	p.dpi_modes[index].xres = dpi_x;
-	p.dpi_modes[index].yres = dpi_y;
-
-	/* this effectively switches the resolution to the default in the profile */
-	rc = hidpp10_set_profile(drv_data->dev, profile->index, &p);
-	if (rc)
-		return rc;
+	p->dpi_modes[index].xres = dpi_x;
+	p->dpi_modes[index].yres = dpi_y;
 
 	/* restore the current setting */
 	return hidpp10_set_current_resolution(hidpp10, cur_dpi_x, cur_dpi_y);
@@ -505,6 +491,60 @@ hidpp10_log(void *userdata, enum hidpp_log_priority priority, const char *format
 	struct ratbag_device *device = userdata;
 
 	log_msg_va(device->ratbag, priority, format, args);
+}
+
+static int
+hidpp10drv_commit(struct ratbag_device *device)
+{
+	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp10_device *dev = drv_data->dev;
+	struct ratbag_profile *profile;
+	struct ratbag_button *button;
+	struct ratbag_resolution *resolution;
+	struct hidpp10_profile p;
+	int rc;
+	unsigned int i;
+
+	list_for_each(profile, &device->profiles, link) {
+		if (!profile->dirty)
+			continue;
+
+		rc = hidpp10_get_profile(dev, profile->index, &p);
+		if (rc)
+			return rc;
+
+		p.enabled = profile->is_enabled;
+
+		for (i = 0; i < profile->resolution.num_modes; i++) {
+			resolution = &profile->resolution.modes[i];
+
+			rc = hidpp10drv_write_resolution_dpi(&p,
+							     resolution,
+							     resolution->dpi_x,
+							     resolution->dpi_y);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+
+		list_for_each(button, &profile->buttons, link) {
+			struct ratbag_button_action action = button->action;
+
+			if (!button->dirty)
+				continue;
+
+			rc = hidpp10drv_write_button(&p, button, &action);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+
+		if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
+			rc = hidpp10_set_profile(dev, profile->index, &p);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+	}
+
+	return RATBAG_SUCCESS;
 }
 
 static int
@@ -651,6 +691,5 @@ struct ratbag_driver hidpp10_driver = {
 	.write_profile = hidpp10drv_write_profile,
 	.set_active_profile = hidpp10drv_set_current_profile,
 	.read_button = hidpp10drv_read_button,
-	.write_button = hidpp10drv_write_button,
-	.write_resolution_dpi = hidpp10drv_write_resolution_dpi,
+	.commit = hidpp10drv_commit,
 };
