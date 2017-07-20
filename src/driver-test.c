@@ -52,7 +52,7 @@ test_read_profile(struct ratbag_profile *profile, unsigned int index)
 		res->is_default = r->dflt;
 		if (r->dflt)
 			default_set = true;
-		res->capabilities = r->caps;
+		ratbag_resolution_set_cap(res, r->caps);
 		res->hz = r->hz;
 		assert(res);
 	}
