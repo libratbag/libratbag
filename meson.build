@@ -523,11 +523,10 @@ py3 = python.find_python()
 
 custom_target('ratbagctl',
   output : 'ratbagctl',
-  input : 'tools/ratbagctl.in',
+  input : ['tools/ratbagctl.in', 'tools/ratbagd.py'],
   build_by_default : true,
   command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
-				join_paths(meson.source_root(), 'tools', 'ratbagd.py'),
 				'--output', '@OUTPUT@',
 				'--version', meson.project_version()],
   install: true,
