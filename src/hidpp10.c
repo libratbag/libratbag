@@ -715,6 +715,71 @@ hidpp10_get_dpi_value(struct hidpp10_device *dev, uint8_t raw_value)
 }
 
 static int
+hidpp10_write_profile_directory(struct hidpp10_device *dev)
+{
+	unsigned int i, index;
+	int res;
+	uint8_t bytes[HIDPP10_PAGE_SIZE];
+	struct hidpp10_directory *directory = (struct hidpp10_directory *)bytes;
+	uint16_t crc;
+
+	if (dev->profile_type == HIDPP10_PROFILE_UNKNOWN) {
+		hidpp_log_debug(&dev->base, "no profile type given\n");
+		return 0;
+	}
+
+	memset(bytes, 0xff, sizeof(bytes));
+
+	index = 0;
+	for (i = 0; i < dev->profile_count; i++) {
+		if (!dev->profiles[i].enabled)
+			continue;
+
+		directory[index].page = dev->profiles[i].page;
+		directory[index].offset = dev->profiles[i].offset;
+		directory[index].led_mask = ((0b111 << index) >> 2) & 0b111;
+		++index;
+	}
+
+	crc = hidpp_crc_ccitt(bytes, HIDPP10_PAGE_SIZE - 2);
+	hidpp_set_unaligned_be_u16(&bytes[HIDPP10_PAGE_SIZE - 2], crc);
+
+	res = hidpp10_send_hot_payload(dev,
+				       0x00, 0x0000, /* destination: RAM */
+				       bytes,
+				       HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_erase_memory(dev, 0x01);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_write_flash(dev,
+				  0x00, 0x0000,
+				  0x01, 0x0000,
+				  HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_send_hot_payload(dev,
+				       0x00, 0x0000, /* destination: RAM */
+				       bytes + HIDPP10_PAGE_SIZE / 2,
+				       HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	res = hidpp10_write_flash(dev,
+				  0x00, 0x0000,
+				  0x01, HIDPP10_PAGE_SIZE / 2,
+				  HIDPP10_PAGE_SIZE / 2);
+	if (res < 0)
+		return res;
+
+	return 0;
+}
+
+static int
 hidpp10_read_profile_directory(struct hidpp10_device *dev)
 {
 	unsigned int i;
@@ -1422,8 +1487,20 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 	}
 
 	profile = &dev->profiles[number];
-	if (!profile->enabled)
-		return 0;
+	if (!profile->page) {
+		unsigned long pages = 0xffff;
+		unsigned int i;
+
+		/* pages 0 and 1 are ROM and directory so they are reserved */
+		long_clear_bit(&pages, 0);
+		long_clear_bit(&pages, 1);
+
+		for (i = 0; i < dev->profile_count; i++)
+			long_clear_bit(&pages, dev->profiles[i].page);
+
+		page = ffsl(pages) - 1;
+		profile->page = page;
+	}
 
 	switch (dev->profile_type) {
 	case HIDPP10_PROFILE_G500:
@@ -1448,9 +1525,10 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 			 * if the CRC is wrong, the mouse still handles the
 			 * profile. Warn the user.
 			 */
-			hidpp_log_info(&dev->base,
-				      "Profile %d has a wrong CRC, assuming valid.\n",
-				      number);
+			if (profile->enabled)
+				hidpp_log_info(&dev->base,
+					      "Profile %d has a wrong CRC, assuming valid.\n",
+					      number);
 			res = 0;
 		}
 		if (res)
@@ -1635,7 +1713,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, uint8_t number, struct hidpp10_p
 		return -EINVAL;
 	}
 
-	/* we do not support not enabled profiles just now */
+	/* something went wrong */
 	if (!profile->page)
 		return -ENOTSUP;
 
@@ -1692,7 +1770,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, uint8_t number, struct hidpp10_p
 		break;
 	case HIDPP10_PROFILE_G700:
 		p700->default_dpi_mode = profile->default_dpi_mode;
-		p700->usb_refresh_rate = 1000 / profile->refresh_rate;
+		p700->usb_refresh_rate = profile->refresh_rate ? 1000 / profile->refresh_rate : 0;
 
 		hidpp10_write_dpi_modes_8_dual(dev, profile, p700->dpi_modes, PROFILE_NUM_DPI_MODES);
 		hidpp10_write_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
@@ -1733,6 +1811,13 @@ hidpp10_set_profile(struct hidpp10_device *dev, uint8_t number, struct hidpp10_p
 	res = hidpp10_set_internal_current_profile(dev, 0, PROFILE_TYPE_FACTORY);
 	if (res < 0)
 		return res;
+
+	if (profile->enabled != dev->profiles[number].enabled) {
+		dev->profiles[number].enabled = profile->enabled;
+		res = hidpp10_write_profile_directory(dev);
+		if (res < 0)
+			return res;
+	}
 
 	res = hidpp10_send_hot_payload(dev,
 				       0x00, 0x0000, /* destination: RAM */
@@ -2101,6 +2186,9 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 	res = hidpp10_request_command(dev, &refresh);
 	if (res)
 		return res;
+
+	if (!refresh.msg.parameters[0])
+		return -EINVAL;
 
 	*rate = 1000/refresh.msg.parameters[0];
 
