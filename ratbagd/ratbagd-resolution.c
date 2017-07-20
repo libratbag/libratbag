@@ -44,9 +44,14 @@ struct ratbagd_resolution {
 	char *path;
 };
 
-static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
-					      void *userdata,
-					      sd_bus_error *error)
+static int
+ratbagd_resolution_set_report_rate(sd_bus *bus,
+				   const char *path,
+				   const char *interface,
+				   const char *property,
+				   sd_bus_message *m,
+				   void *userdata,
+				   sd_bus_error *error)
 {
 	struct ratbagd_resolution *resolution = userdata;
 	unsigned int rate;
@@ -70,40 +75,8 @@ static int ratbagd_resolution_set_report_rate(sd_bus_message *m,
 					       "ReportRate",
 					       NULL);
 	}
-	return sd_bus_reply_method_return(m, "u", r);
-}
 
-static int ratbagd_resolution_set_resolution(sd_bus_message *m,
-					     void *userdata,
-					     sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	const enum ratbag_device_capability cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
-	unsigned int xres, yres;
-	int r;
-
-	r = sd_bus_message_read(m, "uu", &xres, &yres);
-	if (r < 0)
-		return r;
-
-	if (!ratbag_resolution_has_capability(lib_resolution, cap)) {
-		r = ratbag_resolution_set_dpi(resolution->lib_resolution, xres);
-	} else {
-		r = ratbag_resolution_set_dpi_xy(resolution->lib_resolution,
-						 xres, yres);
-	}
-	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
-		sd_bus_emit_properties_changed(bus,
-					       resolution->path,
-					       RATBAGD_NAME_ROOT ".Resolution",
-					       "XResolution",
-					       "YResolution",
-					       NULL);
-	}
-
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_resolution_default_signal_cb(sd_bus *bus,
@@ -139,7 +112,7 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 					   resolution->profile,
 					   ratbagd_resolution_default_signal_cb);
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int
@@ -214,37 +187,60 @@ ratbagd_resolution_is_default(sd_bus *bus,
 }
 
 static int
-ratbagd_resolution_get_resolution_x(sd_bus *bus,
-				    const char *path,
-				    const char *interface,
-				    const char *property,
-				    sd_bus_message *reply,
-				    void *userdata,
-				    sd_bus_error *error)
+ratbagd_resolution_get_resolution(sd_bus *bus,
+				  const char *path,
+				  const char *interface,
+				  const char *property,
+				  sd_bus_message *reply,
+				  void *userdata,
+				  sd_bus_error *error)
 {
 	struct ratbagd_resolution *resolution = userdata;
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	int xres;
+	int xres, yres;
 
 	xres = ratbag_resolution_get_dpi_x(lib_resolution);
-	return sd_bus_message_append(reply, "u", xres);
+	yres = ratbag_resolution_get_dpi_y(lib_resolution);
+
+	return sd_bus_message_append(reply, "(uu)", xres, yres);
 }
 
 static int
-ratbagd_resolution_get_resolution_y(sd_bus *bus,
-				    const char *path,
-				    const char *interface,
-				    const char *property,
-				    sd_bus_message *reply,
-				    void *userdata,
-				    sd_bus_error *error)
+ratbagd_resolution_set_resolution(sd_bus *bus,
+				  const char *path,
+				  const char *interface,
+				  const char *property,
+				  sd_bus_message *m,
+				  void *userdata,
+				  sd_bus_error *error)
 {
 	struct ratbagd_resolution *resolution = userdata;
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	int yres;
+	const enum ratbag_device_capability cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
+	int xres, yres;
+	int r;
 
-	yres = ratbag_resolution_get_dpi_y(lib_resolution);
-	return sd_bus_message_append(reply, "u", yres);
+	r = sd_bus_message_read(m, "(uu)", &xres, &yres);
+	if (r < 0)
+		return r;
+
+	if (!ratbag_resolution_has_capability(lib_resolution, cap)) {
+		r = ratbag_resolution_set_dpi(resolution->lib_resolution, xres);
+	} else {
+		r = ratbag_resolution_set_dpi_xy(resolution->lib_resolution,
+						 xres, yres);
+	}
+
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       resolution->path,
+					       RATBAGD_NAME_ROOT ".Resolution",
+					       "Resolution",
+					       NULL);
+	}
+
+	return r;
 }
 
 static int
@@ -304,13 +300,16 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_resolution_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("IsDefault", "b", ratbagd_resolution_is_default, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("XResolution", "u", ratbagd_resolution_get_resolution_x, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("YResolution", "u", ratbagd_resolution_get_resolution_y, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("ReportRate", "u", ratbagd_resolution_get_rate, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("Resolution", "(uu)",
+				 ratbagd_resolution_get_resolution,
+				 ratbagd_resolution_set_resolution, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("ReportRate", "u",
+				 ratbagd_resolution_get_rate,
+				 ratbagd_resolution_set_report_rate, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Maximum", "u", ratbagd_resolution_get_maximum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Minimum", "u", ratbagd_resolution_get_minimum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_METHOD("SetReportRate", "u", "u", ratbagd_resolution_set_report_rate, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetResolution", "uu", "u", ratbagd_resolution_set_resolution, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };

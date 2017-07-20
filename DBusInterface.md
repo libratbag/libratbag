@@ -176,19 +176,16 @@ Resolutions can only be set to default, but never to not default - at least
 one resolution must be default at all times. This property is read-only, use the
 `SetDefault()` method to set a resolution as the default resolution.
 
-#### `XResolution`
-- type: `u`, read-only, mutable
+#### `Resolution`
+- type: `uu`, read-only, mutable
 
-uint for the x resolution assigned to this entry
+uint for the x and y resolution assigned to this entry, respectively
 
-#### `YResolution`
-- type: `u`, read-only, mutable
-
-uint for the y resolution assigned to this entry
 #### `ReportRate`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
 uint for the report rate in Hz assigned to this entry
+
 #### `Maximum`
 - type: `u`, read-only, constant
 
@@ -200,11 +197,6 @@ uint for the minimum possible resolution
 
 ### Methods:
 
-#### `SetResolution(u, u) → ()`
-x/y resolution to assign
-
-#### `SetReportRate(uint) → ()`
-uint for the report rate to assign
 #### `SetDefault() → () `
 
 Set this resolution to be the default
