@@ -276,6 +276,43 @@ class TestRatbgagCtlDPI(TestRatbagCtl):
         self.launch_fail_test("Profile 1 Resolution 1 Resolution 2 DPI get test_device")
 
 
+class TestRatbgagCtlReportRate(TestRatbagCtl):
+    @classmethod
+    def setUpClass(cls):
+        super(TestRatbgagCtlReportRate, cls).setUpClass()
+        cls.setProfile(0)
+
+    def test_rate_get(self):
+        command = "rate get"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(int(r), 1000)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " 1 test_device")
+        self.launch_fail_test(command + " test_device X")
+
+    def test_rate_set(self):
+        command = "rate set"
+        r = self.launch_good_test("rate get test_device")
+        res = int(r) + 500
+        r = self.launch_good_test(command + " {} test_device".format(res))
+        self.assertEqual(r, '')
+        r = self.launch_good_test("rate get test_device")
+        self.assertEqual(int(r), res)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 100 test_device X")
+
+    def test_prefix_rate(self):
+        r = self.launch_good_test("Profile 1 rate get test_device")
+        self.assertEqual(int(r), 2000)
+        r = self.launch_good_test("Profile 1 Resolution 1 rate get test_device")
+        self.assertEqual(int(r), 2000)
+        r = self.launch_good_test("Resolution 2 rate get test_device")
+        self.assertEqual(int(r), 1000)
+        self.launch_fail_test("Profile 1 Profile 1 rate get test_device")
+        self.launch_fail_test("Profile 1 Resolution 1 Resolution 2 rate get test_device")
+
+
 class TestRatbgagCtlButton(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):
