@@ -226,14 +226,14 @@ class TestRatbgagCtlResolution(TestRatbagCtl):
 
     def test_resolution_n_get(self):
         r = self.launch_good_test("Resolution 1 get test_device")
-        self.assertEqual(r, "1: 1200dpi @ 2000Hz (default)")
+        self.assertEqual(r, "1: 1200x1300dpi @ 2000Hz (default)")
         self.launch_fail_test("Resolution 10 get test_device")
         self.launch_fail_test("Resolution 1 get test_device X")
         self.launch_fail_test("Resolution 1 get X")
 
     def test_profile_resolution(self):
         r = self.launch_good_test("Profile 2 Resolution 2 get test_device")
-        self.assertEqual(r, "2: 2300dpi @ 3000Hz")
+        self.assertEqual(r, "2: 2300x2400dpi @ 3000Hz")
 
 
 class TestRatbgagCtlDPI(TestRatbagCtl):
@@ -246,12 +246,16 @@ class TestRatbgagCtlDPI(TestRatbagCtl):
         command = "DPI get"
         r = self.launch_good_test(command + " test_device")
         self.assertEqual(int(r), 200)
+        self.setProfile(1)
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(r, "1300x1400dpi")
         self.launch_fail_test(command)
         self.launch_fail_test(command + " 1 test_device")
         self.launch_fail_test(command + " test_device X")
 
     def test_dpi_set(self):
         command = "DPI set"
+        self.setProfile(0)
         r = self.launch_good_test("DPI get test_device")
         res = int(r) + 50
         r = self.launch_good_test(command + " {} test_device".format(res))
@@ -262,11 +266,31 @@ class TestRatbgagCtlDPI(TestRatbagCtl):
         self.launch_fail_test(command + " X test_device")
         self.launch_fail_test(command + " 100 test_device X")
 
+    def test_dpi_set_xy(self):
+        command = "DPI set"
+        self.setProfile(2)
+        r = self.launch_good_test("DPI get test_device")
+        self.assertEqual(r, "2100x2200dpi")
+        self.launch_good_test(command + " 1350x1450 test_device")
+        r = self.launch_good_test("DPI get test_device")
+        self.assertEqual(r, "1350x1450dpi")
+        self.launch_good_test(command + " 2350x2450dpi test_device")
+        r = self.launch_good_test("DPI get test_device")
+        self.assertEqual(r, "2350x2450dpi")
+        self.launch_good_test(command + " 2350 test_device")
+        r = self.launch_good_test("DPI get test_device")
+        self.assertEqual(r, "2350x2350dpi")
+        self.launch_fail_test(command + " 2350dpi test_device")
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 100 test_device X")
+
     def test_prefix_dpi(self):
+        self.setProfile(0)
         r = self.launch_good_test("Profile 1 DPI get test_device")
-        self.assertEqual(int(r), 1300)
+        self.assertEqual(r, "1300x1400dpi")
         r = self.launch_good_test("Profile 1 Resolution 1 DPI get test_device")
-        self.assertEqual(int(r), 1200)
+        self.assertEqual(r, "1200x1300dpi")
         r = self.launch_good_test("Resolution 2 DPI get test_device")
         self.assertEqual(int(r), 300)
         self.launch_fail_test("Profile 1 Profile 1 DPI get test_device")
