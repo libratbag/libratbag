@@ -301,6 +301,16 @@ def func_dpi_set(r, args):
         r.resolution = (args.dpi_n, args.dpi_n)
 
 
+def func_report_rate_get(r, args):
+    r, p, d = find_resolution(r, args)
+    print(r.report_rate)
+
+
+def func_report_rate_set(r, args):
+    r, p, d = find_resolution(r, args)
+    r.report_rate = args.rate_n
+
+
 def func_resolution_get(r, args):
     r, p, d = find_resolution(r, args)
     print_resolution(d, p, r, 0)
@@ -510,6 +520,10 @@ parser_def = [
                 },
                 {
                     of_type: link,
+                    dest: 'rate',
+                },
+                {
+                    of_type: link,
                     dest: 'button',
                 },
                 {
@@ -570,6 +584,10 @@ parser_def = [
                     of_type: link,
                     dest: 'dpi',
                 },
+                {
+                    of_type: link,
+                    dest: 'rate',
+                },
             ],
         },
     },
@@ -599,6 +617,35 @@ parser_def = [
                     },
                 ],
                 func: func_dpi_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: 'rate',
+        help_str: 'Access report rate information',
+        tag: 'rate',
+        switch: [
+            {
+                of_type: command,
+                name: 'get',
+                help_str: 'Show current report rate',
+                func: func_report_rate_get,
+            },
+            {
+                of_type: command,
+                name: 'set',
+                help_str: 'Set the report rate to N',
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: 'rate_n',
+                        metavar: 'N',
+                        help_str: 'The report rate to set as current',
+                        arg_type: int,
+                    },
+                ],
+                func: func_report_rate_set,
             },
         ],
     },
