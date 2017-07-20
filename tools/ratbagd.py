@@ -127,6 +127,7 @@ class _RatbagdDBus(GObject.GObject):
             object_path = "/" + ratbag1.replace('.', '/')
 
         self._object_path = object_path
+        self._interface = "{}.{}".format(ratbag1, interface)
 
         try:
             self._proxy = Gio.DBusProxy.new_sync(_RatbagdDBus._dbus,
@@ -134,7 +135,7 @@ class _RatbagdDBus(GObject.GObject):
                                                  None,
                                                  ratbag1,
                                                  object_path,
-                                                 "{}.{}".format(ratbag1, interface),
+                                                 self._interface,
                                                  None)
         except GLib.Error:
             raise RatbagdDBusUnavailable()
@@ -151,7 +152,28 @@ class _RatbagdDBus(GObject.GObject):
 
     def _set_dbus_property(self, property, type, value):
         # Sets a cached property on the bus.
+
+        # Take our real value and wrap it into a variant. To call
+        # org.freedesktop.DBus.Properties.Set we need to wrap that again
+        # into a (ssv), where v is our value's variant.
+        # args to .Set are "interface name", "function name",  value-variant
         val = GLib.Variant("{}".format(type), value)
+        pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
+        try:
+            self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
+                                  pval, Gio.DBusCallFlags.NO_AUTO_START,
+                                  500, None)
+        except GLib.Error as e:
+            # FIXME: Temporary fix until the DBus API revamp is complete:
+            # Silently ignore DBus unknown property warnings so the bits we
+            # already have updated are testable. In the future when all
+            # properties are switched from SetFoo to just a writable
+            # property Foo, remove this error
+            if "org.freedesktop.DBus.Error.UnknownProperty" not in e.message:
+                raise
+
+        # This is our local copy, so we don't have to wait for the async
+        # update
         self._proxy.set_cached_property(property, val)
 
     def _dbus_call(self, method, type, *value):
