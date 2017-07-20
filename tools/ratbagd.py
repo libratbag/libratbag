@@ -375,7 +375,7 @@ class RatbagdResolution(_RatbagdDBus):
     @GObject.Property
     def resolution(self):
         """The tuple (xres, yres) with each resolution in DPI."""
-        return self._get_dbus_property("XResolution"), self._get_dbus_property("YResolution")
+        return self._get_dbus_property("Resolution")
 
     @resolution.setter
     def resolution(self, res):
@@ -383,8 +383,7 @@ class RatbagdResolution(_RatbagdDBus):
 
         @param res The new resolution, as (int, int)
         """
-        ret = self._dbus_call("SetResolution", "uu", *res)
-        self._set_dbus_property("Resolution", "(uu)", res)
+        ret = self._set_dbus_property("Resolution", "(uu)", res)
         return ret
 
     @GObject.Property
@@ -408,9 +407,7 @@ class RatbagdResolution(_RatbagdDBus):
 
         @param rate The new report rate, as int
         """
-        ret = self._dbus_call("SetReportRate", "u", rate)
-        self._set_dbus_property("ReportRate", "u", rate)
-        return ret
+        return self._set_dbus_property("ReportRate", "u", rate)
 
     @GObject.Property
     def is_active(self):
