@@ -144,16 +144,12 @@ def print_resolution(d, p, r, level):
         print(" " * level + "{}: <disabled>".format(r.index))
         return
     if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
-        print(" " * level + "{}: {}x{}dpi @ {}Hz{}{}".format(r.index,
-                                                             r.resolution[0],
-                                                             r.resolution[1],
-                                                             r.report_rate,
-                                                             " (active)" if p.active_resolution == r else "",
-                                                             " (default)" if p.default_resolution == r else "",
-                                                             ))
-        return
+        dpi = "{}x{}".format(r.resolution[0], r.resolution[1])
+    else:
+        dpi = "{}".format(r.resolution[0])
+
     print(" " * level + "{}: {}dpi @ {}Hz{}{}".format(r.index,
-                                                      r.resolution[0],
+                                                      dpi,
                                                       r.report_rate,
                                                       " (active)" if p.active_resolution == r else "",
                                                       " (default)" if p.default_resolution == r else "",
