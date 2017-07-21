@@ -279,7 +279,7 @@ int ratbagd_led_new(struct ratbagd_led **out,
 	led->index = index;
 
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
-	sprintf(led_buffer, "b%u", index);
+	sprintf(led_buffer, "l%u", index);
 	r = sd_bus_path_encode_many(&led->path,
 				    RATBAGD_OBJ_ROOT "/led/%/%/%",
 				    ratbagd_device_get_name(device),
