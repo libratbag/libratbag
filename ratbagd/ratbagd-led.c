@@ -54,7 +54,11 @@ static int ratbagd_led_get_mode(sd_bus *bus,
 	return sd_bus_message_append(reply, "u", mode);
 }
 
-static int ratbagd_led_set_mode(sd_bus_message *m,
+static int ratbagd_led_set_mode(sd_bus *bus,
+				const char *path,
+				const char *interface,
+				const char *property,
+				sd_bus_message *m,
 				void *userdata,
 				sd_bus_error *error)
 {
@@ -77,7 +81,7 @@ static int ratbagd_led_set_mode(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_led_get_type(sd_bus *bus,
@@ -127,7 +131,11 @@ static int ratbagd_led_get_color(sd_bus *bus,
 	return sd_bus_message_append(reply, "(uuu)", c.red, c.green, c.blue);
 }
 
-static int ratbagd_led_set_color(sd_bus_message *m,
+static int ratbagd_led_set_color(sd_bus *bus,
+				 const char *path,
+				 const char *interface,
+				 const char *property,
+				 sd_bus_message *m,
 				 void *userdata,
 				 sd_bus_error *error)
 {
@@ -153,7 +161,7 @@ static int ratbagd_led_set_color(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_led_get_effect_rate(sd_bus *bus,
@@ -168,10 +176,14 @@ static int ratbagd_led_get_effect_rate(sd_bus *bus,
 	int rate;
 
 	rate = ratbag_led_get_effect_rate(led->lib_led);
-	return sd_bus_message_append(reply, "i", rate);
+	return sd_bus_message_append(reply, "u", rate);
 }
 
-static int ratbagd_led_set_effect_rate(sd_bus_message *m,
+static int ratbagd_led_set_effect_rate(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       const char *property,
+				       sd_bus_message *m,
 				       void *userdata,
 				       sd_bus_error *error)
 {
@@ -197,7 +209,7 @@ static int ratbagd_led_set_effect_rate(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_led_get_brightness(sd_bus *bus,
@@ -215,7 +227,11 @@ static int ratbagd_led_get_brightness(sd_bus *bus,
 	return sd_bus_message_append(reply, "u", brightness);
 }
 
-static int ratbagd_led_set_brightness(sd_bus_message *m,
+static int ratbagd_led_set_brightness(sd_bus *bus,
+				      const char *path,
+				      const char *interface,
+				      const char *property,
+				      sd_bus_message *m,
 				      void *userdata,
 				      sd_bus_error *error)
 {
@@ -241,22 +257,26 @@ static int ratbagd_led_set_brightness(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 const sd_bus_vtable ratbagd_led_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_led, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Mode", "u", ratbagd_led_get_mode, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("Mode", "u",
+				 ratbagd_led_get_mode,
+				 ratbagd_led_set_mode, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Type", "s", ratbagd_led_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Color", "(uuu)", ratbagd_led_get_color, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("EffectRate", "i", ratbagd_led_get_effect_rate, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("Brightness", "u", ratbagd_led_get_brightness, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-
-	SD_BUS_METHOD("SetMode", "u", "u", ratbagd_led_set_mode, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetColor", "(uuu)", "u", ratbagd_led_set_color, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetEffectRate", "u", "u", ratbagd_led_set_effect_rate, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetBrightness", "u", "u", ratbagd_led_set_brightness, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_WRITABLE_PROPERTY("Color", "(uuu)",
+				 ratbagd_led_get_color, ratbagd_led_set_color, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("EffectRate", "u",
+				 ratbagd_led_get_effect_rate, ratbagd_led_set_effect_rate, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("Brightness", "u",
+				 ratbagd_led_get_brightness, ratbagd_led_set_brightness, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_VTABLE_END,
 };
 
