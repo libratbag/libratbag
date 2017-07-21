@@ -258,7 +258,7 @@ org.freedesktop.ratbag1.Led
 Index of the LED
 
 #### `Mode`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
 uint mapping to the mode enum from libratbag
 
@@ -268,28 +268,18 @@ uint mapping to the mode enum from libratbag
 String describing the LED type
 
 #### `Color`
-- type: `(uuu)`, read-only, mutable
+- type: `(uuu)`, read-write, mutable
 uint triplet (RGB) of the LED's color
 
 #### `EffectRate`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
 The effect rate in Hz, possible values are in the range 100 - 20000
 
 #### `Brightness`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
 The brightness of the LED, possible values are in the range 0 - 255
-
-### Methods:
-#### `SetMode(u) → ()`
-Set the mode to the given mode enum value from libratbag
-#### `SetColor((uuu)) → ()`
-Set the color to the given uint triplet (RGB)
-#### `SetEffectRate(u) → ()`
-Set the effect rate in Hz, possible values are in the range 100 - 20000
-#### `SetBrightness(i) → ()`
-Set the brightness, possible values are in the range 0 - 255
 
 For easier debugging, objects paths are constructed from the device. e.g.
 `/org/freedesktop/ratbag/button/event5/p0/b10` is the button interface for

@@ -536,9 +536,7 @@ class RatbagdLed(_RatbagdDBus):
         @param mode The new mode, as one of MODE_OFF, MODE_ON, MODE_CYCLE and
                     MODE_BREATHING.
         """
-        ret = self._dbus_call("SetMode", "u", mode)
-        self._set_dbus_property("Mode", "u", mode)
-        return ret
+        return self._set_dbus_property("Mode", "u", mode)
 
     @GObject.Property
     def type(self):
@@ -556,9 +554,7 @@ class RatbagdLed(_RatbagdDBus):
 
         @param color An RGB color, as an integer triplet with values 0-255.
         """
-        ret = self._dbus_call("SetColor", "(uuu)", color)
-        self._set_dbus_property("Color", "(uuu)", color)
-        return ret
+        return self._set_dbus_property("Color", "(uuu)", color)
 
     @GObject.Property
     def effect_rate(self):
@@ -571,9 +567,7 @@ class RatbagdLed(_RatbagdDBus):
 
         @param effect_rate The new effect rate, as int
         """
-        ret = self._dbus_call("SetEffectRate", "u", effect_rate)
-        self._set_dbus_property("EffectRate", "u", effect_rate)
-        return ret
+        return self._set_dbus_property("EffectRate", "u", effect_rate)
 
     @GObject.Property
     def brightness(self):
@@ -586,6 +580,4 @@ class RatbagdLed(_RatbagdDBus):
 
         @param brightness The new brightness, as int
         """
-        ret = self._dbus_call("SetBrightness", "u", brightness)
-        self._set_dbus_property("Brightness", "u", brightness)
-        return ret
+        return self._set_dbus_property("Brightness", "u", brightness)
