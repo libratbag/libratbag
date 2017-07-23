@@ -43,29 +43,6 @@ specific theme.
 
 This list is static for the lifetime of ratbagd.
 
-### Signals
-
-#### `DeviceNew(o)`
-Notifies the client that a new device is available. The new device's
-object path is provided as argument in the signal.
-
-This signal is auxilary to the
-`org.freedesktop.DBus.Properties.PropertyChanged` signal for the `Devices`
-property.
-
-#### `DeviceRemoved(o)`
-
-Notifies the client that a device has been removed. The device's old
-object path is provided as argument in the signal.
-
-When this signal is received, all references to this device have been
-dropped by ratbagd. Further attempts at querying or modifying this
-device will fail.
-
-This signal is auxilary to the
-`org.freedesktop.DBus.Properties.PropertyChanged` signal for the `Devices`
-property.
-
 org.freedesktop.ratbag1.Device
 ==============================
 

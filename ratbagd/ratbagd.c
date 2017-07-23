@@ -301,12 +301,6 @@ static int ratbagd_reset_test_device(sd_bus_message *m,
 	int r;
 
 	if (ratbagd_test_device) {
-		(void) sd_bus_emit_signal(ctx->bus,
-					  RATBAGD_OBJ_ROOT,
-					  RATBAGD_NAME_ROOT ".Manager",
-					  "DeviceRemoved",
-					  "o",
-					  ratbagd_device_get_path(ratbagd_test_device));
 		ratbagd_device_unlink(ratbagd_test_device);
 		ratbagd_device_free(ratbagd_test_device);
 
@@ -331,12 +325,6 @@ static int ratbagd_reset_test_device(sd_bus_message *m,
 
 	ratbagd_device_link(ratbagd_test_device);
 	if (m) {
-		(void) sd_bus_emit_signal(ctx->bus,
-					  RATBAGD_OBJ_ROOT,
-					  RATBAGD_NAME_ROOT ".Manager",
-					  "DeviceNew",
-					  "o",
-					  ratbagd_device_get_path(ratbagd_test_device));
 		sd_bus_reply_method_return(m, "u", r);
 		(void) sd_bus_emit_properties_changed(ctx->bus,
 						      RATBAGD_OBJ_ROOT,
@@ -363,8 +351,6 @@ static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Themes", "as", ratbagd_get_themes, 0, 0),
-	SD_BUS_SIGNAL("DeviceNew", "o", 0),
-	SD_BUS_SIGNAL("DeviceRemoved", "o", 0),
 #ifdef RATBAG_DEVELOPER_EDITION
 	SD_BUS_METHOD("ResetTestDevice", "", "u", ratbagd_reset_test_device, SD_BUS_VTABLE_UNPRIVILEGED),
 #endif /* RATBAG_DEVELOPER_EDITION */
@@ -402,12 +388,6 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 							      RATBAGD_NAME_ROOT ".Manager",
 							      "Devices",
 							      NULL);
-			(void) sd_bus_emit_signal(ctx->bus,
-						  RATBAGD_OBJ_ROOT,
-						  RATBAGD_NAME_ROOT ".Manager",
-						  "DeviceRemoved",
-						  "o",
-						  ratbagd_device_get_path(device));
 			ratbagd_device_unlink(device);
 			ratbagd_device_free(device);
 		}
@@ -439,12 +419,6 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 						      RATBAGD_NAME_ROOT ".Manager",
 						      "Devices",
 						      NULL);
-		(void) sd_bus_emit_signal(ctx->bus,
-					  RATBAGD_OBJ_ROOT,
-					  RATBAGD_NAME_ROOT ".Manager",
-					  "DeviceNew",
-					  "o",
-					  ratbagd_device_get_path(device));
 	}
 }
 

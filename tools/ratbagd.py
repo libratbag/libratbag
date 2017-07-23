@@ -214,23 +214,8 @@ class Ratbagd(_RatbagdDBus):
     Throws RatbagdDBusUnavailable when the DBus service is not available.
     """
 
-    __gsignals__ = {
-        "device-added":
-            (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, [str]),
-        "device-removed":
-            (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, [str]),
-    }
-
     def __init__(self):
         _RatbagdDBus.__init__(self, "Manager", None)
-        self._proxy.connect("g-signal", self._on_g_signal)
-
-    def _on_g_signal(self, proxy, sender, signal, params):
-        params = params.unpack()
-        if signal == "DeviceNew":
-            self.emit("device-added", params[0])
-        elif signal == "DeviceRemoved":
-            self.emit("device-removed", params[0])
 
     @GObject.Property
     def devices(self):
