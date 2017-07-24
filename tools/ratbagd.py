@@ -426,6 +426,10 @@ class RatbagdResolution(_RatbagdDBus):
         """Set this resolution to be the default."""
         return self._dbus_call("SetDefault", "")
 
+    def set_active(self):
+        """Set this resolution to be the active one."""
+        return self._dbus_call("SetActive", "")
+
 
 class RatbagdButton(_RatbagdDBus):
     """Represents a ratbagd button."""

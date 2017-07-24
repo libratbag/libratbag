@@ -213,13 +213,14 @@ class TestRatbgagCtlResolution(TestRatbagCtl):
         self.launch_fail_test(command + " 10 test_device")
         self.launch_fail_test(command + " test_device x")
 
-    @unittest.skip("Resolution active set not implemented")
     def test_resolution_active_set(self):
         command = "Resolution active set"
-        r = self.launch_good_test(command + " 2 test_device")
-        self.assertNotEqual(r, '')
         r = self.launch_good_test("Resolution active get test_device")
         self.assertEqual(int(r), 2)
+        r = self.launch_good_test(command + " 0 test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("Resolution active get test_device")
+        self.assertEqual(int(r), 0)
         self.launch_fail_test(command)
         self.launch_fail_test(command + " X test_device")
         self.launch_fail_test(command + " 1 test_device X")

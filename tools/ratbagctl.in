@@ -429,6 +429,12 @@ def func_resolution_active_get(r, args):
     print(r.index)
 
 
+def func_resolution_active_set(r, args):
+    r, p, d = find_resolution(r, args)
+    r.set_active()
+    d.commit()
+
+
 def func_resolution_default_get(r, args):
     p, d = find_profile(r, args)
     for r in p.resolutions:
@@ -707,7 +713,7 @@ parser_def = [
                                 arg_type: int,
                             },
                         ],
-                        func: func_dummy,  # FIXME: func_active_resolution_set,
+                        func: func_resolution_active_set,
                     },
                 ],
             },

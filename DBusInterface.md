@@ -209,6 +209,9 @@ uint for the minimum possible resolution
 #### `SetDefault() → () `
 
 Set this resolution to be the default
+#### `SetActive() → () `
+
+Set this resolution to be the active one
 
 org.freedesktop.ratbag1.Button
 ==============================

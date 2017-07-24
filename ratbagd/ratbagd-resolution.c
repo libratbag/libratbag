@@ -79,6 +79,42 @@ ratbagd_resolution_set_report_rate(sd_bus *bus,
 	return r;
 }
 
+static int ratbagd_resolution_active_signal_cb(sd_bus *bus,
+						struct ratbagd_resolution *resolution)
+{
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+
+	/* FIXME: we should cache is_active and only send the signal for
+	 * those resolutions where it changed */
+
+	(void) sd_bus_emit_signal(bus,
+				  resolution->path,
+				  RATBAGD_NAME_ROOT ".Resolution",
+				  "IsActive",
+				  "b",
+				  ratbag_resolution_is_active(lib_resolution));
+
+	return 0;
+}
+
+static int ratbagd_resolution_set_active(sd_bus_message *m,
+					 void *userdata,
+					 sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	int r;
+
+	r = ratbag_resolution_set_active(resolution->lib_resolution);
+	if (r < 0)
+		return r;
+
+	ratbagd_for_each_resolution_signal(sd_bus_message_get_bus(m),
+					   resolution->profile,
+					   ratbagd_resolution_active_signal_cb);
+
+	return sd_bus_reply_method_return(m, "u", r);
+}
+
 static int ratbagd_resolution_default_signal_cb(sd_bus *bus,
 						struct ratbagd_resolution *resolution)
 {
@@ -310,6 +346,7 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Maximum", "u", ratbagd_resolution_get_maximum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Minimum", "u", ratbagd_resolution_get_minimum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_METHOD("SetActive", "", "u", ratbagd_resolution_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
