@@ -69,31 +69,41 @@ mouse:usb:v046dpc041:name:*:
  RATBAG_HIDPP10_DPI_LIST=400;800;1600;2000
 
 # G5 2007
+# http://support.logitech.com/en_us/product/g5-laser-mouse-product/specs
 mouse:usb:v046dpc049:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_HIDPP10_DPI_LIST=400;800;1600;2000
+ RATBAG_HIDPP10_PROFILE_COUNT=1
 
 # G7
+# http://support.logitech.com/en_us/product/g7-laser-cordless-mouse/specs
 mouse:usb:v046dpc51a:name:*:
  RATBAG_DRIVER=hidpp10
+ RATBAG_HIDPP10_PROFILE_COUNT=1
 
 # G9
+# http://support.logitech.com/en_us/product/g9-laser-mouse/specs
 mouse:usb:v046dpc048:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_HIDPP10_DPI_LIST=0;200;400;600;800;1000;1200;1400;1600;1800;2000;2200;2400;2600;2800;3000;3200
  RATBAG_HIDPP10_PROFILE=G9
+ RATBAG_HIDPP10_PROFILE_COUNT=5
 
 # G9x [Original]
+# http://support.logitech.com/en_us/product/g9x-laser-mouse/specs
 mouse:usb:v046dpc066:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_HIDPP10_DPI=0:5700@23.53
  RATBAG_HIDPP10_PROFILE=G500
+ RATBAG_HIDPP10_PROFILE_COUNT=5
 
 # G9x [Call of Duty MW3 Edition]
+# http://support.logitech.com/en_us/product/laser-mouse-g9x/specs
 mouse:usb:v046dpc249:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_HIDPP10_DPI=0:5700@23.53
  RATBAG_HIDPP10_PROFILE=G500
+ RATBAG_HIDPP10_PROFILE_COUNT=5
 
 # G300
 mouse:usb:v046dpc246:name:*:
@@ -106,18 +116,22 @@ mouse:usb:v046dpc082:name:*:
  RATBAG_SVG=logitech-g403.svg
 
 # G500
+# http://support.logitech.com/en_us/product/gaming-mouse-g500/specs
 mouse:usb:v046dpc068:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_SVG=logitech-g500.svg
  RATBAG_HIDPP10_DPI=0:5700@23.53
  RATBAG_HIDPP10_PROFILE=G500
+ RATBAG_HIDPP10_PROFILE_COUNT=1
 
 # G500s
+# http://support.logitech.com/en_us/product/g500s-laser-gaming-mouse/specs
 mouse:usb:v046dpc24e:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_SVG=logitech-g500s.svg
  RATBAG_HIDPP10_DPI=0:8200@50
  RATBAG_HIDPP10_PROFILE=G500
+ RATBAG_HIDPP10_PROFILE_COUNT=1
 
 # G502 Proteus Core over USB
 mouse:usb:v046dpc07d:name:*:
@@ -130,33 +144,41 @@ mouse:usb:v046dpc332:name:*:
  RATBAG_SVG=logitech-g502.svg
 
 # G700 over USB
+# http://support.logitech.com/en_us/product/wireless-gaming-mouse-g700/specs
 mouse:usb:v046dpc06b:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_SVG=logitech-g700.svg
  RATBAG_HIDPP10_DPI=0:5700@23.53
  RATBAG_HIDPP10_PROFILE=G700
+ RATBAG_HIDPP10_PROFILE_COUNT=5
 
 # G700 over wireless USB
+# http://support.logitech.com/en_us/product/wireless-gaming-mouse-g700/specs
 mouse:usb:v046dpc531:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_HIDPP10_DPI=0:5700@23.53
  RATBAG_HIDPP10_PROFILE=G700
  RATBAG_HIDPP10_INDEX=1
+ RATBAG_HIDPP10_PROFILE_COUNT=5
 
 # G700s over USB
+# http://support.logitech.com/en_us/product/g700s-rechargable-wireless-gaming-mouse/specs
 mouse:usb:v046dpc07c:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_SVG=logitech-g700.svg
  RATBAG_HIDPP10_DPI=0:8200@50
  RATBAG_HIDPP10_PROFILE=G700
+ RATBAG_HIDPP10_PROFILE_COUNT=5
 
 # G700s over wireless USB
+# http://support.logitech.com/en_us/product/g700s-rechargable-wireless-gaming-mouse/specs
 mouse:usb:v046dpc531:name:*:
  RATBAG_DRIVER=hidpp10
  RATBAG_SVG=logitech-g700.svg
  RATBAG_HIDPP10_DPI=0:8200@50
  RATBAG_HIDPP10_PROFILE=G700
  RATBAG_HIDPP10_INDEX=1
+ RATBAG_HIDPP10_PROFILE_COUNT=5
 
 # MX Master over unifying
 mouse:usb:v046dp4041:name:*:

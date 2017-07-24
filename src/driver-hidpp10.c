@@ -356,18 +356,20 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct ratbag_device *device = profile->device;
 	struct hidpp10drv_data *drv_data;
 	struct hidpp10_device *hidpp10;
-	struct hidpp10_profile p;
+	struct hidpp10_profile p = {0};
 	struct ratbag_resolution *res;
 	int rc;
 	unsigned int i;
 	uint16_t xres, yres;
-	int8_t idx;
+	uint8_t idx;
 
 	drv_data = ratbag_get_drv_data(device);
 	hidpp10 = drv_data->dev;
 	rc = hidpp10_get_profile(hidpp10, index, &p);
 	if (rc)
 		return;
+
+	profile->is_enabled = p.enabled;
 
 	rc = hidpp10_get_current_profile(hidpp10, &idx);
 	if (rc == 0 && (unsigned int)idx == profile->index)
@@ -458,24 +460,23 @@ static int
 hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device *dev)
 {
 	int rc;
-	struct hidpp10_profile profile;
-	struct hidpp10_directory directory[16];
-	int count;
-
-	count = hidpp10_get_profile_directory(dev, directory, ARRAY_LENGTH(directory));
-	if (count < 0)
-		return count;
+	struct hidpp10_profile profile = {0};
+	unsigned int i;
 
 	/* We don't know the HID++1.0 requests to query for buttons, etc.
-	 * Simply get the first profile and fill the device information in
-	 * from that.
+	 * Simply get the first enabled profile and fill in the device
+	 * information from that.
 	 */
-	rc = hidpp10_get_profile(dev, 0, &profile);
-	if (rc)
-		return rc;
+	for (i = 0; i < dev->profile_count; i++) {
+		rc = hidpp10_get_profile(dev, i, &profile);
+		if (rc)
+			return rc;
+		if (profile.enabled)
+			break;
+	}
 
 	ratbag_device_init_profiles(device,
-				    count,
+				    dev->profile_count,
 				    profile.num_dpi_modes,
 				    profile.num_buttons,
 				    profile.num_leds);
@@ -483,6 +484,7 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
@@ -516,6 +518,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 	const char *prop;
 	int device_idx = HIDPP_WIRED_DEVICE_IDX;
 	int nread = 0;
+	unsigned int profile_count = 1;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
 	if (rc)
@@ -533,6 +536,10 @@ hidpp10drv_probe(struct ratbag_device *device)
 			type = HIDPP10_PROFILE_G700;
 		else if (strcasecmp("G9", prop) == 0)
 			type = HIDPP10_PROFILE_G9;
+
+		prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_PROFILE_COUNT");
+		if (prop)
+			profile_count = atoi(prop);
 	}
 
 	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_INDEX");
@@ -554,7 +561,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 	 * If there is a special need like for G700(s), we can pass a
 	 * udev prop RATBAG_HIDPP10_INDEX.
 	 */
-	dev = hidpp10_device_new(&base, device_idx, type);
+	dev = hidpp10_device_new(&base, device_idx, type, profile_count);
 
 	if (!dev) {
 		log_error(device->ratbag,
@@ -591,6 +598,10 @@ hidpp10drv_probe(struct ratbag_device *device)
 				  "to the udev properties.\n",
 				  device->name);
 	}
+
+	rc = hidpp10_device_read_profiles(dev);
+	if (rc)
+		goto err;
 
 	drv_data->dev = dev;
 	ratbag_set_drv_data(device, drv_data);

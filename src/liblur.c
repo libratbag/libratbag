@@ -146,7 +146,7 @@ hidpp10_init(int fd)
 	hidpp_device_init(&base, fd);
 
 	return hidpp10_device_new(&base, HIDPP_RECEIVER_IDX,
-				  HIDPP10_PROFILE_UNKNOWN);
+				  HIDPP10_PROFILE_UNKNOWN, 1);
 }
 
 _EXPORT_ int
@@ -201,8 +201,7 @@ lur_receiver_enumerate(struct lur_receiver *lur,
 		uint32_t serial;
 		bool is_new_device = true;
 
-		d = hidpp10_device_new(&base, i,
-				  HIDPP10_PROFILE_UNKNOWN);
+		d = hidpp10_device_new(&base, i, HIDPP10_PROFILE_UNKNOWN, 1);
 		if (!d)
 			continue;
 
