@@ -159,18 +159,9 @@ class _RatbagdDBus(GObject.GObject):
         # args to .Set are "interface name", "function name",  value-variant
         val = GLib.Variant("{}".format(type), value)
         pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
-        try:
-            self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
-                                  pval, Gio.DBusCallFlags.NO_AUTO_START,
-                                  500, None)
-        except GLib.Error as e:
-            # FIXME: Temporary fix until the DBus API revamp is complete:
-            # Silently ignore DBus unknown property warnings so the bits we
-            # already have updated are testable. In the future when all
-            # properties are switched from SetFoo to just a writable
-            # property Foo, remove this error
-            if "org.freedesktop.DBus.Error.UnknownProperty" not in e.message:
-                raise
+        self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
+                              pval, Gio.DBusCallFlags.NO_AUTO_START,
+                              500, None)
 
         # This is our local copy, so we don't have to wait for the async
         # update
