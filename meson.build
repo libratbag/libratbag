@@ -542,6 +542,8 @@ configure_file(input : 'tools/ratbagctl.devel.in',
 configure_file(input : 'tools/ratbagctl.test.in',
 	       output : 'ratbagctl.test',
 	       configuration : config_ratbagctl_devel)
+ratbagctl_test_wrapper = find_program('tools/ratbagctl.test.wrapper')
+test('ratbagctl-test', ratbagctl_test_wrapper, args: [meson.build_root()])
 
 #### output files ####
 configure_file(output: 'config.h', install: false, configuration: config_h)
