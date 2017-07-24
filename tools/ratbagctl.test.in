@@ -508,7 +508,6 @@ def setUpModule():
 
 def tearDownModule():
     global ratbagd_process
-    ratbagd_process.terminate()
     try:
         ratbagd_process.terminate()
         ratbagd_process.wait(5)
