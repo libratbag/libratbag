@@ -165,7 +165,9 @@ def print_resolution(d, p, r, level):
 
 
 def print_profile(d, p, level):
-    print(" " * (level - 2) + "Profile {}:{}".format(p.index, " <disabled>" if not p.enabled else ""))
+    print(" " * (level - 2) + "Profile {}:{}{}".format(p.index,
+                                                       " (disabled)" if not p.enabled else "",
+                                                       " (active)" if p.is_active else ""))
     if p.enabled:
         print(" " * level + "Resolutions:")
         for r in p.resolutions:
