@@ -163,9 +163,6 @@ hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,
 	if (index != count)
 		goto err;
 
-	/* mark the state as invalid */
-	dev->profile_count = 0;
-
 	return 0;
 
 err:
@@ -202,9 +199,6 @@ hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
 		dev->dpi_table[i].raw_value = i;
 		dev->dpi_table[i].dpi = round((min + step * i) / 25.0f) * 25;
 	}
-
-	/* mark the state as invalid */
-	dev->profile_count = 0;
 
 	return 0;
 }
@@ -720,29 +714,18 @@ hidpp10_get_dpi_value(struct hidpp10_device *dev, uint8_t raw_value)
 	return 0;
 }
 
-int
-hidpp10_get_profile_directory(struct hidpp10_device *dev,
-			      struct hidpp10_directory *out,
-			      size_t nelems)
+static int
+hidpp10_read_profile_directory(struct hidpp10_device *dev)
 {
 	unsigned int i;
 	int res;
 	uint8_t bytes[HIDPP10_PAGE_SIZE] = { 0 };
 	struct hidpp10_directory *directory = (struct hidpp10_directory *)bytes;
-	size_t count;
+	unsigned int count;
 
 	if (dev->profile_type == HIDPP10_PROFILE_UNKNOWN) {
 		hidpp_log_debug(&dev->base, "no profile type given\n");
 		return 0;
-	}
-
-	if (dev->profile_directory) {
-		count = 0;
-		while (dev->profile_directory[count].page) {
-			count++;
-		}
-
-		goto out;
 	}
 
 	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
@@ -752,46 +735,29 @@ hidpp10_get_profile_directory(struct hidpp10_device *dev,
 		return res;
 
 	count = 0;
-	/* assume 16 profiles max */
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < dev->profile_count; i++) {
 		if (directory[i].page == 0xFF)
 			break;
+		dev->profiles[i].page = directory[i].page;
+		dev->profiles[i].offset = directory[i].offset;
+		dev->profiles[i].enabled = true;
 		count++;
 	}
 
-	dev->profile_directory = zalloc((count + 1) * sizeof(struct hidpp10_directory));
-	memcpy(dev->profile_directory, directory, count  * sizeof(struct hidpp10_directory));
-
-out:
-	if (dev->profile_count != count) {
-		if (dev->profiles)
-			free(dev->profiles);
-		dev->profiles = zalloc(count * sizeof(struct hidpp10_profile));
-		dev->profile_count = count;
-	}
-	count = min(count, nelems);
-	memcpy(out, dev->profile_directory, count  * sizeof(out[0]));
+	for (i = count; i < dev->profile_count; i++)
+		dev->profiles[i].enabled = false;
 
 	return count;
 }
 
 int
-hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
+hidpp10_get_current_profile(struct hidpp10_device *dev, uint8_t *current_profile)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message profile = CMD_PROFILE(idx, GET_REGISTER_REQ);
 	int res;
 	unsigned i;
-	int8_t type, page, offset;
-	struct hidpp10_directory directory[16]; /* completely random profile count */
-	int count = 0;
-
-	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
-
-	count = hidpp10_get_profile_directory(dev, directory,
-					    ARRAY_LENGTH(directory));
-	if (count < 0)
-		return count;
+	uint8_t type, page, offset;
 
 	hidpp_log_raw(&dev->base, "Fetching current profile\n");
 
@@ -806,14 +772,14 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 		*current_profile = page;
 		/* If the profile exceeds the directory length, default to
 		 * the first */
-		if (*current_profile > count)
+		if (*current_profile > dev->profile_count)
 			*current_profile = 0;
 		return 0;
 	case PROFILE_TYPE_ADDRESS:
 		offset = profile.msg.parameters[2];
-		for (i = 0; i < ARRAY_LENGTH(directory) && directory[i].page < 32; i++) {
-			if (page == directory[i].page &&
-			    offset == directory[i].offset) {
+		for (i = 0; i < dev->profile_count; i++) {
+			if (page == dev->profiles[i].page &&
+			    offset == dev->profiles[i].offset) {
 				*current_profile = i;
 				return 0;
 			}
@@ -833,21 +799,12 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile)
 
 static int
 hidpp10_set_internal_current_profile(struct hidpp10_device *dev,
-				     int16_t current_profile,
+				     uint16_t current_profile,
 				     uint8_t profile_type)
 {
 	unsigned idx = dev->index;
 	union hidpp10_message profile = CMD_PROFILE(idx, SET_REGISTER_REQ);
 	int8_t page, offset;
-	struct hidpp10_directory directory[16]; /* completely random profile count */
-	int count = 0;
-
-	hidpp_log_raw(&dev->base, "Fetching the profiles' directory\n");
-
-	count = hidpp10_get_profile_directory(dev, directory,
-					    ARRAY_LENGTH(directory));
-	if (count < 0)
-		return count;
 
 	hidpp_log_raw(&dev->base, "Setting current profile\n");
 
@@ -855,7 +812,7 @@ hidpp10_set_internal_current_profile(struct hidpp10_device *dev,
 
 	switch (profile_type) {
 	case PROFILE_TYPE_INDEX:
-		if (current_profile > count)
+		if (current_profile > dev->profile_count)
 			return -EINVAL;
 		profile.msg.parameters[1] = current_profile & 0xFF;
 		break;
@@ -878,7 +835,7 @@ hidpp10_set_internal_current_profile(struct hidpp10_device *dev,
 }
 
 int
-hidpp10_set_current_profile(struct hidpp10_device *dev, int16_t current_profile)
+hidpp10_set_current_profile(struct hidpp10_device *dev, uint16_t current_profile)
 {
 	return hidpp10_set_internal_current_profile(dev,
 						    current_profile,
@@ -1431,8 +1388,8 @@ hidpp10_profile_set_names(struct hidpp10_device *dev, struct hidpp10_profile *pr
 	}
 }
 
-int
-hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile_return)
+static int
+hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 {
 	uint8_t page_data[HIDPP10_PAGE_SIZE];
 	union _hidpp10_profile_data *data = (union _hidpp10_profile_data *)page_data;
@@ -1442,9 +1399,7 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	size_t i;
 	int res;
 	struct hidpp10_profile *profile;
-	struct hidpp10_directory directory[16]; /* completely random profile count */
 	union _hidpp10_button_binding *buttons;
-	int count = 0;
 	uint8_t page;
 
 	/* Page 0 is RAM
@@ -1458,18 +1413,17 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 
 	hidpp_log_raw(&dev->base, "Fetching profile %d\n", number);
 
-	count = hidpp10_get_profile_directory(dev, directory,
-					    ARRAY_LENGTH(directory));
-	if (count < 0)
-		return count;
-
-	if (count == 0 || dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
+	if (dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
 		return -ENOTSUP;
 
-	if (number >= count) {
-		hidpp_log_error(&dev->base, "Profile number %d not in the directory.\n", number);
+	if (number >= dev->profile_count) {
+		hidpp_log_error(&dev->base, "Profile number %d is not supported.\n", number);
 		return -EINVAL;
 	}
+
+	profile = &dev->profiles[number];
+	if (!profile->enabled)
+		return 0;
 
 	switch (dev->profile_type) {
 	case HIDPP10_PROFILE_G500:
@@ -1486,10 +1440,8 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		return -EINVAL;
 	}
 
-	profile = &dev->profiles[number];
 	if (!profile->initialized) {
-
-		page = directory[number].page;
+		page = profile->page;
 		res = hidpp10_read_page(dev, page, page_data);
 		if (res == -EILSEQ) {
 			/*
@@ -1597,8 +1549,21 @@ hidpp10_get_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 		}
 	}
 
-	*profile_return = *profile;
+	return 0;
+}
 
+int
+hidpp10_get_profile(struct hidpp10_device *dev, uint8_t number, struct hidpp10_profile *profile_return)
+{
+	if (dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
+		return -ENOTSUP;
+
+	if (number >= dev->profile_count) {
+		hidpp_log_error(&dev->base, "Profile number %d is not supported.\n", number);
+		return -EINVAL;
+	}
+
+	*profile_return = dev->profiles[number];
 	return 0;
 }
 
@@ -1648,7 +1613,7 @@ hidpp10_onboard_profiles_get_code_from_special(enum ratbag_button_action_special
 }
 
 int
-hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_profile *profile)
+hidpp10_set_profile(struct hidpp10_device *dev, uint8_t number, struct hidpp10_profile *profile)
 {
 	uint8_t page_data[HIDPP10_PAGE_SIZE];
 	union _hidpp10_profile_data *data = (union _hidpp10_profile_data *)page_data;
@@ -1656,26 +1621,23 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	struct _hidpp10_profile_700 *p700 = &data->profile_700;
 	struct _hidpp10_profile_9 *p9 = &data->profile_9;
 	int res;
-	struct hidpp10_directory directory[16]; /* completely random profile count */
 	union _hidpp10_button_binding *buttons;
-	int count = 0;
 	uint16_t crc;
 	uint8_t page;
 
 	hidpp_log_raw(&dev->base, "Fetching profile %d\n", number);
 
-	count = hidpp10_get_profile_directory(dev, directory,
-					    ARRAY_LENGTH(directory));
-	if (count < 0)
-		return count;
-
-	if (count == 0 || dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
+	if (dev->profile_type == HIDPP10_PROFILE_UNKNOWN)
 		return -ENOTSUP;
 
-	if (number >= count) {
-		hidpp_log_error(&dev->base, "Profile number %d not in the directory.\n", number);
+	if (number >= dev->profile_count) {
+		hidpp_log_error(&dev->base, "Profile number %d is incorrect.\n", number);
 		return -EINVAL;
 	}
+
+	/* we do not support not enabled profiles just now */
+	if (!profile->page)
+		return -ENOTSUP;
 
 	memset(page_data, 0xff, sizeof(page_data));
 
@@ -1702,7 +1664,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	case HIDPP10_PROFILE_G9:
 		/* we do not know the actual values of the remaining field right now
 		 * so pre-fill with the current data */
-		res = hidpp10_read_page(dev, directory[number].page, page_data);
+		res = hidpp10_read_page(dev, profile->page, page_data);
 		if (res)
 			return res;
 		break;
@@ -1779,7 +1741,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	if (res < 0)
 		return res;
 
-	page = directory[number].page;
+	page = profile->page;
 	/* according to the spec, a profile can have an offset.
 	 * For all the devices we know, they all start at 0x0000 */
 	res = hidpp10_erase_memory(dev, page);
@@ -1811,6 +1773,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, int8_t number, struct hidpp10_pr
 	if (res < 0)
 		return res;
 
+	dev->profiles[number] = *profile;
 	return res;
 }
 
@@ -2655,14 +2618,10 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 {
 	uint32_t feature_mask, notifications;
 	uint8_t reflect;
-	int i;
 	uint16_t xres, yres;
 	uint16_t refresh_rate;
 	enum hidpp10_led_status led[6];
-	int8_t current_profile;
-	struct hidpp10_profile profiles[HIDPP10_NUM_PROFILES];
-	int count;
-	struct hidpp10_directory directory[16];
+	uint8_t current_profile;
 
 	hidpp10_get_individual_features(dev, &feature_mask);
 	hidpp10_get_hidpp_notifications(dev, &notifications);
@@ -2674,18 +2633,14 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	hidpp10_get_optical_sensor_settings(dev, &reflect);
 
 	hidpp10_get_current_profile(dev, &current_profile);
-
-	count = hidpp10_get_profile_directory(dev, directory,
-					      ARRAY_LENGTH(directory));
-	for (i = 0; i < count && i < HIDPP10_NUM_PROFILES; i++)
-		hidpp10_get_profile(dev, i, &profiles[i]);
-
 	return 0;
 }
 
 struct hidpp10_device*
-hidpp10_device_new(const struct hidpp_device *base, int idx,
-		   enum hidpp10_profile_type type)
+hidpp10_device_new(const struct hidpp_device *base,
+		   int idx,
+		   enum hidpp10_profile_type type,
+		   unsigned int profile_count)
 {
 	struct hidpp10_device *dev;
 
@@ -2694,6 +2649,8 @@ hidpp10_device_new(const struct hidpp_device *base, int idx,
 	dev->index = idx;
 	dev->base = *base;
 	dev->profile_type = type;
+	dev->profile_count = profile_count;
+	dev->profiles = zalloc(dev->profile_count * sizeof(struct hidpp10_profile));
 
 	if (hidpp10_get_device_info(dev) != 0) {
 		hidpp10_device_destroy(dev);
@@ -2701,6 +2658,19 @@ hidpp10_device_new(const struct hidpp_device *base, int idx,
 	}
 
 	return dev;
+}
+
+int
+hidpp10_device_read_profiles(struct hidpp10_device *dev)
+{
+	unsigned int i;
+
+	hidpp10_read_profile_directory(dev);
+
+	for (i = 0; i < dev->profile_count && i < HIDPP10_NUM_PROFILES; i++)
+		hidpp10_read_profile(dev, i);
+
+	return 0;
 }
 
 void
@@ -2711,19 +2681,15 @@ hidpp10_device_destroy(struct hidpp10_device *dev)
 
 	if (dev->dpi_table)
 		free(dev->dpi_table);
-	if (dev->profile_directory)
-		free(dev->profile_directory);
-	if (dev->profiles) {
-		for (i = 0; i < dev->profile_count; i++) {
-			ARRAY_FOR_EACH(dev->profiles[i].macros, macro) {
-				if (*macro) {
-					free(*macro);
-					*macro = NULL;
-				}
+	for (i = 0; i < dev->profile_count; i++) {
+		ARRAY_FOR_EACH(dev->profiles[i].macros, macro) {
+			if (*macro) {
+				free(*macro);
+				*macro = NULL;
 			}
 		}
-
-		free(dev->profiles);
 	}
+
+	free(dev->profiles);
 	free(dev);
 }

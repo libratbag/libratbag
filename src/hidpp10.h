@@ -59,15 +59,19 @@ struct hidpp10_device  {
 	unsigned index;
 	uint8_t dpi_count;
 	struct hidpp10_dpi_mapping *dpi_table;
-	struct hidpp10_directory  *profile_directory; /* must be null terminated */
 	enum hidpp10_profile_type profile_type;
 	struct hidpp10_profile *profiles;
 	unsigned int profile_count;
 };
 
 struct hidpp10_device*
-hidpp10_device_new(const struct hidpp_device *base, int idx,
-		   enum hidpp10_profile_type type);
+hidpp10_device_new(const struct hidpp_device *base,
+		   int idx,
+		   enum hidpp10_profile_type type,
+		   unsigned int profile_count);
+
+int
+hidpp10_device_read_profiles(struct hidpp10_device *dev);
 
 void
 hidpp10_device_destroy(struct hidpp10_device *dev);
@@ -463,6 +467,8 @@ union hidpp10_macro_data {
 _Static_assert(sizeof(union hidpp10_macro_data) == 5, "Invalid size");
 
 struct hidpp10_profile {
+	uint8_t page;
+	uint8_t offset;
 	struct {
 		uint16_t xres;
 		uint16_t yres;
@@ -512,6 +518,7 @@ struct hidpp10_profile {
 	size_t num_leds;
 
 	unsigned int initialized;
+	bool enabled;
 };
 
 struct hidpp10_directory {
@@ -521,22 +528,17 @@ struct hidpp10_directory {
 } __attribute__((packed));
 
 int
-hidpp10_get_profile_directory(struct hidpp10_device *dev,
-			      struct hidpp10_directory *out,
-			      size_t nelems);
+hidpp10_get_current_profile(struct hidpp10_device *dev, uint8_t *current_profile);
 
 int
-hidpp10_get_current_profile(struct hidpp10_device *dev, int8_t *current_profile);
+hidpp10_set_current_profile(struct hidpp10_device *dev, uint16_t current_profile);
 
 int
-hidpp10_set_current_profile(struct hidpp10_device *dev, int16_t current_profile);
-
-int
-hidpp10_get_profile(struct hidpp10_device *dev, int8_t number,
+hidpp10_get_profile(struct hidpp10_device *dev, uint8_t number,
 		    struct hidpp10_profile *profile);
 
 int
-hidpp10_set_profile(struct hidpp10_device *dev, int8_t number,
+hidpp10_set_profile(struct hidpp10_device *dev, uint8_t number,
 		    struct hidpp10_profile *profile);
 
 enum ratbag_button_action_special
