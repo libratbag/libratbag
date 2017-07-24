@@ -350,7 +350,7 @@ if enable_tests
 			       '--error-exitcode=3',
 			       '--suppressions=' + valgrind_suppressions_file ],
 		       env : env_test,
-		       timeout_multiplier: 100)
+		       timeout_multiplier: 5)
 
 	executable('test-build-cxx',
 		   ['test/build-cxx.cc'],
