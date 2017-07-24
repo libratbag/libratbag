@@ -494,7 +494,7 @@ def setUpModule():
     # first copy the policy for the ratbagd daemon to be allowed to run
     shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME), DBUS_CONF_PATH)
 
-    # FIXME: kill any running ratabgd.devel
+    # FIXME: kill any running ratbagd.devel
 
     ratbagd_process = subprocess.Popen([os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")], shell=False)
 
