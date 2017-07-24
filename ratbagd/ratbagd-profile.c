@@ -285,7 +285,7 @@ static int ratbagd_profile_find_led(sd_bus *bus,
 	int r;
 
 	r = sd_bus_path_decode_many(path,
-				    RATBAGD_OBJ_ROOT "/led/%/p%/b%",
+				    RATBAGD_OBJ_ROOT "/led/%/p%/l%",
 				    NULL,
 				    NULL,
 				    &name);
