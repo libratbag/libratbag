@@ -444,9 +444,7 @@ class RatbagdButton(_RatbagdDBus):
 
         @param button The button to map to, as int
         """
-        ret = self._dbus_call("SetButtonMapping", "u", button)
-        self._set_dbus_property("ButtonMapping", "u", button)
-        return ret
+        return self._set_dbus_property("ButtonMapping", "u", button)
 
     @GObject.Property
     def special(self):

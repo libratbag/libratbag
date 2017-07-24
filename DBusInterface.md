@@ -214,9 +214,11 @@ Index of the button
 
 String describing the button type
 #### `ButtonMapping`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
-uint of the current button mapping (if mapping to button)
+The uint of the current button mapping (if mapping to button). If written to,
+this sets the action type to "button" and the mapping to the given button.
+
 #### `SpecialMapping`
 - type: `s`, read-only, mutable
 
@@ -238,8 +240,6 @@ value
 Array of strings, possible values for ActionType
 
 ### Methods:
-#### `SetButtonMapping(u) → ()`
-Set the button mapping to the given button
 #### `SetSpecialMapping(s) → ()`
 Set the button mapping to the given special entry
 #### `SetKeyMapping(au) → ()`
