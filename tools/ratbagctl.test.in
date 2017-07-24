@@ -503,6 +503,13 @@ def setUpModule():
     ratbagd = ratbagctl.open_ratbagd()
     assert ratbagd is not None
 
+    # if some old version of ratbagd is still running, ratbagd_process may
+    # have never started but our DBus bindings may succeed. Check for the
+    # return code here, this also gives ratbagd enough time to start and
+    # die. If we check immediately we may not have terminated yet.
+    ratbagd_process.poll()
+    assert ratbagd_process.returncode is None
+
     parser = ratbagctl.get_parser()
 
 
