@@ -227,10 +227,12 @@ this sets the action type to "special" and the mapping to the given special
 entry.
 
 #### `KeyMapping`
-- type: `au`, read-only, mutable
+- type: `au`, read-write, mutable
 
 Array of uints, first entry is the keycode, other entries, if any, are
-modifiers (if mapped to key)
+modifiers (if mapped to key). If written to, this sets the action type to "key"
+and the key mapping to the given keys.
+
 #### `ActionType`
 - type: `s`, read-only, mutable
 
@@ -243,9 +245,6 @@ value
 Array of strings, possible values for ActionType
 
 ### Methods:
-#### `SetKeyMapping(au) → ()`
-Set the key mapping, first entry is the keycode, other entries, if any, are
-modifier keycodes
 #### `Disable() → ()`
 Disable this button
 

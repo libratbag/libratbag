@@ -472,9 +472,7 @@ class RatbagdButton(_RatbagdDBus):
         @param keys A list of integers, the first being the keycode and the rest
                     modifiers.
         """
-        ret = self._dbus_call("SetKeyMapping", "au", keys)
-        self._set_dbus_property("KeyMapping", "au", keys)
-        return ret
+        return self._set_dbus_property("KeyMapping", "au", keys)
 
     @GObject.Property
     def action_type(self):
