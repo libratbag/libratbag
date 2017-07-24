@@ -688,7 +688,7 @@ exit:
 
 	if (r < 0) {
 		errno = -r;
-		log_error("Failed: %m\n");
+		log_error("Failed to start ratbagd: %m\n");
 		return EXIT_FAILURE;
 	}
 
