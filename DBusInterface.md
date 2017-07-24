@@ -177,7 +177,7 @@ one resolution must be default at all times. This property is read-only, use the
 `SetDefault()` method to set a resolution as the default resolution.
 
 #### `Resolution`
-- type: `uu`, read-only, mutable
+- type: `uu`, read-write, mutable
 
 uint for the x and y resolution assigned to this entry, respectively
 
