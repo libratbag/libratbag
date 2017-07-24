@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/resource.h>
 
 #include "libratbag.h"
 #include "libratbag-test.h"
@@ -932,6 +933,9 @@ int main(void)
 	int nfailed;
 	Suite *s;
 	SRunner *sr;
+	const struct rlimit corelimit = { 0, 0 };
+
+	setrlimit(RLIMIT_CORE, &corelimit);
 
 	s = test_context_suite();
         sr = srunner_create(s);

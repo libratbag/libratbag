@@ -29,6 +29,7 @@ import argparse
 import imp
 import io
 import os
+import resource
 import shutil
 import subprocess
 import sys
@@ -528,6 +529,8 @@ def parse(input_string):
 def main(argv):
     if not os.geteuid() == 0:
         sys.exit('Script must be run as root')
+
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
     args = parse(argv)
 
