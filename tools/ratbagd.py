@@ -457,9 +457,7 @@ class RatbagdButton(_RatbagdDBus):
 
         @param special The special entry, as str
         """
-        ret = self._dbus_call("SetSpecialMapping", "s", special)
-        self._set_dbus_property("SpecialMapping", "s", special)
-        return ret
+        return self._set_dbus_property("SpecialMapping", "s", special)
 
     @GObject.Property
     def key(self):

@@ -265,7 +265,11 @@ static int ratbagd_button_get_special(sd_bus *bus,
 	return sd_bus_message_append(reply, "s", type);
 }
 
-static int ratbagd_button_set_special(sd_bus_message *m,
+static int ratbagd_button_set_special(sd_bus *bus,
+				      const char *path,
+				      const char *interface,
+				      const char *property,
+				      sd_bus_message *m,
 				      void *userdata,
 				      sd_bus_error *error)
 {
@@ -326,7 +330,7 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_button_get_key(sd_bus *bus,
@@ -508,12 +512,14 @@ const sd_bus_vtable ratbagd_button_vtable[] = {
 				 ratbagd_button_get_button,
 				 ratbagd_button_set_button, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("SpecialMapping", "s", ratbagd_button_get_special, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("SpecialMapping", "s",
+				 ratbagd_button_get_special,
+				 ratbagd_button_set_special, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("KeyMapping", "au", ratbagd_button_get_key, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionType", "s", ratbagd_button_get_action_type, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionTypes", "as", ratbagd_button_get_action_types, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 
-	SD_BUS_METHOD("SetSpecialMapping", "s", "u", ratbagd_button_set_special, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetKeyMapping", "au", "u", ratbagd_button_set_key, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Disable", "", "u", ratbagd_button_disable, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,

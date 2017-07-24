@@ -220,9 +220,12 @@ The uint of the current button mapping (if mapping to button). If written to,
 this sets the action type to "button" and the mapping to the given button.
 
 #### `SpecialMapping`
-- type: `s`, read-only, mutable
+- type: `s`, read-write, mutable
 
-String of the current special mapping (if mapped to special)
+String of the current special mapping (if mapped to special). If written to,
+this sets the action type to "special" and the mapping to the given special
+entry.
+
 #### `KeyMapping`
 - type: `au`, read-only, mutable
 
@@ -240,8 +243,6 @@ value
 Array of strings, possible values for ActionType
 
 ### Methods:
-#### `SetSpecialMapping(s) → ()`
-Set the button mapping to the given special entry
 #### `SetKeyMapping(au) → ()`
 Set the key mapping, first entry is the keycode, other entries, if any, are
 modifier keycodes
