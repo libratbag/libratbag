@@ -111,7 +111,11 @@ class _RatbagdDBus(GObject.GObject):
         GObject.GObject.__init__(self)
 
         if _RatbagdDBus._dbus is None:
-            _RatbagdDBus._dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+            try:
+                _RatbagdDBus._dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+            except GLib.Error:
+                raise RatbagdDBusUnavailable()
+
             if _RatbagdDBus._dbus is None:
                 raise RatbagdDBusUnavailable()
 
