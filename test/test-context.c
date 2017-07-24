@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/resource.h>
 
 #include "libratbag.h"
 
@@ -162,6 +163,9 @@ int main(void)
 	Suite *s;
 	SRunner *sr;
 	bool using_valgrind;
+	const struct rlimit corelimit = { 0, 0 };
+
+	setrlimit(RLIMIT_CORE, &corelimit);
 
 	/* when running under valgrind we're using nofork mode, so a
 	 * signal raised by a test will fail in valgrind */

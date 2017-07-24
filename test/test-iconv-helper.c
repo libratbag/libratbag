@@ -25,6 +25,7 @@
 #include <check.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/resource.h>
 
 #include "libratbag-util.h"
 
@@ -166,6 +167,9 @@ int main(void)
 	int nfailed;
 	Suite *s;
 	SRunner *sr;
+	const struct rlimit corelimit = { 0, 0 };
+
+	setrlimit(RLIMIT_CORE, &corelimit);
 
 	s = test_context_suite();
 	sr = srunner_create(s);
