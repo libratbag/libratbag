@@ -116,9 +116,6 @@ class _RatbagdDBus(GObject.GObject):
             except GLib.Error:
                 raise RatbagdDBusUnavailable()
 
-            if _RatbagdDBus._dbus is None:
-                raise RatbagdDBusUnavailable()
-
         ratbag1 = "org.freedesktop.ratbag1"
         if os.environ.get('RATBAGCTL_DEVEL'):
             ratbag1 = os.environ['RATBAGCTL_DEVEL']
