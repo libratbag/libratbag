@@ -200,11 +200,14 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 	.profiles = {
 		{
 			.buttons = {
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 0 },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .button_type = RATBAG_BUTTON_TYPE_MIDDLE,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = KEY_3 },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				{ .button_type = RATBAG_BUTTON_TYPE_RIGHT,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
 				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
 				  .macro = {
