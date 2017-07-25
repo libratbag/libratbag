@@ -100,6 +100,7 @@ test_read_button(struct ratbag_button *button)
 	struct ratbag_button_macro *m;
 	const char data[] = "TEST";
 	const char *c;
+	int idx;
 
 	switch (p->buttons[button->index].type) {
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
@@ -114,15 +115,18 @@ test_read_button(struct ratbag_button *button)
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
 		m = ratbag_button_macro_new("test macro");
 
+		idx = 0;
 		ARRAY_FOR_EACH(data, c) {
 			char str[6];
+			if (*c == '\0')
+				break;
 			snprintf_safe(str, 6, "KEY_%c", *c);
 			ratbag_button_macro_set_event(m,
-						      0,
+						      idx++,
 						      RATBAG_MACRO_EVENT_KEY_PRESSED,
 						      libevdev_event_code_from_name(EV_KEY, str));
 			ratbag_button_macro_set_event(m,
-						      0,
+						      idx++,
 						      RATBAG_MACRO_EVENT_KEY_RELEASED,
 						      libevdev_event_code_from_name(EV_KEY, str));
 		}
