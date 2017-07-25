@@ -135,8 +135,36 @@ def print_led(d, p, l, level):
 
 
 def print_button(d, p, b, level):
+    types =  {
+        RatbagdButton.TYPE_UNKNOWN : "unknown",
+        RatbagdButton.TYPE_LEFT : "left",
+        RatbagdButton.TYPE_MIDDLE : "middle",
+        RatbagdButton.TYPE_RIGHT : "right",
+        RatbagdButton.TYPE_THUMB : "thumb",
+        RatbagdButton.TYPE_THUMB2 : "thumb2",
+        RatbagdButton.TYPE_THUMB3 : "thumb3",
+        RatbagdButton.TYPE_THUMB4 : "thumb4",
+        RatbagdButton.TYPE_WHEEL_LEFT : "wheel-left",
+        RatbagdButton.TYPE_WHEEL_RIGHT : "wheel-right",
+        RatbagdButton.TYPE_WHEEL_CLICK : "wheel-click",
+        RatbagdButton.TYPE_WHEEL_UP : "wheel-up",
+        RatbagdButton.TYPE_WHEEL_DOWN : "wheel-down",
+        RatbagdButton.TYPE_WHEEL_RATCHET_MODE_SHIFT : "wheel-ratchet-mode-shift",
+        RatbagdButton.TYPE_EXTRA : "extra",
+        RatbagdButton.TYPE_SIDE : "side",
+        RatbagdButton.TYPE_PINKIE : "pinkie",
+        RatbagdButton.TYPE_PINKIE2 : "pinkie2",
+        RatbagdButton.TYPE_RESOLUTION_CYCLE_UP : "resolution-cycle-up",
+        RatbagdButton.TYPE_RESOLUTION_UP : "resolution-up",
+        RatbagdButton.TYPE_RESOLUTION_DOWN : "resolution-down",
+        RatbagdButton.TYPE_PROFILE_CYCLE_UP : "profile-cycle-up",
+        RatbagdButton.TYPE_PROFILE_UP : "profile-up",
+        RatbagdButton.TYPE_PROFILE_DOWN : "profile-down",
+    }
+
+    t = types[b.type]
     header = " " * level + "Button: {} type {} is mapped to ".format(b.index,
-                                                                     b.type)
+                                                                     t)
 
     if b.action_type == RatbagdButton.ACTION_TYPE_BUTTON:
         print("{}'button {}'".format(header, b.mapping))

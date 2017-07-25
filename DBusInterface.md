@@ -219,9 +219,11 @@ org.freedesktop.ratbag1.Button
 
 Index of the button
 #### `Type`
-- type: `s`, read-only, constant
+- type: `u`, read-only, constant
 
-String describing the button type
+Enum describing the button physical type. This type is unrelated to the
+logical button mapping and serves to easily identify the button on the
+device.
 #### `ButtonMapping`
 - type: `u`, read-only, mutable
 
