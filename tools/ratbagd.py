@@ -432,6 +432,12 @@ class RatbagdResolution(_RatbagdDBus):
 class RatbagdButton(_RatbagdDBus):
     """Represents a ratbagd button."""
 
+    ACTION_TYPE_NONE = 0
+    ACTION_TYPE_BUTTON = 1
+    ACTION_TYPE_SPECIAL = 2
+    ACTION_TYPE_KEY = 3
+    ACTION_TYPE_MACRO = 4
+
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Button", object_path)
 
@@ -494,8 +500,9 @@ class RatbagdButton(_RatbagdDBus):
 
     @GObject.Property
     def action_type(self):
-        """A string describing the action type of the button. One of "none",
-        "button", "key", "special", "macro" or "unknown". This decides which
+        """An enum describing the action type of the button. One of
+        ACTION_TYPE_NONE, ACTION_TYPE_BUTTON, ACTION_TYPE_SPECIAL,
+        ACTION_TYPE_KEY, ACTION_TYPE_MACRO. This decides which
         *Mapping property has a value.
         """
         return self._get_dbus_property("ActionType")
