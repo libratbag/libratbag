@@ -23,6 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import evdev
 import sys
 import argparse
 
@@ -134,17 +135,68 @@ def print_led(d, p, l, level):
 
 
 def print_button(d, p, b, level):
-    header = " " * level + "Button: {} type {} is mapped to ".format(b.index,
-                                                                     b.type)
+    types =  {
+        RatbagdButton.TYPE_UNKNOWN : "unknown",
+        RatbagdButton.TYPE_LEFT : "left",
+        RatbagdButton.TYPE_MIDDLE : "middle",
+        RatbagdButton.TYPE_RIGHT : "right",
+        RatbagdButton.TYPE_THUMB : "thumb",
+        RatbagdButton.TYPE_THUMB2 : "thumb2",
+        RatbagdButton.TYPE_THUMB3 : "thumb3",
+        RatbagdButton.TYPE_THUMB4 : "thumb4",
+        RatbagdButton.TYPE_WHEEL_LEFT : "wheel-left",
+        RatbagdButton.TYPE_WHEEL_RIGHT : "wheel-right",
+        RatbagdButton.TYPE_WHEEL_CLICK : "wheel-click",
+        RatbagdButton.TYPE_WHEEL_UP : "wheel-up",
+        RatbagdButton.TYPE_WHEEL_DOWN : "wheel-down",
+        RatbagdButton.TYPE_WHEEL_RATCHET_MODE_SHIFT : "wheel-ratchet-mode-shift",
+        RatbagdButton.TYPE_EXTRA : "extra",
+        RatbagdButton.TYPE_SIDE : "side",
+        RatbagdButton.TYPE_PINKIE : "pinkie",
+        RatbagdButton.TYPE_PINKIE2 : "pinkie2",
+        RatbagdButton.TYPE_RESOLUTION_CYCLE_UP : "resolution-cycle-up",
+        RatbagdButton.TYPE_RESOLUTION_UP : "resolution-up",
+        RatbagdButton.TYPE_RESOLUTION_DOWN : "resolution-down",
+        RatbagdButton.TYPE_PROFILE_CYCLE_UP : "profile-cycle-up",
+        RatbagdButton.TYPE_PROFILE_UP : "profile-up",
+        RatbagdButton.TYPE_PROFILE_DOWN : "profile-down",
+    }
 
-    if b.action_type == "button":
+    t = types[b.type]
+    header = " " * level + "Button: {} type {} is mapped to ".format(b.index,
+                                                                     t)
+
+    if b.action_type == RatbagdButton.ACTION_TYPE_BUTTON:
         print("{}'button {}'".format(header, b.mapping))
-    elif b.action_type == "key":
-        print("{}'{}'".format(header, b.key))
-    elif b.action_type == "special":
+    elif b.action_type == RatbagdButton.ACTION_TYPE_KEY:
+        bmap = ""
+        for m in b.key:
+            code = evdev.ecodes.KEY.get(m, m)
+            bmap = bmap +  "{}".format(code)
+
+        print("{}'{}'".format(header, bmap))
+    elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
         print("{}'{}'".format(header, b.special))
+    elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
+        bmap = ""
+        for t, v in b.macro:
+            bt = 'unknown'
+            if t == RatbagdButton.MACRO_KEY_PRESS:
+                bt = '+'
+                bv =  evdev.ecodes.KEY.get(v, v)
+            elif t == RatbagdButton.MACRO_KEY_RELEASE:
+                bt = '-'
+                bv =  evdev.ecodes.KEY.get(v, v)
+            elif t == RatbagdButton.MACRO_WAIT:
+                bt = 't'
+                bv = v
+            bmap = bmap + "{}{} ".format(bt, bv)
+
+        print("{}macro '{}'".format(header, bmap[:-1]))
+    elif b.action_type == RatbagdButton.ACTION_TYPE_NONE:
+        print("{}none".format(header))
     else:
-        print("{}UNKOWN".format(header))
+        print("{}UNKNOWN".format(header))
 
 
 def print_resolution(d, p, r, level):
@@ -291,6 +343,44 @@ def func_button_get(r, args):
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
     b.mapping = args.target_button
+    d.commit()
+
+def func_button_action_set_macro(r, args):
+    b, p, d = find_button(r, args)
+    macro_keys = args.target_macro
+    macro = []
+    for s in macro_keys:
+        is_press = True
+        is_release = True
+        is_timeout = False
+
+        s = s.upper()
+        if s[0] == 'T':
+            is_timeout = True
+            is_press = False
+            is_release = False
+        elif s[0] == '+':
+            is_release = False
+            s = s[1:]
+        elif s[0] == '-':
+            is_press = False
+            s = s[1:]
+
+        if is_timeout:
+            t = int(s[1:])
+            macro.append((RatbagdButton.MACRO_WAIT, t))
+        else:
+            if not s.startswith("KEY_") and not s.startswith("BTN_"):
+                msg = "Don't know how to convert {}".format(s)
+                raise argparse.ArgumentTypeError(msg)
+
+            code = evdev.ecodes.ecodes[s]
+            if is_press:
+                macro.append((RatbagdButton.MACRO_KEY_PRESS, code))
+            if is_release:
+                macro.append((RatbagdButton.MACRO_KEY_RELEASE, code))
+
+    b.macro = macro
     d.commit()
 
 
@@ -812,7 +902,7 @@ parser_def = [
                                             nargs: argparse.REMAINDER,
                                         },
                                     ],
-                                    func: func_dummy,  # FIXME: func_button_action_set_macro,
+                                    func: func_button_action_set_macro,
                                 },
                             ]
                         },

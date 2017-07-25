@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <linux/input-event-codes.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <libratbag.h>
@@ -198,13 +200,25 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 	.profiles = {
 		{
 			.buttons = {
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 0 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
-				  .key = 4 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				{ .button_type = RATBAG_BUTTON_TYPE_MIDDLE,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				  .key = KEY_3 },
+				{ .button_type = RATBAG_BUTTON_TYPE_RIGHT,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO },
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
+				  .macro = {
+					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
+					    .value = KEY_B },
+					  { .type = RATBAG_MACRO_EVENT_KEY_RELEASED,
+					    .value = KEY_B },
+					  { .type = RATBAG_MACRO_EVENT_WAIT,
+					    .value = 300 },
+				  },
+				}
 			},
 			.resolutions = {
 				{ .xres = 100, .yres = 200, .hz = 1000 },
@@ -236,13 +250,13 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 		},
 		{
 			.buttons = {
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 4 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 5 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 6 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 7 },
 			},
 			.resolutions = {
@@ -255,13 +269,21 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 		},
 		{
 			.buttons = {
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
-				  .button = 1 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
+				  .macro = {
+					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
+					    .value = KEY_A },
+					  { .type = RATBAG_MACRO_EVENT_KEY_RELEASED,
+					    .value = KEY_A },
+					  { .type = RATBAG_MACRO_EVENT_WAIT,
+					    .value = 150 },
+				  }
+				},
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 2 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 3 },
 			},
 			.resolutions = {

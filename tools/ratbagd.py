@@ -147,7 +147,7 @@ class _RatbagdDBus(GObject.GObject):
             return p.unpack()
         return p
 
-    def _set_dbus_property(self, property, type, value):
+    def _set_dbus_property(self, property, type, value, readwrite=True):
         # Sets a cached property on the bus.
 
         # Take our real value and wrap it into a variant. To call
@@ -155,10 +155,11 @@ class _RatbagdDBus(GObject.GObject):
         # into a (ssv), where v is our value's variant.
         # args to .Set are "interface name", "function name",  value-variant
         val = GLib.Variant("{}".format(type), value)
-        pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
-        self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
-                              pval, Gio.DBusCallFlags.NO_AUTO_START,
-                              500, None)
+        if readwrite:
+            pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
+            self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
+                                  pval, Gio.DBusCallFlags.NO_AUTO_START,
+                                  500, None)
 
         # This is our local copy, so we don't have to wait for the async
         # update
@@ -429,6 +430,42 @@ class RatbagdResolution(_RatbagdDBus):
 class RatbagdButton(_RatbagdDBus):
     """Represents a ratbagd button."""
 
+    ACTION_TYPE_NONE = 0
+    ACTION_TYPE_BUTTON = 1
+    ACTION_TYPE_SPECIAL = 2
+    ACTION_TYPE_KEY = 3
+    ACTION_TYPE_MACRO = 4
+
+    MACRO_KEY_PRESS = 1
+    MACRO_KEY_RELEASE = 2
+    MACRO_WAIT = 3
+
+    TYPE_UNKNOWN = 0
+    TYPE_LEFT = 1
+    TYPE_MIDDLE = 2
+    TYPE_RIGHT= 3
+    TYPE_THUMB = 4
+    TYPE_THUMB2 = 5
+    TYPE_THUMB3 = 6
+    TYPE_THUMB4 = 7
+    TYPE_WHEEL_LEFT = 8
+    TYPE_WHEEL_RIGHT = 9
+    TYPE_WHEEL_CLICK = 10
+    TYPE_WHEEL_UP = 11
+    TYPE_WHEEL_DOWN = 12
+    TYPE_WHEEL_RATCHET_MODE_SHIFT = 13
+    TYPE_EXTRA = 14
+    TYPE_SIDE = 15
+    TYPE_PINKIE = 16
+    TYPE_PINKIE2 = 17
+    TYPE_RESOLUTION_CYCLE_UP = 18
+    TYPE_RESOLUTION_UP = 19
+    TYPE_RESOLUTION_DOWN = 20
+    TYPE_PROFILE_CYCLE_UP = 21
+    TYPE_PROFILE_UP = 22
+    TYPE_PROFILE_DOWN = 23
+
+
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Button", object_path)
 
@@ -439,7 +476,7 @@ class RatbagdButton(_RatbagdDBus):
 
     @GObject.Property
     def type(self):
-        """A string describing this button's type."""
+        """An enum describing this button's type."""
         return self._get_dbus_property("Type")
 
     @GObject.Property
@@ -455,6 +492,25 @@ class RatbagdButton(_RatbagdDBus):
         """
         ret = self._dbus_call("SetButtonMapping", "u", button)
         self._set_dbus_property("ButtonMapping", "u", button)
+        return ret
+
+    @GObject.Property
+    def macro(self):
+        """A list of (type, keycode) tuples that form the currently set macro,
+        where type is either RatbagdButton.KEY_PRESS or RatbagdButton.KEY_RELEASE
+        and the keycode is as specified in linux/input.h."""
+        return self._get_dbus_property("Macro")
+
+    @macro.setter
+    def macro(self, macro):
+        """Set the macro to the given macro. Note that the type must be one of
+        RatbagdButton.KEY_PRESS or RatbagdButton.KEY_RELEASE and the keycodes
+        must be as specified in linux/input.h.
+
+        @param macro A list of (type, keycode) tuples to form the new macro.
+        """
+        ret = self._dbus_call("SetMacro", "a(uu)", macro)
+        self._set_dbus_property("Macro", "a(uu)", macro, readwrite=False)
         return ret
 
     @GObject.Property
@@ -491,8 +547,9 @@ class RatbagdButton(_RatbagdDBus):
 
     @GObject.Property
     def action_type(self):
-        """A string describing the action type of the button. One of "none",
-        "button", "key", "special", "macro" or "unknown". This decides which
+        """An enum describing the action type of the button. One of
+        ACTION_TYPE_NONE, ACTION_TYPE_BUTTON, ACTION_TYPE_SPECIAL,
+        ACTION_TYPE_KEY, ACTION_TYPE_MACRO. This decides which
         *Mapping property has a value.
         """
         return self._get_dbus_property("ActionType")

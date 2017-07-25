@@ -31,12 +31,19 @@
 #define RATBAG_TEST_MAX_RESOLUTIONS 8
 #define RATBAG_TEST_MAX_LEDS 8
 
+struct ratbag_test_macro_event {
+	enum ratbag_macro_event_type type;
+	unsigned int value;
+};
+
 struct ratbag_test_button {
-	enum ratbag_button_action_type type;
+	enum ratbag_button_type button_type;
+	enum ratbag_button_action_type action_type;
 	union {
 		int button;
 		int key;
 		enum ratbag_button_action_special special;
+		struct ratbag_test_macro_event macro[24];
 	};
 };
 

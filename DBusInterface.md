@@ -219,9 +219,11 @@ org.freedesktop.ratbag1.Button
 
 Index of the button
 #### `Type`
-- type: `s`, read-only, constant
+- type: `u`, read-only, constant
 
-String describing the button type
+Enum describing the button physical type. This type is unrelated to the
+logical button mapping and serves to easily identify the button on the
+device.
 #### `ButtonMapping`
 - type: `u`, read-only, mutable
 
@@ -236,15 +238,14 @@ String of the current special mapping (if mapped to special)
 Array of uints, first entry is the keycode, other entries, if any, are
 modifiers (if mapped to key)
 #### `ActionType`
-- type: `s`, read-only, mutable
+- type: `u`, read-only, mutable
 
-String describing the action type of the button ("none", "button", "key",
-"special", "macro", "unknown"). This decides which Mapping  property has a
-value
-
+An enum describing the action type of the button, see
+ratbag\_button\_get\_action\_type for the list of enums.
+This decides which Mapping  property has a value.
 #### `ActionTypes`
-- type: `as`, read-only, constant
-Array of strings, possible values for ActionType
+- type: `au`, read-only, constant
+Array of enum ratbag\_button\_action\_type, possible values for ActionType
 
 ### Methods:
 #### `SetButtonMapping(u) → ()`

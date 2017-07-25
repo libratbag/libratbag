@@ -97,11 +97,15 @@ test_read_button(struct ratbag_button *button)
 	struct ratbag_device *device = button->profile->device;
 	struct ratbag_test_device *d = ratbag_get_drv_data(device);
 	struct ratbag_test_profile *p = &d->profiles[button->profile->index];
+	struct ratbag_test_button *b = &p->buttons[button->index];
 	struct ratbag_button_macro *m;
-	const char data[] = "TEST";
-	const char *c;
+	struct ratbag_test_macro_event *e;
+	int idx;
 
-	switch (p->buttons[button->index].type) {
+	/* Only take the button types from the first profile */
+	button->type = d->profiles[0].buttons[button->index].button_type;
+
+	switch (b->action_type) {
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 		button->action.action.button = p->buttons[button->index].button;
@@ -114,17 +118,11 @@ test_read_button(struct ratbag_button *button)
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
 		m = ratbag_button_macro_new("test macro");
 
-		ARRAY_FOR_EACH(data, c) {
-			char str[6];
-			snprintf_safe(str, 6, "KEY_%c", *c);
-			ratbag_button_macro_set_event(m,
-						      0,
-						      RATBAG_MACRO_EVENT_KEY_PRESSED,
-						      libevdev_event_code_from_name(EV_KEY, str));
-			ratbag_button_macro_set_event(m,
-						      0,
-						      RATBAG_MACRO_EVENT_KEY_RELEASED,
-						      libevdev_event_code_from_name(EV_KEY, str));
+		idx = 0;
+		ARRAY_FOR_EACH(b->macro, e) {
+			if (e->type == RATBAG_MACRO_EVENT_NONE)
+				break;
+			ratbag_button_macro_set_event(m, idx++, e->type, e->value);
 		}
 		ratbag_button_copy_macro(button, m);
 		ratbag_button_macro_unref(m);
