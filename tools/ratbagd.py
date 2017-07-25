@@ -456,9 +456,7 @@ class RatbagdButton(_RatbagdDBus):
 
         @param button The button to map to, as int
         """
-        ret = self._dbus_call("SetButtonMapping", "u", button)
-        self._set_dbus_property("ButtonMapping", "u", button)
-        return ret
+        return self._set_dbus_property("ButtonMapping", "u", button)
 
     @GObject.Property
     def special(self):
@@ -471,9 +469,7 @@ class RatbagdButton(_RatbagdDBus):
 
         @param special The special entry, as str
         """
-        ret = self._dbus_call("SetSpecialMapping", "s", special)
-        self._set_dbus_property("SpecialMapping", "s", special)
-        return ret
+        return self._set_dbus_property("SpecialMapping", "s", special)
 
     @GObject.Property
     def key(self):
@@ -488,9 +484,7 @@ class RatbagdButton(_RatbagdDBus):
         @param keys A list of integers, the first being the keycode and the rest
                     modifiers.
         """
-        ret = self._dbus_call("SetKeyMapping", "au", keys)
-        self._set_dbus_property("KeyMapping", "au", keys)
-        return ret
+        return self._set_dbus_property("KeyMapping", "au", keys)
 
     @GObject.Property
     def action_type(self):

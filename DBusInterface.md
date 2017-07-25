@@ -186,7 +186,7 @@ one resolution must be default at all times. This property is read-only, use the
 `SetDefault()` method to set a resolution as the default resolution.
 
 #### `Resolution`
-- type: `uu`, read-only, mutable
+- type: `uu`, read-write, mutable
 
 uint for the x and y resolution assigned to this entry, respectively
 
@@ -223,18 +223,25 @@ Index of the button
 
 String describing the button type
 #### `ButtonMapping`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
-uint of the current button mapping (if mapping to button)
+The uint of the current button mapping (if mapping to button). If written to,
+this sets the action type to "button" and the mapping to the given button.
+
 #### `SpecialMapping`
-- type: `s`, read-only, mutable
+- type: `s`, read-write, mutable
 
-String of the current special mapping (if mapped to special)
+String of the current special mapping (if mapped to special). If written to,
+this sets the action type to "special" and the mapping to the given special
+entry.
+
 #### `KeyMapping`
-- type: `au`, read-only, mutable
+- type: `au`, read-write, mutable
 
 Array of uints, first entry is the keycode, other entries, if any, are
-modifiers (if mapped to key)
+modifiers (if mapped to key). If written to, this sets the action type to "key"
+and the key mapping to the given keys.
+
 #### `ActionType`
 - type: `s`, read-only, mutable
 
@@ -247,13 +254,6 @@ value
 Array of strings, possible values for ActionType
 
 ### Methods:
-#### `SetButtonMapping(u) → ()`
-Set the button mapping to the given button
-#### `SetSpecialMapping(s) → ()`
-Set the button mapping to the given special entry
-#### `SetKeyMapping(au) → ()`
-Set the key mapping, first entry is the keycode, other entries, if any, are
-modifier keycodes
 #### `Disable() → ()`
 Disable this button
 
