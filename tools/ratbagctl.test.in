@@ -357,10 +357,10 @@ class TestRatbgagCtlButton(TestRatbagCtl):
         self.assertEqual(r, "Button: 1 type unknown is mapped to '[4]'")
         r = self.launch_good_test("button 2 get test_device")
         # FIXME: special maps to UNKNOWN????
-        self.assertEqual(r, "Button: 2 type unknown is mapped to UNKOWN")
+        self.assertEqual(r, "Button: 2 type unknown is mapped to UNKNOWN")
         r = self.launch_good_test("button 3 get test_device")
         # FIXME: macro maps to UNKNOWN????
-        self.assertEqual(r, "Button: 3 type unknown is mapped to UNKOWN")
+        self.assertEqual(r, "Button: 3 type unknown is mapped to UNKNOWN")
         self.launch_fail_test("button 1 get 10 test_device")
         self.launch_fail_test("button 10 get test_device")
         self.launch_fail_test("button 1 get test_device X")

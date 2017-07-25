@@ -144,7 +144,7 @@ def print_button(d, p, b, level):
     elif b.action_type == "special":
         print("{}'{}'".format(header, b.special))
     else:
-        print("{}UNKOWN".format(header))
+        print("{}UNKNOWN".format(header))
 
 
 def print_resolution(d, p, r, level):
