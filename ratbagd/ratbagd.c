@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <linux/input-event-codes.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <libratbag.h>
@@ -201,7 +203,7 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 0 },
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
-				  .key = 4 },
+				  .key = KEY_3 },
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO },
