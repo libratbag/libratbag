@@ -143,17 +143,28 @@ def print_button(d, p, b, level):
     elif b.action_type == RatbagdButton.ACTION_TYPE_KEY:
         bmap = ""
         for m in b.key:
-            try:
-                code = evdev.ecodes.KEY[m]
-            except KeyError:
-                code = m
-
+            code = evdev.ecodes.KEY.get(m, m)
             bmap = bmap +  "{}".format(code)
+
         print("{}'{}'".format(header, bmap))
     elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
         print("{}'{}'".format(header, b.special))
     elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
-        print("{}macro".format(header))
+        bmap = ""
+        for t, v in b.macro:
+            bt = 'unknown'
+            if t == RatbagdButton.MACRO_KEY_PRESS:
+                bt = '+'
+                bv =  evdev.ecodes.KEY.get(v, v)
+            elif t == RatbagdButton.MACRO_KEY_RELEASE:
+                bt = '-'
+                bv =  evdev.ecodes.KEY.get(v, v)
+            elif t == RatbagdButton.MACRO_WAIT:
+                bt = 't'
+                bv = v
+            bmap = bmap + "{}{} ".format(bt, bv)
+
+        print("{}macro '{}'".format(header, bmap[:-1]))
     elif b.action_type == RatbagdButton.ACTION_TYPE_NONE:
         print("{}none".format(header))
     else:
@@ -304,6 +315,44 @@ def func_button_get(r, args):
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
     b.mapping = args.target_button
+    d.commit()
+
+def func_button_action_set_macro(r, args):
+    b, p, d = find_button(r, args)
+    macro_keys = args.target_macro
+    macro = []
+    for s in macro_keys:
+        is_press = True
+        is_release = True
+        is_timeout = False
+
+        s = s.upper()
+        if s[0] == 'T':
+            is_timeout = True
+            is_press = False
+            is_release = False
+        elif s[0] == '+':
+            is_release = False
+            s = s[1:]
+        elif s[0] == '-':
+            is_press = False
+            s = s[1:]
+
+        if is_timeout:
+            t = int(s[1:])
+            macro.append((RatbagdButton.MACRO_WAIT, t))
+        else:
+            if not s.startswith("KEY_") and not s.startswith("BTN_"):
+                msg = "Don't know how to convert {}".format(s)
+                raise argparse.ArgumentTypeError(msg)
+
+            code = evdev.ecodes.ecodes[s]
+            if is_press:
+                macro.append((RatbagdButton.MACRO_KEY_PRESS, code))
+            if is_release:
+                macro.append((RatbagdButton.MACRO_KEY_RELEASE, code))
+
+    b.macro = macro
     d.commit()
 
 
@@ -780,7 +829,7 @@ parser_def = [
                                             nargs: argparse.REMAINDER,
                                         },
                                     ],
-                                    func: func_dummy,  # FIXME: func_button_action_set_macro,
+                                    func: func_button_action_set_macro,
                                 },
                             ]
                         },

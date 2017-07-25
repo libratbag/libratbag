@@ -358,7 +358,7 @@ class TestRatbgagCtlButton(TestRatbagCtl):
         # FIXME: special maps to UNKNOWN????
         self.assertEqual(r, "Button: 2 type unknown is mapped to UNKNOWN")
         r = self.launch_good_test("button 3 get test_device")
-        self.assertEqual(r, "Button: 3 type unknown is mapped to macro")
+        self.assertEqual(r, "Button: 3 type unknown is mapped to macro '+KEY_B -KEY_B t300'")
         self.launch_fail_test("button 1 get 10 test_device")
         self.launch_fail_test("button 10 get test_device")
         self.launch_fail_test("button 1 get test_device X")
@@ -389,10 +389,14 @@ class TestRatbgagCtlButton(TestRatbagCtl):
         pass
         # FIXME
 
-    @unittest.skip("Button action set macro not implemented")
     def test_button_n_action_set_macro(self):
-        pass
-        # FIXME
+        command = "button 2 action set macro "
+        self.launch_good_test(command + 'KEY_B KEY_A KEY_C test_device')
+        r = self.launch_good_test("button 2 get test_device")
+        self.assertEqual(r, "Button: 2 type unknown is mapped to macro '+KEY_B -KEY_B +KEY_A -KEY_A +KEY_C -KEY_C'")
+        self.launch_good_test(command + 't100 t200 test_device')
+        r = self.launch_good_test("button 2 get test_device")
+        self.assertEqual(r, "Button: 2 type unknown is mapped to macro 't100 t200'")
 
     def test_prefix_button(self):
         r = self.launch_good_test("Profile 2 Button 3 get test_device")
