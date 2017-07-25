@@ -235,6 +235,25 @@ class TestRatbgagCtlResolution(TestRatbagCtl):
         r = self.launch_good_test("Profile 2 Resolution 2 get test_device")
         self.assertEqual(r, "2: 2300x2400dpi @ 3000Hz")
 
+    def test_resolution_default_get(self):
+        command = "Resolution default get"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(int(r), 1)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 10 test_device")
+        self.launch_fail_test(command + " test_device x")
+
+    def test_resolution_default_set(self):
+        command = "Resolution default set"
+        self.launch_good_test(command + " 2 test_device")
+        r = self.launch_good_test("Resolution default get test_device")
+        self.assertEqual(int(r), 2)
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 1 test_device X")
+        # Reset for other tests
+        self.launch_good_test(command + " 1 test_device")
+
 
 class TestRatbgagCtlDPI(TestRatbagCtl):
     @classmethod
