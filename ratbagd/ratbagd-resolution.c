@@ -112,7 +112,7 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 					   resolution->profile,
 					   ratbagd_resolution_default_signal_cb);
 
-	return r;
+	return sd_bus_reply_method_return(m, "u", r);
 }
 
 static int
