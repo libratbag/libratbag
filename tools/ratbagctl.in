@@ -137,12 +137,16 @@ def print_button(d, p, b, level):
     header = " " * level + "Button: {} type {} is mapped to ".format(b.index,
                                                                      b.type)
 
-    if b.action_type == "button":
+    if b.action_type == RatbagdButton.ACTION_TYPE_BUTTON:
         print("{}'button {}'".format(header, b.mapping))
-    elif b.action_type == "key":
+    elif b.action_type == RatbagdButton.ACTION_TYPE_KEY:
         print("{}'{}'".format(header, b.key))
-    elif b.action_type == "special":
+    elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
         print("{}'{}'".format(header, b.special))
+    elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
+        print("{}macro".format(header))
+    elif b.action_type == RatbagdButton.ACTION_TYPE_NONE:
+        print("{}none".format(header))
     else:
         print("{}UNKNOWN".format(header))
 
