@@ -37,6 +37,7 @@ struct ratbag_test_macro_event {
 };
 
 struct ratbag_test_button {
+	enum ratbag_button_type button_type;
 	enum ratbag_button_action_type action_type;
 	union {
 		int button;
