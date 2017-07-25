@@ -200,13 +200,13 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 	.profiles = {
 		{
 			.buttons = {
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 0 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = KEY_3 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
 				  .macro = {
 					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
 					    .value = KEY_B },
@@ -247,13 +247,13 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 		},
 		{
 			.buttons = {
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 4 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 5 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 6 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_KEY,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
 				  .key = 7 },
 			},
 			.resolutions = {
@@ -266,9 +266,9 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 		},
 		{
 			.buttons = {
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
 				  .macro = {
 					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
 					    .value = KEY_A },
@@ -278,9 +278,9 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 					    .value = 150 },
 				  }
 				},
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 2 },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 3 },
 			},
 			.resolutions = {

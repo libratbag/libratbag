@@ -681,7 +681,7 @@ START_TEST(device_buttons)
 	struct ratbag_test_device td = sane_device;
 	td.num_buttons = 10;
 
-	td.profiles[0].buttons[8].type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[8].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
 
 	td.destroyed_data = &device_freed_count;
 

@@ -102,7 +102,7 @@ test_read_button(struct ratbag_button *button)
 	struct ratbag_test_macro_event *e;
 	int idx;
 
-	switch (b->type) {
+	switch (b->action_type) {
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 		button->action.action.button = p->buttons[button->index].button;
