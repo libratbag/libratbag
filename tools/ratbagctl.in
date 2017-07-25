@@ -27,7 +27,7 @@ import evdev
 import sys
 import argparse
 
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdLed, RatbagdDBusUnavailable  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable  # NOQA
 
 
 def list_devices(r, args):
@@ -135,31 +135,31 @@ def print_led(d, p, l, level):
 
 
 def print_button(d, p, b, level):
-    types =  {
-        RatbagdButton.TYPE_UNKNOWN : "unknown",
-        RatbagdButton.TYPE_LEFT : "left",
-        RatbagdButton.TYPE_MIDDLE : "middle",
-        RatbagdButton.TYPE_RIGHT : "right",
-        RatbagdButton.TYPE_THUMB : "thumb",
-        RatbagdButton.TYPE_THUMB2 : "thumb2",
-        RatbagdButton.TYPE_THUMB3 : "thumb3",
-        RatbagdButton.TYPE_THUMB4 : "thumb4",
-        RatbagdButton.TYPE_WHEEL_LEFT : "wheel-left",
-        RatbagdButton.TYPE_WHEEL_RIGHT : "wheel-right",
-        RatbagdButton.TYPE_WHEEL_CLICK : "wheel-click",
-        RatbagdButton.TYPE_WHEEL_UP : "wheel-up",
-        RatbagdButton.TYPE_WHEEL_DOWN : "wheel-down",
-        RatbagdButton.TYPE_WHEEL_RATCHET_MODE_SHIFT : "wheel-ratchet-mode-shift",
-        RatbagdButton.TYPE_EXTRA : "extra",
-        RatbagdButton.TYPE_SIDE : "side",
-        RatbagdButton.TYPE_PINKIE : "pinkie",
-        RatbagdButton.TYPE_PINKIE2 : "pinkie2",
-        RatbagdButton.TYPE_RESOLUTION_CYCLE_UP : "resolution-cycle-up",
-        RatbagdButton.TYPE_RESOLUTION_UP : "resolution-up",
-        RatbagdButton.TYPE_RESOLUTION_DOWN : "resolution-down",
-        RatbagdButton.TYPE_PROFILE_CYCLE_UP : "profile-cycle-up",
-        RatbagdButton.TYPE_PROFILE_UP : "profile-up",
-        RatbagdButton.TYPE_PROFILE_DOWN : "profile-down",
+    types = {
+        RatbagdButton.TYPE_UNKNOWN: "unknown",
+        RatbagdButton.TYPE_LEFT: "left",
+        RatbagdButton.TYPE_MIDDLE: "middle",
+        RatbagdButton.TYPE_RIGHT: "right",
+        RatbagdButton.TYPE_THUMB: "thumb",
+        RatbagdButton.TYPE_THUMB2: "thumb2",
+        RatbagdButton.TYPE_THUMB3: "thumb3",
+        RatbagdButton.TYPE_THUMB4: "thumb4",
+        RatbagdButton.TYPE_WHEEL_LEFT: "wheel-left",
+        RatbagdButton.TYPE_WHEEL_RIGHT: "wheel-right",
+        RatbagdButton.TYPE_WHEEL_CLICK: "wheel-click",
+        RatbagdButton.TYPE_WHEEL_UP: "wheel-up",
+        RatbagdButton.TYPE_WHEEL_DOWN: "wheel-down",
+        RatbagdButton.TYPE_WHEEL_RATCHET_MODE_SHIFT: "wheel-ratchet-mode-shift",
+        RatbagdButton.TYPE_EXTRA: "extra",
+        RatbagdButton.TYPE_SIDE: "side",
+        RatbagdButton.TYPE_PINKIE: "pinkie",
+        RatbagdButton.TYPE_PINKIE2: "pinkie2",
+        RatbagdButton.TYPE_RESOLUTION_CYCLE_UP: "resolution-cycle-up",
+        RatbagdButton.TYPE_RESOLUTION_UP: "resolution-up",
+        RatbagdButton.TYPE_RESOLUTION_DOWN: "resolution-down",
+        RatbagdButton.TYPE_PROFILE_CYCLE_UP: "profile-cycle-up",
+        RatbagdButton.TYPE_PROFILE_UP: "profile-up",
+        RatbagdButton.TYPE_PROFILE_DOWN: "profile-down",
     }
 
     t = types[b.type]
@@ -172,7 +172,7 @@ def print_button(d, p, b, level):
         bmap = ""
         for m in b.key:
             code = evdev.ecodes.KEY.get(m, m)
-            bmap = bmap +  "{}".format(code)
+            bmap = bmap + "{}".format(code)
 
         print("{}'{}'".format(header, bmap))
     elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
@@ -183,10 +183,10 @@ def print_button(d, p, b, level):
             bt = 'unknown'
             if t == RatbagdButton.MACRO_KEY_PRESS:
                 bt = '+'
-                bv =  evdev.ecodes.KEY.get(v, v)
+                bv = evdev.ecodes.KEY.get(v, v)
             elif t == RatbagdButton.MACRO_KEY_RELEASE:
                 bt = '-'
-                bv =  evdev.ecodes.KEY.get(v, v)
+                bv = evdev.ecodes.KEY.get(v, v)
             elif t == RatbagdButton.MACRO_WAIT:
                 bt = 't'
                 bv = v
@@ -344,6 +344,7 @@ def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
     b.mapping = args.target_button
     d.commit()
+
 
 def func_button_action_set_macro(r, args):
     b, p, d = find_button(r, args)
@@ -560,6 +561,7 @@ def u8(string):
     if int_value < 0 or int_value > 255:
         raise argparse.ArgumentTypeError(msg)
     return int_value
+
 
 def dpi(string):
     try:

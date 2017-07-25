@@ -443,7 +443,7 @@ class RatbagdButton(_RatbagdDBus):
     TYPE_UNKNOWN = 0
     TYPE_LEFT = 1
     TYPE_MIDDLE = 2
-    TYPE_RIGHT= 3
+    TYPE_RIGHT = 3
     TYPE_THUMB = 4
     TYPE_THUMB2 = 5
     TYPE_THUMB3 = 6
@@ -464,7 +464,6 @@ class RatbagdButton(_RatbagdDBus):
     TYPE_PROFILE_CYCLE_UP = 21
     TYPE_PROFILE_UP = 22
     TYPE_PROFILE_DOWN = 23
-
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Button", object_path)
