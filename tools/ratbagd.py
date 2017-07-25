@@ -491,7 +491,7 @@ class RatbagdButton(_RatbagdDBus):
         @param button The button to map to, as int
         """
         ret = self._dbus_call("SetButtonMapping", "u", button)
-        self._set_dbus_property("ButtonMapping", "u", button)
+        self._set_dbus_property("ButtonMapping", "u", button, readwrite=False)
         return ret
 
     @GObject.Property
@@ -527,7 +527,7 @@ class RatbagdButton(_RatbagdDBus):
         @param special The special entry, as str
         """
         ret = self._dbus_call("SetSpecialMapping", "s", special)
-        self._set_dbus_property("SpecialMapping", "s", special)
+        self._set_dbus_property("SpecialMapping", "s", special, readwrite=False)
         return ret
 
     @GObject.Property
@@ -544,7 +544,7 @@ class RatbagdButton(_RatbagdDBus):
                     modifiers.
         """
         ret = self._dbus_call("SetKeyMapping", "au", keys)
-        self._set_dbus_property("KeyMapping", "au", keys)
+        self._set_dbus_property("KeyMapping", "au", keys, readwrite=False)
         return ret
 
     @GObject.Property
