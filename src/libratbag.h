@@ -1235,10 +1235,6 @@ ratbag_button_get_type(struct ratbag_button *button);
  */
 enum ratbag_button_action_type {
 	/**
-	 * Button action is unknown
-	 */
-	RATBAG_BUTTON_ACTION_TYPE_UNKNOWN = -1,
-	/**
 	 * Button is disabled
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_NONE = 0,
@@ -1259,6 +1255,10 @@ enum ratbag_button_action_type {
 	 * Button sends a user-defined key or button sequence
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_MACRO,
+	/**
+	 * Button action is unknown
+	 */
+	RATBAG_BUTTON_ACTION_TYPE_UNKNOWN = 1000,
 };
 
 /**
