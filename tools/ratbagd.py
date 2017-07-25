@@ -147,7 +147,7 @@ class _RatbagdDBus(GObject.GObject):
             return p.unpack()
         return p
 
-    def _set_dbus_property(self, property, type, value):
+    def _set_dbus_property(self, property, type, value, readwrite=True):
         # Sets a cached property on the bus.
 
         # Take our real value and wrap it into a variant. To call
@@ -155,10 +155,11 @@ class _RatbagdDBus(GObject.GObject):
         # into a (ssv), where v is our value's variant.
         # args to .Set are "interface name", "function name",  value-variant
         val = GLib.Variant("{}".format(type), value)
-        pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
-        self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
-                              pval, Gio.DBusCallFlags.NO_AUTO_START,
-                              500, None)
+        if readwrite:
+            pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
+            self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
+                                  pval, Gio.DBusCallFlags.NO_AUTO_START,
+                                  500, None)
 
         # This is our local copy, so we don't have to wait for the async
         # update
@@ -435,6 +436,10 @@ class RatbagdButton(_RatbagdDBus):
     ACTION_TYPE_KEY = 3
     ACTION_TYPE_MACRO = 4
 
+    MACRO_KEY_PRESS = 1
+    MACRO_KEY_RELEASE = 2
+    MACRO_WAIT = 3
+
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Button", object_path)
 
@@ -461,6 +466,27 @@ class RatbagdButton(_RatbagdDBus):
         """
         ret = self._dbus_call("SetButtonMapping", "u", button)
         self._set_dbus_property("ButtonMapping", "u", button)
+        return ret
+
+    @GObject.Property
+    def macro(self):
+        """A list of (type, value) tuples that form the currently set macro,
+        where type is either RatbagdButton.KEY_PRESS, RatbagdButton.KEY_RELEASE
+        or RatbagdButton.MACRO_WAIT and the value is the keycode as specified
+        in linux/input.h for key related types, or the timeout in milliseconds."""
+        return self._get_dbus_property("Macro")
+
+    @macro.setter
+    def macro(self, macro):
+        """Set the macro to the given macro. Note that the type must be one of
+        RatbagdButton.KEY_PRESS, RatbagdButton.KEY_RELEASE or
+        RatbagdButton.MACRO_WAIT and the keycodes must be as specified in
+        linux/input.h, and the timeout must be in milliseconds.
+
+        @param macro A list of (type, value) tuples to form the new macro.
+        """
+        ret = self._dbus_call("SetMacro", "a(uu)", macro)
+        self._set_dbus_property("Macro", "a(uu)", macro, readwrite=False)
         return ret
 
     @GObject.Property
