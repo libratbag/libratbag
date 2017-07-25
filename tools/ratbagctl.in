@@ -23,6 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import evdev
 import sys
 import argparse
 
@@ -140,7 +141,15 @@ def print_button(d, p, b, level):
     if b.action_type == RatbagdButton.ACTION_TYPE_BUTTON:
         print("{}'button {}'".format(header, b.mapping))
     elif b.action_type == RatbagdButton.ACTION_TYPE_KEY:
-        print("{}'{}'".format(header, b.key))
+        bmap = ""
+        for m in b.key:
+            try:
+                code = evdev.ecodes.KEY[m]
+            except KeyError:
+                code = m
+
+            bmap = bmap +  "{}".format(code)
+        print("{}'{}'".format(header, bmap))
     elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
         print("{}'{}'".format(header, b.special))
     elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:

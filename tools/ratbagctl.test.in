@@ -353,8 +353,7 @@ class TestRatbgagCtlButton(TestRatbagCtl):
         r = self.launch_good_test("button 0 get test_device")
         self.assertEqual(r, "Button: 0 type unknown is mapped to 'button 0'")
         r = self.launch_good_test("button 1 get test_device")
-        # FIXME: we should probably have keys here, not int
-        self.assertEqual(r, "Button: 1 type unknown is mapped to '[4]'")
+        self.assertEqual(r, "Button: 1 type unknown is mapped to 'KEY_3'")
         r = self.launch_good_test("button 2 get test_device")
         # FIXME: special maps to UNKNOWN????
         self.assertEqual(r, "Button: 2 type unknown is mapped to UNKNOWN")
