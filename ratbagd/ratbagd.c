@@ -206,7 +206,16 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				  .key = KEY_3 },
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
-				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO },
+				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
+				  .macro = {
+					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
+					    .value = KEY_B },
+					  { .type = RATBAG_MACRO_EVENT_KEY_RELEASED,
+					    .value = KEY_B },
+					  { .type = RATBAG_MACRO_EVENT_WAIT,
+					    .value = 300 },
+				  },
+				}
 			},
 			.resolutions = {
 				{ .xres = 100, .yres = 200, .hz = 1000 },
@@ -260,7 +269,15 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
-				  .button = 1 },
+				  .macro = {
+					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
+					    .value = KEY_A },
+					  { .type = RATBAG_MACRO_EVENT_KEY_RELEASED,
+					    .value = KEY_A },
+					  { .type = RATBAG_MACRO_EVENT_WAIT,
+					    .value = 150 },
+				  }
+				},
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 2 },
 				{ .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
