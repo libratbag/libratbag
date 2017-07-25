@@ -53,90 +53,11 @@ static int ratbagd_button_get_type(sd_bus *bus,
 				   sd_bus_error *error)
 {
 	struct ratbagd_button *button = userdata;
-	const char *type = NULL;
 	enum ratbag_button_type t;
 
 	t = ratbag_button_get_type(button->lib_button);
 
-	switch(t) {
-		default:
-			log_error("Unknown button type %d\n", t);
-			/* fallthrough */
-		case RATBAG_BUTTON_TYPE_UNKNOWN:
-			type = "unknown";
-			break;
-		case RATBAG_BUTTON_TYPE_LEFT:
-			type = "left";
-			break;
-		case RATBAG_BUTTON_TYPE_MIDDLE:
-			type = "middle";
-			break;
-		case RATBAG_BUTTON_TYPE_RIGHT:
-			type = "right";
-			break;
-		case RATBAG_BUTTON_TYPE_THUMB:
-			type = "thumb";
-			break;
-		case RATBAG_BUTTON_TYPE_THUMB2:
-			type = "thumb2";
-			break;
-		case RATBAG_BUTTON_TYPE_THUMB3:
-			type = "thumb3";
-			break;
-		case RATBAG_BUTTON_TYPE_THUMB4:
-			type = "thumb4";
-			break;
-		case RATBAG_BUTTON_TYPE_WHEEL_LEFT:
-			type = "wheel-left";
-			break;
-		case RATBAG_BUTTON_TYPE_WHEEL_RIGHT:
-			type = "wheel-right";
-			break;
-		case RATBAG_BUTTON_TYPE_WHEEL_CLICK:
-			type = "wheel-click";
-			break;
-		case RATBAG_BUTTON_TYPE_WHEEL_UP:
-			type = "wheel-up";
-			break;
-		case RATBAG_BUTTON_TYPE_WHEEL_DOWN:
-			type = "wheel-down";
-			break;
-		case RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT:
-			type = "wheel-ratchet_mode_shift";
-			break;
-		case RATBAG_BUTTON_TYPE_EXTRA:
-			type = "extra";
-			break;
-		case RATBAG_BUTTON_TYPE_SIDE:
-			type = "side";
-			break;
-		case RATBAG_BUTTON_TYPE_PINKIE:
-			type = "pinkie";
-			break;
-		case RATBAG_BUTTON_TYPE_PINKIE2:
-			type = "pinkie2";
-			break;
-		case RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP:
-			type = "resolution-cycle-up";
-			break;
-		case RATBAG_BUTTON_TYPE_RESOLUTION_UP:
-			type = "resolution-up";
-			break;
-		case RATBAG_BUTTON_TYPE_RESOLUTION_DOWN:
-			type = "resolution-down";
-			break;
-		case RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP:
-			type = "profile-cycle-up";
-			break;
-		case RATBAG_BUTTON_TYPE_PROFILE_UP:
-			type = "profile-up";
-			break;
-		case RATBAG_BUTTON_TYPE_PROFILE_DOWN:
-			type = "profile-down";
-			break;
-	}
-
-	return sd_bus_message_append(reply, "s", type);
+	return sd_bus_message_append(reply, "u", t);
 }
 
 static int ratbagd_button_get_button(sd_bus *bus,
@@ -557,7 +478,7 @@ static int ratbagd_button_disable(sd_bus_message *m,
 const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_button, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Type", "s", ratbagd_button_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Type", "u", ratbagd_button_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ButtonMapping", "u", ratbagd_button_get_button, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("SpecialMapping", "s", ratbagd_button_get_special, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("KeyMapping", "au", ratbagd_button_get_key, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
