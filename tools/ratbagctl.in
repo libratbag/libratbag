@@ -106,26 +106,31 @@ def print_led(d, p, l, level):
         RatbagdLed.MODE_OFF: "off",
         RatbagdLed.MODE_ON: "on",
     }
+    types = {
+        RatbagdLed.TYPE_UNKNOWN: "unknown",
+        RatbagdLed.TYPE_LOGO: "logo",
+        RatbagdLed.TYPE_SIDE: "side",
+    }
     if l.mode == RatbagdLed.MODE_OFF:
         print(" " * level + "LED: {} type: {}, mode: {}".format(l.index,
-                                                                l.type,
+                                                                types[l.type],
                                                                 leds[l.mode]))
     elif l.mode == RatbagdLed.MODE_ON:
         print(" " * level + "LED: {} type: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(l.index,
-                                                                                           l.type,
+                                                                                           types[l.type],
                                                                                            leds[l.mode],
                                                                                            l.color[0],
                                                                                            l.color[1],
                                                                                            l.color[2]))
     elif l.mode == RatbagdLed.MODE_CYCLE:
         print(" " * level + "LED: {} type: {}, mode: {}, rate: {}, brightness: {}".format(l.index,
-                                                                                          l.type,
+                                                                                          types[l.type],
                                                                                           leds[l.mode],
                                                                                           l.effect_rate,
                                                                                           l.brightness))
     elif l.mode == RatbagdLed.MODE_BREATHING:
         print(" " * level + "LED: {} type: {}, mode: {}, color: {:02x}{:02x}{:02x}, rate: {}, brightness: {}".format(l.index,
-                                                                                                                     l.type,
+                                                                                                                     types[l.type],
                                                                                                                      leds[l.mode],
                                                                                                                      l.color[0],
                                                                                                                      l.color[1],

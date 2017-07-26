@@ -277,9 +277,9 @@ Index of the LED
 uint mapping to the mode enum from libratbag
 
 #### `Type`
-- type: `s`, read-only, mutable
+- type: `u`, read-only, mutable
 
-String describing the LED type
+enum describing the LED type
 
 #### `Color`
 - type: `(uuu)`, read-write, mutable
