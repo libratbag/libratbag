@@ -404,10 +404,20 @@ class TestRatbgagCtlButton(TestRatbagCtl):
         self.launch_fail_test(command + " X test_device")
         self.launch_fail_test(command + " 100 test_device X")
 
-    @unittest.skip("Button action set special not implemented")
     def test_button_n_action_set_special(self):
-        pass
-        # FIXME
+        self.setProfile(2)
+        command = "button 0 action set special "
+        r = self.launch_good_test("button 0 action get test_device")
+        # FIXME: special maps to UNKNOWN????
+        self.assertEqual(r, "Button: 0 type left is mapped to UNKNOWN")#'profile-cycle-up'")
+        r = self.launch_good_test(command + " second-mode test_device")
+        self.assertEqual(r, '')
+        r = self.launch_good_test("button 0 action get test_device")
+        # FIXME: special maps to UNKNOWN????
+        self.assertEqual(r, "Button: 0 type left is mapped to UNKNOWN")#'second-mode'")
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test(command + " 100 test_device X")
 
     def test_button_n_action_set_macro(self):
         command = "button 2 action set macro "

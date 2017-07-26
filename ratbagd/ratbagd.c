@@ -269,7 +269,8 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 		},
 		{
 			.buttons = {
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
 				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
 				  .macro = {

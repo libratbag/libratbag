@@ -232,9 +232,9 @@ device.
 
 uint of the current button mapping (if mapping to button)
 #### `SpecialMapping`
-- type: `s`, read-only, mutable
+- type: `u`, read-only, mutable
 
-String of the current special mapping (if mapped to special)
+Enum describing the current special mapping (if mapped to special)
 #### `KeyMapping`
 - type: `au`, read-only, mutable
 
@@ -254,7 +254,7 @@ on the current device
 ### Methods:
 #### `SetButtonMapping(u) → ()`
 Set the button mapping to the given button
-#### `SetSpecialMapping(s) → ()`
+#### `SetSpecialMapping(u) → ()`
 Set the button mapping to the given special entry
 #### `SetKeyMapping(au) → ()`
 Set the key mapping, first entry is the keycode, other entries, if any, are

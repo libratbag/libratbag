@@ -114,72 +114,11 @@ static int ratbagd_button_get_special(sd_bus *bus,
 				      sd_bus_error *error)
 {
 	struct ratbagd_button *button = userdata;
-	const char *type;
 	enum ratbag_button_action_special special;
 
 	special = ratbag_button_get_special(button->lib_button);
 
-	switch(special) {
-	default:
-		log_error("Unknown special type %d\n", special);
-		/* fallthrough */
-	case RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN:
-		type = "unknown";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_INVALID:
-		type = "n/a";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK:
-		type = "doubleclick";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT:
-		type = "wheel-left";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT:
-		type = "wheel-right";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:
-		type = "wheel-up";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:
-		type = "wheel-down";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH:
-		type = "ratchet-mode-switch";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP:
-		type = "resolution-cycle-up";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP:
-		type = "resolution-up";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN:
-		type = "resolution-down";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE:
-		type = "resolution-alternate";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT:
-		type = "resolution-default";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP:
-		type = "profile-cycle-up";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP:
-		type = "profile-up";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN:
-		type = "profile-down";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE:
-		type = "second-mode";
-		break;
-	case RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL:
-		type = "battery-level";
-		break;
-	}
-
-	return sd_bus_message_append(reply, "s", type);
+	return sd_bus_message_append(reply, "u", special);
 }
 
 static int ratbagd_button_set_special(sd_bus_message *m,
@@ -187,50 +126,12 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 				      sd_bus_error *error)
 {
 	struct ratbagd_button *button = userdata;
-	const char *s;
 	enum ratbag_button_action_special special;
 	int r;
 
-	r = sd_bus_message_read(m, "s", &s);
+	r = sd_bus_message_read(m, "u", &special);
 	if (r < 0)
 		return r;
-
-	if (streq(s, "doubleclick"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK;
-	else if (streq(s, "wheel-left"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT;
-	else if (streq(s, "wheel-right"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT;
-	else if (streq(s, "wheel-up"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP;
-	else if (streq(s, "wheel-down"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN;
-	else if (streq(s, "ratchet-mode-switch"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH;
-	else if (streq(s, "resolution-cycle-up"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP;
-	else if (streq(s, "resolution-up"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP;
-	else if (streq(s, "resolution-down"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN;
-	else if (streq(s, "resolution-alternate"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE;
-	else if (streq(s, "resolution-default"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT;
-	else if (streq(s, "profile-cycle-up"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP;
-	else if (streq(s, "profile-up"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP;
-	else if (streq(s, "profile-down"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN;
-	else if (streq(s, "second-mode"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE;
-	else if (streq(s, "battery-level"))
-		special = RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL;
-	else {
-		log_error("Unknown button special action %s\n", s);
-		return sd_bus_reply_method_return(m, "u", -1);
-	}
 
 	r = ratbag_button_set_special(button->lib_button, special);
 
@@ -243,7 +144,7 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_button_get_key(sd_bus *bus,
@@ -481,13 +382,13 @@ const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_button, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Type", "u", ratbagd_button_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("ButtonMapping", "u", ratbagd_button_get_button, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("SpecialMapping", "s", ratbagd_button_get_special, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("SpecialMapping", "u", ratbagd_button_get_special, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("KeyMapping", "au", ratbagd_button_get_key, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionType", "u", ratbagd_button_get_action_type, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionTypes", "au", ratbagd_button_get_action_types, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Macro", "a(uu)", ratbagd_button_get_macro, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_METHOD("SetButtonMapping", "u", "u", ratbagd_button_set_button, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetSpecialMapping", "s", "u", ratbagd_button_set_special, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("SetSpecialMapping", "u", "u", ratbagd_button_set_special, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetKeyMapping", "au", "u", ratbagd_button_set_key, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetMacro", "a(uu)", "u", ratbagd_button_set_macro, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Disable", "", "u", ratbagd_button_disable, SD_BUS_VTABLE_UNPRIVILEGED),
