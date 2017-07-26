@@ -45,12 +45,18 @@ libratbag_references:
       name: Ninja scan-build
       environment:
         NINJA_ARGS: scan-build
+  start_dbus: &start_dbus
+    run:
+      name: Start dbus daemon
+      command: |
+        mkdir /run/dbus
+        /usr/bin/dbus-daemon --system --fork
 
 
 fedora_install: &fedora_install
   run:
     name: Install prerequisites
-    command: dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz valgrind python3-gobject
+    command: dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel doxygen graphviz valgrind python3-gobject python3-evdev
 
 
 fedora_settings: &fedora_settings
@@ -58,6 +64,7 @@ fedora_settings: &fedora_settings
   steps:
     - *fedora_install
     - checkout
+    - *start_dbus
     - *build_and_test
     - *install
     - *check_uninstall
@@ -74,8 +81,9 @@ ubuntu_settings: &ubuntu_settings
           apt-get install -y software-properties-common
           add-apt-repository universe
           apt-get update
-          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz valgrind python3-gi
+          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev doxygen graphviz valgrind python3-gi python3-evdev
     - checkout
+    - *start_dbus
     - *build_and_test
     - *install
     - *check_uninstall
