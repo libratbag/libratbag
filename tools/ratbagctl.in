@@ -933,7 +933,7 @@ parser_def = [
                                             of_type: argument,
                                             name: 'target_button',
                                             metavar: 'B',
-                                            help_str: 'The new buton value to assign',
+                                            help_str: 'The new button value to assign',
                                             arg_type: int,
                                         },
                                     ],
