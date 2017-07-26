@@ -161,10 +161,29 @@ def print_button(d, p, b, level):
         RatbagdButton.TYPE_PROFILE_UP: "profile-up",
         RatbagdButton.TYPE_PROFILE_DOWN: "profile-down",
     }
-
+    specials = {
+        RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",
+        RatbagdButton.ACTION_SPECIAL_DOUBLECLICK: "doubleclick",
+        RatbagdButton.ACTION_SPECIAL_WHEEL_LEFT: "wheel-left",
+        RatbagdButton.ACTION_SPECIAL_WHEEL_RIGHT: "wheel-right",
+        RatbagdButton.ACTION_SPECIAL_WHEEL_UP: "wheel-up",
+        RatbagdButton.ACTION_SPECIAL_WHEEL_DOWN: "wheel-down",
+        RatbagdButton.ACTION_SPECIAL_RATCHET_MODE_SWITCH: "ratchet-mode-switch",
+        RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_UP: "resolution-cycle-up",
+        RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN: "resolution-cycle-down",
+        RatbagdButton.ACTION_SPECIAL_RESOLUTION_UP: "resolution-up",
+        RatbagdButton.ACTION_SPECIAL_RESOLUTION_DOWN: "resolution-down",
+        RatbagdButton.ACTION_SPECIAL_RESOLUTION_ALTERNATE: "resolution-alternate",
+        RatbagdButton.ACTION_SPECIAL_RESOLUTION_DEFAULT: "resolution-default",
+        RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_UP: "profile-cycle-up",
+        RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_DOWN: "profile-cycle-down",
+        RatbagdButton.ACTION_SPECIAL_PROFILE_UP: "profile-up",
+        RatbagdButton.ACTION_SPECIAL_PROFILE_DOWN: "profile-down",
+        RatbagdButton.ACTION_SPECIAL_SECOND_MODE: "second-mode",
+        RatbagdButton.ACTION_SPECIAL_BATTERY_LEVEL: "battery-level",
+    }
     t = types[b.type]
-    header = " " * level + "Button: {} type {} is mapped to ".format(b.index,
-                                                                     t)
+    header = " " * level + "Button: {} type {} is mapped to ".format(b.index, t)
 
     if b.action_type == RatbagdButton.ACTION_TYPE_BUTTON:
         print("{}'button {}'".format(header, b.mapping))
@@ -176,7 +195,7 @@ def print_button(d, p, b, level):
 
         print("{}'{}'".format(header, bmap))
     elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
-        print("{}'{}'".format(header, b.special))
+        print("{}'{}'".format(header, specials[b.special]))
     elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
         bmap = ""
         for t, v in b.macro:
@@ -343,6 +362,38 @@ def func_button_get(r, args):
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
     b.mapping = args.target_button
+    d.commit()
+
+
+def func_button_action_set_special(r, args):
+    b, p, d = find_button(r, args)
+    try:
+        special = args.target_special
+    except AttributeError:
+        pass
+    else:
+        specials = {
+            "unknown": RatbagdButton.ACTION_SPECIAL_UNKNOWN,
+            "doubleclick": RatbagdButton.ACTION_SPECIAL_DOUBLECLICK,
+            "wheel-left": RatbagdButton.ACTION_SPECIAL_WHEEL_LEFT,
+            "wheel-right": RatbagdButton.ACTION_SPECIAL_WHEEL_RIGHT,
+            "wheel-up": RatbagdButton.ACTION_SPECIAL_WHEEL_UP,
+            "wheel-down": RatbagdButton.ACTION_SPECIAL_WHEEL_DOWN,
+            "ratchet-mode-switch": RatbagdButton.ACTION_SPECIAL_RATCHET_MODE_SWITCH,
+            "resolution-cycle-up": RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_UP,
+            "resolution-cycle-down": RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN,
+            "resolution-up": RatbagdButton.ACTION_SPECIAL_RESOLUTION_UP,
+            "resolution-down": RatbagdButton.ACTION_SPECIAL_RESOLUTION_DOWN,
+            "resolution-alternate": RatbagdButton.ACTION_SPECIAL_RESOLUTION_ALTERNATE,
+            "resolution-default": RatbagdButton.ACTION_SPECIAL_RESOLUTION_DEFAULT,
+            "profile-cycle-up": RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_UP,
+            "profile-cycle-down": RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_DOWN,
+            "profile-up": RatbagdButton.ACTION_SPECIAL_PROFILE_UP,
+            "profile-down": RatbagdButton.ACTION_SPECIAL_PROFILE_DOWN,
+            "second-mode": RatbagdButton.ACTION_SPECIAL_SECOND_MODE,
+            "battery-level": RatbagdButton.ACTION_SPECIAL_BATTERY_LEVEL,
+        }
+        b.special = specials[special]
     d.commit()
 
 
@@ -891,11 +942,32 @@ parser_def = [
                                         {
                                             of_type: argument,
                                             name: 'target_special',
-                                            metavar: 'S',
+                                            metavar: 'special',
                                             help_str: 'The new special value to assign',
+                                            choices: [
+                                                "unknown",
+                                                "doubleclick",
+                                                "wheel-left",
+                                                "wheel-right",
+                                                "wheel-up",
+                                                "wheel-down",
+                                                "ratchet-mode-switch",
+                                                "resolution-cycle-up",
+                                                "resolution-cycle-down",
+                                                "resolution-up",
+                                                "resolution-down",
+                                                "resolution-alternate",
+                                                "resolution-default",
+                                                "profile-cycle-up",
+                                                "profile-cycle-down",
+                                                "profile-up",
+                                                "profile-down",
+                                                "second-mode",
+                                                "battery-level",
+                                            ]
                                         },
                                     ],
-                                    func: func_dummy,  # FIXME: func_button_action_set_special,
+                                    func: func_button_action_set_special,
                                 },
                                 {
                                     of_type: command,

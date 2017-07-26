@@ -440,6 +440,26 @@ class RatbagdButton(_RatbagdDBus):
     ACTION_TYPE_KEY = 3
     ACTION_TYPE_MACRO = 4
 
+    ACTION_SPECIAL_UNKNOWN = (1 << 30),
+    ACTION_SPECIAL_DOUBLECLICK = (1 << 30) + 1,
+    ACTION_SPECIAL_WHEEL_LEFT = (1 << 30) + 2,
+    ACTION_SPECIAL_WHEEL_RIGHT = (1 << 30) + 3,
+    ACTION_SPECIAL_WHEEL_UP = (1 << 30) + 4,
+    ACTION_SPECIAL_WHEEL_DOWN = (1 << 30) + 5,
+    ACTION_SPECIAL_RATCHET_MODE_SWITCH = (1 << 30) + 6,
+    ACTION_SPECIAL_RESOLUTION_CYCLE_UP = (1 << 30) + 7,
+    ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN = (1 << 30) + 8,
+    ACTION_SPECIAL_RESOLUTION_UP = (1 << 30) + 9,
+    ACTION_SPECIAL_RESOLUTION_DOWN = (1 << 30) + 10,
+    ACTION_SPECIAL_RESOLUTION_ALTERNATE = (1 << 30) + 11,
+    ACTION_SPECIAL_RESOLUTION_DEFAULT = (1 << 30) + 12,
+    ACTION_SPECIAL_PROFILE_CYCLE_UP = (1 << 30) + 13,
+    ACTION_SPECIAL_PROFILE_CYCLE_DOWN = (1 << 30) + 14,
+    ACTION_SPECIAL_PROFILE_UP = (1 << 30) + 15,
+    ACTION_SPECIAL_PROFILE_DOWN = (1 << 30) + 16,
+    ACTION_SPECIAL_SECOND_MODE = (1 << 30) + 17,
+    ACTION_SPECIAL_BATTERY_LEVEL = (1 << 30) + 18,
+
     MACRO_KEY_PRESS = 1
     MACRO_KEY_RELEASE = 2
     MACRO_WAIT = 3
@@ -520,17 +540,17 @@ class RatbagdButton(_RatbagdDBus):
 
     @GObject.Property
     def special(self):
-        """A string of the current special mapping, if mapped to special."""
+        """An enum describing the current special mapping, if mapped to special."""
         return self._get_dbus_property("SpecialMapping")
 
     @special.setter
     def special(self, special):
         """Set the button mapping to the given special entry.
 
-        @param special The special entry, as str
+        @param special The special entry, as one of RatbagdButton.ACTION_SPECIAL_*
         """
-        ret = self._dbus_call("SetSpecialMapping", "s", special)
-        self._set_dbus_property("SpecialMapping", "s", special, readwrite=False)
+        ret = self._dbus_call("SetSpecialMapping", "u", special)
+        self._set_dbus_property("SpecialMapping", "u", special, readwrite=False)
         return ret
 
     @GObject.Property
