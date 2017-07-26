@@ -1141,9 +1141,15 @@ ratbag_resolution_is_active(const struct ratbag_resolution *resolution)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 {
+	struct ratbag_profile *profile = resolution->profile;
+	unsigned int i;
+
+	for (i = 0; i < profile->resolution.num_modes; i++)
+		profile->resolution.modes[i].is_active = false;
+
 	resolution->is_active = true;
-	/* FIXME: call into the driver */
-	return RATBAG_ERROR_IMPLEMENTATION;
+	profile->dirty = true;
+	return RATBAG_SUCCESS;
 }
 
 
