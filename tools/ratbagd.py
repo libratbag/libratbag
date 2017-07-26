@@ -54,17 +54,17 @@ class RatbagErrorCode(IntEnum):
     RATBAG_ERROR_IMPLEMENTATION = -1004
 
 
-class RatbagdDBusUnavailable(BaseException):
+class RatbagdDBusUnavailable(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
     pass
 
 
-class RatbagdDBusTimeout(BaseException):
+class RatbagdDBusTimeout(Exception):
     """Signals that a timeout occurred during a DBus method call."""
     pass
 
 
-class RatbagError(BaseException):
+class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
     pass
 
@@ -113,8 +113,8 @@ class _RatbagdDBus(GObject.GObject):
         if _RatbagdDBus._dbus is None:
             try:
                 _RatbagdDBus._dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
-            except GLib.Error:
-                raise RatbagdDBusUnavailable()
+            except GLib.Error as e:
+                raise RatbagdDBusUnavailable(e.message)
 
         ratbag1 = "org.freedesktop.ratbag1"
         if os.environ.get('RATBAGCTL_DEVEL'):
@@ -134,11 +134,11 @@ class _RatbagdDBus(GObject.GObject):
                                                  object_path,
                                                  self._interface,
                                                  None)
-        except GLib.Error:
-            raise RatbagdDBusUnavailable()
+        except GLib.Error as e:
+            raise RatbagdDBusUnavailable(e.message)
 
         if self._proxy.get_name_owner() is None:
-            raise RatbagdDBusUnavailable()
+            raise RatbagdDBusUnavailable("No one currently owns {}".format(ratbag1))
 
     def _get_dbus_property(self, property):
         # Retrieves a cached property from the bus, or None.
