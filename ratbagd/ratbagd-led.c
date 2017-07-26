@@ -93,27 +93,11 @@ static int ratbagd_led_get_type(sd_bus *bus,
 				sd_bus_error *error)
 {
 	struct ratbagd_led *led = userdata;
-	const char *type = NULL;
-	enum ratbag_led_type t;
+	enum ratbag_led_type type;
 
-	t = ratbag_led_get_type(led->lib_led);
+	type = ratbag_led_get_type(led->lib_led);
 
-	switch(t) {
-		default:
-			log_error("Unknown led type %d\n", t);
-			/* fallthrough */
-		case RATBAG_LED_TYPE_UNKNOWN:
-			type = "unknown";
-			break;
-		case RATBAG_LED_TYPE_LOGO:
-			type = "logo";
-			break;
-		case RATBAG_LED_TYPE_SIDE:
-			type = "side";
-			break;
-	}
-
-	return sd_bus_message_append(reply, "s", type);
+	return sd_bus_message_append(reply, "u", type);
 }
 
 static int ratbagd_led_get_color(sd_bus *bus,
@@ -267,7 +251,7 @@ const sd_bus_vtable ratbagd_led_vtable[] = {
 				 ratbagd_led_get_mode,
 				 ratbagd_led_set_mode, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("Type", "s", ratbagd_led_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Type", "u", ratbagd_led_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("Color", "(uuu)",
 				 ratbagd_led_get_color, ratbagd_led_set_color, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),

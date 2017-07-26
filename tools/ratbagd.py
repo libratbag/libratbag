@@ -592,6 +592,10 @@ class RatbagdButton(_RatbagdDBus):
 class RatbagdLed(_RatbagdDBus):
     """Represents a ratbagd led."""
 
+    TYPE_UNKNOWN = -1
+    TYPE_LOGO = 0
+    TYPE_SIDE = 1
+
     MODE_OFF = 0
     MODE_ON = 1
     MODE_CYCLE = 2
@@ -622,7 +626,8 @@ class RatbagdLed(_RatbagdDBus):
 
     @GObject.Property
     def type(self):
-        """A string describing this led's type."""
+        """An enum describing this led's type, one of RatbagdLed.TYPE_UNKNOWN,
+        RatbagdLed.TYPE_LOGO or RatbagdLed.TYPE_SIDE."""
         return self._get_dbus_property("Type")
 
     @GObject.Property
