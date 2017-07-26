@@ -375,8 +375,7 @@ class TestRatbgagCtlButton(TestRatbagCtl):
         r = self.launch_good_test("button 1 get test_device")
         self.assertEqual(r, "Button: 1 type middle is mapped to 'KEY_3'")
         r = self.launch_good_test("button 2 get test_device")
-        # FIXME: special maps to UNKNOWN????
-        self.assertEqual(r, "Button: 2 type right is mapped to UNKNOWN")
+        self.assertEqual(r, "Button: 2 type right is mapped to 'profile-cycle-up'")
         r = self.launch_good_test("button 3 get test_device")
         self.assertEqual(r, "Button: 3 type unknown is mapped to macro '+KEY_B -KEY_B t300'")
         self.launch_fail_test("button 1 get 10 test_device")
@@ -408,13 +407,11 @@ class TestRatbgagCtlButton(TestRatbagCtl):
         self.setProfile(2)
         command = "button 0 action set special "
         r = self.launch_good_test("button 0 action get test_device")
-        # FIXME: special maps to UNKNOWN????
-        self.assertEqual(r, "Button: 0 type left is mapped to UNKNOWN")#'profile-cycle-up'")
+        self.assertEqual(r, "Button: 0 type left is mapped to 'profile-cycle-up'")
         r = self.launch_good_test(command + " second-mode test_device")
         self.assertEqual(r, '')
         r = self.launch_good_test("button 0 action get test_device")
-        # FIXME: special maps to UNKNOWN????
-        self.assertEqual(r, "Button: 0 type left is mapped to UNKNOWN")#'second-mode'")
+        self.assertEqual(r, "Button: 0 type left is mapped to 'second-mode'")
         self.launch_fail_test(command)
         self.launch_fail_test(command + " X test_device")
         self.launch_fail_test(command + " 100 test_device X")

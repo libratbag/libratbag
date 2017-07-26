@@ -127,6 +127,10 @@ test_read_button(struct ratbag_button *button)
 		ratbag_button_copy_macro(button, m);
 		ratbag_button_macro_unref(m);
 		break;
+	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+		button->action.action.special = p->buttons[button->index].special;
+		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 	}
