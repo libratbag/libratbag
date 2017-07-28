@@ -541,11 +541,6 @@ def func_profile_disable(r, args):
     d.commit()
 
 
-def func_dummy(r, args):
-    print("uh, oh, not implemented")
-    pr_debug(args, r, args)
-
-
 ################################################################################
 # these are definitions to be reused in the dict that defines our language
 
