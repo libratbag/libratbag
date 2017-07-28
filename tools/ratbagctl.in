@@ -1231,6 +1231,9 @@ class RatbagParserSet(RatbagParserSwitch):
             e.parse(subs, input_string, ns)
         if len(input_string) == 3:
             self.store_function(parser)
+        elif len(input_string) == 2:
+            # missing device argument
+            parser.add_argument("device", metavar='eventX')
         else:
             parser.set_defaults(subparse=self.sub_parse)
         return parser
