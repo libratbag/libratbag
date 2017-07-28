@@ -29,6 +29,30 @@ import argparse
 
 from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable  # NOQA
 
+button_specials_strmap = {
+    RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",
+    RatbagdButton.ACTION_SPECIAL_DOUBLECLICK: "doubleclick",
+    RatbagdButton.ACTION_SPECIAL_WHEEL_LEFT: "wheel-left",
+    RatbagdButton.ACTION_SPECIAL_WHEEL_RIGHT: "wheel-right",
+    RatbagdButton.ACTION_SPECIAL_WHEEL_UP: "wheel-up",
+    RatbagdButton.ACTION_SPECIAL_WHEEL_DOWN: "wheel-down",
+    RatbagdButton.ACTION_SPECIAL_RATCHET_MODE_SWITCH: "ratchet-mode-switch",
+    RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_UP: "resolution-cycle-up",
+    RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN: "resolution-cycle-down",
+    RatbagdButton.ACTION_SPECIAL_RESOLUTION_UP: "resolution-up",
+    RatbagdButton.ACTION_SPECIAL_RESOLUTION_DOWN: "resolution-down",
+    RatbagdButton.ACTION_SPECIAL_RESOLUTION_ALTERNATE: "resolution-alternate",
+    RatbagdButton.ACTION_SPECIAL_RESOLUTION_DEFAULT: "resolution-default",
+    RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_UP: "profile-cycle-up",
+    RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_DOWN: "profile-cycle-down",
+    RatbagdButton.ACTION_SPECIAL_PROFILE_UP: "profile-up",
+    RatbagdButton.ACTION_SPECIAL_PROFILE_DOWN: "profile-down",
+    RatbagdButton.ACTION_SPECIAL_SECOND_MODE: "second-mode",
+    RatbagdButton.ACTION_SPECIAL_BATTERY_LEVEL: "battery-level",
+}
+for k, v in [(v, k) for k, v in button_specials_strmap.items()]:
+    button_specials_strmap[k] = v
+
 
 def list_devices(r, args):
     for d in r.devices:
@@ -166,27 +190,6 @@ def print_button(d, p, b, level):
         RatbagdButton.TYPE_PROFILE_UP: "profile-up",
         RatbagdButton.TYPE_PROFILE_DOWN: "profile-down",
     }
-    specials = {
-        RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",
-        RatbagdButton.ACTION_SPECIAL_DOUBLECLICK: "doubleclick",
-        RatbagdButton.ACTION_SPECIAL_WHEEL_LEFT: "wheel-left",
-        RatbagdButton.ACTION_SPECIAL_WHEEL_RIGHT: "wheel-right",
-        RatbagdButton.ACTION_SPECIAL_WHEEL_UP: "wheel-up",
-        RatbagdButton.ACTION_SPECIAL_WHEEL_DOWN: "wheel-down",
-        RatbagdButton.ACTION_SPECIAL_RATCHET_MODE_SWITCH: "ratchet-mode-switch",
-        RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_UP: "resolution-cycle-up",
-        RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN: "resolution-cycle-down",
-        RatbagdButton.ACTION_SPECIAL_RESOLUTION_UP: "resolution-up",
-        RatbagdButton.ACTION_SPECIAL_RESOLUTION_DOWN: "resolution-down",
-        RatbagdButton.ACTION_SPECIAL_RESOLUTION_ALTERNATE: "resolution-alternate",
-        RatbagdButton.ACTION_SPECIAL_RESOLUTION_DEFAULT: "resolution-default",
-        RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_UP: "profile-cycle-up",
-        RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_DOWN: "profile-cycle-down",
-        RatbagdButton.ACTION_SPECIAL_PROFILE_UP: "profile-up",
-        RatbagdButton.ACTION_SPECIAL_PROFILE_DOWN: "profile-down",
-        RatbagdButton.ACTION_SPECIAL_SECOND_MODE: "second-mode",
-        RatbagdButton.ACTION_SPECIAL_BATTERY_LEVEL: "battery-level",
-    }
     t = types[b.type]
     header = " " * level + "Button: {} type {} is mapped to ".format(b.index, t)
 
@@ -200,7 +203,7 @@ def print_button(d, p, b, level):
 
         print("{}'{}'".format(header, bmap))
     elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
-        print("{}'{}'".format(header, specials[b.special]))
+        print("{}'{}'".format(header, button_specials_strmap[b.special]))
     elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
         bmap = ""
         for t, v in b.macro:
@@ -377,28 +380,7 @@ def func_button_action_set_special(r, args):
     except AttributeError:
         pass
     else:
-        specials = {
-            "unknown": RatbagdButton.ACTION_SPECIAL_UNKNOWN,
-            "doubleclick": RatbagdButton.ACTION_SPECIAL_DOUBLECLICK,
-            "wheel-left": RatbagdButton.ACTION_SPECIAL_WHEEL_LEFT,
-            "wheel-right": RatbagdButton.ACTION_SPECIAL_WHEEL_RIGHT,
-            "wheel-up": RatbagdButton.ACTION_SPECIAL_WHEEL_UP,
-            "wheel-down": RatbagdButton.ACTION_SPECIAL_WHEEL_DOWN,
-            "ratchet-mode-switch": RatbagdButton.ACTION_SPECIAL_RATCHET_MODE_SWITCH,
-            "resolution-cycle-up": RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_UP,
-            "resolution-cycle-down": RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN,
-            "resolution-up": RatbagdButton.ACTION_SPECIAL_RESOLUTION_UP,
-            "resolution-down": RatbagdButton.ACTION_SPECIAL_RESOLUTION_DOWN,
-            "resolution-alternate": RatbagdButton.ACTION_SPECIAL_RESOLUTION_ALTERNATE,
-            "resolution-default": RatbagdButton.ACTION_SPECIAL_RESOLUTION_DEFAULT,
-            "profile-cycle-up": RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_UP,
-            "profile-cycle-down": RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_DOWN,
-            "profile-up": RatbagdButton.ACTION_SPECIAL_PROFILE_UP,
-            "profile-down": RatbagdButton.ACTION_SPECIAL_PROFILE_DOWN,
-            "second-mode": RatbagdButton.ACTION_SPECIAL_SECOND_MODE,
-            "battery-level": RatbagdButton.ACTION_SPECIAL_BATTERY_LEVEL,
-        }
-        b.special = specials[special]
+        b.special = button_specials_strmap[special]
     d.commit()
 
 
