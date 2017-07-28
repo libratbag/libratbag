@@ -662,6 +662,15 @@ exit:
 	return r;
 }
 
+static int sighandler(sd_event_source *source,
+		      const struct signalfd_siginfo *si,
+		      void *userdata)
+{
+	sd_event *event = sd_event_source_get_event(source);
+	sd_event_exit(event, 0);
+	return 0;
+}
+
 static int ratbagd_run(struct ratbagd *ctx)
 {
 	int r;
@@ -681,6 +690,12 @@ static int ratbagd_run(struct ratbagd *ctx)
 	r = ratbagd_run_enumerate(ctx);
 	if (r < 0)
 		return r;
+
+	sigset_t sigset;
+	sigemptyset(&sigset);
+	sigaddset(&sigset, SIGINT);
+	sigprocmask(SIG_BLOCK, &sigset, NULL);
+	sd_event_add_signal(ctx->event, NULL, SIGINT, sighandler, NULL);
 
 	return sd_event_loop(ctx->event);
 }
