@@ -841,10 +841,29 @@ ratbag_cmd_resolution_active_set(const struct ratbag_cmd *cmd,
 				 struct ratbag_cmd_options *options,
 				 int argc, char **argv)
 {
+	struct ratbag_profile *profile = options->profile;
 	struct ratbag_resolution *resolution;
-	int rc;
+	int num_resolutions, index;
+	int rc = SUCCESS;
 
-	resolution = options->resolution;
+	index = atoi(argv[0]);
+
+	argc--;
+	argv++;
+
+	num_resolutions = ratbag_profile_get_num_resolutions(profile);
+	if (index >= num_resolutions) {
+		error("'%d' is not a valid resolution\n", index);
+		rc = ERR_USAGE;
+		goto out;
+	}
+
+	resolution = ratbag_profile_get_resolution(profile, index);
+	if (ratbag_resolution_is_active(resolution)) {
+		rc = SUCCESS;
+		goto out;
+	}
+
 	rc = ratbag_resolution_set_active(resolution);
 
 	if (rc != 0) {
@@ -852,7 +871,10 @@ ratbag_cmd_resolution_active_set(const struct ratbag_cmd *cmd,
 		return ERR_DEVICE;
 	}
 
-	return SUCCESS;
+out:
+	ratbag_resolution_unref(resolution);
+
+	return rc;
 }
 
 static const struct ratbag_cmd cmd_resolution_active_set = {

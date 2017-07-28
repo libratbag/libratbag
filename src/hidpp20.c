@@ -1299,6 +1299,61 @@ hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 }
 
 int
+hidpp20_onboard_profiles_set_current_dpi_index(struct hidpp20_device *device,
+					       uint8_t index)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ONBOARD_PROFILES_SET_CURRENT_DPI_INDEX,
+		.msg.parameters[0] = index,
+	};
+
+	if (index > 4)
+		return -EINVAL;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ONBOARD_PROFILES);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+int
+hidpp20_onboard_profiles_get_current_dpi_index(struct hidpp20_device *device)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ONBOARD_PROFILES_GET_CURRENT_DPI_INDEX,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ONBOARD_PROFILES);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return msg.msg.parameters[0];
+}
+
+int
 hidpp20_onboard_profiles_set_current_profile(struct hidpp20_device *device,
 					     uint8_t index)
 {

@@ -706,7 +706,8 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_resolution *res;
 	struct hidpp20_profile *p;
-	unsigned i, dpi = 0;
+	unsigned int i;
+	int dpi_index = 0xff;
 
 	profile->is_enabled = drv_data->profiles->profiles[index].enabled;
 
@@ -716,11 +717,11 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	if ((int)index == hidpp20drv_current_profile(device))
 		profile->is_active = true;
 
-	/* retrieve the resolution through 220X as the profile doesn't has it */
 	if (profile->is_active)
-		hidpp20drv_read_resolution_dpi(profile);
+		dpi_index = hidpp20_onboard_profiles_get_current_dpi_index(drv_data->dev);
 
-	dpi = ratbag_resolution_get_dpi(profile->resolution.modes);
+	if (dpi_index < 0)
+		dpi_index = 0xff;
 
 	p = &drv_data->profiles->profiles[index];
 
@@ -737,11 +738,11 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 					     p->report_rate);
 
 		if (profile->is_active &&
-		    res->dpi_x == dpi)
+		    i == (unsigned int)dpi_index)
 			res->is_active = true;
 		if (i == p->default_dpi) {
 			res->is_default = true;
-			if (!profile->is_active)
+			if (!profile->is_active || dpi_index < 0 || dpi_index > 4)
 				res->is_active = true;
 		}
 
@@ -891,7 +892,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	int rc;
-	unsigned int i;
+	unsigned int i, dpi_index = 0;
 
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
@@ -901,6 +902,8 @@ hidpp20drv_commit(struct ratbag_device *device)
 
 		for (i = 0; i < profile->resolution.num_modes; i++) {
 			resolution = &profile->resolution.modes[i];
+			if (resolution->is_active)
+				dpi_index = i;
 
 			rc = hidpp20drv_update_resolution_dpi(resolution,
 							      resolution->dpi_x,
@@ -929,10 +932,14 @@ hidpp20drv_commit(struct ratbag_device *device)
 				return RATBAG_ERROR_DEVICE;
 		}
 
-		if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+		if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 			hidpp20_onboard_profiles_write(drv_data->dev,
 						       profile->index,
 						       drv_data->profiles);
+			if (profile->is_active)
+				hidpp20_onboard_profiles_set_current_dpi_index(drv_data->dev,
+									       dpi_index);
+		}
 	}
 
 	return RATBAG_SUCCESS;

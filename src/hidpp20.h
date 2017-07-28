@@ -472,6 +472,7 @@ struct hidpp20_profile {
 	unsigned report_rate;
 	unsigned default_dpi;
 	unsigned switched_dpi;
+	unsigned current_dpi;
 	uint16_t dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
@@ -520,6 +521,22 @@ int hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device);
 int
 hidpp20_onboard_profiles_set_current_profile(struct hidpp20_device *device,
 					     uint8_t index);
+
+/**
+ * return the current dpi index of the current active profile
+ * or a negative error.
+ */
+int hidpp20_onboard_profiles_get_current_dpi_index(struct hidpp20_device *device);
+
+/**
+ * Sets the current dpi index on the current active profile.
+ * Indexes are 0-indexed.
+ *
+ * return 0 or a negative error.
+ */
+int
+hidpp20_onboard_profiles_set_current_dpi_index(struct hidpp20_device *device,
+					       uint8_t index);
 
 /**
  * parse a given profile from the mouse and fill in the right profile in
