@@ -547,6 +547,9 @@ class TestRatbgagCtlLED(TestRatbagCtl):
 
 
 def setUpModule():
+    from gi.repository import Gio
+    import time
+
     global ratbagd_process, ratbagd, parser
     # first copy the policy for the ratbagd daemon to be allowed to run
     shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME), DBUS_CONF_PATH)
@@ -554,6 +557,22 @@ def setUpModule():
     # FIXME: kill any running ratbagd.devel
 
     ratbagd_process = subprocess.Popen([os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")], shell=False)
+
+    dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+
+    name_owner = None
+    start_time = time.clock()
+    while name_owner is None and time.clock() - start_time < 30:
+        proxy = Gio.DBusProxy.new_sync(dbus,
+                                       Gio.DBusProxyFlags.NONE,
+                                       None,
+                                       "org.freedesktop.ratbag_devel1_@ratbagd_sha@",
+                                       "/org/freedesktop/ratbag_devel1_@ratbagd_sha@",
+                                       "org.freedesktop.ratbag_devel1_@ratbagd_sha@.Manager",
+                                       None)
+        name_owner = proxy.get_name_owner()
+        if name_owner is None:
+            time.sleep(0.2)
 
     os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1_@ratbagd_sha@"
 
