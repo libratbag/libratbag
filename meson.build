@@ -516,7 +516,7 @@ configure_file(input : 'tools/ratbagctl.devel.in',
 configure_file(input : 'tools/ratbagctl.test.in',
 	       output : 'ratbagctl.test',
 	       configuration : config_ratbagctl_devel)
-ratbagctl_test = find_program('build/ratbagctl.test')
+ratbagctl_test = find_program(join_paths(meson.build_root(), 'ratbagctl.test'))
 test('ratbagctl-test', ratbagctl_test, args: ['-v'])
 
 #### output files ####
