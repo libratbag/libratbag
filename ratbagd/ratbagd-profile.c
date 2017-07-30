@@ -298,6 +298,13 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 					profile->device,
 					ratbagd_profile_active_signal_cb);
 
+	(void) sd_bus_emit_signal(sd_bus_message_get_bus(m),
+				  ratbagd_device_get_path(profile->device),
+				  RATBAGD_NAME_ROOT ".Device",
+				  "ActiveProfileChanged",
+				  "u",
+				  profile->index);
+
         return sd_bus_reply_method_return(m, "u",
                                           ratbag_profile_set_active(profile->lib_profile));
 }
