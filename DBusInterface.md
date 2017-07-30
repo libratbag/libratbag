@@ -69,7 +69,6 @@ The capabilities supported by this device. see `enum
 ratbag_device_capability` in libratbag.h for the list of permissible
 capabilities.
 
-
 #### `Svg`
 - type: `s`, read-only, constant
 
@@ -84,6 +83,8 @@ profiles.
 Provides the list of profile paths for all profiles on this device, see
 **org.freedesktop.ratbag1.Profile**.
 
+### Methods
+
 #### `Commit() → ()`
 
 Commits the changes to the device. Changes to the device are batched; they
@@ -97,6 +98,13 @@ none is available.  The theme must be one of
 guaranteed to be available. ratbagd may return the path to a file that
 doesn't exist. This is the case if the device has SVGs available but not for
 the given theme.
+
+### Signals
+
+#### `ActiveProfileChanged(u)`
+
+Emitted when the active profile is changed, with the index of the new active
+profile.
 
 org.freedesktop.ratbag1.Profile
 ===============================
