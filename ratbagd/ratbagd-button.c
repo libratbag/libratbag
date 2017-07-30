@@ -144,7 +144,7 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 					       NULL);
 	}
 
-	return r;
+	return sd_bus_reply_method_return(m, "u", r);
 }
 
 static int ratbagd_button_get_key(sd_bus *bus,
