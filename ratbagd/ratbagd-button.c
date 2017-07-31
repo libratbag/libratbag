@@ -367,6 +367,15 @@ static int ratbagd_button_set_macro(sd_bus_message *m,
 	if (r < 0)
 		return r;
 
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       RATBAGD_NAME_ROOT ".Button",
+					       "Macro",
+					       NULL);
+	}
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
