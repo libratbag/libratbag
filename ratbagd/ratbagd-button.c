@@ -222,6 +222,15 @@ static int ratbagd_button_set_key(sd_bus_message *m,
 
 	r = ratbag_button_set_key(button->lib_button, key, modifiers, nmodifiers);
 
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       RATBAGD_NAME_ROOT ".Button",
+					       "KeyMapping",
+					       NULL);
+	}
+
 	return sd_bus_reply_method_return(m, "u", r);
 }
 
