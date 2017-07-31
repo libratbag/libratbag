@@ -1318,7 +1318,7 @@ def get_parser():
     return RatbagParserRoot(parser_def)
 
 
-def open_ratbagd():
+def open_ratbagd(ratbagd_process=None):
     try:
         r = Ratbagd()
     except RatbagdDBusUnavailable:
@@ -1328,6 +1328,14 @@ def open_ratbagd():
         if not r.devices:
             print("No devices available.")
         return r
+
+    if ratbagd_process is not None:
+        # if some old version of ratbagd is still running, ratbagd_process may
+        # have never started but our DBus bindings may succeed. Check for the
+        # return code here, this also gives ratbagd enough time to start and
+        # die. If we check immediately we may not have terminated yet.
+        ratbagd_process.poll()
+        assert ratbagd_process.returncode is None
 
 
 def main(argv):

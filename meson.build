@@ -519,6 +519,10 @@ configure_file(input : 'tools/ratbagctl.test.in',
 ratbagctl_test = find_program(join_paths(meson.build_root(), 'ratbagctl.test'))
 test('ratbagctl-test', ratbagctl_test, args: ['-v'])
 
+configure_file(input : 'tools/toolbox.py',
+	       output : 'toolbox.py',
+	       configuration : config_ratbagctl_devel)
+
 #### output files ####
 configure_file(output: 'config.h', install: false, configuration: config_h)
 
