@@ -240,6 +240,11 @@ Enum describing the current special mapping (if mapped to special)
 
 Array of uints, first entry is the keycode, other entries, if any, are
 modifiers (if mapped to key)
+#### `Macro`
+-type: `a(uu)`, read-only, mutable
+
+Array of (type, keycode), where type may be one of
+`RATBAG_MACRO_EVENT_KEY_PRESSED` or `RATBAG_MACRO_EVENT_KEY_RELEASED`.
 #### `ActionType`
 - type: `u`, read-only, mutable
 
@@ -259,6 +264,9 @@ Set the button mapping to the given special entry
 #### `SetKeyMapping(au) → ()`
 Set the key mapping, first entry is the keycode, other entries, if any, are
 modifier keycodes
+#### `SetMacro(a(uu)) → ()`
+Set the macro, as an array of (type, key) where type may be one of
+`RATBAG_MACRO_EVENT_KEY_PRESSED` or `RATBAG_MACRO_EVENT_KEY_RELEASED`.
 #### `Disable() → ()`
 Disable this button
 
