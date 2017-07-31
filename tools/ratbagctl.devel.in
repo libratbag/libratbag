@@ -27,7 +27,6 @@
 
 import os
 import toolbox
-import subprocess
 import sys
 
 
@@ -35,15 +34,19 @@ def main(argv):
     if not os.geteuid() == 0:
         sys.exit('Script must be run as root')
 
-    ratbagd = toolbox.start_ratbagd()
+    if not argv:
+        argv = ["list"]
+
+    ratbagd_process = toolbox.start_ratbagd()
+
+    ratbagd = toolbox.open_ratbagd()
+    parser = toolbox.get_parser()
 
     try:
-        ratbagctl = subprocess.Popen(" ".join([toolbox.RATBAGCTL_PATH, *sys.argv[1:]]))
-
-        ratbagctl.wait()
-    except KeyboardInterrupt:
-        pass
-    toolbox.terminate_ratbagd(ratbagd)
+        cmd = parser.parse(argv)
+        cmd.func(ratbagd, cmd)
+    finally:
+        toolbox.terminate_ratbagd(ratbagd_process)
 
 
 if __name__ == "__main__":
