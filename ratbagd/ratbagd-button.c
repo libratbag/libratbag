@@ -100,6 +100,12 @@ static int ratbagd_button_set_button(sd_bus_message *m,
 					       RATBAGD_NAME_ROOT ".Button",
 					       "ButtonMapping",
 					       NULL);
+
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       RATBAGD_NAME_ROOT ".Button",
+					       "ActionType",
+					       NULL);
 	}
 
 	return sd_bus_reply_method_return(m, "u", r);
@@ -141,6 +147,12 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 					       button->path,
 					       RATBAGD_NAME_ROOT ".Button",
 					       "SpecialMapping",
+					       NULL);
+
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       RATBAGD_NAME_ROOT ".Button",
+					       "ActionType",
 					       NULL);
 	}
 
@@ -228,6 +240,12 @@ static int ratbagd_button_set_key(sd_bus_message *m,
 					       button->path,
 					       RATBAGD_NAME_ROOT ".Button",
 					       "KeyMapping",
+					       NULL);
+
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       RATBAGD_NAME_ROOT ".Button",
+					       "ActionType",
 					       NULL);
 	}
 
@@ -373,6 +391,12 @@ static int ratbagd_button_set_macro(sd_bus_message *m,
 					       button->path,
 					       RATBAGD_NAME_ROOT ".Button",
 					       "Macro",
+					       NULL);
+
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       RATBAGD_NAME_ROOT ".Button",
+					       "ActionType",
 					       NULL);
 	}
 
