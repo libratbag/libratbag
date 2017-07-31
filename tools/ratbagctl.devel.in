@@ -26,27 +26,25 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
-import shutil
+import toolbox
 import subprocess
 import sys
 
-if not os.geteuid() == 0:
-    sys.exit('Script must be run as root')
 
-SCRIPT_DIR = '@MESON_BUILD_ROOT@'
+def main(argv):
+    if not os.geteuid() == 0:
+        sys.exit('Script must be run as root')
 
-# first copy the policy for the ratbagd daemon to be allowed to run
-shutil.copy(os.path.join(SCRIPT_DIR, 'org.freedesktop.ratbag_devel1.conf'),
-            '/etc/dbus-1/system.d/')
+    ratbagd = toolbox.start_ratbagd()
 
-ratbagd = subprocess.Popen([os.path.join(SCRIPT_DIR, "ratbagd.devel")], shell=True)
+    try:
+        ratbagctl = subprocess.Popen(" ".join([toolbox.RATBAGCTL_PATH, *sys.argv[1:]]))
 
-try:
-    ratbagctl = subprocess.Popen(" ".join([os.path.join(SCRIPT_DIR, "ratbagctl"), *sys.argv[1:]]),
-                                 shell=True,
-                                 env={"RATBAGCTL_DEVEL": "org.freedesktop.ratbag_devel1_@ratbagd_sha@"})
+        ratbagctl.wait()
+    except KeyboardInterrupt:
+        pass
+    toolbox.terminate_ratbagd(ratbagd)
 
-    ratbagctl.wait()
-except KeyboardInterrupt:
-    pass
-ratbagd.terminate()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

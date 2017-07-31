@@ -26,41 +26,15 @@
 # DEALINGS IN THE SOFTWARE.
 
 import argparse
-import imp
 import io
 import os
 import resource
-import shutil
 import subprocess
 import sys
+import toolbox
 import unittest
 
-# various constants
-RATBAGCTL_NAME = 'ratbagctl'
-RATBAGCTL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_NAME)
-DBUS_CONF_DIR = '/etc/dbus-1/system.d'
-DBUS_CONF_NAME = 'org.freedesktop.ratbag_devel1.conf'
-DBUS_CONF_PATH = os.path.join(DBUS_CONF_DIR, DBUS_CONF_NAME)
-
 run_ratbagctl_in_subprocess = False
-
-
-def import_non_standard_path(name, path):
-    # Fast path: see if the module has already been imported.
-    try:
-        return sys.modules[name]
-    except KeyError:
-        pass
-
-    # If any of the following calls raises an exception,
-    # there's a problem we can't handle -- let the caller handle it.
-
-    with open(path, 'rb') as fp:
-        module = imp.load_module(name, fp, os.path.basename(path), ('.py', 'rb', imp.PY_SOURCE))
-
-    return module
-
-ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
 
 class TestRatbagCtl(unittest.TestCase):
@@ -71,7 +45,7 @@ class TestRatbagCtl(unittest.TestCase):
 
     @classmethod
     def run_ratbagctl_subprocess(cls, params):
-        ratbagctl = subprocess.Popen(" ".join([RATBAGCTL_PATH, params]),
+        ratbagctl = subprocess.Popen(" ".join([toolbox.RATBAGCTL_PATH, params]),
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      shell=True,
@@ -547,56 +521,19 @@ class TestRatbgagCtlLED(TestRatbagCtl):
 
 
 def setUpModule():
-    from gi.repository import Gio
-    import time
-
     global ratbagd_process, ratbagd, parser
-    # first copy the policy for the ratbagd daemon to be allowed to run
-    shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME), DBUS_CONF_PATH)
 
-    # FIXME: kill any running ratbagd.devel
+    ratbagd_process = toolbox.start_ratbagd()
 
-    ratbagd_process = subprocess.Popen([os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")], shell=False)
-
-    dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
-
-    name_owner = None
-    start_time = time.clock()
-    while name_owner is None and time.clock() - start_time < 30:
-        proxy = Gio.DBusProxy.new_sync(dbus,
-                                       Gio.DBusProxyFlags.NONE,
-                                       None,
-                                       "org.freedesktop.ratbag_devel1_@ratbagd_sha@",
-                                       "/org/freedesktop/ratbag_devel1_@ratbagd_sha@",
-                                       "org.freedesktop.ratbag_devel1_@ratbagd_sha@.Manager",
-                                       None)
-        name_owner = proxy.get_name_owner()
-        if name_owner is None:
-            time.sleep(0.2)
-
-    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1_@ratbagd_sha@"
-
-    ratbagd = ratbagctl.open_ratbagd()
+    ratbagd = toolbox.open_ratbagd(ratbagd_process)
     assert ratbagd is not None
 
-    # if some old version of ratbagd is still running, ratbagd_process may
-    # have never started but our DBus bindings may succeed. Check for the
-    # return code here, this also gives ratbagd enough time to start and
-    # die. If we check immediately we may not have terminated yet.
-    ratbagd_process.poll()
-    assert ratbagd_process.returncode is None
-
-    parser = ratbagctl.get_parser()
+    parser = toolbox.get_parser()
 
 
 def tearDownModule():
     global ratbagd_process
-    try:
-        ratbagd_process.terminate()
-        ratbagd_process.wait(5)
-    except subprocess.TimeoutExpired:
-        ratbagd_process.kill()
-    os.unlink(DBUS_CONF_PATH)
+    toolbox.terminate_ratbagd(ratbagd_process)
 
 
 def parse(input_string):
