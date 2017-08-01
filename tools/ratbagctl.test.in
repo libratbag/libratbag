@@ -116,6 +116,14 @@ class TestRatbagCtlInfo(TestRatbagCtl):
         self.launch_fail_test("info X")
 
 
+class TestRatbagCtlName(TestRatbagCtl):
+    def test_get(self):
+        r = self.launch_good_test("name test_device")
+        self.assertEqual(r, 'Test device')
+        self.launch_fail_test("name test_device X")
+        self.launch_fail_test("name X")
+
+
 class TestRatbgagCtlProfile(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):

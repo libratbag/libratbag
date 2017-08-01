@@ -523,6 +523,11 @@ def func_profile_disable(r, args):
     d.commit()
 
 
+def func_device_name_get(r, args):
+    d = find_device(r, args)
+    print(d.name)
+
+
 ################################################################################
 # these are definitions to be reused in the dict that defines our language
 
@@ -637,6 +642,12 @@ parser_def = [
         help_str: 'Show device information',
         func: show_device,
         group: 'Device',
+    },
+    {
+        of_type: command,
+        name: 'name',
+        help_str: 'Returns the device name',
+        func: func_device_name_get,
     },
     {
         of_type: switch,
