@@ -663,6 +663,7 @@ ratbag_create_profile(struct ratbag_device *device,
 						   sizeof(*profile->resolution.modes));
 	profile->resolution.num_modes = num_resolutions;
 	profile->is_enabled = true;
+	profile->name = asprintf_safe("Profile %d", index + 1);
 
 	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
@@ -742,6 +743,9 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 		ratbag_led_destroy(led);
 
 	free(profile->resolution.modes);
+
+	if (profile->name)
+		free(profile->name);
 
 	list_remove(&profile->link);
 	free(profile);
@@ -1530,6 +1534,31 @@ ratbag_profile_get_led(struct ratbag_profile *profile,
 			  index, profile->index);
 
 	return NULL;
+}
+
+LIBRATBAG_EXPORT const char *
+ratbag_profile_get_name(struct ratbag_profile *profile)
+{
+	return profile->name;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_profile_set_name(struct ratbag_profile *profile,
+			const char *name)
+{
+	char *name_copy;
+
+	if (!ratbag_profile_has_capability(profile,
+					   RATBAG_PROFILE_CAP_WRITABLE_NAME))
+		return RATBAG_ERROR_CAPABILITY;
+
+	name_copy = strdup_safe(name);
+	if (profile->name)
+		free(profile->name);
+
+	profile->name = name_copy;
+
+	return 0;
 }
 
 LIBRATBAG_EXPORT void

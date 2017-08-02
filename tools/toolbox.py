@@ -100,7 +100,7 @@ def terminate_ratbagd(ratbagd):
 
 ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
-from ratbagctl import open_ratbagd, get_parser
+from ratbagctl import open_ratbagd, get_parser, RatbagError, RatbagErrorCapability
 
 __all__ = [
     RATBAGCTL_NAME,
@@ -112,4 +112,6 @@ __all__ = [
     terminate_ratbagd,
     open_ratbagd,
     get_parser,
+    RatbagError,
+    RatbagErrorCapability,
 ]

@@ -266,6 +266,7 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 			},
 			.active = false,
 			.dflt = true,
+			.caps = { RATBAG_PROFILE_CAP_WRITABLE_NAME },
 		},
 		{
 			.buttons = {

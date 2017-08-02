@@ -97,6 +97,11 @@ class TestRatbagCtl(unittest.TestCase):
         self.assertNotEqual(returncode, 0)
         return stdout
 
+    def launch_fail_with_exception_test(self, params, exception):
+        with self.assertRaises(exception):
+            returncode, stdout, stderr = self.run_ratbagctl(params)
+        return ''
+
     @classmethod
     def setProfile(cls, profile):
         cls.run_ratbagctl("Profile active set {} test_device".format(profile))
@@ -129,6 +134,29 @@ class TestRatbgagCtlProfile(TestRatbagCtl):
     def setUpClass(cls):
         super(TestRatbgagCtlProfile, cls).setUpClass()
         cls.setProfile(0)
+
+    def test_profile_name_get(self):
+        command = "profile 0 name get"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(r, 'Profile 1')
+        self.launch_fail_test(command)
+        self.launch_fail_test(command + " X test_device")
+        self.launch_fail_test("profile name get test_device")
+
+    def test_profile_name_set(self):
+        r = self.launch_good_test("profile 1 name get test_device")
+        self.assertEqual(r, 'Profile 2')
+        self.launch_good_test("profile 1 name set banana test_device")
+        r = self.launch_good_test("profile 1 name get test_device")
+        self.assertEqual(r, 'banana')
+        # profile 0 doesn't have the capability RATBAG_PROFILE_CAP_WRITABLE_NAME
+        self.launch_fail_with_exception_test("profile 0 name set kiwi test_device", toolbox.RatbagErrorCapability)
+        # better be safe than sorry, checking that the previous actually failed :)
+        r = self.launch_good_test("profile 0 name get test_device")
+        self.assertNotEqual(r, 'kiwi')
+        self.launch_fail_test("profile 1 name set blah")
+        self.launch_fail_test("profile 1 name set blah X test_device")
+        self.launch_fail_test("profile name set blah test_device")
 
     def test_profile_active_get(self):
         command = "profile active get"

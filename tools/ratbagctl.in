@@ -27,7 +27,7 @@ import evdev
 import sys
 import argparse
 
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable, RatbagError, RatbagErrorCapability  # NOQA
 
 button_specials_strmap = {
     RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",
@@ -248,6 +248,7 @@ def print_profile(d, p, level):
                                                        " (disabled)" if not p.enabled else "",
                                                        " (active)" if p.is_active else ""))
     if p.enabled:
+        print(" " * level + "Name : '{}'".format(p.name))
         print(" " * level + "Resolutions:")
         for r in p.resolutions:
             print_resolution(d, p, r, level + 2)
@@ -495,6 +496,19 @@ def func_profile_get(r, args):
     print_profile(d, p, 0)
 
 
+def func_profile_name_get(r, args):
+    p, d = find_profile(r, args)
+    print(p.name)
+
+
+def func_profile_name_set(r, args):
+    p, d = find_profile(r, args)
+    if RatbagdProfile.CAP_WRITABLE_NAME not in p.capabilities:
+        raise RatbagErrorCapability("assigning a profile name is not supported on this profile")
+    p.name = args.name
+    d.commit()
+
+
 def func_profile_active_get(r, args):
     d = find_device(r, args)
     for p in d.profiles:
@@ -696,6 +710,33 @@ parser_def = [
                     name: 'get',
                     help_str: 'Show selected profile information',
                     func: func_profile_get,
+                },
+                {
+                    of_type: switch,
+                    name: 'name',
+                    help_str: 'access profile name information',
+                    switch: [
+                        {
+                            of_type: command,
+                            name: 'get',
+                            help_str: 'Show the name of the profile',
+                            func: func_profile_name_get,
+                        },
+                        {
+                            of_type: command,
+                            name: 'set',
+                            help_str: 'Set the name of the profile',
+                            pos_args: [
+                                {
+                                    of_type: argument,
+                                    name: 'name',
+                                    metavar: 'blah',
+                                    help_str: 'The name to set',
+                                },
+                            ],
+                            func: func_profile_name_set,
+                        },
+                    ],
                 },
                 {
                     of_type: command,

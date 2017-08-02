@@ -348,6 +348,57 @@ ratbagd_profile_is_enabled(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_set_name(sd_bus *bus,
+			 const char *path,
+			 const char *interface,
+			 const char *property,
+			 sd_bus_message *m,
+			 void *userdata,
+			 sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	char *name;
+	int r;
+
+	r = sd_bus_message_read(m, "s", &name);
+	if (r < 0)
+		return r;
+
+	r = ratbag_profile_set_name(profile->lib_profile, name);
+
+	if (r == 0) {
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "Name",
+					       NULL);
+	}
+
+	/*
+	 * Note: we should return `r`, but the d-bus bindings doesn't
+	 * like non standard errors. So just return success and let the client
+	 * check for the capability before-hand and let .commit() signal an
+	 * error.
+	 */
+	return 0;
+}
+
+static int
+ratbagd_profile_get_name(sd_bus *bus,
+			 const char *path,
+			 const char *interface,
+			 const char *property,
+			 sd_bus_message *reply,
+			 void *userdata,
+			 sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	const char *name = ratbag_profile_get_name(profile->lib_profile);
+
+	return sd_bus_message_append(reply, "s", name);
+}
+
+static int
 ratbagd_profile_get_capabilities(sd_bus *bus,
 				 const char *path,
 				 const char *interface,
@@ -360,6 +411,7 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 	struct ratbag_profile *lib_profile = profile->lib_profile;
 	enum ratbag_profile_capability cap;
 	enum ratbag_profile_capability caps[] = {
+		RATBAG_PROFILE_CAP_WRITABLE_NAME,
 	};
 	int r;
 	size_t i;
@@ -382,6 +434,10 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
+	SD_BUS_WRITABLE_PROPERTY("Name", "s",
+				 ratbagd_profile_get_name,
+				 ratbagd_profile_set_name, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("Enabled", "b",
 				 ratbagd_profile_is_enabled,
 				 ratbagd_profile_set_enabled, 0,

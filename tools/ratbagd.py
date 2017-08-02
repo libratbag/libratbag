@@ -289,6 +289,8 @@ class RatbagdDevice(_RatbagdDBus):
 class RatbagdProfile(_RatbagdDBus):
     """Represents a ratbagd profile."""
 
+    CAP_WRITABLE_NAME = 100
+
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Profile", object_path)
 
@@ -297,12 +299,24 @@ class RatbagdProfile(_RatbagdDBus):
         """The capabilities of this profile as an array. Capabilities not
         present on the profile are not in the list. Thus use e.g.
 
-        if RatbagdPorfile.CAP_WRITABLE_NAME is in profile.capabilities:
+        if RatbagdProfile.CAP_WRITABLE_NAME is in profile.capabilities:
             do something
         """
         return self._get_dbus_property("Capabilities")
 
     @GObject.property
+    def name(self):
+        """The name of the profile"""
+        return self._get_dbus_property("Name")
+
+    @name.setter
+    def name(self, name):
+        """Set the name of this profile.
+
+        @param name The new name, as str"""
+        self._set_dbus_property("Name", "s", name)
+
+    @GObject.Property
     def index(self):
         """The index of this profile."""
         return self._get_dbus_property("Index")

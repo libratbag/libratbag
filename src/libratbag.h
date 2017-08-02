@@ -651,6 +651,14 @@ ratbag_device_get_num_leds(struct ratbag_device *device);
  */
 enum ratbag_profile_capability {
 	RATBAG_PROFILE_CAP_NONE = 0,
+	/**
+	 * The device has the capability to write a name to a profile
+	 * and store it in its flash.
+	 *
+	 * Any changes uploaded to the device will be cached in libratbag
+	 * and will be committed to it after a commit only.
+	 */
+	RATBAG_PROFILE_CAP_WRITABLE_NAME = 100,
 };
 /**
  * @ingroup profile
@@ -687,6 +695,31 @@ ratbag_profile_unref(struct ratbag_profile *profile);
 int
 ratbag_profile_has_capability(const struct ratbag_profile *profile,
 			      enum ratbag_profile_capability cap);
+
+/**
+ * @ingroup profile
+ *
+ * Return the ratbag profile name.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @return the profile name
+ */
+const char *
+ratbag_profile_get_name(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Set the name of a ratbag profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param name the profile name
+ *
+ * @return 0 on success or an error code otherwise
+ */
+int
+ratbag_profile_set_name(struct ratbag_profile *profile,
+			const char *name);
 
 /**
  * @ingroup profile
