@@ -356,50 +356,6 @@ test('symbols-leak-test',
      test_symbols_leak,
      args : [ meson.current_source_dir() ])
 
-#### documentation ####
-enable_doc = get_option('enable-documentation')
-
-if enable_doc
-	cmd_doxygen = find_program('doxygen')
-	cmd_dot = find_program('dot')
-
-	v = run_command(cmd_doxygen, ['--version']).stdout()
-	if not v.version_compare('>=1.8.3')
-		error('Doxygen $doxygen_version too old. ' +
-		      'Doxygen 1.8.3+ required for documentation build. ' +
-		      'Install required doxygen version or ' +
-		      'disable the documentation using --disable-documentation')
-	endif
-
-	v = run_command(cmd_dot, ['-V']).stderr()
-	v = v.split(' ')[4]
-	if v.version_compare('<2.26.0')
-		error('Graphviz dot $dot_version too old. ' +
-		      'Graphviz 2.26+ required for documentation build. ' +
-		      'Install required graphviz version or ' +
-		      'disable the documentation using --disable-documentation')
-	endif
-
-	doc_config = configuration_data()
-	doc_config.set('PACKAGE_NAME', meson.project_name())
-	doc_config.set('PACKAGE_VERSION', meson.project_version())
-	doc_config.set('top_srcdir', meson.source_root())
-
-	doxyfile = configure_file(input : 'doc/libratbag.doxygen.in',
-				  output : 'libratbag.doxygen',
-				  configuration : doc_config,
-				  install : false)
-	src_doxygen = [ doxyfile,
-			'src/libratbag.h',
-			'README.md']
-	custom_target('doxygen',
-			input : src_doxygen,
-			output : [ 'html' ],
-			command : [ cmd_doxygen, doxyfile ],
-			install : false,
-			build_by_default : true)
-endif
-
 #### ratbagd ####
 src_ratbagd = [
 	'src/shared-macro.h',

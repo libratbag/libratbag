@@ -8,11 +8,6 @@ option('enable-tests',
 	value: true,
 	description: 'Build the tests (default=yes)')
 
-option('enable-documentation',
-	type: 'boolean',
-	value: true,
-	description: 'Build the documentation (default=yes)')
-
 option('systemd-unit-dir',
 	type : 'string',
 	default : '',
