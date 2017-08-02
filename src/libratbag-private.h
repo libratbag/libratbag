@@ -261,6 +261,7 @@ struct ratbag_led {
 struct ratbag_profile {
 	int refcount;
 	void *userdata;
+	char *name;
 
 	struct list link;
 	unsigned index;

@@ -118,6 +118,24 @@ snprintf_safe(char *buf, size_t n, const char *fmt, ...)
 #define sprintf_safe(buf, fmt, ...) \
 	snprintf_safe(buf, ARRAY_LENGTH(buf), fmt, __VA_ARGS__)
 
+__attribute__((format(printf, 1, 2)))
+static inline void *
+asprintf_safe(const char *fmt, ...)
+{
+	va_list args;
+	int rc;
+	char *result;
+
+	va_start(args, fmt);
+	rc = vasprintf(&result, fmt, args);
+	va_end(args);
+
+	if (rc < 0)
+		abort();
+
+	return result;
+}
+
 static inline void
 msleep(unsigned int ms)
 {

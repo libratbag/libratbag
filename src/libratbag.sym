@@ -59,6 +59,7 @@ global:
 	ratbag_led_unref;
 	ratbag_device_get_num_leds;
 	ratbag_profile_get_button;
+	ratbag_profile_get_name;
 	ratbag_profile_get_num_resolutions;
 	ratbag_profile_get_resolution;
 	ratbag_profile_get_user_data;
@@ -69,6 +70,7 @@ global:
 	ratbag_profile_set_user_data;
 	ratbag_profile_set_active;
 	ratbag_profile_set_enabled;
+	ratbag_profile_set_name;
 	ratbag_profile_unref;
 	ratbag_resolution_get_dpi;
 	ratbag_resolution_get_dpi_maximum;
