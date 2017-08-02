@@ -634,6 +634,16 @@ ratbag_profile_init_leds(struct ratbag_profile *profile, unsigned int count)
 	return 0;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_profile_has_capability(const struct ratbag_profile *profile,
+			      enum ratbag_profile_capability cap)
+{
+	if (cap == RATBAG_PROFILE_CAP_NONE || cap >= MAX_CAP)
+		abort();
+
+	return long_bit_is_set(profile->capabilities, cap);
+}
+
 static struct ratbag_profile *
 ratbag_create_profile(struct ratbag_device *device,
 		      unsigned int index,

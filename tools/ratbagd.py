@@ -293,6 +293,16 @@ class RatbagdProfile(_RatbagdDBus):
         _RatbagdDBus.__init__(self, "Profile", object_path)
 
     @GObject.Property
+    def capabilities(self):
+        """The capabilities of this profile as an array. Capabilities not
+        present on the profile are not in the list. Thus use e.g.
+
+        if RatbagdPorfile.CAP_WRITABLE_NAME is in profile.capabilities:
+            do something
+        """
+        return self._get_dbus_property("Capabilities")
+
+    @GObject.property
     def index(self):
         """The index of this profile."""
         return self._get_dbus_property("Index")

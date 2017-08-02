@@ -347,6 +347,39 @@ ratbagd_profile_is_enabled(sd_bus *bus,
 	return sd_bus_message_append(reply, "b", enabled);
 }
 
+static int
+ratbagd_profile_get_capabilities(sd_bus *bus,
+				 const char *path,
+				 const char *interface,
+				 const char *property,
+				 sd_bus_message *reply,
+				 void *userdata,
+				 sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	enum ratbag_profile_capability cap;
+	enum ratbag_profile_capability caps[] = {
+	};
+	int r;
+	size_t i;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	for (i = 0; i < ELEMENTSOF(caps); i++) {
+		cap = caps[i];
+		if (ratbag_profile_has_capability(lib_profile, cap)) {
+			r = sd_bus_message_append(reply, "u", cap);
+			if (r < 0)
+				return r;
+		}
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_WRITABLE_PROPERTY("Enabled", "b",
@@ -354,6 +387,7 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 				 ratbagd_profile_set_enabled, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_profile_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),

@@ -62,6 +62,7 @@ global:
 	ratbag_profile_get_num_resolutions;
 	ratbag_profile_get_resolution;
 	ratbag_profile_get_user_data;
+	ratbag_profile_has_capability;
 	ratbag_profile_is_active;
 	ratbag_profile_is_enabled;
 	ratbag_profile_ref;

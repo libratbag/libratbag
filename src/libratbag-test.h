@@ -76,6 +76,7 @@ struct ratbag_test_profile {
 	bool active;
 	bool dflt;
 	bool disabled;
+	uint32_t caps[10];
 };
 
 struct ratbag_test_device {
