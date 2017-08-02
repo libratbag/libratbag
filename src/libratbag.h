@@ -648,6 +648,12 @@ ratbag_device_get_num_leds(struct ratbag_device *device);
 
 /**
  * @ingroup profile
+ */
+enum ratbag_profile_capability {
+	RATBAG_PROFILE_CAP_NONE = 0,
+};
+/**
+ * @ingroup profile
  *
  * Add a reference to the profile. A profile is destroyed whenever the
  * reference count reaches 0. See @ref ratbag_profile_unref.
@@ -670,6 +676,17 @@ ratbag_profile_ref(struct ratbag_profile *profile);
  */
 struct ratbag_profile *
 ratbag_profile_unref(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Check if a profile has a specific capability.
+ *
+ * @return non-zero if the capability is available, zero otherwise.
+ */
+int
+ratbag_profile_has_capability(const struct ratbag_profile *profile,
+			      enum ratbag_profile_capability cap);
 
 /**
  * @ingroup profile

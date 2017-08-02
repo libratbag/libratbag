@@ -277,6 +277,7 @@ struct ratbag_profile {
 	bool is_active;		/**< profile is the currently active one */
 	bool is_enabled;
 	bool dirty;       /**< profile changed since last commit */
+	unsigned long capabilities[NLONGS(MAX_CAP)];
 };
 
 #define BUTTON_ACTION_NONE \
@@ -395,6 +396,15 @@ static inline void *
 ratbag_profile_get_drv_data(struct ratbag_profile *profile)
 {
 	return profile->drv_data;
+}
+
+static inline void
+ratbag_profile_set_cap(struct ratbag_profile *profile,
+		       enum ratbag_profile_capability cap)
+{
+	assert(cap <= MAX_CAP);
+
+	long_set_bit(profile->capabilities, cap);
 }
 
 static inline int
