@@ -409,13 +409,14 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	if (streq_ptr("remove", udev_device_get_action(udevice))) {
 		/* device was removed, unlink it and destroy our context */
 		if (device) {
+			ratbagd_device_unlink(device);
+			ratbagd_device_free(device);
+
 			(void) sd_bus_emit_properties_changed(ctx->bus,
 							      RATBAGD_OBJ_ROOT,
 							      RATBAGD_NAME_ROOT ".Manager",
 							      "Devices",
 							      NULL);
-			ratbagd_device_unlink(device);
-			ratbagd_device_free(device);
 		}
 	} else if (device) {
 		/* device already known, refresh our view of the device */
