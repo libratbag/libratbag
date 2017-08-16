@@ -94,6 +94,12 @@ static int ratbagd_resolution_active_signal_cb(sd_bus *bus,
 				  "b",
 				  ratbag_resolution_is_active(lib_resolution));
 
+	(void) sd_bus_emit_properties_changed(bus,
+					      resolution->path,
+					      RATBAGD_NAME_ROOT ".Resolution",
+					      "IsActive",
+					      NULL);
+
 	return 0;
 }
 
