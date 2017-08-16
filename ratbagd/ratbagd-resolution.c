@@ -136,6 +136,12 @@ static int ratbagd_resolution_default_signal_cb(sd_bus *bus,
 				  "b",
 				  ratbag_resolution_is_default(lib_resolution));
 
+	(void) sd_bus_emit_properties_changed(bus,
+					      resolution->path,
+					      RATBAGD_NAME_ROOT ".Resolution",
+					      "IsDefault",
+					      NULL);
+
 	return 0;
 }
 
