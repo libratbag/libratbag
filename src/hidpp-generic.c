@@ -36,7 +36,7 @@
 
 #include "libratbag-private.h"
 
-const char *hidpp10_errors[0xFF] = {
+const char *hidpp10_errors[0x100] = {
 	[0x00] = "ERR_SUCCESS",
 	[0x01] = "ERR_INVALID_SUBID",
 	[0x02] = "ERR_INVALID_ADDRESS",
@@ -50,10 +50,10 @@ const char *hidpp10_errors[0xFF] = {
 	[0x0A] = "ERR_REQUEST_UNAVAILABLE",
 	[0x0B] = "ERR_INVALID_PARAM_VALUE",
 	[0x0C] = "ERR_WRONG_PIN_CODE",
-	[0x0D ... 0xFE] = NULL,
+	[0x0D ... 0xFF] = NULL,
 };
 
-const char *hidpp20_errors[0xFF] = {
+const char *hidpp20_errors[0x100] = {
 	[0x00] = "ERR_NO_ERROR",
 	[0x01] = "ERR_UNKNOWN",
 	[0x02] = "ERR_INVALID_ARGUMENT",
@@ -64,7 +64,7 @@ const char *hidpp20_errors[0xFF] = {
 	[0x07] = "ERR_INVALID_FUNCTION_ID",
 	[0x08] = "ERR_BUSY",
 	[0x09] = "ERR_UNSUPPORTED",
-	[0x0A ... 0xFE] = NULL,
+	[0x0A ... 0xFF] = NULL,
 };
 
 struct hidpp20_1b04_action_mapping {
