@@ -51,19 +51,30 @@
 #define GET_LONG_REGISTER_RSP			0x83
 #define __ERROR_MSG				0x8F
 
-#define ERR_SUCCESS				0x00
-#define ERR_INVALID_SUBID			0x01
-#define ERR_INVALID_ADDRESS			0x02
-#define ERR_INVALID_VALUE			0x03
-#define ERR_CONNECT_FAIL			0x04
-#define ERR_TOO_MANY_DEVICES			0x05
-#define ERR_ALREADY_EXISTS			0x06
-#define ERR_BUSY				0x07
-#define ERR_UNKNOWN_DEVICE			0x08
-#define ERR_RESOURCE_ERROR			0x09
-#define ERR_REQUEST_UNAVAILABLE			0x0A
-#define ERR_INVALID_PARAM_VALUE			0x0B
-#define ERR_WRONG_PIN_CODE			0x0C
+#define HIDPP10_ERR_SUCCESS				0x00
+#define HIDPP10_ERR_INVALID_SUBID			0x01
+#define HIDPP10_ERR_INVALID_ADDRESS			0x02
+#define HIDPP10_ERR_INVALID_VALUE			0x03
+#define HIDPP10_ERR_CONNECT_FAIL			0x04
+#define HIDPP10_ERR_TOO_MANY_DEVICES			0x05
+#define HIDPP10_ERR_ALREADY_EXISTS			0x06
+#define HIDPP10_ERR_BUSY				0x07
+#define HIDPP10_ERR_UNKNOWN_DEVICE			0x08
+#define HIDPP10_ERR_RESOURCE_ERROR			0x09
+#define HIDPP10_ERR_REQUEST_UNAVAILABLE			0x0A
+#define HIDPP10_ERR_INVALID_PARAM_VALUE			0x0B
+#define HIDPP10_ERR_WRONG_PIN_CODE			0x0C
+
+#define HIDPP20_ERR_NO_ERROR			0x00
+#define HIDPP20_ERR_UNKNOWN			0x01
+#define HIDPP20_ERR_INVALID_ARGUMENT		0x02
+#define HIDPP20_ERR_OUT_OF_RANGE		0x03
+#define HIDPP20_ERR_HARDWARE_ERROR		0x04
+#define HIDPP20_ERR_LOGITECH_INTERNAL		0x05
+#define HIDPP20_ERR_INVALID_FEATURE_INDEX	0x06
+#define HIDPP20_ERR_INVALID_FUNCTION_ID		0x07
+#define HIDPP20_ERR_BUSY			0x08
+#define HIDPP20_ERR_UNSUPPORTED			0x09
 
 /* Keep this in sync with ratbag_log_priority */
 enum hidpp_log_priority {
@@ -97,7 +108,8 @@ hidpp_device_set_log_handler(struct hidpp_device *dev,
 			     enum hidpp_log_priority priority,
 			     void *userdata);
 
-extern const char *hidpp_errors[0xFF];
+extern const char *hidpp10_errors[0xFF];
+extern const char *hidpp20_errors[0xFF];
 
 const char *
 hidpp20_1b04_get_physical_mapping_name(uint16_t value);
