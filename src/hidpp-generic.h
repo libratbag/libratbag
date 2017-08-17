@@ -108,8 +108,8 @@ hidpp_device_set_log_handler(struct hidpp_device *dev,
 			     enum hidpp_log_priority priority,
 			     void *userdata);
 
-extern const char *hidpp10_errors[0xFF];
-extern const char *hidpp20_errors[0xFF];
+extern const char *hidpp10_errors[0x100];
+extern const char *hidpp20_errors[0x100];
 
 const char *
 hidpp20_1b04_get_physical_mapping_name(uint16_t value);
