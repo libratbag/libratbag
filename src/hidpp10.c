@@ -268,7 +268,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 				"    HID++ error from the %s (%d): %s (%02x)\n",
 				read_buffer.msg.device_idx == HIDPP_RECEIVER_IDX ? "receiver" : "device",
 				read_buffer.msg.device_idx,
-				hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
+				hidpp10_errors[hidpp_err] ? hidpp10_errors[hidpp_err] : "Undocumented error code",
 				hidpp_err);
 			break;
 		}

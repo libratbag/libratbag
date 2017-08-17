@@ -130,13 +130,13 @@ hidpp20_request_command_allow_error(struct hidpp20_device *device, union hidpp20
 				hidpp_log_debug(&device->base,
 						"    HID++ error from the device (%d): %s (%02x)\n",
 						read_buffer.msg.device_idx,
-						hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
+						hidpp20_errors[hidpp_err] ? hidpp20_errors[hidpp_err] : "Undocumented error code",
 						hidpp_err);
 			else
 				hidpp_log_error(&device->base,
 						"    HID++ error from the device (%d): %s (%02x)\n",
 						read_buffer.msg.device_idx,
-						hidpp_errors[hidpp_err] ? hidpp_errors[hidpp_err] : "Undocumented error code",
+						hidpp20_errors[hidpp_err] ? hidpp20_errors[hidpp_err] : "Undocumented error code",
 						hidpp_err);
 			break;
 		}
@@ -241,7 +241,7 @@ hidpp20_root_get_protocol_version(struct hidpp20_device *device,
 
 	rc = hidpp20_request_command_allow_error(device, &msg, true);
 
-	if (rc == ERR_INVALID_SUBID) {
+	if (rc == HIDPP10_ERR_INVALID_SUBID) {
 		*major = 1;
 		*minor = 0;
 		return 0;
