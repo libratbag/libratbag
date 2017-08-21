@@ -1279,9 +1279,11 @@ class RatbagParserRoot(object):
             if not string.startswith('-'):
                 input_string[i] = string.lower()
 
-        self.parser = argparse.ArgumentParser(description="Inspect and modify configurable mice")
+        self.parser = argparse.ArgumentParser(description="Inspect and modify configurable mice",
+                                              add_help=False)
         self.parser.add_argument("-V", "--version", action="version", version="@version@")
         self.parser.add_argument('--verbose', '-v', action='count', default=0)
+        self.parser.add_argument('--help', '-h', action='store_true', default=0)
 
         ns, rest = self.parser.parse_known_args(input_string)
 
@@ -1344,6 +1346,12 @@ def main(argv):
 
     parser = get_parser()
     cmd = parser.parse(argv)
+    try:
+        if cmd.help:
+            parser.print_help()
+            return
+    except AttributeError:
+        pass
 
     r = open_ratbagd()
     if r is not None:
