@@ -1158,7 +1158,7 @@ class RatbagParserSwitch(RatbagParser):
                 # N_access subtree of the command
                 return self.N_access.sub_parse(input_string, ns)
 
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(add_help=False)
 
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
@@ -1177,7 +1177,7 @@ class RatbagParserNAccess(RatbagParserSwitch):
         self.metavar = metavar
 
     def _sub_parse(self, input_string, ns):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(add_help=False)
         parser.add_argument(self.name, help=self.help, type=int)
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
@@ -1201,7 +1201,7 @@ class RatbagParserSet(RatbagParserSwitch):
         parser.set_defaults(subparse=self.sub_parse)
 
     def _sub_parse(self, input_string, ns):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(add_help=False)
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
         for e in self.switch:
@@ -1288,15 +1288,15 @@ class RatbagParserRoot(object):
         if self.want_keepalive:
             self.parser.add_argument('--keepalive', action='store_true', default=False)
 
+        # retrieve the global options now and remove them from the processing
         ns, rest = self.parser.parse_known_args(input_string)
 
         subs = self.parser.add_subparsers(title="COMMANDS", help='sub-command help')
 
         subparser = self.parser
-        rest = input_string
 
         for child in self.children:
-            child.parse(subs, input_string, ns)
+            child.parse(subs, rest, ns)
 
         while subparser:
             ns, rest = subparser.parse_known_args(rest, namespace=ns)
