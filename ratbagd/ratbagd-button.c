@@ -76,7 +76,11 @@ static int ratbagd_button_get_button(sd_bus *bus,
 	return sd_bus_message_append(reply, "u", b);
 }
 
-static int ratbagd_button_set_button(sd_bus_message *m,
+static int ratbagd_button_set_button(sd_bus *bus,
+				     const char *path,
+				     const char *interface,
+				     const char *property,
+				     sd_bus_message *m,
 				     void *userdata,
 				     sd_bus_error *error)
 {
@@ -108,7 +112,7 @@ static int ratbagd_button_set_button(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_button_get_special(sd_bus *bus,
@@ -127,7 +131,11 @@ static int ratbagd_button_get_special(sd_bus *bus,
 	return sd_bus_message_append(reply, "u", special);
 }
 
-static int ratbagd_button_set_special(sd_bus_message *m,
+static int ratbagd_button_set_special(sd_bus *bus,
+				      const char *path,
+				      const char *interface,
+				      const char *property,
+				      sd_bus_message *m,
 				      void *userdata,
 				      sd_bus_error *error)
 {
@@ -156,7 +164,7 @@ static int ratbagd_button_set_special(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
 }
 
 static int ratbagd_button_get_key(sd_bus *bus,
@@ -202,7 +210,11 @@ static int ratbagd_button_get_key(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
-static int ratbagd_button_set_key(sd_bus_message *m,
+static int ratbagd_button_set_key(sd_bus *bus,
+				  const char *path,
+				  const char *interface,
+				  const char *property,
+				  sd_bus_message *m,
 				  void *userdata,
 				  sd_bus_error *error)
 {
@@ -249,58 +261,7 @@ static int ratbagd_button_set_key(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
-}
-
-static int ratbagd_button_get_action_type(sd_bus *bus,
-					  const char *path,
-					  const char *interface,
-					  const char *property,
-					  sd_bus_message *reply,
-					  void *userdata,
-					  sd_bus_error *error)
-{
-	struct ratbagd_button *button = userdata;
-	enum ratbag_button_action_type type;
-
-	type = ratbag_button_get_action_type(button->lib_button);
-
-	return sd_bus_message_append(reply, "u", type);
-}
-
-static int ratbagd_button_get_action_types(sd_bus *bus,
-					   const char *path,
-					   const char *interface,
-					   const char *property,
-					   sd_bus_message *reply,
-					   void *userdata,
-					   sd_bus_error *error)
-{
-	struct ratbagd_button *button = userdata;
-	int r;
-	enum ratbag_button_action_type types[] = {
-		RATBAG_BUTTON_ACTION_TYPE_BUTTON,
-		RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
-		RATBAG_BUTTON_ACTION_TYPE_KEY,
-		RATBAG_BUTTON_ACTION_TYPE_MACRO
-	};
-	enum ratbag_button_action_type *t;
-
-
-	r = sd_bus_message_open_container(reply, 'a', "u");
-	if (r < 0)
-		return r;
-
-	ARRAY_FOR_EACH(types, t) {
-		if (!ratbag_button_has_action_type(button->lib_button, *t))
-			continue;
-
-		r = sd_bus_message_append(reply, "u", *t);
-		if (r < 0)
-			return r;
-	}
-
-	return sd_bus_message_close_container(reply);
+	return r;
 }
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbag_button_macro *, ratbag_button_macro_unref);
@@ -355,7 +316,11 @@ out:
 	return sd_bus_message_close_container(reply);
 }
 
-static int ratbagd_button_set_macro(sd_bus_message *m,
+static int ratbagd_button_set_macro(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *m,
 				    void *userdata,
 				    sd_bus_error *error)
 {
@@ -400,7 +365,58 @@ static int ratbagd_button_set_macro(sd_bus_message *m,
 					       NULL);
 	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return r;
+}
+
+static int ratbagd_button_get_action_type(sd_bus *bus,
+					  const char *path,
+					  const char *interface,
+					  const char *property,
+					  sd_bus_message *reply,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	enum ratbag_button_action_type type;
+
+	type = ratbag_button_get_action_type(button->lib_button);
+
+	return sd_bus_message_append(reply, "u", type);
+}
+
+static int ratbagd_button_get_action_types(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *reply,
+					   void *userdata,
+					   sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	int r;
+	enum ratbag_button_action_type types[] = {
+		RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+		RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+		RATBAG_BUTTON_ACTION_TYPE_KEY,
+		RATBAG_BUTTON_ACTION_TYPE_MACRO
+	};
+	enum ratbag_button_action_type *t;
+
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	ARRAY_FOR_EACH(types, t) {
+		if (!ratbag_button_has_action_type(button->lib_button, *t))
+			continue;
+
+		r = sd_bus_message_append(reply, "u", *t);
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
 }
 
 static int ratbagd_button_disable(sd_bus_message *m,
@@ -423,16 +439,24 @@ const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_button, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Type", "u", ratbagd_button_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("ButtonMapping", "u", ratbagd_button_get_button, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("SpecialMapping", "u", ratbagd_button_get_special, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("KeyMapping", "au", ratbagd_button_get_key, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("ButtonMapping", "u",
+				 ratbagd_button_get_button,
+				 ratbagd_button_set_button,
+				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("SpecialMapping", "u",
+				 ratbagd_button_get_special,
+				 ratbagd_button_set_special,
+				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("KeyMapping", "au",
+				 ratbagd_button_get_key,
+				 ratbagd_button_set_key,
+				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("Macro", "a(uu)",
+				 ratbagd_button_get_macro,
+				 ratbagd_button_set_macro,
+				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionType", "u", ratbagd_button_get_action_type, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionTypes", "au", ratbagd_button_get_action_types, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Macro", "a(uu)", ratbagd_button_get_macro, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_METHOD("SetButtonMapping", "u", "u", ratbagd_button_set_button, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetSpecialMapping", "u", "u", ratbagd_button_set_special, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetKeyMapping", "au", "u", ratbagd_button_set_key, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_METHOD("SetMacro", "a(uu)", "u", ratbagd_button_set_macro, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Disable", "", "u", ratbagd_button_disable, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
