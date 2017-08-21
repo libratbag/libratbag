@@ -49,7 +49,10 @@ def main(argv):
 
     try:
         cmd = parser.parse(argv)
-        cmd.func(ratbagd, cmd)
+        if cmd.help:
+            parser.print_help()
+        else:
+            cmd.func(ratbagd, cmd)
     finally:
         try:
             if cmd.keepalive:
