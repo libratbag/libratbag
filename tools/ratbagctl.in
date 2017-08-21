@@ -1356,7 +1356,13 @@ def main(argv):
 
     r = open_ratbagd()
     if r is not None:
-        cmd.func(r, cmd)
+        try:
+            f = cmd.func
+        except AttributeError:
+            parser.print_help()
+            return
+        else:
+            f(r, cmd)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
