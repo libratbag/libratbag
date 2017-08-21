@@ -1300,8 +1300,9 @@ class RatbagParserRoot(object):
             pr_debug(ns, "<<< {}: {} | {}".format(child.type, child.name, rest))
 
         while subparser:
+            old_rest = rest
             ns, rest = subparser.parse_known_args(rest, namespace=ns)
-            if not rest:
+            if not rest or old_rest == rest:
                 break
             pr_debug(ns, ns, rest)
             try:
