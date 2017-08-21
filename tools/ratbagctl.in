@@ -1104,13 +1104,11 @@ class RatbagParser(object):
             if 'list' not in self.name:
                 parser.add_argument("device", metavar='eventX')
 
-    def _parse(self, parent, input_string, ns):
-        raise ParseError("please implement _parse on {}".format(type(self)))
+    def _add_to_subparsers(self, parent, input_string, ns):
+        raise ParseError("please implement _add_to_subparsers on {}".format(type(self)))
 
-    def parse(self, parent, input_string, ns):
-        pr_debug(ns, ">>> {}: {} | {}".format(self.type, self.name, input_string))
-        self._parse(parent, input_string, ns)
-        pr_debug(ns, "<<< {}: {} | {}".format(self.type, self.name, input_string))
+    def add_to_subparsers(self, parent):
+        self._add_to_subparsers(parent)
 
     def _sub_parse(self, input_string, ns):
         raise ParseError("please implement _sub_parse on {}".format(type(self)))
@@ -1141,7 +1139,7 @@ class RatbagParserSwitch(RatbagParser):
     def repr_args(self):
         return """switch='{}', N_access='{}', {}""".format([repr(o) for o in self.switch], self.N_access, RatbagParser.repr_args(self))
 
-    def _parse(self, parent, input_string, ns):
+    def _add_to_subparsers(self, parent):
         parser = parent.add_parser(self.name, help=self.help)
         parser.set_defaults(subparse=self.sub_parse)
 
@@ -1163,7 +1161,7 @@ class RatbagParserSwitch(RatbagParser):
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
         for e in self.switch:
-            e.parse(subs, input_string, ns)
+            e.add_to_subparsers(subs)
 
         return parser
 
@@ -1182,7 +1180,7 @@ class RatbagParserNAccess(RatbagParserSwitch):
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
         for e in self.switch:
-            e.parse(subs, input_string, ns)
+            e.add_to_subparsers(subs)
         return parser
 
     def repr_args(self):
@@ -1196,7 +1194,7 @@ class RatbagParserSet(RatbagParserSwitch):
     def __init__(self, type, name, switch=[], N_access=None, tag=None, func=None, help=None):
         super(RatbagParserSet, self).__init__(type, name, switch, N_access, tag, func, help)
 
-    def _parse(self, parent, input_string, ns):
+    def _add_to_subparsers(self, parent):
         parser = parent.add_parser(self.name, help=self.help)
         parser.set_defaults(subparse=self.sub_parse)
 
@@ -1205,7 +1203,7 @@ class RatbagParserSet(RatbagParserSwitch):
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
         for e in self.switch:
-            e.parse(subs, input_string, ns)
+            e.add_to_subparsers(subs)
         if len(input_string) == 3:
             self.store_function(parser)
         elif len(input_string) == 2:
@@ -1224,10 +1222,10 @@ class RatbagParserCommand(RatbagParser):
         super(RatbagParserCommand, self).__init__(type, name, tag, func, help)
         self.pos_args = [classes[obj[of_type]](**obj) for obj in pos_args]
 
-    def _parse(self, parent, input_string, ns):
+    def _add_to_subparsers(self, parent):
         parser = parent.add_parser(self.name, help=self.help)
         for a in self.pos_args:
-            a.parse(parser, input_string, ns)
+            a.add_to_subparsers(parser)
         self.store_function(parser)
 
     def __repr__(self):
@@ -1242,7 +1240,7 @@ class RatbagParserArgument(RatbagParser):
         self.nargs = nargs
         self.choices = choices
 
-    def _parse(self, parent, input_string, ns):
+    def _add_to_subparsers(self, parent):
         parent.add_argument(self.name, metavar=self.metavar, help=self.help, type=self.arg_type, nargs=self.nargs, choices=self.choices)
 
 
@@ -1251,13 +1249,13 @@ class RatbagParserLink(RatbagParser):
         super(RatbagParserLink, self).__init__(type, dest, tag, func, help)
         self.dest = dest
 
-    def _parse(self, parent, input_string, ns):
+    def _add_to_subparsers(self, parent):
         try:
             e = RatbagParser.tagged[self.dest]
         except KeyError:
             raise ParseError("link '{}' points to nothing".format(self.dest))
         else:
-            e.parse(parent, input_string, ns)
+            e.add_to_subparsers(parent)
 
 classes = {
     switch: RatbagParserSwitch,
@@ -1295,8 +1293,11 @@ class RatbagParserRoot(object):
 
         subparser = self.parser
 
+        pr_debug(ns, rest)
         for child in self.children:
-            child.parse(subs, rest, ns)
+            pr_debug(ns, ">>> {}: {} | {}".format(child.type, child.name, rest))
+            child.add_to_subparsers(subs)
+            pr_debug(ns, "<<< {}: {} | {}".format(child.type, child.name, rest))
 
         while subparser:
             ns, rest = subparser.parse_known_args(rest, namespace=ns)
