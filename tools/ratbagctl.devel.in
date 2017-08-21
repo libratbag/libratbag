@@ -52,7 +52,13 @@ def main(argv):
         if cmd.help:
             parser.print_help()
         else:
-            cmd.func(ratbagd, cmd)
+            try:
+                f = cmd.func
+            except AttributeError:
+                parser.print_help()
+                return
+            else:
+                f(ratbagd, cmd)
     finally:
         try:
             if cmd.keepalive:
