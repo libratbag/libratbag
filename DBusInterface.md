@@ -228,20 +228,20 @@ Enum describing the button physical type. This type is unrelated to the
 logical button mapping and serves to easily identify the button on the
 device.
 #### `ButtonMapping`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
 uint of the current button mapping (if mapping to button)
 #### `SpecialMapping`
-- type: `u`, read-only, mutable
+- type: `u`, read-write, mutable
 
 Enum describing the current special mapping (if mapped to special)
 #### `KeyMapping`
-- type: `au`, read-only, mutable
+- type: `au`, read-write, mutable
 
 Array of uints, first entry is the keycode, other entries, if any, are
 modifiers (if mapped to key)
 #### `Macro`
--type: `a(uu)`, read-only, mutable
+-type: `a(uu)`, read-write, mutable
 
 Array of (type, keycode), where type may be one of
 `RATBAG_MACRO_EVENT_KEY_PRESSED` or `RATBAG_MACRO_EVENT_KEY_RELEASED`.
@@ -257,16 +257,6 @@ Array of enum ratbag\_button\_action\_type, possible values for ActionType
 on the current device
 
 ### Methods:
-#### `SetButtonMapping(u) → ()`
-Set the button mapping to the given button
-#### `SetSpecialMapping(u) → ()`
-Set the button mapping to the given special entry
-#### `SetKeyMapping(au) → ()`
-Set the key mapping, first entry is the keycode, other entries, if any, are
-modifier keycodes
-#### `SetMacro(a(uu)) → ()`
-Set the macro, as an array of (type, key) where type may be one of
-`RATBAG_MACRO_EVENT_KEY_PRESSED` or `RATBAG_MACRO_EVENT_KEY_RELEASED`.
 #### `Disable() → ()`
 Disable this button
 
