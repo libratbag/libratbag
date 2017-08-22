@@ -1299,18 +1299,16 @@ class RatbagParserRoot(object):
             child.add_to_subparsers(subs)
             pr_debug(ns, "<<< {}: {} | {}".format(child.type, child.name, rest))
 
+        ns.subparse = None
+
         while subparser:
             old_rest = rest
             ns, rest = subparser.parse_known_args(rest, namespace=ns)
             if not rest or old_rest == rest:
                 break
             pr_debug(ns, ns, rest)
-            try:
-                subparse_call = ns.subparse
-            except AttributeError:
-                break
-            else:
-                subparser = subparse_call(rest, ns)
+            if ns.subparse:
+                subparser = ns.subparse(rest, ns)
 
         if rest:
             self.parser.error("extra arguments: '{}'".format(" ".join(rest)))
