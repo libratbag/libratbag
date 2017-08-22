@@ -27,6 +27,7 @@
 
 import os
 import toolbox
+import signal
 import sys
 
 
@@ -41,11 +42,18 @@ def main(argv):
 
     ratbagd = toolbox.open_ratbagd()
     parser = toolbox.get_parser()
+    parser.want_keepalive = True
+    print('export RATBAGCTL_DEVEL="{}"\n'.format(os.environ['RATBAGCTL_DEVEL']))
 
     try:
         cmd = parser.parse(argv)
         cmd.func(ratbagd, cmd)
     finally:
+        try:
+            if cmd.keepalive:
+                signal.pause()
+        except KeyboardInterrupt:
+            pass
         toolbox.terminate_ratbagd(ratbagd_process)
 
 

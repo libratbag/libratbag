@@ -1272,6 +1272,7 @@ classes = {
 class RatbagParserRoot(object):
     def __init__(self, commands):
         self.children = [classes[def_parser[of_type]](**def_parser) for def_parser in commands]
+        self.want_keepalive = False
 
     def parse(self, input_string):
         # we do not care about case, use lower case for the input string
@@ -1284,6 +1285,8 @@ class RatbagParserRoot(object):
         self.parser.add_argument("-V", "--version", action="version", version="@version@")
         self.parser.add_argument('--verbose', '-v', action='count', default=0)
         self.parser.add_argument('--help', '-h', action='store_true', default=False)
+        if self.want_keepalive:
+            self.parser.add_argument('--keepalive', action='store_true', default=False)
 
         ns, rest = self.parser.parse_known_args(input_string)
 
