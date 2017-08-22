@@ -43,7 +43,6 @@ def main(argv):
     ratbagd = toolbox.open_ratbagd()
     parser = toolbox.get_parser()
     parser.want_keepalive = True
-    print('export RATBAGCTL_DEVEL="{}"\n'.format(os.environ['RATBAGCTL_DEVEL']))
 
     cmd = None
 
@@ -62,6 +61,7 @@ def main(argv):
     finally:
         try:
             if cmd.keepalive:
+                print('\nexport RATBAGCTL_DEVEL="{}"\n'.format(os.environ['RATBAGCTL_DEVEL']))
                 signal.pause()
         except KeyboardInterrupt:
             pass
