@@ -45,6 +45,8 @@ def main(argv):
     parser.want_keepalive = True
     print('export RATBAGCTL_DEVEL="{}"\n'.format(os.environ['RATBAGCTL_DEVEL']))
 
+    cmd = None
+
     try:
         cmd = parser.parse(argv)
         cmd.func(ratbagd, cmd)
@@ -53,6 +55,8 @@ def main(argv):
             if cmd.keepalive:
                 signal.pause()
         except KeyboardInterrupt:
+            pass
+        except AttributeError:  # in case the parsing failed and cmd is None
             pass
         toolbox.terminate_ratbagd(ratbagd_process)
 
