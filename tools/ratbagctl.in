@@ -1144,7 +1144,7 @@ class RatbagParserSwitch(RatbagParser):
         parser.set_defaults(subparse=self.sub_parse)
 
     def _sub_parse(self, input_string, ns):
-        if len(input_string) >= 0 and self.N_access is not None:
+        if len(input_string) > 0 and self.N_access is not None:
             # retrieve first numbered element if any
             try:
                 int(input_string[0])
@@ -1301,10 +1301,10 @@ class RatbagParserRoot(object):
 
         ns.subparse = None
 
-        while subparser:
+        while rest and subparser:
             old_rest = rest
             ns, rest = subparser.parse_known_args(rest, namespace=ns)
-            if not rest or old_rest == rest:
+            if old_rest == rest:
                 break
             pr_debug(ns, ns, rest)
             if ns.subparse:
