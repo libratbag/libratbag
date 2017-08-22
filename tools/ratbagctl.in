@@ -531,6 +531,8 @@ def func_profile_disable(r, args):
 of_type = 'type'
 """the name of the element, it'll be the one matching the args on the CLI"""
 name = 'name'
+"""the group to logically associate commands while printing the help"""
+group = 'group'
 """list of positional arguments for the given command"""
 pos_args = 'pos_args'
 """a tag that we can refer latrer in an element of type 'link'"""
@@ -625,20 +627,23 @@ parser_def = [
     {
         of_type: command,
         name: 'list',
-        help_str: 'List available configurable devices',
+        help_str: 'List supported devices (does not take a device argument)',
         func: list_devices,
+        group: 'General',
     },
     {
         of_type: command,
         name: 'info',
         help_str: 'Show device information',
         func: show_device,
+        group: 'Device',
     },
     {
         of_type: switch,
         name: 'profile',
         help_str: 'Access profile information',
         tag: 'profile',
+        group: 'Profile',
         switch: [
             {
                 of_type: switch,
@@ -678,7 +683,7 @@ parser_def = [
                 {
                     of_type: command,
                     name: 'get',
-                    help_str: 'Show current active profile',
+                    help_str: 'Show selected profile information',
                     func: func_profile_get,
                 },
                 {
@@ -719,8 +724,12 @@ parser_def = [
     {
         of_type: switch,
         name: 'resolution',
-        help_str: 'Access resolution information',
+        help_str: """Access resolution information
+
+Resolution commands work on the given profile, or on the
+active profile if none is given.""",
         tag: 'resolution',
+        group: 'Resolution',
         switch: [
             {
                 of_type: switch,
@@ -805,8 +814,12 @@ parser_def = [
     {
         of_type: switch,
         name: 'dpi',
-        help_str: 'Access DPI information',
+        help_str: """Access DPI information
+
+DPI commands work on the given profile and resolution, or on the
+active resolution of the active profile if none are given.""",
         tag: 'dpi',
+        group: 'DPI',
         switch: [
             {
                 of_type: command,
@@ -834,8 +847,12 @@ parser_def = [
     {
         of_type: switch,
         name: 'rate',
-        help_str: 'Access report rate information',
+        help_str: """Access report rate information
+
+Rate commands work on the given profile and resolution, or on the
+active resolution of the active profile if none are given.""",
         tag: 'rate',
+        group: 'Rate',
         switch: [
             {
                 of_type: command,
@@ -863,8 +880,12 @@ parser_def = [
     {
         of_type: switch,
         name: 'button',
-        help_str: 'Access Button information',
+        help_str: """Access Button information
+
+Button commands work on the given profile, or on the
+active profile if none is given.""",
         tag: 'button',
+        group: 'Button',
         switch: [
             {
                 of_type: command,
@@ -924,7 +945,7 @@ parser_def = [
                                         {
                                             of_type: argument,
                                             name: 'target_special',
-                                            metavar: 'special',
+                                            metavar: 'S',
                                             help_str: 'The new special value to assign',
                                             choices: [
                                                 "unknown",
@@ -954,12 +975,20 @@ parser_def = [
                                 {
                                     of_type: command,
                                     name: 'macro',
-                                    help_str: 'Set the button action to the given macro',
+                                    help_str: """Set the button action to the given macro
+
+  Macro syntax:
+        A macro is a series of key events or waiting periods.
+        Keys must be specified in linux/input.h key names.
+        KEY_A                   Press and release 'a'
+        +KEY_A                  Press 'a'
+        -KEY_A                  Release 'a'
+        t300                    Wait 300ms""",
                                     pos_args: [
                                         {
                                             of_type: argument,
                                             name: 'target_macro',
-                                            metavar: 'macro',
+                                            metavar: '...',
                                             help_str: 'The new macro to assign',
                                             nargs: argparse.REMAINDER,
                                         },
@@ -976,8 +1005,12 @@ parser_def = [
     {
         of_type: switch,
         name: 'led',
-        help_str: 'Access LED information',
+        help_str: """Access LED information
+
+LED commands work on the given profile, or on the
+active profile if none is given.""",
         tag: 'led',
+        group: 'LED',
         switch: [
             {
                 of_type: command,
@@ -1039,7 +1072,7 @@ parser_def = [
                                 {
                                     of_type: argument,
                                     name: 'rate',
-                                    metavar: 'rate',
+                                    metavar: 'R',
                                     help_str: 'The rate in Hz to set as current',
                                     arg_type: int,
                                 },
@@ -1053,7 +1086,7 @@ parser_def = [
                                 {
                                     of_type: argument,
                                     name: 'brightness',
-                                    metavar: 'brightness',
+                                    metavar: 'B',
                                     help_str: 'The brightness to set as current',
                                     arg_type: u8,
                                 },
@@ -1083,10 +1116,11 @@ class ParseError(Exception):
 class RatbagParser(object):
     tagged = {}
 
-    def __init__(self, type, name, tag=None, func=None, help=None):
+    def __init__(self, type, name, group=None, tag=None, func=None, help=None):
         self.type = type
         self.name = name
         self.tag = tag
+        self.group = group
         if tag is not None:
             RatbagParser.tagged[tag] = self
         self.func = func
@@ -1119,17 +1153,22 @@ class RatbagParser(object):
         pr_debug(ns, "<.. {}: {} | {}".format(self.type, self.name, input_string))
         return r
 
-    def print_help(self):
-        return str(type(self))
-
     def build_cmd_args_name(self):
         """uniquely tag the arguments of the command in the namespace"""
         return "{}_args_{}".format(self.name)
 
+    def print_help(self, group, prefix=""):
+        if self.group is not None:
+            print("\n{} Commands:".format(self.group))
+        self._print_help(prefix)
+
+    def _print_help(self, prefix):
+        raise ParseError("please implement _print_help on {}".format(type(self)))
+
 
 class RatbagParserSwitch(RatbagParser):
-    def __init__(self, type, name, switch=[], N_access=None, tag=None, func=None, help=None):
-        super(RatbagParserSwitch, self).__init__(type, name, tag, func, help)
+    def __init__(self, type, name, group=None, switch=[], N_access=None, tag=None, func=None, help=None):
+        super(RatbagParserSwitch, self).__init__(type, name, group, tag, func, help)
         self.switch = [classes[obj[of_type]](**obj) for obj in switch]
         if N_access is not None:
             self.N_access = RatbagParserNAccess(**N_access)
@@ -1154,9 +1193,11 @@ class RatbagParserSwitch(RatbagParser):
             else:
                 # we have a single int as first argument, switch to the
                 # N_access subtree of the command
-                return self.N_access.sub_parse(input_string, ns)
+                return self.N_access._sub_parse(self, input_string, ns)
 
-        parser = argparse.ArgumentParser(add_help=False)
+        parser = argparse.ArgumentParser(prog="{} {}".format(sys.argv[0], self.name),
+                                         description=self.help,
+                                         add_help=False)
 
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
@@ -1165,17 +1206,28 @@ class RatbagParserSwitch(RatbagParser):
 
         return parser
 
+    def _print_help(self, prefix):
+        if self.help and self.group is not None:
+            string = self.help.split('\n')
+            string = "\n  ".join(string)
+            print(" ", string, '\n')
+        for e in self.switch:
+            e.print_help(None, "{}{} ".format(prefix, self.name))
+        if self.N_access is not None:
+            self.N_access.print_help(None, self.name + " ")
+
     def __repr__(self):
         return "switch({})".format(self.repr_args())
 
 
 class RatbagParserNAccess(RatbagParserSwitch):
-    def __init__(self, type, name, switch=[], metavar=None, tag=None, func=None, help=None):
-        super(RatbagParserNAccess, self).__init__(type, name, switch, None, tag, func, help)
+    def __init__(self, type, name, group=None, switch=[], metavar=None, tag=None, func=None, help=None):
+        super(RatbagParserNAccess, self).__init__(type, name, group, switch, None, tag, func, help)
         self.metavar = metavar
 
-    def _sub_parse(self, input_string, ns):
-        parser = argparse.ArgumentParser(add_help=False)
+    def _sub_parse(self, parent, input_string, ns):
+        parser = argparse.ArgumentParser(prog="{} {}".format(sys.argv[0], parent.name),
+                                         add_help=False)
         parser.add_argument(self.name, help=self.help, type=int)
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
@@ -1189,17 +1241,22 @@ class RatbagParserNAccess(RatbagParserSwitch):
     def __repr__(self):
         return "N_Access({})".format(self.repr_args())
 
+    def _print_help(self, prefix):
+        for e in self.switch:
+            e.print_help(None, "{}N ".format(prefix))
+
 
 class RatbagParserSet(RatbagParserSwitch):
-    def __init__(self, type, name, switch=[], N_access=None, tag=None, func=None, help=None):
-        super(RatbagParserSet, self).__init__(type, name, switch, N_access, tag, func, help)
+    def __init__(self, type, name, group=None, switch=[], N_access=None, tag=None, func=None, help=None):
+        super(RatbagParserSet, self).__init__(type, name, group, switch, N_access, tag, func, help)
 
     def _add_to_subparsers(self, parent):
         parser = parent.add_parser(self.name, help=self.help)
         parser.set_defaults(subparse=self.sub_parse)
 
     def _sub_parse(self, input_string, ns):
-        parser = argparse.ArgumentParser(add_help=False)
+        parser = argparse.ArgumentParser(prog="{} {}".format(sys.argv[0], self.name),
+                                         add_help=False)
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
         for e in self.switch:
@@ -1216,10 +1273,17 @@ class RatbagParserSet(RatbagParserSwitch):
     def __repr__(self):
         return "set({})".format(self.repr_args())
 
+    def _print_help(self, prefix):
+        command = prefix + "{COMMAND} ..."
+        print("  {:<36}{}".format(command,
+                                  self.help if self.help else ""))
+        for e in self.switch:
+            e.print_help(None, " " * len(prefix))
+
 
 class RatbagParserCommand(RatbagParser):
-    def __init__(self, type, name, pos_args=[], tag=None, func=None, help=None):
-        super(RatbagParserCommand, self).__init__(type, name, tag, func, help)
+    def __init__(self, type, name, group=None, pos_args=[], tag=None, func=None, help=None):
+        super(RatbagParserCommand, self).__init__(type, name, group, tag, func, help)
         self.pos_args = [classes[obj[of_type]](**obj) for obj in pos_args]
 
     def _add_to_subparsers(self, parent):
@@ -1231,10 +1295,20 @@ class RatbagParserCommand(RatbagParser):
     def __repr__(self):
         return "command({})".format(self.repr_args())
 
+    def _print_help(self, prefix):
+        command = prefix + self.name
+        for a in self.pos_args:
+            if a.choices is None or len(a.choices) > 5:
+                command += " {}".format(a.metavar)
+            else:
+                command += " [{}]".format("|".join(a.choices))
+        print("  {:<36}{}".format(command,
+                                  self.help if self.help else ""))
+
 
 class RatbagParserArgument(RatbagParser):
-    def __init__(self, type, name, arg_type=None, metavar=None, nargs=None, choices=None, tag=None, func=None, help=None):
-        super(RatbagParserArgument, self).__init__(type, name, tag, func, help)
+    def __init__(self, type, name, group=None, arg_type=None, metavar=None, nargs=None, choices=None, tag=None, func=None, help=None):
+        super(RatbagParserArgument, self).__init__(type, name, group, tag, func, help)
         self.arg_type = arg_type
         self.metavar = metavar
         self.nargs = nargs
@@ -1245,17 +1319,24 @@ class RatbagParserArgument(RatbagParser):
 
 
 class RatbagParserLink(RatbagParser):
-    def __init__(self, type, dest=None, tag=None, func=None, help=None):
-        super(RatbagParserLink, self).__init__(type, dest, tag, func, help)
+    def __init__(self, type, dest=None, group=None, tag=None, func=None, help=None):
+        super(RatbagParserLink, self).__init__(type, dest, group, tag, func, help)
         self.dest = dest
 
-    def _add_to_subparsers(self, parent):
+    def get_dest(self):
         try:
-            e = RatbagParser.tagged[self.dest]
+            dest = RatbagParser.tagged[self.dest]
         except KeyError:
             raise ParseError("link '{}' points to nothing".format(self.dest))
-        else:
-            e.add_to_subparsers(parent)
+        return dest
+
+    def _add_to_subparsers(self, parent):
+        dest = self.get_dest()
+        dest.add_to_subparsers(parent)
+
+    def _print_help(self, prefix):
+        dest = self.get_dest()
+        print("  {:<36}Use {}for '{} Commands'".format(prefix + self.dest + " ...", prefix, dest.group))
 
 classes = {
     switch: RatbagParserSwitch,
@@ -1278,7 +1359,7 @@ class RatbagParserRoot(object):
             if not string.startswith('-'):
                 input_string[i] = string.lower()
 
-        self.parser = argparse.ArgumentParser(description="Inspect and modify configurable mice",
+        self.parser = argparse.ArgumentParser(description="Inspect and modify a configurable device",
                                               add_help=False)
         self.parser.add_argument("-V", "--version", action="version", version="@version@")
         self.parser.add_argument('--verbose', '-v', action='count', default=0)
@@ -1289,7 +1370,10 @@ class RatbagParserRoot(object):
         # retrieve the global options now and remove them from the processing
         ns, rest = self.parser.parse_known_args(input_string)
 
-        subs = self.parser.add_subparsers(title="COMMANDS", help='sub-command help')
+        if ns.help:
+            return ns
+
+        subs = self.parser.add_subparsers(title="COMMANDS")
 
         subparser = self.parser
 
@@ -1316,7 +1400,34 @@ class RatbagParserRoot(object):
         return ns
 
     def print_help(self):
-        self.parser.print_help()
+        print("usage: {} [OPTIONS] {{COMMAND}} ... /path/to/device\n".format(self.parser.prog))
+        print(self.parser.description)
+        print("""
+Common options:
+    --versionm -V               show program's version number and exit
+    --verbose, -v
+    --help, -h                  show this help and exit""")
+        if self.want_keepalive:
+            print("    --keepalive                 do not terminate ratbagd after the processing")
+        for c in self.children:
+            c.print_help(None)
+        print("""
+Examples:
+  {0} profile active get
+  {0} profile 0 resolution active set 4
+  {0} profile 0 resolution 1 dpi get
+  {0} resolution 4 rate get
+  {0} dpi set 800
+  {0} profile 0 led 0 set mode on
+  {0} profile 0 led 0 set color ff00ff
+  {0} profile 0 led 0 set rate 20
+
+Exit codes:
+  0     Success
+  1     Unsupported feature, index out of available range or invalid device
+  2     Commandline arguments are invalid
+  3     A command failed on the device
+""".format(self.parser.prog))
 
 
 def get_parser():
