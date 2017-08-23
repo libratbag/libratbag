@@ -84,6 +84,9 @@ def start_ratbagd():
 
     os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1_@ratbagd_sha@"
 
+    if name_owner is None or ratbagd_process.poll() is not None:
+        return None
+
     return ratbagd_process
 
 
