@@ -205,21 +205,7 @@ def print_button(d, p, b, level):
     elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
         print("{}'{}'".format(header, button_specials_strmap[b.special]))
     elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
-        bmap = ""
-        for t, v in b.macro:
-            bt = 'unknown'
-            if t == RatbagdButton.MACRO_KEY_PRESS:
-                bt = '+'
-                bv = evdev.ecodes.KEY.get(v, v)
-            elif t == RatbagdButton.MACRO_KEY_RELEASE:
-                bt = '-'
-                bv = evdev.ecodes.KEY.get(v, v)
-            elif t == RatbagdButton.MACRO_WAIT:
-                bt = 't'
-                bv = v
-            bmap = bmap + "{}{} ".format(bt, bv)
-
-        print("{}macro '{}'".format(header, bmap[:-1]))
+        print("{}macro '{}'".format(header, str(b.macro)))
     elif b.action_type == RatbagdButton.ACTION_TYPE_NONE:
         print("{}none".format(header))
     else:
