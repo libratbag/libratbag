@@ -24,7 +24,7 @@ org.freedesktop.ratbag1.Manager
 The **org.freedesktop.ratbag1.Manager** interface is the entry point to
 interact with ratbagd.
 
-### Properties
+### Properties:
 
 #### `Devices`
 - type `ao`, read-only, mutable
@@ -49,7 +49,7 @@ org.freedesktop.ratbag1.Device
 The **org.freedesktop.ratbag1.Device** interface describes a single device
 known to ratbagd.
 
-### Properties
+### Properties:
 
 #### `Id`
 - type: `s`, read-only, constant
@@ -84,6 +84,8 @@ profiles.
 Provides the list of profile paths for all profiles on this device, see
 **org.freedesktop.ratbag1.Profile**.
 
+### Methods:
+
 #### `Commit() → ()`
 
 Commits the changes to the device. Changes to the device are batched; they
@@ -101,7 +103,7 @@ the given theme.
 org.freedesktop.ratbag1.Profile
 ===============================
 
-### Properties
+### Properties:
 
 #### `Index`
 - type: `u`, read-only, constant
@@ -147,7 +149,7 @@ Profiles can only be set to active, but never to not active - at least one
 profile must be active at all times. This property is read-only, use the
 `SetActive()` method to activate a profile.
 
-### Methods
+### Methods:
 
 #### `SetActive() → ()`
 Set this profile to be the active profile
