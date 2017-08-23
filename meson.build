@@ -1,5 +1,5 @@
 project('libratbag', 'c', 'cpp',
-	version : '0.9.0',
+	version : '0.9.900',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ])
 
