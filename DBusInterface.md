@@ -89,7 +89,9 @@ Provides the list of profile paths for all profiles on this device, see
 #### `Commit() → ()`
 
 Commits the changes to the device. Changes to the device are batched; they
-are not written to the hardware until `Commit()` is invoked.
+are not written to the hardware until `Commit()` is invoked. This method is
+**asynchronous** and always succeeds. When the commit has been completed, a
+**Committed** signal is emitted.
 
 #### `GetSvg(s) → (s)`
 
@@ -99,6 +101,15 @@ none is available.  The theme must be one of
 guaranteed to be available. ratbagd may return the path to a file that
 doesn't exist. This is the case if the device has SVGs available but not for
 the given theme.
+
+### Signals:
+
+#### `Committed(i)`
+
+Signal sent when a previous **Commit** has completed. If the error is positive,
+it is an errno. If the error is negative, it is a libratbag-specific error.
+
+If the error is 0, the commit was successful.
 
 org.freedesktop.ratbag1.Profile
 ===============================
