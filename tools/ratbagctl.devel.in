@@ -39,6 +39,8 @@ def main(argv):
         argv = ["list"]
 
     ratbagd_process = toolbox.start_ratbagd()
+    if ratbagd_process is None:
+        sys.exit("Failed to start or connect to ratbagd")
 
     ratbagd = toolbox.open_ratbagd()
     parser = toolbox.get_parser()
