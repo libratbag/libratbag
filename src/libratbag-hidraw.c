@@ -21,6 +21,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>

@@ -29,6 +29,8 @@
  *   https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28&usp=sharing
  */
 
+#include "config.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
