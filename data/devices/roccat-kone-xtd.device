@@ -1,0 +1,5 @@
+[Device]
+Name=Roccat Kone XTD
+DeviceMatch=usb:1e7d:2e22
+Driver=roccat
+Svg=roccat-kone-xtd.svg

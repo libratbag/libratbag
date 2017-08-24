@@ -1,0 +1,5 @@
+# G.Skill MX-780
+[Device]
+Name=G.Skill MX-780
+DeviceMatch=usb:28da:3101
+Driver=gskill

@@ -1,0 +1,10 @@
+[Device]
+Name=Logitech G500
+DeviceMatch=usb:046d:c068
+Driver=hidpp10
+Svg=logitech-g500.svg
+
+[Driver/hidpp10]
+DpiRange=0:5700@23.53
+ProfileType=G500
+Profiles=1

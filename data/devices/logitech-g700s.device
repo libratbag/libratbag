@@ -1,0 +1,12 @@
+# Logitech G700s over USB
+# http://support.logitech.com/en_us/product/g700s-rechargable-wireless-gaming-mouse/specs
+[Device]
+Name=Logitech G700s
+DeviceMatch=usb:046d:c07c
+Driver=hidpp10
+Svg=logitech-g700.svg
+
+[Driver/hidpp10]
+DpiRange=0:8200@50
+ProfileType=G700
+Profiles=5

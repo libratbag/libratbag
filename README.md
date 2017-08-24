@@ -80,33 +80,16 @@ library in the future, if other projects require it.
 Adding Devices to libratbag
 ---------------------------
 
-As of commit 3605bede4 libratbag now uses a hwdb entry to match the device
-with the drivers. To access a device through libratbag, the udev property
-RATBAG_DRIVER must be set for a device's event node. Check with
+libratbag relies on a device database to match a device with the drivers.
+See the data/devices/ directory for the set of known devices. These files
+are usually installed into $prefix/$datadir (e.g. /usr/share/libratbag/).
 
-     sudo udevadm info /sys/class/input/eventX | grep RATBAG_DRIVER
+To add a new device to libratbag, simply drop a new device file into that
+directory and restart ratbagd. See the data/devices/device.example file for
+guidance on what information must be set.
 
-If your device is not yet assigned the property, it is not in the hwdb. It
-may however be supported by one of our existing drivers. Try enabling it by
-adding the device vendor-id/product-id to the hwdb file in
-`hwdb/70-libratbag-mouse.hwdb`. For example, for a HID++ 1.0 device, edit
-the 70-libratbag-mouse.hwdb file and add an entry with `RATBAG_DRIVER=hidpp10`.
-For the other drivers, look for the id of the driver in driver-{drivername}.c
-file and do the same.
-
-Once your device is added to the hwdb, install libratbag and trigger a hwdb
-update:
-
-    sudo udevadm hwdb --update
-    sudo udevadm control --reload
-
-Then unplug/replug your mouse. `RATBAG_DRIVER` should appear in the udev
-properties of your device with the value you previously set. If the property
-is not assigned, the hwdb entry does not correctly match your device or the
-installed udev rules/hwdb entries are not picked up by udev.
-
-If the device doesn't work, you'll have to start reverse-engineering the
-device-specific protocol. Good luck :)
+If the device doesn't work after adding the device file, you'll have to
+start reverse-engineering the device-specific protocol. Good luck :)
 
 Source
 ------

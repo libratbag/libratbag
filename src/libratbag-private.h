@@ -90,6 +90,7 @@ struct ratbag_device {
 	struct input_id ids;
 	struct ratbag_driver *driver;
 	struct ratbag *ratbag;
+	struct ratbag_device_data *data;
 	unsigned long capabilities[NLONGS(MAX_CAP)];
 
 	unsigned num_profiles;
