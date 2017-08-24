@@ -214,14 +214,42 @@ static int ratbagd_device_get_profiles(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+static int ratbagd_device_commit_cb(sd_event_source *s, void *userdata)
+{
+	struct ratbagd_device *device = userdata;
+	struct ratbagd *ctx = device->ctx;
+	int r;
+
+	r = ratbag_device_commit(device->lib_device);
+	if (r != 0) {
+		log_error("Unable to commit to device %s: %d (%s)\n",
+			  ratbagd_device_get_name(device), r, strerror(-r));
+		/* FIXME: we need to re-load from libratbag and update all
+		   properties */
+	}
+
+	sd_bus_emit_signal(ctx->bus,
+			   device->path,
+			   RATBAGD_NAME_ROOT ".Device",
+			   "Committed",
+			   "i",
+			   r);
+
+	sd_event_source_unref(s);
+
+	return 0;
+}
+
 static int ratbagd_device_commit(sd_bus_message *m,
 				 void *userdata,
 				 sd_bus_error *error)
 {
 	struct ratbagd_device *device = userdata;
+	struct ratbagd *ctx = device->ctx;
 	int r;
 
-	r = ratbag_device_commit(device->lib_device);
+	r = sd_event_add_defer(ctx->event, NULL,
+			       ratbagd_device_commit_cb, device);
 
 	return sd_bus_reply_method_return(m, "u", r);
 }
@@ -279,6 +307,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("GetSvg", "s", "s", ratbagd_device_get_theme_svg, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_SIGNAL("Committed", "i", 0),
 	SD_BUS_VTABLE_END,
 };
 
