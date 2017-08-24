@@ -1,0 +1,9 @@
+# Logitech G7
+# http://support.logitech.com/en_us/product/g7-laser-cordless-mouse/specs
+[Device]
+Name=Logitech G7
+DeviceMatch=usb:046d:c51a
+Driver=hidpp10
+
+[Driver/hidpp10]
+Profiles=1

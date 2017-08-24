@@ -1,0 +1,6 @@
+# Logitech G900 over USB
+[Device]
+Name=Logitech G900
+DeviceMatch=usb:046d:c081
+Driver=hidpp20
+Svg=logitech-g900.svg

@@ -1,0 +1,11 @@
+# Logitech G9
+# http://support.logitech.com/en_us/product/g9-laser-mouse/specs
+[Device]
+Name=Logitech G9
+DeviceMatch=usb:046d:c048
+Driver=hidpp10
+
+[Driver/hidpp10]
+DpiList=0;200;400;600;800;1000;1200;1400;1600;1800;2000;2200;2400;2600;2800;3000;3200
+ProfileType=G9
+Profiles=5

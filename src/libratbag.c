@@ -37,6 +37,7 @@
 #include "usb-ids.h"
 #include "libratbag-private.h"
 #include "libratbag-util.h"
+#include "libratbag-data.h"
 
 static enum ratbag_error_code
 error_code(enum ratbag_error_code code)
@@ -180,6 +181,7 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	device->refcount = 1;
 	device->udev_device = udev_device_ref(udev_device);
 	device->ids = *id;
+	device->data = ratbag_device_data_new_for_id(ratbag, id);
 	list_init(&device->profiles);
 
 	list_insert(&ratbag->devices, &device->link);
@@ -217,6 +219,7 @@ ratbag_device_destroy(struct ratbag_device *device)
 	list_remove(&device->link);
 
 	ratbag_unref(device->ratbag);
+	ratbag_device_data_unref(device->data);
 	free(device->name);
 	free(device);
 }
@@ -358,7 +361,7 @@ ratbag_assign_driver(struct ratbag_device *device,
 	const char *driver_name;
 
 	if (!test_device) {
-		driver_name = udev_prop_value(device->udev_device, "RATBAG_DRIVER");
+		driver_name = ratbag_device_data_get_driver(device->data);
 	} else {
 		driver_name = "test_driver";
 	}
@@ -433,7 +436,7 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 		goto out_err;
 
 	device = ratbag_device_new(ratbag, udev_device, name, &id);
-	if (!device)
+	if (!device || !device->data)
 		goto out_err;
 
 	if (!ratbag_assign_driver(device, &device->ids, NULL))
@@ -483,9 +486,10 @@ ratbag_device_get_name(const struct ratbag_device* device)
 LIBRATBAG_EXPORT const char *
 ratbag_device_get_svg_name(const struct ratbag_device* device)
 {
-	const char *name;
+	const char *name = NULL;
 
-	name = udev_prop_value(device->udev_device, "RATBAG_SVG");
+	if (device->data)
+		name = ratbag_device_data_get_svg(device->data);
 	if (!name && device->driver->get_svg_name)
 		name = device->driver->get_svg_name(device);
 

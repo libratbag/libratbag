@@ -1,0 +1,5 @@
+# Logitech T650 over unifying
+[Device]
+Name=Logitech T650
+DeviceMatch=usb:046d:4101
+Driver=hidpp20

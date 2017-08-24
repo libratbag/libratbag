@@ -47,6 +47,7 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "libratbag-data.h"
 
 struct hidpp10drv_data {
 	struct hidpp10_device *dev;
@@ -555,9 +556,8 @@ hidpp10drv_probe(struct ratbag_device *device)
 	struct hidpp10_device *dev = NULL;
 	struct hidpp_device base;
 	enum hidpp10_profile_type type = HIDPP10_PROFILE_UNKNOWN;
-	const char *prop;
+	const char *profile;
 	int device_idx = HIDPP_WIRED_DEVICE_IDX;
-	int nread = 0;
 	unsigned int profile_count = 1;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
@@ -568,31 +568,22 @@ hidpp10drv_probe(struct ratbag_device *device)
 	hidpp_device_init(&base, device->hidraw.fd);
 	hidpp_device_set_log_handler(&base, hidpp10_log, HIDPP_LOG_PRIORITY_RAW, device);
 
-	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_PROFILE");
-	if (prop) {
-		if (strcasecmp("G500", prop) == 0)
+	profile = ratbag_device_data_hidpp10_get_profile_type(device->data);
+	if (profile) {
+		if (strcasecmp("G500", profile) == 0)
 			type = HIDPP10_PROFILE_G500;
-		else if (strcasecmp("G700", prop) == 0)
+		else if (strcasecmp("G700", profile) == 0)
 			type = HIDPP10_PROFILE_G700;
-		else if (strcasecmp("G9", prop) == 0)
+		else if (strcasecmp("G9", profile) == 0)
 			type = HIDPP10_PROFILE_G9;
 
-		prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_PROFILE_COUNT");
-		if (prop)
-			profile_count = atoi(prop);
+		profile_count = ratbag_device_data_hidpp10_get_profile_count(device->data);
 	}
 
-	prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_INDEX");
-	if (prop) {
-		sscanf(prop, "%d%n", &device_idx, &nread);
-		if (!nread || (prop[nread]) != '\0' || device_idx < 0) {
-			log_error(device->ratbag,
-				  "Error parsing RATBAG_HIDPP10_INDEX: '%s' for %s\n",
-				  prop,
-				  device->name);
-			device_idx = HIDPP_WIRED_DEVICE_IDX;
-		}
-	}
+	device_idx = ratbag_device_data_hidpp10_get_index(device->data);
+	if (device_idx == -1)
+		device_idx = HIDPP_WIRED_DEVICE_IDX;
+
 	/* In the general case, we can treat all devices as wired devices
 	 * here. If we talk to the correct hidraw device the kernel adjusts
 	 * the device index for us, so even for unifying receiver devices
@@ -611,23 +602,24 @@ hidpp10drv_probe(struct ratbag_device *device)
 	}
 
 	if (type != HIDPP10_PROFILE_UNKNOWN) {
-		prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI");
-		if (prop) {
-			rc = hidpp10_build_dpi_table_from_dpi_info(dev, prop);
+		_cleanup_(dpi_list_freep) struct dpi_list *list = NULL;
+		_cleanup_(freep) struct dpi_range *range = NULL;
+
+		range = ratbag_device_data_hidpp10_get_dpi_range(device->data);
+		if (range) {
+			rc = hidpp10_build_dpi_table_from_dpi_info(dev, range);
 			if (rc)
 				log_error(device->ratbag,
-					  "Error parsing RATBAG_HIDPP10_DPI: '%s' for %s\n",
-					  prop,
+					  "Error parsing DpiRange for %s\n",
 					  device->name);
 		}
 
-		prop = ratbag_device_get_udev_property(device, "RATBAG_HIDPP10_DPI_LIST");
-		if (prop) {
-			rc = hidpp10_build_dpi_table_from_list(dev, prop);
+		list = ratbag_device_data_hidpp10_get_dpi_list(device->data);
+		if (list) {
+			rc = hidpp10_build_dpi_table_from_list(dev, list);
 			if (rc)
 				log_error(device->ratbag,
-					  "Error parsing RATBAG_HIDPP10_DPI_LIST: '%s' for %s\n",
-					  prop,
+					  "Error parsing DpiList for %s\n",
 					  device->name);
 		}
 

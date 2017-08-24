@@ -1,0 +1,49 @@
+# Example description file for a libratbag device
+#
+# Make sure the file has a recognizable name with a '.device' suffix
+
+[Device]
+# The kernel name of the device. This name is not used by libratbag, it is
+# used by debugging tools.
+Name=Logitech Example Device
+
+# DeviceMatch is a triplet of bus:vid:pid, where bus is 'usb' or bluetooth'
+# and pid/vid are lowercase 4-digit hexadecimal numbers with preceding
+# zeroes.
+DeviceMatch=usb:12ab:00f2
+
+# The file name of the SVG file representing this device
+Svg=logitech-example.svg
+
+# The libratbag driver backend
+Driver=hidpp10
+
+# Only one group of driver-specific properties is permitted and it must be
+# [Driver/<drivername>]. It is a bug do have any other [Driver/foo] group in
+# a device file, but this example file lists all.
+
+[Driver/hidpp10]
+# The number of profiles, must be greater than 0
+Profiles=1
+
+# The type of the profile
+ProfileType=G9
+
+# The range of available resolutions in the form min:max@step
+# Mutually exclusive with DpiList
+DpiRange=50:5700@50
+
+# The list of available resolutions, separated by semicolons.
+# Mutually exclusive with DpiRange
+# Where possible, DpiRange should be preferred
+DpiList=50;200;400;800
+
+# The HID++ 1.0 device index
+# Should be unset unless required
+# DeviceIndex=1
+
+
+[Driver/hidpp20]
+# The HID++ 2.0 device index
+# Should be unset unless required
+# DeviceIndex=1

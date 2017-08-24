@@ -48,6 +48,7 @@ dep_udev = dependency('libudev')
 dep_libevdev = dependency('libevdev')
 dep_libsystemd = dependency('libsystemd', version : '>=227')
 dep_systemd = dependency('systemd')
+dep_glib = dependency('glib-2.0')
 dep_lm = cc.find_library('m')
 
 #### libutil.a ####
@@ -131,6 +132,8 @@ src_libratbag = [
 	'src/driver-test.c',
 	'src/libratbag.c',
 	'src/libratbag.h',
+	'src/libratbag-data.c',
+	'src/libratbag-data.h',
 	'src/libratbag-hidraw.c',
 	'src/libratbag-hidraw.h',
 	'src/libratbag-private.h',
@@ -142,6 +145,7 @@ src_libratbag = [
 deps_libratbag = [
 	dep_udev,
 	dep_libevdev,
+	dep_glib,
 	dep_libutil,
 	dep_libhidpp,
 ]
@@ -245,18 +249,46 @@ man_lur_command = configure_file (
 	install_dir : join_paths(get_option('mandir'), 'man1')
 )
 
-#### hwdb ####
-udev_dir = get_option('udev-dir')
-if udev_dir == ''
-        udev_dir = '@0@/lib/udev'.format(get_option('prefix'))
-endif
-udev_rules_dir = '@0@/rules.d'.format(udev_dir)
-udev_hwdb_dir = '@0@/hwdb.d'.format(udev_dir)
+#### data files ####
+data_files = files(
+	'data/devices/etekcity-fixme.device',
+	'data/devices/gskill-MX-780.device',
+	'data/devices/logitech-g300.device',
+	'data/devices/logitech-g303.device',
+	'data/devices/logitech-g403.device',
+	'data/devices/logitech-g500.device',
+	'data/devices/logitech-g500s.device',
+	'data/devices/logitech-g502-Proteus-Core-over-USB.device',
+	'data/devices/logitech-g502-Proteus-Spectrum-over-USB.device',
+	'data/devices/logitech-g5-2007.device',
+	'data/devices/logitech-g5.device',
+	'data/devices/logitech-g602.device',
+	'data/devices/logitech-g700.device',
+	'data/devices/logitech-g700s.device',
+	'data/devices/logitech-g700s-wireless.device',
+	'data/devices/logitech-g700-wireless.device',
+	'data/devices/logitech-g7.device',
+	'data/devices/logitech-g900.device',
+	'data/devices/logitech-g900-wireless.device',
+	'data/devices/logitech-g9.device',
+	'data/devices/logitech-g9x-[Call-of-Duty-MW3-Edition].device',
+	'data/devices/logitech-g9x-[Original].device',
+	'data/devices/logitech-M325.device',
+	'data/devices/logitech-M570.device',
+	'data/devices/logitech-M705.device',
+	'data/devices/logitech-MX-Master.device',
+	'data/devices/logitech-T650.device',
+	'data/devices/logitech-Wireless-Touchpad.device',
+	'data/devices/roccat-kone-xtd.device',
+)
 
-install_data('hwdb/70-libratbag-mouse.rules',
-	     install_dir : udev_rules_dir)
-install_data('hwdb/70-libratbag-mouse.hwdb',
-	     install_dir : udev_hwdb_dir)
+install_data(data_files,
+	     install_dir : join_paths(get_option('datadir'), 'libratbag'))
+
+data_parse_test = find_program(join_paths(meson.source_root(), 'data/devices/data-parse-test.py'))
+test('data-parse-test', data_parse_test,
+     args : [ '--svg-dir', join_paths(meson.source_root(), 'data/default'),
+	      '--svg-dir', join_paths(meson.source_root(), 'data/gnome') ] + data_files)
 
 #### svg files ####
 default_svg_files = [

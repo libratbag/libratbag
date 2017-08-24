@@ -1,0 +1,5 @@
+# Logitech Wireless Touchpad (Unifying)
+[Device]
+Name=Logitech Wireless Touchpad
+DeviceMatch=usb:046d:4011
+Driver=hidpp20

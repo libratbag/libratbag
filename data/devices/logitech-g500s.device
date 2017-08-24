@@ -1,0 +1,10 @@
+[Device]
+Name=Logitech G500s
+DeviceMatch=usb:046d:c24e
+Driver=hidpp10
+Svg=logitech-g500s.svg
+
+[Driver/hidpp10]
+DpiRange=0:8200@50
+ProfileType=G500
+Profiles=1

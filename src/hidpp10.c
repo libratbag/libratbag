@@ -114,19 +114,9 @@ hidpp10_dpi_table_get_min_dpi(struct hidpp10_device *dev)
 
 int
 hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,
-				  const char *str_list)
+				  const struct dpi_list *list)
 {
-	_cleanup_(dpi_list_freep) struct dpi_list *list;
 	size_t i;
-
-	/*
-	 * str_list is in the form:
-	 * "0;200;400;600;800;1000;1200"
-	 */
-
-	list = dpi_list_from_string(str_list);
-	if (!list)
-		goto err;
 
 	if (list->nentries + 0x80 - 1> 0xff)
 		goto err;
@@ -149,19 +139,10 @@ err:
 
 int
 hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
-				      const char *str_dpi)
+				      const struct dpi_range *range)
 {
 	unsigned raw_max, i;
-	_cleanup_(freep) struct dpi_range *range = NULL;
 
-	/*
-	 * str_list is in the form:
-	 * "MIN:MAX@STEP"
-	 */
-
-	range = dpi_range_from_string(str_dpi);
-	if (!range)
-		return -EINVAL;
 
 	raw_max = (range->max - range->min) / range->step;
 	if (raw_max > 0xff)

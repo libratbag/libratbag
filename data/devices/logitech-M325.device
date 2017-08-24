@@ -1,0 +1,5 @@
+# Logitech M325 over unifying
+[Device]
+Name=Logitech M325
+DeviceMatch=usb:046d:400a
+Driver=hidpp20

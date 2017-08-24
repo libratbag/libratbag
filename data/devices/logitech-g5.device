@@ -1,0 +1,7 @@
+[Device]
+Name=G5
+DeviceMatch=usb:046d:c041
+Driver=hidpp10
+
+[Driver/hidpp10]
+DpiList=400;800;1600;2000
