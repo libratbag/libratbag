@@ -171,3 +171,19 @@ ratbag_utf8_to_enc(char *buf, size_t buf_len, const char *to_enc,
 ssize_t
 ratbag_utf8_from_enc(char *in_buf, size_t in_len, const char *from_enc,
 		     char **out);
+
+__attribute__((format(printf, 2, 3)))
+static inline int
+xasprintf(char **strp, const char *fmt, ...)
+{
+	int rc = 0;
+	va_list args;
+
+	va_start(args, fmt);
+	rc = vasprintf(strp, fmt, args);
+	va_end(args);
+	if ((rc == -1) && strp)
+		*strp = NULL;
+
+	return rc;
+}
