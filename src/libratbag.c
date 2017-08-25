@@ -496,13 +496,6 @@ ratbag_device_get_svg_name(const struct ratbag_device* device)
 	return name;
 }
 
-const char *
-ratbag_device_get_udev_property(const struct ratbag_device* device,
-				const char *name)
-{
-	return udev_prop_value(device->udev_device, name);
-}
-
 void
 ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 {
