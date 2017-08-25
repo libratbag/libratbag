@@ -304,6 +304,11 @@ if enable_tests
 				 dependencies : [ dep_libratbag, dep_check ],
 				 include_directories : include_directories('src'),
 				 install : false)
+	test_util = executable('test-util',
+				 ['test/test-util.c'],
+				 dependencies : [ dep_libratbag, dep_check ],
+				 include_directories : include_directories('src'),
+				 install : false)
 	test_iconv_helper = executable('test-iconv-helper',
 				['test/test-iconv-helper.c'],
 				dependencies : [ dep_libratbag,
@@ -313,6 +318,7 @@ if enable_tests
 				install : false)
 	test('test-context', test_context, env : env_test)
 	test('test-device', test_device, env : env_test)
+	test('test-util', test_util, env : env_test)
 	test('test-iconv-helper', test_iconv_helper, env : env_test)
 
 	valgrind = find_program('valgrind')
