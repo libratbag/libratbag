@@ -187,3 +187,101 @@ xasprintf(char **strp, const char *fmt, ...)
 
 	return rc;
 }
+
+struct dpi_range {
+	unsigned int min;
+	unsigned int max;
+	float step;
+};
+
+/* Parse a string in the form min:max@step to a dpi_range */
+static inline struct dpi_range *
+dpi_range_from_string(const char *str)
+{
+	float min, max, step;
+	int rc;
+	struct dpi_range *range;
+
+	rc = sscanf(str, "%f:%f@%f", &min, &max, &step);
+	if (rc != 3 || min < 0 || max <= min || step < 20)
+		return NULL;
+
+	range = zalloc(sizeof(*range));
+	range->min = min;
+	range->max = max;
+	range->step = step;
+
+	return range;
+}
+
+struct dpi_list {
+	int *entries;
+	size_t nentries;
+};
+
+static inline void
+dpi_list_free(struct dpi_list *list)
+{
+	free(list->entries);
+	free(list);
+}
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct dpi_list *, dpi_list_free);
+
+/* Parse a string in the form "100;200;400"to a dpi_list */
+static inline struct dpi_list *
+dpi_list_from_string(const char *str)
+{
+	struct dpi_list *list;
+	unsigned int i, count, index;
+	int nread, dpi = 0;
+	char c;
+	void *tmp;
+
+	if (!str || str[0] == '\0')
+		return NULL;
+	printf("%s: ", str);
+
+	/* first, count how many elements do we have in the table */
+	count = 1;
+	i = 0;
+	while (str[i] != 0) {
+		c = str[i++];
+		if (c == ';')
+			count++;
+	}
+
+	list = zalloc(sizeof *list);
+	list->nentries = count;
+	list->entries = zalloc(count * sizeof(list->entries[0]));
+
+	index = 0;
+
+	while (*str != 0 && index < count) {
+		if (*str == ';') {
+			str++;
+			continue;
+		}
+
+		nread = 0;
+		sscanf(str, "%d%n", &dpi, &nread);
+		if (!nread || dpi < 0)
+			goto err;
+
+		list->entries[index] = dpi;
+		str += nread;
+		index++;
+	}
+
+	/* Drop empty entries for trailing semicolons */
+	list->nentries = index;
+	tmp = realloc(list->entries, index * sizeof(list->entries[0]));
+	if (tmp)
+		list->entries = tmp;
+
+	return list;
+
+err:
+	dpi_list_free(list);
+	return NULL;
+}

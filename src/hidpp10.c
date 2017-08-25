@@ -116,55 +116,30 @@ int
 hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,
 				  const char *str_list)
 {
-	unsigned int i, count, index;
-	int nread, dpi = 0;
-	char c;
+	_cleanup_(dpi_list_freep) struct dpi_list *list;
+	size_t i;
+
 	/*
 	 * str_list is in the form:
 	 * "0;200;400;600;800;1000;1200"
 	 */
 
-	/* first, count how many elements do we have in the table */
-	count = 1;
-	i = 0;
-	while (str_list[i] != 0) {
-		c = str_list[i++];
-		if (c == ';')
-			count++;
-	}
-
-	index = 0;
-
-	/* check that the max raw value fits in a uint8_t */
-	if (count + 0x80 - 1> 0xff)
-		return -EINVAL;
-
-	dev->dpi_count = count;
-	dev->dpi_table = zalloc(count * sizeof(*dev->dpi_table));
-
-	while (*str_list != 0 && index < count) {
-		if (*str_list == ';') {
-			str_list++;
-			continue;
-		}
-
-		nread = 0;
-		sscanf(str_list, "%d%n", &dpi, &nread);
-		if (!nread || dpi < 0)
-			goto err;
-
-		dev->dpi_table[index].raw_value = index + 0x80;
-		dev->dpi_table[index].dpi = dpi;
-
-		str_list += nread;
-		index++;
-	}
-
-	if (index != count)
+	list = dpi_list_from_string(str_list);
+	if (!list)
 		goto err;
 
-	return 0;
+	if (list->nentries + 0x80 - 1> 0xff)
+		goto err;
 
+	dev->dpi_count = list->nentries;
+	dev->dpi_table = zalloc(list->nentries * sizeof(*dev->dpi_table));
+
+	for (i = 0; i < list->nentries; i++) {
+		dev->dpi_table[i].raw_value = i + 0x80;
+		dev->dpi_table[i].dpi = list->entries[i];
+	}
+
+	return 0;
 err:
 	dev->dpi_count = 0;
 	free(dev->dpi_table);
@@ -176,19 +151,19 @@ int
 hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
 				      const char *str_dpi)
 {
-	float min, max, step;
 	unsigned raw_max, i;
-	int rc;
+	_cleanup_(freep) struct dpi_range *range = NULL;
+
 	/*
 	 * str_list is in the form:
 	 * "MIN:MAX@STEP"
 	 */
 
-	rc = sscanf(str_dpi, "%f:%f@%f", &min, &max, &step);
-	if (rc != 3)
+	range = dpi_range_from_string(str_dpi);
+	if (!range)
 		return -EINVAL;
 
-	raw_max = (max - min) / step;
+	raw_max = (range->max - range->min) / range->step;
 	if (raw_max > 0xff)
 		return -EINVAL;
 
@@ -197,7 +172,7 @@ hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
 
 	for (i = 1; i <= raw_max; i++) {
 		dev->dpi_table[i].raw_value = i;
-		dev->dpi_table[i].dpi = round((min + step * i) / 25.0f) * 25;
+		dev->dpi_table[i].dpi = round((range->min + range->step * i) / 25.0f) * 25;
 	}
 
 	return 0;
