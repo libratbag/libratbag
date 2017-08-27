@@ -280,6 +280,7 @@ gnome_svg_files = [
 	'data/gnome/logitech-g500s.svg',
 	'data/gnome/logitech-g502.svg',
 	'data/gnome/logitech-g700.svg',
+	'data/gnome/logitech-g900.svg',
 	'data/gnome/roccat-kone-xtd.svg',
 ]
 install_data(gnome_svg_files,
