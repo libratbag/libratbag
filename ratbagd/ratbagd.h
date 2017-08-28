@@ -169,6 +169,12 @@ struct ratbagd_device *ratbagd_device_next(struct ratbagd_device *device);
 	     (_device);					\
 	     (_device) = ratbagd_device_next(_device))
 
+#define RATBAGD_DEVICE_FOREACH_SAFE(_device, _safe, _ctx)	\
+	for (_device = ratbagd_device_first(_ctx),		\
+	     _safe = (_device) ? ratbagd_device_next(_device) : NULL; \
+	     (_device);						\
+	     _device = (_safe),				\
+	     _safe = (_safe) ? ratbagd_device_next(_safe) : NULL)
 /*
  * Context
  */
