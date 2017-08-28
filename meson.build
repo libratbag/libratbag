@@ -316,7 +316,8 @@ if enable_tests
 	test('test-device', test_device, env : env_test)
 	test('test-iconv-helper', test_iconv_helper, env : env_test)
 
-	valgrind = find_program('valgrind')
+	valgrind = find_program('valgrind', required:false)
+	if valgrind.found()
 	valgrind_suppressions_file = join_paths(meson.source_root(), 'test', 'valgrind.suppressions')
 	add_test_setup('valgrind',
 		       exe_wrapper : [
@@ -327,7 +328,8 @@ if enable_tests
 			       '--suppressions=' + valgrind_suppressions_file ],
 		       env : env_test,
 		       timeout_multiplier: 5)
-
+	endif
+	
 	executable('test-build-cxx',
 		   ['test/build-cxx.cc'],
 		   dependencies : [ dep_libratbag ],
