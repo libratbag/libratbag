@@ -486,12 +486,12 @@ static const struct ratbag_interface ratbagd_lib_interface = {
 
 static struct ratbagd *ratbagd_free(struct ratbagd *ctx)
 {
-	struct ratbagd_device *device;
+	struct ratbagd_device *device, *tmp;
 
 	if (!ctx)
 		return NULL;
 
-	RATBAGD_DEVICE_FOREACH(device, ctx)
+	RATBAGD_DEVICE_FOREACH_SAFE(device, tmp, ctx)
 		ratbagd_device_unlink(device);
 
 	ctx->bus = sd_bus_flush_close_unref(ctx->bus);
