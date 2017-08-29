@@ -25,7 +25,14 @@ import os
 import sys
 
 from enum import IntEnum
+from evdev import ecodes
+from gettext import gettext as _
 from gi.repository import Gio, GLib, GObject
+
+
+# Deferred translations, see https://docs.python.org/3/library/gettext.html#deferred-translations
+def N_(x):
+    return x
 
 
 class RatbagErrorCode(IntEnum):
@@ -140,6 +147,20 @@ class _RatbagdDBus(GObject.GObject):
         if self._proxy.get_name_owner() is None:
             raise RatbagdDBusUnavailable("No one currently owns {}".format(ratbag1))
 
+        self._proxy.connect("g-properties-changed", self._on_properties_changed)
+
+    def _on_properties_changed(self, proxy, changed_props, invalidated_props):
+        # Implement this in derived classes to respond to property changes.
+        pass
+
+    def _find_object_with_path(self, iterable, object_path):
+        # Find the index of an object in an iterable that whose object path
+        # matches the given object path.
+        for index, obj in enumerate(iterable):
+            if obj._object_path == object_path:
+                return index
+        return -1
+
     def _get_dbus_property(self, property):
         # Retrieves a cached property from the bus, or None.
         p = self._proxy.get_cached_property(property)
@@ -159,11 +180,32 @@ class _RatbagdDBus(GObject.GObject):
             pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
             self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
                                   pval, Gio.DBusCallFlags.NO_AUTO_START,
-                                  500, None)
+                                  2000, None)
 
         # This is our local copy, so we don't have to wait for the async
         # update
         self._proxy.set_cached_property(property, val)
+
+    def _dbus_call_async(self, method, type, *value, callback):
+        # The callback handler to unwrap the data
+        def callback_handler(obj, result, user_callback):
+            res = obj.call_finish(result)
+            res = res.unpack()[0]  # Result is always a tuple
+            user_callback(res)
+
+        # Calls a method asynchronously on the bus, using the given method
+        # name, type signature and values. The callback is invoked when the
+        # method finishes
+        val = GLib.Variant("({})".format(type), value)
+        try:
+            self._proxy.call(method, val,
+                             Gio.DBusCallFlags.NO_AUTO_START,
+                             500, None, callback_handler, callback)
+        except GLib.Error as e:
+            # Unrecognized error code; print the message to stderr and raise
+            # the GLib.Error.
+            print(e.message, file=sys.stderr)
+            raise
 
     def _dbus_call(self, method, type, *value):
         # Calls a method synchronously on the bus, using the given method name,
@@ -177,8 +219,7 @@ class _RatbagdDBus(GObject.GObject):
         try:
             res = self._proxy.call_sync(method, val,
                                         Gio.DBusCallFlags.NO_AUTO_START,
-                                        500, None)
-            global EXCEPTION_TABLE
+                                        2000, None)
             if res in EXCEPTION_TABLE:
                 raise EXCEPTION_TABLE[res]
             return res.unpack()[0]  # Result is always a tuple
@@ -203,17 +244,36 @@ class Ratbagd(_RatbagdDBus):
     Throws RatbagdDBusUnavailable when the DBus service is not available.
     """
 
+    __gsignals__ = {
+        "device-added":
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        "device-removed":
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+    }
+
     def __init__(self):
         _RatbagdDBus.__init__(self, "Manager", None)
+        result = self._get_dbus_property("Devices")
+        self._devices = [RatbagdDevice(objpath) for objpath in result]
+
+    def _on_properties_changed(self, proxy, changed_props, invalidated_props):
+        if "Devices" in changed_props.keys():
+            object_paths = [d._object_path for d in self._devices]
+            for object_path in changed_props["Devices"]:
+                if object_path not in object_paths:
+                    device = RatbagdDevice(object_path)
+                    self._devices.append(device)
+                    self.emit("device-added", device)
+            for device in self.devices:
+                if device._object_path not in changed_props["Devices"]:
+                    self._devices.remove(device)
+                    self.emit("device-removed", device)
+            self.notify("devices")
 
     @GObject.Property
     def devices(self):
         """A list of RatbagdDevice objects supported by ratbagd."""
-        devices = []
-        result = self._get_dbus_property("Devices")
-        if result is not None:
-            devices = [RatbagdDevice(objpath) for objpath in result]
-        return devices
+        return self._devices
 
     @GObject.Property
     def themes(self):
@@ -238,8 +298,23 @@ class RatbagdDevice(_RatbagdDBus):
     CAP_BUTTON_MACROS = 302
     CAP_LED = 400
 
+    __gsignals__ = {
+        "active-profile-changed":
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+    }
+
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Device", object_path)
+
+        # FIXME: if we start adding and removing objects from this list,
+        # things will break!
+        result = self._get_dbus_property("Profiles")
+        self._profiles = [RatbagdProfile(objpath) for objpath in result]
+        for profile in self._profiles:
+            profile.connect("notify::is-active", self._on_active_profile_changed)
+
+    def _on_active_profile_changed(self, profile, pspec):
+        self.emit("active-profile-changed", self._profiles[profile.index])
 
     @GObject.Property
     def id(self):
@@ -264,11 +339,19 @@ class RatbagdDevice(_RatbagdDBus):
     @GObject.Property
     def profiles(self):
         """A list of RatbagdProfile objects provided by this device."""
-        profiles = []
-        result = self._get_dbus_property("Profiles")
-        if result is not None:
-            profiles = [RatbagdProfile(objpath) for objpath in result]
-        return profiles
+        return self._profiles
+
+    @GObject.Property
+    def active_profile(self):
+        """The currently active profile. This is a non-DBus property computed
+        over the cached list of profiles. In the unlikely case that your device
+        driver is misconfigured and there is no active profile, this returns
+        the first profile."""
+        for profile in self._profiles:
+            if profile.is_active:
+                return profile
+        print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
+        return self._profiles[0]
 
     def get_svg(self, theme):
         """Gets the full path to the SVG for the given theme, or the empty
@@ -281,9 +364,25 @@ class RatbagdDevice(_RatbagdDBus):
         """
         return self._dbus_call("GetSvg", "s", theme)
 
-    def commit(self):
-        """Commits all changes made to the device."""
-        return self._dbus_call("Commit", "")
+    def commit(self, callback):
+        """Commits all changes made to the device.
+
+        This is an async call to DBus and this method does not return
+        anything. Any success or failure code is reported to the callback
+        provided when ratbagd finishes writing to the device. Note that upon
+        failure, the device is automatically resynchronized by ratbagd and no
+        further interaction is required by the client; clients can thus treat a
+        commit as being always successful.
+
+        @param callback The function to call with the result of the commit, as
+                        a function that takes the return value of the Commit
+                        method.
+        """
+        self._dbus_call_async("Commit", "", callback=callback)
+        for profile in self._profiles:
+            if profile.dirty:
+                profile._dirty = False
+                profile.notify("dirty")
 
 
 class RatbagdProfile(_RatbagdDBus):
@@ -293,6 +392,30 @@ class RatbagdProfile(_RatbagdDBus):
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Profile", object_path)
+        self._dirty = False
+
+        # FIXME: if we start adding and removing objects from any of these
+        # lists, things will break!
+        result = self._get_dbus_property("Resolutions")
+        self._resolutions = [RatbagdResolution(objpath) for objpath in result]
+        self._subscribe_dirty(self._resolutions)
+
+        result = self._get_dbus_property("Buttons")
+        self._buttons = [RatbagdButton(objpath) for objpath in result]
+        self._subscribe_dirty(self._buttons)
+
+        result = self._get_dbus_property("Leds")
+        self._leds = [RatbagdLed(objpath) for objpath in result]
+        self._subscribe_dirty(self._leds)
+
+    def _subscribe_dirty(self, objects):
+        for obj in objects:
+            obj.connect("notify", self._on_obj_notify)
+
+    def _on_obj_notify(self, obj, pspec):
+        if not self._dirty:
+            self._dirty = True
+            self.notify("dirty")
 
     @GObject.Property
     def capabilities(self):
@@ -322,6 +445,11 @@ class RatbagdProfile(_RatbagdDBus):
         return self._get_dbus_property("Index")
 
     @GObject.Property
+    def dirty(self):
+        """Whether this profile is dirty."""
+        return self._dirty
+
+    @GObject.Property
     def enabled(self):
         """tells if the profile is enabled."""
         return self._get_dbus_property("Enabled")
@@ -331,37 +459,40 @@ class RatbagdProfile(_RatbagdDBus):
         """Enable/Disable this profile.
 
         @param enabled The new state, as boolean"""
-        return self._set_dbus_property("Enabled", "b", enabled)
+        self._set_dbus_property("Enabled", "b", enabled)
 
     @GObject.Property
     def resolutions(self):
         """A list of RatbagdResolution objects with this profile's resolutions.
-        """
-        resolutions = []
-        result = self._get_dbus_property("Resolutions")
-        if result is not None:
-            resolutions = [RatbagdResolution(objpath) for objpath in result]
-        return resolutions
+        Note that the list of resolutions differs between profiles but the number
+        of resolutions is identical across profiles."""
+        return self._resolutions
+
+    @GObject.Property
+    def active_resolution(self):
+        """The currently active resolution of this profile. This is a non-DBus
+        property computed over the cached list of resolutions. In the unlikely
+        case that your device driver is misconfigured and there is no active
+        resolution, this returns the first resolution."""
+        for resolution in self._resolutions:
+            if resolution.is_active:
+                return resolution
+        print("No active resolution. Please report this bug to the libratbag developers", file=sys.stderr)
+        return self._resolutions[0]
 
     @GObject.Property
     def buttons(self):
         """A list of RatbagdButton objects with this profile's button mappings.
         Note that the list of buttons differs between profiles but the number
         of buttons is identical across profiles."""
-        buttons = []
-        result = self._get_dbus_property("Buttons")
-        if result is not None:
-            buttons = [RatbagdButton(objpath) for objpath in result]
-        return buttons
+        return self._buttons
 
     @GObject.Property
     def leds(self):
-        """A list of RatbagdLed objects with this profile's leds."""
-        leds = []
-        result = self._get_dbus_property("Leds")
-        if result is not None:
-            leds = [RatbagdLed(objpath) for objpath in result]
-        return leds
+        """A list of RatbagdLed objects with this profile's leds. Note that the
+        list of leds differs between profiles but the number of leds is
+        identical across profiles."""
+        return self._leds
 
     @GObject.Property
     def is_active(self):
@@ -370,7 +501,10 @@ class RatbagdProfile(_RatbagdDBus):
 
     def set_active(self):
         """Set this profile to be the active profile."""
-        return self._dbus_call("SetActive", "")
+        ret = self._dbus_call("SetActive", "")
+        self._set_dbus_property("IsActive", "b", True, readwrite=False)
+        self.notify("is-active")
+        return ret
 
 
 class RatbagdResolution(_RatbagdDBus):
@@ -381,6 +515,10 @@ class RatbagdResolution(_RatbagdDBus):
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Resolution", object_path)
+
+    def _on_properties_changed(self, proxy, changed_props, invalidated_props):
+        if "IsActive" in changed_props.keys():
+            self.notify("is-active")
 
     @GObject.Property
     def index(self):
@@ -408,13 +546,20 @@ class RatbagdResolution(_RatbagdDBus):
 
         @param res The new resolution, as (int, int)
         """
-        ret = self._set_dbus_property("Resolution", "(uu)", res)
-        return ret
+        self._set_dbus_property("Resolution", "(uu)", res)
 
     @GObject.Property
     def report_rate(self):
         """The report rate in Hz."""
         return self._get_dbus_property("ReportRate")
+
+    @report_rate.setter
+    def report_rate(self, rate):
+        """Set the report rate in Hz.
+
+        @param rate The new report rate, as int
+        """
+        self._set_dbus_property("ReportRate", "u", rate)
 
     @GObject.Property
     def maximum(self):
@@ -425,14 +570,6 @@ class RatbagdResolution(_RatbagdDBus):
     def minimum(self):
         """The minimum possible resolution."""
         return self._get_dbus_property("Minimum")
-
-    @report_rate.setter
-    def report_rate(self, rate):
-        """Set the report rate in Hz.
-
-        @param rate The new report rate, as int
-        """
-        return self._set_dbus_property("ReportRate", "u", rate)
 
     @GObject.Property
     def is_active(self):
@@ -448,11 +585,15 @@ class RatbagdResolution(_RatbagdDBus):
 
     def set_default(self):
         """Set this resolution to be the default."""
-        return self._dbus_call("SetDefault", "")
+        ret = self._dbus_call("SetDefault", "")
+        self._set_dbus_property("IsDefault", "b", True, readwrite=False)
+        return ret
 
     def set_active(self):
         """Set this resolution to be the active one."""
-        return self._dbus_call("SetActive", "")
+        ret = self._dbus_call("SetActive", "")
+        self._set_dbus_property("IsActive", "b", True, readwrite=False)
+        return ret
 
 
 class RatbagdButton(_RatbagdDBus):
@@ -513,8 +654,45 @@ class RatbagdButton(_RatbagdDBus):
     TYPE_PROFILE_UP = 22
     TYPE_PROFILE_DOWN = 23
 
+    """A table mapping a button's index to its usual function as defined by X
+    and the common desktop environments."""
+    BUTTON_DESCRIPTION = {
+        0: N_("Left mouse button click"),
+        1: N_("Right mouse button click"),
+        2: N_("Middle mouse button click"),
+        3: N_("Backward"),
+        4: N_("Forward"),
+    }
+
+    """A table mapping a special function to its human-readable description."""
+    SPECIAL_DESCRIPTION = {
+        ACTION_SPECIAL_UNKNOWN: N_("Unknown"),
+        ACTION_SPECIAL_DOUBLECLICK: N_("Doubleclick"),
+        ACTION_SPECIAL_WHEEL_LEFT: N_("Wheel Left"),
+        ACTION_SPECIAL_WHEEL_RIGHT: N_("Wheel Right"),
+        ACTION_SPECIAL_WHEEL_UP: N_("Wheel Up"),
+        ACTION_SPECIAL_WHEEL_DOWN: N_("Wheel Down"),
+        ACTION_SPECIAL_RATCHET_MODE_SWITCH: N_("Ratchet Mode"),
+        ACTION_SPECIAL_RESOLUTION_CYCLE_UP: N_("Cycle Resolution Up"),
+        ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN: N_("Cycle Resolution Down"),
+        ACTION_SPECIAL_RESOLUTION_UP: N_("Resolution Up"),
+        ACTION_SPECIAL_RESOLUTION_DOWN: N_("Resolution Down"),
+        ACTION_SPECIAL_RESOLUTION_ALTERNATE: N_("Resolution Switch"),
+        ACTION_SPECIAL_RESOLUTION_DEFAULT: N_("Default Resolution"),
+        ACTION_SPECIAL_PROFILE_CYCLE_UP: N_("Cycle Profile Up"),
+        ACTION_SPECIAL_PROFILE_CYCLE_DOWN: N_("Cycle Profile Down"),
+        ACTION_SPECIAL_PROFILE_UP: N_("Profile Up"),
+        ACTION_SPECIAL_PROFILE_DOWN: N_("Profile Down"),
+        ACTION_SPECIAL_SECOND_MODE: N_("Second Mode"),
+        ACTION_SPECIAL_BATTERY_LEVEL: N_("Battery Level"),
+    }
+
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Button", object_path)
+
+    def _on_properties_changed(self, proxy, changed_props, invalidated_props):
+        if "ActionType" in changed_props.keys():
+            self.notify("action-type")
 
     @GObject.Property
     def index(self):
@@ -537,30 +715,22 @@ class RatbagdButton(_RatbagdDBus):
 
         @param button The button to map to, as int
         """
-        ret = self._set_dbus_property("ButtonMapping", "u", button)
-        self.notify("action-type")
-        return ret
+        self._set_dbus_property("ButtonMapping", "u", button)
 
     @GObject.Property
     def macro(self):
-        """A list of (type, value) tuples that form the currently set macro,
-        where type is either RatbagdButton.KEY_PRESS, RatbagdButton.KEY_RELEASE
-        or RatbagdButton.MACRO_WAIT and the value is the keycode as specified
-        in linux/input.h for key related types, or the timeout in milliseconds."""
-        return self._get_dbus_property("Macro")
+        """A RatbagdMacro object representing the currently set macro."""
+        return RatbagdMacro.from_ratbag(self._get_dbus_property("Macro"))
 
     @macro.setter
     def macro(self, macro):
-        """Set the macro to the given macro. Note that the type must be one of
-        RatbagdButton.KEY_PRESS, RatbagdButton.KEY_RELEASE or
-        RatbagdButton.MACRO_WAIT and the keycodes must be as specified in
-        linux/input.h, and the timeout must be in milliseconds.
+        """Set the macro to the macro represented by the given RatbagdMacro
+        object.
 
-        @param macro A list of (type, value) tuples to form the new macro.
+        @param macro A RatbagdMacro object representing the macro to apply to
+                     the button, as RatbagdMacro.
         """
-        ret = self._set_dbus_property("Macro", "a(uu)", macro)
-        self.notify("action-type")
-        return ret
+        self._set_dbus_property("Macro", "a(uu)", macro.keys)
 
     @GObject.Property
     def special(self):
@@ -573,9 +743,7 @@ class RatbagdButton(_RatbagdDBus):
 
         @param special The special entry, as one of RatbagdButton.ACTION_SPECIAL_*
         """
-        ret = self._set_dbus_property("SpecialMapping", "u", special)
-        self.notify("action-type")
-        return ret
+        self._set_dbus_property("SpecialMapping", "u", special)
 
     @GObject.Property
     def key(self):
@@ -590,9 +758,7 @@ class RatbagdButton(_RatbagdDBus):
         @param keys A list of integers, the first being the keycode and the rest
                     modifiers.
         """
-        ret = self._set_dbus_property("KeyMapping", "au", keys)
-        self.notify("action-type")
-        return ret
+        self._set_dbus_property("KeyMapping", "au", keys)
 
     @GObject.Property
     def action_type(self):
@@ -613,6 +779,99 @@ class RatbagdButton(_RatbagdDBus):
         return self._dbus_call("Disable", "")
 
 
+class RatbagdMacro(GObject.Object):
+    """Represents a button macro. Note that it uses keycodes as defined by
+    linux/input.h and not those used by X.Org or any other higher layer such as
+    Gdk."""
+
+    # All keys from ecodes.KEY have a KEY_ prefix. We strip it.
+    _PREFIX_LEN = len("KEY_")
+
+    # Both a key press and release.
+    _MACRO_KEY = 1000
+
+    _MACRO_DESCRIPTION = {
+        RatbagdButton.MACRO_KEY_PRESS: lambda key:
+            "↓{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+        RatbagdButton.MACRO_KEY_RELEASE: lambda key:
+            "↑{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+        RatbagdButton.MACRO_WAIT: lambda val:
+            "{}ms".format(val),
+        _MACRO_KEY: lambda key:
+            "↕{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+    }
+
+    __gsignals__ = {
+        'macro-set': (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
+
+    def __init__(self, **kwargs):
+        GObject.Object.__init__(self, **kwargs)
+        self._macro = []
+
+    def __str__(self):
+        if not self._macro:
+            # Translators: this is used when there is no macro to preview.
+            return _("None")
+
+        keys = []
+        idx = 0
+        while idx < len(self._macro):
+            t, v = self._macro[idx]
+            try:
+                if t == RatbagdButton.MACRO_KEY_PRESS:
+                    # Check for a paired press/release event
+                    t2, v2 = self._macro[idx + 1]
+                    if t2 == RatbagdButton.MACRO_KEY_RELEASE and v == v2:
+                        t = self._MACRO_KEY
+                        idx += 1
+            except IndexError:
+                pass
+            keys.append(self._MACRO_DESCRIPTION[t](v))
+            idx += 1
+        return " ".join(keys)
+
+    @GObject.Property
+    def keys(self):
+        """A list of (RatbagdButton.MACRO_*, value) tuples representing the
+        current macro."""
+        return self._macro
+
+    @staticmethod
+    def from_ratbag(macro):
+        """Instantiates a new RatbagdMacro instance from the given macro in
+        libratbag format.
+
+        @param macro The macro in libratbag format, as
+                     [(RatbagdButton.MACRO_*, value)].
+        """
+        ratbagd_macro = RatbagdMacro()
+
+        # Do not emit notify::keys for every key that we add.
+        with ratbagd_macro.freeze_notify():
+            for (type, value) in macro:
+                ratbagd_macro.append(type, value)
+        return ratbagd_macro
+
+    def accept(self):
+        """Applies the currently cached macro."""
+        self.emit("macro-set")
+
+    def append(self, type, value):
+        """Appends the given event to the current macro.
+
+        @param type The type of event, as one of RatbagdButton.MACRO_*.
+        @param value If the type denotes a key event, the X.Org or Gdk keycode
+                     of the event, as int. Otherwise, the value of the timeout
+                     in milliseconds, as int.
+        """
+        # Only append if the entry isn't identical to the last one, as we cannot
+        # e.g. have two identical key presses in a row.
+        if len(self._macro) == 0 or (type, value) != self._macro[-1]:
+            self._macro.append((type, value))
+            self.notify("keys")
+
+
 class RatbagdLed(_RatbagdDBus):
     """Represents a ratbagd led."""
 
@@ -624,6 +883,18 @@ class RatbagdLed(_RatbagdDBus):
     MODE_ON = 1
     MODE_CYCLE = 2
     MODE_BREATHING = 3
+
+    LED_DESCRIPTION = {
+        # Translators: the LED is off.
+        MODE_OFF: N_("Off"),
+        # Translators: the LED has a single, solid color.
+        MODE_ON: N_("Solid"),
+        # Translators: the LED is cycling between red, green and blue.
+        MODE_CYCLE: N_("Cycle"),
+        # Translators: the LED's is pulsating a single color on different
+        # brightnesses.
+        MODE_BREATHING: N_("Breathing"),
+    }
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Led", object_path)
@@ -646,7 +917,7 @@ class RatbagdLed(_RatbagdDBus):
         @param mode The new mode, as one of MODE_OFF, MODE_ON, MODE_CYCLE and
                     MODE_BREATHING.
         """
-        return self._set_dbus_property("Mode", "u", mode)
+        self._set_dbus_property("Mode", "u", mode)
 
     @GObject.Property
     def type(self):
@@ -665,7 +936,7 @@ class RatbagdLed(_RatbagdDBus):
 
         @param color An RGB color, as an integer triplet with values 0-255.
         """
-        return self._set_dbus_property("Color", "(uuu)", color)
+        self._set_dbus_property("Color", "(uuu)", color)
 
     @GObject.Property
     def effect_rate(self):
@@ -678,7 +949,7 @@ class RatbagdLed(_RatbagdDBus):
 
         @param effect_rate The new effect rate, as int
         """
-        return self._set_dbus_property("EffectRate", "u", effect_rate)
+        self._set_dbus_property("EffectRate", "u", effect_rate)
 
     @GObject.Property
     def brightness(self):
@@ -691,4 +962,4 @@ class RatbagdLed(_RatbagdDBus):
 
         @param brightness The new brightness, as int
         """
-        return self._set_dbus_property("Brightness", "u", brightness)
+        self._set_dbus_property("Brightness", "u", brightness)
