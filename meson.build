@@ -37,6 +37,7 @@ add_project_arguments(cppflags, language: 'cpp')
 # is generated at the end of this file
 config_h = configuration_data()
 config_h.set('_GNU_SOURCE', '1')
+config_h.set_quoted('FALLBACK_SVG_NAME', 'fallback.svg')
 libratbag_data_dir = join_paths(get_option('prefix'),
 				get_option('datadir'),
 				'libratbag')

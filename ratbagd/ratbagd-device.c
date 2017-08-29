@@ -171,14 +171,13 @@ static int ratbagd_device_get_theme_svg(sd_bus_message *m,
 
 	svg = ratbag_device_get_svg_name(device->lib_device);
 	if (!svg) {
-		log_error("Unable to fetch SVG for %s\n",
+		log_error("Unable to fetch SVG for %s, using fallback\n",
 			  ratbagd_device_get_name(device));
-		goto out;
+		svg = FALLBACK_SVG_NAME;
 	}
 
 	sprintf(svg_path, "%s/%s/%s", LIBRATBAG_DATA_DIR, theme, svg);
 
-out:
 	return sd_bus_reply_method_return(m, "s", svg_path);
 }
 
