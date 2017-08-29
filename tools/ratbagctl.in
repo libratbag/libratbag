@@ -27,7 +27,7 @@ import evdev
 import sys
 import argparse
 
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable, RatbagError, RatbagErrorCapability  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
 
 button_specials_strmap = {
     RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",
@@ -354,7 +354,7 @@ def func_led_set(r, args):
         pass
     else:
         l.brightness = brightness
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_led_get_all(r, args):
@@ -371,7 +371,7 @@ def func_button_get(r, args):
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
     b.mapping = args.target_button
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_button_action_set_special(r, args):
@@ -382,13 +382,13 @@ def func_button_action_set_special(r, args):
         pass
     else:
         b.special = button_specials_strmap[special]
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_button_action_set_macro(r, args):
     b, p, d = find_button(r, args)
     macro_keys = args.target_macro
-    macro = []
+    macro = RatbagdMacro()
     for s in macro_keys:
         is_press = True
         is_release = True
@@ -408,7 +408,7 @@ def func_button_action_set_macro(r, args):
 
         if is_timeout:
             t = int(s[1:])
-            macro.append((RatbagdButton.MACRO_WAIT, t))
+            macro.append(RatbagdButton.MACRO_WAIT, t)
         else:
             if not s.startswith("KEY_") and not s.startswith("BTN_"):
                 msg = "Don't know how to convert {}".format(s)
@@ -416,12 +416,12 @@ def func_button_action_set_macro(r, args):
 
             code = evdev.ecodes.ecodes[s]
             if is_press:
-                macro.append((RatbagdButton.MACRO_KEY_PRESS, code))
+                macro.append(RatbagdButton.MACRO_KEY_PRESS, code)
             if is_release:
-                macro.append((RatbagdButton.MACRO_KEY_RELEASE, code))
+                macro.append(RatbagdButton.MACRO_KEY_RELEASE, code)
 
     b.macro = macro
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_button_count(r, args):
@@ -440,7 +440,7 @@ def func_dpi_get(r, args):
 def func_dpi_set(r, args):
     r, p, d = find_resolution(r, args)
     r.resolution = (args.dpi_n[0], args.dpi_n[1])
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_report_rate_get(r, args):
@@ -471,7 +471,7 @@ def func_resolution_active_get(r, args):
 def func_resolution_active_set(r, args):
     r, p, d = find_resolution(r, args)
     r.set_active()
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_resolution_default_get(r, args):
@@ -488,7 +488,7 @@ def func_default_resolution_set(r, args):
     # FIXME: capabilities check?
     r, p, d = find_resolution(r, args)
     r.set_default()
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_profile_get(r, args):
@@ -506,7 +506,7 @@ def func_profile_name_set(r, args):
     if RatbagdProfile.CAP_WRITABLE_NAME not in p.capabilities:
         raise RatbagErrorCapability("assigning a profile name is not supported on this profile")
     p.name = args.name
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_profile_active_get(r, args):
@@ -522,19 +522,19 @@ def func_profile_active_get(r, args):
 def func_profile_active_set(r, args):
     p, d = find_profile(r, args)
     p.set_active()
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_profile_enable(r, args):
     p, d = find_profile(r, args)
     p.enabled = True
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_profile_disable(r, args):
     p, d = find_profile(r, args)
     p.enabled = False
-    d.commit()
+    d.commit(commit_cb)
 
 
 def func_device_name_get(r, args):
@@ -601,6 +601,11 @@ set = 'set'
 link = 'link'
 
 ################################################################################
+
+
+def commit_cb(status):
+    if not status == RatbagErrorCode.RATBAG_SUCCESS:
+        print("Could not commit changes to the device")
 
 
 def color(string):
