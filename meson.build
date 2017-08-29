@@ -306,6 +306,7 @@ install_data(default_svg_files,
 	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'default'))
 
 gnome_svg_files = [
+	'data/gnome/fallback.svg',
 	'data/gnome/logitech-g303.svg',
 	'data/gnome/logitech-g403.svg',
 	'data/gnome/logitech-g500.svg',
