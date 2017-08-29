@@ -193,7 +193,7 @@
     <path
        sodipodi:nodetypes="ccccc"
        inkscape:connector-curvature="0"
-       id="button9"
+       id="button7"
        d="m 209.20722,524.3296 -0.65676,27.92859 -17.18836,0 -0.65677,-27.92859 z"
        style="color:#000000;overflow:visible;opacity:1;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
        inkscape:label="#path942" />
@@ -201,7 +201,7 @@
        inkscape:label="#path942"
        style="color:#000000;overflow:visible;opacity:1;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
        d="m 208.41172,565.23341 -1.86126,32.17123 c -0.25984,4.4912 -1.83301,4.12045 -6.59419,4.12045 -4.76117,0 -6.33658,0.37088 -6.59417,-4.12045 l -1.94966,-31.99445 z"
-       id="button10"
+       id="button8"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cssscc" />
     <path
@@ -220,7 +220,7 @@
     <path
        sodipodi:nodetypes="ccccc"
        inkscape:connector-curvature="0"
-       id="button11"
+       id="button9"
        d="m 206.55097,441.9448 1.9995,15.20984 -17.18836,0 1.99948,-15.17859 z"
        style="color:#000000;overflow:visible;opacity:1;fill:#ffffff;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
        inkscape:label="#path942" />
@@ -282,7 +282,7 @@
          y="50.005764" />
     </g>
     <g
-       id="button11-path"
+       id="button9-path"
        inkscape:label="#g141"
        transform="translate(8,-88)">
       <path
@@ -303,7 +303,7 @@
       <rect
          inkscape:label="#rect871"
          style="color:#000000;text-align:start;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
-         id="button11-leader"
+         id="button9-leader"
          width="1"
          height="1"
          x="437"
@@ -336,7 +336,7 @@
          y="92" />
     </g>
     <g
-       id="button10-path"
+       id="button8-path"
        inkscape:label="#g146"
        transform="translate(8,-8)">
       <path
@@ -357,14 +357,14 @@
          x="437"
          height="1"
          width="1"
-         id="button10-leader"
+         id="button8-leader"
          style="color:#000000;text-align:start;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
          inkscape:label="#rect871" />
     </g>
     <g
        transform="translate(-72.0872,-77.953227)"
        style="display:inline"
-       id="button9-path"
+       id="button7-path"
        inkscape:label="#g191">
       <path
          style="color:#000000;overflow:visible;opacity:1;fill:none;fill-opacity:1;stroke:#888a85;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
@@ -383,7 +383,7 @@
       <rect
          transform="scale(-1,-1)"
          style="color:#000000;text-align:end;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
-         id="button9-leader"
+         id="button7-leader"
          width="1"
          height="1"
          x="-37.168953"
