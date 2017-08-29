@@ -196,7 +196,7 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 	.num_resolutions = 3,
 	.num_buttons = 4,
 	.num_leds = 3,
-	.svg = "logitech-g500.svg",
+	.svg = "fallback.svg",
 	.profiles = {
 		{
 			.buttons = {
