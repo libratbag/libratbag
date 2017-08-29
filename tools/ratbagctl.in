@@ -95,11 +95,7 @@ def find_resolution(r, args):
         print("Invalid resolution index {}".format(args.resolution_n))
         sys.exit(1)
     except AttributeError:
-        for r in p.resolutions:
-            if r.is_active:
-                break
-        else:
-            r = None
+        r = p.active_resolution
     return r, p, d
 
 
@@ -446,12 +442,7 @@ def func_resolution_get(r, args):
 
 def func_resolution_active_get(r, args):
     p, d = find_profile(r, args)
-    for r in p.resolutions:
-        if r.is_active:
-            break
-    else:
-        r = None
-    print(r.index)
+    print(p.active_resolution.index)
 
 
 def func_resolution_active_set(r, args):
