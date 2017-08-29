@@ -79,11 +79,7 @@ def find_profile(r, args):
         print("Invalid profile index {}".format(args.profile_n))
         sys.exit(1)
     except AttributeError:
-        for p in d.profiles:
-            if p.is_active:
-                break
-        else:
-            p = None
+        p = d.active_profile
     return p, d
 
 
@@ -488,12 +484,7 @@ def func_profile_name_set(r, args):
 
 def func_profile_active_get(r, args):
     d = find_device(r, args)
-    for p in d.profiles:
-        if p.is_active:
-            break
-    else:
-        p = None
-    print(p.index)
+    print(d.active_profile.index)
 
 
 def func_profile_active_set(r, args):
