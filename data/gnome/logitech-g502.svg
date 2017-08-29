@@ -296,7 +296,7 @@
          height="1"
          width="1"
          id="button2-leader"
-         style="color:#000000;overflow:visible;vector-effect:none;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round" />
+         style="color:#000000;text-align:start;overflow:visible;vector-effect:none;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round" />
     </g>
     <g
        id="button6-path"
