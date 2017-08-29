@@ -306,7 +306,7 @@ default_svg_files = [
 install_data(default_svg_files,
 	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'default'))
 
-gnome_svg_files = [
+gnome_svg_files = files(
 	'data/gnome/fallback.svg',
 	'data/gnome/logitech-g303.svg',
 	'data/gnome/logitech-g403.svg',
@@ -316,9 +316,12 @@ gnome_svg_files = [
 	'data/gnome/logitech-g700.svg',
 	'data/gnome/logitech-g900.svg',
 	'data/gnome/roccat-kone-xtd.svg',
-]
+)
 install_data(gnome_svg_files,
 	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'gnome'))
+
+test_svg_files = find_program('data/gnome/check-svg.py')
+test('check-svg', test_svg_files, args : gnome_svg_files)
 
 #### tests ####
 enable_tests = get_option('enable-tests')
