@@ -326,8 +326,8 @@ ratbag_device_data_new_for_id(struct ratbag *ratbag, const struct input_id *id)
 
 	n = scandir(LIBRATBAG_DATA_DIR, &files, filter_device_files, alphasort);
 	if (n <= 0) {
-		log_error(ratbag, "Unable to locate device files: %s\n",
-			  n == 0 ? "No files found" : strerror(errno));
+		log_error(ratbag, "Unable to locate device files in %s: %s\n",
+			  LIBRATBAG_DATA_DIR, n == 0 ? "No files found" : strerror(errno));
 		return NULL;
 	}
 
