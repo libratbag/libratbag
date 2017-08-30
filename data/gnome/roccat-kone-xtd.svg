@@ -102,23 +102,28 @@
     <sodipodi:guide
        position="125.24434,292.81279"
        orientation="1,0"
-       id="guide4350" />
+       id="guide4350"
+       inkscape:locked="false" />
     <sodipodi:guide
        position="232.01745,389.68642"
        orientation="0,1"
-       id="guide4352" />
+       id="guide4352"
+       inkscape:locked="false" />
     <sodipodi:guide
        position="339.49769,179.67571"
        orientation="1,0"
-       id="guide4354" />
+       id="guide4354"
+       inkscape:locked="false" />
     <sodipodi:guide
        position="262.42305,21.283798"
        orientation="0,1"
-       id="guide4356" />
+       id="guide4356"
+       inkscape:locked="false" />
     <sodipodi:guide
        position="61.51829,157.33126"
        orientation="1,0"
-       id="guide5867" />
+       id="guide5867"
+       inkscape:locked="false" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -128,7 +133,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -258,11 +263,11 @@
     <g
        id="button1-path"
        inkscape:label="#g131"
-       transform="translate(8,72)">
+       transform="translate(8,111.99976)">
       <path
-         sodipodi:nodetypes="cc"
+         sodipodi:nodetypes="ccc"
          style="color:#000000;overflow:visible;opacity:1;fill:none;fill-opacity:1;stroke:#888a85;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
-         d="m 242.94764,50.505764 194.05236,0"
+         d="M 221.19764,23.005764 248.71312,50.628685 437,50.505764"
          id="path958"
          inkscape:connector-curvature="0" />
       <rect
@@ -270,8 +275,8 @@
          id="rect968"
          width="6.999999"
          height="6.999999"
-         x="237"
-         y="47.005764" />
+         x="217.125"
+         y="19.255764" />
       <rect
          inkscape:label="#rect867"
          style="color:#000000;text-align:start;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
@@ -338,10 +343,10 @@
     <g
        id="button8-path"
        inkscape:label="#g146"
-       transform="translate(8,-8)">
+       transform="matrix(1,0,0,-1,8,371.99953)">
       <path
          style="color:#000000;overflow:visible;opacity:1;fill:none;fill-opacity:1;stroke:#888a85;stroke-width:0.99999994;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
-         d="m 436.55132,170.50615 -223.20734,0 -18.11371,18.15319"
+         d="M 436.55132,170.50615 H 213.34398 l -18.11371,18.15319"
          id="path51"
          inkscape:connector-curvature="0"
          sodipodi:nodetypes="ccc" />
@@ -452,12 +457,12 @@
        inkscape:label="#g191"
        id="button0-path"
        style="display:inline"
-       transform="translate(-72.0872,-137.95323)">
+       transform="translate(-72.0872,-177.95275)">
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
          id="button0-line"
-         d="m 37.16895,320.50027 59.327469,0 99.344411,-99.98695 26.85261,0"
+         d="m 37.16895,320.50027 h 59.327469 l 99.344411,-99.98695 h 26.85261"
          style="color:#000000;overflow:visible;opacity:1;fill:none;fill-opacity:1;stroke:#888a85;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
          inkscape:label="#path5841" />
       <rect
@@ -467,7 +472,7 @@
          width="6.999999"
          id="button0-rect"
          style="color:#000000;overflow:visible;opacity:1;fill:#2e3436;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
-         transform="scale(-1,-1)"
+         transform="scale(-1)"
          inkscape:label="#rect5843" />
       <rect
          inkscape:label="#rect873"
@@ -477,7 +482,64 @@
          width="1"
          id="button0-leader"
          style="color:#000000;text-align:end;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
-         transform="scale(-1,-1)" />
+         transform="scale(-1)" />
+    </g>
+    <g
+       transform="translate(-72.0872,-137.95275)"
+       style="display:inline"
+       id="button5-path"
+       inkscape:label="#g191">
+      <path
+         inkscape:label="#path5841"
+         style="color:#000000;overflow:visible;opacity:1;fill:none;fill-opacity:1;stroke:#888a85;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+         d="m 37.16895,320.50027 h 59.327469 l 88.152021,-88.86195 h 55.67"
+         id="path85"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="cccc" />
+      <rect
+         inkscape:label="#rect5843"
+         transform="scale(-1)"
+         style="color:#000000;overflow:visible;opacity:1;fill:#2e3436;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+         id="rect87"
+         width="6.999999"
+         height="6.999999"
+         x="-244.00287"
+         y="-235.48463" />
+      <rect
+         transform="scale(-1)"
+         style="color:#000000;text-align:end;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
+         id="button5-leader"
+         width="1"
+         height="1"
+         x="-37.168953"
+         y="-321.00027"
+         inkscape:label="#rect873" />
+    </g>
+    <g
+       transform="translate(10.625,71.49976)"
+       inkscape:label="#g131"
+       id="button6-path">
+      <path
+         inkscape:connector-curvature="0"
+         id="path93"
+         d="m 221.19764,23.005764 27.51548,27.622921 185.72362,-0.122921"
+         style="color:#000000;overflow:visible;opacity:1;fill:none;fill-opacity:1;stroke:#888a85;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+         sodipodi:nodetypes="ccc" />
+      <rect
+         y="19.255764"
+         x="217.125"
+         height="6.999999"
+         width="6.999999"
+         id="rect95"
+         style="color:#000000;overflow:visible;opacity:1;fill:#2e3436;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal" />
+      <rect
+         y="50.005764"
+         x="434.37524"
+         height="1"
+         width="1"
+         id="button6-leader"
+         style="color:#000000;text-align:start;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
+         inkscape:label="#rect867" />
     </g>
   </g>
   <g
