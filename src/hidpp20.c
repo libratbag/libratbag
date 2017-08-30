@@ -1619,6 +1619,7 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 
 	for (i = 0; i < count; i++) {
 		m = &macro[i];
+		assert(m != NULL);
 		switch (m->any.type) {
 		case HIDPP20_MACRO_DELAY:
 			m->delay.time = hidpp_be_u16_to_cpu(m->delay.time);
