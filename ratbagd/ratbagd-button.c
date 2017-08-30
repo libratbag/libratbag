@@ -305,6 +305,8 @@ static int ratbagd_button_get_macro(sd_bus *bus,
 		case RATBAG_MACRO_EVENT_WAIT:
 			value = ratbag_button_macro_get_event_timeout(macro, idx);
 			break;
+		default:
+			abort();
 		}
 
 		r = sd_bus_message_append(reply, "(uu)", type, value);
