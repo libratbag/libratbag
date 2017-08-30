@@ -291,6 +291,9 @@ dpi_list_from_string(const char *str)
 		index++;
 	}
 
+	if (index == 0)
+		goto err;
+
 	/* Drop empty entries for trailing semicolons */
 	list->nentries = index;
 	tmp = realloc(list->entries, index * sizeof(list->entries[0]));
