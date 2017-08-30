@@ -1451,8 +1451,12 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 		long_clear_bit(&pages, 0);
 		long_clear_bit(&pages, 1);
 
-		for (i = 0; i < dev->profile_count; i++)
-			long_clear_bit(&pages, dev->profiles[i].page);
+		for (i = 0; i < dev->profile_count; i++) {
+			uint8_t page = dev->profiles[i].page;
+
+			assert(page < sizeof(pages) * 8);
+			long_clear_bit(&pages, page);
+		}
 
 		page = ffsl(pages) - 1;
 		profile->page = page;
