@@ -97,6 +97,7 @@ init_data_hidpp10(struct ratbag *ratbag,
 	if (error)
 		g_error_free(error);
 
+	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "Profiles", &error);
 	if (num > 0 || !error)
 		data->hidpp10.profile_count = num;
