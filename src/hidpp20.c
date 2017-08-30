@@ -1611,7 +1611,7 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 	int rc;
 
 	rc = hidpp20_onboard_profiles_read_macro(device, page, offset, &macro);
-	if (rc)
+	if (rc <= 0)
 		return rc;
 
 	count = rc;
