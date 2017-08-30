@@ -174,7 +174,7 @@ ratbagd_resolution_get_capabilities(sd_bus *bus,
 {
 	struct ratbagd_resolution *resolution = userdata;
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	enum ratbag_device_capability cap;
+	enum ratbag_resolution_capability cap;
 	int r;
 
 	r = sd_bus_message_open_container(reply, 'a', "u");
