@@ -842,7 +842,7 @@ ratbag_cmd_resolution_active_set(const struct ratbag_cmd *cmd,
 				 int argc, char **argv)
 {
 	struct ratbag_profile *profile = options->profile;
-	struct ratbag_resolution *resolution;
+	struct ratbag_resolution *resolution = NULL;
 	int num_resolutions, index;
 	int rc = SUCCESS;
 
