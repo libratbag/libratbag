@@ -74,6 +74,7 @@ class TestRatbagCtl(unittest.TestCase):
         error = sys.stderr.getvalue()
         sys.stdout = stdout
         sys.stderr = stderr
+        toolbox.sync_dbus()
         return returncode, output.rstrip('\n'), error.rstrip('\n')
 
     @classmethod
