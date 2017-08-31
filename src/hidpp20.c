@@ -1596,8 +1596,7 @@ hidpp20_onboard_profiles_read_macro(struct hidpp20_device *device,
 	return index;
 
 out_err:
-	if (macro)
-		free(macro);
+	free(macro);
 
 	return rc;
 }
@@ -1719,8 +1718,7 @@ hidpp20_onboard_profiles_destroy(struct hidpp20_profiles *profiles_list)
 		profile = &profiles_list->profiles[i];
 
 		ARRAY_FOR_EACH(profile->macros, macro) {
-			if (*macro)
-				free(*macro);
+			free(*macro);
 		}
 	}
 

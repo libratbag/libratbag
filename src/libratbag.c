@@ -744,8 +744,7 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 
 	free(profile->resolution.modes);
 
-	if (profile->name)
-		free(profile->name);
+	free(profile->name);
 
 	list_remove(&profile->link);
 	free(profile);
@@ -1388,8 +1387,7 @@ ratbag_button_destroy(struct ratbag_button *button)
 {
 	list_remove(&button->link);
 	if (button->action.macro) {
-		if (button->action.macro->name)
-			free(button->action.macro->name);
+		free(button->action.macro->name);
 		free(button->action.macro);
 	}
 	free(button);
@@ -1644,8 +1642,7 @@ ratbag_button_copy_macro(struct ratbag_button *button,
 	if (!button->action.macro)
 		button->action.macro = zalloc(sizeof(struct ratbag_macro));
 	else {
-		if (button->action.macro->name)
-			free(button->action.macro->name);
+		free(button->action.macro->name);
 		memset(button->action.macro, 0, sizeof(struct ratbag_macro));
 	}
 

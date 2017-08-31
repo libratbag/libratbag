@@ -1142,8 +1142,7 @@ hidpp10_onboard_profiles_read_macro(struct hidpp10_device *device,
 	return index;
 
 out_err:
-	if (macro)
-		free(macro);
+	free(macro);
 
 	return rc;
 }
@@ -2723,8 +2722,7 @@ hidpp10_device_destroy(struct hidpp10_device *dev)
 	union hidpp10_macro_data **macro;
 	unsigned i;
 
-	if (dev->dpi_table)
-		free(dev->dpi_table);
+	free(dev->dpi_table);
 	for (i = 0; i < dev->profile_count; i++) {
 		ARRAY_FOR_EACH(dev->profiles[i].macros, macro) {
 			if (*macro) {
