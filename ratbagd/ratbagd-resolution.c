@@ -82,17 +82,8 @@ ratbagd_resolution_set_report_rate(sd_bus *bus,
 static int ratbagd_resolution_active_signal_cb(sd_bus *bus,
 						struct ratbagd_resolution *resolution)
 {
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-
 	/* FIXME: we should cache is_active and only send the signal for
 	 * those resolutions where it changed */
-
-	(void) sd_bus_emit_signal(bus,
-				  resolution->path,
-				  RATBAGD_NAME_ROOT ".Resolution",
-				  "IsActive",
-				  "b",
-				  ratbag_resolution_is_active(lib_resolution));
 
 	(void) sd_bus_emit_properties_changed(bus,
 					      resolution->path,
@@ -124,17 +115,8 @@ static int ratbagd_resolution_set_active(sd_bus_message *m,
 static int ratbagd_resolution_default_signal_cb(sd_bus *bus,
 						struct ratbagd_resolution *resolution)
 {
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-
 	/* FIXME: we should cache is default and only send the signal for
 	 * those resolutions where it changed */
-
-	(void) sd_bus_emit_signal(bus,
-				  resolution->path,
-				  RATBAGD_NAME_ROOT ".Resolution",
-				  "IsDefault",
-				  "b",
-				  ratbag_resolution_is_default(lib_resolution));
 
 	(void) sd_bus_emit_properties_changed(bus,
 					      resolution->path,
