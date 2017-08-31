@@ -268,17 +268,13 @@ static int ratbagd_profile_find_led(sd_bus *bus,
 static int ratbagd_profile_active_signal_cb(sd_bus *bus,
 					    struct ratbagd_profile *profile)
 {
-	struct ratbag_profile *lib_profile = profile->lib_profile;
-
 	/* FIXME: we should cache is active and only send the signal for
 	 * those profiles where it changed */
-
-	(void) sd_bus_emit_signal(bus,
-				  profile->path,
-				  RATBAGD_NAME_ROOT ".Profile",
-				  "IsActive",
-				  "b",
-				  ratbag_profile_is_active(lib_profile));
+	(void) sd_bus_emit_properties_changed(bus,
+					      profile->path,
+					      RATBAGD_NAME_ROOT ".Profile",
+					      "IsActive",
+					      NULL);
 
 	return 0;
 }
