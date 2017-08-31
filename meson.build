@@ -41,6 +41,7 @@ config_h.set_quoted('FALLBACK_SVG_NAME', 'fallback.svg')
 libratbag_data_dir = join_paths(get_option('prefix'),
 				get_option('datadir'),
 				'libratbag')
+libratbag_data_dir_devel = join_paths(meson.source_root(), 'data', 'devices')
 config_h.set_quoted('LIBRATBAG_DATA_DIR', libratbag_data_dir)
 
 # dependencies
@@ -324,12 +325,14 @@ test_svg_files = find_program('data/gnome/check-svg.py')
 test('check-svg', test_svg_files, args : gnome_svg_files)
 
 #### tests ####
+env_test = environment()
+env_test.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
+
 enable_tests = get_option('enable-tests')
 if enable_tests
 	dep_check = dependency('check', version: '>= 0.9.10')
 
 	config_h.set('BUILD_TESTS', '1')
-	env_test = environment()
 	env_test.set('RATBAG_TEST', '1')
 
 	test_context = executable('test-context',
@@ -511,6 +514,7 @@ install_man('tools/ratbagctl.1')
 config_ratbagctl_devel = configuration_data()
 config_ratbagctl_devel.set('ratbagd_sha', ratbagd_sha)
 config_ratbagctl_devel.set('MESON_BUILD_ROOT', meson.build_root())
+config_ratbagctl_devel.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 configure_file(input : 'tools/ratbagctl.devel.in',
 	       output : 'ratbagctl.devel',
 	       configuration : config_ratbagctl_devel)
@@ -518,7 +522,7 @@ configure_file(input : 'tools/ratbagctl.test.in',
 	       output : 'ratbagctl.test',
 	       configuration : config_ratbagctl_devel)
 ratbagctl_test = find_program(join_paths(meson.build_root(), 'ratbagctl.test'))
-test('ratbagctl-test', ratbagctl_test, args: ['-v'])
+test('ratbagctl-test', ratbagctl_test, args: ['-v'], env : env_test)
 
 configure_file(input : 'tools/toolbox.py',
 	       output : 'toolbox.py',
