@@ -294,12 +294,15 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 	if (r < 0)
 		return r;
 
+	r = ratbag_profile_set_active(profile->lib_profile);
+	if (r < 0)
+		return r;
+
 	ratbagd_for_each_profile_signal(sd_bus_message_get_bus(m),
 					profile->device,
 					ratbagd_profile_active_signal_cb);
 
-        return sd_bus_reply_method_return(m, "u",
-                                          ratbag_profile_set_active(profile->lib_profile));
+	return sd_bus_reply_method_return(m, "u", 0);
 }
 
 static int
