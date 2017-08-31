@@ -1,3 +1,5 @@
+# vim: set expandtab shiftwidth=4 tabstop=4:
+#
 # This file is part of libratbag.
 #
 # Copyright 2017 Red Hat, Inc.
