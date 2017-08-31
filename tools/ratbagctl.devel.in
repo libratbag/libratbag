@@ -35,6 +35,8 @@ def main(argv):
     if not os.geteuid() == 0:
         sys.exit('Script must be run as root')
 
+    os.environ['LIBRATBAG_DATA_DIR'] = '@LIBRATBAG_DATA_DIR@'
+
     if not argv:
         argv = ["list"]
 
