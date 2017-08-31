@@ -53,8 +53,8 @@ class TestRatbagCtl(unittest.TestCase):
 
         (stdout, stderr) = ratbagctl.communicate()
         return (ratbagctl.returncode,
-                stdout.decode('ascii').rstrip('\n'),
-                stderr.decode('ascii').rstrip('\n'))
+                stdout.decode('utf-8').rstrip('\n'),
+                stderr.decode('utf-8').rstrip('\n'))
 
     @classmethod
     def run_ratbagctl_fast(cls, params):
