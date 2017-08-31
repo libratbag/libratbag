@@ -7,3 +7,15 @@
    ...
    fun:main
 }
+{
+   Python::PyObject_Malloc
+   Memcheck:Leak
+   fun:malloc
+   obj:/*lib*/libpython3*
+}
+{
+   Python::PyObject_Malloc
+   Memcheck:Leak
+   fun:realloc
+   obj:/*lib*/libpython3*
+}
