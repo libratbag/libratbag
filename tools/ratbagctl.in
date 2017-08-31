@@ -1429,7 +1429,7 @@ class RatbagParserRoot(object):
         print(self.parser.description)
         print("""
 Common options:
-    --versionm -V               show program's version number and exit
+    --version -V                show program's version number and exit
     --verbose, -v
     --help, -h                  show this help and exit""")
         if self.want_keepalive:
