@@ -27,7 +27,7 @@ import evdev
 import sys
 import argparse
 
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
 
 button_specials_strmap = {
     RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",

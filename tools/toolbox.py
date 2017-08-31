@@ -102,6 +102,7 @@ def terminate_ratbagd(ratbagd):
         ratbagd.kill()
     os.unlink(DBUS_CONF_PATH)
 
+
 def sync_dbus():
     main_context = GLib.MainContext.default()
     while main_context.pending():
