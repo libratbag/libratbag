@@ -29,6 +29,8 @@ import shutil
 import subprocess
 import sys
 
+from gi.repository import GLib
+
 # various constants
 RATBAGCTL_NAME = 'ratbagctl'
 RATBAGCTL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_NAME)
@@ -99,6 +101,12 @@ def terminate_ratbagd(ratbagd):
     except subprocess.TimeoutExpired:
         ratbagd.kill()
     os.unlink(DBUS_CONF_PATH)
+
+def sync_dbus():
+    main_context = GLib.MainContext.default()
+    while main_context.pending():
+        main_context.iteration(False)
+
 
 ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
