@@ -1,6 +1,8 @@
 libratbag_references:
   default_settings: &default_settings
     working_directory: ~/libratbag
+    environment:
+      LANG: C.UTF-8
   build_default: &build_default
     name: Build
     command: |
