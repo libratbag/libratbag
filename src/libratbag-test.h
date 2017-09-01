@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include "libratbag.h"
 
 #define RATBAG_TEST_MAX_PROFILES 12
