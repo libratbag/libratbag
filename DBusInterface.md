@@ -238,10 +238,9 @@ uint of the current button mapping (if mapping to button)
 
 Enum describing the current special mapping (if mapped to special)
 #### `KeyMapping`
-- type: `au`, read-write, mutable
+- type: `u`, read-write, mutable
 
-Array of uints, first entry is the keycode, other entries, if any, are
-modifiers (if mapped to key)
+uint of the keycode in linux/input.h form (if mapping to key)
 #### `Macro`
 -type: `a(uu)`, read-write, mutable
 

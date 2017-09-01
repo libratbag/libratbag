@@ -1306,23 +1306,17 @@ ratbag_button_set_special(struct ratbag_button *button,
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_button_get_key(struct ratbag_button *button,
-		      unsigned int *modifiers,
-		      size_t *sz)
+ratbag_button_get_key(struct ratbag_button *button)
 {
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
 		return 0;
 
-	/* FIXME: modifiers */
-	*sz = 0;
-	return button->action.action.key.key;
+	return button->action.action.key;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_key(struct ratbag_button *button,
-		      unsigned int key,
-		      unsigned int *modifiers,
-		      size_t sz)
+		      unsigned int key)
 {
 	struct ratbag_button_action action = {0};
 
@@ -1332,10 +1326,8 @@ ratbag_button_set_key(struct ratbag_button *button,
 					  RATBAG_DEVICE_CAP_BUTTON_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
-	/* FIXME: modifiers */
-
 	action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-	action.action.key.key = key;
+	action.action.key = key;
 
 	button->action = action;
 	button->dirty = true;

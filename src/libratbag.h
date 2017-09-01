@@ -562,8 +562,7 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_BUTTON = 300,
 
 	/**
-	 * The device supports assigning button numbers, key events or key +
-	 * modifier combinations.
+	 * The device supports assigning button numbers or key events
 	 */
 	RATBAG_DEVICE_CAP_BUTTON_KEY,
 
@@ -1298,7 +1297,7 @@ enum ratbag_button_action_type {
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 	/**
-	 * Button sends a key or key + modifier combination
+	 * Button sends a key
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_KEY,
 	/**
@@ -1624,44 +1623,28 @@ ratbag_button_set_special(struct ratbag_button *button,
  * this function returns the key or button configured for this button.
  *
  * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_KEY,
- * this function returns 0 and leaves modifiers and sz untouched.
+ * this function returns 0.
  *
  * @param button A previously initialized ratbag button
- * @param[out] modifiers Will be filled with the modifiers required for this
- * action. The modifiers are as defined in linux/input.h.
- * @param[in,out] sz Takes the size of the modifiers array and returns the
- * number of modifiers filled in. sz may be 0 if no modifiers are required.
  *
- * @note The caller must ensure that modifiers is large enough to accomodate
- * for the key combination.
- *
- * @return The button number
+ * @return The key code as one of the codes defined in linux/input.h
  */
 unsigned int
-ratbag_button_get_key(struct ratbag_button *button,
-		      unsigned int *modifiers,
-		      size_t *sz);
+ratbag_button_get_key(struct ratbag_button *button);
 
 /**
  * @ingroup button
  *
  * @param button A previously initialized ratbag button
- * @param key The button number to assign to this button, one of BTN_* as
+ * @param key The button number to assign to this button, one of KEY_* as
  * defined in linux/input.h
- * @param modifiers The modifiers required for this action. The
- * modifiers are as defined in linux/input.h, in the order they should be
- * pressed.
- * @param sz The size of the modifiers array. sz may be 0 if no modifiers
- * are required.
  *
  * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_KEY.
  */
 enum ratbag_error_code
 ratbag_button_set_key(struct ratbag_button *button,
-		      unsigned int key,
-		      unsigned int *modifiers,
-		      size_t sz);
+		      unsigned int key);
 
 /**
  * @ingroup button

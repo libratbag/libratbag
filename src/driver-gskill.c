@@ -1266,13 +1266,13 @@ gskill_read_button(struct ratbag_button *button)
 		break;
 	case GSKILL_BUTTON_FUNCTION_KBD:
 		act->type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		act->action.key.key =
+		act->action.key =
 			ratbag_hidraw_get_keycode_from_keyboard_usage(
 			    device, bcfg->params.kbd.hid_code);
 		break;
 	case GSKILL_BUTTON_FUNCTION_CONSUMER:
 		act->type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		act->action.key.key =
+		act->action.key =
 			ratbag_hidraw_get_keycode_from_consumer_usage(
 			    device, bcfg->params.consumer.code);
 		break;
@@ -1372,13 +1372,13 @@ gskill_update_button(struct ratbag_button *button)
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(
-		    device, action->action.key.key);
+		    device, action->action.key);
 		if (code) {
 			bcfg->type = GSKILL_BUTTON_FUNCTION_KBD;
 			bcfg->params.kbd.hid_code = code;
 		} else {
 			code = ratbag_hidraw_get_consumer_usage_from_keycode(
-			    device, action->action.key.key);
+			    device, action->action.key);
 
 			bcfg->type = GSKILL_BUTTON_FUNCTION_CONSUMER;
 			bcfg->params.consumer.code = code;

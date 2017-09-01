@@ -291,7 +291,7 @@ struct ratbag_profile {
 	.action.special = sp_ }
 #define BUTTON_ACTION_KEY(k_) \
  { .type = RATBAG_BUTTON_ACTION_TYPE_KEY, \
-	.action.key.key = k_ }
+	.action.key = k_ }
 #define BUTTON_ACTION_MACRO \
  { .type = RATBAG_BUTTON_ACTION_TYPE_MACRO, \
 	/* FIXME: add the macro keys */ }
@@ -321,10 +321,7 @@ struct ratbag_button_action {
 	union ratbag_btn_action {
 		unsigned int button; /* action_type == button */
 		enum ratbag_button_action_special special; /* action_type == special */
-		struct {
-			unsigned int key; /* action_type == key */
-			/* FIXME: modifiers */
-		} key;
+		unsigned int key; /* action_type == key */
 	} action;
 	struct ratbag_macro *macro; /* dynamically allocated, so kept aside */
 };
@@ -419,7 +416,7 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		return match->action.button == action->action.button;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
-		return match->action.key.key == action->action.key.key;
+		return match->action.key == action->action.key;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		return match->action.special == action->action.special;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
