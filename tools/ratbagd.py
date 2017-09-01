@@ -925,6 +925,11 @@ class RatbagdLed(_RatbagdDBus):
         self._set_dbus_property("Mode", "u", mode)
 
     @GObject.Property
+    def modes(self):
+        """The supported modes as a list"""
+        return self._get_dbus_property("Modes")
+
+    @GObject.Property
     def type(self):
         """An enum describing this led's type,
         RatbagdLed.TYPE_LOGO or RatbagdLed.TYPE_SIDE."""

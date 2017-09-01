@@ -567,6 +567,11 @@ class TestRatbagCtlLED(TestRatbagCtl):
         self.launch_fail_test("Profile 1 Profile 2 Led 1 get test_device")
         self.launch_fail_test("Profile 1 Resolution 2 Led 1 get test_device")
 
+    def test_led_capabilities(self):
+        r = self.launch_good_test("led 0 capabilities test_device")
+        self.assertEqual(r, "Modes: breathing, cycle, off, on")
+        r = self.launch_good_test("led 1 capabilities test_device")
+        self.assertEqual(r, "Modes: breathing, cycle, off, on")
 
 def setUpModule():
     global ratbagd_process, ratbagd, parser

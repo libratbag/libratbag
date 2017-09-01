@@ -167,6 +167,16 @@ def print_led(d, p, l, level):
                                                                                                                                 l.effect_rate,
                                                                                                                                 l.brightness))
 
+def print_led_caps(d, p, l, level):
+    leds = {
+        RatbagdLed.MODE_BREATHING: "breathing",
+        RatbagdLed.MODE_CYCLE: "cycle",
+        RatbagdLed.MODE_OFF: "off",
+        RatbagdLed.MODE_ON: "on",
+    }
+    supported = sorted([ v for k, v in leds.items() if k in l.modes ])
+    print(" " * level + "Modes: {}".format(", ".join(supported)))
+
 
 def print_button(d, p, b, level):
     types = {
@@ -305,6 +315,9 @@ def func_led_get(r, args):
     l, p, d = find_led(r, args)
     print_led(d, p, l, 0)
 
+def func_led_caps(r, args):
+    l, p, d = find_led(r, args)
+    print_led_caps(d, p, l, 0)
 
 def func_led_set(r, args):
     l, p, d = find_led(r, args)
@@ -1073,6 +1086,12 @@ active profile if none is given.""",
                     name: 'get',
                     help_str: 'Show current LED value',
                     func: func_led_get,
+                },
+                {
+                    of_type: command,
+                    name: 'capabilities',
+                    help_str: 'Show LED capabilities',
+                    func: func_led_caps,
                 },
                 {
                     of_type: set,
