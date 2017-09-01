@@ -1499,7 +1499,7 @@ ratbag_led_get_type(struct ratbag_led *led);
  * This function returns the mode for ratbag_led.
  *
  * @param led A previously initialized ratbag LED
- * @return The LED mod @ref ratbag_led_mode
+ * @return The LED mode @ref ratbag_led_mode
  *
  * @see ratbag_led_set_mode
  */
