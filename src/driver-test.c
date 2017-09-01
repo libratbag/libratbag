@@ -106,6 +106,11 @@ test_read_led(struct ratbag_led *led)
 	struct ratbag_test_profile *p = &d->profiles[led->profile->index];
 	struct ratbag_test_led t_led = p->leds[led->index];
 
+	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+
 	switch (t_led.mode) {
 	case RATBAG_LED_ON:
 		led->mode = RATBAG_LED_ON;

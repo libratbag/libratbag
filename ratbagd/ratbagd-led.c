@@ -40,6 +40,32 @@ struct ratbagd_led {
 	enum ratbag_led_colordepth colordepth;
 };
 
+static int ratbagd_led_get_modes(sd_bus *bus,
+				const char *path,
+				const char *interface,
+				const char *property,
+				sd_bus_message *reply,
+				void *userdata,
+				sd_bus_error *error)
+{
+	struct ratbagd_led *led = userdata;
+	enum ratbag_led_mode mode = 0;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+
+	while (mode <= RATBAG_LED_BREATHING) {
+		if (ratbag_led_has_mode(led->lib_led, mode))
+			sd_bus_message_append(reply, "u", mode);
+		mode++;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
 static int ratbagd_led_get_mode(sd_bus *bus,
 				const char *path,
 				const char *interface,
@@ -254,6 +280,7 @@ static int ratbagd_led_set_brightness(sd_bus *bus,
 const sd_bus_vtable ratbagd_led_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_led, index), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Modes", "au", ratbagd_led_get_modes, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("Mode", "u",
 				 ratbagd_led_get_mode,
 				 ratbagd_led_set_mode, 0,

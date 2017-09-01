@@ -274,6 +274,7 @@ struct ratbag_led {
 	unsigned index;
 	enum ratbag_led_type type;
 	enum ratbag_led_mode mode;
+	uint32_t modes;		      /**< supported modes */
 	struct ratbag_color color;
 	enum ratbag_led_colordepth colordepth;
 	unsigned int hz;              /**< rate of action in hz */
@@ -533,6 +534,16 @@ ratbag_resolution_set_cap(struct ratbag_resolution *res,
 	assert(cap <= RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 
 	res->capabilities = (1 << cap);
+}
+
+static inline void
+ratbag_led_set_mode_capability(struct ratbag_led *led,
+			       enum ratbag_led_mode mode)
+{
+	assert(mode <= RATBAG_LED_BREATHING);
+	assert(mode < sizeof(led->modes) * 8);
+
+	led->modes |= (1 << mode);
 }
 
 /* list of all supported drivers */

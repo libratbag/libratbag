@@ -383,6 +383,13 @@ org.freedesktop.ratbag1.Led
 
         uint mapping to the mode enum from libratbag
 
+    .. js:attribute:: Modes
+
+	:type: au
+	:flags: read-only, constant
+
+	A list of modes supported by this LED
+
     .. js:attribute:: Type
 
         :type: u

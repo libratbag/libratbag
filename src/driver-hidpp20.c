@@ -295,6 +295,10 @@ hidpp20drv_read_led_1300(struct ratbag_led *led, struct hidpp20drv_data* data)
 	default:
 		led->mode = RATBAG_LED_ON;
 	}
+
+	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 }
 
 static void
@@ -332,6 +336,11 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	led->hz = h_led->period;  /* FIXME: should be ceil(1000.0 / h_led->period), but that would be very small */
 	led->brightness = h_led->brightness * 255 / 100;
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+
+	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 }
 
 static void

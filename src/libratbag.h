@@ -1182,6 +1182,23 @@ ratbag_profile_get_led(struct ratbag_profile *profile, unsigned int index);
  */
 enum ratbag_led_type
 ratbag_led_get_type(struct ratbag_led *led);
+
+/**
+ * @ingroup led
+ *
+ * This function returns true if the given mode is supported by the LED, or
+ * false otherwise.
+ *
+ * @param led A previously initialized ratbag LED
+ * @param mode The LED mode @ref ratbag_led_mode to check for
+ * @return True if supported, false otherwise
+ *
+ * @see ratbag_led_set_mode
+ */
+int
+ratbag_led_has_mode(struct ratbag_led *led,
+		    enum ratbag_led_mode mode);
+
 /**
  * @ingroup led
  *

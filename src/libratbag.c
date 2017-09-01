@@ -1458,6 +1458,18 @@ ratbag_led_get_type(struct ratbag_led *led)
 	return led->type;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_led_has_mode(struct ratbag_led *led,
+		    enum ratbag_led_mode mode)
+{
+	assert(mode <= RATBAG_LED_BREATHING);
+
+	if (mode == RATBAG_LED_OFF)
+		return 1;
+
+	return (led->modes & (1 << mode));
+}
+
 LIBRATBAG_EXPORT struct ratbag_color
 ratbag_led_get_color(struct ratbag_led *led)
 {
