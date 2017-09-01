@@ -228,7 +228,7 @@ logitech_g300_current_profile(struct ratbag_device *device)
 static int
 logitech_g300_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
-	uint8_t buf[] = {LOGITECH_G300_REPORT_ID_SET_ACTIVE_PROFILE, 0x80 + index, 0x00, 0x00};
+	uint8_t buf[] = {LOGITECH_G300_REPORT_ID_SET_ACTIVE_PROFILE, 0x80 | (index << 4), 0x00, 0x00};
 	int ret;
 
 	if (index > LOGITECH_G300_PROFILE_MAX)
