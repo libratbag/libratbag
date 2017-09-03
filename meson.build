@@ -212,7 +212,7 @@ man_ratbag_command = configure_file (
 	input: 'tools/ratbag-command.man',
 	output: 'ratbag-command.1',
 	configuration: man_config,
-	install : true,
+	install : false,
 	install_dir : join_paths(get_option('mandir'), 'man1')
 )
 
