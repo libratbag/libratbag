@@ -55,7 +55,7 @@ def main(argv):
     if ns.output:
         ns.output_file = open(ns.output, 'w')
         st = os.stat(ns.output)
-        os.chmod(ns.output, st.st_mode | stat.S_IEXEC)
+        os.chmod(ns.output, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         sys.stdout = ns.output_file
     print_ratbagctl(ns.ratbagctl, ns.ratbagd, ns.version)
     try:
