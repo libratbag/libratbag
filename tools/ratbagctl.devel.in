@@ -26,6 +26,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import time
 import toolbox
 import signal
 import sys
@@ -60,6 +61,9 @@ def main(argv):
                 return
             else:
                 f(ratbagd, cmd)
+                # give time for ratbagd to receive async requests before
+                # we try to terminate it
+                time.sleep(0.5)
     finally:
         try:
             if cmd.keepalive:
