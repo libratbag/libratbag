@@ -30,32 +30,36 @@
 #include <libratbag-util.h>
 
 static inline int
-dump_page(struct hidpp20_device *dev, uint8_t rom, size_t page, size_t offset)
+dump_page(struct hidpp20_device *dev, uint16_t sector_size, uint8_t rom, size_t page, size_t offset)
 {
 	int rc = 0;
-	uint8_t bytes[16];
+	uint16_t sector = (rom << 8) | page;
+	uint8_t *data = zalloc(sector_size);
+
+	rc = hidpp20_onboard_profiles_read_sector(dev, sector, sector_size, data);
+	if (rc != 0)
+		goto out;
 
 	while (offset < 256) {
 		hidpp_log_info(&dev->base, "%s: page 0x%02zx off 0x%02zx: ", rom ? "ROM  " : "FLASH", page, offset);
-		rc = hidpp20_onboard_profiles_read_memory(dev, rom, page, offset, bytes);
-		if (rc != 0)
-			break;
 
-		hidpp_log_buffer(&dev->base, HIDPP_LOG_PRIORITY_INFO, " ", bytes, ARRAY_LENGTH(bytes));
+		hidpp_log_buffer(&dev->base, HIDPP_LOG_PRIORITY_INFO, " ", data + offset, 16);
 		offset += 16;
 	}
 
+ out:
+	free(data);
 	return rc;
 }
 
 static inline int
-dump_all_pages(struct hidpp20_device *dev, uint8_t rom)
+dump_all_pages(struct hidpp20_device *dev, uint16_t sector_size, uint8_t rom)
 {
 	uint8_t page;
 	int rc = 0;
 
 	for (page = 0; page < 31; page++) {
-		rc = dump_page(dev, rom, page, 0);
+		rc = dump_page(dev, sector_size, rom, page, 0);
 		if (rc != 0)
 			break;
 	}
@@ -72,15 +76,15 @@ dump_all_pages(struct hidpp20_device *dev, uint8_t rom)
 }
 
 static inline int
-dump_everything(struct hidpp20_device *dev)
+dump_everything(struct hidpp20_device *dev, uint16_t sector_size)
 {
 	int rc;
 
-	rc = dump_all_pages(dev, 0);
+	rc = dump_all_pages(dev, sector_size, 0);
 	if (rc)
 		return rc;
 
-	return dump_all_pages(dev, 1);
+	return dump_all_pages(dev, sector_size, 1);
 }
 
 static void
@@ -97,6 +101,7 @@ main(int argc, char **argv)
 	size_t page = 0, offset = 0;
 	struct hidpp20_device *dev = NULL;
 	struct hidpp_device base;
+	struct hidpp20_onboard_profiles_info info = { 0 };
 	int rc;
 
 	if (argc < 2 || argc > 4) {
@@ -114,13 +119,15 @@ main(int argc, char **argv)
 	if (!dev)
 		error(1, 0, "Failed to open %s as a HID++ 2.0 device", path);
 
+	hidpp20_onboard_profiles_get_profiles_desc(dev, &info);
+
 	if (argc == 2)
-		rc = dump_everything(dev);
+		rc = dump_everything(dev, info.sector_size);
 	else {
 		page = atoi(argv[1]);
 		if (argc > 3)
 			offset = atoi(argv[2]);
-		rc = dump_page(dev, 0, page, offset);
+		rc = dump_page(dev, info.sector_size, 0, page, offset);
 	}
 
 	hidpp20_device_destroy(dev);
