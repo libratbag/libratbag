@@ -1001,6 +1001,7 @@ hidpp20drv_remove(struct ratbag_device *device)
 
 	if (drv_data->profiles)
 		hidpp20_onboard_profiles_destroy(drv_data->profiles);
+	free(drv_data->led_infos);
 	free(drv_data->controls);
 	free(drv_data->sensors);
 	if (drv_data->dev)
