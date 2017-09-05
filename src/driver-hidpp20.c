@@ -867,6 +867,10 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		if (rc < 0)
 			return rc;
 
+		rc = hidpp20_onboard_profiles_initialize(drv_data->dev, drv_data->profiles);
+		if (rc < 0)
+			return rc;
+
 		drv_data->num_profiles = drv_data->profiles->num_profiles;
 		drv_data->num_resolutions = drv_data->profiles->num_modes;
 		drv_data->num_buttons = drv_data->profiles->num_buttons;
