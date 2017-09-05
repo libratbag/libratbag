@@ -479,6 +479,21 @@ struct hidpp20_profile {
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
 };
 
+struct hidpp20_onboard_profiles_info {
+	uint8_t memory_model_id;
+	uint8_t profile_format_id;
+	uint8_t macro_format_id;
+	uint8_t profile_count;
+	uint8_t profile_count_oob;
+	uint8_t button_count;
+	uint8_t sector_count;
+	uint16_t sector_size;
+	uint8_t mechanical_layout;
+	uint8_t various_info;
+	uint8_t reserved[5];
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_onboard_profiles_info) == 16, "Invalid size");
+
 struct hidpp20_profiles {
 	uint8_t num_profiles;
 	uint8_t num_rom_profiles;
@@ -489,8 +504,19 @@ struct hidpp20_profiles {
 	uint8_t has_dpi_shift;
 	uint8_t corded;
 	uint8_t wireless;
+	uint8_t sector_count;
+	uint16_t sector_size;
 	struct hidpp20_profile profiles[0];
 };
+
+/**
+ * fetches the profiles description as reported by the mouse.
+ *
+ * returns 0 or a negative error.
+ */
+int
+hidpp20_onboard_profiles_get_profiles_desc(struct hidpp20_device *device,
+					   struct hidpp20_onboard_profiles_info *info);
 
 /**
  * allocates a list of profiles that has to be destroyed by the caller.
@@ -506,6 +532,14 @@ int hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
  */
 void
 hidpp20_onboard_profiles_destroy(struct hidpp20_profiles *profiles_list);
+
+/**
+ * initialize a struct hidpp20_profiles previous allocated with
+ * hidpp20_onboard_profiles_allocate().
+ */
+int
+hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
+				    struct hidpp20_profiles *profiles);
 
 /**
  * return the current profile index or a negative error.
