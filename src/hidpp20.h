@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 #include "hidpp-generic.h"
+#include "libratbag-util.h"
 
 struct _hidpp20_message {
 	uint8_t report_id;
@@ -506,7 +507,7 @@ struct hidpp20_profiles {
 	uint8_t wireless;
 	uint8_t sector_count;
 	uint16_t sector_size;
-	struct hidpp20_profile profiles[0];
+	struct hidpp20_profile *profiles;
 };
 
 /**
@@ -593,11 +594,16 @@ uint8_t
 hidpp20_onboard_profiles_get_code_from_special(enum ratbag_button_action_special special);
 
 int
-hidpp20_onboard_profiles_read_memory(struct hidpp20_device *device,
-				     uint8_t read_rom,
-				     uint8_t page,
-				     uint16_t section,
-				     uint8_t result[16]);
+hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
+				     uint16_t sector,
+				     uint16_t sector_size,
+				     uint8_t *data);
+
+static inline uint8_t *
+hidpp20_onboard_profiles_allocate_sector(struct hidpp20_profiles *profiles)
+{
+	return zalloc(profiles->sector_size);
+}
 
 /* -------------------------------------------------------------------------- */
 /* 0x8110 - Mouse Button Spy                                                  */
