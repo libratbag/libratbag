@@ -441,8 +441,10 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		printf("  Profile %d (%s)%s\n", i,
 		       ratbag_profile_is_enabled(profile) ? "enabled" : "disabled",
 		       ratbag_profile_is_active(profile) ? " (active)" : "");
-		if (!ratbag_profile_is_enabled(profile))
+		if (!ratbag_profile_is_enabled(profile)) {
+			ratbag_profile_unref(profile);
 			continue;
+		}
 
 		printf("    Resolutions:\n");
 
