@@ -515,8 +515,6 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 	struct ratbag_button *button_6, *button_7;
 	struct ratbag_profile *profile = NULL;
 	int commit = 0;
-	unsigned int modifiers[10];
-	size_t modifiers_sz = 10;
 
 	device = options->device;
 	profile = options->profile;
@@ -531,15 +529,15 @@ ratbag_cmd_switch_etekcity(const struct ratbag_cmd *cmd,
 	button_6 = ratbag_profile_get_button(profile, 6);
 	button_7 = ratbag_profile_get_button(profile, 7);
 
-	if (ratbag_button_get_key(button_6, modifiers, &modifiers_sz) == KEY_VOLUMEUP &&
-	    ratbag_button_get_key(button_7, modifiers, &modifiers_sz) == KEY_VOLUMEDOWN) {
+	if (ratbag_button_get_key(button_6) == KEY_VOLUMEUP &&
+	    ratbag_button_get_key(button_7) == KEY_VOLUMEDOWN) {
 		ratbag_button_disable(button_6);
 		ratbag_button_disable(button_7);
 		commit = 1;
 	} else if (ratbag_button_get_action_type(button_6) == RATBAG_BUTTON_ACTION_TYPE_NONE &&
 		   ratbag_button_get_action_type(button_7) == RATBAG_BUTTON_ACTION_TYPE_NONE) {
-		ratbag_button_set_key(button_6, KEY_VOLUMEUP, modifiers, 0);
-		ratbag_button_set_key(button_7, KEY_VOLUMEDOWN, modifiers, 0);
+		ratbag_button_set_key(button_6, KEY_VOLUMEUP);
+		ratbag_button_set_key(button_7, KEY_VOLUMEDOWN);
 		commit = 2;
 	}
 
@@ -729,7 +727,7 @@ ratbag_cmd_change_button(const struct ratbag_cmd *cmd,
 		rc = ratbag_button_set_button(button, btnkey);
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
-		rc = ratbag_button_set_key(button, btnkey, NULL, 0);
+		rc = ratbag_button_set_key(button, btnkey);
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		rc = ratbag_button_set_special(button, special);
@@ -1331,7 +1329,7 @@ ratbag_cmd_button_set_key(const struct ratbag_cmd *cmd,
 		return ERR_UNSUPPORTED;
 
 	button = options->button;
-	rc = ratbag_button_set_key(button, keycode, NULL, 0);
+	rc = ratbag_button_set_key(button, keycode);
 	if (rc != 0)
 		return ERR_DEVICE;
 

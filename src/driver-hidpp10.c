@@ -176,12 +176,12 @@ hidpp10drv_map_button(struct ratbag_device *device,
 		break;
 	case PROFILE_BUTTON_TYPE_KEYS:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+		button->action.action.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 							profile.buttons[button->index].keys.key);
 		break;
 	case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		button->action.action.key.key = ratbag_hidraw_get_keycode_from_consumer_usage(device,
+		button->action.action.key = ratbag_hidraw_get_keycode_from_consumer_usage(device,
 							profile.buttons[button->index].consumer_control.consumer_control);
 		break;
 	case PROFILE_BUTTON_TYPE_SPECIAL:
@@ -309,9 +309,9 @@ hidpp10drv_write_button(struct hidpp10_profile *profile,
 		profile->buttons[button->index].button.button = action->action.button;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
-		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key.key);
+		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key);
 		if (code == 0) {
-			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, action->action.key.key);
+			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, action->action.key);
 			if (code == 0)
 				return -EINVAL;
 

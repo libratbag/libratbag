@@ -197,10 +197,8 @@ char *
 button_action_key_to_str(struct ratbag_button *button)
 {
 	const char *str;
-	unsigned int modifiers[10];
-	size_t m_size = 10;
 
-	str = libevdev_event_code_get_name(EV_KEY, ratbag_button_get_key(button, modifiers, &m_size));
+	str = libevdev_event_code_get_name(EV_KEY, ratbag_button_get_key(button));
 	if (!str)
 		str = "UNKNOWN";
 

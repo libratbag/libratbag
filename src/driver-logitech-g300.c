@@ -336,7 +336,7 @@ logitech_g300_read_button(struct ratbag_button *button)
 		struct ratbag_button_action *key_action = &button->action;
 
 		key_action->type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		key_action->action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(
+		key_action->action.key = ratbag_hidraw_get_keycode_from_keyboard_usage(
 			device, button_report->key);
 	}
 }
@@ -448,7 +448,7 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 		raw_button->key = 0x00;
 		if (action->type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
 			raw_button->key = ratbag_hidraw_get_keyboard_usage_from_keycode(
-				device, action->action.key.key);
+				device, action->action.key);
 		}
 	}
 
