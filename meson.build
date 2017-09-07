@@ -409,11 +409,6 @@ if enable_tests
 		   install : false)
 endif
 
-test_symbols_leak = find_program('test/symbols-leak-test')
-test('symbols-leak-test',
-     test_symbols_leak,
-     args : [ meson.current_source_dir() ])
-
 #### ratbagd ####
 src_ratbagd = [
 	'src/shared-macro.h',
