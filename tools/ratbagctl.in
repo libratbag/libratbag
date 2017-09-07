@@ -129,6 +129,7 @@ def print_led(d, p, l, level):
         RatbagdLed.TYPE_UNKNOWN: "unknown",
         RatbagdLed.TYPE_LOGO: "logo",
         RatbagdLed.TYPE_SIDE: "side",
+        RatbagdLed.TYPE_SCROLL_WHEEL: "scrollwheel",
     }
     if l.mode == RatbagdLed.MODE_OFF:
         print(" " * level + "LED: {} type: {}, mode: {}".format(l.index,

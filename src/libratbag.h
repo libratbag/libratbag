@@ -1460,7 +1460,8 @@ enum ratbag_led_mode {
 enum ratbag_led_type {
 	RATBAG_LED_TYPE_UNKNOWN = -1,
 	RATBAG_LED_TYPE_LOGO = 0,
-	RATBAG_LED_TYPE_SIDE
+	RATBAG_LED_TYPE_SIDE,
+	RATBAG_LED_TYPE_SCROLL_WHEEL,
 };
 
 /**

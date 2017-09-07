@@ -883,6 +883,7 @@ class RatbagdLed(_RatbagdDBus):
     TYPE_UNKNOWN = -1
     TYPE_LOGO = 0
     TYPE_SIDE = 1
+    TYPE_SCROLL_WHEEL = 2
 
     MODE_OFF = 0
     MODE_ON = 1

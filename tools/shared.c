@@ -63,6 +63,9 @@ led_type_to_str(enum ratbag_led_type type)
 	case RATBAG_LED_TYPE_SIDE:
 		str = "side";
 		break;
+	case RATBAG_LED_TYPE_SCROLL_WHEEL:
+		str = "scrollwheel";
+		break;
 	}
 
 	return str;
