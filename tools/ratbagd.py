@@ -621,7 +621,6 @@ class RatbagdButton(_RatbagdDBus):
     ACTION_TYPE_NONE = 0
     ACTION_TYPE_BUTTON = 1
     ACTION_TYPE_SPECIAL = 2
-    ACTION_TYPE_KEY = 3
     ACTION_TYPE_MACRO = 4
 
     ACTION_SPECIAL_UNKNOWN = (1 << 30)
@@ -783,7 +782,7 @@ class RatbagdButton(_RatbagdDBus):
     def action_type(self):
         """An enum describing the action type of the button. One of
         ACTION_TYPE_NONE, ACTION_TYPE_BUTTON, ACTION_TYPE_SPECIAL,
-        ACTION_TYPE_KEY, ACTION_TYPE_MACRO. This decides which
+        ACTION_TYPE_MACRO. This decides which
         *Mapping property has a value.
         """
         return self._get_dbus_property("ActionType")

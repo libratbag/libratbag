@@ -187,13 +187,6 @@ def print_button(d, p, b, level):
 
     if b.action_type == RatbagdButton.ACTION_TYPE_BUTTON:
         print("{}'button {}'".format(header, b.mapping))
-    elif b.action_type == RatbagdButton.ACTION_TYPE_KEY:
-        bmap = ""
-        for m in b.key:
-            code = evdev.ecodes.KEY.get(m, m)
-            bmap = bmap + "{}".format(code)
-
-        print("{}'{}'".format(header, bmap))
     elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
         print("{}'{}'".format(header, button_specials_strmap[b.special]))
     elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
