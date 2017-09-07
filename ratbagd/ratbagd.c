@@ -489,9 +489,20 @@ static int sighandler(sd_event_source *source,
 	return 0;
 }
 
+static int ratbagd_dispatch(sd_event_source *s, int fd,
+			    uint32_t revents, void *data)
+{
+	struct ratbagd *ctx = data;
+
+	ratbag_dispatch(ctx->lib_ctx);
+
+	return 0;
+}
+
 static int ratbagd_run(struct ratbagd *ctx)
 {
 	int r;
+	int fd;
 
 	/*
 	 * TODO: We should support exit-on-idle and bus-activation. Note that
@@ -514,6 +525,12 @@ static int ratbagd_run(struct ratbagd *ctx)
 	sigaddset(&sigset, SIGINT);
 	sigprocmask(SIG_BLOCK, &sigset, NULL);
 	sd_event_add_signal(ctx->event, NULL, SIGINT, sighandler, NULL);
+
+
+	fd = ratbag_get_fd(ctx->lib_ctx);
+
+	sd_event_add_io(ctx->event, NULL, fd, EPOLLIN,
+			ratbagd_dispatch, ctx);
 
 	return sd_event_loop(ctx->event);
 }
