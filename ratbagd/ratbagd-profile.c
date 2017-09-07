@@ -373,12 +373,6 @@ ratbagd_profile_set_name(sd_bus *bus,
 					       NULL);
 	}
 
-	/*
-	 * Note: we should return `r`, but the d-bus bindings doesn't
-	 * like non standard errors. So just return success and let the client
-	 * check for the capability before-hand and let .commit() signal an
-	 * error.
-	 */
 	return 0;
 }
 

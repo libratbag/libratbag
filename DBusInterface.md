@@ -18,6 +18,11 @@ object. Properties marked as 'mutable' may change, and a
 `org.freedesktop.DBus.Properties.PropertyChanged` signal is sent for those
 unless otherwise specified.
 
+All setters (whether implicit for read-write properties or explicit) return
+success instead of the internal return value because DBus does not like
+non-standard error values. This means that clients should check for capabilities
+beforehand and that the `Commit()` method (see below) signals an error.
+
 org.freedesktop.ratbag1.Manager
 ===============================
 
