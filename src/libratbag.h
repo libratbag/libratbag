@@ -294,6 +294,8 @@ ratbag_log_set_handler(struct ratbag *ratbag,
 		       ratbag_log_handler log_handler);
 
 
+typedef int (*ratbag_event_callback)(void *user_data);
+
 /**
  * @ingroup base
  * @struct ratbag_interface
@@ -393,6 +395,33 @@ ratbag_ref(struct ratbag *ratbag);
  */
 struct ratbag *
 ratbag_unref(struct ratbag *ratbag);
+
+/**
+ * @ingroup base
+ *
+ * Main event dispatchment function. Reads events of the file descriptors
+ * and processes them internally.
+ *
+ * This function must be called immediately by the calling process whenever
+ * events are available on the fd returned by ratbag_get_fd().
+ *
+ * @param ratbag A previously initialized ratbag context
+ * @return 0 on success or a negative errno on failure
+ */
+int
+ratbag_dispatch(struct ratbag *ratbag);
+
+/**
+ * @ingroup base
+ *
+ * Returns the file descriptor for this ratbag context. The calling process
+ * must call ratbag_dispatch() whenever events become available on this fd.
+ * must be added to the caller's main loop and monitored for events.
+ *
+ * @return The file descriptor used to notify of pending events.
+ */
+int
+ratbag_get_fd(struct ratbag *ratbag);
 
 /**
  * @ingroup base

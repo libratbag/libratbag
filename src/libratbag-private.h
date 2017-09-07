@@ -79,8 +79,20 @@ struct ratbag_test_device;
 struct ratbag_driver;
 struct ratbag_button_action;
 
+typedef void (*ratbag_source_dispatch_t)(void *data);
+
+struct ratbag_source {
+	struct list link;
+	ratbag_source_dispatch_t dispatch;
+	void *userdata;
+	int fd;
+};
+
 struct ratbag {
 	const struct ratbag_interface *interface;
+	int epoll_fd;
+	struct list source_destroy_list;
+
 	void *userdata;
 
 	struct udev *udev;
@@ -538,3 +550,12 @@ void
 ratbag_button_copy_macro(struct ratbag_button *button,
 			 const struct ratbag_button_macro *macro);
 
+struct ratbag_source *
+ratbag_add_source(struct ratbag *ratbag,
+		  int fd,
+		  ratbag_source_dispatch_t dispatch,
+		  void *userdata);
+
+void
+ratbag_remove_source(struct ratbag *ratbag,
+		     struct ratbag_source *source);
