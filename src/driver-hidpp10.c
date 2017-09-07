@@ -589,8 +589,8 @@ hidpp10drv_probe(struct ratbag_device *device)
 	 * the device index for us, so even for unifying receiver devices
 	 * we can just use 0x00 as device index.
 	 *
-	 * If there is a special need like for G700(s), we can pass a
-	 * udev prop RATBAG_HIDPP10_INDEX.
+	 * If there is a special need like for G700(s), then add a DeviceIndex
+	 * entry to the .device file.
 	 */
 	dev = hidpp10_device_new(&base, device_idx, type, profile_count);
 
@@ -626,8 +626,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 		if (!dev->dpi_count)
 			log_info(device->ratbag,
 				  "Device %s might have wrong dpi settings. "
-				  "Please add RATBAG_HIDPP10_DPI or RATBAG_HIDPP10_DPI_LIST "
-				  "to the udev properties.\n",
+				  "Please adjust the .device file.\n",
 				  device->name);
 	}
 
