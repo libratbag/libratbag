@@ -110,6 +110,11 @@ org.freedesktop.ratbag1.Profile
 
 The index of this profile
 
+#### `Name`
+- type: `s`, read-write, mutable
+
+The name of this profile.
+
 #### `Enabled`
 - type: `b`, read-write, mutable
 
