@@ -167,103 +167,6 @@ static int ratbagd_button_set_special(sd_bus *bus,
 	return r;
 }
 
-static int ratbagd_button_get_key(sd_bus *bus,
-				  const char *path,
-				  const char *interface,
-				  const char *property,
-				  sd_bus_message *reply,
-				  void *userdata,
-				  sd_bus_error *error)
-{
-	struct ratbagd_button *button = userdata;
-	unsigned int key;
-	unsigned int modifiers[10] = {0};
-	size_t nmodifiers = ELEMENTSOF(modifiers);
-	size_t i;
-	int r;
-
-	/* Return an array with the first element the key, the rest
-	   are modifiers (or 0 if unset). If no key is set, the array is
-	   just [0] */
-
-	r = sd_bus_message_open_container(reply, 'a', "u");
-	if (r < 0)
-		return r;
-
-	key = ratbag_button_get_key(button->lib_button,
-				    modifiers,
-				    &nmodifiers);
-
-	r = sd_bus_message_append(reply, "u", key);
-	if (r < 0)
-		return r;
-
-	if (key == 0)
-		nmodifiers = 0;
-
-	for (i = 0; i < nmodifiers; i++) {
-		r = sd_bus_message_append(reply, "u", modifiers[0]);
-		if (r < 0)
-			return r;
-	}
-
-	return sd_bus_message_close_container(reply);
-}
-
-static int ratbagd_button_set_key(sd_bus *bus,
-				  const char *path,
-				  const char *interface,
-				  const char *property,
-				  sd_bus_message *m,
-				  void *userdata,
-				  sd_bus_error *error)
-{
-	struct ratbagd_button *button = userdata;
-	unsigned int key;
-	size_t nmodifiers = 10;
-	unsigned int modifiers[nmodifiers];
-	int r;
-
-	/* Expect an array with the first element the key, the rest
-	   are modifiers (or 0 if unset). */
-
-	r = sd_bus_message_enter_container(m, 'a', "u");
-	if (r < 0)
-		return r;
-
-	r = sd_bus_message_read(m, "u", &key);
-	if (r < 0)
-		return r;
-
-	nmodifiers = 0;
-	while ((r = sd_bus_message_read_basic(m, 'u',
-					      &modifiers[nmodifiers++])) > 0)
-		;
-
-	r = sd_bus_message_exit_container(m);
-	if (r < 0)
-		return r;
-
-	r = ratbag_button_set_key(button->lib_button, key, modifiers, nmodifiers);
-
-	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
-		sd_bus_emit_properties_changed(bus,
-					       button->path,
-					       RATBAGD_NAME_ROOT ".Button",
-					       "KeyMapping",
-					       NULL);
-
-		sd_bus_emit_properties_changed(bus,
-					       button->path,
-					       RATBAGD_NAME_ROOT ".Button",
-					       "ActionType",
-					       NULL);
-	}
-
-	return r;
-}
-
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbag_button_macro *, ratbag_button_macro_unref);
 
 static int ratbagd_button_get_macro(sd_bus *bus,
@@ -382,6 +285,8 @@ static int ratbagd_button_get_action_type(sd_bus *bus,
 	enum ratbag_button_action_type type;
 
 	type = ratbag_button_get_action_type(button->lib_button);
+	if (type == RATBAG_BUTTON_ACTION_TYPE_KEY)
+		type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 
 	return sd_bus_message_append(reply, "u", type);
 }
@@ -399,7 +304,6 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 	enum ratbag_button_action_type types[] = {
 		RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 		RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
-		RATBAG_BUTTON_ACTION_TYPE_KEY,
 		RATBAG_BUTTON_ACTION_TYPE_MACRO
 	};
 	enum ratbag_button_action_type *t;
@@ -448,10 +352,6 @@ const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_WRITABLE_PROPERTY("SpecialMapping", "u",
 				 ratbagd_button_get_special,
 				 ratbagd_button_set_special,
-				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_WRITABLE_PROPERTY("KeyMapping", "au",
-				 ratbagd_button_get_key,
-				 ratbagd_button_set_key,
 				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("Macro", "a(uu)",
 				 ratbagd_button_get_macro,

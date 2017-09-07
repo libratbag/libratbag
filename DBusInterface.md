@@ -237,11 +237,6 @@ uint of the current button mapping (if mapping to button)
 - type: `u`, read-write, mutable
 
 Enum describing the current special mapping (if mapped to special)
-#### `KeyMapping`
-- type: `au`, read-write, mutable
-
-Array of uints, first entry is the keycode, other entries, if any, are
-modifiers (if mapped to key)
 #### `Macro`
 -type: `a(uu)`, read-write, mutable
 
