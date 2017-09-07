@@ -51,6 +51,7 @@ dep_libevdev = dependency('libevdev')
 dep_libsystemd = dependency('libsystemd', version : '>=227')
 dep_systemd = dependency('systemd')
 dep_glib = dependency('glib-2.0')
+dep_gio = dependency('gio-2.0')
 dep_lm = cc.find_library('m')
 
 #### libutil.a ####
@@ -129,6 +130,7 @@ src_libratbag = [
 	'src/driver-hidpp20.c',
 	'src/driver-hidpp10.c',
 	'src/driver-logitech-g300.c',
+	'src/driver-openrazer.c',
 	'src/driver-roccat.c',
 	'src/driver-gskill.c',
 	'src/driver-test.c',
@@ -148,6 +150,7 @@ deps_libratbag = [
 	dep_udev,
 	dep_libevdev,
 	dep_glib,
+	dep_gio,
 	dep_libutil,
 	dep_libhidpp,
 ]
@@ -290,6 +293,7 @@ data_files = files(
 	'data/devices/logitech-MX-Master.device',
 	'data/devices/logitech-T650.device',
 	'data/devices/logitech-Wireless-Touchpad.device',
+	'data/devices/razer-deathadder-chroma.device',
 	'data/devices/roccat-kone-xtd.device',
 )
 

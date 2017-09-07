@@ -1,0 +1,5 @@
+[Device]
+Name=Razer Razer DeathAdder Chroma
+DeviceMatch=usb:1532:0043
+Svg=fallback.svg
+Driver=openrazer
