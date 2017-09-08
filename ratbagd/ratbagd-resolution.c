@@ -45,41 +45,6 @@ struct ratbagd_resolution {
 	char *path;
 };
 
-static int
-ratbagd_resolution_set_report_rate(sd_bus *bus,
-				   const char *path,
-				   const char *interface,
-				   const char *property,
-				   sd_bus_message *m,
-				   void *userdata,
-				   sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	unsigned int rate;
-	int r;
-
-	r = sd_bus_message_read(m, "u", &rate);
-	if (r < 0)
-		return r;
-
-	/* basic sanity check */
-	if (rate > 5000 || rate % 100)
-		return 0;
-
-	r = ratbag_resolution_set_report_rate(resolution->lib_resolution,
-					      rate);
-	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
-		sd_bus_emit_properties_changed(bus,
-					       resolution->path,
-					       RATBAGD_NAME_ROOT ".Resolution",
-					       "ReportRate",
-					       NULL);
-	}
-
-	return 0;
-}
-
 static int ratbagd_resolution_active_signal_cb(sd_bus *bus,
 						struct ratbagd_resolution *resolution)
 {
@@ -283,13 +248,13 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 }
 
 static int
-ratbagd_resolution_get_rate(sd_bus *bus,
-			    const char *path,
-			    const char *interface,
-			    const char *property,
-			    sd_bus_message *reply,
-			    void *userdata,
-			    sd_bus_error *error)
+ratbagd_resolution_get_report_rate(sd_bus *bus,
+				   const char *path,
+				   const char *interface,
+				   const char *property,
+				   sd_bus_message *reply,
+				   void *userdata,
+				   sd_bus_error *error)
 {
 	struct ratbagd_resolution *resolution = userdata;
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
@@ -297,6 +262,41 @@ ratbagd_resolution_get_rate(sd_bus *bus,
 
 	rate = ratbag_resolution_get_report_rate(lib_resolution);
 	return sd_bus_message_append(reply, "u", rate);
+}
+
+static int
+ratbagd_resolution_set_report_rate(sd_bus *bus,
+				   const char *path,
+				   const char *interface,
+				   const char *property,
+				   sd_bus_message *m,
+				   void *userdata,
+				   sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	unsigned int rate;
+	int r;
+
+	r = sd_bus_message_read(m, "u", &rate);
+	if (r < 0)
+		return r;
+
+	/* basic sanity check */
+	if (rate > 5000 || rate % 100)
+		return 0;
+
+	r = ratbag_resolution_set_report_rate(resolution->lib_resolution,
+					      rate);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       resolution->path,
+					       RATBAGD_NAME_ROOT ".Resolution",
+					       "ReportRate",
+					       NULL);
+	}
+
+	return 0;
 }
 
 static int
@@ -344,7 +344,7 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 				 ratbagd_resolution_set_resolution, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("ReportRate", "u",
-				 ratbagd_resolution_get_rate,
+				 ratbagd_resolution_get_report_rate,
 				 ratbagd_resolution_set_report_rate, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Maximum", "u", ratbagd_resolution_get_maximum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
