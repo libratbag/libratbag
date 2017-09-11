@@ -1132,6 +1132,12 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 	count = sector_size;
 
 	for (offset = 0; offset < sector_size; offset += 16) {
+		/*
+		 * the firmware replies with an ERR_INVALID_ARGUMENT error
+		 * if we try to read past sector_size - 16, so when we are left with
+		 * less than 16 bytes to read we need to read from sector_size - 16
+		 */
+		offset = (sector_size - offset < 16) ? sector_size - 16 : offset;
 		hidpp_set_unaligned_be_u16(&msg.msg.parameters[2], offset);
 		buf = msg;
 		rc = hidpp20_request_command(device, &buf);
