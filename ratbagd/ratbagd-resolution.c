@@ -282,8 +282,10 @@ ratbagd_resolution_set_report_rate(sd_bus *bus,
 		return r;
 
 	/* basic sanity check */
-	if (rate > 5000 || rate % 100)
-		return 0;
+	if (rate > 5000)
+		rate = 5000;
+	else if (rate % 100)
+		rate = rate - (rate % 100);
 
 	r = ratbag_resolution_set_report_rate(resolution->lib_resolution,
 					      rate);
