@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
 
 	if (argc > 1) {
 		if (streq(argv[1], "--verbose=raw")) {
-			verbose = true;
+			verbose_raw = true;
 		} else if (streq(argv[1], "--verbose")) {
 			verbose = true;
 		} else {
