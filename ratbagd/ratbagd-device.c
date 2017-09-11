@@ -278,6 +278,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("GetSvg", "s", "s", ratbagd_device_get_theme_svg, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_SIGNAL("Resync", "", 0),
 	SD_BUS_VTABLE_END,
 };
 
@@ -382,6 +383,17 @@ unsigned int ratbagd_device_get_num_leds(struct ratbagd_device *device)
 {
 	assert(device);
 	return ratbag_device_get_num_leds(device->lib_device);
+}
+
+int ratbagd_device_resync(struct ratbagd_device *device, sd_bus *bus)
+{
+	assert(device);
+	assert(bus);
+	return sd_bus_emit_signal(bus,
+				  device->path,
+				  RATBAGD_NAME_ROOT ".Device",
+				  "Resync",
+				  NULL);
 }
 
 bool ratbagd_device_linked(struct ratbagd_device *device)
