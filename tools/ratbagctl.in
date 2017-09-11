@@ -1119,14 +1119,6 @@ active profile if none is given.""",
 ]
 
 
-def pr_debug(ns, *args):
-    try:
-        if ns.verbose > 2:
-            print(*args)
-    except AttributeError:
-        print(ns)
-
-
 class ParseError(Exception):
     pass
 
@@ -1166,9 +1158,7 @@ class RatbagParser(object):
         raise ParseError("please implement _sub_parse on {}".format(type(self)))
 
     def sub_parse(self, input_string, ns):
-        pr_debug(ns, ">.. {}: {} | {}".format(self.type, self.name, input_string))
         r = self._sub_parse(input_string, ns)
-        pr_debug(ns, "<.. {}: {} | {}".format(self.type, self.name, input_string))
         return r
 
     def build_cmd_args_name(self):
@@ -1395,11 +1385,8 @@ class RatbagParserRoot(object):
 
         subparser = self.parser
 
-        pr_debug(ns, rest)
         for child in self.children:
-            pr_debug(ns, ">>> {}: {} | {}".format(child.type, child.name, rest))
             child.add_to_subparsers(subs)
-            pr_debug(ns, "<<< {}: {} | {}".format(child.type, child.name, rest))
 
         ns.subparse = None
 
@@ -1408,7 +1395,6 @@ class RatbagParserRoot(object):
             ns, rest = subparser.parse_known_args(rest, namespace=ns)
             if old_rest == rest:
                 break
-            pr_debug(ns, ns, rest)
             if ns.subparse:
                 subparser = ns.subparse(rest, ns)
 
