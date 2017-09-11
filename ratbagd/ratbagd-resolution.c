@@ -38,6 +38,7 @@
 #include "libratbag-util.h"
 
 struct ratbagd_resolution {
+	struct ratbagd_device *device;
 	struct ratbagd_profile *profile;
 	struct ratbag_resolution *lib_resolution;
 	unsigned int index;
@@ -76,7 +77,7 @@ ratbagd_resolution_set_report_rate(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int ratbagd_resolution_active_signal_cb(sd_bus *bus,
@@ -102,14 +103,18 @@ static int ratbagd_resolution_set_active(sd_bus_message *m,
 	int r;
 
 	r = ratbag_resolution_set_active(resolution->lib_resolution);
-	if (r < 0)
-		return r;
+	if (r < 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		r = ratbagd_device_resync(resolution->device, bus);
+		if (r < 0)
+			return r;
+	}
 
 	ratbagd_for_each_resolution_signal(sd_bus_message_get_bus(m),
 					   resolution->profile,
 					   ratbagd_resolution_active_signal_cb);
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return sd_bus_reply_method_return(m, "u", 0);
 }
 
 static int ratbagd_resolution_default_signal_cb(sd_bus *bus,
@@ -135,14 +140,18 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 	int r;
 
 	r = ratbag_resolution_set_default(resolution->lib_resolution);
-	if (r < 0)
-		return r;
+	if (r < 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		r = ratbagd_device_resync(resolution->device, bus);
+		if (r < 0)
+			return r;
+	}
 
 	ratbagd_for_each_resolution_signal(sd_bus_message_get_bus(m),
 					   resolution->profile,
 					   ratbagd_resolution_default_signal_cb);
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return sd_bus_reply_method_return(m, "u", 0);
 }
 
 static int
@@ -270,7 +279,7 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int
@@ -363,6 +372,7 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 	if (!resolution)
 		return -ENOMEM;
 
+	resolution->device = device;
 	resolution->profile = profile;
 	resolution->lib_resolution = lib_resolution;
 	resolution->index = index;

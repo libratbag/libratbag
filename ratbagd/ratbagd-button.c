@@ -39,6 +39,7 @@
 #include "libratbag-util.h"
 
 struct ratbagd_button {
+	struct ratbagd_device *device;
 	struct ratbag_button *lib_button;
 	unsigned int index;
 	char *path;
@@ -112,7 +113,7 @@ static int ratbagd_button_set_button(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int ratbagd_button_get_special(sd_bus *bus,
@@ -164,7 +165,7 @@ static int ratbagd_button_set_special(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbag_button_macro *, ratbag_button_macro_unref);
@@ -337,8 +338,14 @@ static int ratbagd_button_disable(sd_bus_message *m,
 		return r;
 
 	r = ratbag_button_disable(button->lib_button);
+	if (r < 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		r = ratbagd_device_resync(button->device, bus);
+		if (r < 0)
+			return r;
+	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return sd_bus_reply_method_return(m, "u", 0);
 }
 
 const sd_bus_vtable ratbagd_button_vtable[] = {
@@ -378,6 +385,7 @@ int ratbagd_button_new(struct ratbagd_button **out,
 	assert(lib_button);
 
 	button = zalloc(sizeof(*button));
+	button->device = device;
 	button->lib_button = lib_button;
 	button->index = index;
 
