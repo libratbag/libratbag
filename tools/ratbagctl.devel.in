@@ -50,7 +50,7 @@ def main(argv):
             parser.print_help()
             return
 
-        ratbagd_process = toolbox.start_ratbagd()
+        ratbagd_process = toolbox.start_ratbagd(verbosity=cmd.verbose)
         if ratbagd_process is None:
             sys.exit("Failed to start or connect to ratbagd")
 
