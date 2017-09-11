@@ -42,6 +42,7 @@
 #include "ratbagd-test.h"
 
 static bool verbose = false;
+static bool verbose_raw = false;
 
 static const char *SVG_THEMES[] = {
 	"default",
@@ -380,7 +381,10 @@ static int ratbagd_new(struct ratbagd **out)
 	if (!ctx->lib_ctx)
 		return -ENOMEM;
 
-	if (verbose)
+	if (verbose_raw)
+		ratbag_log_set_priority(ctx->lib_ctx,
+					RATBAG_LOG_PRIORITY_RAW);
+	else if (verbose)
 		ratbag_log_set_priority(ctx->lib_ctx,
 					RATBAG_LOG_PRIORITY_DEBUG);
 
@@ -520,10 +524,12 @@ int main(int argc, char *argv[])
 	int r;
 
 	if (argc > 1) {
-		if (streq(argv[1], "--verbose")) {
+		if (streq(argv[1], "--verbose=raw")) {
+			verbose = true;
+		} else if (streq(argv[1], "--verbose")) {
 			verbose = true;
 		} else {
-			fprintf(stderr, "Usage: %s [--verbose]\n",
+			fprintf(stderr, "Usage: %s [--verbose[=raw]]\n",
 				program_invocation_short_name);
 			r = -EINVAL;
 			goto exit;
