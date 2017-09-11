@@ -131,8 +131,12 @@ static int ratbagd_led_set_color(sd_bus *bus,
 	if (r < 0)
 		return r;
 
-	if (c.red > 255 || c.green > 255 || c.blue > 255)
-		return RATBAG_ERROR_VALUE;
+	if (c.red > 255)
+		c.red = 255;
+	if (c.green > 255)
+		c.green = 255;
+	if (c.blue > 255)
+		c.blue = 255;
 
 	r = ratbag_led_set_color(led->lib_led, c);
 
@@ -179,8 +183,10 @@ static int ratbagd_led_set_effect_rate(sd_bus *bus,
 	if (r < 0)
 		return r;
 
-	if (rate < 100 || rate > 20000)
-		return 0;
+	if (rate < 100)
+		rate = 100;
+	else if (rate > 20000)
+		rate = 20000;
 
 	r = ratbag_led_set_effect_rate(led->lib_led, rate);
 
@@ -228,7 +234,7 @@ static int ratbagd_led_set_brightness(sd_bus *bus,
 		return r;
 
 	if (brightness > 255)
-		return 0;
+		brightness = 255;
 
 	r = ratbag_led_set_brightness(led->lib_led, brightness);
 
