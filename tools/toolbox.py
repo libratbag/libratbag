@@ -57,7 +57,7 @@ def import_non_standard_path(name, path):
     return module
 
 
-def start_ratbagd():
+def start_ratbagd(verbosity=0):
     from gi.repository import Gio
     import time
 
@@ -68,7 +68,14 @@ def start_ratbagd():
 
     # FIXME: kill any running ratbagd.devel
 
-    ratbagd_process = subprocess.Popen([os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")], shell=False)
+    args = [os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")]
+
+    if verbosity >= 3:
+        args.append('--verbose=raw')
+    elif verbosity >= 2:
+        args.append('--verbose')
+
+    ratbagd_process = subprocess.Popen(args, shell=False, stdout=sys.stdout, stderr=sys.stderr)
 
     dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
 
