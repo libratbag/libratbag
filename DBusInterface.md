@@ -20,8 +20,8 @@ unless otherwise specified.
 
 All setters (whether implicit for read-write properties or explicit) return
 success instead of the internal return value because DBus does not like
-non-standard error values. This means that clients should check for capabilities
-beforehand and that the `Commit()` method (see below) signals an error.
+non-standard error values. Upon a ratbag error, the `Resync` signal is emitted
+on the device, indicating that clients should resync their values.
 
 org.freedesktop.ratbag1.Manager
 ===============================
@@ -104,6 +104,13 @@ none is available.  The theme must be one of
 guaranteed to be available. ratbagd may return the path to a file that
 doesn't exist. This is the case if the device has SVGs available but not for
 the given theme.
+
+### Signals:
+
+#### `Resync()`
+
+Emitted when an internal error occurs. Upon receiving this signal, clients are
+expected to resync their values with ratbagd.
 
 org.freedesktop.ratbag1.Profile
 ===============================
