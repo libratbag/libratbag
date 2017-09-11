@@ -221,8 +221,14 @@ static int ratbagd_device_commit(sd_bus_message *m,
 	int r;
 
 	r = ratbag_device_commit(device->lib_device);
+	if (r < 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		r = ratbagd_device_resync(device, bus);
+		if (r < 0)
+			return r;
+	}
 
-	return sd_bus_reply_method_return(m, "u", r);
+	return sd_bus_reply_method_return(m, "u", 0);
 }
 
 static int

@@ -291,8 +291,12 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 		return r;
 
 	r = ratbag_profile_set_active(profile->lib_profile);
-	if (r < 0)
-		return r;
+	if (r < 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		r = ratbagd_device_resync(profile->device, bus);
+		if (r < 0)
+			return r;
+	}
 
 	ratbagd_for_each_profile_signal(sd_bus_message_get_bus(m),
 					profile->device,
@@ -328,7 +332,7 @@ ratbagd_profile_set_enabled(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int

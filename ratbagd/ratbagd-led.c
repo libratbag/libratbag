@@ -81,7 +81,7 @@ static int ratbagd_led_set_mode(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int ratbagd_led_get_type(sd_bus *bus,
@@ -145,7 +145,7 @@ static int ratbagd_led_set_color(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int ratbagd_led_get_effect_rate(sd_bus *bus,
@@ -193,7 +193,7 @@ static int ratbagd_led_set_effect_rate(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int ratbagd_led_get_brightness(sd_bus *bus,
@@ -241,7 +241,7 @@ static int ratbagd_led_set_brightness(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 const sd_bus_vtable ratbagd_led_vtable[] = {
