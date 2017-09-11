@@ -41,31 +41,31 @@ def main(argv):
     if not argv:
         argv = ["list"]
 
-    ratbagd_process = toolbox.start_ratbagd()
-    if ratbagd_process is None:
-        sys.exit("Failed to start or connect to ratbagd")
-
-    ratbagd = toolbox.open_ratbagd()
-    parser = toolbox.get_parser()
-    parser.want_keepalive = True
-
     cmd = None
-
     try:
+        parser = toolbox.get_parser()
+        parser.want_keepalive = True
         cmd = parser.parse(argv)
         if cmd.help:
             parser.print_help()
+            return
+
+        ratbagd_process = toolbox.start_ratbagd()
+        if ratbagd_process is None:
+            sys.exit("Failed to start or connect to ratbagd")
+
+        ratbagd = toolbox.open_ratbagd()
+
+        try:
+            f = cmd.func
+        except AttributeError:
+            parser.print_help()
+            return
         else:
-            try:
-                f = cmd.func
-            except AttributeError:
-                parser.print_help()
-                return
-            else:
-                f(ratbagd, cmd)
-                # give time for ratbagd to receive async requests before
-                # we try to terminate it
-                time.sleep(0.5)
+            f(ratbagd, cmd)
+            # give time for ratbagd to receive async requests before
+            # we try to terminate it
+            time.sleep(0.5)
     finally:
         try:
             if cmd.keepalive:
