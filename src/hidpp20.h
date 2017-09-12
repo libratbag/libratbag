@@ -573,9 +573,12 @@ int
 hidpp20_onboard_profiles_set_current_dpi_index(struct hidpp20_device *device,
 					       uint8_t index);
 
-int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
-				   unsigned int index,
-				   struct hidpp20_profiles *profiles_list);
+/**
+ * Write the internal state of the device onto the FLASH.
+ */
+int
+hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
+				struct hidpp20_profiles *profiles_list);
 
 enum ratbag_button_action_special
 hidpp20_onboard_profiles_get_special(uint8_t code);

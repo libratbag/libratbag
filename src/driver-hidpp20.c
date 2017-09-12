@@ -367,7 +367,7 @@ hidpp20drv_update_button_8100(struct ratbag_button *button,
 		return -ENOTSUP;
 	}
 
-	return hidpp20_onboard_profiles_write(drv_data->dev, button->profile->index, drv_data->profiles);
+	return 0;
 }
 
 static int
@@ -459,7 +459,8 @@ hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 
 	h_profile = &drv_data->profiles->profiles[index];
 	if (!h_profile->enabled) {
-		rc = hidpp20_onboard_profiles_write(drv_data->dev, index, drv_data->profiles);
+		h_profile->enabled = 1;
+		rc = hidpp20_onboard_profiles_commit(drv_data->dev, drv_data->profiles);
 		if (rc)
 			return rc;
 	}
@@ -919,10 +920,15 @@ hidpp20drv_commit(struct ratbag_device *device)
 				return RATBAG_ERROR_DEVICE;
 		}
 
-		if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
-			hidpp20_onboard_profiles_write(drv_data->dev,
-						       profile->index,
-						       drv_data->profiles);
+	}
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+		rc = hidpp20_onboard_profiles_commit(drv_data->dev,
+						     drv_data->profiles);
+		if (rc)
+			return RATBAG_ERROR_DEVICE;
+
+		list_for_each(profile, &device->profiles, link) {
 			if (profile->is_active)
 				hidpp20_onboard_profiles_set_current_dpi_index(drv_data->dev,
 									       dpi_index);
