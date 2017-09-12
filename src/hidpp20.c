@@ -1473,7 +1473,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 
 	profiles->num_profiles = info.profile_count;
 	profiles->num_rom_profiles = info.profile_count_oob;
-	profiles->num_buttons = info.button_count <= 16 ? info.button_count : 16;
+	profiles->num_buttons = min(info.button_count, 16);
 	profiles->num_modes = HIDPP20_DPI_COUNT;
 	profiles->num_leds = HIDPP20_LED_COUNT;
 	profiles->has_g_shift = (info.mechanical_layout & 0x03) == 2;
