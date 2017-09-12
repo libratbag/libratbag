@@ -467,7 +467,7 @@ union hidpp20_macro_data {
 _Static_assert(sizeof(union hidpp20_macro_data) == 3, "Invalid size");
 
 struct hidpp20_profile {
-	uint8_t index;
+	uint16_t address;
 	uint8_t enabled;
 	char name[16 * 3];
 	unsigned report_rate;

@@ -1907,7 +1907,7 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 {
 	union hidpp20_internal_profile *pdata;
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
-	uint16_t sector = index + 1;
+	uint16_t sector = profile->address;
 	_cleanup_free_ uint8_t *data = NULL;
 	unsigned i;
 	int rc;
@@ -1970,9 +1970,10 @@ hidpp20_onboard_profiles_parse(struct hidpp20_device *device,
 	_cleanup_free_ uint8_t *data = NULL;
 	int rc;
 	unsigned i;
+	bool crc_valid;
 
 	for (i = 0; i < profiles->num_profiles; i++) {
-		profiles->profiles[i].index = 0;
+		profiles->profiles[i].address = 0;
 		profiles->profiles[i].enabled = 0;
 	}
 
@@ -1985,29 +1986,61 @@ hidpp20_onboard_profiles_parse(struct hidpp20_device *device,
 	if (rc < 0)
 		return rc;
 
-	if (check_crc) {
-		if (!hidpp20_onboard_profiles_is_sector_valid(device,
-							      profiles->sector_size,
-							      data)) {
-			return -EAGAIN;
+	crc_valid = hidpp20_onboard_profiles_is_sector_valid(device,
+							     profiles->sector_size,
+							     data);
+	if (crc_valid || !check_crc) {
+		for (i = 0; i < profiles->num_profiles; i++) {
+			uint8_t *d = data + 4 * i;
+
+			if (d[0] == 0xFF && d[1] == 0xFF)
+				break;
+
+			profiles->profiles[i].address = hidpp_get_unaligned_be_u16(d);
+			if (profiles->profiles[i].address != (dict_address | (i + 1)))
+				hidpp_log_info(&device->base,
+						"profile %d: error in the address: 0x%04x instead of 0x%04x\n",
+						i + 1,
+						profiles->profiles[i].address,
+						dict_address | (i + 1));
+			profiles->profiles[i].enabled = !!d[2];
 		}
 	}
-	for (i = 0; i < profiles->num_profiles; i++) {
-		uint8_t *d = data + 4 * i;
 
-		if (d[0] == 0xFF && d[1] == 0xFF)
-			break;
-
-		profiles->profiles[i].index = d[1];
-		profiles->profiles[i].enabled = !!d[2];
-
+	/*
+	 * Even if the crc is wrong, we still fetch all the profiles, so as
+	 * to have the current stored values if some profiles are legitimate.
+	 */
+	 for (i = 0; i < profiles->num_profiles; i++) {
+		if (profiles->profiles[i].address == 0x0000) {
+			switch (dict_address) {
+			case 0x0000:
+				profiles->profiles[i].address = i + 1;
+				break;
+			case 0x0100:
+				if (i >= profiles->num_rom_profiles) {
+					profiles->profiles[i].address = dict_address | profiles->num_rom_profiles;
+				} else {
+					profiles->profiles[i].address = dict_address | (i + 1);
+				}
+				break;
+			default:
+				hidpp_log_error(&device->base,
+						"this should never happen: dict address is 0x%04x\n",
+						dict_address);
+				return -EINVAL;
+			}
+		}
 		rc = hidpp20_onboard_profiles_parse_profile(device,
 							    profiles,
 							    i,
 							    check_crc);
-		if (rc < 0)
-			return rc;
+		if (rc == -EAGAIN)
+			crc_valid = false;
 	}
+
+	if (check_crc && !crc_valid)
+		return -EAGAIN;
 
 	return 0;
 }
