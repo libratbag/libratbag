@@ -592,6 +592,13 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 				     uint16_t sector_size,
 				     uint8_t *data);
 
+int
+hidpp20_onboard_profiles_write_sector(struct hidpp20_device *device,
+				      uint16_t sector,
+				      uint16_t sector_size,
+				      uint8_t *data,
+				      bool write_crc);
+
 static inline uint8_t *
 hidpp20_onboard_profiles_allocate_sector(struct hidpp20_profiles *profiles)
 {

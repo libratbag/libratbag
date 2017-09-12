@@ -234,6 +234,15 @@ executable('hidpp20-dump-page',
 	install : false,
 )
 
+#### hidpp20-reset ####
+src_hidpp20_reset = [ 'tools/hidpp20-reset.c' ]
+executable('hidpp20-reset',
+	src_hidpp20_reset,
+	dependencies : [ dep_libhidpp ],
+	include_directories : include_directories('src'),
+	install : false,
+)
+
 #### lur-command ####
 src_lur_command = [ 'tools/lur-command.c' ]
 executable('lur-command',
