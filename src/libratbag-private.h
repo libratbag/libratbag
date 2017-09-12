@@ -50,9 +50,23 @@ cleanup_resolution(struct ratbag_resolution **r)
 	ratbag_resolution_unref(*r);
 }
 
+static inline void
+cleanup_button(struct ratbag_button **b)
+{
+	ratbag_button_unref(*b);
+}
+
+static inline void
+cleanup_led(struct ratbag_led **l)
+{
+	ratbag_led_unref(*l);
+}
+
 #define _cleanup_device_ _cleanup_(cleanup_device)
 #define _cleanup_profile_ _cleanup_(cleanup_profile)
 #define _cleanup_resolution_ _cleanup_(cleanup_resolution)
+#define _cleanup_button_ _cleanup_(cleanup_button)
+#define _cleanup_led_ _cleanup_(cleanup_led)
 
 #define BUS_ANY					0xffff
 #define VENDOR_ANY				0xffff
