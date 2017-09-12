@@ -684,22 +684,6 @@ hidpp20drv_read_color_leds(struct ratbag_device *device)
 	return rc;
 }
 
-static int
-hidpp20drv_read_onboard_profile(struct ratbag_device *device, unsigned index)
-{
-	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
-	int rc;
-
-	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
-		return 0;
-
-	rc = hidpp20_onboard_profiles_read(drv_data->dev, index, drv_data->profiles);
-	if (rc < 0)
-		return rc;
-
-	return 0;
-}
-
 static void
 hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 {
@@ -711,8 +695,6 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	int dpi_index = 0xff;
 
 	profile->is_enabled = drv_data->profiles->profiles[index].enabled;
-
-	hidpp20drv_read_onboard_profile(device, profile->index);
 
 	profile->is_active = false;
 	if ((int)index == hidpp20drv_current_profile(device))

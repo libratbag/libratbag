@@ -573,16 +573,6 @@ int
 hidpp20_onboard_profiles_set_current_dpi_index(struct hidpp20_device *device,
 					       uint8_t index);
 
-/**
- * parse a given profile from the mouse and fill in the right profile in
- * profiles_list.
- *
- * return 0 or a negative error.
- */
-int hidpp20_onboard_profiles_read(struct hidpp20_device *device,
-				  unsigned int index,
-				  struct hidpp20_profiles *profiles_list);
-
 int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 				   unsigned int index,
 				   struct hidpp20_profiles *profiles_list);
