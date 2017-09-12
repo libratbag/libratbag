@@ -318,6 +318,7 @@ install_data(default_svg_files,
 
 gnome_svg_files = files(
 	'data/gnome/fallback.svg',
+	'data/gnome/logitech-g300.svg',
 	'data/gnome/logitech-g303.svg',
 	'data/gnome/logitech-g403.svg',
 	'data/gnome/logitech-g500.svg',
