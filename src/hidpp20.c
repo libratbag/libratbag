@@ -1719,48 +1719,8 @@ hidpp20_onboard_profiles_destroy(struct hidpp20_profiles *profiles_list)
 }
 
 static int
-hidpp20_onboard_profiles_find_and_read_profile(struct hidpp20_device *device,
-					       unsigned int index,
-					       uint16_t sector_size,
-					       uint8_t *data,
-					       unsigned int num_rom_profiles)
-{
-	uint16_t sector = index + 1;
-	int rc;
-
-	rc = hidpp20_onboard_profiles_read_sector(device,
-						  sector,
-						  sector_size,
-						  data);
-	if (rc < 0)
-		return rc;
-
-	if (hidpp20_onboard_profiles_is_sector_valid(device, sector_size, data))
-		return 0;
-
-	/* something went wrong, the mouse is using the factory profile in ROM */
-	if (num_rom_profiles == 0)
-		return -EINVAL;
-
-	if (index >= num_rom_profiles)
-		index = num_rom_profiles - 1;
-
-	sector = (1 << 8) | (index + 1);
-
-	rc = hidpp20_onboard_profiles_read_sector(device,
-						  sector,
-						  sector_size,
-						  data);
-	if (rc < 0)
-		return rc;
-
-	return 0;
-}
-
-static int
-hidpp20_onboard_profiles_set_enable_profile(struct hidpp20_device *device,
-					    unsigned int index,
-					    struct hidpp20_profiles *profiles_list)
+hidpp20_onboard_profiles_write_dict(struct hidpp20_device *device,
+				    struct hidpp20_profiles *profiles_list)
 {
 	unsigned int i, buffer_index = 0;
 	uint16_t sector_size = profiles_list->sector_size;
@@ -1768,8 +1728,6 @@ hidpp20_onboard_profiles_set_enable_profile(struct hidpp20_device *device,
 	int rc;
 
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
-
-	profiles_list->profiles[index].index = index + 1;
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
 		data[buffer_index++] = 0x00;
@@ -2127,9 +2085,10 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 	}
 }
 
-int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
-				   unsigned int index,
-				   struct hidpp20_profiles *profiles_list)
+static int
+hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
+				       struct hidpp20_profiles *profiles_list,
+				       unsigned int index)
 {
 	union hidpp20_internal_profile *pdata;
 	_cleanup_free_ uint8_t *data = NULL;
@@ -2145,17 +2104,7 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
 	pdata = (union hidpp20_internal_profile *)data;
 
-	rc = hidpp20_onboard_profiles_find_and_read_profile(device,
-							    index,
-							    profiles_list->sector_size,
-							    data,
-							    profiles_list->num_rom_profiles);
-	if (rc < 0)
-		return rc;
-
-	rc = hidpp20_onboard_profiles_set_enable_profile(device, index, profiles_list);
-	if (rc < 0)
-		return rc;
+	memset(data, 0xff, profiles_list->sector_size);
 
 	pdata->profile.report_rate = 1000 / profile->report_rate;
 	pdata->profile.default_dpi = profile->default_dpi;
@@ -2177,6 +2126,29 @@ int hidpp20_onboard_profiles_write(struct hidpp20_device *device,
 		return rc;
 
 	return 0;
+}
+
+int
+hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
+				struct hidpp20_profiles *profiles_list)
+{
+	struct hidpp20_profile *profile;
+	unsigned int i;
+	int rc;
+
+	for (i = 0; i < profiles_list->num_profiles; i++) {
+		profile = &profiles_list->profiles[i];
+
+		if (profile->enabled) {
+			rc = hidpp20_onboard_profiles_write_profile(device,
+								    profiles_list,
+								    i);
+			if (rc < 0)
+				return rc;
+		}
+	}
+
+	return hidpp20_onboard_profiles_write_dict(device, profiles_list);
 }
 
 static const enum ratbag_button_action_special hidpp20_profiles_specials[] = {
