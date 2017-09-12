@@ -38,6 +38,9 @@
 #include "libratbag-version.h"
 #include "shared.h"
 
+#include <libratbag-private.h>
+#include <libratbag-util.h>
+
 enum options {
 	OPT_VERSION,
 	OPT_VERBOSE,
@@ -392,10 +395,6 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		int argc, char **argv)
 {
 	struct ratbag_device *device;
-	struct ratbag_profile *profile;
-	struct ratbag_button *button;
-	struct ratbag_led *led;
-	char *action;
 	int num_profiles, num_buttons, num_leds;
 	int b, l;
 
@@ -431,8 +430,9 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 	printf("Profiles supported: %d\n", num_profiles);
 
 	for (int i = 0; i < num_profiles; i++) {
+		_cleanup_profile_ struct ratbag_profile *profile = NULL;
+		_cleanup_resolution_ struct ratbag_resolution *res0 = NULL;
 		int dpi, rate;
-		struct ratbag_resolution *res;
 
 		profile = ratbag_device_get_profile(device, i);
 		if (!profile)
@@ -441,20 +441,19 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 		printf("  Profile %d (%s)%s\n", i,
 		       ratbag_profile_is_enabled(profile) ? "enabled" : "disabled",
 		       ratbag_profile_is_active(profile) ? " (active)" : "");
-		if (!ratbag_profile_is_enabled(profile)) {
-			ratbag_profile_unref(profile);
+		if (!ratbag_profile_is_enabled(profile))
 			continue;
-		}
 
 		printf("    Resolutions:\n");
 
-		res = ratbag_profile_get_resolution(profile, 0);
+		res0 = ratbag_profile_get_resolution(profile, 0);
 		printf("      Range: [%d, %d]\n",
-		       ratbag_resolution_get_dpi_minimum(res),
-		       ratbag_resolution_get_dpi_maximum(res));
-		ratbag_resolution_unref(res);
+		       ratbag_resolution_get_dpi_minimum(res0),
+		       ratbag_resolution_get_dpi_maximum(res0));
 
 		for (unsigned int j = 0; j < ratbag_profile_get_num_resolutions(profile); j++) {
+			_cleanup_resolution_ struct ratbag_resolution *res = NULL;
+
 			res = ratbag_profile_get_resolution(profile, j);
 			dpi = ratbag_resolution_get_dpi(res);
 			rate = ratbag_resolution_get_report_rate(res);
@@ -472,11 +471,11 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 				printf("      %d: %ddpi @ %dHz%s%s\n", j, dpi, rate,
 				       ratbag_resolution_is_active(res) ? " (active)" : "",
 				       ratbag_resolution_is_default(res) ? " (default)" : "");
-
-			ratbag_resolution_unref(res);
 		}
 
 		for (b = 0; b < num_buttons; b++) {
+			_cleanup_button_ struct ratbag_button *button = NULL;
+			_cleanup_free_ char *action = NULL;
 			enum ratbag_button_type type;
 
 			button = ratbag_profile_get_button(profile, b);
@@ -484,17 +483,14 @@ ratbag_cmd_info(const struct ratbag_cmd *cmd,
 			action = button_action_to_str(button);
 			printf("    Button: %d type %s is mapped to '%s'\n",
 			       b, button_type_to_str(type), action);
-			free(action);
-			ratbag_button_unref(button);
 		}
 
 		for (l = 0; l < num_leds; l++) {
+			_cleanup_led_ struct ratbag_led *led = NULL;
+
 			led = ratbag_profile_get_led(profile, l);
 			ratbag_printf_led(led, "    LED: %d ", l);
-			ratbag_led_unref(led);
 		}
-
-		ratbag_profile_unref(profile);
 	}
 
 	return SUCCESS;
