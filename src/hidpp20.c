@@ -334,17 +334,17 @@ hidpp20_feature_set_get(struct hidpp20_device *device)
 	if (rc < 0)
 		return rc;
 
-	feature_count = (uint8_t)rc;
+	/* feature set count does not include the root feature as documented here:
+	 * https://6xq.net/git/lars/lshidpp.git/plain/doc/logitech_hidpp_2.0_specification_draft_2012-06-04.pdf
+	 **/
+	feature_count = ((uint8_t)rc) + 1;
 
-	if (!feature_count)
+	if (feature_count == 1)
 		return -ENOTSUP;
 
 	flist = zalloc((feature_count + 1) * sizeof(struct hidpp20_feature));
 
-	/* feature set count does not include the root feature as documented here:
-	 * https://6xq.net/git/lars/lshidpp.git/plain/doc/logitech_hidpp_2.0_specification_draft_2012-06-04.pdf
-	 **/
-	for (i = 0; i <= feature_count; i++) {
+	for (i = 0; i < feature_count; i++) {
 		rc = hidpp20_feature_set_get_feature_id(device,
 							feature_index,
 							i,
