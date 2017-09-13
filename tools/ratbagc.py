@@ -1,0 +1,751 @@
+# vim: set expandtab shiftwidth=4 tabstop=4:
+#
+# Copyright 2017 Red Hat, Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice (including the next
+# paragraph) shall be included in all copies or substantial portions of the
+# Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+import libratbag
+import os
+import sys
+
+from evdev import ecodes
+
+
+# Deferred translations, see https://docs.python.org/3/library/gettext.html#deferred-translations
+def N_(x):
+    return x
+
+
+# we use a metaclass to automatically load symbols from libratbag in the classes
+# define _PREFIX in subclasses to take advantage of this.
+class MetaRatbag(type):
+    def __new__(cls, name, bases, dct):
+        try:
+            prefix = dct["_PREFIX"]
+        except KeyError:
+            pass
+        else:
+            for k in libratbag.__dict__.keys():
+                if k.startswith(prefix) and k.isupper():
+                    key = k[len(prefix):]
+                    dct[key] = getattr(libratbag, k)
+        c = type.__new__(cls, name, bases, dct)
+        if "__late_init__" in dct:
+            c.__late_init__()
+        return c
+
+
+class RatbagErrorCode(metaclass=MetaRatbag):
+    RATBAG_SUCCESS = libratbag.RATBAG_SUCCESS
+
+    """An error occured on the device. Either the device is not a libratbag
+    device or communication with the device failed."""
+    RATBAG_ERROR_DEVICE = libratbag.RATBAG_ERROR_DEVICE
+
+    """Insufficient capabilities. This error occurs when a requested change is
+    beyond the device's capabilities."""
+    RATBAG_ERROR_CAPABILITY = libratbag.RATBAG_ERROR_CAPABILITY
+
+    """Invalid value or value range. The provided value or value range is
+    outside of the legal or supported range."""
+    RATBAG_ERROR_VALUE = libratbag.RATBAG_ERROR_VALUE
+
+    """A low-level system error has occured, e.g. a failure to access files
+    that should be there. This error is usually unrecoverable and libratbag will
+    print a log message with details about the error."""
+    RATBAG_ERROR_SYSTEM = libratbag.RATBAG_ERROR_SYSTEM
+
+    """Implementation bug, either in libratbag or in the caller. This error is
+    usually unrecoverable and libratbag will print a log message with details
+    about the error."""
+    RATBAG_ERROR_IMPLEMENTATION = libratbag.RATBAG_ERROR_IMPLEMENTATION
+
+
+class RatbagError(Exception):
+    """A common base exception to catch any ratbag exception."""
+    pass
+
+
+class RatbagErrorDevice(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_DEVICE."""
+    pass
+
+
+class RatbagErrorCapability(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_CAPABILITY."""
+    pass
+
+
+class RatbagErrorValue(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_Value."""
+    pass
+
+
+class RatbagErrorSystem(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_System."""
+    pass
+
+
+class RatbagErrorImplementation(RatbagError):
+    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_IMPLEMENTATION."""
+    pass
+
+
+"""A table mapping RatbagErrorCode values to RatbagError* exceptions."""
+EXCEPTION_TABLE = {
+    RatbagErrorCode.RATBAG_ERROR_DEVICE: RatbagErrorDevice,
+    RatbagErrorCode.RATBAG_ERROR_CAPABILITY: RatbagErrorCapability,
+    RatbagErrorCode.RATBAG_ERROR_VALUE: RatbagErrorValue,
+    RatbagErrorCode.RATBAG_ERROR_SYSTEM: RatbagErrorSystem,
+    RatbagErrorCode.RATBAG_ERROR_IMPLEMENTATION: RatbagErrorImplementation
+}
+
+
+class Ratbagd(object):
+    """The ratbagd top-level object. Provides a list of devices available
+    through libratbag; actual interaction with the devices is via the
+    RatbagdDevice, RatbagdProfile, RatbagdResolution and RatbagdButton objects.
+
+    """
+
+    def __init__(self):
+        self._ratbag = libratbag.ratbag_create_context(libratbag.interface, None)
+        self._devices = []
+        for event in os.listdir("/dev/input"):
+            if not event.startswith("event"):
+                continue
+            try:
+                self._devices.append(RatbagdDevice(self._ratbag, os.path.join("/dev/input/", event)))
+            except RatbagErrorDevice:
+                pass
+
+    @property
+    def devices(self):
+        """A list of RatbagdDevice objects supported by ratbagd."""
+        return self._devices
+
+    @property
+    def themes(self):
+        """A list of theme names. The theme 'default' is guaranteed to be
+        available."""
+        return ["default", "gnome"]
+
+    def set_verbose(self, verbose):
+        if verbose > 2:
+            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_RAW)
+        elif verbose >= 1:
+            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_DEBUG)
+
+
+def get_capabilities(type, object):
+    capabilities = []
+    for k in libratbag.__dict__.keys():
+            if k.startswith("RATBAG_{}_CAP_".format(type.upper())) and "CAP_NONE" not in k:
+                cap = getattr(libratbag, k)
+                func = getattr(libratbag, "ratbag_{}_has_capability".format(type.lower()))
+                if func(object, cap):
+                    capabilities.append(cap)
+    return capabilities
+
+
+class RatbagdDevice(metaclass=MetaRatbag):
+    """Represents a ratbagd device."""
+
+    _PREFIX = "RATBAG_DEVICE_"
+
+    def __init__(self, ratbag, path):
+        self._path = path
+        self._ratbag = ratbag
+        self._device = libratbag.ratbag_cmd_open_device(ratbag, path)
+        if self._device is None:
+            raise RatbagErrorDevice("device not compatible")
+
+        self._capabilities = get_capabilities("device", self._device)
+
+        self._profiles = [RatbagdProfile(self._device, i) for i in range(libratbag.ratbag_device_get_num_profiles(self._device))]
+
+    @property
+    def id(self):
+        """The unique identifier of this device."""
+        return self._path
+
+    @property
+    def capabilities(self):
+        """The capabilities of this device as an array. Capabilities not
+        present on the device are not in the list. Thus use e.g.
+
+        if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.capabilities:
+            do something
+        """
+        return self._capabilities
+
+    @property
+    def name(self):
+        """The device name, usually provided by the kernel."""
+        return libratbag.ratbag_device_get_name(self._device)
+
+    @property
+    def profiles(self):
+        """A list of RatbagdProfile objects provided by this device."""
+        return self._profiles
+
+    @property
+    def active_profile(self):
+        """The currently active profile. This is a non-DBus property computed
+        over the cached list of profiles. In the unlikely case that your device
+        driver is misconfigured and there is no active profile, this returns
+        the first profile."""
+        for profile in self._profiles:
+            if profile.is_active:
+                return profile
+        print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
+        return self._profiles[0]
+
+    def get_svg(self, theme):
+        """Gets the full path to the SVG for the given theme, or the empty
+        string if none is available.
+
+        The theme must be one of org.freedesktop.ratbag1.Manager.Themes. The
+        theme 'default' is guaranteed to be available.
+
+        @param theme The theme from which to retrieve the SVG, as str
+        """
+        return os.path.join(theme, libratbag.ratbag_device_get_svg_name(self._device))
+
+    def commit(self, callback=None):
+        """Commits all changes made to the device.
+
+        This is an async call to DBus and this method does not return
+        anything. Any success or failure code is reported to the callback
+        provided when ratbagd finishes writing to the device. Note that upon
+        failure, the device is automatically resynchronized by ratbagd and no
+        further interaction is required by the client; clients can thus treat a
+        commit as being always successful.
+
+        @param callback The function to call with the result of the commit, as
+                        a function that takes the return value of the Commit
+                        method.
+        """
+        r = libratbag.ratbag_device_commit(self._device)
+        if callback is not None:
+            callback(r)
+
+
+class RatbagdProfile(metaclass=MetaRatbag):
+    """Represents a ratbagd profile."""
+
+    _PREFIX = "RATBAG_PROFILE_"
+
+    def __init__(self, device, id):
+        self._id = id
+        self._profile = libratbag.ratbag_device_get_profile(device, id)
+        self._dirty = False
+
+        self._capabilities = get_capabilities("profile", self._profile)
+
+        self._resolutions = [RatbagdResolution(self._profile, i) for i in range(libratbag.ratbag_profile_get_num_resolutions(self._profile))]
+
+        self._buttons = [RatbagdButton(self._profile, i) for i in range(libratbag.ratbag_device_get_num_buttons(device))]
+
+        self._leds = [RatbagdLed(self._profile, i) for i in range(libratbag.ratbag_device_get_num_leds(device))]
+
+    @property
+    def capabilities(self):
+        """The capabilities of this profile as an array. Capabilities not
+        present on the profile are not in the list. Thus use e.g.
+
+        if RatbagdProfile.CAP_WRITABLE_NAME is in profile.capabilities:
+            do something
+        """
+        return self._capabilities
+
+    @property
+    def name(self):
+        """The name of the profile"""
+        return libratbag.ratbag_profile_get_name(self._profile)
+
+    @name.setter
+    def name(self, name):
+        """Set the name of this profile.
+
+        @param name The new name, as str"""
+        return libratbag.ratbag_profile_set_name(self._profile, name)
+
+    @property
+    def index(self):
+        """The index of this profile."""
+        return self._id
+
+    @property
+    def dirty(self):
+        """Whether this profile is dirty."""
+        return self._dirty
+
+    @property
+    def enabled(self):
+        """tells if the profile is enabled."""
+        return libratbag.ratbag_profile_is_enabled(self._profile)
+
+    @enabled.setter
+    def enabled(self, enabled):
+        """Enable/Disable this profile.
+
+        @param enabled The new state, as boolean"""
+        libratbag.ratbag_profile_set_enabled(self._profile, enabled)
+
+    @property
+    def resolutions(self):
+        """A list of RatbagdResolution objects with this profile's resolutions.
+        Note that the list of resolutions differs between profiles but the number
+        of resolutions is identical across profiles."""
+        return self._resolutions
+
+    @property
+    def active_resolution(self):
+        """The currently active resolution of this profile. This is a non-DBus
+        property computed over the cached list of resolutions. In the unlikely
+        case that your device driver is misconfigured and there is no active
+        resolution, this returns the first resolution."""
+        for resolution in self._resolutions:
+            if resolution.is_active:
+                return resolution
+        print("No active resolution. Please report this bug to the libratbag developers", file=sys.stderr)
+        return self._resolutions[0]
+
+    @property
+    def buttons(self):
+        """A list of RatbagdButton objects with this profile's button mappings.
+        Note that the list of buttons differs between profiles but the number
+        of buttons is identical across profiles."""
+        return self._buttons
+
+    @property
+    def leds(self):
+        """A list of RatbagdLed objects with this profile's leds. Note that the
+        list of leds differs between profiles but the number of leds is
+        identical across profiles."""
+        return self._leds
+
+    @property
+    def is_active(self):
+        """Returns True if the profile is currenly active, false otherwise."""
+        return libratbag.ratbag_profile_is_active(self._profile)
+
+    def set_active(self):
+        """Set this profile to be the active profile."""
+        libratbag.ratbag_profile_set_active(self._profile)
+
+
+class RatbagdResolution(metaclass=MetaRatbag):
+    """Represents a ratbagd resolution."""
+
+    _PREFIX = "RATBAG_RESOLUTION_"
+
+    def __init__(self, profile, id):
+        self._id = id
+        self._res = libratbag.ratbag_profile_get_resolution(profile, id)
+
+        self._capabilities = get_capabilities("resolution", self._res)
+
+    @property
+    def index(self):
+        """The index of this resolution."""
+        return self._id
+
+    @property
+    def capabilities(self):
+        """The capabilities of this resolution as a list. Capabilities not
+        present on the resolution are not in the list. Thus use e.g.
+
+        if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION is in resolution.capabilities:
+            do something
+        """
+        return self._capabilities
+
+    @property
+    def resolution(self):
+        """The tuple (xres, yres) with each resolution in DPI."""
+        dpi_y = dpi_x = libratbag.ratbag_resolution_get_dpi_x(self._res)
+        if libratbag.RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION in self._capabilities:
+            dpi_y = libratbag.ratbag_resolution_get_dpi_y(self._res)
+        return (dpi_x, dpi_y)
+
+    @resolution.setter
+    def resolution(self, res):
+        """Set the x- and y-resolution using the given (xres, yres) tuple.
+
+        @param res The new resolution, as (int, int)
+        """
+        if libratbag.RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION in self._capabilities:
+            libratbag.ratbag_resolution_set_dpi_xy(self._res, *res)
+        else:
+            libratbag.ratbag_resolution_set_dpi(self._res, res[0])
+
+    @property
+    def report_rate(self):
+        """The report rate in Hz."""
+        return libratbag.ratbag_resolution_get_report_rate(self._res)
+
+    @report_rate.setter
+    def report_rate(self, rate):
+        """Set the report rate in Hz.
+
+        @param rate The new report rate, as int
+        """
+        libratbag.ratbag_resolution_set_report_rate(self._res, rate)
+
+    @property
+    def is_active(self):
+        """True if this is the currently active resolution, False
+        otherwise"""
+        return libratbag.ratbag_resolution_is_active(self._res)
+
+    @property
+    def is_default(self):
+        """True if this is the currently default resolution, False
+        otherwise"""
+        return libratbag.ratbag_resolution_is_default(self._res)
+
+    def set_default(self):
+        """Set this resolution to be the default."""
+        return libratbag.ratbag_resolution_set_default(self._res)
+
+    def set_active(self):
+        """Set this resolution to be the active one."""
+        return libratbag.ratbag_resolution_set_active(self._res)
+
+
+class RatbagdButton(metaclass=MetaRatbag):
+    """Represents a ratbagd button."""
+
+    _PREFIX = "RATBAG_BUTTON_"
+
+    MACRO_KEY_PRESS = libratbag.RATBAG_MACRO_EVENT_KEY_PRESSED
+    MACRO_KEY_RELEASE = libratbag.RATBAG_MACRO_EVENT_KEY_RELEASED
+    MACRO_WAIT = libratbag.RATBAG_MACRO_EVENT_WAIT
+
+    """A table mapping a button's index to its usual function as defined by X
+    and the common desktop environments."""
+    BUTTON_DESCRIPTION = {
+        0: N_("Left mouse button click"),
+        1: N_("Right mouse button click"),
+        2: N_("Middle mouse button click"),
+        3: N_("Backward"),
+        4: N_("Forward"),
+    }
+
+    """A table mapping a special function to its human-readable description."""
+    SPECIAL_DESCRIPTION = {}
+
+    @classmethod
+    def __late_init__(cls):
+        cls.SPECIAL_DESCRIPTION = {
+            cls.ACTION_SPECIAL_UNKNOWN: N_("Unknown"),
+            cls.ACTION_SPECIAL_DOUBLECLICK: N_("Doubleclick"),
+            cls.ACTION_SPECIAL_WHEEL_LEFT: N_("Wheel Left"),
+            cls.ACTION_SPECIAL_WHEEL_RIGHT: N_("Wheel Right"),
+            cls.ACTION_SPECIAL_WHEEL_UP: N_("Wheel Up"),
+            cls.ACTION_SPECIAL_WHEEL_DOWN: N_("Wheel Down"),
+            cls.ACTION_SPECIAL_RATCHET_MODE_SWITCH: N_("Ratchet Mode"),
+            cls.ACTION_SPECIAL_RESOLUTION_CYCLE_UP: N_("Cycle Resolution Up"),
+            cls.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN: N_("Cycle Resolution Down"),
+            cls.ACTION_SPECIAL_RESOLUTION_UP: N_("Resolution Up"),
+            cls.ACTION_SPECIAL_RESOLUTION_DOWN: N_("Resolution Down"),
+            cls.ACTION_SPECIAL_RESOLUTION_ALTERNATE: N_("Resolution Switch"),
+            cls.ACTION_SPECIAL_RESOLUTION_DEFAULT: N_("Default Resolution"),
+            cls.ACTION_SPECIAL_PROFILE_CYCLE_UP: N_("Cycle Profile Up"),
+            cls.ACTION_SPECIAL_PROFILE_CYCLE_DOWN: N_("Cycle Profile Down"),
+            cls.ACTION_SPECIAL_PROFILE_UP: N_("Profile Up"),
+            cls.ACTION_SPECIAL_PROFILE_DOWN: N_("Profile Down"),
+            cls.ACTION_SPECIAL_SECOND_MODE: N_("Second Mode"),
+            cls.ACTION_SPECIAL_BATTERY_LEVEL: N_("Battery Level"),
+        }
+
+    def __init__(self, profile, id):
+        self._id = id
+        self._button = libratbag.ratbag_profile_get_button(profile, id)
+        self._capabilities = get_capabilities("button", self._button)
+
+    @property
+    def index(self):
+        """The index of this button."""
+        return self._id
+
+    @property
+    def type(self):
+        """An enum describing this button's type."""
+        return libratbag.ratbag_button_get_type(self._button)
+
+    @property
+    def mapping(self):
+        """An integer of the current button mapping, if mapping to a button."""
+        return libratbag.ratbag_button_get_button(self._button)
+
+    @mapping.setter
+    def mapping(self, button):
+        """Set the button mapping to the given button.
+
+        @param button The button to map to, as int
+        """
+        libratbag.ratbag_button_set_button(self._button, button)
+
+    @property
+    def macro(self):
+        """A RatbagdMacro object representing the currently set macro."""
+        return RatbagdMacro.from_ratbag(libratbag.ratbag_button_get_macro(self._button))
+
+    @macro.setter
+    def macro(self, macro):
+        """Set the macro to the macro represented by the given RatbagdMacro
+        object.
+
+        @param macro A RatbagdMacro object representing the macro to apply to
+                     the button, as RatbagdMacro.
+        """
+        macro_object = libratbag.ratbag_button_macro_new("macro")
+        i = 0
+        for type, value in macro.keys:
+            libratbag.ratbag_button_macro_set_event(macro_object, i, type, value)
+            i += 1
+        libratbag.ratbag_button_set_macro(self._button, macro_object)
+        libratbag.ratbag_button_macro_unref(macro_object)
+
+    @property
+    def special(self):
+        """An enum describing the current special mapping, if mapped to special."""
+        return libratbag.ratbag_button_get_special(self._button)
+
+    @special.setter
+    def special(self, special):
+        """Set the button mapping to the given special entry.
+
+        @param special The special entry, as one of RatbagdButton.ACTION_SPECIAL_*
+        """
+        libratbag.ratbag_button_set_special(self._button, special)
+
+    @property
+    def action_type(self):
+        """An enum describing the action type of the button. One of
+        ACTION_TYPE_NONE, ACTION_TYPE_BUTTON, ACTION_TYPE_SPECIAL,
+        ACTION_TYPE_MACRO. This decides which
+        *Mapping property has a value.
+        """
+        return libratbag.ratbag_button_get_action_type(self._button)
+
+    @property
+    def action_types(self):
+        """An array of possible values for ActionType."""
+        return [t for t in (RatbagdButton.ACTION_TYPE_BUTTON, RatbagdButton.ACTION_TYPE_SPECIAL, RatbagdButton.ACTION_TYPE_MACRO)
+                if libratbag.ratbag_button_has_action_type(self._button, t)]
+
+    def disable(self):
+        """Disables this button."""
+        return libratbag.ratbag_button_disable(self._button)
+
+
+class RatbagdMacro(metaclass=MetaRatbag):
+    """Represents a button macro. Note that it uses keycodes as defined by
+    linux/input.h and not those used by X.Org or any other higher layer such as
+    Gdk."""
+
+    # All keys from ecodes.KEY have a KEY_ prefix. We strip it.
+    _PREFIX_LEN = len("KEY_")
+
+    # Both a key press and release.
+    _MACRO_KEY = 1000
+
+    _MACRO_DESCRIPTION = {
+        RatbagdButton.MACRO_KEY_PRESS: lambda key:
+            "↓{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+        RatbagdButton.MACRO_KEY_RELEASE: lambda key:
+            "↑{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+        RatbagdButton.MACRO_WAIT: lambda val:
+            "{}ms".format(val),
+        _MACRO_KEY: lambda key:
+            "↕{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+    }
+
+    def __init__(self):
+        self._macro = []
+
+    def __str__(self):
+        if not self._macro:
+            return "None"
+
+        keys = []
+        idx = 0
+        while idx < len(self._macro):
+            t, v = self._macro[idx]
+            try:
+                if t == RatbagdButton.MACRO_KEY_PRESS:
+                    # Check for a paired press/release event
+                    t2, v2 = self._macro[idx + 1]
+                    if t2 == RatbagdButton.MACRO_KEY_RELEASE and v == v2:
+                        t = self._MACRO_KEY
+                        idx += 1
+            except IndexError:
+                pass
+            keys.append(self._MACRO_DESCRIPTION[t](v))
+            idx += 1
+        return " ".join(keys)
+
+    @property
+    def keys(self):
+        """A list of (RatbagdButton.MACRO_*, value) tuples representing the
+        current macro."""
+        return self._macro
+
+    @staticmethod
+    def from_ratbag(macro_object):
+        """Instantiates a new RatbagdMacro instance from the given macro in
+        libratbag format.
+
+        @param macro The macro in libratbag format, as
+                     [(RatbagdButton.MACRO_*, value)].
+        """
+        ratbagd_macro = RatbagdMacro()
+
+        for i in range(libratbag.ratbag_button_macro_get_num_events(macro_object)):
+            type = libratbag.ratbag_button_macro_get_event_type(macro_object, i)
+            value = None
+            if type == RatbagdButton.MACRO_WAIT:
+                value = libratbag.ratbag_button_macro_get_event_timeout(macro_object, i)
+            else:
+                value = libratbag.ratbag_button_macro_get_event_key(macro_object, i)
+            ratbagd_macro.append(type, value)
+        return ratbagd_macro
+
+    def accept(self):
+        """Applies the currently cached macro."""
+        self.emit("macro-set")
+
+    def append(self, type, value):
+        """Appends the given event to the current macro.
+
+        @param type The type of event, as one of RatbagdButton.MACRO_*.
+        @param value If the type denotes a key event, the X.Org or Gdk keycode
+                     of the event, as int. Otherwise, the value of the timeout
+                     in milliseconds, as int.
+        """
+        # Only append if the entry isn't identical to the last one, as we cannot
+        # e.g. have two identical key presses in a row.
+        if len(self._macro) == 0 or (type, value) != self._macro[-1]:
+            self._macro.append((type, value))
+            self.notify("keys")
+
+
+class RatbagdLed(metaclass=MetaRatbag):
+    """Represents a ratbagd led."""
+
+    _PREFIX = "RATBAG_LED_"
+
+    MODE_OFF = libratbag.RATBAG_LED_OFF
+    MODE_ON = libratbag.RATBAG_LED_ON
+    MODE_CYCLE = libratbag.RATBAG_LED_CYCLE
+    MODE_BREATHING = libratbag.RATBAG_LED_BREATHING
+
+    LED_DESCRIPTION = {
+        # Translators: the LED is off.
+        MODE_OFF: N_("Off"),
+        # Translators: the LED has a single, solid color.
+        MODE_ON: N_("Solid"),
+        # Translators: the LED is cycling between red, green and blue.
+        MODE_CYCLE: N_("Cycle"),
+        # Translators: the LED's is pulsating a single color on different
+        # brightnesses.
+        MODE_BREATHING: N_("Breathing"),
+    }
+
+    def __init__(self, profile, id):
+        self._id = id
+        self._led = libratbag.ratbag_profile_get_led(profile, id)
+        self._capabilities = get_capabilities("led", self._led)
+
+    @property
+    def index(self):
+        """The index of this led."""
+        return self._id
+
+    @property
+    def mode(self):
+        """This led's mode, one of MODE_OFF, MODE_ON, MODE_CYCLE and
+        MODE_BREATHING."""
+        return libratbag.ratbag_led_get_mode(self._led)
+
+    @mode.setter
+    def mode(self, mode):
+        """Set the led's mode to the given mode.
+
+        @param mode The new mode, as one of MODE_OFF, MODE_ON, MODE_CYCLE and
+                    MODE_BREATHING.
+        """
+        libratbag.ratbag_led_set_mode(self._led, mode)
+
+    @property
+    def type(self):
+        """An enum describing this led's type, one of RatbagdLed.TYPE_UNKNOWN,
+        RatbagdLed.TYPE_LOGO or RatbagdLed.TYPE_SIDE."""
+        return libratbag.ratbag_led_get_type(self._led)
+
+    @property
+    def color(self):
+        """An integer triple of the current LED color."""
+        c = libratbag.ratbag_led_get_color(self._led)
+        return (c.red, c.green, c.blue)
+
+    @color.setter
+    def color(self, color):
+        """Set the led color to the given color.
+
+        @param color An RGB color, as an integer triplet with values 0-255.
+        """
+        libratbag.ratbag_led_set_color(self._led, libratbag.ratbag_color(*color))
+
+    @property
+    def colordepth(self):
+        """An enum describing this led's colordepth, one of
+        RatbagdLed.COLORDEPTH_MONOCHROME, RatbagdLed.COLORDEPTH_RGB"""
+        return libratbag.ratbag_led_get_colordepth(self._led)
+
+    @property
+    def effect_rate(self):
+        """The LED's effect rate in Hz, values range from 100 to 20000."""
+        return libratbag.ratbag_led_get_effect_rate(self._led)
+
+    @effect_rate.setter
+    def effect_rate(self, effect_rate):
+        """Set the effect rate in Hz. Allowed values range from 100 to 20000.
+
+        @param effect_rate The new effect rate, as int
+        """
+        libratbag.ratbag_led_set_effect_rate(self._led, effect_rate)
+
+    @property
+    def brightness(self):
+        """The LED's brightness, values range from 0 to 255."""
+        return libratbag.ratbag_led_get_brightness(self._led)
+
+    @brightness.setter
+    def brightness(self, brightness):
+        """Set the brightness. Allowed values range from 0 to 255.
+
+        @param brightness The new brightness, as int
+        """
+        libratbag.ratbag_led_set_brightness(self._led, brightness)

@@ -540,3 +540,44 @@ configure_file(input : 'tools/toolbox.py',
 configure_file(output: 'config.h', install: false, configuration: config_h)
 
 subdir('doc')
+
+#### swig generated ####
+swig = find_program('swig')
+swig_gen = generator(
+    swig,
+    output: ['@BASENAME@.c'],
+    arguments: ['-python', '-py3', '-o', './@OUTPUT@',
+                '-outdir', '.',
+                '-I' + join_paths(meson.source_root(), 'src'),
+                '-I' + join_paths(meson.source_root(), 'tools'),
+                '@INPUT@'],
+)
+
+wrapper_deps = [
+    dependency('python3'),
+    dep_libratbag,
+    dep_libshared,
+]
+
+i_source = join_paths(meson.source_root(), 'src', 'libratbag.i')
+c_source = swig_gen.process(i_source)
+shared_library(
+   'libratbag',
+   c_source,
+   name_prefix: '_',
+   extra_files: [ i_source ] + src_libratbag ,
+   dependencies: deps_libratbag + wrapper_deps,
+   include_directories : include_directories('src', 'tools'),
+   install: false,
+)
+
+
+custom_target('ratbag-command.py',
+  output : 'ratbag-command.py',
+  input : ['tools/ratbagctl.in', 'tools/ratbagc.py'],
+  build_by_default : true,
+  command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
+				'@INPUT@',
+				'--output', '@OUTPUT@',
+				'--version', meson.project_version()],
+  install: false)
