@@ -564,6 +564,8 @@ def setUpModule():
 
     ratbagd_process = toolbox.start_ratbagd()
 
+    assert ratbagd_process is not None
+
     ratbagd = toolbox.open_ratbagd(ratbagd_process)
     assert ratbagd is not None
 
