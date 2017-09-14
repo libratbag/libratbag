@@ -1478,9 +1478,10 @@ def get_parser():
     return RatbagParserRoot(parser_def)
 
 
-def open_ratbagd(ratbagd_process=None):
+def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
         r = Ratbagd()
+        r.verbose = verbose
     except RatbagdDBusUnavailable:
         print("Unable to connect to ratbagd over dbus")
         return None
@@ -1506,7 +1507,7 @@ def main(argv):
         parser.print_help()
         return
 
-    _r = open_ratbagd()
+    _r = open_ratbagd(verbose=cmd.verbose)
     if _r is not None:
         with _r as r:
             try:
