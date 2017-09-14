@@ -143,6 +143,26 @@ class Ratbagd(object):
                 self._devices[name] = dev
         self._devices_initialized = True
 
+    @property
+    def verbose(self):
+        v = libratbag.ratbag_log_get_priority(self._ratbag)
+        if v == libratbag.RATBAG_LOG_PRIORITY_RAW:
+            return 3
+        elif v == libratbag.RATBAG_LOG_PRIORITY_DEBUG:
+            # to match with setter action, we return 1 instead of 2
+            return 1
+        elif v == libratbag.RATBAG_LOG_PRIORITY_INFO:
+            return 1
+        elif v == libratbag.RATBAG_LOG_PRIORITY_ERROR:
+            return 0
+
+    @verbose.setter
+    def verbose(self, verbosity):
+        if verbosity > 2:
+            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_RAW)
+        elif verbosity >= 1:
+            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_DEBUG)
+
     def __enter__(self):
         return self
 
