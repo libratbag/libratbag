@@ -56,6 +56,13 @@ def main(argv):
 
         ratbagd = toolbox.open_ratbagd()
 
+        # if some old version of ratbagd is still running, ratbagd_process may
+        # have never started but our DBus bindings may succeed. Check for the
+        # return code here, this also gives ratbagd enough time to start and
+        # die. If we check immediately we may not have terminated yet.
+        ratbagd_process.poll()
+        assert ratbagd_process.returncode is None
+
         try:
             f = cmd.func
         except AttributeError:
