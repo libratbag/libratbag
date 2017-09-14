@@ -1510,15 +1510,16 @@ def main(argv):
         parser.print_help()
         return
 
-    r = open_ratbagd()
-    if r is not None:
-        try:
-            f = cmd.func
-        except AttributeError:
-            parser.print_help()
-            return
-        else:
-            f(r, cmd)
+    _r = open_ratbagd()
+    if _r is not None:
+        with _r as r:
+            try:
+                f = cmd.func
+            except AttributeError:
+                parser.print_help()
+                return
+            else:
+                f(r, cmd)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

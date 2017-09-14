@@ -281,6 +281,12 @@ class Ratbagd(_RatbagdDBus):
         available."""
         return self._get_dbus_property("Themes")
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
 
 class RatbagdDevice(_RatbagdDBus):
     """Represents a ratbagd device."""
