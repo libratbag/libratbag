@@ -495,7 +495,12 @@ hidpp20drv_read_resolution_dpi_2201(struct ratbag_device *device)
 		  drv_data->sensors[0].dpi_max);
 
 	drv_data->num_sensors = rc;
-	drv_data->num_resolutions = drv_data->num_sensors;
+
+	/* if 0x8100 has already been enumerated we already have the supported
+	 * number of resolutions and shouldn't overwrite it
+	 */
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		drv_data->num_resolutions = drv_data->num_sensors;
 
 	return 0;
 }
