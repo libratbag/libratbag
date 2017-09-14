@@ -623,6 +623,7 @@ class RatbagdButton(_RatbagdDBus):
     ACTION_TYPE_SPECIAL = 2
     ACTION_TYPE_MACRO = 4
 
+    ACTION_SPECIAL_INVALID = -1
     ACTION_SPECIAL_UNKNOWN = (1 << 30)
     ACTION_SPECIAL_DOUBLECLICK = (1 << 30) + 1
     ACTION_SPECIAL_WHEEL_LEFT = (1 << 30) + 2
@@ -684,6 +685,7 @@ class RatbagdButton(_RatbagdDBus):
 
     """A table mapping a special function to its human-readable description."""
     SPECIAL_DESCRIPTION = {
+        ACTION_SPECIAL_INVALID: N_("Invalid"),
         ACTION_SPECIAL_UNKNOWN: N_("Unknown"),
         ACTION_SPECIAL_DOUBLECLICK: N_("Doubleclick"),
         ACTION_SPECIAL_WHEEL_LEFT: N_("Wheel Left"),
