@@ -55,18 +55,19 @@ def main(argv):
         if ratbagd_process is None:
             sys.exit("Failed to start or connect to ratbagd")
 
-        ratbagd = toolbox.open_ratbagd()
-
-        try:
-            f = cmd.func
-        except AttributeError:
-            parser.print_help()
-            return
-        else:
-            f(ratbagd, cmd)
-            # give time for ratbagd to receive async requests before
-            # we try to terminate it
-            time.sleep(0.5)
+        _ratbagd = toolbox.open_ratbagd()
+        if _ratbagd is not None:
+            with _ratbagd as ratbagd:
+                try:
+                    f = cmd.func
+                except AttributeError:
+                    parser.print_help()
+                    return
+                else:
+                    f(ratbagd, cmd)
+                    # give time for ratbagd to receive async requests before
+                    # we try to terminate it
+                    time.sleep(0.5)
     finally:
         try:
             if cmd.keepalive:

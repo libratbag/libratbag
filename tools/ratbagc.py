@@ -136,6 +136,14 @@ class Ratbagd(object):
             except RatbagErrorDevice:
                 pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for d in self._devices:
+            d.__exit__()
+        libratbag.ratbag_unref(self._ratbag)
+
     @property
     def devices(self):
         """A list of RatbagdDevice objects supported by ratbagd."""
@@ -180,6 +188,11 @@ class RatbagdDevice(metaclass=MetaRatbag):
         self._capabilities = get_capabilities("device", self._device)
 
         self._profiles = [RatbagdProfile(self._device, i) for i in range(libratbag.ratbag_device_get_num_profiles(self._device))]
+
+    def __exit__(self):
+        for p in self._profiles:
+            p.__exit__()
+        libratbag.ratbag_device_unref(self._device)
 
     @property
     def id(self):
@@ -265,6 +278,15 @@ class RatbagdProfile(metaclass=MetaRatbag):
         self._buttons = [RatbagdButton(self._profile, i) for i in range(libratbag.ratbag_device_get_num_buttons(device))]
 
         self._leds = [RatbagdLed(self._profile, i) for i in range(libratbag.ratbag_device_get_num_leds(device))]
+
+    def __exit__(self):
+        for r in self._resolutions:
+            r.__exit__()
+        for b in self._buttons:
+            b.__exit__()
+        for l in self._leds:
+            l.__exit__()
+        libratbag.ratbag_profile_unref(self._profile)
 
     @property
     def capabilities(self):
@@ -363,6 +385,9 @@ class RatbagdResolution(metaclass=MetaRatbag):
         self._res = libratbag.ratbag_profile_get_resolution(profile, id)
 
         self._capabilities = get_capabilities("resolution", self._res)
+
+    def __exit__(self):
+        libratbag.ratbag_resolution_unref(self._res)
 
     @property
     def index(self):
@@ -482,6 +507,9 @@ class RatbagdButton(metaclass=MetaRatbag):
         self._id = id
         self._button = libratbag.ratbag_profile_get_button(profile, id)
         self._capabilities = get_capabilities("button", self._button)
+
+    def __exit__(self):
+        libratbag.ratbag_button_unref(self._button)
 
     @property
     def index(self):
@@ -677,6 +705,9 @@ class RatbagdLed(metaclass=MetaRatbag):
         self._id = id
         self._led = libratbag.ratbag_profile_get_led(profile, id)
         self._capabilities = get_capabilities("led", self._led)
+
+    def __exit__(self):
+        libratbag.ratbag_led_unref(self._led)
 
     @property
     def index(self):
