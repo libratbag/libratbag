@@ -1444,10 +1444,9 @@ def open_ratbagd(ratbagd_process=None):
     except RatbagdDBusUnavailable:
         print("Unable to connect to ratbagd over dbus")
         return None
-    else:
-        if not r.devices:
-            print("No devices available.")
-        return r
+
+    if not r.devices:
+        print("No devices available.")
 
     if ratbagd_process is not None:
         # if some old version of ratbagd is still running, ratbagd_process may
@@ -1456,6 +1455,8 @@ def open_ratbagd(ratbagd_process=None):
         # die. If we check immediately we may not have terminated yet.
         ratbagd_process.poll()
         assert ratbagd_process.returncode is None
+
+    return r
 
 
 def main(argv):
