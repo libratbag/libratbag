@@ -70,7 +70,32 @@ hidpp20_feature_get_name(uint16_t feature)
 		break;
 	}
 
+	return str;
+}
+
+const char*
+hidpp20_sw_led_control_get_mode_string(const enum hidpp20_led_sw_ctrl_led_mode mode)
+{
+	static char numeric[8];
+	const char* str;
+
+	switch (mode)
+	{
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_OFF);
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_ON);
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_BLINK);
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_RAMP_UP);
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_RAMP_DOWN);
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_BREATHING);
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_HEARTBEAT);
+	CASE_RETURN_STRING(HIDPP20_LED_MODE_TRAVEL);
+	default:
+		sprintf_safe(numeric, "%#4x", mode);
+		str = numeric;
+		break;
+	}
 #undef CASE_RETURN_STRING
+
 	return str;
 }
 
@@ -399,6 +424,277 @@ hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 
 	return msg.msg.parameters[2];
 }
+
+/* -------------------------------------------------------------------------- */
+/* 0x1300: Non-RGB led support                                                */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_LED_SW_CONTROL_GET_LED_COUNT 0x00
+#define CMD_LED_SW_CONTROL_GET_LED_INFO 0x10
+#define CMD_LED_SW_CONTROL_GET_SW_CTRL 0x20
+#define CMD_LED_SW_CONTROL_SET_SW_CTRL 0x30
+#define CMD_LED_SW_CONTROL_GET_LED_STATE 0x40
+#define CMD_LED_SW_CONTROL_SET_LED_STATE 0x50
+#define CMD_LED_SW_CONTROL_GET_NV_CONFIG 0x60
+
+static bool hidpp20_led_sw_control_check_state(uint16_t state)
+{
+	switch (state)
+	{
+	case HIDPP20_LED_MODE_ON:
+	case HIDPP20_LED_MODE_OFF:
+	case HIDPP20_LED_MODE_BLINK:
+	case HIDPP20_LED_MODE_TRAVEL:
+	case HIDPP20_LED_MODE_RAMP_UP:
+	case HIDPP20_LED_MODE_RAMP_DOWN:
+	case HIDPP20_LED_MODE_HEARTBEAT:
+	case HIDPP20_LED_MODE_BREATHING:
+		return true;
+	}
+
+	return false;
+}
+
+int hidpp20_led_sw_control_read_leds(struct hidpp20_device* device,
+		struct hidpp20_led_sw_ctrl_led_info** info_list)
+{
+	int rc;
+	struct hidpp20_led_sw_ctrl_led_info *i_list, *info;
+	unsigned i;
+	uint8_t num_infos;
+
+	rc = hidpp20_led_sw_control_get_led_count(device);
+
+	if (rc < 0)
+		return rc;
+
+	num_infos = rc;
+
+	if(rc == 0) {
+		*info_list = NULL;
+		return 0;
+	}
+
+	i_list = zalloc(rc * sizeof(struct hidpp20_led_sw_ctrl_led_info));
+
+	for (i = 0; i < num_infos; i++) {
+		info = &i_list[i];
+		info->index = i;
+
+		rc = hidpp20_led_sw_control_get_led_info(device, i, info);
+
+		if (rc != 0)
+			goto err;
+
+		hidpp_log_raw(&device->base, "non-color led %d: type: %d supports: %d\n",
+					  info->index,
+					  info->type,
+					  info->caps);
+	}
+
+	*info_list = i_list;
+	return num_infos;
+
+err:
+	free(i_list);
+	return rc;
+}
+
+int hidpp20_led_sw_control_get_led_count(struct hidpp20_device* device)
+{
+	union hidpp20_message msg = {
+		.msg = {
+			.report_id = REPORT_ID_LONG,
+			.address = CMD_LED_SW_CONTROL_GET_LED_COUNT,
+			.device_idx = device->index,
+		},
+	};
+
+	uint8_t feature_idx;
+
+	feature_idx = hidpp_root_get_feature_idx(device, HIDPP_PAGE_LED_SW_CONTROL);
+	if (feature_idx == 0) {
+		return -ENOTSUP;
+	}
+
+	msg.msg.sub_id = feature_idx;
+
+	if (hidpp20_request_command(device, &msg)) {
+		return -ENOTSUP;
+	}
+
+	return msg.msg.parameters[0];
+}
+
+int hidpp20_led_sw_control_get_led_info(struct hidpp20_device* device,
+		 uint8_t led_idx,
+		 struct hidpp20_led_sw_ctrl_led_info *info)
+{
+	union hidpp20_message msg = {
+		.msg = {
+			.report_id = REPORT_ID_LONG,
+			.address = CMD_LED_SW_CONTROL_GET_LED_INFO,
+			.device_idx = device->index,
+		},
+	};
+	struct hidpp20_led_sw_ctrl_led_info *params;
+	uint8_t feature_idx;
+
+	feature_idx = hidpp_root_get_feature_idx(device, HIDPP_PAGE_LED_SW_CONTROL);
+	if (feature_idx == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_idx;
+	msg.msg.parameters[0] = led_idx;
+
+	if (hidpp20_request_command(device, &msg))
+		// Only error possible is an invalid index, which means the led doesn't exist
+		return -ENOENT;
+
+	params = (struct hidpp20_led_sw_ctrl_led_info*) msg.msg.parameters;
+	params->type = hidpp_be_u16_to_cpu(params->type);
+	params->caps = hidpp_be_u16_to_cpu(params->caps);
+
+	*info = *params;
+
+	return 0;
+}
+
+bool hidpp20_led_sw_control_get_sw_ctrl(struct hidpp20_device* device)
+{
+    uint8_t feature_idx;
+	int rc;
+	union hidpp20_message msg = {
+		.msg = {
+			.report_id = REPORT_ID_SHORT,
+			.address = CMD_LED_SW_CONTROL_GET_SW_CTRL,
+			.device_idx = device->index,
+		},
+	};
+
+	feature_idx = hidpp_root_get_feature_idx(device, HIDPP_PAGE_LED_SW_CONTROL);
+
+	if (feature_idx == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_idx;
+
+	rc = hidpp20_request_command(device, &msg);
+
+	if (rc) {
+		return -ENOTSUP;
+	}
+
+	return msg.msg.parameters[0];
+}
+
+int hidpp20_led_sw_control_set_sw_ctrl(struct hidpp20_device* device, bool ctrl)
+{
+	uint8_t feature_idx;
+	union hidpp20_message msg = {
+		.msg = {
+			.report_id = REPORT_ID_SHORT,
+			.address = CMD_LED_SW_CONTROL_SET_SW_CTRL,
+			.device_idx = device->index,
+		},
+	};
+
+	feature_idx = hidpp_root_get_feature_idx(device, HIDPP_PAGE_LED_SW_CONTROL);
+
+	if (feature_idx == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_idx;
+	msg.msg.parameters[0] = ctrl;
+
+	if (hidpp20_request_command(device, &msg))
+		return -EINVAL;
+
+	return 0;
+}
+
+int hidpp20_led_sw_control_get_led_state(struct hidpp20_device* device,
+		 uint8_t led_idx,
+		 struct hidpp20_led_sw_ctrl_led_state *out)
+{
+	int rc;
+	uint8_t feature_idx;
+	union hidpp20_message msg = {
+		.msg = {
+			.report_id = REPORT_ID_LONG,
+			.address = CMD_LED_SW_CONTROL_GET_LED_STATE,
+			.device_idx = device->index,
+		}
+	};
+	struct hidpp20_led_sw_ctrl_led_state *state;
+
+	feature_idx = hidpp_root_get_feature_idx(device, HIDPP_PAGE_LED_SW_CONTROL);
+
+	if (feature_idx == 0) {
+		return -ENOTSUP;
+	}
+
+	msg.msg.sub_id = feature_idx;
+
+	msg.msg.parameters[0] = led_idx;
+
+	rc = hidpp20_request_command(device, &msg);
+
+	if (rc)
+		return -ENOENT;
+
+	state = (struct hidpp20_led_sw_ctrl_led_state*) msg.msg.parameters;
+
+	// This field has to be stored in little-endian
+	state->mode = state->mode;
+
+	if (state->mode == HIDPP20_LED_MODE_BREATHING) {
+		// Only parameters that is reported by these LEDs is brightness when breathing
+		state->breathing.brightness = hidpp_be_u16_to_cpu(state->breathing.brightness);
+	}
+
+	*out = *state;
+
+	return 0;
+}
+
+int hidpp20_led_sw_control_set_led_state(struct hidpp20_device* device,
+		const struct hidpp20_led_sw_ctrl_led_state *state)
+{
+	int rc;
+	uint8_t feature_idx;
+	union hidpp20_message msg = {
+		.msg = {
+			.report_id = REPORT_ID_LONG,
+			.address = CMD_LED_SW_CONTROL_SET_LED_STATE,
+			.device_idx = device->index,
+		}
+	};
+
+	feature_idx = hidpp_root_get_feature_idx(device, HIDPP_PAGE_LED_SW_CONTROL);
+
+	if (feature_idx == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_idx;
+
+	if (!hidpp20_led_sw_control_check_state(state->mode))
+		return -EINVAL;
+
+	msg.msg.parameters[0] = state->index;
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[1], state->mode);
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[3], state->blink.index);
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[5], state->blink.on_time);
+	hidpp_set_unaligned_be_u16(&msg.msg.parameters[7], state->blink.off_time);
+
+	rc = hidpp20_request_command(device, &msg);
+
+	if (rc)
+		return -EINVAL;
+
+	return 0;
+}
+
 
 /* -------------------------------------------------------------------------- */
 /* 0x1b00: KBD reprogrammable keys and mouse buttons                          */
