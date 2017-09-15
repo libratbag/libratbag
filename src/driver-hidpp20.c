@@ -54,6 +54,7 @@
 #define HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00		(1 << 4)
 #define HIDPP_CAP_COLOR_LED_EFFECTS_8070			(1 << 5)
 #define HIDPP_CAP_ONBOARD_PROFILES_8100			(1 << 6)
+#define HIDPP_CAP_LED_SW_CONTROL            (1 << 7)
 
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
@@ -63,7 +64,7 @@ struct hidpp20drv_data {
 	unsigned num_controls;
 	struct hidpp20_control_id *controls;
 	struct hidpp20_profiles *profiles;
-	struct hidpp20_color_led_zone_info *led_infos;
+	union hidpp20_generic_led_zone_info led_infos;
 
 	unsigned int num_profiles;
 	unsigned int num_resolutions;
@@ -257,7 +258,7 @@ hidpp20drv_read_led(struct ratbag_led *led)
 	if (!(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070))
 		return;
 
-	led_info = &drv_data->led_infos[led->index];
+	led_info = &drv_data->led_infos.color_leds[led->index];
 	profile = &drv_data->profiles->profiles[led->profile->index];
 	h_led = &profile->leds[led->index];
 
@@ -677,11 +678,11 @@ hidpp20drv_read_color_leds(struct ratbag_device *device)
 	if (!(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070))
 		return 0;
 
-	free(drv_data->led_infos);
-	drv_data->led_infos = NULL;
+	free(drv_data->led_infos.color_leds);
+	drv_data->led_infos.color_leds = NULL;
 	drv_data->num_leds = 0;
 
-	rc = hidpp20_color_led_effects_get_zone_infos(drv_data->dev, &drv_data->led_infos);
+	rc = hidpp20_color_led_effects_get_zone_infos(drv_data->dev, &drv_data->led_infos.color_leds);
 
 	if (rc > 0) {
 		drv_data->num_leds = rc;
@@ -999,7 +1000,7 @@ hidpp20drv_remove(struct ratbag_device *device)
 
 	if (drv_data->profiles)
 		hidpp20_onboard_profiles_destroy(drv_data->profiles);
-	free(drv_data->led_infos);
+	free(drv_data->led_infos.color_leds);
 	free(drv_data->controls);
 	free(drv_data->sensors);
 	if (drv_data->dev)

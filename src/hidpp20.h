@@ -127,6 +127,130 @@ int hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 					   uint16_t *next_level);
 
 /* -------------------------------------------------------------------------- */
+/* 0x1300: LED software control                                               */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_LED_SW_CONTROL              0x1300
+
+enum hidpp20_led_sw_ctrl_led_type {
+	HIDPP20_LED_TYPE_BATTERY = 0x01,
+	HIDPP20_LED_TYPE_DPI,
+	HIDPP20_LED_TYPE_PROFILE,
+	HIDPP20_LED_TYPE_LOGO,
+	HIDPP20_LED_TYPE_COSMETIC
+};
+
+enum hidpp20_led_sw_ctrl_led_mode {
+	HIDPP20_LED_MODE_OFF = 0x01,
+	HIDPP20_LED_MODE_ON = 0x02,
+	HIDPP20_LED_MODE_BLINK = 0x04,
+	HIDPP20_LED_MODE_TRAVEL = 0x08,
+	HIDPP20_LED_MODE_RAMP_UP = 0x10,
+	HIDPP20_LED_MODE_RAMP_DOWN = 0x20,
+	HIDPP20_LED_MODE_HEARTBEAT = 0x40,
+	HIDPP20_LED_MODE_BREATHING = 0x80
+};
+
+#define HIDPP20_LED_SW_CONTROL_LED_INDEX_ALL 0xff
+
+struct hidpp20_led_sw_ctrl_led_info {
+	uint8_t index;
+	uint8_t type;
+	uint8_t physical_count;
+	uint16_t caps;
+	uint8_t nvconfig_caps;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_led_sw_ctrl_led_info) == 6, "Invalid size");
+
+struct hidpp20_led_sw_ctrl_led_state {
+	uint8_t index;
+	uint16_t mode;
+	union {
+		struct {
+			uint16_t brightness;
+			uint16_t period;
+			uint16_t timeout;
+		} breathing;
+		struct {
+			uint16_t unused;
+			uint16_t delay;
+		} traveling;
+		struct {
+			uint16_t index;
+			uint16_t on_time;
+			uint16_t off_time;
+		} blink;
+		struct {
+			/* Logical information to display on the LED
+			 * Meaning and value range depend on the LED
+			 */
+			uint16_t index;
+		} on;
+	};
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_led_sw_ctrl_led_state) == 9, "Invalid size");
+
+int hidpp20_led_sw_control_read_leds(struct hidpp20_device* device,
+		struct hidpp20_led_sw_ctrl_led_info** info_list);
+
+const char*
+hidpp20_sw_led_control_get_mode_string(const enum hidpp20_led_sw_ctrl_led_mode mode);
+
+int hidpp20_led_sw_control_read_leds(struct hidpp20_device* device,
+		struct hidpp20_led_sw_ctrl_led_info** info_list);
+
+/**
+ * Retrieves the number of non-RGB logical leds from the mouse
+ * @return the led count or a negative errno
+ */
+int hidpp20_led_sw_control_get_led_count(struct hidpp20_device* device);
+
+/**
+ * Retrieves the info for a given logical led
+ * @return 0 or a negative errno in case of error
+ */
+int hidpp20_led_sw_control_get_led_info(struct hidpp20_device* device,
+		uint8_t led_idx,
+		struct hidpp20_led_sw_ctrl_led_info* info);
+
+/**
+ * Reads all LEDs on the device for their current state
+ * @return 0 on success or a negative errno
+ */
+int hidpp20_led_sw_control_read_leds(struct hidpp20_device* device,
+	 struct hidpp20_led_sw_ctrl_led_info** info_list);
+
+/**
+ * Get the current sw control value
+ * @return 0 if the leds are sofware-controlled 1 if they are firmware controlled
+ */
+bool hidpp20_led_sw_control_get_sw_ctrl(struct hidpp20_device* device);
+
+/**
+ * Sets who controls the LEDs
+ * ctrl = 0, the software controls the LEDs
+ * ctrl = 1, the firmware controls the LEDs
+ * @return 0 on success or a negative errno
+ */
+int hidpp20_led_sw_control_set_sw_ctrl(struct hidpp20_device* device, bool ctrl);
+
+/**
+ * Gets the state of a LED
+ * @return 0 on success or a negative errno
+ */
+int hidpp20_led_sw_control_get_led_state(struct hidpp20_device* device,
+	 uint8_t led_idx,
+	 struct hidpp20_led_sw_ctrl_led_state* state);
+
+/**
+ * Sets the state of a LED
+ * The LED index should be passed in the state structure
+ * @return 0 on success or a negative errno
+ */
+int hidpp20_led_sw_control_set_led_state(struct hidpp20_device* device,
+	 const struct hidpp20_led_sw_ctrl_led_state* state);
+
+/* -------------------------------------------------------------------------- */
 /* 0x1b00: KBD reprogrammable keys and mouse buttons                          */
 /* -------------------------------------------------------------------------- */
 
@@ -258,7 +382,6 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 
 #define HIDPP_PAGE_COLOR_LED_EFFECTS			0x8070
 
-
 struct hidpp20_color_led_info;
 
 struct hidpp20_color_led_zone_info;
@@ -362,6 +485,14 @@ struct hidpp20_color_led_info {
 } __attribute__((packed));
 _Static_assert(sizeof(struct hidpp20_color_led_info) == 5, "Invalid size");
 
+struct hidpp20_non_color_led_zone_info {
+	uint8_t index;
+	uint8_t type;
+	uint16_t capabilities;
+	uint8_t nv_config;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_non_color_led_zone_info) == 5, "Invalid size");
+
 struct hidpp20_color_led_zone_info {
 	uint8_t index;
 	uint16_t location;
@@ -369,6 +500,11 @@ struct hidpp20_color_led_zone_info {
 	uint8_t persistency_caps;
 } __attribute__((packed));
 _Static_assert(sizeof(struct hidpp20_color_led_zone_info) == 5, "Invalid size");
+
+union hidpp20_generic_led_zone_info {
+	struct hidpp20_led_sw_ctrl_led_info* leds;
+	struct hidpp20_color_led_zone_info* color_leds;
+};
 
 struct hidpp20_color {
 	uint8_t red;
@@ -610,5 +746,3 @@ hidpp20_onboard_profiles_allocate_sector(struct hidpp20_profiles *profiles)
 /* -------------------------------------------------------------------------- */
 
 #define HIDPP_PAGE_MOUSE_BUTTON_SPY			0x8110
-
-
