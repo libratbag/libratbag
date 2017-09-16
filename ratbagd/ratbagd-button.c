@@ -242,8 +242,11 @@ static int ratbagd_button_set_macro(sd_bus *bus,
 	macro = ratbag_button_macro_new("macro");
 	while ((r = sd_bus_message_read(m, "(uu)", &type, &value)) > 0) {
 		r = ratbag_button_macro_set_event(macro, idx++, type, value);
-		if (r < 0)
-			return r;
+		if (r < 0) {
+			r = ratbagd_device_resync(button->device, bus);
+			if (r < 0)
+				return r;
+		}
 	}
 	if (r < 0)
 		return r;
@@ -253,8 +256,11 @@ static int ratbagd_button_set_macro(sd_bus *bus,
 		return r;
 
 	r = ratbag_button_set_macro(button->lib_button, macro);
-	if (r < 0)
-		return r;
+	if (r < 0) {
+		r = ratbagd_device_resync(button->device, bus);
+		if (r < 0)
+			return r;
+	}
 
 	if (r == 0) {
 		sd_bus *bus = sd_bus_message_get_bus(m);
@@ -271,7 +277,7 @@ static int ratbagd_button_set_macro(sd_bus *bus,
 					       NULL);
 	}
 
-	return r;
+	return 0;
 }
 
 static int ratbagd_button_get_action_type(sd_bus *bus,
