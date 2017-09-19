@@ -480,7 +480,13 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 				       HID_FEATURE_REPORT,
 				       HID_REQ_SET_REPORT);
 
-	return rc;
+	if (rc < (signed)sizeof(*report)) {
+		log_error(device->ratbag,
+			  "Error while writing profile: %d\n", rc);
+		return rc;
+	}
+
+	return 0;
 }
 
 static int
