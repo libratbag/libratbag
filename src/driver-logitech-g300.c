@@ -267,11 +267,10 @@ logitech_g300_set_active_profile(struct ratbag_device *device, unsigned int inde
 	return 0;
 }
 
-#if 0
 static int
 logitech_g300_set_current_resolution(struct ratbag_device *device, unsigned int index)
 {
-	uint8_t buf[] = {LOGITECH_G300_REPORT_ID_SET_ACTIVE, 0x40 + index*2, 0x00, 0x00};
+	uint8_t buf[] = {LOGITECH_G300_REPORT_ID_SET_ACTIVE, 0x40 | (index << 1), 0x00, 0x00};
 	int ret;
 
 	if (index >= LOGITECH_G300_NUM_DPI)
@@ -282,7 +281,6 @@ logitech_g300_set_current_resolution(struct ratbag_device *device, unsigned int 
 
 	return ret == sizeof(buf) ? 0 : ret;
 }
-#endif
 
 static void
 logitech_g300_read_profile(struct ratbag_profile *profile, unsigned int index)
@@ -452,6 +450,9 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 
 		res->dpi = resolution->dpi_x / 250;
 		res->is_default = resolution->is_default;
+
+		if (profile->is_active && resolution->is_active)
+			logitech_g300_set_current_resolution(device, i);
 	}
 
 	list_for_each(button, &profile->buttons, link) {
