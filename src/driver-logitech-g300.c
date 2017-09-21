@@ -37,6 +37,8 @@
 #define LOGITECH_G300_BUTTON_MAX			8
 #define LOGITECH_G300_NUM_DPI				4
 #define LOGITECH_G300_NUM_LED				0
+#define LOGITECH_G300_DPI_MIN				250
+#define LOGITECH_G300_DPI_MAX				2500
 
 #define LOGITECH_G300_REPORT_ID_GET_ACTIVE		0xF0
 #define LOGITECH_G300_REPORT_ID_SET_ACTIVE		0xF0
@@ -329,6 +331,10 @@ logitech_g300_read_profile(struct ratbag_profile *profile, unsigned int index)
 		resolution->hz = hz;
 		resolution->is_default = res->is_default;
 		resolution->is_active = res->is_default;
+
+		ratbag_resolution_set_range(resolution,
+					    LOGITECH_G300_DPI_MIN,
+					    LOGITECH_G300_DPI_MAX);
 	}
 }
 
