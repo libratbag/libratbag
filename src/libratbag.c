@@ -599,6 +599,7 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 	led->refcount = 0;
 	led->profile = profile;
 	led->index = index;
+	led->colordepth = RATBAG_LED_COLORDEPTH_RGB;
 
 	list_insert(&profile->leds, &led->link);
 
@@ -1483,6 +1484,16 @@ ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color)
 	led->dirty = true;
 	led->profile->dirty = true;
 	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_led_colordepth
+ratbag_led_get_colordepth(struct ratbag_led *led)
+{
+	if (!ratbag_device_has_capability(led->profile->device,
+					  RATBAG_DEVICE_CAP_LED))
+		return RATBAG_ERROR_CAPABILITY;
+
+	return led->colordepth;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code

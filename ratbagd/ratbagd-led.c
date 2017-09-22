@@ -37,6 +37,7 @@ struct ratbagd_led {
 	struct ratbag_led *lib_led;
 	unsigned int index;
 	char *path;
+	enum ratbag_led_colordepth colordepth;
 };
 
 static int ratbagd_led_get_mode(sd_bus *bus,
@@ -261,6 +262,7 @@ const sd_bus_vtable ratbagd_led_vtable[] = {
 	SD_BUS_WRITABLE_PROPERTY("Color", "(uuu)",
 				 ratbagd_led_get_color, ratbagd_led_set_color, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("ColorDepth", "u", NULL, offsetof(struct ratbagd_led, colordepth), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("EffectRate", "u",
 				 ratbagd_led_get_effect_rate, ratbagd_led_set_effect_rate, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
@@ -287,6 +289,7 @@ int ratbagd_led_new(struct ratbagd_led **out,
 	led = zalloc(sizeof(*led));
 	led->lib_led = lib_led;
 	led->index = index;
+	led->colordepth = ratbag_led_get_colordepth(lib_led);
 
 	sprintf(profile_buffer, "p%u", ratbagd_profile_get_index(profile));
 	sprintf(led_buffer, "l%u", index);
