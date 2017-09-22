@@ -1530,10 +1530,13 @@ enum ratbag_led_colordepth {
 	 */
 	RATBAG_LED_COLORDEPTH_MONOCHROME = 400,
 	/**
-	 * The device supports RBG colors of an unspecified depth,
-	 * but with at least 8 bits per color.
+	 * The device supports RBG color with 8 bits per color.
 	 */
-	RATBAG_LED_COLORDEPTH_RGB,
+	RATBAG_LED_COLORDEPTH_RGB_888,
+	/**
+	 * The device supports RBG colors with 1 bit per color.
+	 */
+	RATBAG_LED_COLORDEPTH_RGB_111,
 };
 
 /**

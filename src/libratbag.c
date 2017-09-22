@@ -599,7 +599,7 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 	led->refcount = 0;
 	led->profile = profile;
 	led->index = index;
-	led->colordepth = RATBAG_LED_COLORDEPTH_RGB;
+	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 
 	list_insert(&profile->leds, &led->link);
 
