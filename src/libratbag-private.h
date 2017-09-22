@@ -267,6 +267,7 @@ struct ratbag_led {
 	enum ratbag_led_type type;
 	enum ratbag_led_mode mode;
 	struct ratbag_color color;
+	enum ratbag_led_colordepth colordepth;
 	unsigned int hz;              /**< rate of action in hz */
 	unsigned int brightness;      /**< brightness of the LED */
 	bool dirty;

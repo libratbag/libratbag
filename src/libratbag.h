@@ -1510,6 +1510,11 @@ ratbag_led_get_mode(struct ratbag_led *led);
  *
  * This function returns the led color.
  *
+ * If any color scaling applies because of the device's color depth
+ * this is not reflected in the returned value. In other words,
+ * the returned value always matches the most recent value provided
+ * to ratbag_led_set_color().
+ *
  * @param led A previously initialized ratbag LED
  * @return The LED color in @ref ratbag_led_mode
  *
@@ -1517,6 +1522,33 @@ ratbag_led_get_mode(struct ratbag_led *led);
  */
 struct ratbag_color
 ratbag_led_get_color(struct ratbag_led *led);
+
+enum ratbag_led_colordepth {
+	/**
+	 * The device only supports a single color.
+	 * All color components should be set to 255.
+	 */
+	RATBAG_LED_COLORDEPTH_MONOCHROME = 400,
+	/**
+	 * The device supports RBG colors of an unspecified depth,
+	 * but with at least 8 bits per color.
+	 */
+	RATBAG_LED_COLORDEPTH_RGB,
+};
+
+/**
+ * @ingroup led
+ *
+ * This function returns the color depth of this LED.
+ *
+ * @param led A previously initialized ratbag LED
+ * @return The bit depth of this LED
+ *
+ * @see ratbag_led_set_color
+ */
+enum ratbag_led_colordepth
+ratbag_led_get_colordepth(struct ratbag_led *led);
+
 /**
  * @ingroup led
  *
@@ -1561,6 +1593,12 @@ ratbag_led_set_mode(struct ratbag_led *led, enum ratbag_led_mode mode);
  *
  * If the LED's mode is @ref RATBAG_LED_ON or @ref RATBAG_LED_BREATHING
  * then this function sets the LED color, otherwise it has no effect.
+ *
+ * The color provided has to be within the allowed color range (see @ref
+ * ratbag_color). libratbag silently scales and/or clamps this range into
+ * the device's color depth. It is the caller's responsibility to set the
+ * colors in a non-ambiguous way for the device's bit depth. See @ref
+ * ratbag_led_colordepth for more details.
  *
  * @param led A previously initialized ratbag LED
  * @param color A LED color.

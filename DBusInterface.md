@@ -297,6 +297,11 @@ enum describing the LED type
 - type: `(uuu)`, read-write, mutable
 uint triplet (RGB) of the LED's color
 
+#### `ColorDepth`
+- type: `u`, read-only, constant
+
+The color depth of this LED as one of the constants in libratbag.h
+
 #### `EffectRate`
 - type: `u`, read-write, mutable
 

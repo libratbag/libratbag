@@ -889,6 +889,9 @@ class RatbagdLed(_RatbagdDBus):
     MODE_CYCLE = 2
     MODE_BREATHING = 3
 
+    COLORDEPTH_MONOCHROME = 400
+    COLORDEPTH_RGB = 401
+
     LED_DESCRIPTION = {
         # Translators: the LED is off.
         MODE_OFF: N_("Off"),
@@ -942,6 +945,12 @@ class RatbagdLed(_RatbagdDBus):
         @param color An RGB color, as an integer triplet with values 0-255.
         """
         self._set_dbus_property("Color", "(uuu)", color)
+
+    @GObject.Property
+    def colordepth(self):
+        """An enum describing this led's colordepth, one of
+        RatbagdLed.COLORDEPTH_MONOCHROME, RatbagdLed.COLORDEPTH_RGB"""
+        return self._get_dbus_property("ColorDepth")
 
     @GObject.Property
     def effect_rate(self):
