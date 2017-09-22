@@ -890,7 +890,8 @@ class RatbagdLed(_RatbagdDBus):
     MODE_BREATHING = 3
 
     COLORDEPTH_MONOCHROME = 400
-    COLORDEPTH_RGB = 401
+    COLORDEPTH_RGB_888 = 401
+    COLORDEPTH_RGB_111 = 402
 
     LED_DESCRIPTION = {
         # Translators: the LED is off.

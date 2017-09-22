@@ -281,7 +281,7 @@ hidpp20drv_read_led(struct ratbag_led *led)
 	led->color.blue = h_led->color.blue;
 	led->hz = h_led->period;  /* FIXME: should be ceil(1000.0 / h_led->period), but that would be very small */
 	led->brightness = h_led->brightness * 255 / 100;
-	led->colordepth = RATBAG_LED_COLORDEPTH_RGB;
+	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 }
 
 static int

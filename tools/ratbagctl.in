@@ -132,7 +132,8 @@ def print_led(d, p, l, level):
     }
     depths = {
         RatbagdLed.COLORDEPTH_MONOCHROME: "monochrome",
-        RatbagdLed.COLORDEPTH_RGB: "rgb",
+        RatbagdLed.COLORDEPTH_RGB_888: "rgb",
+        RatbagdLed.COLORDEPTH_RGB_111: "rgb111",
     }
     if l.mode == RatbagdLed.MODE_OFF:
         print(" " * level + "LED: {} type: {}, depth: {}, mode: {}".format(l.index,
