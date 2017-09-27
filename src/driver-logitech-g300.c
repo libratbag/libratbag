@@ -36,7 +36,7 @@
 #define LOGITECH_G300_PROFILE_MAX			2
 #define LOGITECH_G300_BUTTON_MAX			8
 #define LOGITECH_G300_NUM_DPI				4
-#define LOGITECH_G300_NUM_LED				0
+#define LOGITECH_G300_NUM_LED				1
 #define LOGITECH_G300_DPI_MIN				250
 #define LOGITECH_G300_DPI_MAX				2500
 
@@ -63,10 +63,13 @@ struct logitech_g300_button {
 
 struct logitech_g300_profile_report {
 	uint8_t id; /* F3, F4, F5 */
-	uint8_t led; /* 00=off, 01=red, 02=green, 03=yellow, 04=blue, 05=pink, 06=turquoise, 07=white */
+	uint8_t led_red :1;
+	uint8_t led_green :1;
+	uint8_t led_blue :1;
+	uint8_t unknown1 :5;
 	uint8_t frequency; /* 00=1000, 01=125, 02=250, 03=500 */
 	struct logitech_g300_resolution dpi_levels[LOGITECH_G300_NUM_DPI];
-	uint8_t unknown; /* dpi index for shift, but something else too */
+	uint8_t unknown2; /* dpi index for shift, but something else too */
 	struct logitech_g300_button buttons[LOGITECH_G300_BUTTON_MAX + 1];
 } __attribute__((packed));
 
@@ -373,6 +376,25 @@ logitech_g300_read_button(struct ratbag_button *button)
 	}
 }
 
+static void
+logitech_g300_read_led(struct ratbag_led *led)
+{
+	struct ratbag_profile *profile = led->profile;
+	struct ratbag_device *device = profile->device;
+	struct logitech_g300_data *drv_data = device->drv_data;
+	struct logitech_g300_profile_data *pdata;
+	struct logitech_g300_profile_report *profile_report;
+
+	pdata = &drv_data->profile_data[profile->index];
+	profile_report = &pdata->report;
+
+	led->type = RATBAG_LED_TYPE_SIDE;
+	led->mode = RATBAG_LED_ON;
+	led->color.red = profile_report->led_red * 255;
+	led->color.green = profile_report->led_green * 255;
+	led->color.blue = profile_report->led_blue * 255;
+}
+
 static int
 logitech_g300_test_hidraw(struct ratbag_device *device)
 {
@@ -439,6 +461,8 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 	struct logitech_g300_profile_data *pdata;
 	struct logitech_g300_profile_report *report;
 	struct ratbag_button *button;
+	struct ratbag_led *led;
+
 	uint8_t *buf;
 	unsigned int hz, i;
 	int rc;
@@ -478,6 +502,17 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 				device, action->action.key.key);
 		}
 	}
+
+	list_for_each(led, &profile->leds, link) {
+		if (!led->dirty)
+			continue;
+
+		/* Clamp the 8 bit colors to 1 bit */
+		report->led_red = led->color.red > 127;
+		report->led_green = led->color.green > 127;
+		report->led_blue = led->color.blue > 127;
+	}
+
 
 	buf = (uint8_t*)report;
 
@@ -533,4 +568,5 @@ struct ratbag_driver logitech_g300_driver = {
 	.commit = logitech_g300_commit,
 	.set_active_profile = logitech_g300_set_active_profile,
 	.read_button = logitech_g300_read_button,
+	.read_led = logitech_g300_read_led,
 };
