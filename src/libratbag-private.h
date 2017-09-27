@@ -135,6 +135,10 @@ struct ratbag_driver {
 	 *
 	 * Return -ENODEV to ignore the device and let other drivers
 	 * probe the device. Any other error code will stop the probing.
+	 *
+	 * If a matching driver is found it should initialize itself
+	 * and synchronize all profiles with the current state on the device
+	 * in this callback.
 	 */
 	int (*probe)(struct ratbag_device *device);
 
