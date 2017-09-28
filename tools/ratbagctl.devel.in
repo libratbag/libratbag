@@ -42,6 +42,7 @@ def main(argv):
         argv = ["list"]
 
     cmd = None
+    ratbagd_process = None
     try:
         parser = toolbox.get_parser()
         parser.want_keepalive = True
