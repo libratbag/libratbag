@@ -410,40 +410,6 @@ hidpp10drv_write_profile(struct ratbag_profile *profile)
 }
 
 static int
-hidpp10drv_write_resolution_dpi(struct hidpp10_profile *p,
-				struct ratbag_resolution *resolution,
-				int dpi_x, int dpi_y)
-{
-	struct ratbag_profile *profile = resolution->profile;
-	struct ratbag_device *device = profile->device;
-	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
-	struct hidpp10_device *hidpp10 = drv_data->dev;
-	unsigned int index;
-	uint16_t cur_dpi_x, cur_dpi_y;
-	int rc;
-
-	/* store the current resolution */
-	rc = hidpp10_get_current_resolution(hidpp10, &cur_dpi_x, &cur_dpi_y);
-	if (rc)
-		return rc;
-
-	if (resolution->is_active) {
-		/* we need to switch to the new resolution */
-		cur_dpi_x = dpi_x;
-		cur_dpi_y = dpi_y;
-	}
-
-	/* retrieve which resolution is asked to be changed */
-	index = resolution - profile->resolution.modes;
-
-	p->dpi_modes[index].xres = dpi_x;
-	p->dpi_modes[index].yres = dpi_y;
-
-	/* restore the current setting */
-	return hidpp10_set_current_resolution(hidpp10, cur_dpi_x, cur_dpi_y);
-}
-
-static int
 hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device *dev)
 {
 	int rc, num_leds;
@@ -507,6 +473,7 @@ hidpp10drv_commit(struct ratbag_device *device)
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
 	struct ratbag_resolution *resolution;
+	struct ratbag_resolution *active_resolution = NULL;
 	struct hidpp10_profile p;
 	int rc;
 	unsigned int i;
@@ -524,12 +491,11 @@ hidpp10drv_commit(struct ratbag_device *device)
 		for (i = 0; i < profile->resolution.num_modes; i++) {
 			resolution = &profile->resolution.modes[i];
 
-			rc = hidpp10drv_write_resolution_dpi(&p,
-							     resolution,
-							     resolution->dpi_x,
-							     resolution->dpi_y);
-			if (rc)
-				return RATBAG_ERROR_DEVICE;
+			p.dpi_modes[i].xres = resolution->dpi_x;
+			p.dpi_modes[i].yres = resolution->dpi_y;
+
+			if (profile->is_active && resolution->is_active)
+				active_resolution = resolution;
 		}
 
 		list_for_each(button, &profile->buttons, link) {
@@ -547,6 +513,17 @@ hidpp10drv_commit(struct ratbag_device *device)
 			rc = hidpp10_set_profile(dev, profile->index, &p);
 			if (rc)
 				return RATBAG_ERROR_DEVICE;
+		}
+
+		/* Update the current resolution in case it changed */
+		if (active_resolution) {
+			rc = hidpp10_set_current_resolution(dev,
+						       active_resolution->dpi_x,
+						       active_resolution->dpi_y);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+
+			active_resolution = NULL;
 		}
 	}
 
