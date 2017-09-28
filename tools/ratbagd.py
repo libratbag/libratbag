@@ -880,11 +880,10 @@ class RatbagdMacro(GObject.Object):
 class RatbagdLed(_RatbagdDBus):
     """Represents a ratbagd led."""
 
-    TYPE_UNKNOWN = -1
-    TYPE_LOGO = 0
-    TYPE_SIDE = 1
-    TYPE_BATTERY = 2
-    TYPE_DPI = 3
+    TYPE_LOGO = 1
+    TYPE_SIDE = 2
+    TYPE_BATTERY = 3
+    TYPE_DPI = 4
 
     MODE_OFF = 0
     MODE_ON = 1
@@ -932,7 +931,7 @@ class RatbagdLed(_RatbagdDBus):
 
     @GObject.Property
     def type(self):
-        """An enum describing this led's type, one of RatbagdLed.TYPE_UNKNOWN,
+        """An enum describing this led's type,
         RatbagdLed.TYPE_LOGO or RatbagdLed.TYPE_SIDE."""
         return self._get_dbus_property("Type")
 

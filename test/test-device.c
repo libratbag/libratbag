@@ -62,6 +62,10 @@ const struct ratbag_test_device sane_device = {
 			{ .xres = 200, .yres = 300, .hz = 1000 },
 			{ .xres = 300, .yres = 400, .hz = 1000 },
 		},
+		.leds = {
+			{ .type = RATBAG_LED_TYPE_SIDE, },
+			{ .type = RATBAG_LED_TYPE_LOGO, },
+		},
 		.active = true,
 		.dflt = false,
 		},
@@ -85,13 +89,13 @@ const struct ratbag_test_device sane_device = {
 				.mode = RATBAG_LED_ON,
 				.color = { .red = 255, .green = 0,	.blue = 0 },
 				.hz = 1,
-				.brightness = 20
+				.brightness = 20,
 			},
 			{
 				.mode = RATBAG_LED_CYCLE,
 				.color = { .red = 255, .green = 255, .blue = 0 },
 				.hz = 3,
-				.brightness = 40
+				.brightness = 40,
 			}
 		},
 		.active = false,

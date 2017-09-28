@@ -32,6 +32,8 @@
 #include "libratbag-util.h"
 #include "libratbag-hidraw.h"
 
+#define RATBAG_LED_TYPE_UNKNOWN 0
+
 static inline void
 cleanup_device(struct ratbag_device **d)
 {
