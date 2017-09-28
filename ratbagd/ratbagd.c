@@ -33,6 +33,7 @@
 #include <libudev.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/resource.h>
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
 #include "ratbagd.h"
@@ -522,6 +523,12 @@ int main(int argc, char *argv[])
 {
 	struct ratbagd *ctx = NULL;
 	int r;
+
+#if DISABLE_COREDUMP
+	const struct rlimit corelimit = { 0, 0 };
+
+	setrlimit(RLIMIT_CORE, &corelimit);
+#endif
 
 	if (argc > 1) {
 		if (streq(argv[1], "--verbose=raw")) {
