@@ -126,7 +126,6 @@ def print_led(d, p, l, level):
         RatbagdLed.MODE_ON: "on",
     }
     types = {
-        RatbagdLed.TYPE_UNKNOWN: "unknown",
         RatbagdLed.TYPE_LOGO: "logo",
         RatbagdLed.TYPE_SIDE: "side",
     }

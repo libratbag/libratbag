@@ -75,19 +75,22 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 					.mode = RATBAG_LED_OFF,
 					.color = { .red = 255, .green = 0, .blue = 0 },
 					.hz = 1,
-					.brightness = 20
+					.brightness = 20,
+					.type = RATBAG_LED_TYPE_LOGO,
 				},
 				{
 					.mode = RATBAG_LED_ON,
 					.color = { .red = 255, .green = 0, .blue = 0 },
 					.hz = 1,
-					.brightness = 20
+					.brightness = 20,
+					.type = RATBAG_LED_TYPE_SIDE,
 				},
 				{
 					.mode = RATBAG_LED_CYCLE,
 					.color = { .red = 255, .green = 255, .blue = 0 },
 					.hz = 3,
-					.brightness = 40
+					.brightness = 40,
+					.type = RATBAG_LED_TYPE_SIDE,
 				}
 			},
 		},

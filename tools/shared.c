@@ -51,12 +51,9 @@ udev_device_from_path(struct udev *udev, const char *path)
 const char*
 led_type_to_str(enum ratbag_led_type type)
 {
-	const char *str = "UNKNOWN";
+	const char *str = NULL;
 
 	switch(type) {
-	case RATBAG_LED_TYPE_UNKNOWN:
-		str = "unknown";
-		break;
 	case RATBAG_LED_TYPE_LOGO:
 		str = "logo";
 		break;
@@ -68,6 +65,9 @@ led_type_to_str(enum ratbag_led_type type)
 		break;
 	case RATBAG_LED_TYPE_DPI:
 		str = "dpi";
+		break;
+	default:
+		assert(!"Invalid LED type");
 		break;
 	}
 

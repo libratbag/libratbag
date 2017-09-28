@@ -283,6 +283,28 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		goto out;
 	}
 
+	/* Require LED to be the same type in each profile */
+	for (i = 1; i < nprofiles; i++) {
+		_cleanup_profile_ struct ratbag_profile *p0 = ratbag_device_get_profile(device, 0);
+		_cleanup_profile_ struct ratbag_profile *p = ratbag_device_get_profile(device, i);
+		unsigned int nleds = ratbag_device_get_num_leds(device);
+
+		for (unsigned int j = 0; j < nleds; j++) {
+			_cleanup_led_ struct ratbag_led *p0_led = ratbag_profile_get_led(p0, j);
+			_cleanup_led_ struct ratbag_led *led = ratbag_profile_get_led(p, j);
+
+			if (p0_led->type != led->type) {
+				log_bug_libratbag(ratbag,
+						  "%s: mismatching LED types (profile %d led %d)\n",
+						  device->name,
+						  p->index,
+						  led->type);
+				goto out;
+			}
+		}
+
+	}
+
 	rc = true;
 
 out:
@@ -600,11 +622,16 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 	led->profile = profile;
 	led->index = index;
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+	led->type = RATBAG_LED_TYPE_UNKNOWN;
 
 	list_insert(&profile->leds, &led->link);
 
-	if (device->driver->read_led)
-		device->driver->read_led(led);
+	/* If you init a LED, you need to provide this function */
+	assert(device->driver->read_led);
+	device->driver->read_led(led);
+
+	/* The driver must fill this in correctly */
+	assert(led->type != RATBAG_LED_TYPE_UNKNOWN);
 
 	return led;
 }
