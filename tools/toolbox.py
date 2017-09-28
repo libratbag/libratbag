@@ -62,8 +62,7 @@ def start_ratbagd(verbosity=0):
     import time
 
     # first copy the policy for the ratbagd daemon to be allowed to run
-    shutil.copy(os.path.join('@MESON_BUILD_ROOT@',
-                DBUS_CONF_NAME),
+    shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME),
                 DBUS_CONF_DIR)
 
     # FIXME: kill any running ratbagd.devel
