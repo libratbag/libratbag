@@ -448,7 +448,8 @@ executable('ratbagd.devel',
 	   dependencies : deps_ratbagd,
 	   include_directories : include_directories('src'),
 	   install : false,
-	   c_args : '-DRATBAG_DBUS_INTERFACE="ratbag_devel1_@0@"'.format(ratbagd_sha),
+	   c_args : ['-DRATBAG_DBUS_INTERFACE="ratbag_devel1_@0@"'.format(ratbagd_sha),
+		     '-DDISABLE_COREDUMP=1'],
 )
 
 config_ratbagd_devel = configuration_data()
