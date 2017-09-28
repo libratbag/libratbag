@@ -102,12 +102,16 @@ def start_ratbagd(verbosity=0):
 
 
 def terminate_ratbagd(ratbagd):
+    if ratbagd is not None:
+        try:
+            ratbagd.terminate()
+            ratbagd.wait(5)
+        except subprocess.TimeoutExpired:
+            ratbagd.kill()
     try:
-        ratbagd.terminate()
-        ratbagd.wait(5)
-    except subprocess.TimeoutExpired:
-        ratbagd.kill()
-    os.unlink(DBUS_CONF_PATH)
+        os.unlink(DBUS_CONF_PATH)
+    except FileNotFoundError:
+        pass
 
 
 def sync_dbus():
