@@ -2109,12 +2109,24 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 			       uint16_t yres)
 {
 	unsigned idx = dev->index;
-	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
+	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, SET_REGISTER_REQ);
+	union hidpp10_message resolution_long = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
+	int res;
 
-	hidpp_set_unaligned_le_u16(&resolution.data[4], hidpp10_get_dpi_mapping(dev, xres));
-	hidpp_set_unaligned_le_u16(&resolution.data[6], hidpp10_get_dpi_mapping(dev, yres));
+	switch (dev->profile_type) {
+	case HIDPP10_PROFILE_G9:
+		resolution.data[4] = hidpp10_get_dpi_mapping(dev, xres);
+		res = hidpp10_request_command(dev, &resolution);
+		break;
+        default:
+		hidpp_set_unaligned_le_u16(&resolution_long.data[4], hidpp10_get_dpi_mapping(dev, xres));
+		hidpp_set_unaligned_le_u16(&resolution_long.data[6], hidpp10_get_dpi_mapping(dev, yres));
 
-	return hidpp10_request_command(dev, &resolution);
+		res = hidpp10_request_command(dev, &resolution_long);
+		break;
+        }
+
+	return res;
 }
 
 /* -------------------------------------------------------------------------- */
