@@ -189,23 +189,23 @@ class _RatbagdDBus(GObject.GObject):
     def _dbus_call_async(self, method, type, *value, callback):
         # The callback handler to unwrap the data
         def callback_handler(obj, result, user_callback):
-            res = obj.call_finish(result)
-            res = res.unpack()[0]  # Result is always a tuple
-            user_callback(res)
+            try:
+                res = obj.call_finish(result)
+                res = res.unpack()[0]  # Result is always a tuple
+                user_callback(res)
+            except GLib.Error as e:
+                # Unrecognized error code; print the message to stderr and raise
+                # the GLib.Error.
+                print(e.message, file=sys.stderr)
+                raise
 
         # Calls a method asynchronously on the bus, using the given method
         # name, type signature and values. The callback is invoked when the
         # method finishes
         val = GLib.Variant("({})".format(type), value)
-        try:
-            self._proxy.call(method, val,
-                             Gio.DBusCallFlags.NO_AUTO_START,
-                             500, None, callback_handler, callback)
-        except GLib.Error as e:
-            # Unrecognized error code; print the message to stderr and raise
-            # the GLib.Error.
-            print(e.message, file=sys.stderr)
-            raise
+        self._proxy.call(method, val,
+                         Gio.DBusCallFlags.NO_AUTO_START,
+                         500, None, callback_handler, callback)
 
     def _dbus_call(self, method, type, *value):
         # Calls a method synchronously on the bus, using the given method name,
