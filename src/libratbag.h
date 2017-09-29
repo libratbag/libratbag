@@ -23,10 +23,6 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -1951,6 +1947,3 @@ ratbag_led_ref(struct ratbag_led *led);
 struct ratbag_led *
 ratbag_led_unref(struct ratbag_led *led);
 
-#ifdef __cplusplus
-}
-#endif
