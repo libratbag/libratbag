@@ -124,6 +124,7 @@ pkgconfig.generate (
 
 #### libratbag.so ####
 src_libratbag = [
+	'src/libratbag-enums.h',
 	'src/libratbag.h',
 	'src/driver-etekcity.c',
 	'src/driver-hidpp20.c',

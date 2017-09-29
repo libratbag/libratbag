@@ -23,6 +23,8 @@ success instead of the internal return value because DBus does not like
 non-standard error values. Upon a ratbag error, the `Resync` signal is emitted
 on the device, indicating that clients should resync their values.
 
+Values listed as enums are defined in [libratbag-enums.h](https://github.com/libratbag/libratbag/blob/master/src/libratbag-enums.h)
+
 org.freedesktop.ratbag1.Manager
 ===============================
 
@@ -73,7 +75,7 @@ The device's name, suitable for presentation to the user.
 - type: `au`, read-only, constant
 
 The capabilities supported by this device. see `enum
-ratbag_device_capability` in libratbag.h for the list of permissible
+ratbag_device_capability` in libratbag-enums.h for the list of permissible
 capabilities.
 
 
@@ -312,7 +314,7 @@ uint triplet (RGB) of the LED's color
 #### `ColorDepth`
 - type: `u`, read-only, constant
 
-The color depth of this LED as one of the constants in libratbag.h
+The color depth of this LED as one of the constants in libratbag-enums.h
 
 #### `EffectRate`
 - type: `u`, read-write, mutable
