@@ -122,7 +122,7 @@ lur_device_disconnect(struct lur_device *dev)
 _EXPORT_ int
 lur_is_receiver(uint16_t vid, uint16_t pid)
 {
-	return (vid == USB_VENDOR_ID_LOGITECH && (pid == 0xc52b || pid == 0xc532));
+	return (vid == USB_VENDOR_ID_LOGITECH && (pid == 0xc52b || pid == 0xc532 || pid == 0xc539));
 }
 
 static bool

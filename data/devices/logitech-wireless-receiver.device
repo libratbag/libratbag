@@ -1,0 +1,11 @@
+# Logitech G403, G603, G703, G900 and G903 over wireless USB
+[Device]
+Name=Logitech G403, G603, G703, G900 and G903
+DeviceMatch=usb:046d:c539
+Driver=hidpp20
+# This is not used since the real svg name is discovered later
+Svg=logitech-g900.svg 
+
+[Driver/hidpp20]
+DeviceIndex=1
+IsWireless=true

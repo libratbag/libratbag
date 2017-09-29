@@ -164,7 +164,7 @@ def check_section_hidpp10(section):
 
 
 def check_section_hidpp20(section):
-    permitted = ['DeviceIndex']
+    permitted = ['DeviceIndex', 'IsWireless']
     for key in section.keys():
         assert(key in permitted)
 

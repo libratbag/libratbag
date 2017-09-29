@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 struct ratbag_device_data;
 
 struct ratbag_device_data *
@@ -42,6 +44,10 @@ const char *
 ratbag_device_data_get_name(const struct ratbag_device_data *data);
 const char *
 ratbag_device_data_get_svg(const struct ratbag_device_data *data);
+bool
+ratbag_device_data_hidpp20_is_wireless(const struct ratbag_device_data *data);
+void
+ratbag_device_data_hidpp20_set_svg(struct ratbag_device_data *data, char* svg);
 
 /* HID++ 1.0 */
 /**

@@ -141,7 +141,9 @@ src_libratbag = [
 	'src/libratbag-private.h',
 	'src/libratbag-test.c',
 	'src/libratbag-test.h',
-	'src/usb-ids.h'
+	'src/usb-ids.h',
+	'src/liblur.c',
+	'src/liblur.h',
 ]
 
 deps_libratbag = [
@@ -264,6 +266,7 @@ man_lur_command = configure_file (
 data_files = files(
 	'data/devices/etekcity-fixme.device',
 	'data/devices/gskill-MX-780.device',
+	'data/devices/logitech-wireless-receiver.device',
 	'data/devices/logitech-g300.device',
 	'data/devices/logitech-g303.device',
 	'data/devices/logitech-g403.device',

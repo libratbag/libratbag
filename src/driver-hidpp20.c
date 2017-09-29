@@ -40,8 +40,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "hidpp20.h"
+#include "liblur.h"
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
@@ -1161,6 +1163,89 @@ hidpp20drv_remove(struct ratbag_device *device)
 	free(drv_data);
 }
 
+static char*
+hidpp20drv_format_svg(const struct ratbag_device* dev)
+{
+	const char *fmt = "%s.svg";
+	char *name = asprintf_safe(fmt, dev->name);
+
+	for (char* p = name; *p; p++) {
+		if (*p == ' ')
+			*p = '-';
+		else
+			*p = tolower(*p);
+	}
+
+	return name;
+}
+
+static inline void
+lur_receiver_unrefp(struct lur_receiver **rec)
+{
+	if (*rec) {
+		lur_receiver_unref(*rec);
+	}
+	*rec = NULL;
+}
+#define _cleanup_lur_receiver_ _cleanup_(lur_receiver_unrefp)
+
+static inline void
+lur_cleanup_freepp(struct lur_device ***devices)
+{
+	if (*devices) {
+		lur_device_unref(*devices[0]);
+		free(*devices);
+	}
+}
+#define _cleanup_lur_devices_ _cleanup_(lur_cleanup_freepp)
+
+
+static int
+hidpp20drv_receiver_probe(struct ratbag_device *rdev, struct hidpp20_device *hdev)
+{
+	const char* fmt = "Logitech %s";
+	_cleanup_lur_receiver_ struct lur_receiver* receiver;
+	_cleanup_lur_devices_ struct lur_device **devices;
+	int rc;
+
+	rc = lur_receiver_new_from_hidraw(hdev->base.hidraw_fd, NULL, &receiver);
+	if (rc) {
+		hidpp_log_error(&hdev->base, "device isn't a unifying receiver. check your .device files\n");
+		return -EINVAL;
+	}
+
+	rc = lur_receiver_enumerate(receiver, &devices);
+	if (rc != 1) {
+		hidpp_log_error(&hdev->base, "check that your mouse is on and paired with the receiver!\n");
+		return -EINVAL;
+	}
+
+	if (lur_device_get_type(devices[0]) != LUR_DEVICE_TYPE_MOUSE) {
+		hidpp_log_error(&hdev->base, "paired device is not a mouse\n");
+		return -EINVAL;
+	}
+
+	rdev->ids.product = lur_device_get_product_id(devices[0]);
+
+	if (!rdev->ids.product) {
+		hidpp_log_error(&hdev->base, "unable to get mouse product id from receiver!\n");
+		return -EINVAL;
+	}
+
+	const char* name = lur_device_get_name(devices[0]);
+
+	if (!name) {
+		hidpp_log_error(&hdev->base, "unable to read mouse name from receiver\n");
+		return -EINVAL;
+	}
+
+	free(rdev->name);
+	rdev->name = asprintf_safe(fmt, name);
+	ratbag_device_data_hidpp20_set_svg(rdev->data, hidpp20drv_format_svg(rdev));
+
+	return 0;
+}
+
 static int
 hidpp20drv_probe(struct ratbag_device *device)
 {
@@ -1198,6 +1283,15 @@ hidpp20drv_probe(struct ratbag_device *device)
 	}
 
 	drv_data->dev = dev;
+
+	if (ratbag_device_data_hidpp20_is_wireless(device->data)) {
+		log_debug(device->ratbag, "device is using wireless receiver, extended id required\n");
+		rc = hidpp20drv_receiver_probe(device, dev);
+
+		if (rc) {
+			log_error(device->ratbag, "unable to identify precisely this device\n");
+		}
+	}
 
 	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), dev->proto_major, dev->proto_minor);
 
