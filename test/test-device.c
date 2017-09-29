@@ -811,10 +811,10 @@ START_TEST(device_leds)
 	p = ratbag_device_get_profile(d, 2);
 	ck_assert(p != NULL);
 
-	led_logo = ratbag_profile_get_led(p, RATBAG_LED_TYPE_LOGO);
-	assert_led_equals(led_logo, td.profiles[2].leds[RATBAG_LED_TYPE_LOGO]);
-	led_side = ratbag_profile_get_led(p, RATBAG_LED_TYPE_SIDE);
-	assert_led_equals(led_side, td.profiles[2].leds[RATBAG_LED_TYPE_SIDE]);
+	led_logo = ratbag_profile_get_led(p, 0);
+	assert_led_equals(led_logo, td.profiles[2].leds[0]);
+	led_side = ratbag_profile_get_led(p, 1);
+	assert_led_equals(led_side, td.profiles[2].leds[1]);
 
 	ratbag_led_unref(led_logo);
 	ratbag_led_unref(led_side);
@@ -853,14 +853,14 @@ START_TEST(device_leds_set)
 	p = ratbag_device_get_profile(d, 0);
 	ck_assert(p != NULL);
 
-	l = ratbag_profile_get_led(p, RATBAG_LED_TYPE_LOGO);
+	l = ratbag_profile_get_led(p, 0);
 
 	ratbag_led_set_mode(l, RATBAG_LED_BREATHING);
 	ratbag_led_set_color(l, c);
 	ratbag_led_set_effect_rate(l, 11);
 	ratbag_led_set_brightness(l, 22);
 
-	l = ratbag_profile_get_led(p, RATBAG_LED_TYPE_LOGO);
+	l = ratbag_profile_get_led(p, 0);
 	struct ratbag_test_led e_l = {
 		.mode = RATBAG_LED_BREATHING,
 		.color = {
