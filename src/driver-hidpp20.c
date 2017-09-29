@@ -997,7 +997,6 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 			return 0;
 
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
-		device->num_leds = drv_data->num_leds;
 		break;
 	}
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
