@@ -336,15 +336,11 @@ test_svg_files = find_program('data/gnome/check-svg.py')
 test('check-svg', test_svg_files, args : gnome_svg_files)
 
 #### tests ####
-env_test = environment()
-env_test.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
-
 enable_tests = get_option('enable-tests')
 if enable_tests
 	dep_check = dependency('check', version: '>= 0.9.10')
 
 	config_h.set('BUILD_TESTS', '1')
-	env_test.set('RATBAG_TEST', '1')
 
 	test_context = executable('test-context',
 				  ['test/test-context.c'],
@@ -368,10 +364,10 @@ if enable_tests
 						 dep_libutil],
 				include_directories : include_directories('src'),
 				install : false)
-	test('test-context', test_context, env : env_test)
-	test('test-device', test_device, env : env_test)
-	test('test-util', test_util, env : env_test)
-	test('test-iconv-helper', test_iconv_helper, env : env_test)
+	test('test-context', test_context)
+	test('test-device', test_device)
+	test('test-util', test_util)
+	test('test-iconv-helper', test_iconv_helper)
 
 	valgrind = find_program('valgrind')
 	valgrind_suppressions_file = join_paths(meson.source_root(), 'test', 'valgrind.suppressions')
@@ -382,7 +378,6 @@ if enable_tests
 			       '--quiet',
 			       '--error-exitcode=3',
 			       '--suppressions=' + valgrind_suppressions_file ],
-		       env : env_test,
 		       timeout_multiplier: 5)
 
 	executable('test-build-cxx',
@@ -529,6 +524,8 @@ configure_file(input : 'tools/ratbagctl.devel.in',
 configure_file(input : 'tools/ratbagctl.test.in',
 	       output : 'ratbagctl.test',
 	       configuration : config_ratbagctl_devel)
+env_test = environment()
+env_test.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 ratbagctl_test = find_program(join_paths(meson.build_root(), 'ratbagctl.test'))
 test('ratbagctl-test', ratbagctl_test, args: ['-v'], env : env_test)
 

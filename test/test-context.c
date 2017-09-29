@@ -165,6 +165,8 @@ int main(void)
 	bool using_valgrind;
 	const struct rlimit corelimit = { 0, 0 };
 
+	setenv("RATBAG_TEST", "1", 0);
+
 	setrlimit(RLIMIT_CORE, &corelimit);
 
 	/* when running under valgrind we're using nofork mode, so a

@@ -935,6 +935,8 @@ int main(void)
 	SRunner *sr;
 	const struct rlimit corelimit = { 0, 0 };
 
+	setenv("RATBAG_TEST", "1", 0);
+
 	setrlimit(RLIMIT_CORE, &corelimit);
 
 	s = test_context_suite();
