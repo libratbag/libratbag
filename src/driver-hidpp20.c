@@ -1016,7 +1016,9 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->num_profiles = drv_data->profiles->num_profiles;
 		drv_data->num_resolutions = drv_data->profiles->num_modes;
 		drv_data->num_buttons = drv_data->profiles->num_buttons;
-		drv_data->num_leds = drv_data->profiles->num_leds;
+		/* We ignore the profile's num_leds and require
+		 * HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
+		 */
 
 		break;
 	}
