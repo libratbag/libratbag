@@ -65,6 +65,12 @@ ratbag_device_data_hidpp10_get_dpi_list(const struct ratbag_device_data *data);
 struct dpi_range *
 ratbag_device_data_hidpp10_get_dpi_range(const struct ratbag_device_data *data);
 
+/**
+ * @return The led count index or -1 if not set
+ */
+int
+ratbag_device_data_hidpp10_get_led_count(const struct ratbag_device_data *data);
+
 /* HID++ 2.0 */
 
 /**
