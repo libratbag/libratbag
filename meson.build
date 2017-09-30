@@ -325,6 +325,7 @@ gnome_svg_files = files(
 	'data/gnome/logitech-g500s.svg',
 	'data/gnome/logitech-g502.svg',
 	'data/gnome/logitech-g700.svg',
+	'data/gnome/logitech-g9.svg',
 	'data/gnome/logitech-g900.svg',
 	'data/gnome/roccat-kone-xtd.svg',
 )
