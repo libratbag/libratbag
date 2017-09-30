@@ -120,7 +120,7 @@ def check_profile_type_str(string):
 
 
 def check_section_hidpp10(section):
-    permitted = ['Profiles', 'ProfileType', 'DpiRange', 'DpiList', 'DeviceIndex']
+    permitted = ['Profiles', 'ProfileType', 'DpiRange', 'DpiList', 'DeviceIndex', 'Leds']
     for key in section.keys():
         assert(key in permitted)
 
@@ -152,6 +152,13 @@ def check_section_hidpp10(section):
 
     try:
         check_profile_type_str(section['ProfileType'])
+    except KeyError:
+        pass
+
+    try:
+        leds = int(section['Leds'])
+        # 10 is arbitrarily chosen
+        assert(leds > 0 and leds < 10)
     except KeyError:
         pass
 

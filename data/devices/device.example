@@ -42,6 +42,9 @@ DpiList=50;200;400;800
 # Should be unset unless required
 # DeviceIndex=1
 
+# The number of LEDs
+Leds=1
+
 
 [Driver/hidpp20]
 # The HID++ 2.0 device index

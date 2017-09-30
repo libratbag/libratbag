@@ -446,7 +446,7 @@ hidpp10drv_write_resolution_dpi(struct hidpp10_profile *p,
 static int
 hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device *dev)
 {
-	int rc;
+	int rc, num_leds;
 	struct hidpp10_profile profile = {0};
 	unsigned int i;
 
@@ -461,6 +461,11 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 		if (profile.enabled)
 			break;
 	}
+
+	/* let the .device file override LED count from the profile */
+	num_leds = ratbag_device_data_hidpp10_get_led_count(device->data);
+	if (num_leds >= 0)
+		profile.num_leds = num_leds;
 
 	ratbag_device_init_profiles(device,
 				    dev->profile_count,

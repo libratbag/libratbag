@@ -60,6 +60,7 @@ struct data_hidpp10 {
 
 	struct dpi_list *dpi_list;
 	struct dpi_range *dpi_range;
+	int led_count;
 };
 
 struct ratbag_device_data {
@@ -90,6 +91,7 @@ init_data_hidpp10(struct ratbag *ratbag,
 	data->hidpp10.index = -1;
 	data->hidpp10.profile_count = -1;
 	data->hidpp10.profile_type = NULL;
+	data->hidpp10.led_count = -1;
 
 	num = g_key_file_get_integer(keyfile, group, "DeviceIndex", &error);
 	if (num != 0 || !error)
@@ -101,6 +103,13 @@ init_data_hidpp10(struct ratbag *ratbag,
 	num = g_key_file_get_integer(keyfile, group, "Profiles", &error);
 	if (num > 0 || !error)
 		data->hidpp10.profile_count = num;
+	if (error)
+		g_error_free(error);
+
+	error = NULL;
+	num = g_key_file_get_integer(keyfile, group, "Leds", &error);
+	if (num > 0 || !error)
+		data->hidpp10.led_count = num;
 	if (error)
 		g_error_free(error);
 
@@ -398,6 +407,14 @@ ratbag_device_data_hidpp10_get_dpi_range(const struct ratbag_device_data *data)
 	assert(data->drivertype == HIDPP10);
 
 	return data->hidpp10.dpi_range;
+}
+
+int
+ratbag_device_data_hidpp10_get_led_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == HIDPP10);
+
+	return data->hidpp10.led_count;
 }
 
 /* HID++ 2.0 */
