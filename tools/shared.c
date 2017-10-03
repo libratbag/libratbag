@@ -63,6 +63,12 @@ led_type_to_str(enum ratbag_led_type type)
 	case RATBAG_LED_TYPE_SIDE:
 		str = "side";
 		break;
+	case RATBAG_LED_TYPE_BATTERY:
+		str = "battery";
+		break;
+	case RATBAG_LED_TYPE_DPI:
+		str = "dpi";
+		break;
 	}
 
 	return str;
