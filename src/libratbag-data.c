@@ -46,7 +46,8 @@ enum driver {
 	ROCCAT,
 	ETEKCITY,
 	GSKILL,
-	LOGITECH_G300
+	LOGITECH_G300,
+	OPENRAZER,
 };
 
 struct data_hidpp20 {
@@ -149,6 +150,7 @@ static const struct driver_map {
 	{ ETEKCITY, "etekcity", NULL},
 	{ GSKILL, "gskill", NULL },
 	{ LOGITECH_G300, "logitech_g300", NULL},
+	{ OPENRAZER, "openrazer", NULL},
 };
 
 const char *

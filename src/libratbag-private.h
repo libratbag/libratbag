@@ -520,6 +520,7 @@ struct ratbag_driver hidpp10_driver;
 struct ratbag_driver logitech_g300_driver;
 struct ratbag_driver roccat_driver;
 struct ratbag_driver gskill_driver;
+struct ratbag_driver openrazer_driver;
 
 struct ratbag_device*
 ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
