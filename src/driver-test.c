@@ -171,6 +171,7 @@ test_read_led(struct ratbag_led *led)
 	led->color.blue = t_led.color.blue;
 	led->hz = t_led.hz;
 	led->brightness = t_led.brightness;
+	led->type = RATBAG_LED_TYPE_LOGO;
 }
 
 static int
