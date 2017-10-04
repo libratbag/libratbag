@@ -46,6 +46,7 @@ test_read_profile(struct ratbag_profile *profile, unsigned int index)
 	for (i = 0; i < d->num_resolutions; i++) {
 		r = &p->resolutions[i];
 		res = ratbag_resolution_init(profile, i, r->xres, r->yres, r->hz);
+		assert(res);
 		res->is_active = r->active;
 		if (r->active)
 			active_set = true;
@@ -54,7 +55,6 @@ test_read_profile(struct ratbag_profile *profile, unsigned int index)
 			default_set = true;
 		ratbag_resolution_set_cap(res, r->caps);
 		res->hz = r->hz;
-		assert(res);
 	}
 
 	/* special case triggered by the test suite when num_resolutions is 0 */
