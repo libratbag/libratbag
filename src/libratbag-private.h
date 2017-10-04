@@ -184,7 +184,7 @@ struct ratbag_driver {
 	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
 
 	/*
-	 * FIXME: This function is deprecated and should not be removed. Once
+	 * FIXME: This function is deprecated and should be removed. Once
 	 * we've updated all the device drivers to stop using it we'll remove
 	 * it. Look at commit() instead.
 	 */
@@ -212,7 +212,7 @@ struct ratbag_driver {
 	void (*read_button)(struct ratbag_button *button);
 
 	/*
-	 * FIXME: This function is deprecated and should not be removed. Once
+	 * FIXME: This function is deprecated and should be removed. Once
 	 * we've updated all the device drivers to stop using it we'll remove
 	 * it. Look at commit() instead.
 	 */
@@ -220,7 +220,7 @@ struct ratbag_driver {
 			    const struct ratbag_button_action *action);
 
 	/*
-	 * FIXME: This function is deprecated and should not be removed. Once
+	 * FIXME: This function is deprecated and should be removed. Once
 	 * we've updated all the device drivers to stop using it we'll remove
 	 * it. Look at commit() instead.
 	 */
