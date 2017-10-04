@@ -300,6 +300,15 @@ struct ratbag_profile {
 	unsigned long capabilities[NLONGS(MAX_CAP)];
 };
 
+#define ratbag_device_for_each_profile(device_, profile_) \
+	list_for_each(profile_, &(device_)->profiles, link)
+
+#define ratbag_profile_for_each_button(profile_, button_) \
+	list_for_each(button_, &(profile_)->buttons, link) \
+
+#define ratbag_profile_for_each_led(profile_, led_) \
+	list_for_each(led_, &(profile_)->leds, link)
+
 #define BUTTON_ACTION_NONE \
  { .type = RATBAG_BUTTON_ACTION_TYPE_NONE }
 #define BUTTON_ACTION_BUTTON(num_) \
