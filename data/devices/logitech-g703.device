@@ -1,0 +1,6 @@
+[Device]
+Name=Logitech G703
+DeviceMatch=usb:046d:c087
+Driver=hidpp20
+Svg=logitech-g703.svg
+
