@@ -644,12 +644,11 @@ hidpp10drv_probe(struct ratbag_device *device)
 
 	if (hidpp10drv_fill_from_profile(device, dev)) {
 		/* Fall back to something that every mouse has */
-		struct ratbag_profile *profile;
+		_cleanup_profile_ struct ratbag_profile *profile;
 
 		ratbag_device_init_profiles(device, 1, 1, 3, 0);
 		profile = ratbag_device_get_profile(device, 0);
 		profile->is_active = true;
-		ratbag_profile_unref(profile);
 	}
 
 	return 0;
