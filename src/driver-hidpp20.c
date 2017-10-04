@@ -634,9 +634,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 	struct ratbag_device *device = profile->device;
 	struct ratbag *ratbag = device->ratbag;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
-	struct ratbag_resolution *res;
 	int rc;
-	unsigned int i;
 
 	if (drv_data->capabilities & HIDPP_CAP_RESOLUTION_2200) {
 		uint16_t resolution;
@@ -654,11 +652,13 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
+		struct ratbag_resolution *res;
+
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return rc;
 
-		for (i = 0; i < profile->resolution.num_modes; i++) {
+		ratbag_profile_for_each_resolution(profile, res) {
 			struct hidpp20_sensor *sensor;
 
 			/* We only look at the first sensor. Multiple
@@ -666,7 +666,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			sensor = &drv_data->sensors[0];
 
 			/* FIXME: retrieve the refresh rate */
-			res = ratbag_resolution_init(profile, i, sensor->dpi, sensor->dpi, 0);
+			ratbag_resolution_set_resolution(res, sensor->dpi, sensor->dpi, 0);
 			ratbag_resolution_set_range(res, sensor->dpi_min, sensor->dpi_max);
 
 			/* FIXME: we mark all resolutions as active because
@@ -688,14 +688,10 @@ hidpp20drv_update_resolution_dpi_8100(struct ratbag_resolution *resolution,
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *h_profile;
-	unsigned int index;
 	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
 
-	/* retrieve which resolution is asked to be changed */
-	index = resolution - profile->resolution.modes;
-
 	h_profile = &drv_data->profiles->profiles[profile->index];
-	h_profile->dpi[index] = dpi;
+	h_profile->dpi[resolution->index] = dpi;
 
 	return RATBAG_SUCCESS;
 }
@@ -841,7 +837,6 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_resolution *res;
 	struct hidpp20_profile *p;
-	unsigned int i;
 	int dpi_index = 0xff;
 
 	profile->is_enabled = drv_data->profiles->profiles[index].enabled;
@@ -858,22 +853,22 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 
 	p = &drv_data->profiles->profiles[index];
 
-	for (i = 0; i < profile->resolution.num_modes; i++) {
+	ratbag_profile_for_each_resolution(profile, res) {
 		struct hidpp20_sensor *sensor;
 
 		/* We only look at the first sensor. Multiple
 		 * sensors is too niche to care about right now */
 		sensor = &drv_data->sensors[0];
 
-		res = ratbag_resolution_init(profile, i,
-					     p->dpi[i],
-					     p->dpi[i],
-					     p->report_rate);
+		ratbag_resolution_set_resolution(res,
+						 p->dpi[res->index],
+						 p->dpi[res->index],
+						 p->report_rate);
 
 		if (profile->is_active &&
-		    i == (unsigned int)dpi_index)
+		    res->index == (unsigned int)dpi_index)
 			res->is_active = true;
-		if (i == p->default_dpi) {
+		if (res->index == p->default_dpi) {
 			res->is_default = true;
 			if (!profile->is_active || dpi_index < 0 || dpi_index > 4)
 				res->is_active = true;
@@ -1044,7 +1039,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	int rc;
-	unsigned int i, dpi_index = 0;
+	unsigned int dpi_index = 0;
 
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
@@ -1052,10 +1047,9 @@ hidpp20drv_commit(struct ratbag_device *device)
 
 		drv_data->profiles->profiles[profile->index].enabled = profile->is_enabled;
 
-		for (i = 0; i < profile->resolution.num_modes; i++) {
-			resolution = &profile->resolution.modes[i];
+		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (resolution->is_active)
-				dpi_index = i;
+				dpi_index = resolution->index;
 
 			rc = hidpp20drv_update_resolution_dpi(resolution,
 							      resolution->dpi_x,

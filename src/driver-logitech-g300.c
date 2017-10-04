@@ -217,7 +217,6 @@ logitech_g300_get_active_profile_and_resolution(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
 	struct logitech_g300_F0_report buf;
-	unsigned int i;
 	int ret;
 
 	ret = ratbag_hidraw_raw_request(device, 0xF0, (uint8_t*)&buf,
@@ -230,12 +229,14 @@ logitech_g300_get_active_profile_and_resolution(struct ratbag_device *device)
 		return -EIO;
 
 	list_for_each(profile, &device->profiles, link) {
+		struct ratbag_resolution *resolution;
+
 		if (profile->index != buf.profile)
 			continue;
 
 		profile->is_active = true;
-		for (i = 0; i < profile->resolution.num_modes; i++) {
-			profile->resolution.modes[i].is_active = i == buf.resolution;
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			resolution->is_active = resolution->index == buf.resolution;
 		}
 	}
 
@@ -247,7 +248,6 @@ logitech_g300_set_active_profile(struct ratbag_device *device, unsigned int inde
 {
 	struct ratbag_profile *profile;
 	uint8_t buf[] = {LOGITECH_G300_REPORT_ID_SET_ACTIVE, 0x80 | (index << 4), 0x00, 0x00};
-	unsigned int i;
 	int ret;
 
 	if (index > LOGITECH_G300_PROFILE_MAX)
@@ -261,11 +261,13 @@ logitech_g300_set_active_profile(struct ratbag_device *device, unsigned int inde
 
 	/* Update the active resolution. After profile change the default is used. */
 	list_for_each(profile, &device->profiles, link) {
+		struct ratbag_resolution *resolution;
+
 		if (profile->index != index)
 			continue;
 
-		for (i = 0; i < profile->resolution.num_modes; i++) {
-			profile->resolution.modes[i].is_active = profile->resolution.modes[i].is_default;
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			resolution->is_active = resolution->is_default;
 		}
 	}
 
@@ -295,7 +297,7 @@ logitech_g300_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct logitech_g300_profile_data *pdata;
 	struct logitech_g300_profile_report *report;
 	struct ratbag_resolution *resolution;
-	unsigned int i, hz;
+	unsigned int hz;
 	uint8_t report_id;
 	int rc;
 
@@ -324,11 +326,10 @@ logitech_g300_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	hz = logitech_g300_raw_to_frequency(report->frequency);
 
-	for (i = 0; i < profile->resolution.num_modes; i++) {
+	ratbag_profile_for_each_resolution(profile, resolution) {
 		struct logitech_g300_resolution *res =
-			&report->dpi_levels[i];
+			&report->dpi_levels[resolution->index];
 
-		resolution = &profile->resolution.modes[i];
 		resolution->dpi_x = res->dpi * 250;
 		resolution->dpi_y = res->dpi * 250;
 		resolution->hz = hz;
@@ -461,29 +462,33 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 	struct logitech_g300_data *drv_data = device->drv_data;
 	struct logitech_g300_profile_data *pdata;
 	struct logitech_g300_profile_report *report;
+	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
 
 	uint8_t *buf;
-	unsigned int hz, i;
+	unsigned int hz;
 	int rc;
 
 	pdata = &drv_data->profile_data[profile->index];
 	report = &pdata->report;
 
-	/* The same hz is used for all resolutions */
-	hz = profile->resolution.modes[0].hz;
-	report->frequency = logitech_g300_frequency_to_raw(hz);
-
-	for (i = 0; i < profile->resolution.num_modes; i++) {
-		struct ratbag_resolution *resolution = &profile->resolution.modes[i];
-		struct logitech_g300_resolution *res = &report->dpi_levels[i];
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		struct logitech_g300_resolution *res =
+			&report->dpi_levels[resolution->index];
 
 		res->dpi = resolution->dpi_x / 250;
 		res->is_default = resolution->is_default;
 
 		if (profile->is_active && resolution->is_active)
-			logitech_g300_set_current_resolution(device, i);
+			logitech_g300_set_current_resolution(device,
+							     resolution->index);
+
+		/* The same hz is used for all resolutions */
+		if (resolution->index == 0) {
+			hz = resolution->hz;
+			report->frequency = logitech_g300_frequency_to_raw(hz);
+		}
 	}
 
 	list_for_each(button, &profile->buttons, link) {
