@@ -174,17 +174,6 @@ struct ratbag_driver {
 	 */
 	const char *(*get_svg_name)(const struct ratbag_device *device);
 
-	/**
-	 * Callback called when a read profile is requested by the
-	 * caller of the library.
-	 *
-	 * The driver should probe here the device for the requested
-	 * profile and populate the related information.
-	 * There is no need to populate the various struct ratbag_button
-	 * as they are allocated when the user needs it.
-	 */
-	void (*read_profile)(struct ratbag_profile *profile, unsigned int index);
-
 	/*
 	 * FIXME: This function is deprecated and should be removed. Once
 	 * we've updated all the device drivers to stop using it we'll remove
@@ -199,19 +188,6 @@ struct ratbag_driver {
 	 * .write_profile() call is issued before calling this.
 	 */
 	int (*set_active_profile)(struct ratbag_device *device, unsigned int index);
-
-	/**
-	 * For the given button, fill in the struct ratbag_button
-	 * with the available information.
-	 *
-	 * For devices with profiles, profile will not be NULL. For
-	 * device without, profile will be set to NULL.
-	 *
-	 * For devices with profile, there should not be the need to
-	 * actually read the profile from the device. The caller
-	 * should make sure that the profile is up to date.
-	 */
-	void (*read_button)(struct ratbag_button *button);
 
 	/*
 	 * FIXME: This function is deprecated and should be removed. Once
@@ -228,12 +204,6 @@ struct ratbag_driver {
 	 */
 	int (*write_resolution_dpi)(struct ratbag_resolution *resolution,
 				    int dpi_x, int dpi_y);
-
-	/**
-	 * For the given led, fill in the struct ratbag_led
-	 * with the available information.
-	 */
-	void (*read_led)(struct ratbag_led *led);
 
 	/*
 	 * FIXME: This function is deprecated and should be removed. Once

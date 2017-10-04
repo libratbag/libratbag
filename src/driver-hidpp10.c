@@ -347,9 +347,10 @@ hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 }
 
 static void
-hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
+hidpp10drv_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
+	struct ratbag_button *button;
 	struct hidpp10drv_data *drv_data;
 	struct hidpp10_device *hidpp10;
 	struct hidpp10_profile p = {0};
@@ -360,7 +361,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 
 	drv_data = ratbag_get_drv_data(device);
 	hidpp10 = drv_data->dev;
-	rc = hidpp10_get_profile(hidpp10, index, &p);
+	rc = hidpp10_get_profile(hidpp10, profile->index, &p);
 	if (rc)
 		return;
 
@@ -400,6 +401,9 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 		max = hidpp10_dpi_table_get_max_dpi(hidpp10);
 		ratbag_resolution_set_range(res, min, max);
 	}
+
+	ratbag_profile_for_each_button(profile, button)
+		hidpp10drv_read_button(button);
 }
 
 static int
@@ -531,6 +535,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 	const char *typestr;
 	int device_idx = HIDPP_WIRED_DEVICE_IDX;
 	unsigned int profile_count = 1;
+	struct ratbag_profile *profile;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
 	if (rc)
@@ -618,6 +623,9 @@ hidpp10drv_probe(struct ratbag_device *device)
 		profile->is_active = true;
 	}
 
+	ratbag_device_for_each_profile(device, profile)
+		hidpp10drv_read_profile(profile);
+
 	return 0;
 err:
 	free(drv_data);
@@ -649,8 +657,6 @@ struct ratbag_driver hidpp10_driver = {
 	.id = "hidpp10",
 	.probe = hidpp10drv_probe,
 	.remove = hidpp10drv_remove,
-	.read_profile = hidpp10drv_read_profile,
 	.set_active_profile = hidpp10drv_set_current_profile,
-	.read_button = hidpp10drv_read_button,
 	.commit = hidpp10drv_commit,
 };

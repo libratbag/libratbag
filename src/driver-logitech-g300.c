@@ -290,59 +290,6 @@ logitech_g300_set_current_resolution(struct ratbag_device *device, unsigned int 
 }
 
 static void
-logitech_g300_read_profile(struct ratbag_profile *profile, unsigned int index)
-{
-	struct ratbag_device *device = profile->device;
-	struct logitech_g300_data *drv_data = device->drv_data;
-	struct logitech_g300_profile_data *pdata;
-	struct logitech_g300_profile_report *report;
-	struct ratbag_resolution *resolution;
-	unsigned int hz;
-	uint8_t report_id;
-	int rc;
-
-	assert(index <= LOGITECH_G300_PROFILE_MAX);
-
-	pdata = &drv_data->profile_data[index];
-	report = &pdata->report;
-
-	switch (index) {
-	case 0: report_id = LOGITECH_G300_REPORT_ID_PROFILE_0; break;
-	case 1: report_id = LOGITECH_G300_REPORT_ID_PROFILE_1; break;
-	case 2: report_id = LOGITECH_G300_REPORT_ID_PROFILE_2; break;
-	}
-
-	rc = ratbag_hidraw_raw_request(device, report_id,
-					       (uint8_t*)report,
-					       sizeof(*report),
-					       HID_FEATURE_REPORT,
-					       HID_REQ_GET_REPORT);
-
-	if (rc < (int)sizeof(*report)) {
-		log_error(device->ratbag,
-			  "Error while requesting profile: %d\n", rc);
-		return;
-	}
-
-	hz = logitech_g300_raw_to_frequency(report->frequency);
-
-	ratbag_profile_for_each_resolution(profile, resolution) {
-		struct logitech_g300_resolution *res =
-			&report->dpi_levels[resolution->index];
-
-		resolution->dpi_x = res->dpi * 250;
-		resolution->dpi_y = res->dpi * 250;
-		resolution->hz = hz;
-		resolution->is_default = res->is_default;
-		resolution->is_active = res->is_default;
-
-		ratbag_resolution_set_range(resolution,
-					    LOGITECH_G300_DPI_MIN,
-					    LOGITECH_G300_DPI_MAX);
-	}
-}
-
-static void
 logitech_g300_read_button(struct ratbag_button *button)
 {
 	const struct ratbag_button_action *action;
@@ -397,6 +344,67 @@ logitech_g300_read_led(struct ratbag_led *led)
 	led->color.blue = profile_report->led_blue * 255;
 }
 
+static void
+logitech_g300_read_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct logitech_g300_data *drv_data = device->drv_data;
+	struct logitech_g300_profile_data *pdata;
+	struct logitech_g300_profile_report *report;
+	struct ratbag_resolution *resolution;
+	unsigned int hz;
+	uint8_t report_id;
+	int rc;
+	struct ratbag_button *button;
+	struct ratbag_led *led;
+
+	assert(profile->index <= LOGITECH_G300_PROFILE_MAX);
+
+	pdata = &drv_data->profile_data[profile->index];
+	report = &pdata->report;
+
+	switch (profile->index) {
+	case 0: report_id = LOGITECH_G300_REPORT_ID_PROFILE_0; break;
+	case 1: report_id = LOGITECH_G300_REPORT_ID_PROFILE_1; break;
+	case 2: report_id = LOGITECH_G300_REPORT_ID_PROFILE_2; break;
+	}
+
+	rc = ratbag_hidraw_raw_request(device, report_id,
+					       (uint8_t*)report,
+					       sizeof(*report),
+					       HID_FEATURE_REPORT,
+					       HID_REQ_GET_REPORT);
+
+	if (rc < (int)sizeof(*report)) {
+		log_error(device->ratbag,
+			  "Error while requesting profile: %d\n", rc);
+		return;
+	}
+
+	hz = logitech_g300_raw_to_frequency(report->frequency);
+
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		struct logitech_g300_resolution *res =
+			&report->dpi_levels[resolution->index];
+
+		resolution->dpi_x = res->dpi * 250;
+		resolution->dpi_y = res->dpi * 250;
+		resolution->hz = hz;
+		resolution->is_default = res->is_default;
+		resolution->is_active = res->is_default;
+
+		ratbag_resolution_set_range(resolution,
+					    LOGITECH_G300_DPI_MIN,
+					    LOGITECH_G300_DPI_MAX);
+	}
+
+	ratbag_profile_for_each_button(profile, button)
+		logitech_g300_read_button(button);
+
+	ratbag_profile_for_each_led(profile, led)
+		logitech_g300_read_led(led);
+}
+
 static int
 logitech_g300_test_hidraw(struct ratbag_device *device)
 {
@@ -409,6 +417,7 @@ logitech_g300_probe(struct ratbag_device *device)
 	int rc;
 	struct logitech_g300_data *drv_data = NULL;
 	int active_idx;
+	struct ratbag_profile *profile;
 
 	rc = ratbag_find_hidraw(device, logitech_g300_test_hidraw);
 	if (rc)
@@ -423,6 +432,9 @@ logitech_g300_probe(struct ratbag_device *device)
 				    LOGITECH_G300_NUM_DPI,
 				    LOGITECH_G300_BUTTON_MAX + 1,
 				    LOGITECH_G300_NUM_LED);
+
+	ratbag_device_for_each_profile(device, profile)
+		logitech_g300_read_profile(profile);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
@@ -570,9 +582,6 @@ struct ratbag_driver logitech_g300_driver = {
 	.id = "logitech_g300",
 	.probe = logitech_g300_probe,
 	.remove = logitech_g300_remove,
-	.read_profile = logitech_g300_read_profile,
 	.commit = logitech_g300_commit,
 	.set_active_profile = logitech_g300_set_active_profile,
-	.read_button = logitech_g300_read_button,
-	.read_led = logitech_g300_read_led,
 };

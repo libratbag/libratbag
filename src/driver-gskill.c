@@ -972,67 +972,6 @@ gskill_write_button_macro(struct ratbag_device *device,
 
 	return 0;
 }
-
-static int
-gskill_probe(struct ratbag_device *device)
-{
-	struct gskill_data *drv_data = NULL;
-	struct ratbag_profile *profile;
-	unsigned int active_idx;
-	int ret;
-
-	ret = ratbag_open_hidraw(device);
-	if (ret)
-		return ret;
-
-	drv_data = zalloc(sizeof(*drv_data));
-	ratbag_set_drv_data(device, drv_data);
-
-	ret = gskill_get_firmware_version(device);
-	if (ret < 0)
-		goto err;
-
-	log_debug(device->ratbag,
-		 "Firmware version: %d\n", ret);
-
-	ret = gskill_get_profile_count(device);
-	if (ret < 0)
-		goto err;
-	drv_data->profile_count = ret;
-
-	ratbag_device_init_profiles(device, GSKILL_PROFILE_MAX, GSKILL_NUM_DPI,
-				    GSKILL_BUTTON_MAX, GSKILL_NUM_LED);
-
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
-
-	ret = gskill_get_active_profile_idx(device);
-	if (ret < 0)
-		goto err;
-
-	active_idx = ret;
-	list_for_each(profile, &device->profiles, link) {
-		if (profile->index == active_idx) {
-			profile->is_active = true;
-			break;
-		}
-	}
-
-	return 0;
-
-err:
-	if (drv_data) {
-		ratbag_set_drv_data(device, NULL);
-		free(drv_data);
-	}
-
-	ratbag_close_hidraw(device);
-	return ret;
-}
-
 static void
 gskill_read_resolutions(struct ratbag_profile *profile,
 			struct gskill_profile_report *report)
@@ -1083,7 +1022,7 @@ gskill_read_profile_name(struct ratbag_device *device,
 }
 
 static void
-gskill_read_profile(struct ratbag_profile *profile, unsigned int index)
+gskill_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct gskill_data *drv_data = ratbag_get_drv_data(device);
@@ -1092,7 +1031,7 @@ gskill_read_profile(struct ratbag_profile *profile, unsigned int index)
 	uint8_t checksum;
 	int rc, retries;
 
-	if (index >= drv_data->profile_count) {
+	if (profile->index >= drv_data->profile_count) {
 		profile->is_enabled = false;
 		return;
 	}
@@ -1106,7 +1045,7 @@ gskill_read_profile(struct ratbag_profile *profile, unsigned int index)
 	 * mouse we're doing something wrong.
 	 */
 	for (retries = 0; retries < 3; retries++) {
-		rc = gskill_select_profile(device, index, false);
+		rc = gskill_select_profile(device, profile->index, false);
 		if (rc < 0)
 			return;
 
@@ -1124,12 +1063,11 @@ gskill_read_profile(struct ratbag_profile *profile, unsigned int index)
 			return;
 		}
 
-		if (report->profile_num == index)
+		if (report->profile_num == profile->index)
 			break;
 
 		log_debug(device->ratbag,
-			  "Mouse send wrong profile %d instead of %d, retrying...\n",
-			  profile->index, index);
+			  "Mouse send wrong profile, retrying...\n");
 	}
 
 	checksum = gskill_calculate_checksum((uint8_t*)report, sizeof(*report));
@@ -1431,6 +1369,73 @@ gskill_update_profile(struct ratbag_profile *profile)
 }
 
 static int
+gskill_probe(struct ratbag_device *device)
+{
+	struct gskill_data *drv_data = NULL;
+	struct ratbag_profile *profile;
+	unsigned int active_idx;
+	int ret;
+
+	ret = ratbag_open_hidraw(device);
+	if (ret)
+		return ret;
+
+	drv_data = zalloc(sizeof(*drv_data));
+	ratbag_set_drv_data(device, drv_data);
+
+	ret = gskill_get_firmware_version(device);
+	if (ret < 0)
+		goto err;
+
+	log_debug(device->ratbag,
+		 "Firmware version: %d\n", ret);
+
+	ret = gskill_get_profile_count(device);
+	if (ret < 0)
+		goto err;
+	drv_data->profile_count = ret;
+
+	ratbag_device_init_profiles(device, GSKILL_PROFILE_MAX, GSKILL_NUM_DPI,
+				    GSKILL_BUTTON_MAX, GSKILL_NUM_LED);
+
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
+
+	ret = gskill_get_active_profile_idx(device);
+	if (ret < 0)
+		goto err;
+
+	active_idx = ret;
+	ratbag_device_for_each_profile(device, profile) {
+		struct ratbag_button *button;
+
+		gskill_read_profile(profile);
+
+		ratbag_profile_for_each_button(profile, button)
+			gskill_read_button(button);
+
+		if (profile->index == active_idx) {
+			profile->is_active = true;
+			break;
+		}
+	}
+
+	return 0;
+
+err:
+	if (drv_data) {
+		ratbag_set_drv_data(device, NULL);
+		free(drv_data);
+	}
+
+	ratbag_close_hidraw(device);
+	return ret;
+}
+
+static int
 gskill_commit(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
@@ -1507,8 +1512,6 @@ struct ratbag_driver gskill_driver = {
 	.id = "gskill",
 	.probe = gskill_probe,
 	.remove = gskill_remove,
-	.read_profile = gskill_read_profile,
 	.commit = gskill_commit,
 	.set_active_profile = gskill_set_active_profile,
-	.read_button = gskill_read_button,
 };

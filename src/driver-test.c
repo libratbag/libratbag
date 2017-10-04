@@ -29,57 +29,6 @@
 #include "libratbag-private.h"
 #include "libratbag-test.h"
 
-static void
-test_read_profile(struct ratbag_profile *profile, unsigned int index)
-{
-	struct ratbag_test_device *d = ratbag_get_drv_data(profile->device);
-	struct ratbag_test_profile *p;
-	struct ratbag_test_resolution *r;
-	unsigned int i;
-	bool active_set = false;
-	bool default_set = false;
-
-	assert(index < d->num_profiles);
-
-	p = &d->profiles[index];
-	for (i = 0; i < d->num_resolutions; i++) {
-		_cleanup_resolution_ struct ratbag_resolution *res;
-
-		r = &p->resolutions[i];
-
-		res = ratbag_profile_get_resolution(profile, i);
-		assert(res);
-		ratbag_resolution_set_resolution(res, r->xres, r->yres, r->hz);
-		res->is_active = r->active;
-		if (r->active)
-			active_set = true;
-		res->is_default = r->dflt;
-		if (r->dflt)
-			default_set = true;
-		ratbag_resolution_set_cap(res, r->caps);
-		res->hz = r->hz;
-	}
-
-	/* special case triggered by the test suite when num_resolutions is 0 */
-	if (d->num_resolutions) {
-		_cleanup_resolution_ struct ratbag_resolution *res;
-
-		res = ratbag_profile_get_resolution(profile, 0);
-		assert(res);
-		if (!active_set)
-			res->is_active = true;
-		if (!default_set)
-			res->is_default = true;
-	}
-
-	profile->is_active = p->active;
-	profile->is_enabled = !p->disabled;
-
-	for (i = 0; i < ARRAY_LENGTH(p->caps) && p->caps[i]; i++) {
-		ratbag_profile_set_cap(profile, p->caps[i]);
-	}
-}
-
 static int
 test_write_profile(struct ratbag_profile *profile)
 {
@@ -215,10 +164,70 @@ test_fake_probe(struct ratbag_device *device)
 	return -ENODEV;
 }
 
+static void
+test_read_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_test_device *d = ratbag_get_drv_data(profile->device);
+	struct ratbag_test_profile *p;
+	struct ratbag_test_resolution *r;
+	struct ratbag_button *button;
+	struct ratbag_led *led;
+	unsigned int i;
+	bool active_set = false;
+	bool default_set = false;
+
+	assert(profile->index < d->num_profiles);
+
+	p = &d->profiles[profile->index];
+	for (i = 0; i < d->num_resolutions; i++) {
+		_cleanup_resolution_ struct ratbag_resolution *res;
+
+		r = &p->resolutions[i];
+
+		res = ratbag_profile_get_resolution(profile, i);
+		assert(res);
+		ratbag_resolution_set_resolution(res, r->xres, r->yres, r->hz);
+		res->is_active = r->active;
+		if (r->active)
+			active_set = true;
+		res->is_default = r->dflt;
+		if (r->dflt)
+			default_set = true;
+		ratbag_resolution_set_cap(res, r->caps);
+		res->hz = r->hz;
+	}
+
+	/* special case triggered by the test suite when num_resolutions is 0 */
+	if (d->num_resolutions) {
+		_cleanup_resolution_ struct ratbag_resolution *res;
+
+		res = ratbag_profile_get_resolution(profile, 0);
+		assert(res);
+		if (!active_set)
+			res->is_active = true;
+		if (!default_set)
+			res->is_default = true;
+	}
+
+	ratbag_profile_for_each_button(profile, button)
+		test_read_button(button);
+
+	ratbag_profile_for_each_led(profile, led)
+		test_read_led(led);
+
+	profile->is_active = p->active;
+	profile->is_enabled = !p->disabled;
+
+	for (i = 0; i < ARRAY_LENGTH(p->caps) && p->caps[i]; i++) {
+		ratbag_profile_set_cap(profile, p->caps[i]);
+	}
+}
+
 static int
 test_probe(struct ratbag_device *device, const void *data)
 {
 	struct ratbag_test_device *test_device;
+	struct ratbag_profile *profile;
 
 	test_device = zalloc(sizeof(*test_device));
 	memcpy(test_device, data, sizeof(*test_device));
@@ -234,6 +243,9 @@ test_probe(struct ratbag_device *device, const void *data)
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
 	}
+
+	ratbag_device_for_each_profile(device, profile)
+		test_read_profile(profile);
 
 	return 0;
 }
@@ -258,11 +270,8 @@ struct ratbag_driver test_driver = {
 	.test_probe = test_probe,
 	.remove = test_remove,
 	.get_svg_name = test_get_svg_name,
-	.read_profile = test_read_profile,
 	.write_profile = test_write_profile,
 	.set_active_profile = test_set_active_profile,
-	.read_button = test_read_button,
-	.read_led = test_read_led,
 	.write_button = test_write_button,
 	.write_resolution_dpi = NULL,
 	.write_led = test_write_led,

@@ -295,6 +295,8 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 			_cleanup_led_ struct ratbag_led *p0_led = ratbag_profile_get_led(p0, j);
 			_cleanup_led_ struct ratbag_led *led = ratbag_profile_get_led(p, j);
 
+			assert(led->type != RATBAG_LED_TYPE_UNKNOWN);
+
 			if (p0_led->type != led->type) {
 				log_bug_libratbag(ratbag,
 						  "%s: mismatching LED types (profile %d led %d)\n",
@@ -597,18 +599,15 @@ ratbag_unref(struct ratbag *ratbag)
 static struct ratbag_button *
 ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 {
-	struct ratbag_device *device = profile->device;
 	struct ratbag_button *button;
 
 	button = zalloc(sizeof(*button));
 	button->refcount = 0;
 	button->profile = profile;
 	button->index = index;
+	button->type = RATBAG_BUTTON_TYPE_UNKNOWN;
 
 	list_insert(&profile->buttons, &button->link);
-
-	if (device->driver->read_button)
-		device->driver->read_button(button);
 
 	return button;
 }
@@ -630,40 +629,7 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 
 	list_insert(&profile->leds, &led->link);
 
-	/* If you init a LED, you need to provide this function */
-	assert(device->driver->read_led);
-	device->driver->read_led(led);
-
-	/* The driver must fill this in correctly */
-	assert(led->type != RATBAG_LED_TYPE_UNKNOWN);
-
 	return led;
-}
-
-static int
-ratbag_profile_init_buttons(struct ratbag_profile *profile, unsigned int count)
-{
-	unsigned int i;
-
-	for (i = 0; i < count; i++)
-		ratbag_create_button(profile, i);
-
-	profile->device->num_buttons = count;
-
-	return 0;
-}
-
-static int
-ratbag_profile_init_leds(struct ratbag_profile *profile, unsigned int count)
-{
-	unsigned int i;
-
-	for (i = 0; i < count; i++)
-		ratbag_create_led(profile, i);
-
-	profile->device->num_leds = count;
-
-	return 0;
 }
 
 LIBRATBAG_EXPORT int
@@ -715,14 +681,17 @@ ratbag_create_profile(struct ratbag_device *device,
 	list_init(&profile->leds);
 	list_init(&profile->resolutions);
 
+	profile->device->num_buttons = num_buttons;
+	profile->device->num_leds = num_leds;
+
 	for (i = 0; i < num_resolutions; i++)
 		ratbag_create_resolution(profile, i);
 
-	assert(device->driver->read_profile);
-	device->driver->read_profile(profile, index);
+	for (i = 0; i < num_buttons; i++)
+		ratbag_create_button(profile, i);
 
-	ratbag_profile_init_buttons(profile, num_buttons);
-	ratbag_profile_init_leds(profile, num_leds);
+	for (i = 0; i < num_leds; i++)
+		ratbag_create_led(profile, i);
 
 	return profile;
 }
