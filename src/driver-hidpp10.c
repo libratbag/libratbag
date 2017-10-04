@@ -561,7 +561,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 	struct hidpp10_device *dev = NULL;
 	struct hidpp_device base;
 	enum hidpp10_profile_type type = HIDPP10_PROFILE_UNKNOWN;
-	const char *profile;
+	const char *typestr;
 	int device_idx = HIDPP_WIRED_DEVICE_IDX;
 	unsigned int profile_count = 1;
 
@@ -573,13 +573,13 @@ hidpp10drv_probe(struct ratbag_device *device)
 	hidpp_device_init(&base, device->hidraw.fd);
 	hidpp_device_set_log_handler(&base, hidpp10_log, HIDPP_LOG_PRIORITY_RAW, device);
 
-	profile = ratbag_device_data_hidpp10_get_profile_type(device->data);
-	if (profile) {
-		if (strcasecmp("G500", profile) == 0)
+	typestr = ratbag_device_data_hidpp10_get_profile_type(device->data);
+	if (typestr) {
+		if (strcasecmp("G500", typestr) == 0)
 			type = HIDPP10_PROFILE_G500;
-		else if (strcasecmp("G700", profile) == 0)
+		else if (strcasecmp("G700", typestr) == 0)
 			type = HIDPP10_PROFILE_G700;
-		else if (strcasecmp("G9", profile) == 0)
+		else if (strcasecmp("G9", typestr) == 0)
 			type = HIDPP10_PROFILE_G9;
 
 		profile_count = ratbag_device_data_hidpp10_get_profile_count(device->data);
