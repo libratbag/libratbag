@@ -1038,7 +1038,6 @@ gskill_read_resolutions(struct ratbag_profile *profile,
 			struct gskill_profile_report *report)
 {
 	struct gskill_profile_data *pdata = profile_to_pdata(profile);
-	struct ratbag_resolution *resolution;
 	int dpi_x, dpi_y, hz, i;
 
 	log_debug(profile->device->ratbag,
@@ -1048,11 +1047,12 @@ gskill_read_resolutions(struct ratbag_profile *profile,
 	hz = GSKILL_MAX_POLLING_RATE / (report->polling_rate + 1);
 
 	for (i = 0; i < report->dpi_num; i++) {
+		_cleanup_resolution_ struct ratbag_resolution *resolution;
 		dpi_x = report->dpi_levels[i].x * GSKILL_DPI_UNIT;
 		dpi_y = report->dpi_levels[i].y * GSKILL_DPI_UNIT;
 
-		resolution = ratbag_resolution_init(profile, i, dpi_x, dpi_y,
-						    hz);
+		resolution = ratbag_profile_get_resolution(profile, i);
+		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y, hz);
 		resolution->is_active = (i == report->current_dpi_level);
 		pdata->res_idx_to_dev_idx[i] = i;
 
@@ -1162,10 +1162,11 @@ gskill_update_resolutions(struct ratbag_profile *profile)
 	 * lost on exit
 	 */
 	for (i = 0; i < GSKILL_NUM_DPI; i++) {
-		struct ratbag_resolution *res = &profile->resolution.modes[i];
+		_cleanup_resolution_ struct ratbag_resolution *res;
 		struct gskill_raw_dpi_level *level =
 			&report->dpi_levels[report->dpi_num];
 
+		res = ratbag_profile_get_resolution(profile, i);
 		if (!res->dpi_x || !res->dpi_y)
 			continue;
 
@@ -1173,8 +1174,8 @@ gskill_update_resolutions(struct ratbag_profile *profile)
 		level->y = res->dpi_y / GSKILL_DPI_UNIT;
 		pdata->res_idx_to_dev_idx[i] = report->dpi_num;
 
-		log_debug(device->ratbag, "Profile %d res %ld mapped to %d\n",
-			  profile->index, res - profile->resolution.modes,
+		log_debug(device->ratbag, "Profile %d res %d mapped to %d\n",
+			  profile->index, res->index,
 			  report->dpi_num);
 
 		report->dpi_num++;

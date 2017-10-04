@@ -254,6 +254,8 @@ struct ratbag_resolution {
 	struct ratbag_profile *profile;
 	int refcount;
 	void *userdata;
+	struct list link;
+	unsigned index;
 	unsigned int dpi_max;	/**< max resolution in dpi */
 	unsigned int dpi_min;	/**< min resolution in dpi */
 	unsigned int dpi_x;	/**< x resolution in dpi */
@@ -290,11 +292,10 @@ struct ratbag_profile {
 	struct list buttons;
 	void *drv_data;
 	void *user_data;
-	struct {
-		struct ratbag_resolution *modes;
-		unsigned int num_modes;
-	} resolution;
+	struct list resolutions;
 	struct list leds;
+
+	unsigned int num_resolutions;
 
 	bool is_active;		/**< profile is the currently active one */
 	bool is_enabled;
@@ -310,6 +311,9 @@ struct ratbag_profile {
 
 #define ratbag_profile_for_each_led(profile_, led_) \
 	list_for_each(led_, &(profile_)->leds, link)
+
+#define ratbag_profile_for_each_resolution(profile_, resolution_) \
+	list_for_each(resolution_, &(profile_)->resolutions, link)
 
 #define BUTTON_ACTION_NONE \
  { .type = RATBAG_BUTTON_ACTION_TYPE_NONE }
@@ -461,23 +465,13 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	return 0;
 }
 
-static inline struct ratbag_resolution *
-ratbag_resolution_init(struct ratbag_profile *profile, int index,
-		       int dpi_x, int dpi_y, int hz)
+static inline void
+ratbag_resolution_set_resolution(struct ratbag_resolution *res,
+				 int dpi_x, int dpi_y, int hz)
 {
-	struct ratbag_resolution *res = &profile->resolution.modes[index];
-
-	res->profile = profile;
 	res->dpi_x = dpi_x;
 	res->dpi_y = dpi_y;
 	res->hz = hz;
-	res->is_active = false;
-	res->is_default = false;
-	res->capabilities = 0;
-	res->dpi_min = 0;
-	res->dpi_max = 0;
-
-	return res;
 }
 
 static inline void

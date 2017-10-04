@@ -400,7 +400,6 @@ roccat_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct roccat_settings_report *setting_report;
 	uint8_t *buf;
 	unsigned int report_rate;
-	unsigned int i;
 	int dpi_x, dpi_y, hz;
 	int rc;
 
@@ -431,20 +430,21 @@ roccat_read_profile(struct ratbag_profile *profile, unsigned int index)
 		report_rate = 0;
 	}
 
-	for (i = 0; i < profile->resolution.num_modes; i++) {
-		dpi_x = setting_report->xres[i] * 50;
-		dpi_y = setting_report->yres[i] * 50;
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		dpi_x = setting_report->xres[resolution->index] * 50;
+		dpi_y = setting_report->yres[resolution->index] * 50;
 		hz = report_rate;
-		if (!(setting_report->dpi_mask & (1 << i))) {
+		if (!(setting_report->dpi_mask & (1 << resolution->index))) {
 			/* the profile is disabled, overwrite it */
 			dpi_x = 0;
 			dpi_y = 0;
 			hz = 0;
 		}
-		resolution = ratbag_resolution_init(profile, i, dpi_x, dpi_y, hz);
+
+		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y, hz);
 		ratbag_resolution_set_cap(resolution,
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
-		resolution->is_active = (i == setting_report->current_dpi);
+		resolution->is_active = (resolution->index == setting_report->current_dpi);
 	}
 
 	buf = drv_data->profiles[index];
@@ -733,7 +733,6 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	struct ratbag_device *device = profile->device;
 	struct roccat_data *drv_data = ratbag_get_drv_data(device);
 	struct roccat_settings_report *settings_report;
-	unsigned int index;
 	uint8_t *buf;
 	int rc;
 
@@ -744,11 +743,8 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 
 	settings_report = &drv_data->settings[profile->index];
 
-	/* retrieve which resolution is asked to be changed */
-	index = resolution - profile->resolution.modes;
-
-	settings_report->xres[index] = dpi_x / 50;
-	settings_report->yres[index] = dpi_y / 50;
+	settings_report->xres[resolution->index] = dpi_x / 50;
+	settings_report->yres[resolution->index] = dpi_y / 50;
 
 	buf = (uint8_t*)settings_report;
 

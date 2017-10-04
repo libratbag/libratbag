@@ -62,6 +62,8 @@ static void
 ratbag_button_destroy(struct ratbag_button *button);
 static void
 ratbag_led_destroy(struct ratbag_led *led);
+static void
+ratbag_resolution_destroy(struct ratbag_resolution *resolution);
 
 static void
 ratbag_default_log_func(struct ratbag *ratbag,
@@ -674,6 +676,22 @@ ratbag_profile_has_capability(const struct ratbag_profile *profile,
 	return long_bit_is_set(profile->capabilities, cap);
 }
 
+static inline void
+ratbag_create_resolution(struct ratbag_profile *profile, int index)
+{
+	struct ratbag_resolution *res;
+
+	res = zalloc(sizeof(*res));
+	res->refcount = 0;
+	res->profile = profile;
+	res->index = index;
+
+	list_insert(&profile->resolutions, &res->link);
+
+	profile->num_resolutions++;
+}
+
+
 static struct ratbag_profile *
 ratbag_create_profile(struct ratbag_device *device,
 		      unsigned int index,
@@ -688,19 +706,17 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->refcount = 0;
 	profile->device = device;
 	profile->index = index;
-	if (num_resolutions)
-		profile->resolution.modes = zalloc(num_resolutions *
-						   sizeof(*profile->resolution.modes));
-	profile->resolution.num_modes = num_resolutions;
+	profile->num_resolutions = 0;
 	profile->is_enabled = true;
 	profile->name = asprintf_safe("Profile %d", index + 1);
 
 	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
 	list_init(&profile->leds);
+	list_init(&profile->resolutions);
 
 	for (i = 0; i < num_resolutions; i++)
-		ratbag_resolution_init(profile, i, 0, 0, 0);
+		ratbag_create_resolution(profile, i);
 
 	assert(device->driver->read_profile);
 	device->driver->read_profile(profile, index);
@@ -762,6 +778,7 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 {
 	struct ratbag_button *button, *b_next;
 	struct ratbag_led *led, *l_next;
+	struct ratbag_resolution *res, *r_next;
 
 	/* if we get to the point where the profile is destroyed, buttons,
 	 * resolutions , etc. are at a refcount of 0, so we can destroy
@@ -772,7 +789,8 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 	list_for_each_safe(led, l_next, &profile->leds, link)
 		ratbag_led_destroy(led);
 
-	free(profile->resolution.modes);
+	list_for_each_safe(res, r_next, &profile->resolutions, link)
+		ratbag_resolution_destroy(res);
 
 	free(profile->name);
 
@@ -906,7 +924,6 @@ ratbag_old_write_profile(struct ratbag_device *device)
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	int rc;
-	unsigned int i;
 
 	assert(device->driver->write_profile);
 
@@ -919,9 +936,7 @@ ratbag_old_write_profile(struct ratbag_device *device)
 			return RATBAG_ERROR_DEVICE;
 
 		if (device->driver->write_resolution_dpi) {
-			for (i = 0; i < profile->resolution.num_modes; i++) {
-				resolution = &profile->resolution.modes[i];
-
+			ratbag_profile_for_each_resolution(profile, resolution) {
 				rc = device->driver->write_resolution_dpi(
 				    resolution, resolution->dpi_x,
 				    resolution->dpi_y);
@@ -1012,12 +1027,13 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 LIBRATBAG_EXPORT unsigned int
 ratbag_profile_get_num_resolutions(struct ratbag_profile *profile)
 {
-	return profile->resolution.num_modes;
+	return profile->num_resolutions;
 }
 
 LIBRATBAG_EXPORT struct ratbag_resolution *
 ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
 {
+	struct ratbag_device *device = profile->device;
 	struct ratbag_resolution *res;
 	unsigned max = ratbag_profile_get_num_resolutions(profile);
 
@@ -1027,9 +1043,15 @@ ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx)
 		return NULL;
 	}
 
-	res = &profile->resolution.modes[idx];
+	ratbag_profile_for_each_resolution(profile, res) {
+		if (res->index == idx)
+			return ratbag_resolution_ref(res);
+	}
 
-	return ratbag_resolution_ref(res);
+	log_bug_libratbag(device->ratbag, "Resolution %d, profile %d not found\n",
+			  idx, profile->index);
+
+	return NULL;
 }
 
 LIBRATBAG_EXPORT struct ratbag_resolution *
@@ -1120,12 +1142,11 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 		}
 	} else {
 		struct ratbag_profile *profile = resolution->profile;
-		unsigned int i;
+		struct ratbag_resolution *res;
 
 		/* No indvidual report rate per resolution. Loop through all of
 		 * them and update. */
-		for (i = 0; i < profile->resolution.num_modes; i++) {
-			struct ratbag_resolution *res = &profile->resolution.modes[i];
+		ratbag_profile_for_each_resolution(profile, res) {
 			if (res->hz != hz) {
 				res->hz = hz;
 				profile->dirty = true;
@@ -1182,10 +1203,10 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 {
 	struct ratbag_profile *profile = resolution->profile;
-	unsigned int i;
+	struct ratbag_resolution *res;
 
-	for (i = 0; i < profile->resolution.num_modes; i++)
-		profile->resolution.modes[i].is_active = false;
+	ratbag_profile_for_each_resolution(profile, res)
+		res->is_active = false;
 
 	resolution->is_active = true;
 	profile->dirty = true;
@@ -1203,12 +1224,10 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 {
 	struct ratbag_profile *profile = resolution->profile;
-	unsigned int i;
+	struct ratbag_resolution *other;
 
 	/* Unset the default on the other resolutions */
-	for (i = 0; i < profile->resolution.num_modes; i++) {
-		struct ratbag_resolution *other = &profile->resolution.modes[i];
-
+	ratbag_profile_for_each_resolution(profile, other) {
 		if (other == resolution || !other->is_default)
 			continue;
 
@@ -1428,6 +1447,13 @@ ratbag_led_destroy(struct ratbag_led *led)
 {
 	list_remove(&led->link);
 	free(led);
+}
+
+static void
+ratbag_resolution_destroy(struct ratbag_resolution *res)
+{
+	list_remove(&res->link);
+	free(res);
 }
 
 LIBRATBAG_EXPORT struct ratbag_button *

@@ -355,7 +355,6 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	struct hidpp10_profile p = {0};
 	struct ratbag_resolution *res;
 	int rc;
-	unsigned int i;
 	uint16_t xres, yres;
 	uint8_t idx;
 
@@ -378,20 +377,20 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
 
-	for (i = 0; i < profile->resolution.num_modes; i++) {
+	ratbag_profile_for_each_resolution(profile, res) {
 		unsigned int min, max;
 
-		res = ratbag_resolution_init(profile, i,
-					     p.dpi_modes[i].xres,
-					     p.dpi_modes[i].yres,
-					     p.refresh_rate);
+		ratbag_resolution_set_resolution(res,
+						 p.dpi_modes[res->index].xres,
+						 p.dpi_modes[res->index].yres,
+						 p.refresh_rate);
 		ratbag_resolution_set_cap(res,
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		if (profile->is_active &&
 		    res->dpi_x == xres &&
 		    res->dpi_y == yres)
 			res->is_active = true;
-		if (i == p.default_dpi_mode) {
+		if (res->index == p.default_dpi_mode) {
 			res->is_default = true;
 			if (!profile->is_active)
 				res->is_active = true;
@@ -470,7 +469,6 @@ hidpp10drv_commit(struct ratbag_device *device)
 	struct ratbag_resolution *active_resolution = NULL;
 	struct hidpp10_profile p;
 	int rc;
-	unsigned int i;
 
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
@@ -482,11 +480,9 @@ hidpp10drv_commit(struct ratbag_device *device)
 
 		p.enabled = profile->is_enabled;
 
-		for (i = 0; i < profile->resolution.num_modes; i++) {
-			resolution = &profile->resolution.modes[i];
-
-			p.dpi_modes[i].xres = resolution->dpi_x;
-			p.dpi_modes[i].yres = resolution->dpi_y;
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			p.dpi_modes[resolution->index].xres = resolution->dpi_x;
+			p.dpi_modes[resolution->index].yres = resolution->dpi_y;
 
 			if (profile->is_active && resolution->is_active)
 				active_resolution = resolution;
