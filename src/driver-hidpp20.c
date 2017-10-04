@@ -831,7 +831,7 @@ hidpp20drv_read_leds(struct ratbag_device *device)
 }
 
 static void
-hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
+hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -839,10 +839,10 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	struct hidpp20_profile *p;
 	int dpi_index = 0xff;
 
-	profile->is_enabled = drv_data->profiles->profiles[index].enabled;
+	profile->is_enabled = drv_data->profiles->profiles[profile->index].enabled;
 
 	profile->is_active = false;
-	if ((int)index == hidpp20drv_current_profile(device))
+	if ((int)profile->index == hidpp20drv_current_profile(device))
 		profile->is_active = true;
 
 	if (profile->is_active)
@@ -851,7 +851,7 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 	if (dpi_index < 0)
 		dpi_index = 0xff;
 
-	p = &drv_data->profiles->profiles[index];
+	p = &drv_data->profiles->profiles[profile->index];
 
 	ratbag_profile_for_each_resolution(profile, res) {
 		struct hidpp20_sensor *sensor;
@@ -879,18 +879,27 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile, unsigned int index)
 }
 
 static void
-hidpp20drv_read_profile(struct ratbag_profile *profile, unsigned int index)
+hidpp20drv_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag_led *led;
+	struct ratbag_button *button;
 
-	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
-		return hidpp20drv_read_profile_8100(profile, index);
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+		hidpp20drv_read_profile_8100(profile);
+	} else {
+		hidpp20drv_read_resolution_dpi(profile);
+		hidpp20drv_read_special_key_mouse(device);
 
-	hidpp20drv_read_resolution_dpi(profile);
-	hidpp20drv_read_special_key_mouse(device);
+		profile->is_active = (profile->index == 0);
+	}
 
-	profile->is_active = (index == 0);
+	ratbag_profile_for_each_led(profile, led)
+		hidpp20drv_read_led(led);
+
+	ratbag_profile_for_each_button(profile, button)
+		hidpp20drv_read_button(button);
 }
 
 static int
@@ -1159,6 +1168,22 @@ hidpp20drv_remove(struct ratbag_device *device)
 	free(drv_data);
 }
 
+static void
+hidpp20drv_init_device(struct ratbag_device *device,
+		       struct hidpp20drv_data *drv_data)
+{
+	struct ratbag_profile *profile;
+
+	ratbag_device_init_profiles(device,
+				    drv_data->num_profiles,
+				    drv_data->num_resolutions,
+				    drv_data->num_buttons,
+				    drv_data->num_leds);
+
+	ratbag_device_for_each_profile(device, profile)
+		hidpp20drv_read_profile(profile);
+}
+
 static int
 hidpp20drv_probe(struct ratbag_device *device)
 {
@@ -1209,11 +1234,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 	if (rc)
 		goto err;
 
-	ratbag_device_init_profiles(device,
-				    drv_data->num_profiles,
-				    drv_data->num_resolutions,
-				    drv_data->num_buttons,
-				    drv_data->num_leds);
+	hidpp20drv_init_device(device, drv_data);
 
 	return rc;
 err:
@@ -1227,8 +1248,5 @@ struct ratbag_driver hidpp20_driver = {
 	.probe = hidpp20drv_probe,
 	.remove = hidpp20drv_remove,
 	.commit = hidpp20drv_commit,
-	.read_profile = hidpp20drv_read_profile,
 	.set_active_profile = hidpp20drv_set_current_profile,
-	.read_button = hidpp20drv_read_button,
-	.read_led = hidpp20drv_read_led,
 };

@@ -391,83 +391,6 @@ roccat_button_to_action(struct ratbag_profile *profile,
 	return roccat_raw_to_button_action(data);
 }
 
-static void
-roccat_read_profile(struct ratbag_profile *profile, unsigned int index)
-{
-	struct ratbag_device *device = profile->device;
-	struct roccat_data *drv_data;
-	struct ratbag_resolution *resolution;
-	struct roccat_settings_report *setting_report;
-	uint8_t *buf;
-	unsigned int report_rate;
-	int dpi_x, dpi_y, hz;
-	int rc;
-
-	assert(index <= ROCCAT_PROFILE_MAX);
-
-	drv_data = ratbag_get_drv_data(device);
-
-	setting_report = &drv_data->settings[index];
-	buf = (uint8_t*)setting_report;
-	roccat_set_config_profile(device, index, ROCCAT_CONFIG_SETTINGS);
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_SETTINGS,
-			buf, ROCCAT_REPORT_SIZE_SETTINGS,
-			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
-
-	if (rc < ROCCAT_REPORT_SIZE_SETTINGS)
-		return;
-
-	/* first retrieve the report rate, it is set per profile */
-	switch (setting_report->report_rate) {
-	case 0x00: report_rate = 125; break;
-	case 0x01: report_rate = 250; break;
-	case 0x02: report_rate = 500; break;
-	case 0x03: report_rate = 1000; break;
-	default:
-		log_error(device->ratbag,
-			  "error while reading the report rate of the mouse (0x%02x)\n",
-			  buf[26]);
-		report_rate = 0;
-	}
-
-	ratbag_profile_for_each_resolution(profile, resolution) {
-		dpi_x = setting_report->xres[resolution->index] * 50;
-		dpi_y = setting_report->yres[resolution->index] * 50;
-		hz = report_rate;
-		if (!(setting_report->dpi_mask & (1 << resolution->index))) {
-			/* the profile is disabled, overwrite it */
-			dpi_x = 0;
-			dpi_y = 0;
-			hz = 0;
-		}
-
-		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y, hz);
-		ratbag_resolution_set_cap(resolution,
-					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
-		resolution->is_active = (resolution->index == setting_report->current_dpi);
-	}
-
-	buf = drv_data->profiles[index];
-	roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-			buf, ROCCAT_REPORT_SIZE_PROFILE,
-			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
-
-	msleep(10);
-
-	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
-		return;
-
-	if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_PROFILE))
-		log_error(device->ratbag,
-			  "Error while reading profile %d, continuing...\n",
-			  profile->index);
-
-	log_raw(device->ratbag, "profile: %d %s:%d\n",
-		buf[2],
-		__FILE__, __LINE__);
-}
-
 static int
 roccat_write_profile(struct ratbag_profile *profile)
 {
@@ -769,6 +692,87 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	return rc;
 }
 
+static void
+roccat_read_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct roccat_data *drv_data;
+	struct ratbag_resolution *resolution;
+	struct ratbag_button *button;
+	struct roccat_settings_report *setting_report;
+	uint8_t *buf;
+	unsigned int report_rate;
+	int dpi_x, dpi_y, hz;
+	int rc;
+
+	assert(profile->index <= ROCCAT_PROFILE_MAX);
+
+	drv_data = ratbag_get_drv_data(device);
+
+	setting_report = &drv_data->settings[profile->index];
+	buf = (uint8_t*)setting_report;
+	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_SETTINGS);
+	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_SETTINGS,
+			buf, ROCCAT_REPORT_SIZE_SETTINGS,
+			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+
+	if (rc < ROCCAT_REPORT_SIZE_SETTINGS)
+		return;
+
+	/* first retrieve the report rate, it is set per profile */
+	switch (setting_report->report_rate) {
+	case 0x00: report_rate = 125; break;
+	case 0x01: report_rate = 250; break;
+	case 0x02: report_rate = 500; break;
+	case 0x03: report_rate = 1000; break;
+	default:
+		log_error(device->ratbag,
+			  "error while reading the report rate of the mouse (0x%02x)\n",
+			  buf[26]);
+		report_rate = 0;
+	}
+
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		dpi_x = setting_report->xres[resolution->index] * 50;
+		dpi_y = setting_report->yres[resolution->index] * 50;
+		hz = report_rate;
+		if (!(setting_report->dpi_mask & (1 << resolution->index))) {
+			/* the profile is disabled, overwrite it */
+			dpi_x = 0;
+			dpi_y = 0;
+			hz = 0;
+		}
+
+		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y, hz);
+		ratbag_resolution_set_cap(resolution,
+					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+		resolution->is_active = (resolution->index == setting_report->current_dpi);
+	}
+
+	ratbag_profile_for_each_button(profile, button)
+		roccat_read_button(button);
+
+	buf = drv_data->profiles[profile->index];
+	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_KEY_MAPPING);
+	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_KEY_MAPPING,
+			buf, ROCCAT_REPORT_SIZE_PROFILE,
+			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+
+	msleep(10);
+
+	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
+		return;
+
+	if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_PROFILE))
+		log_error(device->ratbag,
+			  "Error while reading profile %d, continuing...\n",
+			  profile->index);
+
+	log_raw(device->ratbag, "profile: %d %s:%d\n",
+		buf[2],
+		__FILE__, __LINE__);
+}
+
 static int
 roccat_probe(struct ratbag_device *device)
 {
@@ -795,6 +799,9 @@ roccat_probe(struct ratbag_device *device)
 				    ROCCAT_NUM_DPI,
 				    ROCCAT_BUTTON_MAX + 1,
 				    ROCCAT_LED_MAX);
+
+	ratbag_device_for_each_profile(device, profile)
+		roccat_read_profile(profile);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
@@ -841,10 +848,8 @@ struct ratbag_driver roccat_driver = {
 	.id = "roccat",
 	.probe = roccat_probe,
 	.remove = roccat_remove,
-	.read_profile = roccat_read_profile,
 	.write_profile = roccat_write_profile,
 	.set_active_profile = roccat_set_current_profile,
-	.read_button = roccat_read_button,
 	.write_button = roccat_write_button,
 	.write_resolution_dpi = roccat_write_resolution_dpi,
 };

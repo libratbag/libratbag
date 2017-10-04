@@ -324,79 +324,6 @@ etekcity_button_to_action(struct ratbag_profile *profile,
 	return etekcity_raw_to_button_action(data);
 }
 
-static void
-etekcity_read_profile(struct ratbag_profile *profile, unsigned int index)
-{
-	struct ratbag_device *device = profile->device;
-	struct etekcity_data *drv_data;
-	struct ratbag_resolution *resolution;
-	struct etekcity_settings_report *setting_report;
-	uint8_t *buf;
-	unsigned int report_rate;
-	int dpi_x, dpi_y, hz;
-	int rc;
-
-	assert(index <= ETEKCITY_PROFILE_MAX);
-
-	drv_data = ratbag_get_drv_data(device);
-
-	setting_report = &drv_data->settings[index];
-	buf = (uint8_t*)setting_report;
-	etekcity_set_config_profile(device, index, ETEKCITY_CONFIG_SETTINGS);
-	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_SETTINGS,
-			buf, ETEKCITY_REPORT_SIZE_SETTINGS,
-			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
-
-	if (rc < ETEKCITY_REPORT_SIZE_SETTINGS)
-		return;
-
-	/* first retrieve the report rate, it is set per profile */
-	switch (setting_report->report_rate) {
-	case 0x00: report_rate = 125; break;
-	case 0x01: report_rate = 250; break;
-	case 0x02: report_rate = 500; break;
-	case 0x03: report_rate = 1000; break;
-	default:
-		log_error(device->ratbag,
-			  "error while reading the report rate of the mouse (0x%02x)\n",
-			  buf[26]);
-		report_rate = 0;
-	}
-
-	ratbag_profile_for_each_resolution(profile, resolution) {
-		dpi_x = setting_report->xres[resolution->index] * 50;
-		dpi_y = setting_report->yres[resolution->index] * 50;
-		hz = report_rate;
-		if (!(setting_report->dpi_mask & (1 << resolution->index))) {
-			/* the profile is disabled, overwrite it */
-			dpi_x = 0;
-			dpi_y = 0;
-			hz = 0;
-		}
-
-		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y, hz);
-		ratbag_resolution_set_cap(resolution,
-					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
-		resolution->is_active = (resolution->index == setting_report->current_dpi);
-	}
-
-
-	buf = drv_data->profiles[index];
-	etekcity_set_config_profile(device, index, ETEKCITY_CONFIG_KEY_MAPPING);
-	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_KEY_MAPPING,
-			buf, ETEKCITY_REPORT_SIZE_PROFILE,
-			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
-
-	msleep(10);
-
-	if (rc < ETEKCITY_REPORT_SIZE_PROFILE)
-		return;
-
-	log_raw(device->ratbag, "profile: %d %s:%d\n",
-		buf[2],
-		__FILE__, __LINE__);
-}
-
 static int
 etekcity_write_profile(struct ratbag_profile *profile)
 {
@@ -489,6 +416,82 @@ etekcity_read_button(struct ratbag_button *button)
 		}
 		msleep(10);
 	}
+}
+
+static void
+etekcity_read_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct etekcity_data *drv_data;
+	struct ratbag_resolution *resolution;
+	struct ratbag_button *button;
+	struct etekcity_settings_report *setting_report;
+	uint8_t *buf;
+	unsigned int report_rate;
+	int dpi_x, dpi_y, hz;
+	int rc;
+
+	assert(profile->index <= ETEKCITY_PROFILE_MAX);
+
+	drv_data = ratbag_get_drv_data(device);
+
+	setting_report = &drv_data->settings[profile->index];
+	buf = (uint8_t*)setting_report;
+	etekcity_set_config_profile(device, profile->index, ETEKCITY_CONFIG_SETTINGS);
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_SETTINGS,
+			buf, ETEKCITY_REPORT_SIZE_SETTINGS,
+			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+
+	if (rc < ETEKCITY_REPORT_SIZE_SETTINGS)
+		return;
+
+	/* first retrieve the report rate, it is set per profile */
+	switch (setting_report->report_rate) {
+	case 0x00: report_rate = 125; break;
+	case 0x01: report_rate = 250; break;
+	case 0x02: report_rate = 500; break;
+	case 0x03: report_rate = 1000; break;
+	default:
+		log_error(device->ratbag,
+			  "error while reading the report rate of the mouse (0x%02x)\n",
+			  buf[26]);
+		report_rate = 0;
+	}
+
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		dpi_x = setting_report->xres[resolution->index] * 50;
+		dpi_y = setting_report->yres[resolution->index] * 50;
+		hz = report_rate;
+		if (!(setting_report->dpi_mask & (1 << resolution->index))) {
+			/* the profile is disabled, overwrite it */
+			dpi_x = 0;
+			dpi_y = 0;
+			hz = 0;
+		}
+
+		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y, hz);
+		ratbag_resolution_set_cap(resolution,
+					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+		resolution->is_active = (resolution->index == setting_report->current_dpi);
+	}
+
+	ratbag_profile_for_each_button(profile, button)
+		etekcity_read_button(button);
+
+	buf = drv_data->profiles[profile->index];
+	etekcity_set_config_profile(device, profile->index, ETEKCITY_CONFIG_KEY_MAPPING);
+	rc = ratbag_hidraw_raw_request(device, ETEKCITY_REPORT_ID_KEY_MAPPING,
+			buf, ETEKCITY_REPORT_SIZE_PROFILE,
+			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+
+	msleep(10);
+
+	if (rc < ETEKCITY_REPORT_SIZE_PROFILE)
+		return;
+
+	log_raw(device->ratbag, "profile: %d %s:%d\n",
+		buf[2],
+		__FILE__, __LINE__);
 }
 
 static int
@@ -661,6 +664,9 @@ etekcity_probe(struct ratbag_device *device)
 				    ETEKCITY_BUTTON_MAX + 1,
 				    ETEKCITY_LED);
 
+	ratbag_device_for_each_profile(device, profile)
+		etekcity_read_profile(profile);
+
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
@@ -706,10 +712,8 @@ struct ratbag_driver etekcity_driver = {
 	.id = "etekcity",
 	.probe = etekcity_probe,
 	.remove = etekcity_remove,
-	.read_profile = etekcity_read_profile,
 	.write_profile = etekcity_write_profile,
 	.set_active_profile = etekcity_set_current_profile,
-	.read_button = etekcity_read_button,
 	.write_button = etekcity_write_button,
 	.write_resolution_dpi = etekcity_write_resolution_dpi,
 };
