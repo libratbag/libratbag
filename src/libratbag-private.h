@@ -166,8 +166,8 @@ struct ratbag_driver {
 	int (*commit)(struct ratbag_device *device);
 
 	/**
-	 * Callback called when the device doesn't have the udev property
-	 * RATBAG_SVG.
+	 * Callback called when the device doesn't have a .device file with
+	 * an SVG name set.
 	 *
 	 * The returned value must not be free by the caller, the driver
 	 * has to free it during .remove().
