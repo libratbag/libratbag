@@ -404,12 +404,6 @@ hidpp10drv_read_profile(struct ratbag_profile *profile, unsigned int index)
 }
 
 static int
-hidpp10drv_write_profile(struct ratbag_profile *profile)
-{
-	return 0;
-}
-
-static int
 hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device *dev)
 {
 	int rc, num_leds;
@@ -661,7 +655,6 @@ struct ratbag_driver hidpp10_driver = {
 	.probe = hidpp10drv_probe,
 	.remove = hidpp10drv_remove,
 	.read_profile = hidpp10drv_read_profile,
-	.write_profile = hidpp10drv_write_profile,
 	.set_active_profile = hidpp10drv_set_current_profile,
 	.read_button = hidpp10drv_read_button,
 	.commit = hidpp10drv_commit,
