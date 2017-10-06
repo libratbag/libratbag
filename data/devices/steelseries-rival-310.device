@@ -1,0 +1,5 @@
+[Device]
+Name=SteelSeriesRival 310
+DeviceMatch=usb:1038:1720
+Driver=steelseries
+Svg=steelseries-rival310.svg
