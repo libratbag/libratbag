@@ -4,3 +4,4 @@ Name=Logitech Gaming Mouse G303
 DeviceMatch=usb:046d:c080
 Svg=logitech-g303.svg
 Driver=hidpp20
+LedTypes=logo;side;

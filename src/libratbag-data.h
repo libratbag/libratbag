@@ -42,6 +42,9 @@ const char *
 ratbag_device_data_get_name(const struct ratbag_device_data *data);
 const char *
 ratbag_device_data_get_svg(const struct ratbag_device_data *data);
+enum ratbag_led_type
+ratbag_device_data_get_led_type(const struct ratbag_device_data *data,
+				unsigned int index);
 
 /* HID++ 1.0 */
 /**

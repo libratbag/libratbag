@@ -322,7 +322,10 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 		led->mode = RATBAG_LED_OFF;
 		break;
 	}
-	led->type = hidpp20_8070_get_location_mapping(led_info->location);
+
+	/* pre-filled, only override if unknown */
+	if (led->type == RATBAG_LED_TYPE_UNKNOWN)
+		led->type = hidpp20_8070_get_location_mapping(led_info->location);
 	led->color.red = h_led->color.red;
 	led->color.green = h_led->color.green;
 	led->color.blue = h_led->color.blue;

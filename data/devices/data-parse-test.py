@@ -62,9 +62,20 @@ def check_match_str(string):
         assert(pid == '{:04x}'.format(int(pid, 16)))
 
 
+def check_ledtypes_str(string):
+    permitted_types = ['logo', 'side', 'battery', 'dpi']
+
+    types = string.split(';')
+    for t in types:
+        if not t: # emtpy string if trailing ;
+            continue
+
+        assert(t in permitted_types)
+
+
 def check_section_device(section):
     required_keys = ['Name', 'Driver', 'DeviceMatch']
-    permitted_keys = required_keys + ['Svg']
+    permitted_keys = required_keys + ['Svg', 'LedTypes']
 
     for key in section.keys():
         assert(key in permitted_keys)
@@ -74,6 +85,11 @@ def check_section_device(section):
 
     try:
         check_svg_str(section['Svg'])
+    except KeyError:
+        pass
+
+    try:
+        check_ledtypes_str(section['LedTypes'])
     except KeyError:
         pass
 
