@@ -623,6 +623,8 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 	led->index = index;
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 	led->type = RATBAG_LED_TYPE_UNKNOWN;
+	if (device->data)
+		led->type = ratbag_device_data_get_led_type(device->data, led->index);
 
 	list_insert(&profile->leds, &led->link);
 

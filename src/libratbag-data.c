@@ -75,6 +75,9 @@ struct ratbag_device_data {
 		struct data_hidpp20 hidpp20;
 		struct data_hidpp10 hidpp10;
 	};
+
+	enum ratbag_led_type led_types[20];
+	size_t nled_types;
 };
 
 static void
@@ -178,6 +181,15 @@ ratbag_device_data_get_svg(const struct ratbag_device_data *data)
 	return data->svg;
 }
 
+enum ratbag_led_type
+ratbag_device_data_get_led_type(const struct ratbag_device_data *data,
+				unsigned int index)
+{
+	assert(index < ARRAY_LENGTH(data->led_types));
+
+	return data->led_types[index];
+}
+
 struct ratbag_device_data *
 ratbag_device_data_ref(struct ratbag_device_data *data)
 {
@@ -218,6 +230,40 @@ ratbag_device_data_unref(struct ratbag_device_data *data)
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbag_device_data *, ratbag_device_data_unref);
 
+static int
+parse_ledtypes(char **strv, enum ratbag_led_type *types, size_t ntypes)
+{
+	unsigned int i;
+	int count = 0;
+
+	for (i = 0; i < ntypes; i++)
+		types[i] = RATBAG_LED_TYPE_UNKNOWN;
+
+	if (!strv)
+		return count;
+
+	i = 0;
+	while(strv[i]) {
+		const char *s = strv[i];
+
+		if (streq(s, "logo"))
+			types[i] = RATBAG_LED_TYPE_LOGO;
+		else if (streq(s, "side"))
+			types[i] = RATBAG_LED_TYPE_SIDE;
+		else if (streq(s, "dpi"))
+			types[i] = RATBAG_LED_TYPE_SIDE;
+		else if (streq(s, "battery"))
+			types[i] = RATBAG_LED_TYPE_SIDE;
+		else
+			return -1;
+
+		count++;
+		i++;
+	}
+
+	return count;
+}
+
 static bool
 match(const struct input_id *id, char **strv)
 {
@@ -250,7 +296,8 @@ file_data_matches(struct ratbag *ratbag,
 {
 	_cleanup_(g_key_file_freep) GKeyFile *keyfile = NULL;
 	_cleanup_(g_error_freep) GError *error = NULL;
-	_cleanup_(g_strfreevp) char **strv = NULL;
+	_cleanup_(g_strfreevp) char **match_strv = NULL;
+	_cleanup_(g_strfreevp) char **ledtypes_strv = NULL;
 	_cleanup_(ratbag_device_data_unrefp) struct ratbag_device_data *data = NULL;
 	int rc;
 
@@ -261,13 +308,13 @@ file_data_matches(struct ratbag *ratbag,
 		return false;
 	}
 
-	strv = g_key_file_get_string_list(keyfile, GROUP_DEVICE, "DeviceMatch", NULL, NULL);
-	if (!strv) {
+	match_strv = g_key_file_get_string_list(keyfile, GROUP_DEVICE, "DeviceMatch", NULL, NULL);
+	if (!match_strv) {
 		log_error(ratbag, "Missing DeviceMatch in %s\n", basename(path));
 		return false;
 	}
 
-	if (!match(id, strv))
+	if (!match(id, match_strv))
 		return false;
 
 	data = zalloc(sizeof(*data));
@@ -302,6 +349,12 @@ file_data_matches(struct ratbag *ratbag,
 	}
 
 	data->svg = g_key_file_get_string(keyfile, GROUP_DEVICE, "Svg", NULL);
+
+	ledtypes_strv = g_key_file_get_string_list(keyfile, GROUP_DEVICE, "LedTypes", NULL, NULL);
+	if (parse_ledtypes(ledtypes_strv, data->led_types, ARRAY_LENGTH(data->led_types)) < 0) {
+		log_error(ratbag, "Invalid LedTypes string in '%s'\n", basename(path));
+		return false;
+	}
 
 	*data_out = data;
 	data = NULL;
