@@ -552,7 +552,6 @@ int hidpp20_led_sw_control_get_led_info(struct hidpp20_device* device,
 		return -ENOENT;
 
 	params = (struct hidpp20_led_sw_ctrl_led_info*) msg.msg.parameters;
-	params->type = hidpp_be_u16_to_cpu(params->type);
 	params->caps = hidpp_be_u16_to_cpu(params->caps);
 
 	*info = *params;
