@@ -230,11 +230,10 @@ static inline bool
 ratbag_sanity_check_device(struct ratbag_device *device)
 {
 	struct ratbag *ratbag = device->ratbag;
-	_cleanup_profile_ struct ratbag_profile *profile = NULL;
+	struct ratbag_profile *profile = NULL;
 	bool has_active = false;
-	unsigned int nres, nprofiles;
+	unsigned int nres;
 	bool rc = false;
-	unsigned int i;
 
 	/* arbitrary number: max 16 profiles, does any mouse have more? but
 	 * since we have num_profiles unsigned, it also checks for
@@ -247,12 +246,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		goto out;
 	}
 
-	nprofiles = ratbag_device_get_num_profiles(device);
-	for (i = 0; i < nprofiles; i++) {
-		profile = ratbag_device_get_profile(device, i);
-		if (!profile)
-			goto out;
-
+	ratbag_device_for_each_profile(device, profile) {
 		/* Allow max 1 active profile */
 		if (profile->is_active) {
 			if (has_active) {
@@ -272,9 +266,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 						  nres);
 				goto out;
 		}
-
-		ratbag_profile_unref(profile);
-		profile = NULL;
 	}
 
 	/* Require 1 active profile */
@@ -286,14 +277,13 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	}
 
 	/* Require LED to be the same type in each profile */
-	for (i = 1; i < nprofiles; i++) {
+	ratbag_device_for_each_profile(device, profile) {
 		_cleanup_profile_ struct ratbag_profile *p0 = ratbag_device_get_profile(device, 0);
-		_cleanup_profile_ struct ratbag_profile *p = ratbag_device_get_profile(device, i);
-		unsigned int nleds = ratbag_device_get_num_leds(device);
+		struct ratbag_led *led;
 
-		for (unsigned int j = 0; j < nleds; j++) {
-			_cleanup_led_ struct ratbag_led *p0_led = ratbag_profile_get_led(p0, j);
-			_cleanup_led_ struct ratbag_led *led = ratbag_profile_get_led(p, j);
+
+		ratbag_profile_for_each_led(profile, led) {
+			_cleanup_led_ struct ratbag_led *p0_led = ratbag_profile_get_led(p0, led->index);
 
 			assert(led->type != RATBAG_LED_TYPE_UNKNOWN);
 
@@ -301,7 +291,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 				log_bug_libratbag(ratbag,
 						  "%s: mismatching LED types (profile %d led %d)\n",
 						  device->name,
-						  p->index,
+						  profile->index,
 						  led->type);
 				goto out;
 			}
