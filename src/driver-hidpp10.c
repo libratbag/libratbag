@@ -337,6 +337,43 @@ hidpp10drv_write_button(struct hidpp10_profile *profile,
 	return 0;
 }
 
+static void
+hidpp10drv_read_led(struct ratbag_led *led)
+{
+	struct ratbag_device *device = led->profile->device;
+	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp10_device *hidpp10 = drv_data->dev;
+	struct hidpp10_profile profile;
+	int ret;
+
+	ret = hidpp10_get_profile(hidpp10, led->profile->index, &profile);
+	if (ret)
+		return;
+
+	switch (hidpp10->profile_type) {
+	case HIDPP10_PROFILE_G500:
+		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+		break;
+	default:
+		led->colordepth = RATBAG_LED_COLORDEPTH_MONOCHROME;
+		break;
+	}
+
+	led->mode = RATBAG_LED_ON;
+	led->color.red = profile.red;
+	led->color.green = profile.green;
+	led->color.blue = profile.blue;
+}
+
+static void
+hidpp10drv_write_led(struct hidpp10_profile *profile,
+		     struct ratbag_led *led)
+{
+	profile->red = led->color.red;
+	profile->green = led->color.green;
+	profile->blue = led->color.blue;
+}
+
 static int
 hidpp10drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
@@ -351,6 +388,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct ratbag_button *button;
+	struct ratbag_led *led;
 	struct hidpp10drv_data *drv_data;
 	struct hidpp10_device *hidpp10;
 	struct hidpp10_profile p = {0};
@@ -404,6 +442,9 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 
 	ratbag_profile_for_each_button(profile, button)
 		hidpp10drv_read_button(button);
+
+	ratbag_profile_for_each_led(profile, led)
+		hidpp10drv_read_led(led);
 }
 
 static int
@@ -469,6 +510,7 @@ hidpp10drv_commit(struct ratbag_device *device)
 	struct hidpp10_device *dev = drv_data->dev;
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
+	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	struct ratbag_resolution *active_resolution = NULL;
 	struct hidpp10_profile p;
@@ -502,6 +544,9 @@ hidpp10drv_commit(struct ratbag_device *device)
 			if (rc)
 				return RATBAG_ERROR_DEVICE;
 		}
+
+		ratbag_profile_for_each_led(profile, led)
+			hidpp10drv_write_led(&p, led);
 
 		if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
 			rc = hidpp10_set_profile(dev, profile->index, &p);
