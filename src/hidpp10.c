@@ -1515,6 +1515,9 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 			hidpp10_fill_buttons(dev, profile, buttons, PROFILE_NUM_BUTTONS);
 			break;
 		case HIDPP10_PROFILE_G9:
+			profile->red = p9->red;
+			profile->green = p9->green;
+			profile->blue = p9->blue;
 			profile->default_dpi_mode = p9->default_dpi_mode;
 			profile->refresh_rate = p9->usb_refresh_rate ? 1000/p9->usb_refresh_rate : 0;
 
