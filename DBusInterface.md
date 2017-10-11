@@ -60,7 +60,9 @@ known to ratbagd.
 - type: `s`, read-only, constant
 
 An ID describing this device. This ID should not be used for presentation to
-the user.
+the user. This ID is unique for the device for the lifetime of the device
+but may be recycled when the device is removed. No guarantee is given for
+the content of the ID, the client should treat it as an opaque string.
 
 #### `Description`
 - type: `s`, read-only, constant
