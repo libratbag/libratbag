@@ -184,7 +184,7 @@ Index of the resolution
 #### `Capabilities`
 - type: `au`, read-only, constant
 
-Array of uints with the capabilities enum from libratbag
+Array of uints from the ratbag\_resolution\_capability from libratbag.h.
 
 #### `IsActive`
 - type: `b`, read-only, mutable
@@ -209,17 +209,27 @@ one resolution must be default at all times. This property is read-only, use the
 #### `Resolution`
 - type: `uu`, read-write, mutable
 
-uint for the x and y resolution assigned to this entry, respectively
+uint for the x and y resolution assigned to this entry, respectively.
+The value for the resolution must be equal to or between the `Minimum` and
+`Maximum` of this resolution.
+
+If the resolution does not support separate x/y resolutions, x and y must
+be the same value.
 
 #### `ReportRate`
 - type: `u`, read-write, mutable
 
 uint for the report rate in Hz assigned to this entry
 
+If the resolution does not have the individual report rate capability,
+changing the report rate on one resolution will change the report rate on
+all resolutions.
+
 #### `Maximum`
 - type: `u`, read-only, constant
 
-uint for the maximum possible resolution
+uint for the maximum resolution
+
 #### `Minimum`
 - type: `u`, read-only, constant
 
