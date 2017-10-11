@@ -399,7 +399,7 @@ int ratbagd_button_new(struct ratbagd_button **out,
 	sprintf(button_buffer, "b%u", index);
 	r = sd_bus_path_encode_many(&button->path,
 				    RATBAGD_OBJ_ROOT "/button/%/%/%",
-				    ratbagd_device_get_name(device),
+				    ratbagd_device_get_sysname(device),
 				    profile_buffer,
 				    button_buffer);
 	if (r < 0)

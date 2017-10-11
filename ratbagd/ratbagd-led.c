@@ -295,7 +295,7 @@ int ratbagd_led_new(struct ratbagd_led **out,
 	sprintf(led_buffer, "l%u", index);
 	r = sd_bus_path_encode_many(&led->path,
 				    RATBAGD_OBJ_ROOT "/led/%/%/%",
-				    ratbagd_device_get_name(device),
+				    ratbagd_device_get_sysname(device),
 				    profile_buffer,
 				    led_buffer);
 	if (r < 0)

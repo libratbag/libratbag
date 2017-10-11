@@ -148,7 +148,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 		       const char *name,
 		       struct ratbag_device *lib_device);
 struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device);
-const char *ratbagd_device_get_name(struct ratbagd_device *device);
+const char *ratbagd_device_get_sysname(struct ratbagd_device *device);
 const char *ratbagd_device_get_path(struct ratbagd_device *device);
 unsigned int ratbagd_device_get_num_buttons(struct ratbagd_device *device);
 unsigned int ratbagd_device_get_num_leds(struct ratbagd_device *device);

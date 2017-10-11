@@ -383,7 +383,7 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 	sprintf(resolution_buffer, "r%u", index);
 	r = sd_bus_path_encode_many(&resolution->path,
 				    RATBAGD_OBJ_ROOT "/resolution/%/%/%",
-				    ratbagd_device_get_name(device),
+				    ratbagd_device_get_sysname(device),
 				    profile_buffer,
 				    resolution_buffer);
 	if (r < 0)

@@ -43,7 +43,7 @@
 struct ratbagd_device {
 	struct ratbagd *ctx;
 	RBNode node;
-	char *name;
+	char *sysname;
 	char *path;
 	struct ratbag_device *lib_device;
 
@@ -126,7 +126,7 @@ static int ratbagd_device_get_device_name(sd_bus *bus,
 	name = ratbag_device_get_name(device->lib_device);
 	if (!name) {
 		log_error("Unable to fetch name for %s\n",
-			  ratbagd_device_get_name(device));
+			  ratbagd_device_get_sysname(device));
 		name = "";
 	}
 
@@ -147,7 +147,7 @@ static int ratbagd_device_get_svg(sd_bus *bus,
 	svg = ratbag_device_get_svg_name(device->lib_device);
 	if (!svg) {
 		log_error("Unable to fetch SVG for %s\n",
-			  ratbagd_device_get_name(device));
+			  ratbagd_device_get_sysname(device));
 		svg = "";
 	}
 
@@ -172,7 +172,7 @@ static int ratbagd_device_get_theme_svg(sd_bus_message *m,
 	svg = ratbag_device_get_svg_name(device->lib_device);
 	if (!svg) {
 		log_error("Unable to fetch SVG for %s, using fallback\n",
-			  ratbagd_device_get_name(device));
+			  ratbagd_device_get_sysname(device));
 		svg = FALLBACK_SVG_NAME;
 	}
 
@@ -277,7 +277,7 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
-	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, name), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, sysname), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
@@ -290,7 +290,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 
 int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbagd *ctx,
-		       const char *name,
+		       const char *sysname,
 		       struct ratbag_device *lib_device)
 {
 	_cleanup_(ratbagd_device_freep) struct ratbagd_device *device = NULL;
@@ -300,17 +300,17 @@ int ratbagd_device_new(struct ratbagd_device **out,
 
 	assert(out);
 	assert(ctx);
-	assert(name);
+	assert(sysname);
 
 	device = zalloc(sizeof(*device));
 	device->ctx = ctx;
 	rbnode_init(&device->node);
 	device->lib_device = ratbag_device_ref(lib_device);
 
-	device->name = strdup_safe(name);
+	device->sysname = strdup_safe(sysname);
 
 	r = sd_bus_path_encode(RATBAGD_OBJ_ROOT "/device",
-			       device->name,
+			       device->sysname,
 			       &device->path);
 	if (r < 0)
 		return r;
@@ -320,7 +320,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	device->profiles = zalloc(device->n_profiles * sizeof(*device->profiles));
 
 	log_verbose("%s: \"%s\", %d profiles\n",
-		    name,
+		    sysname,
 		    ratbag_device_get_name(lib_device),
 		    device->n_profiles);
 
@@ -336,7 +336,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 		if (r < 0) {
 			errno = -r;
 			log_error("Cannot allocate profile for '%s': %m\n",
-				  device->name);
+				  device->sysname);
 		}
 	}
 
@@ -360,17 +360,17 @@ struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
 	device->profiles = mfree(device->profiles);
 	device->lib_device = ratbag_device_unref(device->lib_device);
 	device->path = mfree(device->path);
-	device->name = mfree(device->name);
+	device->sysname = mfree(device->sysname);
 
 	assert(!device->lib_device); /* ratbag yields !NULL if still pinned */
 
 	return mfree(device);
 }
 
-const char *ratbagd_device_get_name(struct ratbagd_device *device)
+const char *ratbagd_device_get_sysname(struct ratbagd_device *device)
 {
 	assert(device);
-	return device->name;
+	return device->sysname;
 }
 
 const char *ratbagd_device_get_path(struct ratbagd_device *device)
@@ -424,7 +424,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	while (*node) {
 		parent = *node;
 		iter = ratbagd_device_from_node(parent);
-		v = strcmp(device->name, iter->name);
+		v = strcmp(device->sysname, iter->sysname);
 
 		/* if there's a duplicate, the caller screwed up */
 		assert(v != 0);
@@ -442,7 +442,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	/* register profile interfaces */
 	r = sd_bus_path_encode_many(&prefix,
 				    RATBAGD_OBJ_ROOT "/profile/%",
-				    device->name);
+				    device->sysname);
 	if (r >= 0) {
 		r = sd_bus_add_fallback_vtable(device->ctx->bus,
 					       &device->profile_vtable_slot,
@@ -461,7 +461,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	if (r < 0) {
 		errno = -r;
 		log_error("Cannot register profile interfaces for '%s': %m\n",
-			  device->name);
+			  device->sysname);
 		return;
 	}
 
@@ -471,7 +471,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 							 device->profiles[i]);
 		if (r < 0) {
 			log_error("Cannot register resolutions for '%s': %m\n",
-				  device->name);
+				  device->sysname);
 		}
 
 		r = ratbagd_profile_register_buttons(device->ctx->bus,
@@ -479,7 +479,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 						     device->profiles[i]);
 		if (r < 0) {
 			log_error("Cannot register buttons for '%s': %m\n",
-				  device->name);
+				  device->sysname);
 		}
 
 		r = ratbagd_profile_register_leds(device->ctx->bus,
@@ -487,7 +487,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 						  device->profiles[i]);
 		if (r < 0) {
 			log_error("Cannot register leds for '%s': %m\n",
-				  device->name);
+				  device->sysname);
 		}
 	}
 }
@@ -519,7 +519,7 @@ struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,
 	node = ctx->device_map.root;
 	while (node) {
 		device = ratbagd_device_from_node(node);
-		v = strcmp(name, device->name);
+		v = strcmp(name, device->sysname);
 		if (!v)
 			return device;
 		else if (v < 0)
