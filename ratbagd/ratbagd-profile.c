@@ -474,7 +474,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 	sprintf(index_buffer, "p%u", index);
 	r = sd_bus_path_encode_many(&profile->path,
 				    RATBAGD_OBJ_ROOT "/profile/%/%",
-				    ratbagd_device_get_name(device),
+				    ratbagd_device_get_sysname(device),
 				    index_buffer);
 	if (r < 0)
 		return r;
@@ -501,7 +501,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 		if (r < 0) {
 			errno = -r;
 			log_error("Cannot allocate resolution for '%s': %m\n",
-				  ratbagd_device_get_name(device));
+				  ratbagd_device_get_sysname(device));
 		}
 	}
 
@@ -518,7 +518,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 		if (r < 0) {
 			errno = -r;
 			log_error("Cannot allocate button for '%s': %m\n",
-				  ratbagd_device_get_name(device));
+				  ratbagd_device_get_sysname(device));
 		}
 	}
 
@@ -535,7 +535,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 		if (r < 0) {
 			errno = -r;
 			log_error("Cannot allocate led for '%s': %m\n",
-				  ratbagd_device_get_name(device));
+				  ratbagd_device_get_sysname(device));
 		}
 	}
 
@@ -627,7 +627,7 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 	/* register resolution interfaces */
 	r = sd_bus_path_encode_many(&prefix,
 				    RATBAGD_OBJ_ROOT "/resolution/%/%",
-				    ratbagd_device_get_name(device),
+				    ratbagd_device_get_sysname(device),
 				    index_buffer);
 
 	if (r >= 0) {
@@ -648,7 +648,7 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 	if (r < 0) {
 		errno = -r;
 		log_error("Cannot register resolutions for '%s': %m\n",
-			  ratbagd_device_get_name(device));
+			  ratbagd_device_get_sysname(device));
 	}
 
 	return 0;
@@ -693,7 +693,7 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 	/* register button interfaces */
 	r = sd_bus_path_encode_many(&prefix,
 				    RATBAGD_OBJ_ROOT "/button/%/%",
-				    ratbagd_device_get_name(device),
+				    ratbagd_device_get_sysname(device),
 				    index_buffer);
 
 	if (r >= 0) {
@@ -714,7 +714,7 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 	if (r < 0) {
 		errno = -r;
 		log_error("Cannot register buttons for '%s': %m\n",
-			  ratbagd_device_get_name(device));
+			  ratbagd_device_get_sysname(device));
 	}
 
 	return 0;
@@ -759,7 +759,7 @@ int ratbagd_profile_register_leds(struct sd_bus *bus,
 	/* register led interfaces */
 	r = sd_bus_path_encode_many(&prefix,
 				    RATBAGD_OBJ_ROOT "/led/%/%",
-				    ratbagd_device_get_name(device),
+				    ratbagd_device_get_sysname(device),
 				    index_buffer);
 
 	if (r >= 0) {
@@ -780,7 +780,7 @@ int ratbagd_profile_register_leds(struct sd_bus *bus,
 	if (r < 0) {
 		errno = -r;
 		log_error("Cannot register leds for '%s': %m\n",
-			  ratbagd_device_get_name(device));
+			  ratbagd_device_get_sysname(device));
 	}
 
 	return 0;
