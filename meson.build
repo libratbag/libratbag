@@ -539,3 +539,4 @@ configure_file(input : 'tools/toolbox.py',
 #### output files ####
 configure_file(output: 'config.h', install: false, configuration: config_h)
 
+subdir('doc')
