@@ -125,7 +125,7 @@ static int ratbagd_device_get_device_name(sd_bus *bus,
 
 	name = ratbag_device_get_name(device->lib_device);
 	if (!name) {
-		log_error("Unable to fetch name for %s\n",
+		log_error("%s: failed to fetch name\n",
 			  ratbagd_device_get_sysname(device));
 		name = "";
 	}
@@ -146,7 +146,7 @@ static int ratbagd_device_get_svg(sd_bus *bus,
 
 	svg = ratbag_device_get_svg_name(device->lib_device);
 	if (!svg) {
-		log_error("Unable to fetch SVG for %s\n",
+		log_error("%s: failed to fetch SVG\n",
 			  ratbagd_device_get_sysname(device));
 		svg = "";
 	}
@@ -171,7 +171,7 @@ static int ratbagd_device_get_theme_svg(sd_bus_message *m,
 
 	svg = ratbag_device_get_svg_name(device->lib_device);
 	if (!svg) {
-		log_error("Unable to fetch SVG for %s, using fallback\n",
+		log_error("%s: failed to fetch SVG, using fallback\n",
 			  ratbagd_device_get_sysname(device));
 		svg = FALLBACK_SVG_NAME;
 	}
@@ -335,7 +335,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 					i);
 		if (r < 0) {
 			errno = -r;
-			log_error("Cannot allocate profile for '%s': %m\n",
+			log_error("%s: failed to allocate profile: %m\n",
 				  device->sysname);
 		}
 	}
@@ -460,7 +460,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 	}
 	if (r < 0) {
 		errno = -r;
-		log_error("Cannot register profile interfaces for '%s': %m\n",
+		log_error("%s: failed to register profile interfaces: %m\n",
 			  device->sysname);
 		return;
 	}
@@ -470,7 +470,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 							 device,
 							 device->profiles[i]);
 		if (r < 0) {
-			log_error("Cannot register resolutions for '%s': %m\n",
+			log_error("%s: failed to register resolutions: %m\n",
 				  device->sysname);
 		}
 
@@ -478,7 +478,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 						     device,
 						     device->profiles[i]);
 		if (r < 0) {
-			log_error("Cannot register buttons for '%s': %m\n",
+			log_error("%s: failed to register buttons: %m\n",
 				  device->sysname);
 		}
 
@@ -486,7 +486,7 @@ void ratbagd_device_link(struct ratbagd_device *device)
 						  device,
 						  device->profiles[i]);
 		if (r < 0) {
-			log_error("Cannot register leds for '%s': %m\n",
+			log_error("%s: failed to register leds: %m\n",
 				  device->sysname);
 		}
 	}

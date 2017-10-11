@@ -500,7 +500,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 					   i);
 		if (r < 0) {
 			errno = -r;
-			log_error("Cannot allocate resolution for '%s': %m\n",
+			log_error("%s: failed to allocate resolution: %m\n",
 				  ratbagd_device_get_sysname(device));
 		}
 	}
@@ -517,7 +517,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 				       i);
 		if (r < 0) {
 			errno = -r;
-			log_error("Cannot allocate button for '%s': %m\n",
+			log_error("%s: failed to allocate button: %m\n",
 				  ratbagd_device_get_sysname(device));
 		}
 	}
@@ -534,7 +534,7 @@ int ratbagd_profile_new(struct ratbagd_profile **out,
 				    i);
 		if (r < 0) {
 			errno = -r;
-			log_error("Cannot allocate led for '%s': %m\n",
+			log_error("%s: failed to allocate led: %m\n",
 				  ratbagd_device_get_sysname(device));
 		}
 	}
@@ -647,7 +647,7 @@ int ratbagd_profile_register_resolutions(struct sd_bus *bus,
 	}
 	if (r < 0) {
 		errno = -r;
-		log_error("Cannot register resolutions for '%s': %m\n",
+		log_error("%s: failed to register resolutions: %m\n",
 			  ratbagd_device_get_sysname(device));
 	}
 
@@ -713,7 +713,7 @@ int ratbagd_profile_register_buttons(struct sd_bus *bus,
 	}
 	if (r < 0) {
 		errno = -r;
-		log_error("Cannot register buttons for '%s': %m\n",
+		log_error("%s: failed to register buttons: %m\n",
 			  ratbagd_device_get_sysname(device));
 	}
 
@@ -779,7 +779,7 @@ int ratbagd_profile_register_leds(struct sd_bus *bus,
 	}
 	if (r < 0) {
 		errno = -r;
-		log_error("Cannot register leds for '%s': %m\n",
+		log_error("%s: failed to register leds: %m\n",
 			  ratbagd_device_get_sysname(device));
 	}
 
