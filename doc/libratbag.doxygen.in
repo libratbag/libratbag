@@ -1,0 +1,15 @@
+PROJECT_NAME           = @PACKAGE_NAME@
+PROJECT_NUMBER         = @PACKAGE_VERSION@
+PROJECT_BRIEF          = "A mouse configuration library"
+JAVADOC_AUTOBRIEF      = YES
+TAB_SIZE               = 8
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+MAX_INITIALIZER_LINES  = 0
+QUIET                  = YES
+# Keep this list in sync with meson.build
+INPUT                  = @top_srcdir@/src/libratbag-enums.h
+GENERATE_HTML          = NO
+GENERATE_XML           = YES
+GENERATE_LATEX         = NO

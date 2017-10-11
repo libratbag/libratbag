@@ -17,3 +17,8 @@ option('dbus-root-dir',
 	type : 'string',
 	value : '',
 	description : 'dbus service directory [default=$datadir/dbus-1]')
+
+option('documentation',
+	type: 'boolean',
+	value: false,
+	description: 'Enable documentation build (default=no)')
