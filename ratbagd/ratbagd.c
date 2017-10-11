@@ -251,7 +251,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		ratbag_device_unref(lib_device);
 
 		if (r < 0) {
-			log_error("Cannot track device '%s'\n", name);
+			log_error("%s: cannot track device\n", name);
 			return;
 		}
 
