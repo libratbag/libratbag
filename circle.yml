@@ -125,6 +125,38 @@ doc_build: &doc_build
     - *export_logs
     - store_artifacts:
         path: ~/libratbag/build/doc/html
+    - persist_to_workspace:
+        root: build
+        paths:
+          - doc/html/*
+
+docs_deploy: &docs_deploy
+  <<: *default_settings
+  steps:
+    - run:
+        name: Install prerequisites
+        command: dnf install -y git tree
+    - checkout
+    - attach_workspace:
+        at: build
+    - run:
+        name: Clone doc repository
+        command: |
+          cd ~
+          git clone ssh://git@github.com/${CIRCLE_PROJECT_REPONAME}/${CIRCLE_PROJECT_REPONAME}.github.io
+    - run:
+        name: Copy the doc, commit and push
+        command: |
+          set +e
+          cd ~/${CIRCLE_PROJECT_REPONAME}.github.io
+          \cp -r ~/${CIRCLE_PROJECT_REPONAME}/build/doc/html/* .
+          if ! git diff-index --quiet HEAD --; then
+            git config --global user.email "libratbag@librabtag.github.io"
+            git config --global user.name "The libratbag crew"
+            git add .
+            git commit -m "update docs from ${CIRCLE_SHA1}"
+            git push
+          fi
 
 version: 2
 jobs:
@@ -148,6 +180,10 @@ jobs:
     <<: *scan_build_run
     docker:
       - image: fedora:latest
+  doc_deploy:
+    <<: *docs_deploy
+    docker:
+      - image: fedora:latest
 
 
 workflows:
@@ -159,3 +195,9 @@ workflows:
       - ubuntu_17_04
       - fedora_latest
       - doc_build
+      - doc_deploy:
+          requires:
+            - doc_build
+          filters:
+              branches:
+                only: master
