@@ -417,7 +417,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
 
 	ratbag_profile_for_each_resolution(profile, res) {
-		unsigned int min, max;
+		unsigned int dpis[hidpp10->dpi_count];
 
 		ratbag_resolution_set_resolution(res,
 						 p.dpi_modes[res->index].xres,
@@ -435,9 +435,20 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 				res->is_active = true;
 		}
 
-		min = hidpp10_dpi_table_get_min_dpi(hidpp10);
-		max = hidpp10_dpi_table_get_max_dpi(hidpp10);
-		ratbag_resolution_set_dpi_list_from_range(res, min, max);
+		if (hidpp10->dpi_table_is_range) {
+			unsigned int min, max;
+
+			min = hidpp10_dpi_table_get_min_dpi(hidpp10);
+			max = hidpp10_dpi_table_get_max_dpi(hidpp10);
+			/* FIXME: this relies on libratbag using the
+			 * same steps that we support */
+			ratbag_resolution_set_dpi_list_from_range(res, min, max);
+		} else {
+			for (int i = 0; i < hidpp10->dpi_count - 1; i++)
+				dpis[i] = hidpp10->dpi_table[i].dpi;
+
+			ratbag_resolution_set_dpi_list(res, dpis, hidpp10->dpi_count);
+		}
 	}
 
 	ratbag_profile_for_each_button(profile, button)

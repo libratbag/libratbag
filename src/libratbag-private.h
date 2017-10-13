@@ -512,6 +512,21 @@ ratbag_resolution_set_dpi_list_from_range(struct ratbag_resolution *res,
 }
 
 static inline void
+ratbag_resolution_set_dpi_list(struct ratbag_resolution *res,
+			       unsigned int *dpis,
+			       size_t ndpis)
+{
+	assert(ndpis <= ARRAY_LENGTH(res->dpis));
+	_Static_assert(sizeof(*dpis) == sizeof(*res->dpis), "Mismatching size");
+
+	for (size_t i = 0; i < ndpis; i++) {
+		res->dpis[i] = dpis[i];
+		if (i > 0)
+			assert(dpis[i] > dpis[i - 1]);
+	}
+}
+
+static inline void
 ratbag_resolution_set_cap(struct ratbag_resolution *res,
 			  enum ratbag_resolution_capability cap)
 {
