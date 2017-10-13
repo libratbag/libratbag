@@ -169,7 +169,9 @@ test_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_test_device *d = ratbag_get_drv_data(profile->device);
 	struct ratbag_test_profile *p;
+	struct ratbag_test_profile *p0;
 	struct ratbag_test_resolution *r;
+	struct ratbag_test_resolution *r0;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
 	unsigned int i;
@@ -179,6 +181,9 @@ test_read_profile(struct ratbag_profile *profile)
 	assert(profile->index < d->num_profiles);
 
 	p = &d->profiles[profile->index];
+	p0 = &d->profiles[0];
+	r0 = &p0->resolutions[0];
+
 	for (i = 0; i < d->num_resolutions; i++) {
 		_cleanup_resolution_ struct ratbag_resolution *res;
 
@@ -187,6 +192,8 @@ test_read_profile(struct ratbag_profile *profile)
 		res = ratbag_profile_get_resolution(profile, i);
 		assert(res);
 		ratbag_resolution_set_resolution(res, r->xres, r->yres, r->hz);
+		if (r0->dpi_min != 0 && r0->dpi_max != 0)
+			ratbag_resolution_set_range(res, r0->dpi_min, r0->dpi_max);
 		res->is_active = r->active;
 		if (r->active)
 			active_set = true;
