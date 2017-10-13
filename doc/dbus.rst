@@ -264,11 +264,19 @@ org.freedesktop.ratbag1.Resolution
 
         uint for the x and y resolution assigned to this entry,
         respectively.  The value for the resolution must be equal to
-        or between the :js:attr:`Minimum` and :js:attr:`Maximum` of
-        this resolution.
+        one of the values in :js:attr:`Resolutions`.
 
         If the resolution does not support separate x/y resolutions,
         x and y must be the same value.
+
+    .. js:attribute:: Resolutions
+
+        :type: au
+        :flags: read-only, constant
+
+        A list of permitted resolutions. Values in this list may be used in
+        the :js:attr:`Resolution` property. This list is always sorted
+        ascending, the lowest resolution is the first item in the list.
 
     .. js:attribute:: ReportRate
 
@@ -280,20 +288,6 @@ org.freedesktop.ratbag1.Resolution
         If the resolution does not have the individual report rate
         capability, changing the report rate on one resolution will
         change the report rate on all resolutions.
-
-    .. js:attribute:: Maximum
-
-        :type: u
-        :flags: read-only, constant
-
-        uint for the maximum resolution
-
-    .. js:attribute:: Minimum
-
-        :type: u
-        :flags: read-only, constant
-
-        uint for the minimum possible resolution
 
     .. js:function:: SetDefault() → ()
 

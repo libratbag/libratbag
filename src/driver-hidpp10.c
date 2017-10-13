@@ -437,7 +437,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 
 		min = hidpp10_dpi_table_get_min_dpi(hidpp10);
 		max = hidpp10_dpi_table_get_max_dpi(hidpp10);
-		ratbag_resolution_set_range(res, min, max);
+		ratbag_resolution_set_dpi_list_from_range(res, min, max);
 	}
 
 	ratbag_profile_for_each_button(profile, button)

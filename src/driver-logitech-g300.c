@@ -393,9 +393,9 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 		resolution->is_default = res->is_default;
 		resolution->is_active = res->is_default;
 
-		ratbag_resolution_set_range(resolution,
-					    LOGITECH_G300_DPI_MIN,
-					    LOGITECH_G300_DPI_MAX);
+		ratbag_resolution_set_dpi_list_from_range(resolution,
+							  LOGITECH_G300_DPI_MIN,
+							  LOGITECH_G300_DPI_MAX);
 	}
 
 	ratbag_profile_for_each_button(profile, button)

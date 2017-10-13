@@ -193,7 +193,9 @@ test_read_profile(struct ratbag_profile *profile)
 		assert(res);
 		ratbag_resolution_set_resolution(res, r->xres, r->yres, r->hz);
 		if (r0->dpi_min != 0 && r0->dpi_max != 0)
-			ratbag_resolution_set_range(res, r0->dpi_min, r0->dpi_max);
+			ratbag_resolution_set_dpi_list_from_range(res,
+								  r0->dpi_min,
+								  r0->dpi_max);
 		res->is_active = r->active;
 		if (r->active)
 			active_set = true;

@@ -581,14 +581,9 @@ class RatbagdResolution(_RatbagdDBus):
         self._set_dbus_property("ReportRate", "u", rate)
 
     @GObject.Property
-    def maximum(self):
-        """The maximum possible resolution."""
-        return self._get_dbus_property("Maximum")
-
-    @GObject.Property
-    def minimum(self):
-        """The minimum possible resolution."""
-        return self._get_dbus_property("Minimum")
+    def resolutions(self):
+        """The list of supported DPI values"""
+        return self._get_dbus_property("Resolutions")
 
     @GObject.Property
     def is_active(self):

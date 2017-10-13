@@ -843,28 +843,26 @@ ratbag_resolution_get_dpi(struct ratbag_resolution *resolution);
 /**
  * @ingroup resolution
  *
- * Get the maximum allowed resolution in DPI for the resolution mode.
+ * Get the number of resolutions in DPI available for this resolution.
+ * The list of DPI values is sorted in ascending order but may be filtered
+ * by libratbag and does not necessarily reflect all resolutions supported
+ * by the physical device.
  *
- * @param resolution A previously initialized ratbag resolution
+ * This function writes at most nres values but returns the number of
+ * DPI values available on this resolution. In other words, if it returns a
+ * number larger than nres, call it again with an array the size of the
+ * return value.
  *
- * @return The maximum resolution in dpi
- * @retval 0 The maximum resolution is unknown to libratbag
+ * @param[out] resolutions Set to the supported DPI values in ascending order
+ * @param[in] nres The number of elements in resolutions
+ *
+ * @return The number of valid items in resolutions. If the returned value
+ * is larger than nres, the list was truncated.
  */
-int
-ratbag_resolution_get_dpi_maximum(struct ratbag_resolution *resolution);
-
-/**
- * @ingroup resolution
- *
- * Get the minimum allowed resolution in DPI for the resolution mode.
- *
- * @param resolution A previously initialized ratbag resolution
- *
- * @return The minimum resolution in dpi
- * @retval 0 The minimum resolution is unknown to libratbag
- */
-int
-ratbag_resolution_get_dpi_minimum(struct ratbag_resolution *resolution);
+size_t
+ratbag_resolution_get_dpi_list(struct ratbag_resolution *resolution,
+			       unsigned int *resolutions,
+			       size_t nres);
 
 /**
  * @ingroup resolution
