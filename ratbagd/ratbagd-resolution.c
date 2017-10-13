@@ -191,6 +191,38 @@ ratbagd_resolution_is_default(sd_bus *bus,
 }
 
 static int
+ratbagd_resolution_get_resolutions(sd_bus *bus,
+				  const char *path,
+				  const char *interface,
+				  const char *property,
+				  sd_bus_message *reply,
+				  void *userdata,
+				  sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	unsigned int dpis[300];
+	unsigned int ndpis = ARRAY_LENGTH(dpis);
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	ndpis = ratbag_resolution_get_dpi_list(lib_resolution,
+					       dpis, ndpis);
+	assert(ndpis <= ARRAY_LENGTH(dpis));
+
+	for (unsigned int i = 0; i < ndpis; i++) {
+		r = sd_bus_message_append(reply, "u", dpis[i]);
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
+static int
 ratbagd_resolution_get_resolution(sd_bus *bus,
 				  const char *path,
 				  const char *interface,
@@ -301,40 +333,6 @@ ratbagd_resolution_set_report_rate(sd_bus *bus,
 	return 0;
 }
 
-static int
-ratbagd_resolution_get_minimum(sd_bus *bus,
-			       const char *path,
-			       const char *interface,
-			       const char *property,
-			       sd_bus_message *reply,
-			       void *userdata,
-			       sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	int min;
-
-	min = ratbag_resolution_get_dpi_minimum(lib_resolution);
-	return sd_bus_message_append(reply, "u", min);
-}
-
-static int
-ratbagd_resolution_get_maximum(sd_bus *bus,
-			       const char *path,
-			       const char *interface,
-			       const char *property,
-			       sd_bus_message *reply,
-			       void *userdata,
-			       sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	int max;
-
-	max = ratbag_resolution_get_dpi_maximum(lib_resolution);
-	return sd_bus_message_append(reply, "u", max);
-}
-
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
@@ -345,12 +343,11 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 				 ratbagd_resolution_get_resolution,
 				 ratbagd_resolution_set_resolution, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("Resolutions", "au", ratbagd_resolution_get_resolutions, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("ReportRate", "u",
 				 ratbagd_resolution_get_report_rate,
 				 ratbagd_resolution_set_report_rate, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("Maximum", "u", ratbagd_resolution_get_maximum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Minimum", "u", ratbagd_resolution_get_minimum, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_resolution_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,

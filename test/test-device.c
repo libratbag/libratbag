@@ -34,6 +34,7 @@
 #include <sys/resource.h>
 
 #include "libratbag.h"
+#include "libratbag-util.h"
 #include "libratbag-test.h"
 
 static void
@@ -342,7 +343,7 @@ START_TEST(device_resolutions)
 	struct ratbag_resolution *res;
 	int nprofiles, nresolutions;
 	int i, j;
-	int xres, yres, rate, dpi_min, dpi_max;
+	int xres, yres, rate;
 	int device_freed_count = 0;
 	bool is_active;
 
@@ -388,22 +389,27 @@ START_TEST(device_resolutions)
 		ck_assert_int_eq(nresolutions, 3);
 
 		for (j = 0; j < nresolutions; j++) {
+			unsigned int dpis[200];
+			int ndpis = ARRAY_LENGTH(dpis);
+
 			res = ratbag_profile_get_resolution(p, j);
 
 			xres = ratbag_resolution_get_dpi_x(res);
 			yres = ratbag_resolution_get_dpi_y(res);
 			rate = ratbag_resolution_get_report_rate(res);
 			is_active = ratbag_resolution_is_active(res);
-			dpi_min = ratbag_resolution_get_dpi_minimum(res);
-			dpi_max = ratbag_resolution_get_dpi_maximum(res);
+
+			ndpis = ratbag_resolution_get_dpi_list(res, dpis, ndpis);
+			ck_assert_int_lt(ndpis, ARRAY_LENGTH(dpis));
+			ck_assert_int_gt(ndpis, 20);
 
 			ck_assert_int_eq(xres, i * 1000 + (j + 1) * 100);
 			ck_assert_int_eq(yres, i * 1000 + (j + 1) * 100 + 100);
 			ck_assert_int_eq(xres, ratbag_resolution_get_dpi(res));
 			ck_assert_int_eq(is_active, (j == 1));
 
-			ck_assert_int_eq(dpi_min, 50);
-			ck_assert_int_eq(dpi_max, 5000);
+			ck_assert_int_eq(dpis[0], 50);
+			ck_assert_int_eq(dpis[ndpis - 1], 5000);
 
 			ck_assert_int_eq(rate, (i + 1) * 1000);
 

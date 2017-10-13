@@ -1122,16 +1122,19 @@ ratbag_resolution_get_dpi(struct ratbag_resolution *resolution)
 	return resolution->dpi_x;
 }
 
-LIBRATBAG_EXPORT int
-ratbag_resolution_get_dpi_maximum(struct ratbag_resolution *resolution)
+LIBRATBAG_EXPORT size_t
+ratbag_resolution_get_dpi_list(struct ratbag_resolution *resolution,
+			       unsigned int *resolutions,
+			       size_t nres)
 {
-	return resolution->dpi_max;
-}
+	_Static_assert(sizeof(*resolutions) == sizeof(*resolution->dpis), "type mismatch");
 
-LIBRATBAG_EXPORT int
-ratbag_resolution_get_dpi_minimum(struct ratbag_resolution *resolution)
-{
-	return resolution->dpi_min;
+	assert(nres > 0);
+
+	memcpy(resolutions, resolution->dpis,
+	       sizeof(unsigned int) * min(nres, resolution->ndpis));
+
+	return resolution->ndpis;
 }
 
 LIBRATBAG_EXPORT int

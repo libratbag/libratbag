@@ -667,7 +667,9 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 
 			/* FIXME: retrieve the refresh rate */
 			ratbag_resolution_set_resolution(res, sensor->dpi, sensor->dpi, 0);
-			ratbag_resolution_set_range(res, sensor->dpi_min, sensor->dpi_max);
+			ratbag_resolution_set_dpi_list_from_range(res,
+								  sensor->dpi_min,
+								  sensor->dpi_max);
 
 			/* FIXME: we mark all resolutions as active because
 			 * they are from different sensors */
@@ -874,7 +876,10 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 				res->is_active = true;
 		}
 
-		ratbag_resolution_set_range(res, sensor->dpi_min, sensor->dpi_max);
+		ratbag_resolution_set_dpi_list_from_range(res,
+							  sensor->dpi_min,
+							  sensor->dpi_max);
+
 	}
 }
 

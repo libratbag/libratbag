@@ -254,8 +254,10 @@ struct ratbag_resolution {
 	void *userdata;
 	struct list link;
 	unsigned index;
-	unsigned int dpi_max;	/**< max resolution in dpi */
-	unsigned int dpi_min;	/**< min resolution in dpi */
+
+	unsigned int dpis[300];
+	size_t ndpis;
+
 	unsigned int dpi_x;	/**< x resolution in dpi */
 	unsigned int dpi_y;	/**< y resolution in dpi */
 	unsigned int hz;	/**< report rate in Hz */
@@ -473,10 +475,32 @@ ratbag_resolution_set_resolution(struct ratbag_resolution *res,
 }
 
 static inline void
-ratbag_resolution_set_range(struct ratbag_resolution *res, int min, int max)
+ratbag_resolution_set_dpi_list_from_range(struct ratbag_resolution *res,
+					  unsigned int min, unsigned int max)
 {
-	res->dpi_min = min;
-	res->dpi_max = max;
+	const unsigned int stepsize = 50;
+	bool maxed_out = false;
+
+	res->ndpis = 0;
+
+	/* FIXME: this should use an exponential approach, because who cares
+	 * about 8200 vs 8250 dpi. */
+	while (res->ndpis < ARRAY_LENGTH(res->dpis)) {
+		unsigned int dpi = min + res->ndpis * stepsize;
+
+		if (dpi > (unsigned)max) {
+			maxed_out = true;
+			break;
+		}
+
+		res->dpis[res->ndpis] = dpi;
+		res->ndpis++;
+	}
+
+	if (!maxed_out)
+		log_bug_libratbag(res->profile->device->ratbag,
+				  "%s: resolution range exceeds available space.\n",
+				  res->profile->device->name);
 }
 
 static inline void
