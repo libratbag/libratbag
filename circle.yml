@@ -140,6 +140,15 @@ docs_deploy: &docs_deploy
     - attach_workspace:
         at: build
     - run:
+        name: Setup the deploy SSH key
+        command: |
+          ssh-add -L | tail -n1 > ~/.ssh/deploy.pub
+          cat <<EOF > ~/.ssh/config
+          Host github.com
+            IdentityFile /root/.ssh/deploy.pub
+            IdentitiesOnly yes
+          EOF
+    - run:
         name: Clone doc repository
         command: |
           cd ~
