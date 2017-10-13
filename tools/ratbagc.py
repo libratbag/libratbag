@@ -127,27 +127,48 @@ class Ratbagd(object):
 
     def __init__(self):
         self._ratbag = libratbag.ratbag_create_context(libratbag.interface, None)
-        self._devices = []
+        self._devices = {}
+        self._devices_initialized = False
+
+    def _init_devices(self):
         for event in os.listdir("/dev/input"):
             if not event.startswith("event"):
                 continue
+            name = os.path.join("/dev/input/", event)
             try:
-                self._devices.append(RatbagdDevice(self._ratbag, os.path.join("/dev/input/", event)))
+                dev = RatbagdDevice(self._ratbag, name)
             except RatbagErrorDevice:
                 pass
+            else:
+                self._devices[name] = dev
+        self._devices_initialized = True
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        for d in self._devices:
+        for d in self._devices.values():
             d.__exit__()
         libratbag.ratbag_unref(self._ratbag)
 
     @property
     def devices(self):
         """A list of RatbagdDevice objects supported by ratbagd."""
-        return self._devices
+        if not self._devices_initialized:
+            self._init_devices()
+        return self._devices.values()
+
+    def __getitem__(self, id):
+        """Returns the requested device, or None."""
+        if id not in self._devices.keys():
+            try:
+                dev = RatbagdDevice(self._ratbag, id)
+            except RatbagErrorDevice:
+                pass
+            else:
+                self._devices[id] = dev
+
+        return self._devices[id] if id in self._devices.keys() else None
 
     @property
     def themes(self):
