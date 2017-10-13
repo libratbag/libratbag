@@ -80,6 +80,7 @@ enum ratbag_error_code {
  */
 enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_NONE = 0,
+
 	/**
 	 * The device has the capability to query the current hardware
 	 * configuration. If this capability is missing, libratbag cannot
@@ -173,6 +174,7 @@ enum ratbag_device_capability {
  */
 enum ratbag_profile_capability {
 	RATBAG_PROFILE_CAP_NONE = 0,
+
 	/**
 	 * The device has the capability to write a name to a profile
 	 * and store it in its flash.
@@ -318,18 +320,28 @@ enum ratbag_button_action_special {
 /**
  * @ingroup enums
  *
- * RATBAG_LED_OFF - led is now off,
- * RATBAG_LED_ON - led is on with static color,
- * RATBAG_LED_CYCLE - led is cycling between all colors.
- * RATBAG_LED_BREATHING - led is pulsating with static color
- *
  * Each LED mode has different properties, e.g. the brightness and rate are only
  * available in modes @ref RATBAG_LED_CYCLE and @ref RATBAG_LED_BREATHING modes
  */
 enum ratbag_led_mode {
+	/**
+	 * led is now off
+	 */
 	RATBAG_LED_OFF = 0,
+
+	/**
+	 * led is on with static color
+	 */
 	RATBAG_LED_ON,
+
+	/**
+	 * led is cycling between all colors
+	 */
 	RATBAG_LED_CYCLE,
+
+	/**
+	 * led is pulsating with static color
+	 */
 	RATBAG_LED_BREATHING,
 };
 /**
