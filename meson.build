@@ -190,33 +190,6 @@ lib_libshared = static_library('shared',
 )
 dep_libshared = declare_dependency(link_with: lib_libshared)
 
-#### ratbag-command ####
-src_ratbag_command = [ 'tools/ratbag-command.c' ]
-deps_ratbag_command = [
-	dep_libshared,
-	dep_libratbag,
-	dep_libevdev
-]
-
-executable('ratbag-command',
-	src_ratbag_command,
-	dependencies : deps_ratbag_command,
-	include_directories : include_directories('src'),
-	install : false,
-)
-
-man_config = configuration_data()
-
-man_config.set('version', meson.project_version())
-
-man_ratbag_command = configure_file (
-	input: 'tools/ratbag-command.man',
-	output: 'ratbag-command.1',
-	configuration: man_config,
-	install : false,
-	install_dir : join_paths(get_option('mandir'), 'man1')
-)
-
 #### hidpp10-dump-page ####
 src_hidpp10_dump_page = [ 'tools/hidpp10-dump-page.c' ]
 executable('hidpp10-dump-page',
@@ -252,6 +225,10 @@ executable('lur-command',
 	include_directories : include_directories('src'),
 	install : true,
 )
+
+man_config = configuration_data()
+
+man_config.set('version', meson.project_version())
 
 man_lur_command = configure_file (
 	input: 'tools/lur-command.man',
@@ -515,7 +492,14 @@ custom_target('ratbagctl',
 				'--version', meson.project_version()],
   install: true,
   install_dir: get_option('bindir'))
-install_man('tools/ratbagctl.1')
+
+man_ratbagctl = configure_file (
+	input: 'tools/ratbagctl.1',
+	output: 'ratbagctl.1',
+	configuration: man_config,
+	install : true,
+	install_dir : join_paths(get_option('mandir'), 'man1')
+)
 
 config_ratbagctl_devel = configuration_data()
 config_ratbagctl_devel.set('ratbagd_sha', ratbagd_sha)
@@ -573,8 +557,8 @@ shared_library(
 )
 
 
-custom_target('ratbag-command.py',
-  output : 'ratbag-command.py',
+custom_target('ratbag-command',
+  output : 'ratbag-command',
   input : ['tools/ratbagctl.in', 'tools/ratbagc.py'],
   build_by_default : true,
   command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
