@@ -123,6 +123,7 @@ hidpp10_build_dpi_table_from_list(struct hidpp10_device *dev,
 
 	dev->dpi_count = list->nentries;
 	dev->dpi_table = zalloc(list->nentries * sizeof(*dev->dpi_table));
+	dev->dpi_table_is_range = false;
 
 	for (i = 0; i < list->nentries; i++) {
 		dev->dpi_table[i].raw_value = i + 0x80;
@@ -150,6 +151,7 @@ hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
 
 	dev->dpi_count = raw_max + 1;
 	dev->dpi_table = zalloc((raw_max + 1) * sizeof(*dev->dpi_table));
+	dev->dpi_table_is_range = true;
 
 	for (i = 1; i <= raw_max; i++) {
 		dev->dpi_table[i].raw_value = i;

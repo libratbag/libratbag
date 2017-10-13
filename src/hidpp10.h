@@ -60,6 +60,8 @@ struct hidpp10_dpi_mapping {
 struct hidpp10_device  {
 	struct hidpp_device base;
 	unsigned index;
+
+	bool dpi_table_is_range;
 	uint8_t dpi_count;
 	struct hidpp10_dpi_mapping *dpi_table;
 	enum hidpp10_profile_type profile_type;
