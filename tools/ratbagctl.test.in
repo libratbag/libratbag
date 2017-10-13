@@ -278,7 +278,7 @@ class TestRatbagCtlDPI(TestRatbagCtl):
     def test_dpi_get(self):
         command = "DPI get"
         r = self.launch_good_test(command + " test_device")
-        self.assertEqual(int(r), 200)
+        self.assertEqual(int(r[:-3]), 200) # drop 'dpi' suffix
         self.setProfile(1)
         r = self.launch_good_test(command + " test_device")
         self.assertEqual(r, "1300x1400dpi")
@@ -290,11 +290,11 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         command = "DPI set"
         self.setProfile(0)
         r = self.launch_good_test("DPI get test_device")
-        res = int(r) + 50
+        res = int(r[:-3]) + 50 # drop 'dpi' suffix
         r = self.launch_good_test(command + " {} test_device".format(res))
         self.assertEqual(r, '')
         r = self.launch_good_test("DPI get test_device")
-        self.assertEqual(int(r), res)
+        self.assertEqual(int(r[:-3]), res) # drop 'dpi' suffix
         self.launch_fail_test(command)
         self.launch_fail_test(command + " X test_device")
         self.launch_fail_test(command + " 100 test_device X")
@@ -325,7 +325,7 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         r = self.launch_good_test("Profile 1 Resolution 1 DPI get test_device")
         self.assertEqual(r, "1200x1300dpi")
         r = self.launch_good_test("Resolution 2 DPI get test_device")
-        self.assertEqual(int(r), 300)
+        self.assertEqual(int(r[:-3]), 300) # drop 'dpi' suffix
         self.launch_fail_test("Profile 1 Profile 1 DPI get test_device")
         self.launch_fail_test("Profile 1 Resolution 1 Resolution 2 DPI get test_device")
 
