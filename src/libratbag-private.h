@@ -34,6 +34,34 @@
 
 #define RATBAG_LED_TYPE_UNKNOWN 0
 
+void
+log_msg_va(struct ratbag *ratbag,
+	   enum ratbag_log_priority priority,
+	   const char *format,
+	   va_list args)
+	LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
+void log_msg(struct ratbag *ratbag,
+	enum ratbag_log_priority priority,
+	const char *format, ...)
+	LIBRATBAG_ATTRIBUTE_PRINTF(3, 4);
+void
+log_buffer(struct ratbag *ratbag,
+	enum ratbag_log_priority priority,
+	const char *header,
+	uint8_t *buf, size_t len);
+
+#define log_raw(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_RAW, __VA_ARGS__)
+#define log_debug(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_DEBUG, __VA_ARGS__)
+#define log_info(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_INFO, __VA_ARGS__)
+#define log_error(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, __VA_ARGS__)
+#define log_bug_kernel(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
+#define log_bug_libratbag(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "libratbag bug: " __VA_ARGS__)
+#define log_bug_client(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "client bug: " __VA_ARGS__)
+#define log_buf_raw(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_RAW, h_, buf_, len_)
+#define log_buf_debug(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_DEBUG, h_, buf_, len_)
+#define log_buf_info(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_INFO, h_, buf_, len_)
+#define log_buf_error(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_ERROR, h_, buf_, len_)
+
 static inline void
 cleanup_device(struct ratbag_device **d)
 {
@@ -459,34 +487,6 @@ ratbag_resolution_set_cap(struct ratbag_resolution *res,
 
 	res->capabilities = (1 << cap);
 }
-
-void
-log_msg_va(struct ratbag *ratbag,
-	   enum ratbag_log_priority priority,
-	   const char *format,
-	   va_list args)
-	LIBRATBAG_ATTRIBUTE_PRINTF(3, 0);
-void log_msg(struct ratbag *ratbag,
-	enum ratbag_log_priority priority,
-	const char *format, ...)
-	LIBRATBAG_ATTRIBUTE_PRINTF(3, 4);
-void
-log_buffer(struct ratbag *ratbag,
-	enum ratbag_log_priority priority,
-	const char *header,
-	uint8_t *buf, size_t len);
-
-#define log_raw(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_RAW, __VA_ARGS__)
-#define log_debug(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_DEBUG, __VA_ARGS__)
-#define log_info(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_INFO, __VA_ARGS__)
-#define log_error(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, __VA_ARGS__)
-#define log_bug_kernel(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "kernel bug: " __VA_ARGS__)
-#define log_bug_libratbag(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "libratbag bug: " __VA_ARGS__)
-#define log_bug_client(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_ERROR, "client bug: " __VA_ARGS__)
-#define log_buf_raw(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_RAW, h_, buf_, len_)
-#define log_buf_debug(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_DEBUG, h_, buf_, len_)
-#define log_buf_info(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_INFO, h_, buf_, len_)
-#define log_buf_error(li_, h_, buf_, len_) log_buffer(li_, RATBAG_LOG_PRIORITY_ERROR, h_, buf_, len_)
 
 /* list of all supported drivers */
 struct ratbag_driver etekcity_driver;
