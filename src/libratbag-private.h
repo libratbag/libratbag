@@ -478,16 +478,13 @@ static inline void
 ratbag_resolution_set_dpi_list_from_range(struct ratbag_resolution *res,
 					  unsigned int min, unsigned int max)
 {
-	const unsigned int stepsize = 50;
+	unsigned int stepsize = 50;
+	unsigned int dpi = min;
 	bool maxed_out = false;
 
 	res->ndpis = 0;
 
-	/* FIXME: this should use an exponential approach, because who cares
-	 * about 8200 vs 8250 dpi. */
 	while (res->ndpis < ARRAY_LENGTH(res->dpis)) {
-		unsigned int dpi = min + res->ndpis * stepsize;
-
 		if (dpi > (unsigned)max) {
 			maxed_out = true;
 			break;
@@ -495,6 +492,17 @@ ratbag_resolution_set_dpi_list_from_range(struct ratbag_resolution *res,
 
 		res->dpis[res->ndpis] = dpi;
 		res->ndpis++;
+
+		if (dpi < 1000)
+			stepsize = 50;
+		else if (dpi < 2600)
+			stepsize = 100;
+		else if (dpi < 5000)
+			stepsize = 200;
+		else
+			stepsize = 500;
+
+		dpi += stepsize;
 	}
 
 	if (!maxed_out)
