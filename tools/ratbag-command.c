@@ -962,7 +962,7 @@ ratbag_cmd_resolution_dpi_get(const struct ratbag_cmd *cmd,
 
 	resolution = options->resolution;
 	dpi = ratbag_resolution_get_dpi(resolution);
-	printf("%d\n", dpi);
+	printf("%ddpi\n", dpi);
 
 	return SUCCESS;
 }

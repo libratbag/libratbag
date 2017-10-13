@@ -418,7 +418,7 @@ def func_dpi_get(r, args):
     if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
         print("{}x{}dpi".format(r.resolution[0], r.resolution[1]))
     else:
-        print(r.resolution[0])
+        print("{}dpi".format(r.resolution[0]))
 
 
 def func_dpi_set(r, args):
