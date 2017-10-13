@@ -421,6 +421,12 @@ def func_dpi_get(r, args):
         print("{}dpi".format(r.resolution[0]))
 
 
+def func_dpi_get_all(r, args):
+    r, p, d = find_resolution(r, args)
+    dpis = r.resolutions
+    print(" ".join([str(x) for x in dpis]))
+
+
 def func_dpi_set(r, args):
     r, p, d = find_resolution(r, args)
     r.resolution = (args.dpi_n[0], args.dpi_n[1])
@@ -857,6 +863,12 @@ active resolution of the active profile if none are given.""",
                 name: 'get',
                 help_str: 'Show current DPI value',
                 func: func_dpi_get,
+            },
+            {
+                of_type: command,
+                name: 'get-all',
+                help_str: 'Show all available DPIs',
+                func: func_dpi_get_all,
             },
             {
                 of_type: command,
