@@ -61,6 +61,20 @@ libratbag_references:
         mkdir /run/dbus
         /usr/bin/dbus-daemon --system --fork
 
+fedora_prep_cache: &fedora_prep_cache
+  <<: *default_settings
+  steps:
+    - run:
+        name: Initializing Fedora dnf cache
+        command: dnf install -y --downloadonly tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml
+    - persist_to_workspace:
+        root: /var/cache/
+        paths:
+          - dnf/*
+
+fedora_fetch_cache: &fedora_fetch_cache
+  attach_workspace:
+    at: /var/cache/
 
 fedora_install: &fedora_install
   run:
@@ -71,6 +85,7 @@ fedora_install: &fedora_install
 fedora_settings: &fedora_settings
   <<: *default_settings
   steps:
+    - *fedora_fetch_cache
     - *fedora_install
     - checkout
     - *start_dbus
@@ -102,6 +117,7 @@ ubuntu_settings: &ubuntu_settings
 scan_build_run: &scan_build_run
   <<: *default_settings
   steps:
+    - *fedora_fetch_cache
     - *fedora_install
     - run:
         name: Install clang and find
@@ -116,6 +132,7 @@ scan_build_run: &scan_build_run
 doc_build: &doc_build
   <<: *default_settings
   steps:
+    - *fedora_fetch_cache
     - *fedora_install
     - run:
         name: Install documentation build-deps
@@ -133,6 +150,7 @@ doc_build: &doc_build
 docs_deploy: &docs_deploy
   <<: *default_settings
   steps:
+    - *fedora_fetch_cache
     - run:
         name: Install prerequisites
         command: dnf install -y git tree
@@ -173,6 +191,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:rawhide
+  fedora_cache:
+    <<: *fedora_prep_cache
+    docker:
+      - image: fedora:latest
   fedora_latest:
     <<: *fedora_settings
     docker:
@@ -200,12 +222,20 @@ workflows:
   compile_and_test:
     jobs:
       # - fedora_rawhide
-      - scan_build
+      - fedora_cache
+      - scan_build:
+          requires:
+            - fedora_cache
       - ubuntu_17_04
-      - fedora_latest
-      - doc_build
+      - fedora_latest:
+          requires:
+            - fedora_cache
+      - doc_build:
+          requires:
+            - fedora_cache
       - doc_deploy:
           requires:
+            - fedora_cache
             - doc_build
           filters:
               branches:
