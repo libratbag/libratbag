@@ -275,6 +275,13 @@ class Ratbagd(_RatbagdDBus):
         """A list of RatbagdDevice objects supported by ratbagd."""
         return self._devices
 
+    def __getitem__(self, id):
+        """Returns the requested device, or None."""
+        for d in self.devices:
+            if d.id == id:
+                return d
+        return None
+
     @GObject.Property
     def themes(self):
         """A list of theme names. The theme 'default' is guaranteed to be

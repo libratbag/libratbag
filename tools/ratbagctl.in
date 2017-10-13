@@ -63,11 +63,7 @@ def list_devices(r, args):
 
 
 def find_device(r, args):
-    dev = None
-    for d in r.devices:
-        if d.id == args.device:
-            dev = d
-            break
+    dev = r[args.device]
     if dev is None:
         print("Unable to find device {}".format(args.device))
         sys.exit(1)
