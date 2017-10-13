@@ -55,6 +55,8 @@ struct ratbag_test_resolution {
 	bool active;
 	bool dflt;
 	uint32_t caps;
+
+	int dpi_min, dpi_max;
 };
 
 struct ratbag_test_color {
