@@ -1131,6 +1131,9 @@ ratbag_resolution_get_dpi_list(struct ratbag_resolution *resolution,
 
 	assert(nres > 0);
 
+	if (resolution->ndpis == 0)
+		return 0;
+
 	memcpy(resolutions, resolution->dpis,
 	       sizeof(unsigned int) * min(nres, resolution->ndpis));
 
