@@ -278,6 +278,9 @@ org.freedesktop.ratbag1.Resolution
         the :js:attr:`Resolution` property. This list is always sorted
         ascending, the lowest resolution is the first item in the list.
 
+        This list may be empty if the device does not support reading and/or
+        writing to resolutions.
+
     .. js:attribute:: ReportRate
 
         :type: u
