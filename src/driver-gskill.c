@@ -997,6 +997,9 @@ gskill_read_resolutions(struct ratbag_profile *profile,
 
 		ratbag_resolution_set_cap(resolution,
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+
+		ratbag_resolution_set_dpi_list_from_range(resolution,
+							  GSKILL_MIN_DPI, GSKILL_MAX_DPI);
 	}
 }
 
