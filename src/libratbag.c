@@ -881,6 +881,16 @@ ratbag_device_set_capability(struct ratbag_device *device,
 	long_set_bit(device->capabilities, cap);
 }
 
+void
+ratbag_device_unset_capability(struct ratbag_device *device,
+			     enum ratbag_device_capability cap)
+{
+	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
+		abort();
+
+	long_clear_bit(device->capabilities, cap);
+}
+
 LIBRATBAG_EXPORT int
 ratbag_device_has_capability(const struct ratbag_device *device,
 			     enum ratbag_device_capability cap)

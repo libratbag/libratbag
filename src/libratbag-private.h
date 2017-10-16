@@ -426,6 +426,10 @@ void
 ratbag_device_set_capability(struct ratbag_device *device,
 			     enum ratbag_device_capability cap);
 
+void
+ratbag_device_unset_capability(struct ratbag_device *device,
+			     enum ratbag_device_capability cap);
+
 static inline void
 ratbag_profile_set_drv_data(struct ratbag_profile *profile, void *drv_data)
 {
