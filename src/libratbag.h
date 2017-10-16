@@ -939,6 +939,29 @@ ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
 /**
  * @ingroup resolution
  *
+ * Get the number of report rates in Hz available for this resolution.
+ * The list of report rates is sorted in ascending order but may be filtered
+ * by libratbag and does not necessarily reflect all report rates supported by
+ * the physical device.
+ *
+ * This function writes at most nrates values but returns the number of
+ * report rates available on this resolution. In other words, if it returns a
+ * number larger than nrates, call it again with an array the size of the
+ * return value.
+ *
+ * @param[out] rates Set to the supported report rates in ascending order
+ * @param[in] nrates The number of elements in resolutions
+ *
+ * @return The number of valid items in rates. If the returned value
+ * is larger than nrates, the list was truncated.
+ */
+size_t
+ratbag_resolution_get_report_rate_list(struct ratbag_resolution *resolution,
+				       unsigned int *rates,
+				       size_t nrates);
+/**
+ * @ingroup resolution
+ *
  * Activate the given resolution mode. If the mode is not configured, this
  * function returns an error and the result is undefined.
  *

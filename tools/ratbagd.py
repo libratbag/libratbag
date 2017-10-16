@@ -599,6 +599,11 @@ class RatbagdResolution(_RatbagdDBus):
         return self._get_dbus_property("Resolutions")
 
     @GObject.Property
+    def report_rates(self):
+        """The list of supported report rates"""
+        return self._get_dbus_property("ReportRates")
+
+    @GObject.Property
     def is_active(self):
         """True if this is the currently active resolution, False
         otherwise"""

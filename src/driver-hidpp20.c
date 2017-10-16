@@ -669,6 +669,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 
 		ratbag_profile_for_each_resolution(profile, res) {
 			struct hidpp20_sensor *sensor;
+			unsigned int rate = 500; /* let's assume that one is just present */
 
 			/* We only look at the first sensor. Multiple
 			 * sensors is too niche to care about right now */
@@ -679,6 +680,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			ratbag_resolution_set_dpi_list_from_range(res,
 								  sensor->dpi_min,
 								  sensor->dpi_max);
+			ratbag_resolution_set_report_rate_list(res, &rate, 1);
 
 			/* FIXME: we mark all resolutions as active because
 			 * they are from different sensors */
@@ -866,6 +868,7 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 
 	ratbag_profile_for_each_resolution(profile, res) {
 		struct hidpp20_sensor *sensor;
+		unsigned int rate = p->report_rate;
 
 		/* We only look at the first sensor. Multiple
 		 * sensors is too niche to care about right now */
@@ -888,7 +891,7 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 		ratbag_resolution_set_dpi_list_from_range(res,
 							  sensor->dpi_min,
 							  sensor->dpi_max);
-
+		ratbag_resolution_set_report_rate_list(res, &rate, 1);
 	}
 }
 

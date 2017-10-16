@@ -988,6 +988,8 @@ gskill_read_resolutions(struct ratbag_profile *profile,
 
 	for (i = 0; i < report->dpi_num; i++) {
 		_cleanup_resolution_ struct ratbag_resolution *resolution;
+		unsigned int rates[] = { 500, 1000 }; /* let's assume that is true */
+
 		dpi_x = report->dpi_levels[i].x * GSKILL_DPI_UNIT;
 		dpi_y = report->dpi_levels[i].y * GSKILL_DPI_UNIT;
 
@@ -1001,6 +1003,8 @@ gskill_read_resolutions(struct ratbag_profile *profile,
 
 		ratbag_resolution_set_dpi_list_from_range(resolution,
 							  GSKILL_MIN_DPI, GSKILL_MAX_DPI);
+		ratbag_resolution_set_report_rate_list(resolution, rates,
+						       ARRAY_LENGTH(rates));
 	}
 }
 

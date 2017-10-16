@@ -396,6 +396,7 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 		ratbag_resolution_set_dpi_list_from_range(resolution,
 							  LOGITECH_G300_DPI_MIN,
 							  LOGITECH_G300_DPI_MAX);
+		ratbag_resolution_set_report_rate_list(resolution, &hz, 1);
 	}
 
 	ratbag_profile_for_each_button(profile, button)

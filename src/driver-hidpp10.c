@@ -397,6 +397,10 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 	uint16_t xres, yres;
 	uint8_t idx;
 
+	/* 0x64 USB_REFRESH_RATE has time between reports in ms. so let's
+	 * assume the 1000/500/250 rates exist on the devices */
+	unsigned int rates[] = {250, 500, 1000};
+
 	drv_data = ratbag_get_drv_data(device);
 	hidpp10 = drv_data->dev;
 	rc = hidpp10_get_profile(hidpp10, profile->index, &p);
@@ -449,6 +453,9 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 
 			ratbag_resolution_set_dpi_list(res, dpis, hidpp10->dpi_count);
 		}
+
+		ratbag_resolution_set_report_rate_list(res, rates,
+						       ARRAY_LENGTH(rates));
 	}
 
 	ratbag_profile_for_each_button(profile, button)

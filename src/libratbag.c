@@ -1158,6 +1158,24 @@ ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution)
 	return resolution->hz;
 }
 
+LIBRATBAG_EXPORT size_t
+ratbag_resolution_get_report_rate_list(struct ratbag_resolution *resolution,
+				       unsigned int *rates,
+				       size_t nrates)
+{
+	_Static_assert(sizeof(*rates) == sizeof(*resolution->rates), "type mismatch");
+
+	assert(nrates > 0);
+
+	if (resolution->nrates == 0)
+		return 0;
+
+	memcpy(rates, resolution->rates,
+	       sizeof(unsigned int) * min(nrates, resolution->nrates));
+
+	return resolution->nrates;
+}
+
 LIBRATBAG_EXPORT int
 ratbag_resolution_is_active(const struct ratbag_resolution *resolution)
 {

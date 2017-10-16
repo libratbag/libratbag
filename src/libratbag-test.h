@@ -57,6 +57,7 @@ struct ratbag_test_resolution {
 	uint32_t caps;
 
 	int dpi_min, dpi_max;
+	unsigned int report_rates[5];
 };
 
 struct ratbag_test_color {
