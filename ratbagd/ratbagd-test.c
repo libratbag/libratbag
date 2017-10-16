@@ -64,7 +64,9 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				}
 			},
 			.resolutions = {
-				{ .xres = 100, .yres = 200, .hz = 1000, .dpi_min = 50, .dpi_max = 5000 },
+				{ .xres = 100, .yres = 200, .hz = 1000,
+					.dpi_min = 50, .dpi_max = 5000,
+					.report_rates = { 500, 1000 } },
 				{ .xres = 200, .yres = 300, .hz = 1000, .active = true, .dflt = true },
 				{ .xres = 300, .yres = 400, .hz = 1000 },
 			},
