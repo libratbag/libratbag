@@ -525,6 +525,7 @@ ratbag_resolution_set_dpi_list(struct ratbag_resolution *res,
 		if (i > 0)
 			assert(dpis[i] > dpis[i - 1]);
 	}
+	res->ndpis = ndpis;
 }
 
 static inline void
