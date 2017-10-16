@@ -163,6 +163,7 @@ def print_led(d, p, l, level):
                                                                                                                                 l.effect_rate,
                                                                                                                                 l.brightness))
 
+
 def print_led_caps(d, p, l, level):
     leds = {
         RatbagdLed.MODE_BREATHING: "breathing",
@@ -170,7 +171,7 @@ def print_led_caps(d, p, l, level):
         RatbagdLed.MODE_OFF: "off",
         RatbagdLed.MODE_ON: "on",
     }
-    supported = sorted([ v for k, v in leds.items() if k in l.modes ])
+    supported = sorted([v for k, v in leds.items() if k in l.modes])
     print(" " * level + "Modes: {}".format(", ".join(supported)))
 
 
@@ -311,9 +312,11 @@ def func_led_get(r, args):
     l, p, d = find_led(r, args)
     print_led(d, p, l, 0)
 
+
 def func_led_caps(r, args):
     l, p, d = find_led(r, args)
     print_led_caps(d, p, l, 0)
+
 
 def func_led_set(r, args):
     l, p, d = find_led(r, args)
