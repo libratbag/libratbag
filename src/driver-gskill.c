@@ -972,6 +972,7 @@ gskill_write_button_macro(struct ratbag_device *device,
 
 	return 0;
 }
+
 static void
 gskill_read_resolutions(struct ratbag_profile *profile,
 			struct gskill_profile_report *report)
