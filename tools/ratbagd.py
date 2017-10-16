@@ -879,6 +879,7 @@ class RatbagdLed(_RatbagdDBus):
     TYPE_SIDE = 2
     TYPE_BATTERY = 3
     TYPE_DPI = 4
+    TYPE_WHEEL = 5
 
     MODE_OFF = 0
     MODE_ON = 1
