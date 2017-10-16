@@ -292,6 +292,18 @@ org.freedesktop.ratbag1.Resolution
         capability, changing the report rate on one resolution will
         change the report rate on all resolutions.
 
+    .. js:attribute:: ReportRates
+
+        :type: au
+        :flags: read-write, constant
+
+        A list of permitted report rates. Values in this list may be used
+        in the :js:attr:`ReportRate` property. This list is always sorted
+        ascending, the lowest report rate is the first item in the list.
+
+        This list may be empty if the device does not support reading and/or
+        writing to resolutions.
+
     .. js:function:: SetDefault() → ()
 
         Set this resolution to be the default

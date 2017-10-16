@@ -430,6 +430,7 @@ etekcity_read_profile(struct ratbag_profile *profile)
 	unsigned int report_rate;
 	int dpi_x, dpi_y, hz;
 	int rc;
+	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 	assert(profile->index <= ETEKCITY_PROFILE_MAX);
 
@@ -446,12 +447,9 @@ etekcity_read_profile(struct ratbag_profile *profile)
 		return;
 
 	/* first retrieve the report rate, it is set per profile */
-	switch (setting_report->report_rate) {
-	case 0x00: report_rate = 125; break;
-	case 0x01: report_rate = 250; break;
-	case 0x02: report_rate = 500; break;
-	case 0x03: report_rate = 1000; break;
-	default:
+	if (setting_report->report_rate < ARRAY_LENGTH(report_rates)) {
+		report_rate = report_rates[setting_report->report_rate];
+	} else {
 		log_error(device->ratbag,
 			  "error while reading the report rate of the mouse (0x%02x)\n",
 			  buf[26]);
@@ -473,6 +471,9 @@ etekcity_read_profile(struct ratbag_profile *profile)
 		ratbag_resolution_set_cap(resolution,
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		resolution->is_active = (resolution->index == setting_report->current_dpi);
+
+		ratbag_resolution_set_report_rate_list(resolution, report_rates,
+						       ARRAY_LENGTH(report_rates));
 	}
 
 	ratbag_profile_for_each_button(profile, button)

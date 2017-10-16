@@ -261,6 +261,10 @@ struct ratbag_resolution {
 	unsigned int dpi_x;	/**< x resolution in dpi */
 	unsigned int dpi_y;	/**< y resolution in dpi */
 	unsigned int hz;	/**< report rate in Hz */
+
+	unsigned int rates[5];
+	size_t nrates;
+
 	bool is_active;
 	bool is_default;
 	uint32_t capabilities;
@@ -526,6 +530,22 @@ ratbag_resolution_set_dpi_list(struct ratbag_resolution *res,
 			assert(dpis[i] > dpis[i - 1]);
 	}
 	res->ndpis = ndpis;
+}
+
+static inline void
+ratbag_resolution_set_report_rate_list(struct ratbag_resolution *res,
+				       unsigned int *rates,
+				       size_t nrates)
+{
+	assert(nrates <= ARRAY_LENGTH(res->rates));
+	_Static_assert(sizeof(*rates) == sizeof(*res->rates), "Mismatching size");
+
+	for (size_t i = 0; i < nrates; i++) {
+		res->rates[i] = rates[i];
+		if (i > 0)
+			assert(rates[i] > rates[i - 1]);
+	}
+	res->nrates = nrates;
 }
 
 static inline void

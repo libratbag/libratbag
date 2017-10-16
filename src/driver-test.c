@@ -191,6 +191,7 @@ test_read_profile(struct ratbag_profile *profile)
 
 	for (i = 0; i < d->num_resolutions; i++) {
 		_cleanup_resolution_ struct ratbag_resolution *res;
+		size_t nrates = 0;
 
 		r = &p->resolutions[i];
 
@@ -201,6 +202,17 @@ test_read_profile(struct ratbag_profile *profile)
 			ratbag_resolution_set_dpi_list_from_range(res,
 								  r0->dpi_min,
 								  r0->dpi_max);
+
+		for (size_t r = 0; r < ARRAY_LENGTH(r0->report_rates); r++) {
+			if (r0->report_rates[r] > 0)
+				nrates++;
+		}
+
+		if (nrates > 0)
+			ratbag_resolution_set_report_rate_list(res,
+							       r0->report_rates,
+							       nrates);
+
 		res->is_active = r->active;
 		if (r->active)
 			active_set = true;
