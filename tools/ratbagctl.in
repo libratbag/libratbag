@@ -126,6 +126,7 @@ def print_led(d, p, l, level):
         RatbagdLed.TYPE_SIDE: "side",
         RatbagdLed.TYPE_BATTERY: "battery",
         RatbagdLed.TYPE_DPI: "dpi",
+        RatbagdLed.TYPE_WHEEL: "wheel",
     }
     depths = {
         RatbagdLed.COLORDEPTH_MONOCHROME: "monochrome",
