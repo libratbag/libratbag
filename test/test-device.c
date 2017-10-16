@@ -59,7 +59,9 @@ const struct ratbag_test_device sane_device = {
 	.profiles = {
 		{
 		.resolutions = {
-			{ .xres = 100, .yres = 200, .hz = 1000 },
+			{ .xres = 100, .yres = 200, .hz = 1000,
+				.dpi_min = 100, .dpi_max = 5000,
+				.report_rates = { 500, 1000 } },
 			{ .xres = 200, .yres = 300, .hz = 1000 },
 			{ .xres = 300, .yres = 400, .hz = 1000 },
 		},
@@ -354,7 +356,9 @@ START_TEST(device_resolutions)
 		.profiles = {
 			{
 			.resolutions = {
-				{ .xres = 100, .yres = 200, .hz = 1000, .dpi_min = 50, .dpi_max = 5000},
+				{ .xres = 100, .yres = 200, .hz = 1000,
+					.dpi_min = 50, .dpi_max = 5000,
+					.report_rates = { 500, 1000 } },
 				{ .xres = 200, .yres = 300, .hz = 1000, .active = true },
 				{ .xres = 300, .yres = 400, .hz = 1000 },
 			},

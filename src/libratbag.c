@@ -247,6 +247,8 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	}
 
 	ratbag_device_for_each_profile(device, profile) {
+		struct ratbag_resolution *resolution;
+
 		/* Allow max 1 active profile */
 		if (profile->is_active) {
 			if (has_active) {
@@ -265,6 +267,30 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 						  device->name,
 						  nres);
 				goto out;
+		}
+
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			unsigned int vals[300];
+			unsigned int nvals = ARRAY_LENGTH(vals);
+
+			if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_RESOLUTION))
+				break;
+
+			nvals = ratbag_resolution_get_dpi_list(resolution, vals, nvals);
+			if (nvals == 0) {
+				log_bug_libratbag(ratbag,
+						  "%s: invalid dpi list\n",
+						  device->name);
+				goto out;
+			}
+
+			nvals = ratbag_resolution_get_report_rate_list(resolution, vals, nvals);
+			if (nvals == 0) {
+				log_bug_libratbag(ratbag,
+						  "%s: invalid report rate list\n",
+						  device->name);
+				goto out;
+			}
 		}
 	}
 
