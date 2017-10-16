@@ -478,6 +478,13 @@ class RatbagdResolution(metaclass=MetaRatbag):
         libratbag.ratbag_resolution_set_report_rate(self._res, rate)
 
     @property
+    def resolutions(self):
+        """The list of supported DPI values"""
+        dpis = [0 for i in range(300)]
+        n = libratbag.ratbag_resolution_get_dpi_list(self._res, dpis)
+        return dpis[:n]
+
+    @property
     def is_active(self):
         """True if this is the currently active resolution, False
         otherwise"""
