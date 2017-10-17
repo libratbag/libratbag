@@ -444,7 +444,7 @@ roccat_read_button(struct ratbag_button *button)
 	drv_data = ratbag_get_drv_data(device);
 	action = roccat_button_to_action(button->profile, button->index);
 	if (action)
-		button->action = *action;
+		ratbag_button_set_action(button, action);
 	button->type = roccat_raw_to_button_type(button->index);
 //	if (action == NULL)
 //		log_error(device->ratbag, "button: %d -> %d %s:%d\n",
