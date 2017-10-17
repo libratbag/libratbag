@@ -300,9 +300,14 @@ hidpp20drv_read_led_1300(struct ratbag_led *led, struct hidpp20drv_data* data)
 		led->mode = RATBAG_LED_ON;
 	}
 
-	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+	if (info->caps & HIDPP20_LED_MODE_ON)
+		ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+	if (info->caps & HIDPP20_LED_MODE_OFF)
+		ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+	if (info->caps & (HIDPP20_LED_MODE_BLINK | HIDPP20_LED_MODE_TRAVEL |
+			  HIDPP20_LED_MODE_RAMP_UP | HIDPP20_LED_MODE_RAMP_DOWN |
+			  HIDPP20_LED_MODE_HEARTBEAT | HIDPP20_LED_MODE_BREATHING))
+		ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
 }
 
 static void
