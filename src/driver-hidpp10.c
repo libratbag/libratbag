@@ -448,7 +448,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 			 * same steps that we support */
 			ratbag_resolution_set_dpi_list_from_range(res, min, max);
 		} else {
-			for (int i = 0; i < hidpp10->dpi_count - 1; i++)
+			for (int i = 0; i < hidpp10->dpi_count; i++)
 				dpis[i] = hidpp10->dpi_table[i].dpi;
 
 			ratbag_resolution_set_dpi_list(res, dpis, hidpp10->dpi_count);
