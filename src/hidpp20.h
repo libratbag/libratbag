@@ -389,6 +389,13 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 
 #define HIDPP_PAGE_COLOR_LED_EFFECTS			0x8070
 
+enum hidpp20_color_led_info_ext_caps {
+	HIDPP20_COLOR_LED_INFO_EXT_CAP_HAS_ZONE_EFFECT = 0x01,
+	HIDPP20_COLOR_LED_INFO_EXT_CAP_NO_GET_EFFECT_SETTINGS = 0x02,
+	HIDPP20_COLOR_LED_INFO_EXT_CAP_HAS_SET_LED_BIN_INFO = 0x04,
+	HIDPP20_COLOR_LED_INFO_EXT_CAP_MONOCHROME_ONLY = 0x08,
+};
+
 struct hidpp20_color_led_info;
 
 int
