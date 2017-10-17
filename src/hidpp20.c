@@ -808,7 +808,7 @@ err:
 #define CMD_COLOR_LED_EFFECTS_GET_ZONE_INFO 0x10
 
 static int
-hidpp20_color_led_zones_get_count(struct hidpp20_device *device, uint8_t reg)
+hidpp20_color_led_zones_get_count(struct hidpp20_device *device)
 {
 	int rc;
 	union hidpp20_message msg = {
@@ -877,7 +877,7 @@ hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
 	if (feature_index == 0)
 		return -ENOTSUP;
 
-	rc = hidpp20_color_led_zones_get_count(device, feature_index);
+	rc = hidpp20_color_led_zones_get_count(device);
 	if (rc < 0)
 		return rc;
 
