@@ -1457,6 +1457,7 @@ ratbag_button_destroy(struct ratbag_button *button)
 	list_remove(&button->link);
 	if (button->action.macro) {
 		free(button->action.macro->name);
+		free(button->action.macro->group);
 		free(button->action.macro);
 	}
 	free(button);
@@ -1741,6 +1742,7 @@ ratbag_button_copy_macro(struct ratbag_button *button,
 		button->action.macro = zalloc(sizeof(struct ratbag_macro));
 	else {
 		free(button->action.macro->name);
+		free(button->action.macro->group);
 		memset(button->action.macro, 0, sizeof(struct ratbag_macro));
 	}
 
