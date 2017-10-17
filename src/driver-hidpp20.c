@@ -413,6 +413,7 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
 	struct ratbag_button_action *action = &button->action;
+	struct ratbag_button_action rewritten_action = *action;
 	uint8_t code, type, subtype;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
@@ -420,19 +421,13 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 
 	profile = &drv_data->profiles->profiles[button->profile->index];
 
-	switch (action->type) {
-	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-		profile->buttons[button->index].button.type = HIDPP20_BUTTON_HID_TYPE;
-		profile->buttons[button->index].button.subtype = HIDPP20_BUTTON_HID_TYPE_MOUSE;
-		profile->buttons[button->index].button.buttons = action->action.button;
-		break;
-	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+	if (ratbag_action_keybinding_from_macro(&rewritten_action)) {
 		type = HIDPP20_BUTTON_HID_TYPE;
 		subtype = HIDPP20_BUTTON_HID_TYPE_KEYBOARD;
-		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key.key);
+		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, rewritten_action.action.key.key);
 		if (code == 0) {
 			subtype = HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL;
-			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, action->action.key.key);
+			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, rewritten_action.action.key.key);
 			if (code == 0)
 				return -EINVAL;
 		}
@@ -442,6 +437,14 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 			profile->buttons[button->index].keyboard_keys.key = code;
 		else
 			profile->buttons[button->index].consumer_control.consumer_control = code;
+		return 0;
+	}
+
+	switch (action->type) {
+	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+		profile->buttons[button->index].button.type = HIDPP20_BUTTON_HID_TYPE;
+		profile->buttons[button->index].button.subtype = HIDPP20_BUTTON_HID_TYPE_MOUSE;
+		profile->buttons[button->index].button.buttons = action->action.button;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		code = hidpp20_onboard_profiles_get_code_from_special(action->action.special);
@@ -1093,6 +1096,9 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
 		if (rc < 0)

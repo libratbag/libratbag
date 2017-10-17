@@ -1933,3 +1933,32 @@ ratbag_button_macro_new_from_key(struct ratbag_button *button)
 
 	return 0;
 }
+
+bool
+ratbag_action_keybinding_from_macro(struct ratbag_button_action *action)
+{
+	unsigned int key;
+	struct ratbag_macro *macro = action->macro;
+
+	if (!macro || action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		return false;
+
+	if (macro->events[0].type != RATBAG_MACRO_EVENT_KEY_PRESSED)
+		return false;
+
+	key = macro->events[0].event.key;
+
+	if (macro->events[1].type != RATBAG_MACRO_EVENT_KEY_RELEASED)
+		return false;
+
+	if (key != macro->events[1].event.key)
+		return false;
+
+	if (macro->events[2].type != RATBAG_MACRO_EVENT_NONE)
+		return false;
+
+	action->type = RATBAG_BUTTON_ACTION_TYPE_KEY;
+	action->action.key.key = key;
+
+	return true;
+}
