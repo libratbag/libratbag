@@ -70,6 +70,12 @@ test_read_button(struct ratbag_button *button)
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 		button->action.action.key.key = p->buttons[button->index].key;
+		if (ratbag_button_macro_new_from_key(button)) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;

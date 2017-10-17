@@ -404,7 +404,7 @@ class TestRatbagCtlButton(TestRatbagCtl):
         r = self.launch_good_test("button 0 get test_device")
         self.assertEqual(r, "Button: 0 type left is mapped to 'button 0'")
         r = self.launch_good_test("button 1 get test_device")
-        self.assertEqual(r, "Button: 1 type middle is mapped to UNKNOWN")
+        self.assertEqual(r, "Button: 1 type middle is mapped to macro '↕3'")
         r = self.launch_good_test("button 2 get test_device")
         self.assertEqual(r, "Button: 2 type right is mapped to 'profile-cycle-up'")
         r = self.launch_good_test("button 3 get test_device")

@@ -1905,3 +1905,31 @@ ratbag_button_macro_new(const char *name)
 
 	return macro;
 }
+
+LIBRATBAG_EXPORT int
+ratbag_button_macro_new_from_key(struct ratbag_button *button)
+{
+	struct ratbag_button_macro *macro;
+	int i;
+
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
+		return -EINVAL;
+
+	macro = ratbag_button_macro_new("key");
+	i = 0;
+
+	/* FIXME: handle modifiers */
+	ratbag_button_macro_set_event(macro,
+				      i++,
+				      RATBAG_MACRO_EVENT_KEY_PRESSED,
+				      button->action.action.key.key);
+	ratbag_button_macro_set_event(macro,
+				      i++,
+				      RATBAG_MACRO_EVENT_KEY_RELEASED,
+				      button->action.action.key.key);
+
+	ratbag_button_copy_macro(button, macro);
+	ratbag_button_macro_unref(macro);
+
+	return 0;
+}

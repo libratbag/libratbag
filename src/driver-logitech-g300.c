@@ -321,6 +321,12 @@ logitech_g300_read_button(struct ratbag_button *button)
 		key_action->type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 		key_action->action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(
 			device, button_report->key);
+		if (ratbag_button_macro_new_from_key(button)) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
 	}
 }
 

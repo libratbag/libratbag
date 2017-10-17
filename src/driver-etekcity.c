@@ -366,10 +366,20 @@ etekcity_read_button(struct ratbag_button *button)
 	unsigned j;
 	int rc;
 
+	device = button->profile->device;
 	action = etekcity_button_to_action(button->profile, button->index);
 	if (action)
 		ratbag_button_set_action(button, action);
 	button->type = etekcity_raw_to_button_type(button->index);
+
+	if (action->type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		if (ratbag_button_macro_new_from_key(button)) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
+	}
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
@@ -377,7 +387,6 @@ etekcity_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 	if (action && action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
-		device = button->profile->device;
 		drv_data = ratbag_get_drv_data(device);
 
 		etekcity_set_config_profile(device,

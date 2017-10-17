@@ -178,11 +178,23 @@ hidpp10drv_map_button(struct ratbag_device *device,
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 							profile.buttons[button->index].keys.key);
+		if (ratbag_button_macro_new_from_key(button)) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
 		break;
 	case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 		button->action.action.key.key = ratbag_hidraw_get_keycode_from_consumer_usage(device,
 							profile.buttons[button->index].consumer_control.consumer_control);
+		if (ratbag_button_macro_new_from_key(button)) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
 		break;
 	case PROFILE_BUTTON_TYPE_SPECIAL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;

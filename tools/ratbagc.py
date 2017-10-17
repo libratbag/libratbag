@@ -676,6 +676,9 @@ class RatbagdMacro(metaclass=MetaRatbag):
         idx = 0
         while idx < len(self._macro):
             t, v = self._macro[idx]
+            if t == libratbag.RATBAG_MACRO_EVENT_NONE:
+                # macro are null terminated
+                break
             try:
                 if t == RatbagdButton.MACRO_KEY_PRESS:
                     # Check for a paired press/release event
@@ -731,7 +734,6 @@ class RatbagdMacro(metaclass=MetaRatbag):
         # e.g. have two identical key presses in a row.
         if len(self._macro) == 0 or (type, value) != self._macro[-1]:
             self._macro.append((type, value))
-            self.notify("keys")
 
 
 class RatbagdLed(metaclass=MetaRatbag):

@@ -451,6 +451,15 @@ roccat_read_button(struct ratbag_button *button)
 //			button->index, drv_data->profiles[button->profile->index][3 + button->index * 3],
 //			__FILE__, __LINE__);
 
+	if (action->type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		if (ratbag_button_macro_new_from_key(button)) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
+	}
+
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);

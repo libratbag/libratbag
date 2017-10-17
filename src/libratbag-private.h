@@ -478,6 +478,9 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	return 0;
 }
 
+int
+ratbag_button_macro_new_from_key(struct ratbag_button *button);
+
 static inline void
 ratbag_resolution_set_resolution(struct ratbag_resolution *res,
 				 int dpi_x, int dpi_y, int hz)
