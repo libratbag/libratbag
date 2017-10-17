@@ -316,6 +316,8 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	struct hidpp20_profile *profile;
 	struct hidpp20_led *h_led;
 	struct hidpp20_color_led_zone_info* led_info;
+	struct hidpp20_color_led_info info;
+	int rc;
 
 	led_info = &drv_data->led_infos.color_leds[led->index];
 	profile = &drv_data->profiles->profiles[led->profile->index];
@@ -344,7 +346,13 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	led->color.blue = h_led->color.blue;
 	led->hz = h_led->period;  /* FIXME: should be ceil(1000.0 / h_led->period), but that would be very small */
 	led->brightness = h_led->brightness * 255 / 100;
-	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+
+	rc = hidpp20_color_led_effects_get_info(drv_data->dev, &info);
+	if (rc == 0 &&
+	    info.ext_caps & HIDPP20_COLOR_LED_INFO_EXT_CAP_MONOCHROME_ONLY)
+		led->colordepth = RATBAG_LED_COLORDEPTH_MONOCHROME;
+	else
+		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 
 	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
 	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
