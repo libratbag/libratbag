@@ -391,6 +391,11 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 
 struct hidpp20_color_led_info;
 
+int
+hidpp20_color_led_effects_get_info(struct hidpp20_device *device,
+				   struct hidpp20_color_led_info *info);
+
+
 struct hidpp20_color_led_zone_info;
 
 int

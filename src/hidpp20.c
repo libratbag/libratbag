@@ -807,8 +807,9 @@ err:
 #define CMD_COLOR_LED_EFFECTS_GET_INFO 0x00
 #define CMD_COLOR_LED_EFFECTS_GET_ZONE_INFO 0x10
 
-static int
-hidpp20_color_led_zones_get_count(struct hidpp20_device *device)
+int
+hidpp20_color_led_effects_get_info(struct hidpp20_device *device,
+				   struct hidpp20_color_led_info *info)
 {
 	int rc;
 	union hidpp20_message msg = {
@@ -816,7 +817,6 @@ hidpp20_color_led_zones_get_count(struct hidpp20_device *device)
 		.msg.device_idx = device->index,
 		.msg.address = CMD_COLOR_LED_EFFECTS_GET_INFO,
 	};
-	struct hidpp20_color_led_info *info;
 	uint8_t feature_index;
 
 	feature_index = hidpp_root_get_feature_idx(device,
@@ -830,9 +830,9 @@ hidpp20_color_led_zones_get_count(struct hidpp20_device *device)
 	if (rc)
 		return rc;
 
-	info = (struct hidpp20_color_led_info *)msg.msg.parameters;
+	*info = *(struct hidpp20_color_led_info *)msg.msg.parameters;
 
-	return info->zone_count;
+	return 0;
 }
 
 int
@@ -868,6 +868,7 @@ hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	struct hidpp20_color_led_zone_info *i_list, *info;
+	struct hidpp20_color_led_info ledinfo = {0};
 	uint8_t num_infos;
 	unsigned i;
 	int rc;
@@ -877,11 +878,11 @@ hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
 	if (feature_index == 0)
 		return -ENOTSUP;
 
-	rc = hidpp20_color_led_zones_get_count(device);
+	rc = hidpp20_color_led_effects_get_info(device, &ledinfo);
 	if (rc < 0)
 		return rc;
 
-	num_infos = rc;
+	num_infos = ledinfo.zone_count;
 	if (num_infos == 0) {
 		*infos_list = NULL;
 		return 0;
