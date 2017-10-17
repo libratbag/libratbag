@@ -102,7 +102,7 @@ hidpp20drv_read_button_1b04(struct ratbag_button *button)
 	button->type = hidpp20_1b04_get_physical_mapping(control->task_id);
 	action = hidpp20_1b04_get_logical_mapping(mapping);
 	if (action)
-		button->action = *action;
+		ratbag_button_set_action(button, action);
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);

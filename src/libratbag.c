@@ -1313,6 +1313,17 @@ ratbag_button_get_button(struct ratbag_button *button)
 	return button->action.action.button;
 }
 
+void
+ratbag_button_set_action(struct ratbag_button *button,
+			 const struct ratbag_button_action *action)
+{
+	struct ratbag_macro *macro = button->action.macro;
+
+	button->action = *action;
+	if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		button->action.macro = macro;
+}
+
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 {
@@ -1325,7 +1336,7 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 	action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 	action.action.button = btn;
 
-	button->action = action;
+	ratbag_button_set_action(button, &action);
 	button->dirty = true;
 	button->profile->dirty = true;
 
@@ -1356,7 +1367,7 @@ ratbag_button_set_special(struct ratbag_button *button,
 	action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
 	action.action.special = act;
 
-	button->action = action;
+	ratbag_button_set_action(button, &action);
 	button->dirty = true;
 	button->profile->dirty = true;
 
@@ -1395,7 +1406,7 @@ ratbag_button_set_key(struct ratbag_button *button,
 	action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 	action.action.key.key = key;
 
-	button->action = action;
+	ratbag_button_set_action(button, &action);
 	button->dirty = true;
 	button->profile->dirty = true;
 
@@ -1413,7 +1424,7 @@ ratbag_button_disable(struct ratbag_button *button)
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 
-	button->action = action;
+	ratbag_button_set_action(button, &action);
 	button->dirty = true;
 	button->profile->dirty = true;
 

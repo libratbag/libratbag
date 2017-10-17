@@ -380,6 +380,10 @@ struct ratbag_button {
 	bool dirty; /* changed since last commit to device */
 };
 
+void
+ratbag_button_set_action(struct ratbag_button *button,
+			 const struct ratbag_button_action *action);
+
 static inline void
 ratbag_button_enable_action_type(struct ratbag_button *button,
 				 enum ratbag_button_action_type type)

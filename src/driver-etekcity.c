@@ -368,7 +368,7 @@ etekcity_read_button(struct ratbag_button *button)
 
 	action = etekcity_button_to_action(button->profile, button->index);
 	if (action)
-		button->action = *action;
+		ratbag_button_set_action(button, action);
 	button->type = etekcity_raw_to_button_type(button->index);
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);

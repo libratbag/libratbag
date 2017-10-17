@@ -312,7 +312,7 @@ logitech_g300_read_button(struct ratbag_button *button)
 
 	action = logitech_g300_raw_to_button_action(button_report->code);
 	if (action) {
-		button->action = *action;
+		ratbag_button_set_action(button, action);
 	}
 	else if (button_report->code == 0x00 && (button_report->modifier > 0x00 || button_report->key > 0x00))
 	{
