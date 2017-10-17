@@ -52,9 +52,9 @@
 #define HIDPP_CAP_BUTTON_KEY_1b04			(1 << 2)
 #define HIDPP_CAP_BATTERY_LEVEL_1000			(1 << 3)
 #define HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00		(1 << 4)
-#define HIDPP_CAP_COLOR_LED_EFFECTS_8070			(1 << 5)
+#define HIDPP_CAP_COLOR_LED_EFFECTS_8070		(1 << 5)
 #define HIDPP_CAP_ONBOARD_PROFILES_8100			(1 << 6)
-#define HIDPP_CAP_LED_SW_CONTROL_1300            (1 << 7)
+#define HIDPP_CAP_LED_SW_CONTROL_1300			(1 << 7)
 
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
