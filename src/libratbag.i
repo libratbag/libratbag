@@ -10,7 +10,7 @@
 %}
 #define __attribute__(x)
 
-/* custom typemap for handling ratbag_resolution_get_dpi */
+/* custom typemap for handling ratbag_resolution_get_dpi_list */
 %typemap(in) (unsigned int *resolutions, size_t nres) {
   unsigned int i;
   if (!PyList_Check($input)) {
@@ -42,7 +42,7 @@
   if ($1)
     free($1);
 }
-/* END OF custom typemap for handling ratbag_resolution_get_dpi */
+/* END OF custom typemap for handling ratbag_resolution_get_dpi_list */
 
 /*  Parse the header file to generate wrappers */
 %include "libratbag.h"
