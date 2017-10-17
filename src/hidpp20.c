@@ -1318,6 +1318,40 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x8060 - Adjustable Report Rate                                            */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE_LIST 0x00
+
+int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
+							uint8_t *bitflags_ms)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE_LIST,
+		.msg.parameters[0] = 0,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ADJUSTABLE_REPORT_RATE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*bitflags_ms = msg.msg.parameters[0];
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
 /* -------------------------------------------------------------------------- */
 
