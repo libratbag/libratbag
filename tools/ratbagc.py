@@ -485,6 +485,13 @@ class RatbagdResolution(metaclass=MetaRatbag):
         return dpis[:n]
 
     @property
+    def report_rates(self):
+        """The list of supported report rates"""
+        rates = [0 for i in range(300)]
+        n = libratbag.ratbag_resolution_get_report_rate_list(self._res, rates)
+        return rates[:n]
+
+    @property
     def is_active(self):
         """True if this is the currently active resolution, False
         otherwise"""

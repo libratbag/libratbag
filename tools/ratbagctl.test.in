@@ -353,6 +353,15 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
         self.launch_fail_test(command + " 1 test_device")
         self.launch_fail_test(command + " test_device X")
 
+    def test_rate_get_all(self):
+        rate_list = "500 1000"
+        command = "rate get-all"
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(r, rate_list)
+        self.setProfile(1)
+        r = self.launch_good_test(command + " test_device")
+        self.assertEqual(r, rate_list)
+
     def test_rate_set(self):
         command = "rate set"
         r = self.launch_good_test("rate get test_device")

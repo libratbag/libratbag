@@ -450,6 +450,12 @@ def func_report_rate_get(r, args):
     print(r.report_rate)
 
 
+def func_report_rate_get_all(r, args):
+    r, p, d = find_resolution(r, args)
+    rates = r.report_rates
+    print(" ".join([str(x) for x in rates]))
+
+
 def func_report_rate_set(r, args):
     r, p, d = find_resolution(r, args)
     r.report_rate = args.rate_n
@@ -914,6 +920,12 @@ active resolution of the active profile if none are given.""",
                 name: 'get',
                 help_str: 'Show current report rate',
                 func: func_report_rate_get,
+            },
+            {
+                of_type: command,
+                name: 'get-all',
+                help_str: 'Show all available report rates',
+                func: func_report_rate_get_all,
             },
             {
                 of_type: command,
