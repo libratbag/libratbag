@@ -376,6 +376,13 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 
 #define HIDPP_PAGE_ADJUSTABLE_REPORT_RATE		0x8060
 
+/**
+ * set the bitmap_ms to the supported report rates. Bits enabled reflect a
+ * supported report rate, where bit 0 equals 1ms, bit 1 2ms, bit 2 3ms, etc.
+ */
+int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
+							uint8_t *bitflags_ms);
+
 /* -------------------------------------------------------------------------- */
 /* 0x8070v4 - Color LED effects                                               */
 /* -------------------------------------------------------------------------- */
