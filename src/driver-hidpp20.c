@@ -360,12 +360,12 @@ hidpp20drv_read_led(struct ratbag_led *led)
 }
 
 static int
-hidpp20drv_write_button_1b04(struct ratbag_button *button,
-			     const struct ratbag_button_action *action)
+hidpp20drv_update_button_1b04(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_control_id *control;
+	struct ratbag_button_action *action = &button->action;
 	uint16_t mapping;
 	int rc;
 
@@ -395,12 +395,12 @@ hidpp20drv_write_button_1b04(struct ratbag_button *button,
 }
 
 static int
-hidpp20drv_update_button_8100(struct ratbag_button *button,
-			      const struct ratbag_button_action *action)
+hidpp20drv_update_button_8100(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
+	struct ratbag_button_action *action = &button->action;
 	uint8_t code, type, subtype;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
@@ -447,17 +447,16 @@ hidpp20drv_update_button_8100(struct ratbag_button *button,
 }
 
 static int
-hidpp20drv_update_button(struct ratbag_button *button,
-			const struct ratbag_button_action *action)
+hidpp20drv_update_button(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
-		return hidpp20drv_update_button_8100(button, action);
+		return hidpp20drv_update_button_8100(button);
 
 	if (drv_data->capabilities & HIDPP_CAP_BUTTON_KEY_1b04)
-		return hidpp20drv_write_button_1b04(button, action);
+		return hidpp20drv_update_button_1b04(button);
 
 	return -ENOTSUP;
 }
@@ -1139,12 +1138,10 @@ hidpp20drv_commit(struct ratbag_device *device)
 		}
 
 		list_for_each(button, &profile->buttons, link) {
-			struct ratbag_button_action action = button->action;
-
 			if (!button->dirty)
 				continue;
 
-			rc = hidpp20drv_update_button(button, &action);
+			rc = hidpp20drv_update_button(button);
 			if (rc)
 				return RATBAG_ERROR_DEVICE;
 		}
