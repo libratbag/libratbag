@@ -413,6 +413,14 @@ int
 hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
 					 struct hidpp20_color_led_zone_info **infos_list);
 
+struct hidpp20_color_led_zone_effect_info;
+
+int
+hidpp20_color_led_effect_get_zone_effect_info(struct hidpp20_device *device,
+					      uint8_t zone_index,
+					      uint8_t zone_effect_index,
+					      struct hidpp20_color_led_zone_effect_info *info);
+
 enum hidpp20_color_led_location {
 	HIDPP20_COLOR_LED_LOCATION_UNDEFINED = 0,
 	HIDPP20_COLOR_LED_LOCATION_PRIMARY,
@@ -433,6 +441,19 @@ enum hidpp20_color_led_persistency {
 	HIDPP20_COLOR_LED_PERSISTENCY_ON,
 	HIDPP20_COLOR_LED_PERSISTENCY_OFF,
 	HIDPP20_COLOR_LED_PERSISTENCY_ON_OFF,
+};
+
+enum hidpp20_color_led_zone_effect {
+	HIDPP20_COLOR_LED_ZONE_EFFECT_DISABLED = 0,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_FIXED = 1,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_CYCLING = 3,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_WAVE = 4,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_STARLIGHT = 5,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_LIGHT_ON_PRESS = 6,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_AUDIO_VISUALIZER = 7,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_BOOT_UP = 8,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_DEMO_MODE = 8,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_BREATHING = 10,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -524,6 +545,15 @@ union hidpp20_generic_led_zone_info {
 	struct hidpp20_led_sw_ctrl_led_info* leds;
 	struct hidpp20_color_led_zone_info* color_leds;
 };
+
+struct hidpp20_color_led_zone_effect_info {
+       uint8_t zone_index;
+       uint8_t zone_effect_index;
+       uint16_t effect_id;
+       uint16_t effect_caps;
+       uint16_t effect_period;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_color_led_zone_effect_info) == 8, "Invalid size");
 
 struct hidpp20_color {
 	uint8_t red;

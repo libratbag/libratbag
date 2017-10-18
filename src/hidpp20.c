@@ -806,6 +806,7 @@ err:
 
 #define CMD_COLOR_LED_EFFECTS_GET_INFO 0x00
 #define CMD_COLOR_LED_EFFECTS_GET_ZONE_INFO 0x10
+#define CMD_COLOR_LED_EFFECTS_GET_ZONE_EFFECT_INFO 0x20
 
 int
 hidpp20_color_led_effects_get_info(struct hidpp20_device *device,
@@ -911,6 +912,43 @@ hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
 err:
 	free(i_list);
 	return rc;
+}
+
+int
+hidpp20_color_led_effect_get_zone_effect_info(struct hidpp20_device *device,
+					      uint8_t zone_index,
+					      uint8_t zone_effect_index,
+					      struct hidpp20_color_led_zone_effect_info *info)
+{
+	uint8_t feature_index;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.address = CMD_COLOR_LED_EFFECTS_GET_ZONE_EFFECT_INFO,
+		.msg.device_idx = device->index,
+		.msg.parameters[0] = zone_index,
+		.msg.parameters[1] = zone_effect_index,
+	};
+	int rc;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_COLOR_LED_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	info->zone_index = msg.msg.parameters[0];
+	info->zone_effect_index = msg.msg.parameters[1];
+
+	info->effect_id = hidpp_get_unaligned_be_u16(&msg.msg.parameters[2]);
+	info->effect_caps = hidpp_get_unaligned_be_u16(&msg.msg.parameters[4]);
+	info->effect_period = hidpp_get_unaligned_be_u16(&msg.msg.parameters[6]);
+
+	return 0;
 }
 
 /* -------------------------------------------------------------------------- */

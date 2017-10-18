@@ -354,10 +354,36 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	else
 		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 
-	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+	for (int i = 0; i < led_info->num_effects; i++) {
+		struct hidpp20_color_led_zone_effect_info ei;
+		rc = hidpp20_color_led_effect_get_zone_effect_info(drv_data->dev,
+								   led_info->index,
+								   i, &ei);
+		if (rc < 0)
+			break;
+
+		switch (ei.effect_id) {
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_DISABLED:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+			break;
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_FIXED:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+			break;
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_CYCLING:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+			break;
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_WAVE:
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_BREATHING:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+			break;
+		default:
+			log_bug_libratbag(led->profile->device->ratbag,
+					  "%s: Unknown effect id %d\n",
+					  led->profile->device->name,
+					  ei.effect_id);
+			break;
+		}
+	}
 }
 
 static void
