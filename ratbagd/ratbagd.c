@@ -306,8 +306,10 @@ static struct ratbagd *ratbagd_free(struct ratbagd *ctx)
 	if (!ctx)
 		return NULL;
 
-	RATBAGD_DEVICE_FOREACH_SAFE(device, tmp, ctx)
+	RATBAGD_DEVICE_FOREACH_SAFE(device, tmp, ctx) {
 		ratbagd_device_unlink(device);
+		ratbagd_device_free(device);
+	}
 
 	ctx->bus = sd_bus_flush_close_unref(ctx->bus);
 	ctx->monitor_source = sd_event_source_unref(ctx->monitor_source);
