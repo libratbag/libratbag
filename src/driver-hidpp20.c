@@ -716,6 +716,9 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 	struct ratbag_device *device = profile->device;
 	struct ratbag *ratbag = device->ratbag;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag_resolution *res;
+	unsigned int default_dpi = 1000;
+	unsigned int default_rate = 500;
 	int rc;
 
 	if (drv_data->capabilities & HIDPP_CAP_RESOLUTION_2200) {
@@ -734,8 +737,6 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
-		struct ratbag_resolution *res;
-
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return rc;
@@ -756,13 +757,12 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			 * they are from different sensors */
 			res->is_active = true;
 		}
-
-		return 0;
+	} else {
+		ratbag_profile_for_each_resolution(profile, res)
+			ratbag_resolution_set_dpi_list(res, &default_dpi, 1);
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060) {
-		struct ratbag_resolution *res;
-
 		rc = hidpp20drv_read_report_rate_8060(device);
 		if (rc < 0)
 			return rc;
@@ -771,6 +771,9 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			ratbag_resolution_set_report_rate_list(res,
 							       drv_data->report_rates,
 							       drv_data->num_report_rates);
+	} else {
+		ratbag_profile_for_each_resolution(profile, res)
+			ratbag_resolution_set_report_rate_list(res, &default_rate, 1);
 	}
 
 	return 0;
@@ -1163,8 +1166,6 @@ hidpp20drv_commit(struct ratbag_device *device)
 		if (!profile->dirty)
 			continue;
 
-		drv_data->profiles->profiles[profile->index].enabled = profile->is_enabled;
-
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (resolution->is_active)
 				dpi_index = resolution->index;
@@ -1197,6 +1198,9 @@ hidpp20drv_commit(struct ratbag_device *device)
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+		list_for_each(profile, &device->profiles, link)
+			drv_data->profiles->profiles[profile->index].enabled = profile->is_enabled;
+
 		rc = hidpp20_onboard_profiles_commit(drv_data->dev,
 						     drv_data->profiles);
 		if (rc)
@@ -1335,7 +1339,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 	drv_data->num_profiles = 1;
 	drv_data->num_resolutions = 1;
 	drv_data->num_buttons = 8;
-	drv_data->num_leds = 2;
+	drv_data->num_leds = 0;
 
 	rc = hidpp20drv_20_probe(device);
 	if (rc)
