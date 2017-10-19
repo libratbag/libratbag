@@ -1,6 +1,6 @@
 if get_option('documentation')
 
-cmd_sphinx = find_program('sphinx-build-3')
+cmd_sphinx = find_program('sphinx-build-3', 'sphinx-build3')
 cmd_doxygen = find_program('doxygen')
 cmd_xsltproc = find_program('xsltproc')
 
