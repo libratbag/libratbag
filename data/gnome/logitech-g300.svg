@@ -15,7 +15,7 @@
    version="1.1"
    id="svg8"
    sodipodi:docname="logitech-g300.svg"
-   inkscape:version="0.92+devel unknown">
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,17 +25,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.8284271"
-     inkscape:cx="253.02787"
-     inkscape:cy="140.76165"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="202.78034"
+     inkscape:cy="279.63686"
      inkscape:document-units="px"
-     inkscape:current-layer="Buttons"
+     inkscape:current-layer="LEDs"
      inkscape:document-rotation="0"
      showgrid="false"
      showguides="false"
      inkscape:window-width="1920"
-     inkscape:window-height="1016"
-     inkscape:window-x="0"
+     inkscape:window-height="1163"
+     inkscape:window-x="1920"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
      showborder="true"
@@ -476,11 +476,18 @@
            sodipodi:nodetypes="cccc" />
       </g>
     </g>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="LEDs"
+     inkscape:label="LEDs"
+     transform="translate(0,-2.6458338)"
+     style="display:inline">
     <g
        style="display:inline"
        id="led0-path"
        inkscape:label="#g161"
-       transform="matrix(0.26458333,0,0,0.26458333,38.838971,19.46058)">
+       transform="matrix(0.26458333,0,0,0.26458333,38.838972,19.46058)">
       <path
          inkscape:connector-curvature="0"
          id="path877"
@@ -504,10 +511,4 @@
          style="color:#000000;text-align:start;display:inline;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round" />
     </g>
   </g>
-  <g
-     inkscape:groupmode="layer"
-     id="LEDs"
-     inkscape:label="LEDs"
-     transform="translate(0,-2.6458338)"
-     style="display:none" />
 </svg>
