@@ -41,7 +41,7 @@ config_h.set_quoted('FALLBACK_SVG_NAME', 'fallback.svg')
 libratbag_data_dir = join_paths(get_option('prefix'),
 				get_option('datadir'),
 				'libratbag')
-libratbag_data_dir_devel = join_paths(meson.source_root(), 'data', 'devices')
+libratbag_data_dir_devel = join_paths(meson.source_root(), 'data')
 config_h.set_quoted('LIBRATBAG_DATA_DIR', libratbag_data_dir)
 
 # dependencies
@@ -276,7 +276,7 @@ data_files = files(
 )
 
 install_data(data_files,
-	     install_dir : join_paths(get_option('datadir'), 'libratbag'))
+	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'devices'))
 
 data_parse_test = find_program(join_paths(meson.source_root(), 'data/devices/data-parse-test.py'))
 test('data-parse-test', data_parse_test,
