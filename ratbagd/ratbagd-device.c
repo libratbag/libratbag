@@ -163,6 +163,11 @@ static int ratbagd_device_get_theme_svg(sd_bus_message *m,
 	const char *theme;
 	const char *svg;
 	int r;
+	const char *datadir;
+
+	datadir = getenv("LIBRATBAG_DATA_DIR");
+	if (!datadir)
+		datadir = LIBRATBAG_DATA_DIR;
 
 	r = sd_bus_message_read(m, "s", &theme);
 	if (r < 0)
@@ -176,7 +181,7 @@ static int ratbagd_device_get_theme_svg(sd_bus_message *m,
 		svg = FALLBACK_SVG_NAME;
 	}
 
-	sprintf(svg_path, "%s/%s/%s", LIBRATBAG_DATA_DIR, theme, svg);
+	snprintf(svg_path, sizeof(svg_path), "%s/%s/%s", datadir, theme, svg);
 
 	return sd_bus_reply_method_return(m, "s", svg_path);
 }
