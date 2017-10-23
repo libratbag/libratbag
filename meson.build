@@ -552,7 +552,7 @@ shared_library(
    'libratbag',
    c_source,
    name_prefix: '_',
-   c_args : '-Wno-missing-prototypes',
+   c_args : ['-Wno-missing-prototypes', '-Wno-format-nonliteral'],
    extra_files: [ i_source ] + src_libratbag ,
    dependencies: deps_libratbag + wrapper_deps,
    include_directories : include_directories('src', 'tools'),
