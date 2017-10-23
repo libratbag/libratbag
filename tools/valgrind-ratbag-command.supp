@@ -9,10 +9,8 @@
    Remove dlopens, as libratbag does not do those
    Memcheck:Leak
    match-leak-kinds: reachable
-   fun:calloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
+   fun:*alloc
+   ...
    fun:openaux
    fun:_dl_catch_error
    fun:_dl_map_object_deps
@@ -21,4 +19,52 @@
    fun:_dl_open
    fun:dlopen_doit
    fun:_dl_catch_error
+}
+
+{
+   Remove calloc static allocated glib entries
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*alloc
+   ...
+   obj:/usr/lib64/libglib*.so*
+   fun:g_key_file_new
+}
+
+{
+   Remove any libglib-2 static alloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*alloc
+   ...
+   obj:/usr/lib64/libglib*.so*
+   fun:_dl_init
+   obj:/usr/lib64/ld*.so*
+}
+
+{
+   quarks in glib-2 are staying around
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   obj:/usr/lib64/libglib*.so*
+   fun:g_quark_from_static_string
+}
+
+{
+   Remove pooled allocated memory from systemd
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mempool_alloc_tile
+}
+
+{
+   Remove pooled allocated memory from systemd
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:internal_ordered_hashmap_ensure_allocated
 }
