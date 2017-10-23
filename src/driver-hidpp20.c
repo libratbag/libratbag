@@ -1052,7 +1052,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
 		if (!hidpp20drv_read_special_key_mouse(device))
-			device->num_buttons = drv_data->num_controls;
+			drv_data->num_buttons = drv_data->num_controls;
 		break;
 	}
 	case HIDPP_PAGE_BATTERY_LEVEL_STATUS: {
@@ -1077,7 +1077,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
 		if (!hidpp20drv_read_kbd_reprogrammable_key(device))
-			device->num_buttons = drv_data->num_controls;
+			drv_data->num_buttons = drv_data->num_controls;
 		break;
 	}
 	case HIDPP_PAGE_ADJUSTABLE_REPORT_RATE: {
