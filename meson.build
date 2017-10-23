@@ -283,19 +283,6 @@ test('data-parse-test', data_parse_test,
 	      '--svg-dir', join_paths(meson.source_root(), 'data/gnome') ] + data_files)
 
 #### svg files ####
-default_svg_files = [
-	'data/default/etekcity.svg',
-	'data/default/logitech-g300.svg',
-	'data/default/logitech-g303.svg',
-	'data/default/logitech-g500s.svg',
-	'data/default/logitech-g502.svg',
-	'data/default/logitech-g700.svg',
-	'data/default/logitech-g900.svg',
-	'data/default/logitech-mx_master.svg',
-	'data/default/roccat-kone-xtd.svg'
-]
-install_data(default_svg_files,
-	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'default'))
 
 gnome_svg_files = files(
 	'data/gnome/fallback.svg',
