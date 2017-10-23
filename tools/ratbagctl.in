@@ -351,7 +351,7 @@ def func_led_set(r, args):
         pass
     else:
         l.brightness = brightness
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_led_get_all(r, args):
@@ -368,7 +368,7 @@ def func_button_get(r, args):
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
     b.mapping = args.target_button
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_button_action_set_special(r, args):
@@ -379,7 +379,7 @@ def func_button_action_set_special(r, args):
         pass
     else:
         b.special = button_specials_strmap[special]
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_button_action_set_macro(r, args):
@@ -418,7 +418,7 @@ def func_button_action_set_macro(r, args):
                 macro.append(RatbagdButton.MACRO_KEY_RELEASE, code)
 
     b.macro = macro
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_button_count(r, args):
@@ -443,7 +443,7 @@ def func_dpi_get_all(r, args):
 def func_dpi_set(r, args):
     r, p, d = find_resolution(r, args)
     r.resolution = (args.dpi_n[0], args.dpi_n[1])
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_report_rate_get(r, args):
@@ -475,7 +475,7 @@ def func_resolution_active_get(r, args):
 def func_resolution_active_set(r, args):
     r, p, d = find_resolution(r, args)
     r.set_active()
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_resolution_default_get(r, args):
@@ -492,7 +492,7 @@ def func_default_resolution_set(r, args):
     # FIXME: capabilities check?
     r, p, d = find_resolution(r, args)
     r.set_default()
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_profile_get(r, args):
@@ -510,7 +510,7 @@ def func_profile_name_set(r, args):
     if RatbagdProfile.CAP_WRITABLE_NAME not in p.capabilities:
         raise RatbagErrorCapability("assigning a profile name is not supported on this profile")
     p.name = args.name
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_profile_active_get(r, args):
@@ -521,19 +521,19 @@ def func_profile_active_get(r, args):
 def func_profile_active_set(r, args):
     p, d = find_profile(r, args)
     p.set_active()
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_profile_enable(r, args):
     p, d = find_profile(r, args)
     p.enabled = True
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_profile_disable(r, args):
     p, d = find_profile(r, args)
     p.enabled = False
-    d.commit(commit_cb)
+    commit(d, args)
 
 
 def func_device_name_get(r, args):
@@ -605,6 +605,12 @@ link = 'link'
 def commit_cb(status):
     if not status == RatbagErrorCode.RATBAG_SUCCESS:
         print("Could not commit changes to the device")
+
+
+def commit(device, args):
+    if args.nocommit:
+        return
+    device.commit(commit_cb)
 
 
 def color(string):
@@ -1428,6 +1434,7 @@ class RatbagParserRoot(object):
         self.parser.add_argument("-V", "--version", action="version", version="@version@")
         self.parser.add_argument('--verbose', '-v', action='count', default=0)
         self.parser.add_argument('--help', '-h', action='store_true', default=False)
+        self.parser.add_argument('--nocommit', action='store_true', default=False)
         if self.want_keepalive:
             self.parser.add_argument('--keepalive', action='store_true', default=False)
 
@@ -1465,7 +1472,8 @@ class RatbagParserRoot(object):
         print("""
 Common options:
     --version -V                show program's version number and exit
-    --verbose, -v
+    --verbose, -v               increase verbosity level
+    --nocommit                  Do not immediately write the settings to the mouse
     --help, -h                  show this help and exit""")
         if self.want_keepalive:
             print("    --keepalive                 do not terminate ratbagd after the processing")
