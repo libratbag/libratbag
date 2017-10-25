@@ -52,6 +52,26 @@
 #define STEELSERIES_ID_LED		0x5b
 #define STEELSERIES_ID_SAVE		0x59
 
+static const enum ratbag_button_type button_types[6] =
+{
+	RATBAG_BUTTON_TYPE_LEFT,
+	RATBAG_BUTTON_TYPE_RIGHT,
+	RATBAG_BUTTON_TYPE_MIDDLE,
+	RATBAG_BUTTON_TYPE_THUMB,
+	RATBAG_BUTTON_TYPE_THUMB2,
+	RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP,
+};
+
+static const struct ratbag_button_action button_actions[6] =
+{
+	BUTTON_ACTION_BUTTON(1),
+	BUTTON_ACTION_BUTTON(2),
+	BUTTON_ACTION_BUTTON(3),
+	BUTTON_ACTION_BUTTON(4),
+	BUTTON_ACTION_BUTTON(5),
+	BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP),
+};
+
 static int
 steelseries_test_hidraw(struct ratbag_device *device)
 {
@@ -109,7 +129,12 @@ steelseries_probe(struct ratbag_device *device)
 		}
 
 		ratbag_profile_for_each_button(profile, button) {
-			/* TODO */
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+
+			button->type = button_types[button->index];
+			ratbag_button_set_action(button, &button_actions[button->index]);
 		}
 
 		ratbag_profile_for_each_led(profile, led) {
