@@ -66,6 +66,8 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_button *button;
 	struct ratbag_led *led;
 	int rc;
+	unsigned int report_rates[] = { 125, 250, 500, 1000 };
+
 
 	rc = ratbag_find_hidraw(device, steelseries_test_hidraw);
 	if (rc)
@@ -102,6 +104,8 @@ steelseries_probe(struct ratbag_device *device)
 			ratbag_resolution_set_dpi_list_from_range(resolution,
 								  STEELSERIES_DPI_MIN,
 								  STEELSERIES_DPI_MAX);
+			ratbag_resolution_set_report_rate_list(resolution, report_rates,
+							       ARRAY_LENGTH(report_rates));
 		}
 
 		ratbag_profile_for_each_button(profile, button) {
