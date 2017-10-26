@@ -46,11 +46,20 @@
 #define STEELSERIES_REPORT_ID_2		0x02
 
 #define STEELSERIES_REPORT_SIZE		64
+#define STEELSERIES_REPORT_LONG_SIZE	262
 
+#define STEELSERIES_ID_BUTTONS		0x31
 #define STEELSERIES_ID_DPI		0x53
 #define STEELSERIES_ID_REPORT_RATE	0x54
 #define STEELSERIES_ID_LED		0x5b
 #define STEELSERIES_ID_SAVE		0x59
+
+#define STEELSERIES_BUTTON_OFF		0x00
+#define STEELSERIES_BUTTON_RES_CYCLE	0x30
+#define STEELSERIES_BUTTON_WHEEL_UP	0x31
+#define STEELSERIES_BUTTON_WHEEL_DOWN	0x32
+#define STEELSERIES_BUTTON_KBD		0x51
+#define STEELSERIES_BUTTON_CONSUMER	0x61
 
 static const enum ratbag_button_type button_types[6] =
 {
@@ -188,6 +197,73 @@ steelseries_write_report_rate(struct ratbag_resolution *resolution)
 }
 
 static int
+steelseries_write_buttons(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	uint8_t buf[STEELSERIES_REPORT_LONG_SIZE] = {0};
+	struct ratbag_button *button;
+	int ret;
+
+	buf[0] = STEELSERIES_ID_BUTTONS;
+
+	ratbag_profile_for_each_button(profile, button) {
+		struct ratbag_button_action *action = &button->action;
+		uint16_t code;
+		int idx;
+
+		/* Each button takes up 5 bytes starting from index 2 */
+		idx = 2 + button->index * 5;
+
+		switch (action->type) {
+		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+			buf[idx] = action->action.button;
+			break;
+
+		case RATBAG_BUTTON_ACTION_TYPE_KEY:
+			code = ratbag_hidraw_get_keyboard_usage_from_keycode(
+						device, action->action.key.key);
+			if (code) {
+				buf[idx] = STEELSERIES_BUTTON_KBD;
+				buf[idx + 1] = code;
+			} else {
+				code = ratbag_hidraw_get_consumer_usage_from_keycode(
+						device, action->action.key.key);
+				buf[idx] = STEELSERIES_BUTTON_CONSUMER;
+				buf[idx + 1] = code;
+			}
+			break;
+
+		case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+			switch (action->action.special) {
+			case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP:
+				buf[idx] = STEELSERIES_BUTTON_RES_CYCLE;
+				break;
+			case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:
+				buf[idx] = STEELSERIES_BUTTON_WHEEL_UP;
+				break;
+			case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:
+				buf[idx] = STEELSERIES_BUTTON_WHEEL_DOWN;
+				break;
+			default:
+				break;
+			}
+			break;
+
+		case RATBAG_BUTTON_ACTION_TYPE_NONE:
+		default:
+			buf[idx] = STEELSERIES_BUTTON_OFF;
+			break;
+		}
+	}
+
+	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+	if (ret != sizeof(buf))
+		return ret;
+
+	return 0;
+}
+
+static int
 steelseries_write_led(struct ratbag_led *led)
 {
 	struct ratbag_device *device = led->profile->device;
@@ -225,7 +301,6 @@ static int
 steelseries_write_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_resolution *resolution;
-	struct ratbag_button *button;
 	struct ratbag_led *led;
 	int rc;
 
@@ -243,9 +318,9 @@ steelseries_write_profile(struct ratbag_profile *profile)
 			return rc;
 	}
 
-	ratbag_profile_for_each_button(profile, button) {
-		/* TODO */
-	}
+	rc = steelseries_write_buttons(profile);
+	if (rc != 0)
+		return rc;
 
 	ratbag_profile_for_each_led(profile, led) {
 		if (!led->dirty)
