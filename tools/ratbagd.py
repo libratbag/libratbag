@@ -974,17 +974,17 @@ class RatbagdLed(_RatbagdDBus):
         return self._get_dbus_property("ColorDepth")
 
     @GObject.Property
-    def effect_rate(self):
-        """The LED's effect rate in Hz, values range from 100 to 20000."""
+    def effect_duration(self):
+        """The LED's effect duration in ms, values range from 0 to 10000."""
         return self._get_dbus_property("EffectRate")
 
-    @effect_rate.setter
-    def effect_rate(self, effect_rate):
-        """Set the effect rate in Hz. Allowed values range from 100 to 20000.
+    @effect_duration.setter
+    def effect_duration(self, effect_duration):
+        """Set the effect duration in ms. Allowed values range from 0 to 10000.
 
-        @param effect_rate The new effect rate, as int
+        @param effect_duration The new effect duration, as int
         """
-        self._set_dbus_property("EffectRate", "u", effect_rate)
+        self._set_dbus_property("EffectRate", "u", effect_duration)
 
     @GObject.Property
     def brightness(self):

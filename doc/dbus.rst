@@ -426,12 +426,12 @@ org.freedesktop.ratbag1.Led
 
         The color depth of this LED as one of the constants in libratbag-enums.h
 
-    .. js:attribute:: EffectRate
+    .. js:attribute:: EffectDuration
 
         :type: u
         :flags: read-write, mutable
 
-        The effect rate in Hz, possible values are in the range 100 - 20000
+        The effect duration in ms, possible values are in the range 0 - 10000
 
     .. js:attribute:: Brightness
 

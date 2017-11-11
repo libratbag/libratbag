@@ -147,22 +147,22 @@ def print_led(d, p, l, level):
                                                                                                       l.color[1],
                                                                                                       l.color[2]))
     elif l.mode == RatbagdLed.MODE_CYCLE:
-        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}, rate: {}, brightness: {}".format(l.index,
-                                                                                                     types[l.type],
-                                                                                                     depths[l.colordepth],
-                                                                                                     leds[l.mode],
-                                                                                                     l.effect_rate,
-                                                                                                     l.brightness))
+        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(l.index,
+                                                                                                         types[l.type],
+                                                                                                         depths[l.colordepth],
+                                                                                                         leds[l.mode],
+                                                                                                         l.effect_duration,
+                                                                                                         l.brightness))
     elif l.mode == RatbagdLed.MODE_BREATHING:
-        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, rate: {}, brightness: {}".format(l.index,
-                                                                                                                                types[l.type],
-                                                                                                                                depths[l.colordepth],
-                                                                                                                                leds[l.mode],
-                                                                                                                                l.color[0],
-                                                                                                                                l.color[1],
-                                                                                                                                l.color[2],
-                                                                                                                                l.effect_rate,
-                                                                                                                                l.brightness))
+        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(l.index,
+                                                                                                                                    types[l.type],
+                                                                                                                                    depths[l.colordepth],
+                                                                                                                                    leds[l.mode],
+                                                                                                                                    l.color[0],
+                                                                                                                                    l.color[1],
+                                                                                                                                    l.color[2],
+                                                                                                                                    l.effect_duration,
+                                                                                                                                    l.brightness))
 
 
 def print_led_caps(d, p, l, level):
@@ -340,11 +340,11 @@ def func_led_set(r, args):
     else:
         l.color = color
     try:
-        rate = args.rate
+        duration = args.duration
     except AttributeError:
         pass
     else:
-        l.effect_rate = rate
+        l.effect_duration = duration
     try:
         brightness = args.brightness
     except AttributeError:
@@ -1146,14 +1146,14 @@ active profile if none is given.""",
                         },
                         {
                             of_type: command,
-                            name: 'rate',
-                            help_str: 'The rate to set as current',
+                            name: 'duration',
+                            help_str: 'The duration to set as current',
                             pos_args: [
                                 {
                                     of_type: argument,
-                                    name: 'rate',
+                                    name: 'duration',
                                     metavar: 'R',
-                                    help_str: 'The rate in Hz to set as current',
+                                    help_str: 'The duration in ms to set as current',
                                     arg_type: int,
                                 },
                             ],
@@ -1488,7 +1488,7 @@ Examples:
   {0} dpi set 800
   {0} profile 0 led 0 set mode on
   {0} profile 0 led 0 set color ff00ff
-  {0} profile 0 led 0 set rate 20
+  {0} profile 0 led 0 set duration 50
 
 Exit codes:
   0     Success
