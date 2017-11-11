@@ -293,7 +293,7 @@ hidpp20drv_read_led_1300(struct ratbag_led *led, struct hidpp20drv_data* data)
 		break;
 	case HIDPP20_LED_MODE_BREATHING:
 		led->mode = RATBAG_LED_BREATHING;
-		led->hz = state.breathing.period;
+		led->ms = state.breathing.period;
 		led->brightness = state.breathing.brightness;
 		break;
 	default:
@@ -344,7 +344,7 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	led->color.red = h_led->color.red;
 	led->color.green = h_led->color.green;
 	led->color.blue = h_led->color.blue;
-	led->hz = h_led->period;  /* FIXME: should be ceil(1000.0 / h_led->period), but that would be very small */
+	led->ms = h_led->period;
 	led->brightness = h_led->brightness * 255 / 100;
 
 	rc = hidpp20_color_led_effects_get_info(drv_data->dev, &info);
@@ -514,7 +514,7 @@ hidpp20drv_update_led_1300(struct ratbag_led *led, struct hidpp20drv_data *data)
 	case RATBAG_LED_BREATHING:
 		h_led.mode = HIDPP20_LED_MODE_BREATHING;
 		h_led.breathing.brightness = led->brightness;
-		h_led.breathing.period = led->hz;
+		h_led.breathing.period = led->ms;
 		h_led.breathing.timeout = 300;
 		break;
 	case RATBAG_LED_OFF:
@@ -580,7 +580,7 @@ hidpp20drv_update_led_8070(struct ratbag_led *led, struct ratbag_profile* profil
 	h_led->color.red = led->color.red;
 	h_led->color.green = led->color.green;
 	h_led->color.blue = led->color.blue;
-	h_led->period = led->hz; /* FIXME: should be 1000 / led->hz, but that would be very small */
+	h_led->period = led->ms;
 	h_led->brightness = led->brightness * 100 / 255;
 
 	return RATBAG_SUCCESS;

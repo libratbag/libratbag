@@ -127,7 +127,7 @@ test_read_led(struct ratbag_led *led)
 	led->color.red = t_led.color.red;
 	led->color.green = t_led.color.green;
 	led->color.blue = t_led.color.blue;
-	led->hz = t_led.hz;
+	led->ms = t_led.ms;
 	led->brightness = t_led.brightness;
 
 	/* The led type has to be the same anyway so make writing test
@@ -148,7 +148,7 @@ test_write_button(struct ratbag_button *button,
 static int
 test_write_led(struct ratbag_led *led,
 	       enum ratbag_led_mode mode,
-	       struct ratbag_color color, unsigned int hz,
+	       struct ratbag_color color, unsigned int ms,
 	       unsigned int brightness)
 {
 	/* check if the device is still valid */

@@ -239,7 +239,7 @@ struct ratbag_driver {
 	 * it. Look at commit() instead.
 	 */
 	int (*write_led)(struct ratbag_led *led, enum ratbag_led_mode mode,
-			 struct ratbag_color color, unsigned int hz,
+			 struct ratbag_color color, unsigned int ms,
 			 unsigned int brightness);
 
 	/* private */
@@ -281,7 +281,7 @@ struct ratbag_led {
 	uint32_t modes;		      /**< supported modes */
 	struct ratbag_color color;
 	enum ratbag_led_colordepth colordepth;
-	unsigned int hz;              /**< rate of action in hz */
+	unsigned int ms;              /**< duration of action in ms */
 	unsigned int brightness;      /**< brightness of the LED */
 	bool dirty;
 };

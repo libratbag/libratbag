@@ -179,28 +179,28 @@ static int ratbagd_led_set_color(sd_bus *bus,
 	return 0;
 }
 
-static int ratbagd_led_get_effect_rate(sd_bus *bus,
-				       const char *path,
-				       const char *interface,
-				       const char *property,
-				       sd_bus_message *reply,
-				       void *userdata,
-				       sd_bus_error *error)
+static int ratbagd_led_get_effect_duration(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *reply,
+					   void *userdata,
+					   sd_bus_error *error)
 {
 	struct ratbagd_led *led = userdata;
 	int rate;
 
-	rate = ratbag_led_get_effect_rate(led->lib_led);
+	rate = ratbag_led_get_effect_duration(led->lib_led);
 	return sd_bus_message_append(reply, "u", rate);
 }
 
-static int ratbagd_led_set_effect_rate(sd_bus *bus,
-				       const char *path,
-				       const char *interface,
-				       const char *property,
-				       sd_bus_message *m,
-				       void *userdata,
-				       sd_bus_error *error)
+static int ratbagd_led_set_effect_duration(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *m,
+					   void *userdata,
+					   sd_bus_error *error)
 {
 	struct ratbagd_led *led = userdata;
 	unsigned int rate;
@@ -210,19 +210,17 @@ static int ratbagd_led_set_effect_rate(sd_bus *bus,
 	if (r < 0)
 		return r;
 
-	if (rate < 100)
-		rate = 100;
-	else if (rate > 20000)
-		rate = 20000;
+	if (rate > 10000)
+		rate = 10000;
 
-	r = ratbag_led_set_effect_rate(led->lib_led, rate);
+	r = ratbag_led_set_effect_duration(led->lib_led, rate);
 
 	if (r == 0) {
 		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       led->path,
 					       RATBAGD_NAME_ROOT ".Led",
-					       "EffectRate",
+					       "EffectDuration",
 					       NULL);
 	}
 
@@ -290,8 +288,8 @@ const sd_bus_vtable ratbagd_led_vtable[] = {
 				 ratbagd_led_get_color, ratbagd_led_set_color, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ColorDepth", "u", NULL, offsetof(struct ratbagd_led, colordepth), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_WRITABLE_PROPERTY("EffectRate", "u",
-				 ratbagd_led_get_effect_rate, ratbagd_led_set_effect_rate, 0,
+	SD_BUS_WRITABLE_PROPERTY("EffectDuration", "u",
+				 ratbagd_led_get_effect_duration, ratbagd_led_set_effect_duration, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("Brightness", "u",
 				 ratbagd_led_get_brightness, ratbagd_led_set_brightness, 0,
