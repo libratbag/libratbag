@@ -905,7 +905,7 @@ ratbag_device_has_capability(const struct ratbag_device *device,
 static inline enum ratbag_error_code
 write_led_helper(struct ratbag_device *device, struct ratbag_led *led)
 {
-	return device->driver->write_led(led, led->mode, led->color, led->hz, led->brightness);
+	return device->driver->write_led(led, led->mode, led->color, led->ms, led->brightness);
 }
 
 /* FIXME: This is a temporary fix for all of the drivers that have yet to be
@@ -1547,9 +1547,9 @@ ratbag_led_get_color(struct ratbag_led *led)
 }
 
 LIBRATBAG_EXPORT int
-ratbag_led_get_effect_rate(struct ratbag_led *led)
+ratbag_led_get_effect_duration(struct ratbag_led *led)
 {
-	return led->hz;
+	return led->ms;
 }
 
 LIBRATBAG_EXPORT unsigned int
@@ -1596,13 +1596,13 @@ ratbag_led_get_colordepth(struct ratbag_led *led)
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
-ratbag_led_set_effect_rate(struct ratbag_led *led, unsigned int hz)
+ratbag_led_set_effect_duration(struct ratbag_led *led, unsigned int ms)
 {
 	if (!ratbag_device_has_capability(led->profile->device,
 					  RATBAG_DEVICE_CAP_LED))
 		return RATBAG_ERROR_CAPABILITY;
 
-	led->hz = hz;
+	led->ms = ms;
 	led->dirty = true;
 	led->profile->dirty = true;
 	return RATBAG_SUCCESS;

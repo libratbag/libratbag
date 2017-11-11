@@ -1268,15 +1268,15 @@ ratbag_led_get_colordepth(struct ratbag_led *led);
 /**
  * @ingroup led
  *
- * This function returns the LED effect rate.
+ * This function returns the LED effect duration.
  *
  * @param led A previously initialized ratbag LED
- * @return The LED rate in Hz, can be 100 - 20000
+ * @return The LED duration in ms, can be 0 - 10000
  *
- * @see ratbag_led_set_effect_rate
+ * @see ratbag_led_set_effect_duration
  */
 int
-ratbag_led_get_effect_rate(struct ratbag_led *led);
+ratbag_led_get_effect_duration(struct ratbag_led *led);
 /**
  * @ingroup led
  *
@@ -1329,16 +1329,16 @@ ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color);
  * @ingroup led
  *
  * If the LED's mode is @ref RATBAG_LED_CYCLE or @ref RATBAG_LED_BREATHING
- * then this function sets the LED rate in Hz
+ * then this function sets the LED duration in ms
  *
  * @param led A previously initialized ratbag LED
- * @param rate Effect rate in hz, 100 - 20000
+ * @param rate Effect duration in ms, 0 - 10000
  * @return 0 on success or an error code otherwise.
  *
- * @see ratbag_led_get_effect_rate
+ * @see ratbag_led_get_effect_duration
  */
 enum ratbag_error_code
-ratbag_led_set_effect_rate(struct ratbag_led *led, unsigned int rate);
+ratbag_led_set_effect_duration(struct ratbag_led *led, unsigned int rate);
 
 /**
  * @ingroup led
