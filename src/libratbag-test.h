@@ -70,7 +70,7 @@ struct ratbag_test_led {
 	enum ratbag_led_type type;
 	enum ratbag_led_mode mode;
 	struct ratbag_test_color color;
-	unsigned int hz;
+	unsigned int ms;
 	unsigned int brightness;
 };
 

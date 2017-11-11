@@ -91,13 +91,13 @@ const struct ratbag_test_device sane_device = {
 			{
 				.mode = RATBAG_LED_ON,
 				.color = { .red = 255, .green = 0,	.blue = 0 },
-				.hz = 1,
+				.ms = 1000,
 				.brightness = 20,
 			},
 			{
 				.mode = RATBAG_LED_CYCLE,
 				.color = { .red = 255, .green = 255, .blue = 0 },
-				.hz = 3,
+				.ms = 333,
 				.brightness = 40,
 			}
 		},
@@ -793,18 +793,18 @@ assert_led_equals(struct ratbag_led *l, struct ratbag_test_led e_l)
 {
 	enum ratbag_led_mode mode;
 	struct ratbag_color color;
-	int brightness, hz;
+	int brightness, ms;
 
 	ck_assert(l != NULL);
 	mode = ratbag_led_get_mode(l);
 	color = ratbag_led_get_color(l);
-	hz = ratbag_led_get_effect_rate(l);
+	ms = ratbag_led_get_effect_duration(l);
 	brightness = ratbag_led_get_brightness(l);
 	ck_assert_int_eq(mode, e_l.mode);
 	ck_assert_int_eq(color.red, e_l.color.red);
 	ck_assert_int_eq(color.green, e_l.color.green);
 	ck_assert_int_eq(color.blue, e_l.color.blue);
-	ck_assert_int_eq(hz, e_l.hz);
+	ck_assert_int_eq(ms, e_l.ms);
 	ck_assert_int_eq(brightness, e_l.brightness);
 }
 
@@ -876,7 +876,7 @@ START_TEST(device_leds_set)
 
 	ratbag_led_set_mode(l, RATBAG_LED_BREATHING);
 	ratbag_led_set_color(l, c);
-	ratbag_led_set_effect_rate(l, 11);
+	ratbag_led_set_effect_duration(l, 90);
 	ratbag_led_set_brightness(l, 22);
 
 	l = ratbag_profile_get_led(p, 0);
@@ -887,7 +887,7 @@ START_TEST(device_leds_set)
 			.green = c.green,
 			.blue = c.blue
 		},
-		.hz = 11,
+		.ms = 90,
 		.brightness = 22
 	};
 	assert_led_equals(l, e_l);
