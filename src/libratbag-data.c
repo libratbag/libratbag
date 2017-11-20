@@ -64,6 +64,14 @@ struct data_hidpp10 {
 	int led_count;
 };
 
+struct data_steelseries {
+	int device_version;
+	int button_count;
+	int led_count;
+	struct dpi_list *dpi_list;
+	struct dpi_range *dpi_range;
+};
+
 struct ratbag_device_data {
 	int refcount;
 	char *name;
@@ -75,6 +83,7 @@ struct ratbag_device_data {
 	union {
 		struct data_hidpp20 hidpp20;
 		struct data_hidpp10 hidpp10;
+		struct data_steelseries steelseries;
 	};
 
 	enum ratbag_led_type led_types[20];
@@ -149,6 +158,52 @@ init_data_hidpp20(struct ratbag *ratbag,
 		g_error_free(error);
 }
 
+static void
+init_data_steelseries(struct ratbag *ratbag,
+		  GKeyFile *keyfile,
+		  struct ratbag_device_data *data)
+{
+	const char *group = "Driver/steelseries";
+	GError *error = NULL;
+	_cleanup_(freep) char *str = NULL;
+	int num;
+
+	data->steelseries.device_version = -1;
+	data->steelseries.button_count = -1;
+	data->steelseries.led_count = -1;
+	data->steelseries.dpi_list = NULL;
+	data->steelseries.dpi_range = NULL;
+
+	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
+	if (num != 0 || !error)
+		data->steelseries.button_count = num;
+	if (error)
+		g_error_free(error);
+
+	error = NULL;
+	num = g_key_file_get_integer(keyfile, group, "Leds", &error);
+	if (num > 0 || !error)
+		data->steelseries.led_count = num;
+	if (error)
+		g_error_free(error);
+
+	error = NULL;
+	num = g_key_file_get_integer(keyfile, group, "DeviceVersion", &error);
+	if (num > 0 || !error)
+		data->steelseries.device_version = num;
+	if (error)
+		g_error_free(error);
+
+	str = g_key_file_get_string(keyfile, group, "DpiRange", NULL);
+	if (str) {
+		data->steelseries.dpi_range = dpi_range_from_string(str);
+	} else {
+		str = g_key_file_get_string(keyfile, group, "DpiList", NULL);
+		if (str)
+			data->steelseries.dpi_list = dpi_list_from_string(str);
+	}
+}
+
 static const struct driver_map {
 	enum driver map;
 	const char *driver;
@@ -162,7 +217,7 @@ static const struct driver_map {
 	{ ETEKCITY, "etekcity", NULL},
 	{ GSKILL, "gskill", NULL },
 	{ LOGITECH_G300, "logitech_g300", NULL},
-	{ STEELSERIES, "steelseries", NULL },
+	{ STEELSERIES, "steelseries", init_data_steelseries },
 };
 
 const char *
@@ -483,3 +538,46 @@ ratbag_device_data_hidpp20_get_index(const struct ratbag_device_data *data)
 
 	return data->hidpp20.index;
 }
+
+/* SteelSeries */
+
+int
+ratbag_device_data_steelseries_get_device_version(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == STEELSERIES);
+
+	return data->steelseries.device_version;
+}
+
+int
+ratbag_device_data_steelseries_get_button_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == STEELSERIES);
+
+	return data->steelseries.button_count;
+}
+
+int
+ratbag_device_data_steelseries_get_led_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == STEELSERIES);
+
+	return data->steelseries.led_count;
+}
+
+struct dpi_list *
+ratbag_device_data_steelseries_get_dpi_list(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == STEELSERIES);
+
+	return data->steelseries.dpi_list;
+}
+
+struct dpi_range *
+ratbag_device_data_steelseries_get_dpi_range(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == STEELSERIES);
+
+	return data->steelseries.dpi_range;
+}
+

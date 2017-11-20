@@ -81,3 +81,30 @@ ratbag_device_data_hidpp10_get_led_count(const struct ratbag_device_data *data);
  */
 int
 ratbag_device_data_hidpp20_get_index(const struct ratbag_device_data *data);
+
+/* SteelSeries */
+
+/**
+ * @return The device version or -1 if not set
+ */
+int
+ratbag_device_data_steelseries_get_device_version(const struct ratbag_device_data *data);
+
+/**
+ * @return The button count or -1 if not set
+ */
+int
+ratbag_device_data_steelseries_get_button_count(const struct ratbag_device_data *data);
+
+/**
+ * @return The led count or -1 if not set
+ */
+int
+ratbag_device_data_steelseries_get_led_count(const struct ratbag_device_data *data);
+
+struct dpi_list *
+ratbag_device_data_steelseries_get_dpi_list(const struct ratbag_device_data *data);
+
+struct dpi_range *
+ratbag_device_data_steelseries_get_dpi_range(const struct ratbag_device_data *data);
+
