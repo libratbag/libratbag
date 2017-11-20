@@ -32,14 +32,11 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "libratbag-data.h"
 #include "hidpp-generic.h"
 
 #define STEELSERIES_NUM_PROFILES	1
-#define STEELSERIES_NUM_BUTTONS		6
 #define STEELSERIES_NUM_DPI		2
-#define STEELSERIES_NUM_LED		2
-#define STEELSERIES_DPI_MIN		100
-#define STEELSERIES_DPI_MAX		12000
 
 /* not sure these are used for */
 #define STEELSERIES_REPORT_ID_1		0x01
@@ -94,19 +91,27 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
+	int rc, button_count, led_count, device_version;
+	_cleanup_(dpi_list_freep) struct dpi_list *dpilist = NULL;
+	_cleanup_(freep) struct dpi_range *dpirange = NULL;
 	int rc;
-	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
+	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 	rc = ratbag_find_hidraw(device, steelseries_test_hidraw);
 	if (rc)
 		return rc;
 
+	button_count = ratbag_device_data_steelseries_get_button_count(device->data);
+	led_count = ratbag_device_data_steelseries_get_led_count(device->data);
+	dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
+	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
+
 	ratbag_device_init_profiles(device,
 				    STEELSERIES_NUM_PROFILES,
 				    STEELSERIES_NUM_DPI,
-				    STEELSERIES_NUM_BUTTONS,
-				    STEELSERIES_NUM_LED);
+				    button_count,
+				    led_count);
 
 
 	/* set these caps manually as they are not assumed with only 1 profile */
@@ -126,15 +131,21 @@ steelseries_probe(struct ratbag_device *device)
 				resolution->is_default = true;
 			}
 
-			resolution->dpi_x = 1000 * (1 + resolution->index);
-			resolution->dpi_y = 1000 * (1 + resolution->index);
-			resolution->hz = 1000;
+			if (dpirange)
+				ratbag_resolution_set_dpi_list_from_range(resolution,
+									  dpirange->min,
+									  dpirange->max);
+			if (dpilist)
+				ratbag_resolution_set_dpi_list(resolution,
+							       (unsigned int *)dpilist->entries,
+							       dpilist->nentries);
 
-			ratbag_resolution_set_dpi_list_from_range(resolution,
-								  STEELSERIES_DPI_MIN,
-								  STEELSERIES_DPI_MAX);
+			resolution->dpi_x = resolution->dpis[resolution->index];
+			resolution->dpi_y = resolution->dpis[resolution->index];
+
 			ratbag_resolution_set_report_rate_list(resolution, report_rates,
 							       ARRAY_LENGTH(report_rates));
+			resolution->hz = 1000;
 		}
 
 		ratbag_profile_for_each_button(profile, button) {
