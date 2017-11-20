@@ -271,6 +271,7 @@ data_files = files(
 	'data/devices/logitech-T650.device',
 	'data/devices/logitech-Wireless-Touchpad.device',
 	'data/devices/roccat-kone-xtd.device',
+	'data/devices/steelseries-kinzu-v2.device',
 	'data/devices/steelseries-rival-310.device',
 )
 
@@ -297,6 +298,7 @@ gnome_svg_files = files(
 	'data/gnome/logitech-g9.svg',
 	'data/gnome/logitech-g900.svg',
 	'data/gnome/roccat-kone-xtd.svg',
+	'data/gnome/steelseries-kinzu-v2.svg',
 	'data/gnome/steelseries-rival310.svg',
 )
 install_data(gnome_svg_files,
