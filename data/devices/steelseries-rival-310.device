@@ -1,5 +1,11 @@
 [Device]
-Name=SteelSeriesRival 310
+Name=SteelSeries Rival 310
 DeviceMatch=usb:1038:1720
 Driver=steelseries
 Svg=steelseries-rival310.svg
+
+[Driver/steelseries]
+DeviceVersion=2
+Buttons=6
+Leds=2
+DpiRange=100:12000@100
