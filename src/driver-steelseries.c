@@ -331,27 +331,98 @@ steelseries_write_led(struct ratbag_led *led)
 {
 	struct ratbag_device *device = led->profile->device;
 	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
-	uint16_t rate;
+	uint16_t duration, min_duration;
 	int ret;
-
-	rate = led->index == 0 ? 10000 : 5000; /* 0x1027 or 0x8813 */
 
 	buf[0] = STEELSERIES_ID_LED;
 	buf[2] = led->index;
 
-	/* not sure why the rate is set for the steady color or why it is
-	   different for the two LEDs */
-	hidpp_set_unaligned_le_u16(&buf[3], rate);
-
-	/* not sure if these four are needed either */
+	/* not sure if these two are needed */
 	buf[15] = 0x01;
 	buf[17] = 0x01;
-	buf[19] = 0x01;
-	buf[27] = 0x01;
 
-	buf[28] = buf[31] = led->color.red;
-	buf[29] = buf[32] = led->color.green;
-	buf[30] = buf[33] = led->color.blue;
+	switch(led->mode) {
+	case RATBAG_LED_OFF:
+		buf[19] = 0x01;
+		buf[27] = 0x01;
+		buf[28] = buf[31] = 0x00;
+		buf[29] = buf[32] = 0x00;
+		buf[30] = buf[33] = 0x00;
+		/* not sure why the duration is set for the steady color or why
+		   it is different for the two LEDs */
+		duration = led->index == 0 ? 10000 : 5000; /* 0x1027 or 0x8813 */
+		break;
+	case RATBAG_LED_ON:
+		buf[19] = 0x01;
+		buf[27] = 0x01;
+		buf[28] = buf[31] = led->color.red;
+		buf[29] = buf[32] = led->color.green;
+		buf[30] = buf[33] = led->color.blue;
+
+		/* not sure why the duration is set for the steady color or why
+		   it is different for the two LEDs */
+		duration = led->index == 0 ? 10000 : 5000; /* 0x1027 or 0x8813 */
+		break;
+	case RATBAG_LED_CYCLE:
+		buf[27] = 0x04; /* number of steps in cycle */
+
+		/* start color */
+		buf[28] = buf[31] = 0xFF;
+		buf[29] = buf[32] = 0x00;
+		buf[30] = buf[33] = 0x00;
+
+		/* Cycle to green */
+		buf[35] = 0x00;
+		buf[36] = 0xFF;
+		buf[37] = 0x00;
+		buf[38] = 0x54; /* normalized time share of animation */
+
+		/* Cycle to blue */
+		buf[39] = 0x00;
+		buf[40] = 0x00;
+		buf[41] = 0xFF;
+		buf[42] = 0x54; /* normalized time share of animation */
+
+		/* Cycle to red */
+		buf[43] = 0xFF;
+		buf[44] = 0x00;
+		buf[45] = 0x00;
+		buf[46] = 0x56; /* normalized time share of animation */
+
+		duration = led->ms;
+		break;
+	case RATBAG_LED_BREATHING:
+		buf[27] = 0x03; /* number of steps in cycle */
+
+		/* start color */
+		buf[28] = buf[31] = led->color.red;
+		buf[29] = buf[32] = led->color.green;
+		buf[30] = buf[33] = led->color.blue;
+
+		/* Cycle to black */
+		buf[35] = 0x00;
+		buf[36] = 0x00;
+		buf[37] = 0x00;
+		buf[38] = 0x7F; /* normalized time share of animation */
+
+		/* Cycle to selected color */
+		buf[39] = led->color.red;
+		buf[40] = led->color.green;
+		buf[41] = led->color.blue;
+		buf[42] = 0x7F; /* normalized time share of animation */
+
+		duration = led->ms;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* this seems to be the minimum allowed */
+	min_duration = buf[27] * 330;
+	if (duration < min_duration)
+		duration = min_duration;
+
+	hidpp_set_unaligned_le_u16(&buf[3], duration);
 
 	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
 	if (ret != sizeof(buf))
