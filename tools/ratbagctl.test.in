@@ -612,7 +612,8 @@ def parse(input_string):
 
 def main(argv):
     if not os.geteuid() == 0:
-        sys.exit('Script must be run as root')
+        print('Script must be run as root', file=sys.stderr)
+        sys.exit(77)
 
     os.environ['RATBAG_TEST'] = '1'
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
