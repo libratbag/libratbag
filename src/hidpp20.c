@@ -2545,6 +2545,7 @@ hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
 {
 	struct hidpp20_profile *profile;
 	unsigned int i;
+	bool enabled_profile = false;
 	int rc;
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
@@ -2554,6 +2555,19 @@ hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
 			rc = hidpp20_onboard_profiles_write_profile(device,
 								    profiles_list,
 								    i);
+			if (rc < 0)
+				return rc;
+
+			enabled_profile = true;
+		}
+	}
+
+	if (!enabled_profile) {
+		if (profiles_list->num_profiles > 0) {
+			profiles_list->profiles[0].enabled = 1;
+			rc = hidpp20_onboard_profiles_write_profile(device,
+			                                            profiles_list,
+			                                            0);
 			if (rc < 0)
 				return rc;
 		}
