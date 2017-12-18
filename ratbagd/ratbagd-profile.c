@@ -196,7 +196,7 @@ static int ratbagd_profile_is_active(sd_bus *bus,
 				     sd_bus_error *error)
 {
 	struct ratbagd_profile *profile = userdata;
-	bool is_active;
+	int is_active;
 
 	is_active = !!ratbag_profile_is_active(profile->lib_profile);
 
@@ -315,7 +315,7 @@ ratbagd_profile_set_enabled(sd_bus *bus,
 			    sd_bus_error *error)
 {
 	struct ratbagd_profile *profile = userdata;
-	bool enabled;
+	int enabled;
 	int r;
 
 	r = sd_bus_message_read(m, "b", &enabled);
@@ -345,7 +345,7 @@ ratbagd_profile_is_enabled(sd_bus *bus,
 			   sd_bus_error *error)
 {
 	struct ratbagd_profile *profile = userdata;
-	bool enabled = ratbag_profile_is_enabled(profile->lib_profile) != 0;
+	int enabled = ratbag_profile_is_enabled(profile->lib_profile) != 0;
 
 	return sd_bus_message_append(reply, "b", enabled);
 }
