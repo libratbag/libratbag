@@ -9,7 +9,7 @@ libratbag_references:
     command: |
       rm -rf build
       meson build ${MESON_PARAMS}
-      mesonconf build
+      meson configure build
       ninja -v -C build ${NINJA_ARGS}
     environment:
       MESON_PARAMS: --prefix=/usr
