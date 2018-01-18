@@ -108,7 +108,7 @@ ubuntu_settings: &ubuntu_settings
           apt-get install -y software-properties-common
           add-apt-repository universe
           apt-get update
-          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev valgrind python3-gi python3-evdev libglib2.0-dev python3-lxml python3-dev swig
+          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev valgrind python3-gi python3-evdev libglib2.0-dev python3-lxml python3-dev swig systemd
     - checkout
     - *start_dbus
     - *build_and_test
@@ -202,10 +202,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:latest
-  ubuntu_17_04:
+  ubuntu_17_10:
     <<: *ubuntu_settings
     docker:
-      - image: ubuntu:zesty
+      - image: ubuntu:artful
   doc_build:
     <<: *doc_build
     docker:
@@ -229,7 +229,7 @@ workflows:
       - scan_build:
           requires:
             - fedora_cache
-      - ubuntu_17_04
+      - ubuntu_17_10
       - fedora_latest:
           requires:
             - fedora_cache
