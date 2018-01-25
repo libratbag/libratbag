@@ -467,8 +467,23 @@ configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
 	       output : 'org.freedesktop.ratbag1.service',
 	       configuration : config_bindir,
 	       install_dir : join_paths(dbusdir, 'system-services'))
-install_data('dbus/org.freedesktop.ratbag1.conf',
-	     install_dir : join_paths(dbusdir, 'system.d'))
+
+dbusgroup = get_option('dbus-group')
+if dbusgroup == ''
+	# grant everybody access by default
+	access = 'context="default"'
+else
+	# grant access to members of the specified group only
+	access = 'group="@0@"'.format(dbusgroup)
+endif
+
+config_dbusaccess = configuration_data()
+config_dbusaccess.set('access', access)
+
+configure_file(input : 'dbus/org.freedesktop.ratbag1.conf.in',
+	       output : 'org.freedesktop.ratbag1.conf',
+	       configuration : config_dbusaccess,
+	       install_dir : join_paths(dbusdir, 'system.d'))
 
 #### tools ####
 

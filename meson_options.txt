@@ -22,3 +22,8 @@ option('documentation',
 	type: 'boolean',
 	value: false,
 	description: 'Enable documentation build (default=no)')
+
+option('dbus-group',
+	type: 'string',
+	value : '',
+	description : 'The UNIX group that is granted access to the ratbagd D-Bus service. By default all users may access it.')
