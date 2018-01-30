@@ -63,26 +63,6 @@
 #define STEELSERIES_BUTTON_KBD			0x51
 #define STEELSERIES_BUTTON_CONSUMER		0x61
 
-static const enum ratbag_button_type button_types[6] =
-{
-	RATBAG_BUTTON_TYPE_LEFT,
-	RATBAG_BUTTON_TYPE_RIGHT,
-	RATBAG_BUTTON_TYPE_MIDDLE,
-	RATBAG_BUTTON_TYPE_THUMB,
-	RATBAG_BUTTON_TYPE_THUMB2,
-	RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP,
-};
-
-static const struct ratbag_button_action button_actions[6] =
-{
-	BUTTON_ACTION_BUTTON(1),
-	BUTTON_ACTION_BUTTON(2),
-	BUTTON_ACTION_BUTTON(3),
-	BUTTON_ACTION_BUTTON(4),
-	BUTTON_ACTION_BUTTON(5),
-	BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP),
-};
-
 static int
 steelseries_test_hidraw(struct ratbag_device *device)
 {
@@ -92,6 +72,50 @@ steelseries_test_hidraw(struct ratbag_device *device)
 		return ratbag_hidraw_has_report(device, STEELSERIES_REPORT_ID_1);
 	else
 		return true;
+}
+
+static void
+button_defaults_for_layout(struct ratbag_button *button, int button_count)
+{
+	/* The default button mapping vary depending on the number of buttons
+	 * on the device. */
+	enum ratbag_button_type button_types[8] = {RATBAG_BUTTON_TYPE_UNKNOWN};
+	struct ratbag_button_action button_actions[8] = {
+		BUTTON_ACTION_BUTTON(1),
+		BUTTON_ACTION_BUTTON(2),
+		BUTTON_ACTION_BUTTON(3),
+		BUTTON_ACTION_BUTTON(4),
+		BUTTON_ACTION_BUTTON(5),
+		BUTTON_ACTION_BUTTON(6),
+		BUTTON_ACTION_BUTTON(7),
+		BUTTON_ACTION_BUTTON(8),
+	};
+
+	if (button_count <= 6) {
+		button_actions[5].type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+		button_actions[5].action.special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP;
+		button_actions[6].type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		button_actions[7].type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+	} else {
+		button_actions[7].type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+		button_actions[7].action.special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP;
+	}
+
+	button_types[0] = RATBAG_BUTTON_TYPE_LEFT;
+	button_types[1] = RATBAG_BUTTON_TYPE_RIGHT;
+	button_types[2] = RATBAG_BUTTON_TYPE_MIDDLE;
+	button_types[3] = RATBAG_BUTTON_TYPE_THUMB;
+	button_types[4] = RATBAG_BUTTON_TYPE_THUMB2;
+	if (button_count <= 6) {
+		button_types[5] = RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP;
+	} else {
+		button_types[5] = RATBAG_BUTTON_TYPE_PINKIE;
+		button_types[6] = RATBAG_BUTTON_TYPE_PINKIE2;
+		button_types[7] = RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP;
+	}
+
+	button->type = button_types[button->index];
+	ratbag_button_set_action(button, &button_actions[button->index]);
 }
 
 static int
@@ -165,8 +189,7 @@ steelseries_probe(struct ratbag_device *device)
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 
-			button->type = button_types[button->index];
-			ratbag_button_set_action(button, &button_actions[button->index]);
+			button_defaults_for_layout(button, button_count);
 		}
 
 		ratbag_profile_for_each_led(profile, led) {
