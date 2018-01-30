@@ -1,0 +1,11 @@
+[Device]
+Name=SteelSeries Sensei 310
+DeviceMatch=usb:1038:1722
+Driver=steelseries
+Svg=steelseries-sensei310.svg
+
+[Driver/steelseries]
+DeviceVersion=2
+Buttons=8
+Leds=2
+DpiRange=100:12000@100
