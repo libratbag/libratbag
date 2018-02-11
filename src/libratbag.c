@@ -976,6 +976,7 @@ ratbag_device_commit(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
+	struct ratbag_led *led;
 	int rc;
 
 	if (!device->driver->commit) {
@@ -993,6 +994,9 @@ ratbag_device_commit(struct ratbag_device *device)
 
 		list_for_each(button, &profile->buttons, link)
 			button->dirty = false;
+
+		list_for_each(led, &profile->leds, link)
+			led->dirty = false;
 	}
 
 	return RATBAG_SUCCESS;
