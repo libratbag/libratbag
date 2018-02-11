@@ -246,7 +246,7 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 	}
 
 	ret = ratbag_hidraw_output_report(device, buf, buf_len);
-	if ((size_t)ret != buf_len)
+	if (ret < 0)
 		return ret;
 
 	return 0;
@@ -272,7 +272,7 @@ steelseries_write_report_rate(struct ratbag_resolution *resolution)
 	}
 
 	ret = ratbag_hidraw_output_report(device, buf, buf_len);
-	if ((size_t)ret != buf_len)
+	if (ret < 0)
 		return ret;
 
 	return 0;
@@ -343,7 +343,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 	}
 
 	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
-	if (ret != sizeof(buf))
+	if (ret < 0)
 		return ret;
 
 	return 0;
@@ -448,7 +448,7 @@ steelseries_write_led(struct ratbag_led *led)
 	hidpp_set_unaligned_le_u16(&buf[3], duration);
 
 	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
-	if (ret != sizeof(buf))
+	if (ret < 0)
 		return ret;
 
 	return 0;
@@ -471,7 +471,7 @@ steelseries_write_save(struct ratbag_device *device)
 	}
 
 	ret = ratbag_hidraw_output_report(device, buf, buf_len);
-	if ((size_t)ret != buf_len)
+	if (ret < 0)
 		return ret;
 
 	return 0;
