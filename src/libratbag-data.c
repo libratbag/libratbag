@@ -70,6 +70,7 @@ struct data_steelseries {
 	int led_count;
 	struct dpi_list *dpi_list;
 	struct dpi_range *dpi_range;
+	int macro_length;
 };
 
 struct ratbag_device_data {
@@ -202,6 +203,13 @@ init_data_steelseries(struct ratbag *ratbag,
 		if (str)
 			data->steelseries.dpi_list = dpi_list_from_string(str);
 	}
+
+	error = NULL;
+	num = g_key_file_get_integer(keyfile, group, "MacroLength", &error);
+	if (num > 0 || !error)
+		data->steelseries.macro_length = num;
+	if (error)
+		g_error_free(error);
 }
 
 static const struct driver_map {
@@ -584,3 +592,10 @@ ratbag_device_data_steelseries_get_dpi_range(const struct ratbag_device_data *da
 	return data->steelseries.dpi_range;
 }
 
+int
+ratbag_device_data_steelseries_get_macro_length(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == STEELSERIES);
+
+	return data->steelseries.macro_length;
+}

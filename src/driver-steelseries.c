@@ -150,7 +150,7 @@ steelseries_probe(struct ratbag_device *device)
 				    led_count);
 
 	/* only later models allow setting buttons on the device */
-	if (device_version > 1) {
+	if (ratbag_device_data_steelseries_get_macro_length(device->data) > 0) {
 		/* set these caps manually as they are not assumed with only 1 profile */
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
@@ -291,12 +291,11 @@ static int
 steelseries_write_buttons(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
-	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	uint8_t buf[STEELSERIES_REPORT_LONG_SIZE] = {0};
 	struct ratbag_button *button;
 	int ret;
 
-	if (device_version < 2)
+	if (ratbag_device_data_steelseries_get_macro_length(device->data) == 0)
 		return 0;
 
 	buf[0] = STEELSERIES_ID_BUTTONS;
