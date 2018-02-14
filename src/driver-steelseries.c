@@ -203,6 +203,11 @@ steelseries_probe(struct ratbag_device *device)
 			led->color.red = 0;
 			led->color.green = 0;
 			led->color.blue = 255;
+			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+			if (device_version >= 2)
+				ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
 		}
 	}
 
