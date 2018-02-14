@@ -48,6 +48,8 @@
 
 #define STEELSERIES_ID_DPI_SHORT		0x03
 #define STEELSERIES_ID_REPORT_RATE_SHORT	0x04
+#define STEELSERIES_ID_LED_EFFECT_SHORT		0x07
+#define STEELSERIES_ID_LED_COLOR_SHORT		0x08
 #define STEELSERIES_ID_SAVE_SHORT		0x09
 
 #define STEELSERIES_ID_BUTTONS			0x31
@@ -350,7 +352,48 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 }
 
 static int
-steelseries_write_led(struct ratbag_led *led)
+steelseries_write_led_v1(struct ratbag_led *led)
+{
+	struct ratbag_device *device = led->profile->device;
+	uint8_t buf[STEELSERIES_REPORT_SIZE_SHORT] = {0};
+	int ret;
+
+	buf[0] = STEELSERIES_ID_LED_EFFECT_SHORT;
+	buf[1] = led->index + 1;
+
+	switch(led->mode) {
+	case RATBAG_LED_OFF:
+	case RATBAG_LED_ON:
+		buf[2] = 0x01;
+		break;
+	case RATBAG_LED_BREATHING:
+		buf[2] = 0x03; /* 0x02: slow, 0x03: medium, 0x04: fast */
+		break;
+	case RATBAG_LED_CYCLE:
+		/* Cycle mode is not supported on this version */
+	default:
+		return -EINVAL;
+	}
+
+	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+	if (ret < 0)
+		return ret;
+
+	buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
+	buf[1] = led->index + 1;
+	buf[2] = led->color.red;
+	buf[3] = led->color.green;
+	buf[4] = led->color.blue;
+
+	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int
+steelseries_write_led_v2(struct ratbag_led *led)
 {
 	struct ratbag_device *device = led->profile->device;
 	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
@@ -452,6 +495,20 @@ steelseries_write_led(struct ratbag_led *led)
 		return ret;
 
 	return 0;
+}
+
+static int
+steelseries_write_led(struct ratbag_led *led)
+{
+	struct ratbag_device *device = led->profile->device;
+	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
+
+	if (device_version == 1)
+		return steelseries_write_led_v1(led);
+	else if (device_version == 2)
+		return steelseries_write_led_v2(led);
+
+	return -ENOTSUP;
 }
 
 static int
