@@ -176,8 +176,10 @@ steelseries_probe(struct ratbag_device *device)
 							       (unsigned int *)dpilist->entries,
 							       dpilist->nentries);
 
-			resolution->dpi_x = resolution->dpis[resolution->index];
-			resolution->dpi_y = resolution->dpis[resolution->index];
+			/* 800 and 1600 seem as reasonable defaults supported
+			 * by all known devices. */
+			resolution->dpi_x = 800 * (resolution->index + 1);
+			resolution->dpi_y = 800 * (resolution->index + 1);
 
 			ratbag_resolution_set_report_rate_list(resolution, report_rates,
 							       ARRAY_LENGTH(report_rates));
