@@ -9,3 +9,4 @@ DeviceVersion=1
 Buttons=6
 Leds=2
 DpiRange=50:6500@50
+MacroLength=1

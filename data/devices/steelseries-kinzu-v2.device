@@ -9,3 +9,4 @@ DeviceVersion=1
 Buttons=3
 Leds=0
 DpiList=400;800;1600;3200
+MacroLength=0
