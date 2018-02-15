@@ -24,6 +24,7 @@
 #include "config.h"
 #include <assert.h>
 #include <errno.h>
+#include <sys/epoll.h>
 #include <libudev.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -558,21 +559,29 @@ ratbag_create_context(const struct ratbag_interface *interface,
 		      void *userdata)
 {
 	struct ratbag *ratbag;
+	int epoll_fd;
 
 	assert(interface != NULL);
 	assert(interface->open_restricted != NULL);
 	assert(interface->close_restricted != NULL);
 
+	epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+	if (epoll_fd < 0)
+		return NULL;
+
 	ratbag = zalloc(sizeof(*ratbag));
 	ratbag->refcount = 1;
 	ratbag->interface = interface;
 	ratbag->userdata = userdata;
+	ratbag->epoll_fd = epoll_fd;
 
 	list_init(&ratbag->drivers);
 	list_init(&ratbag->devices);
+	list_init(&ratbag->source_destroy_list);
 	ratbag->udev = udev_new();
 	if (!ratbag->udev) {
 		free(ratbag);
+		close(epoll_fd);
 		return NULL;
 	}
 
@@ -597,6 +606,17 @@ ratbag_ref(struct ratbag *ratbag)
 	return ratbag;
 }
 
+static inline void
+ratbag_drop_destroyed_sources(struct ratbag *ratbag)
+{
+	struct ratbag_source *source, *next;
+
+	list_for_each_safe(source, next, &ratbag->source_destroy_list, link)
+		free(source);
+
+	list_init(&ratbag->source_destroy_list);
+}
+
 LIBRATBAG_EXPORT struct ratbag *
 ratbag_unref(struct ratbag *ratbag)
 {
@@ -606,6 +626,8 @@ ratbag_unref(struct ratbag *ratbag)
 	assert(ratbag->refcount > 0);
 	ratbag->refcount--;
 	if (ratbag->refcount == 0) {
+		ratbag_drop_destroyed_sources(ratbag);
+		close(ratbag->epoll_fd);
 		ratbag->udev = udev_unref(ratbag->udev);
 		free(ratbag);
 	}
@@ -1908,4 +1930,68 @@ ratbag_button_macro_new(const char *name)
 	macro->macro.name = strdup_safe(name);
 
 	return macro;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_dispatch(struct ratbag *ratbag)
+{
+	struct ratbag_source *source;
+	struct epoll_event ep[32];
+	int count;
+
+	count = epoll_wait(ratbag->epoll_fd, ep, ARRAY_LENGTH(ep), 0);
+	if (count < 0)
+		return -errno;
+
+	for (int i = 0; i < count; i++) {
+		source = ep[i].data.ptr;
+		if (source->fd == -1)
+			continue;
+
+		source->dispatch(source->userdata);
+	}
+
+	ratbag_drop_destroyed_sources(ratbag);
+
+	return 0;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_get_fd(struct ratbag *ratbag)
+{
+	return ratbag->epoll_fd;
+}
+
+struct ratbag_source *
+ratbag_add_source(struct ratbag *ratbag,
+		  int fd,
+		  ratbag_source_dispatch_t dispatch,
+		  void *userdata)
+{
+	struct ratbag_source *source;
+	struct epoll_event ep = {0};
+
+	source = zalloc(sizeof *source);
+	source->dispatch = dispatch;
+	source->userdata = userdata;
+	source->fd = fd;
+
+	ep.events = EPOLLIN;
+	ep.data.ptr = source;
+
+	if (epoll_ctl(ratbag->epoll_fd, EPOLL_CTL_ADD, fd, &ep) < 0) {
+		free(source);
+		source = NULL;
+	}
+
+	return source;
+}
+
+void
+ratbag_remove_source(struct ratbag *ratbag,
+		     struct ratbag_source *source)
+{
+        epoll_ctl(ratbag->epoll_fd, EPOLL_CTL_DEL, source->fd, NULL);
+        source->fd = -1;
+        list_insert(&ratbag->source_destroy_list, &source->link);
 }
