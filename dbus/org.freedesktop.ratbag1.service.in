@@ -2,4 +2,4 @@
 Name=org.freedesktop.ratbag1
 Exec=@bindir@/ratbagd
 User=root
-SystemdService=dbus-org.freedesktop.ratbag1.service
+SystemdService=ratbagd.service
