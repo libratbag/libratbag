@@ -355,6 +355,15 @@ struct ratbag_button_macro {
 	struct ratbag_macro macro;
 };
 
+#define MODIFIER_LEFTCTRL (1 << 0)
+#define MODIFIER_LEFTSHIFT (1 << 1)
+#define MODIFIER_LEFTALT (1 << 2)
+#define MODIFIER_LEFTMETA (1 << 3)
+#define MODIFIER_RIGHTCTRL (1 << 4)
+#define MODIFIER_RIGHTSHIFT (1 << 5)
+#define MODIFIER_RIGHTALT (1 << 6)
+#define MODIFIER_RIGHTMETA (1 << 7)
+
 struct ratbag_button_action {
 	enum ratbag_button_action_type type;
 	union ratbag_btn_action {
@@ -477,6 +486,19 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 
 	return 0;
 }
+
+int
+ratbag_action_macro_num_keys(struct ratbag_button_action *action);
+
+int
+ratbag_button_macro_new_from_keycode(struct ratbag_button *button,
+				     unsigned int key,
+				     unsigned int modifiers);
+
+int
+ratbag_action_keycode_from_macro(struct ratbag_button_action *action,
+				     unsigned int *key_out,
+				     unsigned int *modifiers_out);
 
 static inline void
 ratbag_resolution_set_resolution(struct ratbag_resolution *res,

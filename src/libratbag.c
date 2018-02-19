@@ -1909,3 +1909,167 @@ ratbag_button_macro_new(const char *name)
 
 	return macro;
 }
+
+struct ratbag_modifier_mapping {
+	unsigned int modifier_mask;
+	unsigned int key;
+};
+
+struct ratbag_modifier_mapping ratbag_modifier_mapping[] = {
+	{ MODIFIER_LEFTCTRL, KEY_LEFTCTRL },
+	{ MODIFIER_LEFTSHIFT, KEY_LEFTSHIFT },
+	{ MODIFIER_LEFTALT, KEY_LEFTALT },
+	{ MODIFIER_LEFTMETA, KEY_LEFTMETA },
+	{ MODIFIER_RIGHTCTRL, KEY_RIGHTCTRL },
+	{ MODIFIER_RIGHTSHIFT, KEY_RIGHTSHIFT },
+	{ MODIFIER_RIGHTALT, KEY_RIGHTALT },
+	{ MODIFIER_RIGHTMETA, KEY_RIGHTMETA },
+};
+
+int
+ratbag_button_macro_new_from_keycode(struct ratbag_button *button,
+				     unsigned int key,
+				     unsigned int modifiers)
+{
+	struct ratbag_button_macro *macro;
+	struct ratbag_modifier_mapping *mapping;
+	int i;
+
+	macro = ratbag_button_macro_new("key");
+	i = 0;
+
+	ARRAY_FOR_EACH(ratbag_modifier_mapping, mapping) {
+		if (modifiers & mapping->modifier_mask)
+			ratbag_button_macro_set_event(macro,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_PRESSED,
+						      mapping->key);
+	}
+
+	ratbag_button_macro_set_event(macro,
+				      i++,
+				      RATBAG_MACRO_EVENT_KEY_PRESSED,
+				      key);
+	ratbag_button_macro_set_event(macro,
+				      i++,
+				      RATBAG_MACRO_EVENT_KEY_RELEASED,
+				      key);
+
+	ARRAY_FOR_EACH(ratbag_modifier_mapping, mapping) {
+		if (modifiers & mapping->modifier_mask)
+			ratbag_button_macro_set_event(macro,
+						      i++,
+						      RATBAG_MACRO_EVENT_KEY_RELEASED,
+						      mapping->key);
+	}
+
+	ratbag_button_copy_macro(button, macro);
+	ratbag_button_macro_unref(macro);
+
+	return 0;
+}
+
+int
+ratbag_action_macro_num_keys(struct ratbag_button_action *action)
+{
+	struct ratbag_macro *macro = action->macro;
+	int i, count;
+
+	count = 0;
+	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
+		struct ratbag_macro_event event;
+
+		event = macro->events[i];
+		if (event.type == RATBAG_MACRO_EVENT_KEY_PRESSED)
+		{
+			switch(event.event.key) {
+			case KEY_LEFTCTRL:
+			case KEY_LEFTSHIFT:
+			case KEY_LEFTALT:
+			case KEY_LEFTMETA:
+			case KEY_RIGHTCTRL:
+			case KEY_RIGHTSHIFT:
+			case KEY_RIGHTALT:
+			case KEY_RIGHTMETA:
+				break;
+			default:
+				count++;
+			}
+		}
+	}
+
+	return count;
+}
+
+int
+ratbag_action_keycode_from_macro(struct ratbag_button_action *action,
+				 unsigned int *key_out,
+				 unsigned int *modifiers_out)
+{
+	struct ratbag_macro *macro = action->macro;
+	unsigned int key = KEY_RESERVED;
+	unsigned int modifiers = 0;
+	unsigned int i;
+
+	if (!macro || action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		return -EINVAL;
+
+	if (macro->events[0].type == RATBAG_MACRO_EVENT_NONE)
+		return -EINVAL;
+
+	if (ratbag_action_macro_num_keys(action) != 1)
+		return -EINVAL;
+
+	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
+		struct ratbag_macro_event event;
+
+		event = macro->events[i];
+		switch (event.type) {
+		case RATBAG_MACRO_EVENT_INVALID:
+			return -EINVAL;
+		case RATBAG_MACRO_EVENT_NONE:
+			return 0;
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+			switch(event.event.key) {
+			case KEY_LEFTCTRL: modifiers |= MODIFIER_LEFTCTRL; break;
+			case KEY_LEFTSHIFT: modifiers |= MODIFIER_LEFTSHIFT; break;
+			case KEY_LEFTALT: modifiers |= MODIFIER_LEFTALT; break;
+			case KEY_LEFTMETA: modifiers |= MODIFIER_LEFTMETA; break;
+			case KEY_RIGHTCTRL: modifiers |= MODIFIER_RIGHTCTRL; break;
+			case KEY_RIGHTSHIFT: modifiers |= MODIFIER_RIGHTSHIFT; break;
+			case KEY_RIGHTALT: modifiers |= MODIFIER_RIGHTALT; break;
+			case KEY_RIGHTMETA: modifiers |= MODIFIER_RIGHTMETA; break;
+			default:
+				if (key != KEY_RESERVED)
+					return -EINVAL;
+
+				key = event.event.key;
+			}
+			break;
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			switch(event.event.key) {
+			case KEY_LEFTCTRL: modifiers &= ~MODIFIER_LEFTCTRL; break;
+			case KEY_LEFTSHIFT: modifiers &= ~MODIFIER_LEFTSHIFT; break;
+			case KEY_LEFTALT: modifiers &= ~MODIFIER_LEFTALT; break;
+			case KEY_LEFTMETA: modifiers &= ~MODIFIER_LEFTMETA; break;
+			case KEY_RIGHTCTRL: modifiers &= ~MODIFIER_RIGHTCTRL; break;
+			case KEY_RIGHTSHIFT: modifiers &= ~MODIFIER_RIGHTSHIFT; break;
+			case KEY_RIGHTALT: modifiers &= ~MODIFIER_RIGHTALT; break;
+			case KEY_RIGHTMETA: modifiers &= ~MODIFIER_RIGHTMETA; break;
+			default:
+				if (event.event.key != key)
+					return -EINVAL;
+
+				*key_out = key;
+				*modifiers_out = modifiers;
+				return 1;
+			}
+		case RATBAG_MACRO_EVENT_WAIT:
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+
+	return -EINVAL;
+}
