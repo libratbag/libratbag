@@ -151,6 +151,54 @@ logitech_g300_raw_to_button_action(uint8_t data)
 	return NULL;
 }
 
+static uint8_t logitech_g300_modifier_to_raw(int modifier_flags)
+{
+	uint8_t modifiers = 0x00;
+
+	if (modifier_flags & MODIFIER_LEFTCTRL)
+		modifiers |= 0x01;
+	if (modifier_flags & MODIFIER_LEFTSHIFT)
+		modifiers |= 0x02;
+	if (modifier_flags & MODIFIER_LEFTALT)
+		modifiers |= 0x04;
+	if (modifier_flags & MODIFIER_LEFTMETA)
+		modifiers |= 0x08;
+	if (modifier_flags & MODIFIER_RIGHTCTRL)
+		modifiers |= 0x10;
+	if (modifier_flags & MODIFIER_RIGHTSHIFT)
+		modifiers |= 0x20;
+	if (modifier_flags & MODIFIER_RIGHTALT)
+		modifiers |= 0x40;
+	if (modifier_flags & MODIFIER_RIGHTMETA)
+		modifiers |= 0x80;
+
+	return modifiers;
+}
+
+static int logitech_g300_raw_to_modifiers(uint8_t data)
+{
+	int modifiers = 0;
+
+	if (data & 0x01)
+		modifiers |= MODIFIER_LEFTCTRL;
+	if (data & 0x02)
+		modifiers |= MODIFIER_LEFTSHIFT;
+	if (data & 0x04)
+		modifiers |= MODIFIER_LEFTALT;
+	if (data & 0x08)
+		modifiers |= MODIFIER_LEFTMETA;
+	if (data & 0x10)
+		modifiers |= MODIFIER_RIGHTCTRL;
+	if (data & 0x20)
+		modifiers |= MODIFIER_RIGHTSHIFT;
+	if (data & 0x40)
+		modifiers |= MODIFIER_RIGHTALT;
+	if (data & 0x80)
+		modifiers |= MODIFIER_RIGHTMETA;
+
+	return modifiers;
+}
+
 static uint8_t
 logitech_g300_button_action_to_raw(const struct ratbag_button_action *action)
 {
@@ -307,6 +355,7 @@ logitech_g300_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 	button->type = logitech_g300_raw_to_button_type(button->index);
 
@@ -316,11 +365,20 @@ logitech_g300_read_button(struct ratbag_button *button)
 	}
 	else if (button_report->code == 0x00 && (button_report->modifier > 0x00 || button_report->key > 0x00))
 	{
-		struct ratbag_button_action *key_action = &button->action;
+		unsigned int key, modifiers;
+		int rc;
 
-		key_action->type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		key_action->action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(
-			device, button_report->key);
+		key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+								    button_report->key);
+		modifiers = logitech_g300_raw_to_modifiers(button_report->modifier);
+
+		rc = ratbag_button_macro_new_from_keycode(button, key, modifiers);
+		if (rc < 0) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
 	}
 }
 
@@ -444,6 +502,7 @@ logitech_g300_probe(struct ratbag_device *device)
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 	active_idx = logitech_g300_get_active_profile_and_resolution(device);
 
@@ -517,9 +576,22 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 		raw_button->code = logitech_g300_button_action_to_raw(action);
 		raw_button->modifier = 0x00;
 		raw_button->key = 0x00;
-		if (action->type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+
+		if (action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+			unsigned int key, modifiers;
+
+			rc = ratbag_action_keycode_from_macro(action,
+							      &key,
+							      &modifiers);
+			if (rc < 0) {
+				log_error(device->ratbag,
+					  "Error while writing macro for button %d\n",
+					  button->index);
+			}
+
 			raw_button->key = ratbag_hidraw_get_keyboard_usage_from_keycode(
-				device, action->action.key.key);
+						device, key);
+			raw_button->modifier = logitech_g300_modifier_to_raw(modifiers);
 		}
 	}
 
