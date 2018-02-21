@@ -154,6 +154,7 @@ steelseries_probe(struct ratbag_device *device)
 		/* set these caps manually as they are not assumed with only 1 profile */
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 	}
 
 	ratbag_device_unset_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
@@ -192,6 +193,7 @@ steelseries_probe(struct ratbag_device *device)
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 			button_defaults_for_layout(button, button_count);
 		}
@@ -303,6 +305,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 	ratbag_profile_for_each_button(profile, button) {
 		struct ratbag_button_action *action = &button->action;
 		uint16_t code;
+		unsigned int key, modifiers;
 		int idx;
 
 		/* Each button takes up 5 bytes starting from index 2 */
@@ -313,11 +316,39 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 			buf[idx] = action->action.button;
 			break;
 
-		case RATBAG_BUTTON_ACTION_TYPE_KEY:
+		case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+			ratbag_action_keycode_from_macro(action, &key, &modifiers);
+
+			/* There is only space for 3 modifiers */
+			if (__builtin_popcount(modifiers > 3)) {
+				log_debug(device->ratbag,
+					  "Too many modifiers in macro for button %d\n",
+					  button->index);
+				break;
+			}
+
 			code = ratbag_hidraw_get_keyboard_usage_from_keycode(
-						device, action->action.key.key);
+						device, key);
 			if (code) {
 				buf[idx] = STEELSERIES_BUTTON_KBD;
+
+				if (modifiers & MODIFIER_LEFTCTRL)
+					buf[++idx] = 0xE0;
+				if (modifiers & MODIFIER_LEFTSHIFT)
+					buf[++idx] = 0xE1;
+				if (modifiers & MODIFIER_LEFTALT)
+					buf[++idx] = 0xE2;
+				if (modifiers & MODIFIER_LEFTMETA)
+					buf[++idx] = 0xE3;
+				if (modifiers & MODIFIER_RIGHTCTRL)
+					buf[++idx] = 0xE4;
+				if (modifiers & MODIFIER_RIGHTSHIFT)
+					buf[++idx] = 0xE5;
+				if (modifiers & MODIFIER_RIGHTALT)
+					buf[++idx] = 0xE6;
+				if (modifiers & MODIFIER_RIGHTMETA)
+					buf[++idx] = 0xE7;
+
 				buf[idx + 1] = code;
 			} else {
 				code = ratbag_hidraw_get_consumer_usage_from_keycode(
@@ -343,6 +374,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 			}
 			break;
 
+		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		case RATBAG_BUTTON_ACTION_TYPE_NONE:
 		default:
 			buf[idx] = STEELSERIES_BUTTON_OFF;
