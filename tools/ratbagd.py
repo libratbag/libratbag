@@ -246,9 +246,9 @@ class Ratbagd(_RatbagdDBus):
 
     __gsignals__ = {
         "device-added":
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+            (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
         "device-removed":
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+            (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
     def __init__(self):
@@ -313,7 +313,7 @@ class RatbagdDevice(_RatbagdDBus):
 
     __gsignals__ = {
         "active-profile-changed":
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+            (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
     def __init__(self, object_path):
@@ -450,7 +450,7 @@ class RatbagdProfile(_RatbagdDBus):
         """
         return self._get_dbus_property("Capabilities")
 
-    @GObject.property
+    @GObject.Property
     def name(self):
         """The name of the profile"""
         return self._get_dbus_property("Name")
@@ -820,7 +820,7 @@ class RatbagdMacro(GObject.Object):
     }
 
     __gsignals__ = {
-        'macro-set': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'macro-set': (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __init__(self, **kwargs):
