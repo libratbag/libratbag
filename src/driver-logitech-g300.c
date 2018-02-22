@@ -400,6 +400,8 @@ logitech_g300_read_led(struct ratbag_led *led)
 	led->color.red = profile_report->led_red * 255;
 	led->color.green = profile_report->led_green * 255;
 	led->color.blue = profile_report->led_blue * 255;
+	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
 }
 
 static void
