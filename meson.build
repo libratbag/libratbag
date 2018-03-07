@@ -242,7 +242,7 @@ man_lur_command = configure_file (
 
 #### data files ####
 data_files = files(
-	'data/devices/etekcity-fixme.device',
+	'data/devices/etekcity-scroll-alpha.device',
 	'data/devices/gskill-MX-780.device',
 	'data/devices/logitech-g300.device',
 	'data/devices/logitech-g303.device',
