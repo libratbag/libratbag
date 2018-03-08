@@ -1,6 +1,5 @@
-# FIXME: which device is this exactly?
 [Device]
-Name=Etekcity FIXME
+Name=Etekcity Scroll Alpha
 DeviceMatch=usb:1ea7:4011
 Driver=etekcity
 Svg=etekcity.svg
