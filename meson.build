@@ -438,14 +438,14 @@ if unitdir == ''
 	# works out of the box.
 	intended_unitdir = join_paths(get_option('prefix'), get_option('libdir'), 'systemd')
 	if get_option('prefix') == '/usr' and intended_unitdir != default_unitdir
-		message('
+		message('''
 		systemd unitdir libdir mismatch detected, changing unitdir to
 			@0@
 		or specify with
 			mesonconf -Dsystemd-unit-dir=<path>
 
 		See https://github.com/libratbag/libratbag/issues/188
-		'.format(default_unitdir))
+		'''.format(default_unitdir))
 		unitdir = default_unitdir
 	else
 		unitdir = intended_unitdir
