@@ -252,7 +252,7 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 {
 	struct ratbagd_resolution *resolution = userdata;
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	const enum ratbag_device_capability cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
+	const enum ratbag_resolution_capability cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
 	int xres, yres;
 	int r;
 
