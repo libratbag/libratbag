@@ -643,7 +643,7 @@ hidpp10_get_dpi_mapping(struct hidpp10_device *dev, unsigned int value)
 	min_delta = INT_MAX;
 
 	for (i = 0; i < dev->dpi_count; i++) {
-		delta = abs(value - m[i].dpi);
+		delta = abs((int)value - (int)m[i].dpi);
 		if (delta < min_delta) {
 			result = m[i].raw_value;
 			min_delta = delta;
