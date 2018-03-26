@@ -527,6 +527,10 @@ hidpp20drv_update_led_1300(struct ratbag_led *led, struct hidpp20drv_data *data)
 		break;
 	case RATBAG_LED_CYCLE:
 		return -ENOTSUP;
+	case RATBAG_LED_TRIGGER:
+		return -ENOTSUP;
+	default:
+		return -ENOTSUP;
 	}
 
 	if (!(h_led.mode & led_caps)) {

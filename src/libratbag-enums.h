@@ -343,6 +343,11 @@ enum ratbag_led_mode {
 	 * led is pulsating with static color
 	 */
 	RATBAG_LED_BREATHING,
+
+	/**
+	 * led glows when a certain key combination is triggered
+	 */
+	RATBAG_LED_TRIGGER,
 };
 /**
  * @ingroup enums
