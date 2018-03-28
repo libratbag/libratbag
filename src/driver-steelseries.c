@@ -583,8 +583,10 @@ static int
 steelseries_write_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_resolution *resolution;
+	struct ratbag_button *button;
 	struct ratbag_led *led;
 	int rc;
+	bool buttons_dirty = false;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		rc = steelseries_write_dpi(resolution);
@@ -600,9 +602,16 @@ steelseries_write_profile(struct ratbag_profile *profile)
 			return rc;
 	}
 
-	rc = steelseries_write_buttons(profile);
-	if (rc != 0)
-		return rc;
+	ratbag_profile_for_each_button(profile, button) {
+		if (button->dirty)
+			buttons_dirty = true;
+	}
+
+	if (buttons_dirty) {
+		rc = steelseries_write_buttons(profile);
+		if (rc != 0)
+			return rc;
+	}
 
 	ratbag_profile_for_each_led(profile, led) {
 		if (!led->dirty)
