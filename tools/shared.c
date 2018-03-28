@@ -94,6 +94,9 @@ led_mode_to_str(enum ratbag_led_mode mode)
 	case RATBAG_LED_BREATHING:
 		str = "breathing";
 		break;
+	case RATBAG_LED_TRIGGER:
+		str = "trigger";
+		break;
 	}
 
 	return str;
