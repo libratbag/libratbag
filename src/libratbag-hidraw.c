@@ -1375,7 +1375,7 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 			int use_usb_parent)
 {
 	struct ratbag *ratbag = device->ratbag;
-	struct udev_enumerate *e;
+	_cleanup_(udev_enumerate_unrefp) struct udev_enumerate *e = NULL;
 	struct udev_list_entry *entry;
 	const char *path;
 	struct udev_device *hid_udev;
@@ -1421,14 +1421,11 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 		matched = match(device);
 		rc = matched ? 0 : -ENODEV;
 		if (matched == 1)
-			goto out;
+			return rc;
 
 skip:
 		ratbag_close_hidraw(device);
 	}
-
-out:
-	udev_enumerate_unref(e);
 
 	return rc;
 }

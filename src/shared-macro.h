@@ -135,6 +135,7 @@ static inline void reset_errno(int *saved_errno)
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct udev*, udev_unref);
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct udev_device*, udev_device_unref);
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct udev_enumerate*, udev_enumerate_unref);
 
 /*
  * ELEMENTSOF() - number of array elements
