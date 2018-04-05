@@ -580,6 +580,9 @@ steelseries_write_profile(struct ratbag_profile *profile)
 	int rc;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
+		if (!resolution->dirty)
+			continue;
+
 		rc = steelseries_write_dpi(resolution);
 		if (rc != 0)
 			return rc;

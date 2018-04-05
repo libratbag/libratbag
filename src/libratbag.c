@@ -977,6 +977,7 @@ ratbag_device_commit(struct ratbag_device *device)
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
+	struct ratbag_resolution *resolution;
 	int rc;
 
 	if (!device->driver->commit) {
@@ -997,6 +998,10 @@ ratbag_device_commit(struct ratbag_device *device)
 
 		list_for_each(led, &profile->leds, link)
 			led->dirty = false;
+
+		list_for_each(resolution, &profile->resolutions, link)
+			resolution->dirty = false;
+			
 	}
 
 	return RATBAG_SUCCESS;
@@ -1102,6 +1107,7 @@ ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 	if (resolution->dpi_x != dpi || resolution->dpi_y != dpi) {
 		resolution->dpi_x = dpi;
 		resolution->dpi_y = dpi;
+		resolution->dirty = true;
 		profile->dirty = true;
 	}
 
@@ -1124,6 +1130,7 @@ ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 	if (resolution->dpi_x != x || resolution->dpi_y != y) {
 		resolution->dpi_x = x;
 		resolution->dpi_y = y;
+		resolution->dirty = true;
 		profile->dirty = true;
 	}
 
@@ -1138,6 +1145,7 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 					      RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE)) {
 		if (resolution->hz != hz) {
 			resolution->hz = hz;
+			resolution->dirty = true;
 			resolution->profile->dirty = true;
 		}
 	} else {
@@ -1149,6 +1157,7 @@ ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
 		ratbag_profile_for_each_resolution(profile, res) {
 			if (res->hz != hz) {
 				res->hz = hz;
+				res->dirty = true;
 				profile->dirty = true;
 			}
 		}
@@ -1233,6 +1242,7 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 		res->is_active = false;
 
 	resolution->is_active = true;
+	resolution->dirty = true;
 	profile->dirty = true;
 	return RATBAG_SUCCESS;
 }
@@ -1256,11 +1266,13 @@ ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 			continue;
 
 		other->is_default = false;
+		resolution->dirty = true;
 		profile->dirty = true;
 	}
 
 	if (!resolution->is_default) {
 		resolution->is_default = true;
+		resolution->dirty = true;
 		profile->dirty = true;
 	}
 
