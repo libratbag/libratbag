@@ -58,6 +58,15 @@ list_insert(struct list *list, struct list *elm)
 }
 
 void
+list_append(struct list *list, struct list *elm)
+{
+	elm->next = list;
+	elm->prev = list->prev;
+	list->prev = elm;
+	elm->prev->next = elm;
+}
+
+void
 list_remove(struct list *elm)
 {
 	elm->prev->next = elm->next;

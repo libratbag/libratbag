@@ -45,6 +45,7 @@ struct list {
 
 void list_init(struct list *list);
 void list_insert(struct list *list, struct list *elm);
+void list_append(struct list *list, struct list *elm);
 void list_remove(struct list *elm);
 int list_empty(const struct list *list);
 
