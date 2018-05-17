@@ -97,7 +97,7 @@
          style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#babdb6;stroke-width:1;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal" />
       <path
          style="color:#000000;display:inline;overflow:visible;vector-effect:none;fill:none;fill-opacity:1;stroke:#babdb6;stroke-width:8;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         id="led1"
+         id="led0"
          sodipodi:type="arc"
          sodipodi:cx="-664.05457"
          sodipodi:cy="598.10364"
@@ -185,7 +185,7 @@
          inkscape:label="#path1120" />
       <path
          inkscape:connector-curvature="0"
-         id="led0"
+         id="led1"
          d="m 554.07316,558.40614 18.36886,76.63506 -10.78213,5.31523 z"
          style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#eeeeec;fill-opacity:1;stroke:#babdb6;stroke-width:2;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
          inkscape:label="#path1122" />
@@ -517,7 +517,7 @@
      style="display:inline"
      transform="translate(-16.168953)">
     <g
-       id="led0-path"
+       id="led1-path"
        inkscape:label="#g417">
       <path
          sodipodi:nodetypes="cc"
@@ -535,14 +535,14 @@
       <rect
          inkscape:label="#rect875"
          style="color:#000000;text-align:start;display:inline;overflow:visible;vector-effect:none;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
-         id="led0-leader"
+         id="led1-leader"
          width="1"
          height="1"
          x="483"
          y="220" />
     </g>
     <g
-       id="led1-path"
+       id="led0-path"
        inkscape:label="#g412">
       <path
          inkscape:connector-curvature="0"
@@ -563,7 +563,7 @@
          x="483"
          height="1"
          width="1"
-         id="led1-leader"
+         id="led0-leader"
          style="color:#000000;text-align:start;display:inline;overflow:visible;vector-effect:none;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round" />
     </g>
   </g>
