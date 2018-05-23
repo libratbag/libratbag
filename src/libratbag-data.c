@@ -388,7 +388,7 @@ file_data_matches(struct ratbag *ratbag,
 	data->refcount = 1;
 	data->name = g_key_file_get_string(keyfile, GROUP_DEVICE, "Name", NULL);
 	if (!data->name) {
-		return false;
+		return false; // ignore_clang_sa_mem_leak
 	}
 
 	data->driver = g_key_file_get_string(keyfile, GROUP_DEVICE, "Driver", NULL);
