@@ -124,13 +124,13 @@ scan_build_run: &scan_build_run
     - *fedora_install
     - run:
         name: Install clang and find
-        command: dnf install -y clang-analyzer findutils
+        command: dnf install -y clang-analyzer findutils python3-beautifulsoup4
     - checkout
     - *ninja_scan_build
     - *export_logs
     - run:
         name: Check scan-build results
-        command: test ! -d ~/libratbag/build/meson-logs/scanbuild || test $(find ~/libratbag/build/meson-logs/scanbuild -maxdepth 0 ! -empty -exec echo "not empty" \; | wc -l) -eq 0 || (echo "Check scan-build results" && false)
+        command: python3 ~/libratbag/tools/check_scan_build.py ~/libratbag/build/meson-logs/scanbuild
 
 doc_build: &doc_build
   <<: *default_settings
