@@ -1,0 +1,15 @@
+[Device]
+Name=SteelSeries Sensei Raw
+DeviceMatch=usb:1038:1369
+Driver=steelseries
+Svg=steelseries-sensei310.svg
+LedTypes=logo;dpi
+
+[Driver/steelseries]
+DeviceVersion=1
+Buttons=8
+Leds=1
+DpiRange=90:5670@90
+MacroLength=1
+MonoLed=1
+ShortButton=1

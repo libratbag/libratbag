@@ -48,6 +48,7 @@
 
 #define STEELSERIES_ID_DPI_SHORT		0x03
 #define STEELSERIES_ID_REPORT_RATE_SHORT	0x04
+#define STEELSERIES_ID_LED_INTENSITY_SHORT	0x05
 #define STEELSERIES_ID_LED_EFFECT_SHORT		0x07
 #define STEELSERIES_ID_LED_COLOR_SHORT		0x08
 #define STEELSERIES_ID_SAVE_SHORT		0x09
@@ -62,6 +63,7 @@
 #define STEELSERIES_BUTTON_RES_CYCLE		0x30
 #define STEELSERIES_BUTTON_WHEEL_UP		0x31
 #define STEELSERIES_BUTTON_WHEEL_DOWN		0x32
+#define STEELSERIES_BUTTON_KEY			0x10
 #define STEELSERIES_BUTTON_KBD			0x51
 #define STEELSERIES_BUTTON_CONSUMER		0x61
 
@@ -127,7 +129,7 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
-	int rc, button_count, led_count, device_version;
+	int rc, button_count, led_count, device_version, mono_led;
 	_cleanup_(dpi_list_freep) struct dpi_list *dpilist = NULL;
 	_cleanup_(freep) struct dpi_range *dpirange = NULL;
 
@@ -142,6 +144,7 @@ steelseries_probe(struct ratbag_device *device)
 	led_count = ratbag_device_data_steelseries_get_led_count(device->data);
 	dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
 	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
+	mono_led = ratbag_device_data_steelseries_get_mono_led(device->data);
 
 	ratbag_device_init_profiles(device,
 				    STEELSERIES_NUM_PROFILES,
@@ -201,10 +204,15 @@ steelseries_probe(struct ratbag_device *device)
 		ratbag_profile_for_each_led(profile, led) {
 			led->type = led->index == 0 ? RATBAG_LED_TYPE_LOGO : RATBAG_LED_TYPE_WHEEL;
 			led->mode = RATBAG_LED_ON;
-			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-			led->color.red = 0;
-			led->color.green = 0;
-			led->color.blue = 255;
+			if (mono_led) {
+				led->colordepth = RATBAG_LED_COLORDEPTH_MONOCHROME;
+				led->brightness = 255;
+			} else {
+				led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+				led->color.red = 0;
+				led->color.green = 0;
+				led->color.blue = 255;
+			}
 			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
@@ -295,12 +303,19 @@ static int
 steelseries_write_buttons(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
-	uint8_t buf[STEELSERIES_REPORT_LONG_SIZE] = {0};
 	struct ratbag_button *button;
 	int ret;
 
 	if (ratbag_device_data_steelseries_get_macro_length(device->data) == 0)
 		return 0;
+
+	int short_button = ratbag_device_data_steelseries_get_short_button(device->data);
+	int button_size = (short_button == 0) ? 5 : 3;
+	int report_size = (short_button == 0) ? STEELSERIES_REPORT_LONG_SIZE : STEELSERIES_REPORT_SIZE_SHORT;
+	int max_modifiers = (short_button == 0) ? 3 : 0;
+
+	uint8_t buf[report_size];
+	memset(buf, 0, report_size);
 
 	buf[0] = STEELSERIES_ID_BUTTONS;
 
@@ -310,8 +325,8 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 		unsigned int key, modifiers;
 		int idx;
 
-		/* Each button takes up 5 bytes starting from index 2 */
-		idx = 2 + button->index * 5;
+		/* Each button takes up 3 or 5 bytes starting from index 2 */
+		idx = 2 + button->index * button_size;
 
 		switch (action->type) {
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
@@ -322,34 +337,38 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 			ratbag_action_keycode_from_macro(action, &key, &modifiers);
 
 			/* There is only space for 3 modifiers */
-			if (__builtin_popcount(modifiers > 3)) {
-				log_debug(device->ratbag,
-					  "Too many modifiers in macro for button %d\n",
-					  button->index);
+			if (__builtin_popcount(modifiers) > max_modifiers) {
+				log_error(device->ratbag,
+					"Too many modifiers in macro for button %d (maximum %d)\n",
+					button->index, max_modifiers);
 				break;
 			}
 
 			code = ratbag_hidraw_get_keyboard_usage_from_keycode(
 						device, key);
 			if (code) {
-				buf[idx] = STEELSERIES_BUTTON_KBD;
+				if (short_button) {
+					buf[idx] = STEELSERIES_BUTTON_KEY;
+				} else {
+					buf[idx] = STEELSERIES_BUTTON_KBD;
 
-				if (modifiers & MODIFIER_LEFTCTRL)
-					buf[++idx] = 0xE0;
-				if (modifiers & MODIFIER_LEFTSHIFT)
-					buf[++idx] = 0xE1;
-				if (modifiers & MODIFIER_LEFTALT)
-					buf[++idx] = 0xE2;
-				if (modifiers & MODIFIER_LEFTMETA)
-					buf[++idx] = 0xE3;
-				if (modifiers & MODIFIER_RIGHTCTRL)
-					buf[++idx] = 0xE4;
-				if (modifiers & MODIFIER_RIGHTSHIFT)
-					buf[++idx] = 0xE5;
-				if (modifiers & MODIFIER_RIGHTALT)
-					buf[++idx] = 0xE6;
-				if (modifiers & MODIFIER_RIGHTMETA)
-					buf[++idx] = 0xE7;
+					if (modifiers & MODIFIER_LEFTCTRL)
+						buf[++idx] = 0xE0;
+					if (modifiers & MODIFIER_LEFTSHIFT)
+						buf[++idx] = 0xE1;
+					if (modifiers & MODIFIER_LEFTALT)
+						buf[++idx] = 0xE2;
+					if (modifiers & MODIFIER_LEFTMETA)
+						buf[++idx] = 0xE3;
+					if (modifiers & MODIFIER_RIGHTCTRL)
+						buf[++idx] = 0xE4;
+					if (modifiers & MODIFIER_RIGHTSHIFT)
+						buf[++idx] = 0xE5;
+					if (modifiers & MODIFIER_RIGHTALT)
+						buf[++idx] = 0xE6;
+					if (modifiers & MODIFIER_RIGHTMETA)
+						buf[++idx] = 0xE7;
+				}
 
 				buf[idx + 1] = code;
 			} else {
@@ -421,11 +440,24 @@ steelseries_write_led_v1(struct ratbag_led *led)
 	if (ret < 0)
 		return ret;
 
-	buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
-	buf[1] = led->index + 1;
-	buf[2] = led->color.red;
-	buf[3] = led->color.green;
-	buf[4] = led->color.blue;
+	int mono_led = ratbag_device_data_steelseries_get_mono_led(device->data);
+
+	if (mono_led) {
+		buf[0] = STEELSERIES_ID_LED_INTENSITY_SHORT;
+		buf[1] = led->index + 1;
+		if (led->mode == RATBAG_LED_OFF || led->brightness == 0) {
+			buf[2] = 1;
+		} else {
+			//split the brightness into roughly 3 equal intensities
+			buf[2] = (led->brightness / 86) + 2;
+		}
+	} else {
+		buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
+		buf[1] = led->index + 1;
+		buf[2] = led->color.red;
+		buf[3] = led->color.green;
+		buf[4] = led->color.blue;
+	}
 
 	msleep(10);
 	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
