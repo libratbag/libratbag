@@ -275,6 +275,7 @@ data_files = files(
 	'data/devices/steelseries-kinzu-v2.device',
 	'data/devices/steelseries-rival-310.device',
 	'data/devices/steelseries-sensei-310.device',
+	'data/devices/steelseries-sensei-raw.device',
 )
 
 install_data(data_files,
