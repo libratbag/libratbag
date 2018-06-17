@@ -304,6 +304,7 @@ gnome_svg_files = files(
 	'data/gnome/steelseries-kinzu-v2.svg',
 	'data/gnome/steelseries-rival310.svg',
 	'data/gnome/steelseries-sensei310.svg',
+	'data/gnome/steelseries-senseiraw.svg',
 )
 install_data(gnome_svg_files,
 	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'gnome'))
