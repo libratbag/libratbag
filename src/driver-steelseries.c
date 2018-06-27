@@ -129,7 +129,7 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
-	int rc, button_count, led_count, device_version, mono_led;
+	int rc, button_count, led_count, device_version, mono_led, short_button;
 	_cleanup_(dpi_list_freep) struct dpi_list *dpilist = NULL;
 	_cleanup_(freep) struct dpi_range *dpirange = NULL;
 
@@ -145,6 +145,7 @@ steelseries_probe(struct ratbag_device *device)
 	dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
 	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
 	mono_led = ratbag_device_data_steelseries_get_mono_led(device->data);
+	short_button = ratbag_device_data_steelseries_get_short_button(device->data);
 
 	ratbag_device_init_profiles(device,
 				    STEELSERIES_NUM_PROFILES,
@@ -157,7 +158,9 @@ steelseries_probe(struct ratbag_device *device)
 		/* set these caps manually as they are not assumed with only 1 profile */
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+		if (short_button == 0) {
+			ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+		}
 	}
 
 	ratbag_device_unset_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
@@ -196,7 +199,9 @@ steelseries_probe(struct ratbag_device *device)
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
-			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+			if (short_button == 0) {
+				ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+			}
 
 			button_defaults_for_layout(button, button_count);
 		}
