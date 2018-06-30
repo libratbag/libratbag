@@ -175,6 +175,14 @@ dep_libratbag = declare_dependency(
 	dependencies : deps_libratbag
 )
 
+pkgconfig.generate (
+        filebase: 'libratbag',
+        name: 'Libratbag',
+        description: 'A DBus daemon to configure gaming mice',
+        version: meson.project_version(),
+        libraries: lib_libratbag
+)
+
 #### libshared.a ####
 src_libshared = [
 	'tools/shared.c',
