@@ -190,7 +190,7 @@ test_read_profile(struct ratbag_profile *profile)
 	r0 = &p0->resolutions[0];
 
 	for (i = 0; i < d->num_resolutions; i++) {
-		_cleanup_resolution_ struct ratbag_resolution *res;
+		_cleanup_resolution_ struct ratbag_resolution *res = NULL;
 		size_t nrates = 0;
 
 		r = &p->resolutions[i];
@@ -225,7 +225,7 @@ test_read_profile(struct ratbag_profile *profile)
 
 	/* special case triggered by the test suite when num_resolutions is 0 */
 	if (d->num_resolutions) {
-		_cleanup_resolution_ struct ratbag_resolution *res;
+		_cleanup_resolution_ struct ratbag_resolution *res = NULL;
 
 		res = ratbag_profile_get_resolution(profile, 0);
 		assert(res);

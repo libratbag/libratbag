@@ -987,7 +987,7 @@ gskill_read_resolutions(struct ratbag_profile *profile,
 	hz = GSKILL_MAX_POLLING_RATE / (report->polling_rate + 1);
 
 	for (i = 0; i < report->dpi_num; i++) {
-		_cleanup_resolution_ struct ratbag_resolution *resolution;
+		_cleanup_resolution_ struct ratbag_resolution *resolution = NULL;
 		unsigned int rates[] = { 500, 1000 }; /* let's assume that is true */
 
 		dpi_x = report->dpi_levels[i].x * GSKILL_DPI_UNIT;
@@ -1108,7 +1108,7 @@ gskill_update_resolutions(struct ratbag_profile *profile)
 	 * lost on exit
 	 */
 	for (i = 0; i < GSKILL_NUM_DPI; i++) {
-		_cleanup_resolution_ struct ratbag_resolution *res;
+		_cleanup_resolution_ struct ratbag_resolution *res = NULL;
 		struct gskill_raw_dpi_level *level =
 			&report->dpi_levels[report->dpi_num];
 
