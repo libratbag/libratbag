@@ -195,7 +195,7 @@ lur_receiver_enumerate(struct lur_receiver *lur,
 		dev->present = false;
 
 	for (i = 0; i < MAX_DEVICES; i++) {
-		_cleanup_hidpp10_device_destroy_ struct hidpp10_device *d;
+		_cleanup_hidpp10_device_destroy_ struct hidpp10_device *d = NULL;
 		size_t name_size = 64;
 		char name[name_size];
 		uint8_t interval, type;
