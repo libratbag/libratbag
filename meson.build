@@ -244,6 +244,7 @@ man_lur_command = configure_file (
 data_files = files(
 	'data/devices/etekcity-scroll-alpha.device',
 	'data/devices/gskill-MX-780.device',
+	'data/devices/logitech-g102-g203.device',
 	'data/devices/logitech-g300.device',
 	'data/devices/logitech-g303.device',
 	'data/devices/logitech-g403.device',
@@ -290,6 +291,7 @@ test('data-parse-test', data_parse_test,
 
 gnome_svg_files = files(
 	'data/gnome/fallback.svg',
+	'data/gnome/logitech-g102-g203.svg',
 	'data/gnome/logitech-g300.svg',
 	'data/gnome/logitech-g303.svg',
 	'data/gnome/logitech-g403.svg',
