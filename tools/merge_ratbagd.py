@@ -30,7 +30,7 @@ import sys
 
 
 def print_ratbagctl(ratbagctl_path, ratbagd_path, version_string):
-    with open(ratbagctl_path, 'r') as ratbagctl, open(ratbagd_path, 'r') as ratbagd:
+    with open(ratbagctl_path, 'r', encoding='utf-8') as ratbagctl, open(ratbagd_path, 'r', encoding='utf-8') as ratbagd:
         for l in ratbagctl.readlines():
             if l.startswith("from ratbagd import "):
                 headers = True
@@ -53,7 +53,7 @@ def main(argv):
     parser.add_argument("--version", action="store", default="git_master")
     ns = parser.parse_args(sys.argv[1:])
     if ns.output:
-        ns.output_file = open(ns.output, 'w')
+        ns.output_file = open(ns.output, 'w', encoding='utf-8')
         st = os.stat(ns.output)
         os.chmod(ns.output, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         sys.stdout = ns.output_file
