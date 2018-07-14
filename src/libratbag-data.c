@@ -47,6 +47,7 @@ enum driver {
 	ETEKCITY,
 	GSKILL,
 	LOGITECH_G300,
+	LOGITECH_G600,
 	STEELSERIES,
 };
 
@@ -243,6 +244,7 @@ static const struct driver_map {
 	{ ETEKCITY, "etekcity", NULL},
 	{ GSKILL, "gskill", NULL },
 	{ LOGITECH_G300, "logitech_g300", NULL},
+	{ LOGITECH_G600, "logitech_g600", NULL},
 	{ STEELSERIES, "steelseries", init_data_steelseries },
 };
 
