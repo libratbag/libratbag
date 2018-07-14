@@ -1,0 +1,5 @@
+# WARNING: this file was automatically converted and has not yet been vetted
+[Device]
+Name=Logitech G600
+DeviceMatch=usb:046d:c24a
+Driver=logitech_g600
