@@ -307,7 +307,7 @@ ratbagd_resolution_get_report_rates(sd_bus *bus,
 {
 	struct ratbagd_resolution *resolution = userdata;
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	unsigned int rates[5];
+	unsigned int rates[8];
 	unsigned int nrates = ARRAY_LENGTH(rates);
 	int r;
 

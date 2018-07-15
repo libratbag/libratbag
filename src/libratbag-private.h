@@ -262,7 +262,7 @@ struct ratbag_resolution {
 	unsigned int dpi_y;	/**< y resolution in dpi */
 	unsigned int hz;	/**< report rate in Hz */
 
-	unsigned int rates[5];
+	unsigned int rates[8];
 	size_t nrates;
 
 	bool is_active;
