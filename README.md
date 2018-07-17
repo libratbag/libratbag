@@ -27,9 +27,9 @@ And to build or re-build after code-changes, run:
 Note: `builddir` is the build output directory and can be changed to any
 other directory name. To set configure-time options, use e.g.
 
-    mesonconf builddir -Denable-documentation=false
+    meson configure builddir -Denable-documentation=false
 
-Run `mesonconf builddir` to list the options.
+Run `meson configure builddir` to list the options.
 
 Running ratbagd as DBus-activated systemd service
 -------------------------------------------------
