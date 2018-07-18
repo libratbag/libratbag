@@ -6,7 +6,7 @@ way to access the various features exposed by these mice and abstracts away
 hardware-specific and kernel-specific quirks.
 
 libratbag exports the devices over a DBus daemon called **ratbagd**, see the
-[ratbagd DBus Interface description](DBusInterface.md).
+[ratbagd DBus Interface description](https://libratbag.github.io/).
 
 Compiling libratbag
 -------------------
