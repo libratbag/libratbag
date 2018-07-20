@@ -315,7 +315,7 @@ test_svg_files = find_program('data/gnome/check-svg.py')
 test('check-svg', test_svg_files, args : gnome_svg_files)
 
 #### tests ####
-enable_tests = get_option('enable-tests')
+enable_tests = get_option('tests')
 if enable_tests
 	dep_check = dependency('check', version: '>= 0.9.10')
 
