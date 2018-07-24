@@ -265,11 +265,28 @@ logitech_g600_get_active_profile_and_resolution(struct ratbag_device *device)
 }
 
 static int
+logitech_g600_set_current_resolution(struct ratbag_device *device, unsigned int index)
+{
+	uint8_t buf[] = {LOGITECH_G600_REPORT_ID_SET_ACTIVE, 0x40 | (index << 1), 0x00, 0x00};
+	int ret;
+
+	log_debug(device->ratbag, "Setting active resolution to %d\n", index);
+
+	if (index >= LOGITECH_G600_NUM_DPI)
+		return -EINVAL;
+
+	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
+			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+
+	return ret == sizeof(buf) ? 0 : ret;
+}
+
+static int
 logitech_g600_set_active_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct ratbag_profile *profile;
 	uint8_t buf[] = {LOGITECH_G600_REPORT_ID_SET_ACTIVE, 0x80 | (index << 4), 0x00, 0x00};
-	int ret;
+	int ret, active_resolution = 0;
 
 	if (index >= LOGITECH_G600_NUM_PROFILES)
 		return -EINVAL;
@@ -289,25 +306,17 @@ logitech_g600_set_active_profile(struct ratbag_device *device, unsigned int inde
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			resolution->is_active = resolution->is_default;
+
+			if (resolution->is_active)
+				active_resolution = resolution->index;
 		}
 	}
 
+	ret = logitech_g600_set_current_resolution(device, active_resolution);
+	if (ret < 0)
+		return ret;
+
 	return 0;
-}
-
-static int
-logitech_g600_set_current_resolution(struct ratbag_device *device, unsigned int index)
-{
-	uint8_t buf[] = {LOGITECH_G600_REPORT_ID_SET_ACTIVE, 0x40 | (index << 1), 0x00, 0x00};
-	int ret;
-
-	if (index >= LOGITECH_G600_NUM_DPI)
-		return -EINVAL;
-
-	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
-			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
-
-	return ret == sizeof(buf) ? 0 : ret;
 }
 
 static void
@@ -435,7 +444,7 @@ logitech_g600_read_profile(struct ratbag_profile *profile)
 		resolution->dpi_y = report->dpi[resolution->index] * 50;
 		resolution->hz = 1000 / (report->frequency + 1);
 		resolution->is_default = report->dpi_default - 1U == resolution->index;
-		resolution->is_active = false; //is set in a separate call
+		resolution->is_active = resolution->is_default;
 
 		ratbag_resolution_set_dpi_list_from_range(resolution,
 							  LOGITECH_G600_DPI_MIN,
@@ -525,7 +534,7 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 	struct ratbag_led *led;
 
 	uint8_t *buf;
-	int rc;
+	int rc, active_resolution = 0;
 
 	pdata = &drv_data->profile_data[profile->index];
 	report = &pdata->report;
@@ -537,7 +546,7 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 			report->dpi_default = resolution->index + 1;
 
 		if (profile->is_active && resolution->is_active)
-			logitech_g600_set_current_resolution(device, resolution->index);
+			active_resolution = resolution->index;
 
 		/* The same hz is used for all resolutions */
 		if (resolution->index == 0)
@@ -613,6 +622,12 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 		log_error(device->ratbag,
 			  "Error while writing profile: %d\n", rc);
 		return rc;
+	}
+
+	if (profile->is_active) {
+		rc = logitech_g600_set_current_resolution(device, active_resolution);
+		if (rc < 0)
+			return rc;
 	}
 
 	return 0;
