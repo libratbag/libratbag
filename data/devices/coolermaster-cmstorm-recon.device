@@ -1,0 +1,9 @@
+[Device]
+Name=CoolerMaster CMStorm Recon
+DeviceMatch=usb:2516:0006
+Driver=cmstorm
+Svg=steelseries-senseiraw.svg
+LedTypes=wheel;dpi;logo
+
+[Driver/cmstorm]
+DpiList=800;1600;3200;4000

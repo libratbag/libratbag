@@ -134,6 +134,7 @@ src_libratbag = [
 	'src/driver-roccat.c',
 	'src/driver-gskill.c',
 	'src/driver-steelseries.c',
+        'src/driver-cmstorm.c',
 	'src/driver-test.c',
 	'src/libratbag.c',
 	'src/libratbag.h',

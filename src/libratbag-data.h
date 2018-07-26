@@ -116,3 +116,6 @@ ratbag_device_data_steelseries_get_mono_led(const struct ratbag_device_data *dat
 
 int
 ratbag_device_data_steelseries_get_short_button(const struct ratbag_device_data *data);
+
+struct dpi_list *
+ratbag_device_data_cmstorm_get_dpi_list(const struct ratbag_device_data *data);

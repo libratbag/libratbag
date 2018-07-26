@@ -48,6 +48,7 @@ enum driver {
 	GSKILL,
 	LOGITECH_G300,
 	STEELSERIES,
+	CMSTORM
 };
 
 struct data_hidpp20 {
@@ -75,6 +76,10 @@ struct data_steelseries {
 	int short_button;
 };
 
+struct data_cmstorm {
+	struct dpi_list *dpi_list;
+};
+
 struct ratbag_device_data {
 	int refcount;
 	char *name;
@@ -87,6 +92,7 @@ struct ratbag_device_data {
 		struct data_hidpp20 hidpp20;
 		struct data_hidpp10 hidpp10;
 		struct data_steelseries steelseries;
+		struct data_cmstorm cmstorm;
 	};
 
 	enum ratbag_led_type led_types[20];
@@ -159,6 +165,21 @@ init_data_hidpp20(struct ratbag *ratbag,
 		data->hidpp20.index = num;
 	if (error)
 		g_error_free(error);
+}
+
+static void
+init_data_cmstorm(struct ratbag *ratbag,
+		  GKeyFile *keyfile,
+		  struct ratbag_device_data *data)
+{
+	const char *group = "Driver/cmstorm";
+	_cleanup_(freep) char *str = NULL;
+
+	data->cmstorm.dpi_list = NULL;
+
+	str = g_key_file_get_string(keyfile, group, "DpiList", NULL);
+	if (str)
+		data->cmstorm.dpi_list = dpi_list_from_string(str);
 }
 
 static void
@@ -244,6 +265,7 @@ static const struct driver_map {
 	{ GSKILL, "gskill", NULL },
 	{ LOGITECH_G300, "logitech_g300", NULL},
 	{ STEELSERIES, "steelseries", init_data_steelseries },
+	{ CMSTORM, "cmstorm", init_data_cmstorm },
 };
 
 const char *
@@ -632,4 +654,13 @@ ratbag_device_data_steelseries_get_short_button(const struct ratbag_device_data 
 	assert(data->drivertype == STEELSERIES);
 
 	return data->steelseries.short_button;
+}
+
+/* CMStorm */
+struct dpi_list *
+ratbag_device_data_cmstorm_get_dpi_list(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == CMSTORM);
+
+	return data->cmstorm.dpi_list;
 }
