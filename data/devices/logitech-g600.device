@@ -3,3 +3,4 @@
 Name=Logitech G600
 DeviceMatch=usb:046d:c24a
 Driver=logitech_g600
+Svg=logitech-g600.svg
