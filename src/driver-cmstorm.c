@@ -369,7 +369,7 @@ read_profile(struct ratbag_device *device, int profile, struct cmstorm_profile *
 
 	//load the macros if there are any
 	if (out->macro_length > 0) {
-		out->macros = (struct cmstorm_macro*) zalloc(out->macro_length);
+		out->macros = (struct cmstorm_macro*) zalloc(out->macro_length * sizeof(struct cmstorm_macro));
 
 		read_chunks(device, profile, 0x100, out->macro_length, (uint8_t*) out->macros);
 
@@ -391,7 +391,7 @@ write_profile(struct ratbag_device *device, int profile, struct cmstorm_profile 
 	}
 
 	if (remaining_length > 0) {
-		for (uint16_t i = 0; i < out->macro_length / sizeof(struct cmstorm_macro); i++) {
+		for (uint16_t i = 0; i < remaining_length / sizeof(struct cmstorm_macro); i++) {
 			out->macros[i].delay = htobe16(out->macros[i].delay);
 		}
 	}
@@ -400,7 +400,7 @@ write_profile(struct ratbag_device *device, int profile, struct cmstorm_profile 
 	if (ret < 0)
 		return ret;
 
-	//load the macros if there are any
+	//write the macros if there are any
 	if (remaining_length > 0) {
 		write_chunks(device, profile, 0x100, remaining_length, (uint8_t*) out->macros);
 	}
@@ -653,10 +653,10 @@ cmstorm_write_profile(struct ratbag_profile *profile)
 		else if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
 			unsigned int keycode, modifiers;
 			int ret = ratbag_action_keycode_from_macro(&button->action, &keycode, &modifiers);
+			log_debug(profile->device->ratbag,
+				  "ret %d modifiers %d\n", ret, modifiers);
 
-			//TODO check modifiers is empty
-
-			if (ret > 0) {
+			if (ret > 0 && modifiers == 0) {
 				int keyboard_usage = ratbag_hidraw_get_keyboard_usage_from_keycode(profile->device, keycode);
 
 				if (keyboard_usage != 0) {
@@ -669,48 +669,53 @@ cmstorm_write_profile(struct ratbag_profile *profile)
 				}
 			}
 			else {
-				int events = ratbag_button_macro_get_num_events(ratbag_button_get_macro(button));
-				if (events > 0) {
-					cprofile.buttons[button->index].type = CMSTORM_BUTTON_TYPE_MACRO;
-					cprofile.buttons[button->index].function = (macroIdx+1) * 7;
-					for (int i = 0; i < events; i++) {
-						struct ratbag_macro_event *event = &button->action.macro->events[i];
+				int i = 0;
+				cprofile.buttons[button->index].type = CMSTORM_BUTTON_TYPE_MACRO;
+				cprofile.buttons[button->index].function = 0x100 + ((macroIdx+1) * 7);
 
-						//skip over initial waits, we don't support them
-						if (macroIdx == 0 && event->type == RATBAG_MACRO_EVENT_WAIT) {
-							continue;
-						}
+				log_debug(profile->device->ratbag,
+					  "button %d changed, %x\n", button->index, cprofile.buttons[button->index].function);
 
-						switch (event->type) {
-							case RATBAG_MACRO_EVENT_KEY_PRESSED:
-							case RATBAG_MACRO_EVENT_KEY_RELEASED:
-								macroIdx++;
-								macros[macroIdx].type = CMSTORM_MACRO_TYPE_KEYBOARD;
-								macros[macroIdx].unknown = 0;
-								macros[macroIdx].button = ratbag_hidraw_get_keyboard_usage_from_keycode(profile->device, event->event.key);
-								macros[macroIdx].pressed_released = (event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ? 0 : 1);
-								macros[macroIdx].unknown2 = 0;
-								macros[macroIdx].delay = 0; //we set the delay as part of the wait event
-								break;
-							case RATBAG_MACRO_EVENT_WAIT:
-								macros[macroIdx].delay += event->event.timeout;
-								break;
-							case RATBAG_MACRO_EVENT_INVALID:
-							case RATBAG_MACRO_EVENT_NONE:
-								macros[macroIdx].type = 0x04; //TODO does this actually do nothing?
-								break;
-						}
+				while (macroIdx < 512) {
+					struct ratbag_macro_event *event = &button->action.macro->events[i++];
+
+					log_debug(profile->device,
+						  "macroIdx %d, i %d, type %d\n", macroIdx, i, event->type);
+
+					//skip over initial waits, we don't support them
+					if (macroIdx == 0 && event->type == RATBAG_MACRO_EVENT_WAIT) {
+						continue;
 					}
-					//flip the order of the bytes
-					macroIdx++;
-					//add the end event
-					macros[macroIdx].type = CMSTORM_MACRO_TYPE_END;
-					macros[macroIdx].unknown = 0;
-					macros[macroIdx].button = 0;
-					macros[macroIdx].pressed_released = 0;
-					macros[macroIdx].unknown2 = 0;
-					macros[macroIdx].delay = 0;
+
+					switch (event->type) {
+						case RATBAG_MACRO_EVENT_KEY_PRESSED:
+						case RATBAG_MACRO_EVENT_KEY_RELEASED:
+							macroIdx++;
+							macros[macroIdx].type = CMSTORM_MACRO_TYPE_KEYBOARD;
+							macros[macroIdx].unknown = 0;
+							macros[macroIdx].button = ratbag_hidraw_get_keyboard_usage_from_keycode(profile->device, event->event.key);
+							macros[macroIdx].pressed_released = (event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ? 0 : 1);
+							macros[macroIdx].unknown2 = 0;
+							macros[macroIdx].delay = 0; //we set the delay as part of the wait event
+							break;
+						case RATBAG_MACRO_EVENT_WAIT:
+							macros[macroIdx].delay += event->event.timeout;
+							break;
+						case RATBAG_MACRO_EVENT_INVALID:
+						case RATBAG_MACRO_EVENT_NONE:
+							goto out;
+					}
 				}
+out:
+				//flip the order of the bytes
+				macroIdx++;
+				//add the end event
+				macros[macroIdx].type = CMSTORM_MACRO_TYPE_END;
+				macros[macroIdx].unknown = 0;
+				macros[macroIdx].button = 0;
+				macros[macroIdx].pressed_released = 0;
+				macros[macroIdx].unknown2 = 0;
+				macros[macroIdx].delay = 0;
 			}
 		}
 	}
