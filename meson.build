@@ -399,11 +399,13 @@ deps_ratbagd = [
 	dep_unistring,
 ]
 
-executable('ratbagd',
-	   src_ratbagd,
-	   dependencies : deps_ratbagd,
-	   include_directories : include_directories('src'),
-	   install : true,
+executable(
+  'ratbagd',
+  src_ratbagd,
+  dependencies : deps_ratbagd,
+  include_directories : include_directories('src'),
+  install : true,
+  install_dir : get_option('sbindir'),
 )
 
 install_man('ratbagd/ratbagd.8')
@@ -462,14 +464,19 @@ if enable_systemd
 	endif
 endif
 
-config_bindir = configuration_data()
-config_bindir.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
+config_sbindir = configuration_data()
+config_sbindir.set(
+  'sbindir',
+  join_paths(get_option('prefix'), get_option('sbindir')),
+)
 
 if enable_systemd
-	configure_file(input : 'ratbagd/ratbagd.service.in',
-			output : 'ratbagd.service',
-			configuration : config_bindir,
-			install_dir : unitdir)
+  configure_file(
+    input : 'ratbagd/ratbagd.service.in',
+    output : 'ratbagd.service',
+    configuration : config_sbindir,
+    install_dir : unitdir,
+  )
 endif
 
 dbusdir = get_option('dbus-root-dir')
@@ -477,10 +484,12 @@ if dbusdir == ''
 	dbusdir = join_paths(get_option('prefix'), get_option('datadir'), 'dbus-1')
 endif
 
-configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
-	       output : 'org.freedesktop.ratbag1.service',
-	       configuration : config_bindir,
-	       install_dir : join_paths(dbusdir, 'system-services'))
+configure_file(
+  input : 'dbus/org.freedesktop.ratbag1.service.in',
+  output : 'org.freedesktop.ratbag1.service',
+  configuration : config_sbindir,
+  install_dir : join_paths(dbusdir, 'system-services')
+)
 
 dbusgroup = get_option('dbus-group')
 if dbusgroup == ''
