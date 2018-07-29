@@ -407,7 +407,13 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 	if (rc)
 		return;
 
+	ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITABLE_NAME);
+
 	profile->is_enabled = p.enabled;
+
+	if (profile->name)
+		free(profile->name);
+	profile->name = strdup_safe((char*)p.name);
 
 	rc = hidpp10_get_current_profile(hidpp10, &idx);
 	if (rc == 0 && (unsigned int)idx == profile->index)
@@ -543,6 +549,7 @@ hidpp10drv_commit(struct ratbag_device *device)
 			return rc;
 
 		p.enabled = profile->is_enabled;
+		strncpy_safe((char*)p.name, profile->name, 24);
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			p.dpi_modes[resolution->index].xres = resolution->dpi_x;
