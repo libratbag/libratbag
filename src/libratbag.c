@@ -1682,6 +1682,7 @@ ratbag_profile_set_name(struct ratbag_profile *profile,
 		free(profile->name);
 
 	profile->name = name_copy;
+	profile->dirty = true;
 
 	return 0;
 }
