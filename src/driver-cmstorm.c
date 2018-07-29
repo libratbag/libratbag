@@ -422,7 +422,6 @@ cmstorm_probe(struct ratbag_device *device)
 	struct ratbag_led *led;
 	int rc;
 	_cleanup_(dpi_list_freep) struct dpi_list *dpilist = NULL;
-	_cleanup_(freep) struct dpi_range *dpirange = NULL;
 	unsigned int selected_profile;
 	struct cmstorm_profile cprofile;
 
@@ -653,8 +652,6 @@ cmstorm_write_profile(struct ratbag_profile *profile)
 		else if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
 			unsigned int keycode, modifiers;
 			int ret = ratbag_action_keycode_from_macro(&button->action, &keycode, &modifiers);
-			log_debug(profile->device->ratbag,
-				  "ret %d modifiers %d\n", ret, modifiers);
 
 			if (ret > 0 && modifiers == 0) {
 				int keyboard_usage = ratbag_hidraw_get_keyboard_usage_from_keycode(profile->device, keycode);
@@ -673,14 +670,8 @@ cmstorm_write_profile(struct ratbag_profile *profile)
 				cprofile.buttons[button->index].type = CMSTORM_BUTTON_TYPE_MACRO;
 				cprofile.buttons[button->index].function = 0x100 + ((macroIdx+1) * 7);
 
-				log_debug(profile->device->ratbag,
-					  "button %d changed, %x\n", button->index, cprofile.buttons[button->index].function);
-
 				while (macroIdx < 512) {
 					struct ratbag_macro_event *event = &button->action.macro->events[i++];
-
-					log_debug(profile->device,
-						  "macroIdx %d, i %d, type %d\n", macroIdx, i, event->type);
 
 					//skip over initial waits, we don't support them
 					if (macroIdx == 0 && event->type == RATBAG_MACRO_EVENT_WAIT) {
