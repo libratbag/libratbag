@@ -413,14 +413,14 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 	int r;
 	size_t i;
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
+	r = sd_bus_message_open_container(reply, 'a', "i");
 	if (r < 0)
 		return r;
 
 	for (i = 0; i < ELEMENTSOF(caps); i++) {
 		cap = caps[i];
 		if (ratbag_profile_has_capability(lib_profile, cap)) {
-			r = sd_bus_message_append(reply, "u", cap);
+			r = sd_bus_message_append(reply, "i", cap);
 			if (r < 0)
 				return r;
 		}
@@ -440,7 +440,7 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 				 ratbagd_profile_set_enabled, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_profile_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "ai", ratbagd_profile_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),

@@ -264,14 +264,14 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 	int r;
 	size_t i;
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
+	r = sd_bus_message_open_container(reply, 'a', "i");
 	if (r < 0)
 		return r;
 
 	for (i = 0; i < ELEMENTSOF(caps); i++) {
 		cap = caps[i];
 		if (ratbag_device_has_capability(lib_device, cap)) {
-			r = sd_bus_message_append(reply, "u", cap);
+			r = sd_bus_message_append(reply, "i", cap);
 			if (r < 0)
 				return r;
 		}
@@ -283,7 +283,7 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, sysname), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "ai", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),

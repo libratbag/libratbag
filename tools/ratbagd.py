@@ -763,7 +763,7 @@ class RatbagdButton(_RatbagdDBus):
         @param macro A RatbagdMacro object representing the macro to apply to
                      the button, as RatbagdMacro.
         """
-        self._set_dbus_property("Macro", "a(uu)", macro.keys)
+        self._set_dbus_property("Macro", "a(iu)", macro.keys)
 
     @GObject.Property
     def special(self):
@@ -776,7 +776,7 @@ class RatbagdButton(_RatbagdDBus):
 
         @param special The special entry, as one of RatbagdButton.ACTION_SPECIAL_*
         """
-        self._set_dbus_property("SpecialMapping", "u", special)
+        self._set_dbus_property("SpecialMapping", "i", special)
 
     @GObject.Property
     def action_type(self):
@@ -941,7 +941,7 @@ class RatbagdLed(_RatbagdDBus):
         @param mode The new mode, as one of MODE_OFF, MODE_ON, MODE_CYCLE and
                     MODE_BREATHING.
         """
-        self._set_dbus_property("Mode", "u", mode)
+        self._set_dbus_property("Mode", "i", mode)
 
     @GObject.Property
     def modes(self):

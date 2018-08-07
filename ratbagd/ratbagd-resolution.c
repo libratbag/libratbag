@@ -133,20 +133,20 @@ ratbagd_resolution_get_capabilities(sd_bus *bus,
 	enum ratbag_resolution_capability cap;
 	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
+	r = sd_bus_message_open_container(reply, 'a', "i");
 	if (r < 0)
 		return r;
 
 	cap = RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE;
 	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
+		r = sd_bus_message_append(reply, "i", cap);
 		if (r < 0)
 			return r;
 	}
 
 	cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
 	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
+		r = sd_bus_message_append(reply, "i", cap);
 		if (r < 0)
 			return r;
 	}
@@ -369,7 +369,7 @@ ratbagd_resolution_set_report_rate(sd_bus *bus,
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "ai", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_resolution_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("IsDefault", "b", ratbagd_resolution_is_default, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("Resolution", "(uu)",
