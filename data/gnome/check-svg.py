@@ -49,7 +49,7 @@ def check_layers(root):
 def check_elements(root, prefix, required=0):
     """
     Checks for elements of the form 'prefixN' in the root tag. Any elements
-    found must be consecutive or an error is printed, i.e. if there's a
+    found must be consecutive or an warning is printed, i.e. if there's a
     'button8' there has to be a 'button7'.
 
     If required is nonzero, an error is logged for any missing element with
@@ -70,7 +70,7 @@ def check_elements(root, prefix, required=0):
             highest = idx
             previous = '{}{}'.format(prefix, idx - 1)
             if idx > 0 and previous not in element_ids:
-                logger.error("Non-consecutive {}: {}".format(prefix, e))
+                logger.warning("Non-consecutive {}: {}".format(prefix, e))
 
             leader = '{}{}-leader'.format(prefix, idx)
             if leader not in element_ids:
