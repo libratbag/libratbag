@@ -411,15 +411,15 @@ class RatbagdProfile(_RatbagdDBus):
 
         # FIXME: if we start adding and removing objects from any of these
         # lists, things will break!
-        result = self._get_dbus_property("Resolutions")
+        result = self._get_dbus_property("Resolutions") or []
         self._resolutions = [RatbagdResolution(objpath) for objpath in result]
         self._subscribe_dirty(self._resolutions)
 
-        result = self._get_dbus_property("Buttons")
+        result = self._get_dbus_property("Buttons") or []
         self._buttons = [RatbagdButton(objpath) for objpath in result]
         self._subscribe_dirty(self._buttons)
 
-        result = self._get_dbus_property("Leds")
+        result = self._get_dbus_property("Leds") or []
         self._leds = [RatbagdLed(objpath) for objpath in result]
         self._subscribe_dirty(self._leds)
 
