@@ -27,3 +27,9 @@ option('dbus-group',
 	type: 'string',
 	value : '',
 	description : 'The UNIX group that is granted access to the ratbagd D-Bus service. By default all users may access it.')
+
+option('systemd',
+  type : 'boolean',
+  value : true,
+  description : 'Build systemd unit files'
+)
