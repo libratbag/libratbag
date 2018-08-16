@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <liblur.h>
 #include <libratbag-util.h>

@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <glib.h>
+#include <limits.h>
 
 #include "libratbag.h"
 #include "libratbag-private.h"
