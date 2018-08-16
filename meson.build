@@ -50,7 +50,7 @@ pkgconfig = import('pkgconfig')
 dep_udev = dependency('libudev')
 dep_libevdev = dependency('libevdev')
 dep_libsystemd = dependency('libsystemd', version : '>=227')
-dep_systemd = dependency('systemd')
+dep_systemd = dependency('systemd', required: false)
 dep_glib = dependency('glib-2.0')
 dep_lm = cc.find_library('m')
 
@@ -437,35 +437,39 @@ configure_file(input : 'dbus/org.freedesktop.ratbag_devel1.conf.in',
 	       configuration : config_ratbagd_devel)
 
 #### unit file ####
-unitdir = get_option('systemd-unit-dir')
-if unitdir == ''
-	libdir = get_option('libdir')
-	default_unitdir = dep_systemd.get_pkgconfig_variable('systemdsystemunitdir')
-	# Fedora uses lib64 but systemd is in lib. Hack around this so it
-	# works out of the box.
-	intended_unitdir = join_paths(get_option('prefix'), get_option('libdir'), 'systemd')
-	if get_option('prefix') == '/usr' and intended_unitdir != default_unitdir
-		message('''
-		systemd unitdir libdir mismatch detected, changing unitdir to
-			@0@
-		or specify with
-			mesonconf -Dsystemd-unit-dir=<path>
+if dep_systemd.found()
+	unitdir = get_option('systemd-unit-dir')
+	if unitdir == ''
+		libdir = get_option('libdir')
+		default_unitdir = dep_systemd.get_pkgconfig_variable('systemdsystemunitdir')
+		# Fedora uses lib64 but systemd is in lib. Hack around this so it
+		# works out of the box.
+		intended_unitdir = join_paths(get_option('prefix'), get_option('libdir'), 'systemd')
+		if get_option('prefix') == '/usr' and intended_unitdir != default_unitdir
+			message('''
+			systemd unitdir libdir mismatch detected, changing unitdir to
+				@0@
+			or specify with
+				mesonconf -Dsystemd-unit-dir=<path>
 
-		See https://github.com/libratbag/libratbag/issues/188
-		'''.format(default_unitdir))
-		unitdir = default_unitdir
-	else
-		unitdir = intended_unitdir
+			See https://github.com/libratbag/libratbag/issues/188
+			'''.format(default_unitdir))
+			unitdir = default_unitdir
+		else
+			unitdir = intended_unitdir
+		endif
 	endif
 endif
 
 config_bindir = configuration_data()
 config_bindir.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
 
-configure_file(input : 'ratbagd/ratbagd.service.in',
-	       output : 'ratbagd.service',
-	       configuration : config_bindir,
-	       install_dir : unitdir)
+if dep_systemd.found()
+	configure_file(input : 'ratbagd/ratbagd.service.in',
+		      output : 'ratbagd.service',
+		      configuration : config_bindir,
+		      install_dir : unitdir)
+endif
 
 dbusdir = get_option('dbus-root-dir')
 if dbusdir == ''
