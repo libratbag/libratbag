@@ -52,14 +52,14 @@ static int ratbagd_led_get_modes(sd_bus *bus,
 	enum ratbag_led_mode mode = 0;
 	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
+	r = sd_bus_message_open_container(reply, 'a', "i");
 	if (r < 0)
 		return r;
 
 
 	while (mode <= RATBAG_LED_BREATHING) {
 		if (ratbag_led_has_mode(led->lib_led, mode))
-			sd_bus_message_append(reply, "u", mode);
+			sd_bus_message_append(reply, "i", mode);
 		mode++;
 	}
 
@@ -78,7 +78,7 @@ static int ratbagd_led_get_mode(sd_bus *bus,
 	enum ratbag_led_mode mode;
 
 	mode = ratbag_led_get_mode(led->lib_led);
-	return sd_bus_message_append(reply, "u", mode);
+	return sd_bus_message_append(reply, "i", mode);
 }
 
 static int ratbagd_led_set_mode(sd_bus *bus,
@@ -93,7 +93,7 @@ static int ratbagd_led_set_mode(sd_bus *bus,
 	enum ratbag_led_mode mode;
 	int r;
 
-	r = sd_bus_message_read(m, "u", &mode);
+	r = sd_bus_message_read(m, "i", &mode);
 	if (r < 0)
 		return r;
 
@@ -124,7 +124,7 @@ static int ratbagd_led_get_type(sd_bus *bus,
 
 	type = ratbag_led_get_type(led->lib_led);
 
-	return sd_bus_message_append(reply, "u", type);
+	return sd_bus_message_append(reply, "i", type);
 }
 
 static int ratbagd_led_get_color(sd_bus *bus,
@@ -278,16 +278,16 @@ static int ratbagd_led_set_brightness(sd_bus *bus,
 const sd_bus_vtable ratbagd_led_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_led, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Modes", "au", ratbagd_led_get_modes, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_WRITABLE_PROPERTY("Mode", "u",
+	SD_BUS_PROPERTY("Modes", "ai", ratbagd_led_get_modes, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_WRITABLE_PROPERTY("Mode", "i",
 				 ratbagd_led_get_mode,
 				 ratbagd_led_set_mode, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("Type", "u", ratbagd_led_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Type", "i", ratbagd_led_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("Color", "(uuu)",
 				 ratbagd_led_get_color, ratbagd_led_set_color, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("ColorDepth", "u", NULL, offsetof(struct ratbagd_led, colordepth), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("ColorDepth", "i", NULL, offsetof(struct ratbagd_led, colordepth), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("EffectDuration", "u",
 				 ratbagd_led_get_effect_duration, ratbagd_led_set_effect_duration, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),

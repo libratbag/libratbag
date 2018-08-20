@@ -129,7 +129,7 @@ static int ratbagd_button_get_special(sd_bus *bus,
 
 	special = ratbag_button_get_special(button->lib_button);
 
-	return sd_bus_message_append(reply, "u", special);
+	return sd_bus_message_append(reply, "i", special);
 }
 
 static int ratbagd_button_set_special(sd_bus *bus,
@@ -144,7 +144,7 @@ static int ratbagd_button_set_special(sd_bus *bus,
 	enum ratbag_button_action_special special;
 	int r;
 
-	r = sd_bus_message_read(m, "u", &special);
+	r = sd_bus_message_read(m, "i", &special);
 	if (r < 0)
 		return r;
 
@@ -183,7 +183,7 @@ static int ratbagd_button_get_macro(sd_bus *bus,
 	int r;
 	unsigned int idx;
 
-	r = sd_bus_message_open_container(reply, 'a', "(uu)");
+	r = sd_bus_message_open_container(reply, 'a', "(iu)");
 	if (r < 0)
 		return r;
 
@@ -213,7 +213,7 @@ static int ratbagd_button_get_macro(sd_bus *bus,
 			abort();
 		}
 
-		r = sd_bus_message_append(reply, "(uu)", type, value);
+		r = sd_bus_message_append(reply, "(iu)", type, value);
 		if (r < 0)
 			return r;
 	}
@@ -235,12 +235,12 @@ static int ratbagd_button_set_macro(sd_bus *bus,
 	int r, idx = 0;
 	_cleanup_(ratbag_button_macro_unrefp) struct ratbag_button_macro *macro = NULL;
 
-	r = sd_bus_message_enter_container(m, 'a', "(uu)");
+	r = sd_bus_message_enter_container(m, 'a', "(iu)");
 	if (r < 0)
 		return r;
 
 	macro = ratbag_button_macro_new("macro");
-	while ((r = sd_bus_message_read(m, "(uu)", &type, &value)) > 0) {
+	while ((r = sd_bus_message_read(m, "(iu)", &type, &value)) > 0) {
 		r = ratbag_button_macro_set_event(macro, idx++, type, value);
 		if (r < 0) {
 			r = ratbagd_device_resync(button->device, bus);
@@ -295,7 +295,7 @@ static int ratbagd_button_get_action_type(sd_bus *bus,
 	if (type == RATBAG_BUTTON_ACTION_TYPE_KEY)
 		type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 
-	return sd_bus_message_append(reply, "u", type);
+	return sd_bus_message_append(reply, "i", type);
 }
 
 static int ratbagd_button_get_action_types(sd_bus *bus,
@@ -316,7 +316,7 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 	enum ratbag_button_action_type *t;
 
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
+	r = sd_bus_message_open_container(reply, 'a', "i");
 	if (r < 0)
 		return r;
 
@@ -324,7 +324,7 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 		if (!ratbag_button_has_action_type(button->lib_button, *t))
 			continue;
 
-		r = sd_bus_message_append(reply, "u", *t);
+		r = sd_bus_message_append(reply, "i", *t);
 		if (r < 0)
 			return r;
 	}
@@ -362,16 +362,16 @@ const sd_bus_vtable ratbagd_button_vtable[] = {
 				 ratbagd_button_get_button,
 				 ratbagd_button_set_button,
 				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_WRITABLE_PROPERTY("SpecialMapping", "u",
+	SD_BUS_WRITABLE_PROPERTY("SpecialMapping", "i",
 				 ratbagd_button_get_special,
 				 ratbagd_button_set_special,
 				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_WRITABLE_PROPERTY("Macro", "a(uu)",
+	SD_BUS_WRITABLE_PROPERTY("Macro", "a(iu)",
 				 ratbagd_button_get_macro,
 				 ratbagd_button_set_macro,
 				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("ActionType", "u", ratbagd_button_get_action_type, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("ActionTypes", "au", ratbagd_button_get_action_types, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("ActionType", "i", ratbagd_button_get_action_type, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("ActionTypes", "ai", ratbagd_button_get_action_types, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("Disable", "", "u", ratbagd_button_disable, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
