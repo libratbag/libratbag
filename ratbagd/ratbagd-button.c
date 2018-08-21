@@ -58,6 +58,8 @@ static int ratbagd_button_get_type(sd_bus *bus,
 
 	t = ratbag_button_get_type(button->lib_button);
 
+	verify_unsigned_int(t);
+
 	return sd_bus_message_append(reply, "u", t);
 }
 
@@ -73,6 +75,8 @@ static int ratbagd_button_get_button(sd_bus *bus,
 	unsigned int b;
 
 	b = ratbag_button_get_button(button->lib_button);
+
+	verify_unsigned_int(b);
 
 	return sd_bus_message_append(reply, "u", b);
 }
@@ -133,6 +137,8 @@ static int ratbagd_button_get_special(sd_bus *bus,
 			  ratbagd_device_get_sysname(button->device));
 		special = RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN;
 	}
+
+	verify_unsigned_int(special);
 
 	return sd_bus_message_append(reply, "u", special);
 }
@@ -218,6 +224,9 @@ static int ratbagd_button_get_macro(sd_bus *bus,
 			abort();
 		}
 
+		verify_unsigned_int(type);
+		verify_unsigned_int(value);
+
 		r = sd_bus_message_append(reply, "(uu)", type, value);
 		if (r < 0)
 			return r;
@@ -300,6 +309,8 @@ static int ratbagd_button_get_action_type(sd_bus *bus,
 	if (type == RATBAG_BUTTON_ACTION_TYPE_KEY)
 		type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 
+	verify_unsigned_int(type);
+
 	return sd_bus_message_append(reply, "u", type);
 }
 
@@ -329,6 +340,7 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 		if (!ratbag_button_has_action_type(button->lib_button, *t))
 			continue;
 
+		verify_unsigned_int(*t);
 		r = sd_bus_message_append(reply, "u", *t);
 		if (r < 0)
 			return r;

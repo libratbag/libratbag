@@ -78,6 +78,9 @@ static int ratbagd_led_get_mode(sd_bus *bus,
 	enum ratbag_led_mode mode;
 
 	mode = ratbag_led_get_mode(led->lib_led);
+
+	verify_unsigned_int(mode);
+
 	return sd_bus_message_append(reply, "u", mode);
 }
 
@@ -123,6 +126,8 @@ static int ratbagd_led_get_type(sd_bus *bus,
 	enum ratbag_led_type type;
 
 	type = ratbag_led_get_type(led->lib_led);
+
+	verify_unsigned_int(type);
 
 	return sd_bus_message_append(reply, "u", type);
 }
@@ -191,6 +196,9 @@ static int ratbagd_led_get_effect_duration(sd_bus *bus,
 	int rate;
 
 	rate = ratbag_led_get_effect_duration(led->lib_led);
+
+	verify_unsigned_int(rate);
+
 	return sd_bus_message_append(reply, "u", rate);
 }
 
@@ -239,6 +247,9 @@ static int ratbagd_led_get_brightness(sd_bus *bus,
 	unsigned int brightness;
 
 	brightness = ratbag_led_get_brightness(led->lib_led);
+
+	verify_unsigned_int(brightness);
+
 	return sd_bus_message_append(reply, "u", brightness);
 }
 

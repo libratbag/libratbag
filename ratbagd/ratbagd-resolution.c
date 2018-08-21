@@ -214,6 +214,7 @@ ratbagd_resolution_get_resolutions(sd_bus *bus,
 	assert(ndpis <= ARRAY_LENGTH(dpis));
 
 	for (unsigned int i = 0; i < ndpis; i++) {
+		verify_unsigned_int(dpis[i]);
 		r = sd_bus_message_append(reply, "u", dpis[i]);
 		if (r < 0)
 			return r;
@@ -237,6 +238,9 @@ ratbagd_resolution_get_resolution(sd_bus *bus,
 
 	xres = ratbag_resolution_get_dpi_x(lib_resolution);
 	yres = ratbag_resolution_get_dpi_y(lib_resolution);
+
+	verify_unsigned_int(xres);
+	verify_unsigned_int(yres);
 
 	return sd_bus_message_append(reply, "(uu)", xres, yres);
 }
@@ -293,6 +297,7 @@ ratbagd_resolution_get_report_rate(sd_bus *bus,
 	int rate;
 
 	rate = ratbag_resolution_get_report_rate(lib_resolution);
+	verify_unsigned_int(rate);
 	return sd_bus_message_append(reply, "u", rate);
 }
 
@@ -320,6 +325,7 @@ ratbagd_resolution_get_report_rates(sd_bus *bus,
 	assert(nrates <= ARRAY_LENGTH(rates));
 
 	for (unsigned int i = 0; i < nrates; i++) {
+		verify_unsigned_int(rates[i]);
 		r = sd_bus_message_append(reply, "u", rates[i]);
 		if (r < 0)
 			return r;

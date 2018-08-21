@@ -176,6 +176,19 @@ struct ratbagd_device *ratbagd_device_next(struct ratbagd_device *device);
 	     (_device);						\
 	     _device = (_safe),				\
 	     _safe = (_safe) ? ratbagd_device_next(_safe) : NULL)
+
+/* Verify that _val is not -1. This traps DBus API errors where we end up
+ * sending a valid-looking index across and then fail on the other side.
+ *
+ * do {} while(0) so we can terminate with a ; without the compiler
+ * complaining about an empty statement;
+ * */
+#define verify_unsigned_int(_val) \
+	do { if ((int)_val == -1) { \
+		log_error("%s:%d - %s: expected unsigned int, got -1\n", __FILE__, __LINE__, __func__); \
+		return -EINVAL; \
+	} } while(0)
+
 /*
  * Context
  */
