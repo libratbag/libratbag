@@ -167,7 +167,7 @@ ratbagd_resolution_is_active(sd_bus *bus,
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
 	int is_active;
 
-	is_active = !!ratbag_resolution_is_active(lib_resolution);
+	is_active = ratbag_resolution_is_active(lib_resolution);
 
 	return sd_bus_message_append(reply, "b", is_active);
 }
@@ -185,7 +185,7 @@ ratbagd_resolution_is_default(sd_bus *bus,
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
 	int is_default;
 
-	is_default = !!ratbag_resolution_is_default(lib_resolution);
+	is_default = ratbag_resolution_is_default(lib_resolution);
 
 	return sd_bus_message_append(reply, "b", is_default);
 }
