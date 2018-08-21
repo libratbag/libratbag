@@ -198,7 +198,7 @@ static int ratbagd_profile_is_active(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	int is_active;
 
-	is_active = !!ratbag_profile_is_active(profile->lib_profile);
+	is_active = ratbag_profile_is_active(profile->lib_profile);
 
 	return sd_bus_message_append(reply, "b", is_active);
 }

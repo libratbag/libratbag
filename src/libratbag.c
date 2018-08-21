@@ -650,7 +650,7 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 	return led;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_profile_has_capability(const struct ratbag_profile *profile,
 			      enum ratbag_profile_capability cap)
 {
@@ -832,16 +832,16 @@ ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 	return RATBAG_SUCCESS;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_profile_is_active(struct ratbag_profile *profile)
 {
-	return profile->is_active;
+	return !!profile->is_active;
 }
 
 LIBRATBAG_EXPORT bool
 ratbag_profile_is_enabled(const struct ratbag_profile *profile)
 {
-	return profile->is_enabled;
+	return !!profile->is_enabled;
 }
 
 LIBRATBAG_EXPORT unsigned int
@@ -893,7 +893,7 @@ ratbag_device_unset_capability(struct ratbag_device *device,
 	long_clear_bit(device->capabilities, cap);
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_device_has_capability(const struct ratbag_device *device,
 			     enum ratbag_device_capability cap)
 {
@@ -1084,7 +1084,7 @@ ratbag_resolution_unref(struct ratbag_resolution *resolution)
 	return NULL;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 				 enum ratbag_resolution_capability cap)
 {
@@ -1227,10 +1227,10 @@ ratbag_resolution_get_report_rate_list(struct ratbag_resolution *resolution,
 	return resolution->nrates;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_resolution_is_active(const struct ratbag_resolution *resolution)
 {
-	return resolution->is_active;
+	return !!resolution->is_active;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
@@ -1249,10 +1249,10 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 }
 
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_resolution_is_default(const struct ratbag_resolution *resolution)
 {
-	return resolution->is_default;
+	return !!resolution->is_default;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
@@ -1315,7 +1315,7 @@ ratbag_button_get_action_type(struct ratbag_button *button)
 	return button->action.type;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_button_has_action_type(struct ratbag_button *button,
 			      enum ratbag_button_action_type action_type)
 {
@@ -1545,7 +1545,7 @@ ratbag_led_get_type(struct ratbag_led *led)
 	return led->type;
 }
 
-LIBRATBAG_EXPORT int
+LIBRATBAG_EXPORT bool
 ratbag_led_has_mode(struct ratbag_led *led,
 		    enum ratbag_led_mode mode)
 {

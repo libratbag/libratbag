@@ -452,7 +452,7 @@ ratbag_device_get_svg_name(const struct ratbag_device* device);
  * @retval 1 The device has the capability
  * @retval 0 The device does not have the capability
  */
-int
+bool
 ratbag_device_has_capability(const struct ratbag_device *device,
 			     enum ratbag_device_capability cap);
 
@@ -540,7 +540,7 @@ ratbag_profile_unref(struct ratbag_profile *profile);
  *
  * @return non-zero if the capability is available, zero otherwise.
  */
-int
+bool
 ratbag_profile_has_capability(const struct ratbag_profile *profile,
 			      enum ratbag_profile_capability cap);
 
@@ -655,7 +655,7 @@ ratbag_device_get_profile(struct ratbag_device *device, unsigned int index);
  *
  * @return non-zero if the profile is currently active, zero otherwise
  */
-int
+bool
 ratbag_profile_is_active(struct ratbag_profile *profile);
 
 /**
@@ -771,7 +771,7 @@ ratbag_resolution_get_user_data(const struct ratbag_resolution *resolution);
  *
  * @return non-zero if the capability is available, zero otherwise.
  */
-int
+bool
 ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 				 enum ratbag_resolution_capability cap);
 
@@ -988,7 +988,7 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution);
  * @return Non-zero if the resolution mode is the active one, zero
  * otherwise.
  */
-int
+bool
 ratbag_resolution_is_active(const struct ratbag_resolution *resolution);
 
 /**
@@ -1023,7 +1023,7 @@ ratbag_resolution_set_default(struct ratbag_resolution *resolution);
  * @return Non-zero if the resolution mode is the default one, zero
  * otherwise.
  */
-int
+bool
 ratbag_resolution_is_default(const struct ratbag_resolution *resolution);
 
 /**
@@ -1117,7 +1117,7 @@ ratbag_button_get_action_type(struct ratbag_button *button);
  *
  * @return non-zero if the action type is supported, zero otherwise.
  */
-int
+bool
 ratbag_button_has_action_type(struct ratbag_button *button,
 			      enum ratbag_button_action_type action_type);
 
@@ -1218,7 +1218,7 @@ ratbag_led_get_type(struct ratbag_led *led);
  *
  * @see ratbag_led_set_mode
  */
-int
+bool
 ratbag_led_has_mode(struct ratbag_led *led,
 		    enum ratbag_led_mode mode);
 
