@@ -1554,7 +1554,7 @@ ratbag_led_has_mode(struct ratbag_led *led,
 	if (mode == RATBAG_LED_OFF)
 		return 1;
 
-	return (led->modes & (1 << mode));
+	return !!(led->modes & (1 << mode));
 }
 
 LIBRATBAG_EXPORT struct ratbag_color
