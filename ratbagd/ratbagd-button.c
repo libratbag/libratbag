@@ -128,6 +128,11 @@ static int ratbagd_button_get_special(sd_bus *bus,
 	enum ratbag_button_action_special special;
 
 	special = ratbag_button_get_special(button->lib_button);
+	if (special == RATBAG_BUTTON_ACTION_SPECIAL_INVALID) {
+		log_error("%s: changing button special action from INVALID to UNKNOWN\n",
+			  ratbagd_device_get_sysname(button->device));
+		special = RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN;
+	}
 
 	return sd_bus_message_append(reply, "u", special);
 }
