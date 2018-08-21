@@ -1002,7 +1002,7 @@ ratbag_device_commit(struct ratbag_device *device)
 
 		list_for_each(resolution, &profile->resolutions, link)
 			resolution->dirty = false;
-			
+
 	}
 
 	return RATBAG_SUCCESS;
