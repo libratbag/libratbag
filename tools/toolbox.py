@@ -61,6 +61,8 @@ def start_ratbagd(verbosity=0):
     from gi.repository import Gio
     import time
 
+    os.makedirs(DBUS_CONF_DIR, exist_ok=True)
+
     # first copy the policy for the ratbagd daemon to be allowed to run
     shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME),
                 DBUS_CONF_PATH)
