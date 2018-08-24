@@ -57,6 +57,16 @@ struct ratbagd_led;
 void log_verbose(const char *fmt, ...) _printf_(1, 2);
 void log_error(const char *fmt, ...) _printf_(1, 2);
 
+#define CHECK_CALL(_call) \
+	do { \
+		int _r = _call; \
+		if (_r < 0) { \
+			log_error("%s: '%s' failed with: %s\n", __func__, #_call, strerror(-_r)); \
+			return _r; \
+		} \
+	} while (0)
+
+
 /*
  * Profiles
  */

@@ -102,25 +102,22 @@ static int ratbagd_profile_get_resolutions(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	struct ratbagd_resolution *resolution;
 	unsigned int i;
-	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "o");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "o"));
 
 	for (i = 0; i < profile->n_resolutions; ++i) {
 		resolution = profile->resolutions[i];
 		if (!resolution)
 			continue;
 
-		r = sd_bus_message_append(reply,
-					  "o",
-					  ratbagd_resolution_get_path(resolution));
-		if (r < 0)
-			return r;
+		CHECK_CALL(sd_bus_message_append(reply,
+						 "o",
+						 ratbagd_resolution_get_path(resolution)));
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 static int ratbagd_profile_get_buttons(sd_bus *bus,
@@ -134,25 +131,22 @@ static int ratbagd_profile_get_buttons(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	struct ratbagd_button *button;
 	unsigned int i;
-	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "o");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "o"));
 
 	for (i = 0; i < profile->n_buttons; ++i) {
 		button = profile->buttons[i];
 		if (!button)
 			continue;
 
-		r = sd_bus_message_append(reply,
+		CHECK_CALL(sd_bus_message_append(reply,
 					  "o",
-					  ratbagd_button_get_path(button));
-		if (r < 0)
-			return r;
+					  ratbagd_button_get_path(button)));
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 static int ratbagd_profile_get_leds(sd_bus *bus,
@@ -166,25 +160,22 @@ static int ratbagd_profile_get_leds(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	struct ratbagd_led *led;
 	unsigned int i;
-	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "o");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "o"));
 
 	for (i = 0; i < profile->n_leds; ++i) {
 		led = profile->leds[i];
 		if (!led)
 			continue;
 
-		r = sd_bus_message_append(reply,
-					  "o",
-					  ratbagd_led_get_path(led));
-		if (r < 0)
-			return r;
+		CHECK_CALL(sd_bus_message_append(reply,
+						 "o",
+						 ratbagd_led_get_path(led)));
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 static int ratbagd_profile_is_active(sd_bus *bus,
@@ -200,7 +191,9 @@ static int ratbagd_profile_is_active(sd_bus *bus,
 
 	is_active = ratbag_profile_is_active(profile->lib_profile);
 
-	return sd_bus_message_append(reply, "b", is_active);
+	CHECK_CALL(sd_bus_message_append(reply, "b", is_active));
+
+	return 0;
 }
 
 static int ratbagd_profile_find_button(sd_bus *bus,
@@ -286,9 +279,7 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 	struct ratbagd_profile *profile = userdata;
 	int r;
 
-	r = sd_bus_message_read(m, "");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, ""));
 
 	r = ratbag_profile_set_active(profile->lib_profile);
 	if (r < 0) {
@@ -302,7 +293,9 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 					profile->device,
 					ratbagd_profile_active_signal_cb);
 
-	return sd_bus_reply_method_return(m, "u", 0);
+	CHECK_CALL(sd_bus_reply_method_return(m, "u", 0));
+
+	return 0;
 }
 
 static int
@@ -318,9 +311,7 @@ ratbagd_profile_set_enabled(sd_bus *bus,
 	int enabled;
 	int r;
 
-	r = sd_bus_message_read(m, "b", &enabled);
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, "b", &enabled));
 
 	r = ratbag_profile_set_enabled(profile->lib_profile, enabled);
 	if (r == 0) {
@@ -347,7 +338,9 @@ ratbagd_profile_is_enabled(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	int enabled = ratbag_profile_is_enabled(profile->lib_profile) != 0;
 
-	return sd_bus_message_append(reply, "b", enabled);
+	CHECK_CALL(sd_bus_message_append(reply, "b", enabled));
+
+	return 0;
 }
 
 static int
@@ -363,9 +356,7 @@ ratbagd_profile_set_name(sd_bus *bus,
 	char *name;
 	int r;
 
-	r = sd_bus_message_read(m, "s", &name);
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, "s", &name));
 
 	r = ratbag_profile_set_name(profile->lib_profile, name);
 
@@ -392,7 +383,9 @@ ratbagd_profile_get_name(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	const char *name = ratbag_profile_get_name(profile->lib_profile);
 
-	return sd_bus_message_append(reply, "s", name);
+	CHECK_CALL(sd_bus_message_append(reply, "s", name));
+
+	return 0;
 }
 
 static int
@@ -410,23 +403,20 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 	enum ratbag_profile_capability caps[] = {
 		RATBAG_PROFILE_CAP_WRITABLE_NAME,
 	};
-	int r;
 	size_t i;
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "u"));
 
 	for (i = 0; i < ELEMENTSOF(caps); i++) {
 		cap = caps[i];
 		if (ratbag_profile_has_capability(lib_profile, cap)) {
-			r = sd_bus_message_append(reply, "u", cap);
-			if (r < 0)
-				return r;
+			CHECK_CALL(sd_bus_message_append(reply, "u", cap));
 		}
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 const sd_bus_vtable ratbagd_profile_vtable[] = {

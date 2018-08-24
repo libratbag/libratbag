@@ -130,7 +130,9 @@ static int ratbagd_device_get_device_name(sd_bus *bus,
 		name = "";
 	}
 
-	return sd_bus_message_append(reply, "s", name);
+	CHECK_CALL(sd_bus_message_append(reply, "s", name));
+
+	return 0;
 }
 
 static int ratbagd_device_get_svg(sd_bus *bus,
@@ -151,7 +153,9 @@ static int ratbagd_device_get_svg(sd_bus *bus,
 		svg = "";
 	}
 
-	return sd_bus_message_append(reply, "s", svg);
+	CHECK_CALL(sd_bus_message_append(reply, "s", svg));
+
+	return 0;
 }
 
 static int ratbagd_device_get_theme_svg(sd_bus_message *m,
@@ -162,16 +166,13 @@ static int ratbagd_device_get_theme_svg(sd_bus_message *m,
 	char svg_path[PATH_MAX] = {0};
 	const char *theme;
 	const char *svg;
-	int r;
 	const char *datadir;
 
 	datadir = getenv("LIBRATBAG_DATA_DIR");
 	if (!datadir)
 		datadir = LIBRATBAG_DATA_DIR;
 
-	r = sd_bus_message_read(m, "s", &theme);
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, "s", &theme));
 
 
 	svg = ratbag_device_get_svg_name(device->lib_device);
@@ -183,7 +184,9 @@ static int ratbagd_device_get_theme_svg(sd_bus_message *m,
 
 	snprintf(svg_path, sizeof(svg_path), "%s/%s/%s", datadir, theme, svg);
 
-	return sd_bus_reply_method_return(m, "s", svg_path);
+	CHECK_CALL(sd_bus_reply_method_return(m, "s", svg_path));
+
+	return 0;
 }
 
 static int ratbagd_device_get_profiles(sd_bus *bus,
@@ -199,23 +202,21 @@ static int ratbagd_device_get_profiles(sd_bus *bus,
 	unsigned int i;
 	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "o");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "o"));
 
 	for (i = 0; i < device->n_profiles; ++i) {
 		profile = device->profiles[i];
 		if (!profile)
 			continue;
 
-		r = sd_bus_message_append(reply,
-					  "o",
-					  ratbagd_profile_get_path(profile));
-		if (r < 0)
-			return r;
+		CHECK_CALL(sd_bus_message_append(reply,
+						 "o",
+						 ratbagd_profile_get_path(profile)));
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 static int ratbagd_device_commit(sd_bus_message *m,
@@ -233,7 +234,9 @@ static int ratbagd_device_commit(sd_bus_message *m,
 			return r;
 	}
 
-	return sd_bus_reply_method_return(m, "u", 0);
+	CHECK_CALL(sd_bus_reply_method_return(m, "u", 0));
+
+	return 0;
 }
 
 static int
@@ -264,20 +267,18 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 	int r;
 	size_t i;
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "u"));
 
 	for (i = 0; i < ELEMENTSOF(caps); i++) {
 		cap = caps[i];
 		if (ratbag_device_has_capability(lib_device, cap)) {
-			r = sd_bus_message_append(reply, "u", cap);
-			if (r < 0)
-				return r;
+			CHECK_CALL(sd_bus_message_append(reply, "u", cap));
 		}
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 const sd_bus_vtable ratbagd_device_vtable[] = {
