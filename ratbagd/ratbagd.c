@@ -142,21 +142,18 @@ static int ratbagd_get_devices(sd_bus *bus,
 {
 	struct ratbagd *ctx = userdata;
 	struct ratbagd_device *device;
-	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "o");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "o"));
 
 	RATBAGD_DEVICE_FOREACH(device, ctx) {
-		r = sd_bus_message_append(reply,
-					  "o",
-					  ratbagd_device_get_path(device));
-		if (r < 0)
-			return r;
+		CHECK_CALL(sd_bus_message_append(reply,
+						 "o",
+						 ratbagd_device_get_path(device)));
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 static int ratbagd_get_themes(sd_bus *bus,
@@ -169,23 +166,18 @@ static int ratbagd_get_themes(sd_bus *bus,
 {
 	struct ratbagd *ctx = userdata;
 	const char **theme;
-	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "s");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "s"));
 
 	theme = ctx->themes;
 	while(*theme) {
-		r = sd_bus_message_append(reply,
-					  "s",
-					  *theme);
-		if (r < 0)
-			return r;
+		CHECK_CALL(sd_bus_message_append(reply, "s", *theme));
 		theme++;
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 static const sd_bus_vtable ratbagd_vtable[] = {

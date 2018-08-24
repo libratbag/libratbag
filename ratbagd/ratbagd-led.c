@@ -50,20 +50,19 @@ static int ratbagd_led_get_modes(sd_bus *bus,
 {
 	struct ratbagd_led *led = userdata;
 	enum ratbag_led_mode mode = 0;
-	int r;
 
-	r = sd_bus_message_open_container(reply, 'a', "u");
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "u"));
 
 
 	while (mode <= RATBAG_LED_BREATHING) {
 		if (ratbag_led_has_mode(led->lib_led, mode))
-			sd_bus_message_append(reply, "u", mode);
+			CHECK_CALL(sd_bus_message_append(reply, "u", mode));
 		mode++;
 	}
 
-	return sd_bus_message_close_container(reply);
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
 }
 
 static int ratbagd_led_get_mode(sd_bus *bus,
@@ -81,7 +80,9 @@ static int ratbagd_led_get_mode(sd_bus *bus,
 
 	verify_unsigned_int(mode);
 
-	return sd_bus_message_append(reply, "u", mode);
+	CHECK_CALL(sd_bus_message_append(reply, "u", mode));
+
+	return 0;
 }
 
 static int ratbagd_led_set_mode(sd_bus *bus,
@@ -96,9 +97,7 @@ static int ratbagd_led_set_mode(sd_bus *bus,
 	enum ratbag_led_mode mode;
 	int r;
 
-	r = sd_bus_message_read(m, "u", &mode);
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, "u", &mode));
 
 	r = ratbag_led_set_mode(led->lib_led, mode);
 
@@ -129,7 +128,9 @@ static int ratbagd_led_get_type(sd_bus *bus,
 
 	verify_unsigned_int(type);
 
-	return sd_bus_message_append(reply, "u", type);
+	CHECK_CALL(sd_bus_message_append(reply, "u", type));
+
+	return 0;
 }
 
 static int ratbagd_led_get_color(sd_bus *bus,
@@ -144,7 +145,9 @@ static int ratbagd_led_get_color(sd_bus *bus,
 	struct ratbag_color c;
 
 	c = ratbag_led_get_color(led->lib_led);
-	return sd_bus_message_append(reply, "(uuu)", c.red, c.green, c.blue);
+	CHECK_CALL(sd_bus_message_append(reply, "(uuu)", c.red, c.green, c.blue));
+
+	return 0;
 }
 
 static int ratbagd_led_set_color(sd_bus *bus,
@@ -159,9 +162,7 @@ static int ratbagd_led_set_color(sd_bus *bus,
 	struct ratbag_color c;
 	int r;
 
-	r = sd_bus_message_read(m, "(uuu)", &c.red, &c.green, &c.blue);
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, "(uuu)", &c.red, &c.green, &c.blue));
 
 	if (c.red > 255)
 		c.red = 255;
@@ -199,7 +200,9 @@ static int ratbagd_led_get_effect_duration(sd_bus *bus,
 
 	verify_unsigned_int(rate);
 
-	return sd_bus_message_append(reply, "u", rate);
+	CHECK_CALL(sd_bus_message_append(reply, "u", rate));
+
+	return 0;
 }
 
 static int ratbagd_led_set_effect_duration(sd_bus *bus,
@@ -214,9 +217,7 @@ static int ratbagd_led_set_effect_duration(sd_bus *bus,
 	unsigned int rate;
 	int r;
 
-	r = sd_bus_message_read(m, "u", &rate);
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, "u", &rate));
 
 	if (rate > 10000)
 		rate = 10000;
@@ -250,7 +251,9 @@ static int ratbagd_led_get_brightness(sd_bus *bus,
 
 	verify_unsigned_int(brightness);
 
-	return sd_bus_message_append(reply, "u", brightness);
+	CHECK_CALL(sd_bus_message_append(reply, "u", brightness));
+
+	return 0;
 }
 
 static int ratbagd_led_set_brightness(sd_bus *bus,
@@ -265,9 +268,7 @@ static int ratbagd_led_set_brightness(sd_bus *bus,
 	unsigned int brightness;
 	int r;
 
-	r = sd_bus_message_read(m, "u", &brightness);
-	if (r < 0)
-		return r;
+	CHECK_CALL(sd_bus_message_read(m, "u", &brightness));
 
 	if (brightness > 255)
 		brightness = 255;
