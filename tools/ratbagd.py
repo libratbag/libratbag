@@ -253,7 +253,7 @@ class Ratbagd(_RatbagdDBus):
 
     def __init__(self):
         _RatbagdDBus.__init__(self, "Manager", None)
-        result = self._get_dbus_property("Devices")
+        result = self._get_dbus_property("Devices") or []
         self._devices = [RatbagdDevice(objpath) for objpath in result]
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
@@ -286,7 +286,7 @@ class Ratbagd(_RatbagdDBus):
     def themes(self):
         """A list of theme names. The theme 'default' is guaranteed to be
         available."""
-        return self._get_dbus_property("Themes")
+        return self._get_dbus_property("Themes") or []
 
     def __enter__(self):
         return self
@@ -321,7 +321,7 @@ class RatbagdDevice(_RatbagdDBus):
 
         # FIXME: if we start adding and removing objects from this list,
         # things will break!
-        result = self._get_dbus_property("Profiles")
+        result = self._get_dbus_property("Profiles") or []
         self._profiles = [RatbagdProfile(objpath) for objpath in result]
         for profile in self._profiles:
             profile.connect("notify::is-active", self._on_active_profile_changed)
@@ -343,7 +343,7 @@ class RatbagdDevice(_RatbagdDBus):
         if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.capabilities:
             do something
         """
-        return self._get_dbus_property("Capabilities")
+        return self._get_dbus_property("Capabilities") or []
 
     @GObject.Property
     def name(self):
@@ -448,7 +448,7 @@ class RatbagdProfile(_RatbagdDBus):
         if RatbagdProfile.CAP_WRITABLE_NAME is in profile.capabilities:
             do something
         """
-        return self._get_dbus_property("Capabilities")
+        return self._get_dbus_property("Capabilities") or []
 
     @GObject.Property
     def name(self):
@@ -565,7 +565,7 @@ class RatbagdResolution(_RatbagdDBus):
         if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION is in resolution.capabilities:
             do something
         """
-        return self._get_dbus_property("Capabilities")
+        return self._get_dbus_property("Capabilities") or []
 
     @GObject.Property
     def resolution(self):
@@ -596,12 +596,12 @@ class RatbagdResolution(_RatbagdDBus):
     @GObject.Property
     def resolutions(self):
         """The list of supported DPI values"""
-        return self._get_dbus_property("Resolutions")
+        return self._get_dbus_property("Resolutions") or []
 
     @GObject.Property
     def report_rates(self):
         """The list of supported report rates"""
-        return self._get_dbus_property("ReportRates")
+        return self._get_dbus_property("ReportRates") or []
 
     @GObject.Property
     def is_active(self):
