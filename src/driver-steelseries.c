@@ -37,6 +37,8 @@
 
 #define STEELSERIES_NUM_PROFILES	1
 #define STEELSERIES_NUM_DPI		2
+#define STEELSERIES_INPUT_ENDPOINT	0
+#define STEELSERIES_INPUT_HIDRAW	1
 
 /* not sure these two are used for */
 #define STEELSERIES_REPORT_ID_1			0x01
@@ -58,6 +60,8 @@
 #define STEELSERIES_ID_REPORT_RATE		0x54
 #define STEELSERIES_ID_LED			0x5b
 #define STEELSERIES_ID_SAVE			0x59
+#define STEELSERIES_ID_FIRMWARE			0x90
+#define STEELSERIES_ID_SETTTINGS		0x92
 
 #define STEELSERIES_BUTTON_OFF			0x00
 #define STEELSERIES_BUTTON_RES_CYCLE		0x30
@@ -66,6 +70,11 @@
 #define STEELSERIES_BUTTON_KEY			0x10
 #define STEELSERIES_BUTTON_KBD			0x51
 #define STEELSERIES_BUTTON_CONSUMER		0x61
+
+struct steelseries_data {
+	int firmware_major;
+	int firmware_minor;
+};
 
 static int
 steelseries_test_hidraw(struct ratbag_device *device)
@@ -123,8 +132,82 @@ button_defaults_for_layout(struct ratbag_button *button, int button_count)
 }
 
 static int
+steelseries_get_firmware_version(struct ratbag_device *device)
+{
+	struct steelseries_data *drv_data = device->drv_data;
+	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
+	size_t buf_len = STEELSERIES_REPORT_SIZE;
+	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
+	int ret;
+
+	if (device_version == 1)
+		return 0;
+
+	buf[0] = STEELSERIES_ID_FIRMWARE;
+	msleep(10);
+	ret = ratbag_hidraw_output_report(device, buf, buf_len);
+	if (ret < 0)
+		return ret;
+
+	ret = ratbag_hidraw_read_input_report_index(device, buf, buf_len, STEELSERIES_INPUT_HIDRAW);
+	if (ret < 0)
+		return ret;
+
+	drv_data->firmware_major = buf[1];
+	drv_data->firmware_minor = buf[0];
+
+	return 0;
+}
+
+static int
+steelseries_read_settings(struct ratbag_device *device)
+{
+	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
+	struct ratbag_profile *profile = NULL;
+	struct ratbag_resolution *resolution;
+	struct ratbag_led *led;
+
+	size_t buf_len = STEELSERIES_REPORT_SIZE;
+	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
+	int ret;
+	unsigned int active_resolution;
+
+	if (device_version == 1)
+		return 0;
+
+	buf[0] = STEELSERIES_ID_SETTTINGS;
+	msleep(10);
+	ret = ratbag_hidraw_output_report(device, buf, buf_len);
+	if (ret < 0)
+		return ret;
+
+	ret = ratbag_hidraw_read_input_report_index(device, buf, buf_len, STEELSERIES_INPUT_HIDRAW);
+	if (ret < 0)
+		return ret;
+
+	active_resolution = buf[1] - 1;
+	ratbag_device_for_each_profile(device, profile) {
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			resolution->is_active = resolution->index == active_resolution;
+
+			resolution->dpi_x = 100 * (1 +  buf[2 + resolution->index*2]);
+			resolution->dpi_y = resolution->dpi_x;
+		}
+
+		ratbag_profile_for_each_led(profile, led) {
+			led->color.red = buf[6 + led->index * 3];
+			led->color.green = buf[7 + led->index * 3];
+			led->color.blue = buf[8 + led->index * 3];
+		}
+	}
+
+	return 0;
+}
+
+static int
 steelseries_probe(struct ratbag_device *device)
 {
+	struct steelseries_data *drv_data = NULL;
 	struct ratbag_profile *profile = NULL;
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
@@ -136,6 +219,12 @@ steelseries_probe(struct ratbag_device *device)
 	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 	rc = ratbag_find_hidraw(device, steelseries_test_hidraw);
+	if (rc)
+		return rc;
+
+	rc = ratbag_open_hidraw_index(device,
+				      STEELSERIES_INPUT_ENDPOINT,
+				      STEELSERIES_INPUT_HIDRAW);
 	if (rc)
 		return rc;
 
@@ -225,6 +314,16 @@ steelseries_probe(struct ratbag_device *device)
 				ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
 		}
 	}
+
+	drv_data = zalloc(sizeof(*drv_data));
+	ratbag_set_drv_data(device, drv_data);
+
+	steelseries_get_firmware_version(device);
+	log_debug(device->ratbag, "SteelSeries firmware version %d.%d\n",
+		  drv_data->firmware_major,
+		  drv_data->firmware_minor);
+
+	steelseries_read_settings(device);
 
 	return 0;
 }
@@ -695,7 +794,9 @@ steelseries_commit(struct ratbag_device *device)
 static void
 steelseries_remove(struct ratbag_device *device)
 {
-	ratbag_close_hidraw(device);
+	ratbag_close_hidraw_index(device, 0);
+	ratbag_close_hidraw_index(device, 1);
+	free(ratbag_get_drv_data(device));
 }
 
 struct ratbag_driver steelseries_driver = {
