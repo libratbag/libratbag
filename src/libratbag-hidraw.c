@@ -1223,7 +1223,7 @@ static int
 ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 {
 	int rc, desc_size = 0;
-	struct ratbag_hidraw *hidraw = &device->hidraw;
+	struct ratbag_hidraw *hidraw = &device->hidraw[0];
 	struct hidraw_report_descriptor report_desc = {0};
 	unsigned int i, j;
 	unsigned int usage_page, usage;
@@ -1291,7 +1291,7 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 }
 
 static int
-ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw_udev)
+ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw_udev, int idx)
 {
 	struct hidraw_devinfo info;
 	struct ratbag_device *tmp_device;
@@ -1300,15 +1300,17 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 	const char *sysname;
 	size_t reports_size;
 
-	device->hidraw.fd = -1;
+	assert(idx >= 0 && idx < MAX_HIDRAW);
+
+	device->hidraw[idx].fd = -1;
 
 	sysname = udev_device_get_sysname(hidraw_udev);
 	if (!strneq("hidraw", sysname, 6))
 		return -ENODEV;
 
 	list_for_each(tmp_device, &device->ratbag->devices, link) {
-		if (tmp_device->hidraw.sysname &&
-		    streq(tmp_device->hidraw.sysname, sysname)) {
+		if (tmp_device->hidraw[idx].sysname &&
+		    streq(tmp_device->hidraw[idx].sysname, sysname)) {
 			return -ENODEV;
 		}
 	}
@@ -1339,7 +1341,7 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 		  device->name,
 		  udev_device_get_devnode(hidraw_udev));
 
-	device->hidraw.fd = fd;
+	device->hidraw[idx].fd = fd;
 
 	/* parse first to count the number of reports */
 	res = ratbag_hidraw_parse_report_descriptor(device);
@@ -1348,19 +1350,19 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 			  "Error while parsing the report descriptor: '%s' (%d)\n",
 			  strerror(-res),
 			  res);
-		device->hidraw.fd = -1;
+		device->hidraw[idx].fd = -1;
 		goto err;
 	}
 
-	if (device->hidraw.num_reports)
-		reports_size = device->hidraw.num_reports * sizeof(struct ratbag_hid_report);
+	if (device->hidraw[idx].num_reports)
+		reports_size = device->hidraw[idx].num_reports * sizeof(struct ratbag_hid_report);
 	else
 		reports_size = sizeof(struct ratbag_hid_report);
 
-	device->hidraw.reports = zalloc(reports_size);
+	device->hidraw[idx].reports = zalloc(reports_size);
 	ratbag_hidraw_parse_report_descriptor(device);
 
-	device->hidraw.sysname = strdup_safe(sysname);
+	device->hidraw[idx].sysname = strdup_safe(sysname);
 	return 0;
 
 err:
@@ -1372,7 +1374,8 @@ err:
 static int
 ratbag_find_hidraw_node(struct ratbag_device *device,
 			int (*match)(struct ratbag_device *device),
-			int use_usb_parent)
+			int use_usb_parent,
+			int match_index, int hidraw_index)
 {
 	struct ratbag *ratbag = device->ratbag;
 	_cleanup_(udev_enumerate_unrefp) struct udev_enumerate *e = NULL;
@@ -1382,7 +1385,7 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 	struct udev_device *parent_udev;
 	struct udev *udev = ratbag->udev;
 	int rc = -ENODEV;
-	int matched;
+	int matched, endpoint_index = 0;
 
 	assert(match);
 
@@ -1414,9 +1417,13 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 		if (!udev_device)
 			continue;
 
-		rc = ratbag_open_hidraw_node(device, udev_device);
+		if (match_index > 0 && match_index != endpoint_index++)
+			continue;
+
+		rc = ratbag_open_hidraw_node(device, udev_device, hidraw_index);
 		if (rc)
 			goto skip;
+
 
 		matched = match(device);
 		rc = matched ? 0 : -ENODEV;
@@ -1424,7 +1431,7 @@ ratbag_find_hidraw_node(struct ratbag_device *device,
 			return rc;
 
 skip:
-		ratbag_close_hidraw(device);
+		ratbag_close_hidraw_index(device, hidraw_index);
 	}
 
 	return rc;
@@ -1433,7 +1440,7 @@ skip:
 int
 ratbag_find_hidraw(struct ratbag_device *device, int (*match)(struct ratbag_device *device))
 {
-	return ratbag_find_hidraw_node(device, match, true);
+	return ratbag_find_hidraw_node(device, match, true, -1, 0);
 }
 
 static int
@@ -1445,7 +1452,13 @@ hidraw_match_all(struct ratbag_device *device)
 int
 ratbag_open_hidraw(struct ratbag_device *device)
 {
-	return ratbag_find_hidraw_node(device, hidraw_match_all, false);
+	return ratbag_find_hidraw_node(device, hidraw_match_all, false, -1, 0);
+}
+
+int
+ratbag_open_hidraw_index(struct ratbag_device *device, int endpoint_index, int hidraw_index)
+{
+	return ratbag_find_hidraw_node(device, hidraw_match_all, true, endpoint_index, hidraw_index);
 }
 
 static struct ratbag_hid_report *
@@ -1454,15 +1467,15 @@ ratbag_hidraw_get_report(struct ratbag_device *device, unsigned int report_id)
 	unsigned i;
 
 	if (report_id == 0) {
-		if (device->hidraw.reports[0].report_id == report_id)
-			return &device->hidraw.reports[0];
+		if (device->hidraw[0].reports[0].report_id == report_id)
+			return &device->hidraw[0].reports[0];
 		else
 			return NULL;
 	}
 
-	for (i = 0; i < device->hidraw.num_reports; i++) {
-		if (device->hidraw.reports[i].report_id == report_id)
-			return &device->hidraw.reports[i];
+	for (i = 0; i < device->hidraw[0].num_reports; i++) {
+		if (device->hidraw[0].reports[i].report_id == report_id)
+			return &device->hidraw[0].reports[i];
 	}
 
 	return NULL;
@@ -1504,20 +1517,28 @@ ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id)
 void
 ratbag_close_hidraw(struct ratbag_device *device)
 {
-	if (device->hidraw.fd < 0)
+	ratbag_close_hidraw_index(device, 0);
+}
+
+void
+ratbag_close_hidraw_index(struct ratbag_device *device, int idx)
+{
+	assert(idx >= 0 && idx < MAX_HIDRAW);
+
+	if (device->hidraw[idx].fd < 0)
 		return;
 
-	if (device->hidraw.sysname) {
-		free(device->hidraw.sysname);
-		device->hidraw.sysname = NULL;
+	if (device->hidraw[idx].sysname) {
+		free(device->hidraw[idx].sysname);
+		device->hidraw[idx].sysname = NULL;
 	}
 
-	ratbag_close_fd(device, device->hidraw.fd);
-	device->hidraw.fd = -1;
+	ratbag_close_fd(device, device->hidraw[idx].fd);
+	device->hidraw[idx].fd = -1;
 
-	if (device->hidraw.reports) {
-		free(device->hidraw.reports);
-		device->hidraw.reports = NULL;
+	if (device->hidraw[idx].reports) {
+		free(device->hidraw[idx].reports);
+		device->hidraw[idx].reports = NULL;
 	}
 }
 
@@ -1528,7 +1549,7 @@ ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 	uint8_t tmp_buf[HID_MAX_BUFFER_SIZE];
 	int rc;
 
-	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw.fd < 0)
+	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw[0].fd < 0)
 		return -EINVAL;
 
 	if (rtype != HID_FEATURE_REPORT)
@@ -1539,7 +1560,7 @@ ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 		memset(tmp_buf, 0, len);
 		tmp_buf[0] = reportnum;
 
-		rc = ioctl(device->hidraw.fd, HIDIOCGFEATURE(len), tmp_buf);
+		rc = ioctl(device->hidraw[0].fd, HIDIOCGFEATURE(len), tmp_buf);
 		if (rc < 0)
 			return -errno;
 
@@ -1551,7 +1572,7 @@ ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 		buf[0] = reportnum;
 
 		log_buf_raw(device->ratbag, "feature set:   ", buf, len);
-		rc = ioctl(device->hidraw.fd, HIDIOCSFEATURE(len), buf);
+		rc = ioctl(device->hidraw[0].fd, HIDIOCSFEATURE(len), buf);
 		if (rc < 0)
 			return -errno;
 
@@ -1566,12 +1587,12 @@ ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t l
 {
 	int rc;
 
-	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw.fd < 0)
+	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw[0].fd < 0)
 		return -EINVAL;
 
 	log_buf_raw(device->ratbag, "output report: ", buf, len);
 
-	rc = write(device->hidraw.fd, buf, len);
+	rc = write(device->hidraw[0].fd, buf, len);
 
 	if (rc < 0)
 		return -errno;
@@ -1585,13 +1606,21 @@ ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t l
 int
 ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len)
 {
+	return ratbag_hidraw_read_input_report_index(device, buf, len, 0);
+}
+
+int
+ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno)
+{
 	int rc;
 	struct pollfd fds;
 
-	if (len < 1 || !buf || device->hidraw.fd < 0)
+	assert(hidrawno >= 0 && hidrawno < MAX_HIDRAW);
+
+	if (len < 1 || !buf || device->hidraw[hidrawno].fd < 0)
 		return -EINVAL;
 
-	fds.fd = device->hidraw.fd;
+	fds.fd = device->hidraw[hidrawno].fd;
 	fds.events = POLLIN;
 
 	rc = poll(&fds, 1, 1000);
@@ -1601,7 +1630,7 @@ ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size
 	if (rc == 0)
 		return -ETIMEDOUT;
 
-	rc = read(device->hidraw.fd, buf, len);
+	rc = read(device->hidraw[hidrawno].fd, buf, len);
 
 	if (rc > 0)
 		log_buf_raw(device->ratbag, "input report:  ", buf, rc);

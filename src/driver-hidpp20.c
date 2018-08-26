@@ -1310,7 +1310,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
-	hidpp_device_init(&base, device->hidraw.fd);
+	hidpp_device_init(&base, device->hidraw[0].fd);
 	hidpp_device_set_log_handler(&base, hidpp20_log, HIDPP_LOG_PRIORITY_RAW, device);
 
 	device_idx = ratbag_device_data_hidpp20_get_index(device->data);
