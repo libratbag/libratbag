@@ -612,7 +612,7 @@ hidpp10drv_probe(struct ratbag_device *device)
 		goto err;
 
 	drv_data = zalloc(sizeof(*drv_data));
-	hidpp_device_init(&base, device->hidraw.fd);
+	hidpp_device_init(&base, device->hidraw[0].fd);
 	hidpp_device_set_log_handler(&base, hidpp10_log, HIDPP_LOG_PRIORITY_RAW, device);
 
 	typestr = ratbag_device_data_hidpp10_get_profile_type(device->data);

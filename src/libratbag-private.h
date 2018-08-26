@@ -129,7 +129,7 @@ struct ratbag_device {
 	void *userdata;
 
 	struct udev_device *udev_device;
-	struct ratbag_hidraw hidraw;
+	struct ratbag_hidraw hidraw[MAX_HIDRAW];
 	int refcount;
 	struct input_id ids;
 	struct ratbag_driver *driver;

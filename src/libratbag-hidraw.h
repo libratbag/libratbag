@@ -32,6 +32,7 @@
 #define HID_INPUT_REPORT	0
 #define HID_OUTPUT_REPORT	1
 #define HID_FEATURE_REPORT	2
+#define MAX_HIDRAW 2
 
 struct ratbag_hid_report {
 	unsigned int report_id;
@@ -56,6 +57,18 @@ struct ratbag_hidraw {
 int ratbag_open_hidraw(struct ratbag_device *device);
 
 /**
+ * Open a hidraw device associated with the device by its enumeration order to
+ * a specific internal hidraw index.
+ *
+ * @param device the ratbag device
+ * @param enumeration index of the endpoint
+ * @param interal index of hidraw array
+ *
+ * @return 0 on success or a negative errno on error
+ */
+int ratbag_open_hidraw_index(struct ratbag_device *device, int endpoint_index, int hidraw_index);
+
+/**
  * Find and open the hidraw device associated with the device by using the
  * given matching function.
  *
@@ -74,6 +87,14 @@ ratbag_find_hidraw(struct ratbag_device *device,
  * @param device the ratbag device
  */
 void ratbag_close_hidraw(struct ratbag_device *device);
+
+/**
+ * Close a hidraw device associated with the device by the internal index.
+ *
+ * @param device the ratbag device
+ * @param interal index of hidraw array
+ */
+void ratbag_close_hidraw_index(struct ratbag_device *device, int idx);
 
 /**
  * Send report request to device
@@ -114,6 +135,19 @@ int ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size
  * @return count of data transfered, or a negative errno on error
  */
 int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len);
+
+/**
+ * Read an input report from the device from a specific hidraw index
+ *
+ * @param device the ratbag device
+ * @param[out] buf resulting raw data
+ * @param len length of buf
+ * @param interal index of hidraw array
+ *
+ * @return count of data transfered, or a negative errno on error
+ */
+int ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno);
+
 
 /**
  * Tells if a given device has the specified report ID.
