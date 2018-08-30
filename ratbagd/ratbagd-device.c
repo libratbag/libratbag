@@ -200,7 +200,6 @@ static int ratbagd_device_get_profiles(sd_bus *bus,
 	struct ratbagd_device *device = userdata;
 	struct ratbagd_profile *profile;
 	unsigned int i;
-	int r;
 
 	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "o"));
 
@@ -264,7 +263,6 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 		RATBAG_DEVICE_CAP_BUTTON_MACROS,
 		RATBAG_DEVICE_CAP_LED,
 	};
-	int r;
 	size_t i;
 
 	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "u"));

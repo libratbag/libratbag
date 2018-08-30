@@ -188,7 +188,6 @@ static int ratbagd_button_get_macro(sd_bus *bus,
 {
 	struct ratbagd_button *button = userdata;
 	_cleanup_(ratbag_button_macro_unrefp) struct ratbag_button_macro *macro = NULL;
-	int r;
 	unsigned int idx;
 
 	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "(uu)"));
@@ -316,7 +315,6 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 					   sd_bus_error *error)
 {
 	struct ratbagd_button *button = userdata;
-	int r;
 	enum ratbag_button_action_type types[] = {
 		RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 		RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
