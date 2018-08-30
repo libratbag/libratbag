@@ -129,6 +129,19 @@ org.freedesktop.ratbag1.Device
         This is the case if the device has SVGs available but not
         for the given theme.
 
+    .. js:function:: GetSvgFd(s) → (h)
+
+        :param s: the theme name
+        :returns: An open file descriptor to the SVG for the given theme
+
+        Returns an open file descriptor to the SVG for the given theme or an
+        errno on error. The theme must be one of :js:attr:`Themes`.
+
+        The theme **'default'** is guaranteed to be available.
+        ratbagd may return ENOENT if a file doesn't exist.
+        This is the case if the device has SVGs available but not
+        for the given theme.
+
     .. js:function:: Resync()
 
         :type: Signal

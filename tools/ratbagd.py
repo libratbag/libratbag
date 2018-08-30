@@ -232,6 +232,35 @@ class _RatbagdDBus(GObject.GObject):
                 print(e.message, file=sys.stderr)
                 raise
 
+    def _dbus_call_return_one_fd(self, method, type, *value):
+        # Calls a method synchronously on the bus, using the given method name,
+        # type signature and values.
+        #
+        # It the result is valid, it is returned. Invalid results raise the
+        # appropriate RatbagError* or RatbagdDBus* exception, or GLib.Error if
+        # it is an unexpected exception that probably shouldn't be passed up to
+        # the UI.
+        val = GLib.Variant("({})".format(type), value)
+        try:
+            res = self._proxy.call_with_unix_fd_list_sync(method, val,
+                                                          Gio.DBusCallFlags.NO_AUTO_START,
+                                                          2000, None, None)
+            if res in EXCEPTION_TABLE:
+                raise EXCEPTION_TABLE[res]
+            # Result is a tuple of (GLib.Variant('(h)', (0,)), fd_list),
+            # we return the first file descriptor in that list
+            return res[1].get(0)
+        except GLib.Error as e:
+            if e.code == Gio.DBusError.FILE_NOT_FOUND:
+                raise FileNotFoundError('Failed to open SVG file')
+            elif e.code == Gio.IOErrorEnum.TIMED_OUT:
+                raise RatbagdDBusTimeout(e.message)
+            else:
+                # Unrecognized error code; print the message to stderr and raise
+                # the GLib.Error.
+                print(e.message, file=sys.stderr)
+                raise
+
     def __eq__(self, other):
         return other and self._object_path == other._object_path
 
@@ -366,6 +395,19 @@ class RatbagdDevice(_RatbagdDBus):
                 return profile
         print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
         return self._profiles[0]
+
+    def get_svg_fd(self, theme):
+        """Returns a File-like object to the SVG for the given theme, or
+        raises FileNotFoundError if the file is not available.
+
+        The theme must be one of org.freedesktop.ratbag1.Manager.Themes. The
+        theme 'default' is guaranteed to be available (but the file itself
+        may not be).
+
+        @param theme The theme from which to retrieve the SVG, as str
+        """
+        fd = self._dbus_call_return_one_fd("GetSvgFd", "s", theme)
+        return os.fdopen(fd)
 
     def get_svg(self, theme):
         """Gets the full path to the SVG for the given theme, or the empty
