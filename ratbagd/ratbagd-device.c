@@ -323,10 +323,10 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	device->n_profiles = ratbag_device_get_num_profiles(device->lib_device);
 	device->profiles = zalloc(device->n_profiles * sizeof(*device->profiles));
 
-	log_verbose("%s: \"%s\", %d profiles\n",
-		    sysname,
-		    ratbag_device_get_name(lib_device),
-		    device->n_profiles);
+	log_info("%s: \"%s\", %d profiles\n",
+		 sysname,
+		 ratbag_device_get_name(lib_device),
+		 device->n_profiles);
 
 	for (i = 0; i < device->n_profiles; ++i) {
 		profile = ratbag_device_get_profile(device->lib_device, i);

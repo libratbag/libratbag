@@ -75,6 +75,8 @@ def start_ratbagd(verbosity=0):
         args.append('--verbose=raw')
     elif verbosity >= 2:
         args.append('--verbose')
+    elif verbosity == 0:
+        args.append('--quiet')
 
     ratbagd_process = subprocess.Popen(args, shell=False, stdout=sys.stdout, stderr=sys.stderr)
 

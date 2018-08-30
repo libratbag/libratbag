@@ -42,8 +42,12 @@
 
 #include "ratbagd-test.h"
 
-static bool verbose = false;
-static bool verbose_raw = false;
+enum log_level {
+	LL_QUIET = 1,
+	LL_INFO,
+	LL_VERBOSE,
+	LL_RAW,
+} log_level = LL_INFO;
 
 static const char *SVG_THEMES[] = {
 	"default",
@@ -51,13 +55,23 @@ static const char *SVG_THEMES[] = {
 	NULL
 };
 
+void log_info(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	if (log_level >= LL_INFO)
+		vprintf(fmt, args);
+	va_end(args);
+}
+
 void log_verbose(const char *fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
 
-	if (verbose)
+	if (log_level >= LL_VERBOSE)
 		vprintf(fmt, args);
 	va_end(args);
 }
@@ -376,10 +390,10 @@ static int ratbagd_new(struct ratbagd **out)
 	if (!ctx->lib_ctx)
 		return -ENOMEM;
 
-	if (verbose_raw)
+	if (log_level >= LL_RAW)
 		ratbag_log_set_priority(ctx->lib_ctx,
 					RATBAG_LOG_PRIORITY_RAW);
-	else if (verbose)
+	else if (log_level >= LL_VERBOSE)
 		ratbag_log_set_priority(ctx->lib_ctx,
 					RATBAG_LOG_PRIORITY_DEBUG);
 
@@ -525,12 +539,14 @@ int main(int argc, char *argv[])
 #endif
 
 	if (argc > 1) {
-		if (streq(argv[1], "--verbose=raw")) {
-			verbose_raw = true;
+		if (streq(argv[1], "--quiet")) {
+			log_level = LL_QUIET;
+		} else if (streq(argv[1], "--verbose=raw")) {
+			log_level = LL_RAW;
 		} else if (streq(argv[1], "--verbose")) {
-			verbose = true;
+			log_level = LL_VERBOSE;
 		} else {
-			fprintf(stderr, "Usage: %s [--verbose[=raw]]\n",
+			fprintf(stderr, "Usage: %s [--quiet | --verbose[=raw]]\n",
 				program_invocation_short_name);
 			r = -EINVAL;
 			goto exit;
