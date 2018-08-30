@@ -539,14 +539,17 @@ int main(int argc, char *argv[])
 #endif
 
 	if (argc > 1) {
-		if (streq(argv[1], "--quiet")) {
+		if (streq(argv[1], "--version")) {
+			printf("%s\n", RATBAG_VERSION);
+			return 0;
+		} else if (streq(argv[1], "--quiet")) {
 			log_level = LL_QUIET;
 		} else if (streq(argv[1], "--verbose=raw")) {
 			log_level = LL_RAW;
 		} else if (streq(argv[1], "--verbose")) {
 			log_level = LL_VERBOSE;
 		} else {
-			fprintf(stderr, "Usage: %s [--quiet | --verbose[=raw]]\n",
+			fprintf(stderr, "Usage: %s [--version | --quiet | --verbose[=raw]]\n",
 				program_invocation_short_name);
 			r = -EINVAL;
 			goto exit;
