@@ -54,6 +54,7 @@ struct ratbagd_resolution;
 struct ratbagd_button;
 struct ratbagd_led;
 
+void log_info(const char *fmt, ...) _printf_(1, 2);
 void log_verbose(const char *fmt, ...) _printf_(1, 2);
 void log_error(const char *fmt, ...) _printf_(1, 2);
 
