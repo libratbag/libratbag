@@ -161,15 +161,6 @@ deps_libratbag = [
 	dep_libhidpp,
 ]
 
-libratbag_version_h_config = configuration_data()
-libratbag_version_h_config.set_quoted('LIBRATBAG_VERSION', meson.project_version())
-
-libratbag_version_h = configure_file(
-	output : 'libratbag-version.h',
-	configuration : libratbag_version_h_config,
-	install: false,
-)
-
 lib_libratbag = static_library('ratbag',
 	src_libratbag,
 	include_directories : include_directories('.'),
