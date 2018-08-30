@@ -658,6 +658,27 @@ steelseries_write_led_v2(struct ratbag_led *led)
 
 		duration = led->ms;
 		break;
+	case RATBAG_LED_TRIGGER:
+		buf[19] = 0x01; /* don't restart cycle */
+		buf[23] = 0x07; /* cycle triggered when left, right or wheel clicks are pressed */
+		// TODO: Support other key combinations
+
+		buf[27] = 0x02; /* number of steps in cycle */
+
+		/* start color */
+		buf[28] = buf[31] = led->color.red;
+		buf[29] = buf[32] = led->color.green;
+		buf[30] = buf[33] = led->color.blue;
+
+		/* Cycle to black */
+		buf[35] = 0x00;
+		buf[36] = 0x00;
+		buf[37] = 0x00;
+		buf[38] = 0xFF; /* normalized time share of animation */
+		// TODO: Support base color
+
+		duration = led->ms;
+		break;
 	default:
 		return -EINVAL;
 	}
