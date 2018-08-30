@@ -50,9 +50,14 @@ config_h.set_quoted('LIBRATBAG_DATA_DIR', libratbag_data_dir)
 pkgconfig = import('pkgconfig')
 dep_udev = dependency('libudev')
 dep_libevdev = dependency('libevdev')
-dep_libsystemd = dependency('libsystemd', version : '>=227')
 dep_glib = dependency('glib-2.0')
 dep_lm = cc.find_library('m')
+
+if get_option('logind-provider') == 'elogind'
+	logind_dep = dependency('libelogind', version : '>=227')
+else
+	logind_dep = dependency('libsystemd', version : '>=227')
+endif
 
 enable_systemd = get_option('systemd')
 if enable_systemd
@@ -402,7 +407,7 @@ src_ratbagd = [
 
 deps_ratbagd = [
 	dep_udev,
-	dep_libsystemd,
+	logind_dep,
 	dep_libratbag,
 ]
 

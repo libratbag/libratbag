@@ -33,3 +33,10 @@ option('systemd',
 	value : true,
 	description : 'Build systemd unit files'
 )
+
+option('logind-provider',
+  type : 'combo',
+  choices: [ 'elogind', 'systemd'],
+  value : 'systemd',
+  description : 'Which logind provider to use'
+)
