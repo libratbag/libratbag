@@ -127,6 +127,7 @@ class Ratbagd(object):
     """
 
     def __init__(self):
+        os.environ['LIBRATBAG_DATA_DIR'] = LIBRATBAG_DATA_DIR
         self._ratbag = libratbag.ratbag_create_context(libratbag.interface, None)
         self._devices = {}
         self._devices_initialized = False
