@@ -504,6 +504,7 @@ configure_file(input : 'dbus/org.freedesktop.ratbag1.conf.in',
 python = import('python3')
 py3 = python.find_python()
 
+# ratbagctl calls ratbagd over DBus
 custom_target('ratbagctl',
   output : 'ratbagctl',
   input : ['tools/ratbagctl.in', 'tools/ratbagd.py'],
@@ -527,27 +528,25 @@ config_ratbagctl_devel = configuration_data()
 config_ratbagctl_devel.set('ratbagd_sha', ratbagd_sha)
 config_ratbagctl_devel.set('MESON_BUILD_ROOT', meson.build_root())
 config_ratbagctl_devel.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
+
+configure_file(input : 'tools/toolbox.py',
+	       output : 'toolbox.py',
+	       configuration : config_ratbagctl_devel)
+# ratbagctl.devel starts a custom ratbagd and interacts with that over DBus
 configure_file(input : 'tools/ratbagctl.devel.in',
 	       output : 'ratbagctl.devel',
 	       configuration : config_ratbagctl_devel)
+# ratbagctl.test starts a custom ratbagd and interacts with that over DBus
 configure_file(input : 'tools/ratbagctl.test.in',
 	       output : 'ratbagctl.test',
 	       configuration : config_ratbagctl_devel)
+
 env_test = environment()
 env_test.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 ratbagctl_test = find_program(join_paths(meson.build_root(), 'ratbagctl.test'))
 test('ratbagctl-test', ratbagctl_test, args: ['-v'], env : env_test)
 
-configure_file(input : 'tools/toolbox.py',
-	       output : 'toolbox.py',
-	       configuration : config_ratbagctl_devel)
-
-#### output files ####
-configure_file(output: 'config.h', install: false, configuration: config_h)
-
-subdir('doc')
-
-#### swig generated ####
+# ratbag-command uses Swig bindings to call libratbag directly
 swig = find_program('swig')
 swig_gen = generator(
     swig,
@@ -578,7 +577,7 @@ shared_library(
    install: false,
 )
 
-
+# ratbagc is the layer that maps ratbagctl to the swig bindings
 ratbagc_py_conf = configuration_data()
 ratbagc_py_conf.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 ratbagc_py = configure_file(input: 'tools/ratbagc.py.in',
@@ -593,3 +592,8 @@ custom_target('ratbag-command',
 				'--output', '@OUTPUT@',
 				'--version', meson.project_version()],
   install: false)
+
+#### output files ####
+configure_file(output: 'config.h', install: false, configuration: config_h)
+
+subdir('doc')
