@@ -579,9 +579,13 @@ shared_library(
 )
 
 
+ratbagc_py_conf = configuration_data()
+ratbagc_py = configure_file(input: 'tools/ratbagc.py.in',
+			    output: 'ratbagc.py',
+			    configuration: ratbagc_py_conf)
 custom_target('ratbag-command',
   output : 'ratbag-command',
-  input : ['tools/ratbagctl.in', 'tools/ratbagc.py'],
+  input : ['tools/ratbagctl.in', ratbagc_py],
   build_by_default : true,
   command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
