@@ -284,6 +284,18 @@ class RatbagdDevice(metaclass=MetaRatbag):
         """
         return os.path.join(LIBRATBAG_DATA_DIR, theme, libratbag.ratbag_device_get_svg_name(self._device))
 
+    def get_svg_fd(self, theme):
+        """Returns a File-like object to the SVG for the given theme, or
+        raises FileNotFoundError if the file is not available.
+
+        The theme must be one of org.freedesktop.ratbag1.Manager.Themes. The
+        theme 'default' is guaranteed to be available (but the file itself
+        may not be).
+
+        @param theme The theme from which to retrieve the SVG, as str
+        """
+        return open(self.get_svg(theme))
+
     def commit(self, callback=None):
         """Commits all changes made to the device.
 
