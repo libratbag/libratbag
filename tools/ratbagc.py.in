@@ -27,6 +27,7 @@ import sys
 
 from evdev import ecodes
 
+LIBRATBAG_DATA_DIR = "@LIBRATBAG_DATA_DIR@"
 
 # Deferred translations, see https://docs.python.org/3/library/gettext.html#deferred-translations
 def N_(x):
@@ -281,7 +282,7 @@ class RatbagdDevice(metaclass=MetaRatbag):
 
         @param theme The theme from which to retrieve the SVG, as str
         """
-        return os.path.join(theme, libratbag.ratbag_device_get_svg_name(self._device))
+        return os.path.join(LIBRATBAG_DATA_DIR, theme, libratbag.ratbag_device_get_svg_name(self._device))
 
     def commit(self, callback=None):
         """Commits all changes made to the device.

@@ -580,6 +580,7 @@ shared_library(
 
 
 ratbagc_py_conf = configuration_data()
+ratbagc_py_conf.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 ratbagc_py = configure_file(input: 'tools/ratbagc.py.in',
 			    output: 'ratbagc.py',
 			    configuration: ratbagc_py_conf)
