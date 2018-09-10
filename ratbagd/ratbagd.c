@@ -568,8 +568,12 @@ exit:
 	ratbagd_free(ctx);
 
 	if (r < 0) {
-		errno = -r;
-		log_error("Failed to start ratbagd: %m\n");
+		if (r == -EEXIST) {
+			log_error("Bus name is taken, another instance of ratbagd is already running.\n");
+		} else {
+			errno = -r;
+			log_error("Failed to start ratbagd: %m\n");
+		}
 		return EXIT_FAILURE;
 	}
 
