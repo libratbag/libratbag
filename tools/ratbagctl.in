@@ -28,7 +28,7 @@ import sys
 import argparse
 import re
 
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
 
 
 button_specials_strmap = {
@@ -1520,8 +1520,8 @@ def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
         r = Ratbagd()
         r.verbose = verbose
-    except RatbagdDBusUnavailable:
-        print("Unable to connect to ratbagd over dbus")
+    except RatbagdUnavailable:
+        print("Unable to connect to ratbagd")
         return None
 
     if ratbagd_process is not None:
