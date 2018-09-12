@@ -30,6 +30,7 @@ import re
 
 from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdDBusUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
 
+
 button_specials_strmap = {
     RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",
     RatbagdButton.ACTION_SPECIAL_DOUBLECLICK: "doubleclick",
@@ -661,6 +662,7 @@ def dpi(string):
         raise argparse.ArgumentTypeError("%r is not a valid dpi" % string)
     else:
         return (int_x, int_y)
+
 
 # note: 'eventX' is assumed at the end of each command
 parser_def = [
@@ -1419,6 +1421,7 @@ class RatbagParserLink(RatbagParser):
         dest = self.get_dest()
         print("  {:<36}Use {}for '{} Commands'".format(prefix + self.dest + " ...", prefix, dest.group))
 
+
 classes = {
     switch: RatbagParserSwitch,
     set: RatbagParserSet,
@@ -1552,6 +1555,7 @@ def main(argv):
                 return
             else:
                 f(r, cmd)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

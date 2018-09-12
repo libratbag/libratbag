@@ -29,6 +29,7 @@ from evdev import ecodes
 
 LIBRATBAG_DATA_DIR = "@LIBRATBAG_DATA_DIR@"
 
+
 # Deferred translations, see https://docs.python.org/3/library/gettext.html#deferred-translations
 def N_(x):
     return x
