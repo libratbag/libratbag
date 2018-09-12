@@ -188,6 +188,9 @@ class Ratbagd(object):
 
     def __getitem__(self, id):
         """Returns the requested device, or None."""
+        if id.startswith("event"):
+            id = "/dev/input/{}".format(id)
+
         if id not in self._devices.keys():
             try:
                 dev = RatbagdDevice(self._ratbag, id)
