@@ -55,29 +55,29 @@ class MetaRatbag(type):
 
 
 class RatbagErrorCode(metaclass=MetaRatbag):
-    RATBAG_SUCCESS = libratbag.RATBAG_SUCCESS
+    SUCCESS = libratbag.RATBAG_SUCCESS
 
     """An error occured on the device. Either the device is not a libratbag
     device or communication with the device failed."""
-    RATBAG_ERROR_DEVICE = libratbag.RATBAG_ERROR_DEVICE
+    DEVICE = libratbag.RATBAG_ERROR_DEVICE
 
     """Insufficient capabilities. This error occurs when a requested change is
     beyond the device's capabilities."""
-    RATBAG_ERROR_CAPABILITY = libratbag.RATBAG_ERROR_CAPABILITY
+    CAPABILITY = libratbag.RATBAG_ERROR_CAPABILITY
 
     """Invalid value or value range. The provided value or value range is
     outside of the legal or supported range."""
-    RATBAG_ERROR_VALUE = libratbag.RATBAG_ERROR_VALUE
+    VALUE = libratbag.RATBAG_ERROR_VALUE
 
     """A low-level system error has occured, e.g. a failure to access files
     that should be there. This error is usually unrecoverable and libratbag will
     print a log message with details about the error."""
-    RATBAG_ERROR_SYSTEM = libratbag.RATBAG_ERROR_SYSTEM
+    SYSTEM = libratbag.RATBAG_ERROR_SYSTEM
 
     """Implementation bug, either in libratbag or in the caller. This error is
     usually unrecoverable and libratbag will print a log message with details
     about the error."""
-    RATBAG_ERROR_IMPLEMENTATION = libratbag.RATBAG_ERROR_IMPLEMENTATION
+    IMPLEMENTATION = libratbag.RATBAG_ERROR_IMPLEMENTATION
 
 
 class RatbagdUnavailable(Exception):
@@ -91,37 +91,37 @@ class RatbagError(Exception):
 
 
 class RatbagErrorDevice(RatbagError):
-    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_DEVICE."""
+    """An exception corresponding to RatbagErrorCode.DEVICE."""
     pass
 
 
 class RatbagErrorCapability(RatbagError):
-    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_CAPABILITY."""
+    """An exception corresponding to RatbagErrorCode.CAPABILITY."""
     pass
 
 
 class RatbagErrorValue(RatbagError):
-    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_Value."""
+    """An exception corresponding to RatbagErrorCode.VALUE."""
     pass
 
 
 class RatbagErrorSystem(RatbagError):
-    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_System."""
+    """An exception corresponding to RatbagErrorCode.SYSTEM."""
     pass
 
 
 class RatbagErrorImplementation(RatbagError):
-    """An exception corresponding to RatbagErrorCode.RATBAG_ERROR_IMPLEMENTATION."""
+    """An exception corresponding to RatbagErrorCode.IMPLEMENTATION."""
     pass
 
 
 """A table mapping RatbagErrorCode values to RatbagError* exceptions."""
 EXCEPTION_TABLE = {
-    RatbagErrorCode.RATBAG_ERROR_DEVICE: RatbagErrorDevice,
-    RatbagErrorCode.RATBAG_ERROR_CAPABILITY: RatbagErrorCapability,
-    RatbagErrorCode.RATBAG_ERROR_VALUE: RatbagErrorValue,
-    RatbagErrorCode.RATBAG_ERROR_SYSTEM: RatbagErrorSystem,
-    RatbagErrorCode.RATBAG_ERROR_IMPLEMENTATION: RatbagErrorImplementation
+    RatbagErrorCode.DEVICE: RatbagErrorDevice,
+    RatbagErrorCode.CAPABILITY: RatbagErrorCapability,
+    RatbagErrorCode.VALUE: RatbagErrorValue,
+    RatbagErrorCode.SYSTEM: RatbagErrorSystem,
+    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation
 }
 
 
