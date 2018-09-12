@@ -61,7 +61,7 @@ class RatbagErrorCode(IntEnum):
     RATBAG_ERROR_IMPLEMENTATION = -1004
 
 
-class RatbagdDBusUnavailable(Exception):
+class RatbagdUnavailable(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
     pass
 
@@ -121,7 +121,7 @@ class _RatbagdDBus(GObject.GObject):
             try:
                 _RatbagdDBus._dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
             except GLib.Error as e:
-                raise RatbagdDBusUnavailable(e.message)
+                raise RatbagdUnavailable(e.message)
 
         ratbag1 = "org.freedesktop.ratbag1"
         if os.environ.get('RATBAGCTL_DEVEL'):
@@ -142,10 +142,10 @@ class _RatbagdDBus(GObject.GObject):
                                                  self._interface,
                                                  None)
         except GLib.Error as e:
-            raise RatbagdDBusUnavailable(e.message)
+            raise RatbagdUnavailable(e.message)
 
         if self._proxy.get_name_owner() is None:
-            raise RatbagdDBusUnavailable("No one currently owns {}".format(ratbag1))
+            raise RatbagdUnavailable("No one currently owns {}".format(ratbag1))
 
         self._proxy.connect("g-properties-changed", self._on_properties_changed)
 
@@ -270,7 +270,7 @@ class Ratbagd(_RatbagdDBus):
     through ratbagd; actual interaction with the devices is via the
     RatbagdDevice, RatbagdProfile, RatbagdResolution and RatbagdButton objects.
 
-    Throws RatbagdDBusUnavailable when the DBus service is not available.
+    Throws RatbagdUnavailable when the DBus service is not available.
     """
 
     __gsignals__ = {

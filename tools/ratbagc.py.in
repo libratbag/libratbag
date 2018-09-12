@@ -80,6 +80,11 @@ class RatbagErrorCode(metaclass=MetaRatbag):
     RATBAG_ERROR_IMPLEMENTATION = libratbag.RATBAG_ERROR_IMPLEMENTATION
 
 
+class RatbagdUnavailable(Exception):
+    """Signals DBus is unavailable or the ratbagd daemon is not available."""
+    pass
+
+
 class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
     pass
