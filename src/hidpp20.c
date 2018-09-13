@@ -650,8 +650,7 @@ int hidpp20_led_sw_control_get_led_state(struct hidpp20_device* device,
 	state = (struct hidpp20_led_sw_ctrl_led_state*) msg.msg.parameters;
 
 	// This field has to be stored in little-endian
-	state->mode = state->mode;
-
+	state->mode = hidpp_be_u16_to_cpu(state->mode);
 	if (state->mode == HIDPP20_LED_MODE_BREATHING) {
 		// Only parameters that is reported by these LEDs is brightness when breathing
 		state->breathing.brightness = hidpp_be_u16_to_cpu(state->breathing.brightness);
