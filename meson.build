@@ -46,6 +46,25 @@ libratbag_data_dir = join_paths(get_option('prefix'),
 libratbag_data_dir_devel = join_paths(meson.source_root(), 'data')
 config_h.set_quoted('LIBRATBAG_DATA_DIR', libratbag_data_dir)
 
+# Coverity breaks because it doesn't define _Float128 correctly, you'll end
+# up with a bunch of messages in the form:
+# "/usr/include/stdlib.h", line 133: error #20: identifier "_Float128" is
+#           undefined
+#   extern _Float128 strtof128 (const char *__restrict __nptr,
+#          ^
+# We don't use float128 ourselves, it gets pulled in from math.h or
+# something, so let's just define it as uint128 and move on.
+# Unfortunately we can't detect the coverity build at meson configure
+# time, we only know it fails at runtime. So make this an option instead, to
+# be removed when coverity fixes this again.
+if get_option('coverity')
+        config_h.set('_Float128', '__uint128_t')
+        config_h.set('_Float32', 'int')
+        config_h.set('_Float32x', 'int')
+        config_h.set('_Float64', 'long')
+        config_h.set('_Float64x', 'long')
+endif
+
 # dependencies
 pkgconfig = import('pkgconfig')
 dep_udev = dependency('libudev')
