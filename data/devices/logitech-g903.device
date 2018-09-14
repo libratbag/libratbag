@@ -1,0 +1,6 @@
+# Logitech G903 over USB
+[Device]
+Name=Logitech G903
+DeviceMatch=usb:046d:c086
+Driver=hidpp20
+Svg=logitech-g900.svg
