@@ -87,12 +87,12 @@ class RatbagErrorCapability(RatbagError):
 
 
 class RatbagErrorValue(RatbagError):
-    """An exception corresponding to RatbagErrorCode.Value."""
+    """An exception corresponding to RatbagErrorCode.VALUE."""
     pass
 
 
 class RatbagErrorSystem(RatbagError):
-    """An exception corresponding to RatbagErrorCode.System."""
+    """An exception corresponding to RatbagErrorCode.SYSTEM."""
     pass
 
 
