@@ -292,7 +292,11 @@ class RatbagdDevice(metaclass=MetaRatbag):
 
         @param theme The theme from which to retrieve the SVG, as str
         """
-        return os.path.join(LIBRATBAG_DATA_DIR, theme, libratbag.ratbag_device_get_svg_name(self._device))
+        svg = libratbag.ratbag_device_get_svg_name(self._device)
+        if svg is None:
+            return ''
+
+        return os.path.join(LIBRATBAG_DATA_DIR, theme, svg)
 
     def get_svg_fd(self, theme):
         """Returns a File-like object to the SVG for the given theme, or
