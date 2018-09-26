@@ -696,6 +696,18 @@ hidpp10drv_probe(struct ratbag_device *device)
 	ratbag_device_for_each_profile(device, profile)
 		hidpp10drv_read_profile(profile);
 
+	if (device->num_profiles == 1) {
+		_cleanup_profile_ struct ratbag_profile *profile;
+
+		profile = ratbag_device_get_profile(device, 0);
+		if (!profile->is_active) {
+			log_debug(device->ratbag,
+				  "%s: forcing profile 0 to active.\n",
+				  device->name);
+			profile->is_active = true;
+		}
+	}
+
 	return 0;
 err:
 	free(drv_data);
