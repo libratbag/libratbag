@@ -1,0 +1,12 @@
+[Device]
+Name=SteelSeries Rival 600
+DeviceMatch=usb:1038:1724
+Driver=steelseries
+Svg=steelseries-rival600.svg
+
+[Driver/steelseries]
+DeviceVersion=3
+Buttons=7
+Leds=8
+DpiRange=100:12000@100
+MacroLength=1

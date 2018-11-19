@@ -298,6 +298,7 @@ data_files = files(
 	'data/devices/roccat-kone-xtd.device',
 	'data/devices/steelseries-kinzu-v2.device',
 	'data/devices/steelseries-rival-310.device',
+	'data/devices/steelseries-rival-600.device',
 	'data/devices/steelseries-sensei-310.device',
 	'data/devices/steelseries-sensei-raw.device',
 )
@@ -329,6 +330,7 @@ gnome_svg_files = files(
 	'data/gnome/roccat-kone-xtd.svg',
 	'data/gnome/steelseries-kinzu-v2.svg',
 	'data/gnome/steelseries-rival310.svg',
+	'data/gnome/steelseries-rival600.svg',
 	'data/gnome/steelseries-sensei310.svg',
 	'data/gnome/steelseries-senseiraw.svg',
 )
