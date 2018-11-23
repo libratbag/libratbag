@@ -1,0 +1,6 @@
+# Logitech G502 Proteus Spectrum over USB
+[Device]
+Name=Logitech G502 HERO
+DeviceMatch=usb:046d:c08b
+Driver=hidpp20
+Svg=logitech-g502.svg
