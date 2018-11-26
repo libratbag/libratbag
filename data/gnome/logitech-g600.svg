@@ -292,16 +292,16 @@
     <path
        style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#babdb6;stroke-width:1.00157475;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 317.54607,570.04977 v -14.86768 c 0,-3.32226 -2.53923,-3.17407 -10.93958,-3.17407 -8.40035,0 -10.75737,-0.17634 -10.75737,3.17407 v 14.99268 c 0,0.8228 0.29258,1.29021 0.94502,1.28789 l 19.59359,-0.0698 c 0.59119,-0.002 1.15834,-0.75189 1.15834,-1.34309 z"
-       id="button6"
+       id="button7"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="sszsssss" />
     <path
        style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#babdb6;stroke-width:1.00157475;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 296.79395,573.25201 c -0.65244,0 -0.94531,0.46626 -0.94531,1.28906 v 13.6836 c 0.125,3.125 1.04518,4.18009 3.82812,4.92578 1.12947,0.30264 3.08418,0.75 6.92969,0.75 3.81789,0 6.10173,-0.5475 7.0957,-0.8125 2.12312,-0.56604 3.84375,-1.86328 3.84375,-4.48828 v -13.9336 c 0,-1.00605 -0.19935,-1.34375 -1.1582,-1.34375 z"
-       id="button7"
+       id="button6"
        inkscape:connector-curvature="0" />
     <g
-       id="button7_display"
+       id="button6_display"
        transform="translate(9.375)">
       <path
          style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#babdb6;stroke-width:1.00157475;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
@@ -831,7 +831,7 @@
          y="204.89717" />
     </g>
     <g
-       id="button6-path"
+       id="button7-path"
        transform="translate(9.3749998)">
       <path
          id="path2125"
@@ -848,14 +848,14 @@
          style="display:inline;opacity:1;fill:#2e3436;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:9.99999905;stroke-opacity:1;paint-order:normal" />
       <rect
          style="text-align:start;opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:5;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:9.99999905;stroke-opacity:1;paint-order:normal"
-         id="button6-leader"
+         id="button7-leader"
          width="1"
          height="1"
          x="473.625"
          y="235.11517" />
     </g>
     <g
-       id="button7-path"
+       id="button6-path"
        transform="translate(9.3749998)">
       <path
          id="path2127"
@@ -872,7 +872,7 @@
          y="181.92424" />
       <rect
          style="text-align:start;opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:5;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:9.99999905;stroke-opacity:1;paint-order:normal"
-         id="button7-leader"
+         id="button6-leader"
          width="1"
          height="1"
          x="473.625"
