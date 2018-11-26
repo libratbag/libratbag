@@ -605,3 +605,35 @@ exit:
 
 	return EXIT_SUCCESS;
 }
+
+struct ratbagd_callback
+{
+	ratbagd_callback_t callback;
+	void *userdata;
+};
+
+static int ratbagd_callback_handler(sd_event_source *s, void *userdata)
+{
+	struct ratbagd_callback *cb = userdata;
+
+	cb->callback(cb->userdata);
+
+	sd_event_source_set_enabled(s, SD_EVENT_OFF);
+	sd_event_source_unref(s);
+	free(cb);
+
+	return 0;
+}
+
+void ratbagd_schedule_task(struct ratbagd *ctx,
+			   ratbagd_callback_t callback,
+			   void *userdata)
+{
+	struct ratbagd_callback *cb = zalloc(sizeof *cb);
+	sd_event_source *source;
+
+	cb->callback = callback;
+	cb->userdata = userdata;
+
+	sd_event_add_post(ctx->event, &source, ratbagd_callback_handler, cb);
+}

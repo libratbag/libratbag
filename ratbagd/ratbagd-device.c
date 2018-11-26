@@ -256,20 +256,25 @@ static int ratbagd_device_get_profiles(sd_bus *bus,
 	return 0;
 }
 
+static void ratbagd_device_commit_pending(void *data)
+{
+	struct ratbagd_device *device = data;
+	int r;
+
+	r = ratbag_device_commit(device->lib_device);
+	if (r < 0)
+		ratbagd_device_resync(device, device->ctx->bus);
+}
+
 static int ratbagd_device_commit(sd_bus_message *m,
 				 void *userdata,
 				 sd_bus_error *error)
 {
 	struct ratbagd_device *device = userdata;
-	int r;
 
-	r = ratbag_device_commit(device->lib_device);
-	if (r < 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
-		r = ratbagd_device_resync(device, bus);
-		if (r < 0)
-			return r;
-	}
+	ratbagd_schedule_task(device->ctx,
+			      ratbagd_device_commit_pending,
+			      device);
 
 	CHECK_CALL(sd_bus_reply_method_return(m, "u", 0));
 
