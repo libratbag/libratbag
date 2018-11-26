@@ -788,3 +788,47 @@ int ratbagd_for_each_resolution_signal(sd_bus *bus,
 
 	return rc;
 }
+
+int ratbagd_for_each_button_signal(sd_bus *bus,
+				       struct ratbagd_profile *profile,
+				       int (*func)(sd_bus *bus,
+						   struct ratbagd_button *button))
+{
+	int rc = 0;
+
+	for (size_t i = 0; rc == 0 && i < profile->n_buttons; i++)
+		rc = func(bus, profile->buttons[i]);
+
+	return rc;
+}
+
+int ratbagd_for_each_led_signal(sd_bus *bus,
+				       struct ratbagd_profile *profile,
+				       int (*func)(sd_bus *bus,
+						   struct ratbagd_led *button))
+{
+	int rc = 0;
+
+	for (size_t i = 0; rc == 0 && i < profile->n_leds; i++)
+		rc = func(bus, profile->leds[i]);
+
+	return rc;
+}
+
+
+int ratbagd_profile_resync(sd_bus *bus,
+			    struct ratbagd_profile *profile)
+{
+	ratbagd_for_each_resolution_signal(bus, profile, ratbagd_resolution_resync);
+	ratbagd_for_each_button_signal(bus, profile, ratbagd_button_resync);
+	ratbagd_for_each_led_signal(bus, profile, ratbagd_led_resync);
+
+	return sd_bus_emit_properties_changed(bus,
+					      profile->path,
+					      RATBAGD_NAME_ROOT ".Profile",
+					      "Resolutions",
+					      "Buttons",
+					      "Leds",
+					      "IsActive",
+					      NULL);
+}

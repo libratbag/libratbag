@@ -438,6 +438,10 @@ int ratbagd_device_resync(struct ratbagd_device *device, sd_bus *bus)
 {
 	assert(device);
 	assert(bus);
+
+	ratbagd_for_each_profile_signal(bus, device,
+					ratbagd_profile_resync);
+
 	return sd_bus_emit_signal(bus,
 				  device->path,
 				  RATBAGD_NAME_ROOT ".Device",

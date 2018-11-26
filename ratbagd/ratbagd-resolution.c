@@ -45,6 +45,19 @@ struct ratbagd_resolution {
 	char *path;
 };
 
+int ratbagd_resolution_resync(sd_bus *bus,
+			      struct ratbagd_resolution *resolution)
+{
+	return sd_bus_emit_properties_changed(bus,
+					      resolution->path,
+					      RATBAGD_NAME_ROOT ".Resolution",
+					      "IsDefault",
+					      "Resolution",
+					      "ReportRate",
+					      "IsActive",
+					      NULL);
+}
+
 static int ratbagd_resolution_active_signal_cb(sd_bus *bus,
 						struct ratbagd_resolution *resolution)
 {

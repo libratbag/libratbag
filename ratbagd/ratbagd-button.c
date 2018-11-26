@@ -433,3 +433,15 @@ struct ratbagd_button *ratbagd_button_free(struct ratbagd_button *button)
 	return mfree(button);
 }
 
+int ratbagd_button_resync(sd_bus *bus,
+			      struct ratbagd_button *button)
+{
+	return sd_bus_emit_properties_changed(bus,
+					      button->path,
+					      RATBAGD_NAME_ROOT ".Button",
+					      "ButtonMapping",
+					      "SpecialMapping",
+					      "Macro",
+					      "ActionType",
+					      NULL);
+}

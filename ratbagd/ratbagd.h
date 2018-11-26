@@ -100,6 +100,15 @@ int ratbagd_for_each_resolution_signal(sd_bus *bus,
 				       struct ratbagd_profile *profile,
 				       int (*func)(sd_bus *bus,
 						   struct ratbagd_resolution *resolution));
+int ratbagd_for_each_button_signal(sd_bus *bus,
+				   struct ratbagd_profile *profile,
+				   int (*func)(sd_bus *bus,
+					       struct ratbagd_button *button));
+int ratbagd_for_each_led_signal(sd_bus *bus,
+				struct ratbagd_profile *profile,
+				int (*func)(sd_bus *bus,
+					    struct ratbagd_led *led));
+int ratbagd_profile_resync(sd_bus *bus, struct ratbagd_profile *profile);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_profile *, ratbagd_profile_free);
 
@@ -115,6 +124,7 @@ int ratbagd_resolution_new(struct ratbagd_resolution **out,
 			   unsigned int index);
 struct ratbagd_resolution *ratbagd_resolution_free(struct ratbagd_resolution *resolution);
 const char *ratbagd_resolution_get_path(struct ratbagd_resolution *resolution);
+int ratbagd_resolution_resync(sd_bus *bus, struct ratbagd_resolution *resolution);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_resolution *, ratbagd_resolution_free);
 
@@ -130,6 +140,7 @@ int ratbagd_button_new(struct ratbagd_button **out,
 		       unsigned int index);
 struct ratbagd_button *ratbagd_button_free(struct ratbagd_button *button);
 const char *ratbagd_button_get_path(struct ratbagd_button *button);
+int ratbagd_button_resync(sd_bus *bus, struct ratbagd_button *button);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_button *, ratbagd_button_free);
 
@@ -145,6 +156,7 @@ int ratbagd_led_new(struct ratbagd_led **out,
 		    unsigned int index);
 struct ratbagd_led *ratbagd_led_free(struct ratbagd_led *led);
 const char *ratbagd_led_get_path(struct ratbagd_led *led);
+int ratbagd_led_resync(sd_bus *bus, struct ratbagd_led *led);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_led *, ratbagd_led_free);
 
