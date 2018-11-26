@@ -189,7 +189,9 @@ out_err:
 int
 hidpp20_request_command(struct hidpp20_device *device, union hidpp20_message *msg)
 {
-	return hidpp20_request_command_allow_error(device, msg, false);
+	int ret = hidpp20_request_command_allow_error(device, msg, false);
+
+	return ret > 0 ? -EPROTO : ret;
 }
 
 /* -------------------------------------------------------------------------- */
