@@ -7,6 +7,16 @@ hardware-specific and kernel-specific quirks.
 
 libratbag exports the devices over a DBus daemon called **ratbagd**, see the
 [ratbagd DBus Interface description](https://libratbag.github.io/).
+Users interact through a GUI like
+[Piper](https://github.com/libratbag/piper/). For developers, the
+`ratbagctl` tool is the prime tool for debugging.
+
+Installing libratbag from system packages
+-----------------------------------------
+
+libratbag is packaged for some distributions, you can use your system's
+package manager to install it. See [the
+wiki](https://github.com/libratbag/libratbag/wiki/Installation) for details.
 
 Compiling libratbag
 -------------------
@@ -17,7 +27,11 @@ libratbag and initialize the build:
 
     git clone https://github.com/libratbag/libratbag.git
     cd libratbag
-    meson builddir --prefix=/usr/
+    meson builddir
+
+This will inititialize libratbag so that it installs under `/usr/local`,
+i.e. it will not overwrite the system installation. For more information,
+see [the wiki](https://github.com/libratbag/libratbag/wiki/Installation).
 
 And to build or re-build after code-changes, run:
 
