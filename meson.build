@@ -273,6 +273,7 @@ data_files = files(
 	'data/devices/logitech-g500s.device',
 	'data/devices/logitech-g502-Proteus-Core-over-USB.device',
 	'data/devices/logitech-g502-Proteus-Spectrum-over-USB.device',
+	'data/devices/logitech-g502-HERO-over-USB.device',
 	'data/devices/logitech-g5-2007.device',
 	'data/devices/logitech-g5.device',
 	'data/devices/logitech-g600.device',
