@@ -197,11 +197,11 @@ jobs:
   fedora_cache:
     <<: *fedora_prep_cache
     docker:
-      - image: fedora:latest
+      - image: fedora:28
   fedora_latest:
     <<: *fedora_settings
     docker:
-      - image: fedora:latest
+      - image: fedora:28
   ubuntu_17_10:
     <<: *ubuntu_settings
     docker:
@@ -209,15 +209,15 @@ jobs:
   doc_build:
     <<: *doc_build
     docker:
-      - image: fedora:latest
+      - image: fedora:28
   scan_build:
     <<: *scan_build_run
     docker:
-      - image: fedora:latest
+      - image: fedora:28
   doc_deploy:
     <<: *docs_deploy
     docker:
-      - image: fedora:latest
+      - image: fedora:28
 
 
 workflows:
