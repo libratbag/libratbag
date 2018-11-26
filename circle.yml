@@ -188,10 +188,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:28
-  ubuntu_17_10:
+  ubuntu_19_04:
     <<: *ubuntu_settings
     docker:
-      - image: ubuntu:artful
+      - image: ubuntu:19.04
   doc_build:
     <<: *doc_build
     docker:
@@ -208,7 +208,7 @@ workflows:
     jobs:
       # - fedora_rawhide
       - fedora_cache
-      - ubuntu_17_10
+      - ubuntu_19_04
       - fedora_latest:
           requires:
             - fedora_cache
