@@ -1042,7 +1042,7 @@ int hidpp20_special_key_mouse_get_controls(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	struct hidpp20_control_id *c_list, *control;
-	uint8_t num_controls;
+	uint8_t num_controls, real_num_controls = 0;
 	unsigned i;
 	int rc;
 
@@ -1062,22 +1062,30 @@ int hidpp20_special_key_mouse_get_controls(struct hidpp20_device *device,
 		return 0;
 	}
 
+	hidpp_log_debug(&device->base, "device has %d buttons\n", num_controls);
+
 	c_list = zalloc(num_controls * sizeof(struct hidpp20_control_id));
 
 	for (i = 0; i < num_controls; i++) {
-		control = &c_list[i];
+		control = &c_list[real_num_controls];
 		control->index = i;
 		rc = hidpp20_special_keys_buttons_get_info(device,
 							   feature_index,
 							   control);
-		if (rc)
-			goto err;
+		if (rc) {
+			hidpp_log_error(&device->base,
+				"error getting button info for control %d, ignoring\n", i);
+			continue;
+		}
 
 		rc = hidpp20_special_keys_buttons_get_reporting(device,
 								feature_index,
 								control);
-		if (rc)
-			goto err;
+		if (rc) {
+			hidpp_log_error(&device->base,
+				"error getting button reporting for control %d, ignoring\n", i);
+			continue;
+		}
 
 		hidpp_log_raw(&device->base,
 			      "control %d: cid: '%s' (%d) tid: '%s' (%d) flags: 0x%02x pos: %d group: %d gmask: 0x%02x raw_XY: %s\n"
@@ -1097,13 +1105,11 @@ int hidpp20_special_key_mouse_get_controls(struct hidpp20_device *device,
 			      control->reporting.divert ? "yes" : "no",
 			      hidpp20_1b04_get_logical_mapping_name(control->reporting.remapped),
 			      control->reporting.remapped);
-	}
 
-	*controls_list = c_list;
-	return num_controls;
-err:
-	free(c_list);
-	return rc;
+		real_num_controls++;
+	}
+	*controls_list = realloc(c_list, real_num_controls * sizeof(struct hidpp20_control_id));
+	return real_num_controls;
 }
 
 int
