@@ -202,10 +202,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:28
-  ubuntu_17_10:
+  ubuntu_18_10:
     <<: *ubuntu_settings
     docker:
-      - image: ubuntu:artful
+      - image: ubuntu:18.10
   doc_build:
     <<: *doc_build
     docker:
@@ -229,7 +229,7 @@ workflows:
       - scan_build:
           requires:
             - fedora_cache
-      - ubuntu_17_10
+      - ubuntu_18_10
       - fedora_latest:
           requires:
             - fedora_cache
