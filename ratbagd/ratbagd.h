@@ -216,3 +216,9 @@ struct ratbagd {
 
 	const char **themes; /* NULL-terminated */
 };
+
+typedef void (*ratbagd_callback_t)(void *userdata);
+
+void ratbagd_schedule_task(struct ratbagd *ctx,
+			   ratbagd_callback_t callback,
+			   void *userdata);
