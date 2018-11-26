@@ -360,3 +360,15 @@ struct ratbagd_led *ratbagd_led_free(struct ratbagd_led *led)
 	return mfree(led);
 }
 
+int ratbagd_led_resync(sd_bus *bus,
+		       struct ratbagd_led *led)
+{
+	return sd_bus_emit_properties_changed(bus,
+					      led->path,
+					      RATBAGD_NAME_ROOT ".Led",
+					      "Mode",
+					      "Color",
+					      "EffectDuration",
+					      "Brightness",
+					      NULL);
+}
