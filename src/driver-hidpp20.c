@@ -421,9 +421,6 @@ hidpp20drv_update_button_1b04(struct ratbag_button *button)
 	control->reporting.updated = 1;
 
 	rc = hidpp20_special_key_mouse_set_control(drv_data->dev, control);
-	if (rc == HIDPP20_ERR_INVALID_ARGUMENT)
-		return -EINVAL;
-
 	if (rc)
 		log_error(device->ratbag,
 			  "Error while writing profile: '%s' (%d)\n",
