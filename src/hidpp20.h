@@ -101,6 +101,18 @@ int hidpp20_root_get_protocol_version(struct hidpp20_device *dev,
 #define HIDPP_PAGE_DEVICE_INFO				0x0003
 
 /* -------------------------------------------------------------------------- */
+/* 0x0005: Device Name                                                        */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_DEVICE_NAME				0x0005
+
+/* -------------------------------------------------------------------------- */
+/* 0x0020: Reset                                                              */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_RESET					0x0020
+
+/* -------------------------------------------------------------------------- */
 /* 0x1000: Battery level status                                               */
 /* -------------------------------------------------------------------------- */
 #define HIDPP_PAGE_BATTERY_LEVEL_STATUS			0x1000
@@ -315,6 +327,12 @@ uint16_t hidpp20_1b04_get_logical_control_id(const struct ratbag_button_action *
 const char *hidpp20_1b04_get_logical_mapping_name(uint16_t value);
 enum ratbag_button_type hidpp20_1b04_get_physical_mapping(uint16_t value);
 const char *hidpp20_1b04_get_physical_mapping_name(uint16_t value);
+
+/* -------------------------------------------------------------------------- */
+/* 0x1d4b: Wireless Device Status                                             */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_WIRELESS_DEVICE_STATUS		0x1d4b
 
 /* -------------------------------------------------------------------------- */
 /* 0x2200: Mouse Pointer Basic Optical Sensors                                */
