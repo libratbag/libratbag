@@ -208,6 +208,7 @@ struct ratbagd {
 	sd_event *event;
 	struct ratbag *lib_ctx;
 	struct udev_monitor *monitor;
+	sd_event_source *timeout_source;
 	sd_event_source *monitor_source;
 	sd_bus *bus;
 

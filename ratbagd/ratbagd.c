@@ -489,6 +489,26 @@ exit:
 	return r;
 }
 
+static int on_timeout_cb(sd_event_source *s, uint64_t usec, void *userdata)
+{
+	log_info("Exiting after idle\n");
+	sd_event_exit(sd_event_source_get_event(s), 0);
+	return 0;
+}
+
+static int before_idle_cb(sd_event_source *s, void *userdata)
+{
+	struct ratbagd *ctx = userdata;
+	uint64_t usec;
+
+	sd_event_now(sd_event_source_get_event(s), CLOCK_MONOTONIC, &usec);
+#define min2us(us_) (us_ * 1000000 * 60)
+	usec += min2us(20);
+	sd_event_source_set_time(ctx->timeout_source, usec);
+
+	return 0;
+}
+
 static int sighandler(sd_event_source *source,
 		      const struct signalfd_siginfo *si,
 		      void *userdata)
@@ -502,18 +522,6 @@ static int ratbagd_run(struct ratbagd *ctx)
 {
 	int r;
 
-	/*
-	 * TODO: We should support exit-on-idle and bus-activation. Note that
-	 *       we don't store any state on our own, hence, all we have to do
-	 *       is to make sure we advertise device add/remove events via the
-	 *       bus (in case there is a listener).
-	 *       To track such events, we should store devices we already
-	 *       advertised in /run/ratbagd/devices/ and read it out on
-	 *       activation.
-	 *       Note that this feature requires udev-activation, which might
-	 *       not be possible, yet.
-	 */
-
 	r = ratbagd_run_enumerate(ctx);
 	if (r < 0)
 		return r;
@@ -523,6 +531,24 @@ static int ratbagd_run(struct ratbagd *ctx)
 	sigaddset(&sigset, SIGINT);
 	sigprocmask(SIG_BLOCK, &sigset, NULL);
 	sd_event_add_signal(ctx->event, NULL, SIGINT, sighandler, NULL);
+
+	/* exit-on-idle: we set up a timer to simply exit. Since we don't
+	 * store anything, it doesn't matter and we can just restart next
+	 * time someone wants us.
+	 *
+	 * since we don't want to monitor every single dbus call, we just
+	 * set up a post source that gets called before we go idle. That
+	 * resets the timer, so as long as something is happening, ratbagd
+	 * won't exit.
+	 */
+	sd_event_add_time(ctx->event,
+			  &ctx->timeout_source,
+			  CLOCK_MONOTONIC,
+			  -1, /* infinite, see before_idle_cb */
+			  min2us(1), /* accuracy doesn't matter */
+			  on_timeout_cb,
+			  ctx);
+	sd_event_add_post(ctx->event, NULL, before_idle_cb, ctx);
 
 	return sd_event_loop(ctx->event);
 }
