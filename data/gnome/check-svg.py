@@ -66,13 +66,14 @@ def check_elements(root, prefix, required=0):
     highest = -1
     for idx in range(0, 20):
         e = '{}{}'.format(prefix, idx)
+        previous = '{}{}'.format(prefix, idx - 1)
+        leader = '{}{}-leader'.format(prefix, idx)
+        path = '{}{}-path'.format(prefix, idx)
         if e in element_ids:
             highest = idx
-            previous = '{}{}'.format(prefix, idx - 1)
             if idx > 0 and previous not in element_ids:
                 logger.warning("Non-consecutive {}: {}".format(prefix, e))
 
-            leader = '{}{}-leader'.format(prefix, idx)
             if leader not in element_ids:
                 logger.error("Missing {} for {}".format(leader, e))
             else:
@@ -80,9 +81,12 @@ def check_elements(root, prefix, required=0):
                 if element is None or len(element) != 1 or element[0] is None:
                     logger.error("Missing style property for {}".format(leader))
 
-            path = '{}{}-path'.format(prefix, idx)
             if path not in element_ids:
                 logger.error("Missing {} for {}".format(path, e))
+        elif leader in element_ids:
+            logger.error("Have {} but not {}".format(leader, e))
+        elif path in element_ids:
+            logger.error("Have {} but not {}".format(path, e))
         elif idx < required:
             logger.error("Missing {}: {}".format(prefix, e))
 
