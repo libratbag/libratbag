@@ -748,6 +748,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 
 		ratbag_resolution_set_report_rate_list(resolution, report_rates,
 						       ARRAY_LENGTH(report_rates));
+		ratbag_resolution_set_dpi_list_from_range(resolution, 200, 8200);
 	}
 
 	ratbag_profile_for_each_button(profile, button)
