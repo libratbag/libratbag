@@ -32,6 +32,15 @@ import configparser
 # Set on commandline with --svg-dir
 svg_dirs = []
 
+def assertIn(element, l):
+    if element not in l:
+        raise AssertionError('{} must be in {}'.format(element, l))
+
+
+def assertNotIn(element, l):
+    if element in l:
+        raise AssertionError('{} must not be in {}'.format(element, l))
+
 
 def check_svg_str(string):
     assert(string.endswith('.svg'))
@@ -55,7 +64,7 @@ def check_match_str(string):
 
         parts = match.split(':')
         assert(len(parts) == 3)
-        assert(parts[0] in bustypes)
+        assertIn(parts[0], bustypes)
         vid = parts[1]
         assert(vid == '{:04x}'.format(int(vid, 16)))
         pid = parts[2]
@@ -70,7 +79,7 @@ def check_ledtypes_str(string):
         if not t: # emtpy string if trailing ;
             continue
 
-        assert(t in permitted_types)
+        assertIn(t, permitted_types)
 
 
 def check_section_device(section):
@@ -78,10 +87,10 @@ def check_section_device(section):
     permitted_keys = required_keys + ['Svg', 'LedTypes']
 
     for key in section.keys():
-        assert(key in permitted_keys)
+        assertIn(key, permitted_keys)
 
     for r in required_keys:
-        assert(r in section)
+        assertIn(r, section)
 
     try:
         check_svg_str(section['Svg'])
@@ -132,13 +141,13 @@ def check_dpi_list_str(string):
 
 def check_profile_type_str(string):
     types = ['G9', 'G500', 'G700']
-    assert(string in types)
+    assertIn(string, types)
 
 
 def check_section_hidpp10(section):
     permitted = ['Profiles', 'ProfileType', 'DpiRange', 'DpiList', 'DeviceIndex', 'Leds']
     for key in section.keys():
-        assert(key in permitted)
+        assertIn(key, permitted)
 
     try:
         nprofiles = int(section['Profiles'])
@@ -156,13 +165,13 @@ def check_section_hidpp10(section):
 
     try:
         check_dpi_range_str(section['DpiRange'])
-        assert('DpiList' not in section.keys())
+        assertNotIn('DpiList', section.keys())
     except KeyError:
         pass
 
     try:
         check_dpi_list_str(section['DpiList'])
-        assert('DpiRange' not in section.keys())
+        assertNotIn('DpiRange', section.keys())
     except KeyError:
         pass
 
@@ -182,7 +191,7 @@ def check_section_hidpp10(section):
 def check_section_hidpp20(section):
     permitted = ['DeviceIndex']
     for key in section.keys():
-        assert(key in permitted)
+        assertIn(key, permitted)
 
     try:
         index = int(section['DeviceIndex'])
@@ -208,7 +217,7 @@ def parse_data_file(path):
     data.optionxform = lambda option: option
     data.read(path)
 
-    assert('Device' in data.sections())
+    assertIn('Device', data.sections())
     check_section_device(data['Device'])
 
     driver = data['Device']['Driver']
@@ -216,7 +225,7 @@ def parse_data_file(path):
 
     permitted_sections = ['Device', driver_section]
     for s in data.sections():
-        assert(s in permitted_sections)
+        assertIn(s, permitted_sections)
 
     if data.has_section(driver_section):
         check_section_driver(driver, data[driver_section])
