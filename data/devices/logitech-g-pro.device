@@ -1,9 +1,0 @@
-[Device]
-Name=Logitech Gaming Mouse G Pro
-DeviceMatch=usb:046d:c085
-Svg=logitech-g-pro.svg
-Driver=hidpp20
-LedTypes=logo;side
-DpiRange=50:12000@50
-DpiList=50;200;400;800:12000
-Leds=1
