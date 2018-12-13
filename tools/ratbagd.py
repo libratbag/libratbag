@@ -278,12 +278,18 @@ class Ratbagd(_RatbagdDBus):
             (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
         "device-removed":
             (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        "daemon-disappeared":
+            (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __init__(self):
         _RatbagdDBus.__init__(self, "Manager", None)
         result = self._get_dbus_property("Devices") or []
         self._devices = [RatbagdDevice(objpath) for objpath in result]
+        self._proxy.connect("notify::g-name-owner", self._on_name_owner_changed)
+
+    def _on_name_owner_changed(self, *kwargs):
+        self.emit("daemon-disappeared")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
         if "Devices" in changed_props.keys():
