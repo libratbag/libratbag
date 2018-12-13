@@ -310,23 +310,15 @@ class RatbagdDevice(metaclass=MetaRatbag):
         """
         return open(self.get_svg(theme))
 
-    def commit(self, callback=None):
+    def commit(self):
         """Commits all changes made to the device.
 
-        This is an async call to DBus and this method does not return
-        anything. Any success or failure code is reported to the callback
-        provided when ratbagd finishes writing to the device. Note that upon
-        failure, the device is automatically resynchronized by ratbagd and no
-        further interaction is required by the client; clients can thus treat a
-        commit as being always successful.
-
-        @param callback The function to call with the result of the commit, as
-                        a function that takes the return value of the Commit
-                        method.
+        This is implemented asynchronously inside ratbagd. Hence, we just call
+        this method and always succeed.  Any failure is handled inside ratbagd
+        by emitting the Resync signal, which automatically resynchronizes the
+        device. No further interaction is required by the client.
         """
-        r = libratbag.ratbag_device_commit(self._device)
-        if callback is not None:
-            callback(r)
+        return libratbag.ratbag_device_commit(self._device)
 
 
 class RatbagdProfile(metaclass=MetaRatbag):
