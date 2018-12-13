@@ -533,8 +533,13 @@ configure_file(input : 'dbus/org.freedesktop.ratbag1.conf.in',
 
 #### tools ####
 
-python = import('python3')
-py3 = python.find_python()
+if meson.version().version_compare('<0.48.0')
+  python = import('python3')
+  py3 = python.find_python()
+else
+  pymod = import('python')
+  py3 = pymod.find_installation()
+endif
 
 # ratbagctl calls ratbagd over DBus
 custom_target('ratbagctl',
