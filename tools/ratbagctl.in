@@ -614,15 +614,10 @@ link = 'link'
 ################################################################################
 
 
-def commit_cb(status):
-    if not status == RatbagErrorCode.RATBAG_SUCCESS:
-        print("Could not commit changes to the device")
-
-
 def commit(device, args):
     if args.nocommit:
         return
-    device.commit(commit_cb)
+    device.commit()
 
 
 def color(string):

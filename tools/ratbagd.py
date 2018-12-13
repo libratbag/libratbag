@@ -186,27 +186,6 @@ class _RatbagdDBus(GObject.GObject):
         # update
         self._proxy.set_cached_property(property, val)
 
-    def _dbus_call_async(self, method, type, *value, callback):
-        # The callback handler to unwrap the data
-        def callback_handler(obj, result, user_callback):
-            try:
-                res = obj.call_finish(result)
-                res = res.unpack()[0]  # Result is always a tuple
-                user_callback(res)
-            except GLib.Error as e:
-                # Unrecognized error code; print the message to stderr and raise
-                # the GLib.Error.
-                print(e.message, file=sys.stderr)
-                raise
-
-        # Calls a method asynchronously on the bus, using the given method
-        # name, type signature and values. The callback is invoked when the
-        # method finishes
-        val = GLib.Variant("({})".format(type), value)
-        self._proxy.call(method, val,
-                         Gio.DBusCallFlags.NO_AUTO_START,
-                         500, None, callback_handler, callback)
-
     def _dbus_call(self, method, type, *value):
         # Calls a method synchronously on the bus, using the given method name,
         # type signature and values.
@@ -426,21 +405,15 @@ class RatbagdDevice(_RatbagdDBus):
         """
         return self._dbus_call("GetSvg", "s", theme)
 
-    def commit(self, callback):
+    def commit(self):
         """Commits all changes made to the device.
 
-        This is an async call to DBus and this method does not return
-        anything. Any success or failure code is reported to the callback
-        provided when ratbagd finishes writing to the device. Note that upon
-        failure, the device is automatically resynchronized by ratbagd and no
-        further interaction is required by the client; clients can thus treat a
-        commit as being always successful.
-
-        @param callback The function to call with the result of the commit, as
-                        a function that takes the return value of the Commit
-                        method.
+        This is implemented asynchronously inside ratbagd. Hence, we just call
+        this method and always succeed.  Any failure is handled inside ratbagd
+        by emitting the Resync signal, which automatically resynchronizes the
+        device. No further interaction is required by the client.
         """
-        self._dbus_call_async("Commit", "", callback=callback)
+        self._dbus_call("Commit", "")
         for profile in self._profiles:
             if profile.dirty:
                 profile._dirty = False
