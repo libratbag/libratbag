@@ -339,6 +339,9 @@ install_data(data_files,
 data_parse_test = find_program(join_paths(meson.source_root(), 'data/devices/data-parse-test.py'))
 test('data-parse-test', data_parse_test, args:  data_files)
 
+duplicate_test = find_program(join_paths(meson.source_root(), 'data/devices/duplicate-check.py'))
+test('duplicate-test', duplicate_test, args : data_files)
+
 #### tests ####
 enable_tests = get_option('tests')
 if enable_tests
