@@ -6,7 +6,7 @@ ratbagctl \- inspect and modify configurable mice
 .SH DESCRIPTION
 .PP
 The
-.I ratbagctl
+.B ratbagctl
 tool queries or changes a device's settings.
 .PP
 This tool usually needs ratbagd to be running.
@@ -18,12 +18,13 @@ Show program's version number and exit.
 .B \-\-verbose, \-v
 Print debugging output. Multiple -v options increase the verbosity. For example,
 .B \-vvv
-will show the  protocol output.
+will show the protocol output.
 .TP 8
 .B \-\-nocommit
 Do not immediately write the settings to the mouse. This allows to set
-multiple parameters in a script, and the last call to ratbagctl will write
-them all.
+multiple parameters in a script, and the last call to
+.B ratbagctl
+will write them all.
 .TP 8
 .B \-\-help, \-h
 Print the help.
