@@ -30,6 +30,7 @@ import time
 import toolbox
 import signal
 import sys
+from ratbagctl import RatbagErrorCapability  # NOQA
 
 
 def main(argv):
@@ -64,10 +65,13 @@ def main(argv):
                     parser.print_help()
                     return
                 else:
-                    f(ratbagd, cmd)
-                    # give time for ratbagd to receive async requests before
-                    # we try to terminate it
-                    time.sleep(0.5)
+                    try:
+                        f(ratbagd, cmd)
+                        # give time for ratbagd to receive async requests before
+                        # we try to terminate it
+                        time.sleep(0.5)
+                    except RatbagErrorCapability as e:
+                        print("Error: {}".format(e), file=sys.stderr)
     finally:
         try:
             if cmd.keepalive:

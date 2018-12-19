@@ -1562,7 +1562,10 @@ def main(argv):
                 parser.print_help()
                 return
             else:
-                f(r, cmd)
+                try:
+                    f(r, cmd)
+                except RatbagErrorCapability as e:
+                    print("Error: {}".format(e), file=sys.stderr)
 
 
 if __name__ == "__main__":
