@@ -29,6 +29,13 @@ libratbag_references:
     run:
       name: Installing
       command: ninja -C build install
+  check_install: &check_install
+    run:
+      name: Checking installation
+      command: |
+        PREFIX=/usr/local/
+        diff -u <(cd data/devices; ls *.device) <(cd $PREFIX/share/libratbag/devices; ls *.device)
+        diff -u <(cd data/gnome; ls *.svg) <(cd $PREFIX/share/libratbag/gnome; ls *.svg)
   check_uninstall: &check_uninstall
     run:
       name: Checking if any files are left after uninstall
@@ -94,6 +101,7 @@ fedora_settings: &fedora_settings
     - *start_dbus
     - *build_and_test
     - *install
+    - *check_install
     - *check_uninstall
     - *export_logs
 
@@ -113,6 +121,7 @@ ubuntu_settings: &ubuntu_settings
     - *start_dbus
     - *build_and_test
     - *install
+    - *check_install
     - *check_uninstall
     - *export_logs
 
