@@ -197,6 +197,7 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 	struct ratbag_device *device = button->profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
+	unsigned int modifiers = 0;
 	int rc;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
@@ -215,6 +216,7 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 			button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 								profile->buttons[button->index].keyboard_keys.key);
+			modifiers = profile->buttons[button->index].keyboard_keys.modifier_flags;
 			break;
 		case HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL:
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
@@ -235,6 +237,20 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 		break;
+	}
+
+	if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		int rc;
+
+		rc = ratbag_button_macro_new_from_keycode(button,
+							  button->action.action.key.key,
+							  modifiers);
+		if (rc < 0) {
+			log_error(device->ratbag,
+				  "Error while reading button %d\n",
+				  button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		}
 	}
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
@@ -437,6 +453,8 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
 	struct ratbag_button_action *action = &button->action;
+	unsigned int modifiers, key;
+	int rc;
 	uint8_t code, type, subtype;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
@@ -449,6 +467,34 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		profile->buttons[button->index].button.type = HIDPP20_BUTTON_HID_TYPE;
 		profile->buttons[button->index].button.subtype = HIDPP20_BUTTON_HID_TYPE_MOUSE;
 		profile->buttons[button->index].button.buttons = action->action.button;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		type = HIDPP20_BUTTON_HID_TYPE;
+		subtype = HIDPP20_BUTTON_HID_TYPE_KEYBOARD;
+		rc = ratbag_action_keycode_from_macro(action,
+						      &key,
+						      &modifiers);
+		if (rc < 0) {
+			log_error(device->ratbag,
+				  "Error while writing macro for button %d\n",
+				  button->index);
+		}
+
+		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+		if (code == 0) {
+			subtype = HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL;
+			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, action->action.key.key);
+			if (code == 0)
+				return -EINVAL;
+		}
+		profile->buttons[button->index].subany.type = type;
+		profile->buttons[button->index].subany.subtype = subtype;
+		if (subtype == HIDPP20_BUTTON_HID_TYPE_KEYBOARD) {
+			profile->buttons[button->index].keyboard_keys.key = code;
+			profile->buttons[button->index].keyboard_keys.modifier_flags = modifiers;
+		} else {
+			profile->buttons[button->index].consumer_control.consumer_control = code;
+		}
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		type = HIDPP20_BUTTON_HID_TYPE;
@@ -474,7 +520,6 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		profile->buttons[button->index].special.type = HIDPP20_BUTTON_SPECIAL;
 		profile->buttons[button->index].special.special = code;
 		break;
-	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 	default:
 		return -ENOTSUP;
 	}
@@ -1120,6 +1165,9 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
 		if (rc < 0)
