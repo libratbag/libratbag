@@ -28,7 +28,7 @@ udev_device_from_path(struct udev *udev, const char *path)
 {
 	struct udev_device *udev_device;
 	const char *event_node_prefix = "/dev/input/event";
-	_cleanup_(freep) const char *path_canonical = NULL;
+	_cleanup_(freep) char *path_canonical = NULL;
 
 	if ((path_canonical = canonicalize_file_name(path)) == NULL) {
 		error("Failed to canonicalize path '%s': %s\n", path, strerror(errno));
