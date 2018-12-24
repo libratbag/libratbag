@@ -28,17 +28,22 @@ udev_device_from_path(struct udev *udev, const char *path)
 {
 	struct udev_device *udev_device;
 	const char *event_node_prefix = "/dev/input/event";
+	_cleanup_(freep) char *path_canonical = NULL;
 
-	if (strneq(path, event_node_prefix, strlen(event_node_prefix))) {
+	if ((path_canonical = canonicalize_file_name(path)) == NULL) {
+		error("Failed to canonicalize path '%s': %s\n", path, strerror(errno));
+		return NULL;
+	}
+	if (strneq(path_canonical, event_node_prefix, strlen(event_node_prefix))) {
 		struct stat st;
-		if (stat(path, &st) == -1) {
+		if (stat(path_canonical, &st) == -1) {
 			error("Failed to stat '%s': %s\n", path, strerror(errno));
 			return NULL;
 		}
 		udev_device = udev_device_new_from_devnum(udev, 'c', st.st_rdev);
 
 	} else {
-		udev_device = udev_device_new_from_syspath(udev, path);
+		udev_device = udev_device_new_from_syspath(udev, path_canonical);
 	}
 	if (!udev_device) {
 		error("Can't open '%s': %s\n", path, strerror(errno));
