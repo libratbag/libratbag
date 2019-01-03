@@ -588,6 +588,20 @@ hidpp20drv_update_led_1300(struct ratbag_led *led, struct hidpp20drv_data *data)
 	if (rc)
 		return rc;
 
+	/*
+	 * We revert to HW control of the LEDs.
+	 * This effectively disable the capability of changing the DPI/profile
+	 * LEDs, but this allows to make them work with the internal DPI/profile
+	 * switches.
+	 *
+	 * The net result is:
+	 * - DPI/profiles can't be controlled (but who wants this?)
+	 * - The logo can properly controlled
+	 */
+	rc = hidpp20_led_sw_control_set_sw_ctrl(data->dev, false);
+	if (rc)
+		return rc;
+
 	return RATBAG_SUCCESS;
 }
 
