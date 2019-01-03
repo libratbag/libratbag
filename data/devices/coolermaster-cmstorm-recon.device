@@ -1,5 +1,5 @@
 [Device]
-Name=CoolerMaster CMStorm Recon
+Name=CoolerMaster CM Storm Recon
 DeviceMatch=usb:2516:0006
 Driver=cmstorm
 Svg=steelseries-senseiraw.svg
