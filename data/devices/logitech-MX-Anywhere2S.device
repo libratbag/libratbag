@@ -1,0 +1,5 @@
+[Device]
+Name=Logitech MX Anywhere 2S
+DeviceMatch=usb:046d:406a
+Driver=hidpp20
+Svg=logitech-mx-anywhere2.svg
