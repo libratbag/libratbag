@@ -1,0 +1,6 @@
+# Logitech G402 Gaming Mouse USB
+[Device]
+Name=Logitech G402 Gaming Mouse
+DeviceMatch=usb:046d:c07e
+Driver=hidpp20
+Svg=logitech-g402.svg
