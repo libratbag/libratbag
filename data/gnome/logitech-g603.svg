@@ -14,7 +14,7 @@
    viewBox="0 0 409.2084 411.27099"
    version="1.1"
    id="svg8"
-   inkscape:version="0.92.2 2405546, 2018-03-11"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:docname="logitech-g603.svg"
    inkscape:export-filename="/home/jimmac/logitech-g403.png"
    inkscape:export-xdpi="96"
@@ -28,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4142135"
-     inkscape:cx="18.28"
-     inkscape:cy="93.909922"
+     inkscape:zoom="0.99999996"
+     inkscape:cx="262.73866"
+     inkscape:cy="157.51103"
      inkscape:document-units="px"
      inkscape:current-layer="Device"
      inkscape:document-rotation="0"
@@ -40,11 +40,11 @@
      inkscape:showpageshadow="false"
      inkscape:pagecheckerboard="false"
      showguides="true"
-     inkscape:window-width="1635"
-     inkscape:window-height="1399"
-     inkscape:window-x="12"
-     inkscape:window-y="29"
-     inkscape:window-maximized="0"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-4"
+     inkscape:window-y="-4"
+     inkscape:window-maximized="1"
      fit-margin-top="20"
      fit-margin-left="20"
      fit-margin-bottom="20"
@@ -63,7 +63,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -129,19 +129,20 @@
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cscsc" />
     <path
-       transform="translate(0,400)"
-       style="display:inline;fill:#babdb6;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 189.76532,257.83729 v 7.68979 l 9.81111,-0.0398 v 8.13173 h 7.86657 l -0.0884,-15.82152 z"
-       id="path1296"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccccc" />
-    <path
-       transform="translate(0,400)"
-       style="display:inline;fill:#babdb6;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 189.76533,250.90322 -0.0884,-8.22011 c -10.87024,0.0191 -20.03036,6.66727 -20.0067,18.30523 0.0237,11.63796 9.70791,18.61724 20.0067,18.72948 l -0.17678,-7.77817 c 0,0 -10.94634,-1.77172 -10.97582,-10.96566 -0.0295,-9.19394 11.241,-10.07077 11.241,-10.07077 z"
-       id="path1294"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cczcczc" />
+       style="color:#000000;display:inline;overflow:visible;vector-effect:none;fill:none;fill-opacity:1;stroke:#babdb6;stroke-width:10;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="led0"
+       sodipodi:type="arc"
+       sodipodi:cx="-656.78052"
+       sodipodi:cy="189.57994"
+       sodipodi:rx="19.936752"
+       sodipodi:ry="19.936752"
+       sodipodi:start="0.78539816"
+       sodipodi:end="5.4977871"
+       sodipodi:arc-type="arc"
+       d="m -642.6831,203.67735 a 19.936752,19.936752 0 0 1 -28.19483,0 19.936752,19.936752 0 0 1 0,-28.19482 19.936752,19.936752 0 0 1 28.19482,0"
+       sodipodi:open="true"
+       transform="rotate(-90)"
+       inkscape:label="#path883" />
   </g>
   <g
      inkscape:groupmode="layer"
