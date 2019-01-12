@@ -28,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.99999996"
-     inkscape:cx="262.73866"
-     inkscape:cy="157.51103"
+     inkscape:zoom="5.656854"
+     inkscape:cx="141.15425"
+     inkscape:cy="248.38223"
      inkscape:document-units="px"
      inkscape:current-layer="Device"
      inkscape:document-rotation="0"
@@ -48,12 +48,21 @@
      fit-margin-top="20"
      fit-margin-left="20"
      fit-margin-bottom="20"
-     fit-margin-right="0">
+     fit-margin-right="0"
+     inkscape:snap-smooth-nodes="false"
+     inkscape:object-nodes="true"
+     inkscape:snap-nodes="true"
+     inkscape:guide-bbox="true">
     <inkscape:grid
        type="xygrid"
        id="grid956"
        originx="-68.791593"
        originy="1.2767161" />
+    <sodipodi:guide
+       position="126.53125,259.03126"
+       orientation="0,1"
+       id="guide4772"
+       inkscape:locked="false" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -129,20 +138,31 @@
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cscsc" />
     <path
-       style="color:#000000;display:inline;overflow:visible;vector-effect:none;fill:none;fill-opacity:1;stroke:#babdb6;stroke-width:10;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       id="led0"
-       sodipodi:type="arc"
-       sodipodi:cx="-656.78052"
-       sodipodi:cy="189.57994"
-       sodipodi:rx="19.936752"
-       sodipodi:ry="19.936752"
-       sodipodi:start="0.78539816"
-       sodipodi:end="5.4977871"
-       sodipodi:arc-type="arc"
-       d="m -642.6831,203.67735 a 19.936752,19.936752 0 0 1 -28.19483,0 19.936752,19.936752 0 0 1 0,-28.19482 19.936752,19.936752 0 0 1 28.19482,0"
-       sodipodi:open="true"
-       transform="rotate(-90)"
-       inkscape:label="#path883" />
+       sodipodi:nodetypes="ccccsc"
+       inkscape:connector-curvature="0"
+       id="button0"
+       d="m 174.91314,423.64614 3.0021,129.78071 -48.65044,25.07759 -32.826242,-92.02794 c -1.027151,-19.85446 -0.810142,-28.0624 15.700932,-37.87909 17.32775,-10.30224 41.981,-20.75843 62.77365,-24.95127 z"
+       style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#d3d3ce;fill-opacity:1;stroke:#bfc2bb;stroke-width:1.98825693;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+       inkscape:label="#path948" />
+    <path
+       style="color:#000000;overflow:visible;opacity:1;vector-effect:none;fill:#d3d3ce;fill-opacity:1;stroke:#bfc2bb;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
+       d="m 207.75569,423.97641 -1.77476,128.93066 47.9684,25.54626 27.50793,-87.30721 c 4.86457,-36.68335 -44.6715,-55.30429 -73.70157,-67.16971 z"
+       id="button1"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccc"
+       inkscape:label="#path944" />
+    <g
+       style="display:inline"
+       id="g1304"
+       transform="translate(337.51617,-37.32483)">
+      <ellipse
+         ry="1.9375004"
+         rx="1.8137393"
+         cy="614.46423"
+         cx="-145.51083"
+         id="ellipse1298"
+         style="fill:#babdb6;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none" />
+    </g>
   </g>
   <g
      inkscape:groupmode="layer"
@@ -307,18 +327,5 @@
      id="LEDs"
      inkscape:label="LEDs"
      style="display:inline"
-     transform="translate(-68.791597,9.994236)">
-    <g
-       style="display:inline"
-       id="g1304"
-       transform="translate(337.51617,-437.32483)">
-      <ellipse
-         ry="1.9375004"
-         rx="1.8137393"
-         cy="614.46423"
-         cx="-145.51083"
-         id="ellipse1298"
-         style="fill:#babdb6;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none" />
-    </g>
-  </g>
+     transform="translate(-68.791597,9.994236)" />
 </svg>
