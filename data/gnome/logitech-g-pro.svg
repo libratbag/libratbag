@@ -37,11 +37,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.9881757"
-     inkscape:cx="204.03959"
-     inkscape:cy="203.08966"
+     inkscape:zoom="0.99408785"
+     inkscape:cx="119.04209"
+     inkscape:cy="99.169501"
      inkscape:document-units="px"
-     inkscape:current-layer="LEDs"
+     inkscape:current-layer="Buttons"
      inkscape:document-rotation="0"
      showgrid="false"
      units="px"
@@ -308,7 +308,8 @@
     </g>
     <g
        id="button1-path"
-       inkscape:label="#g1002">
+       inkscape:label="#g1002"
+       transform="translate(0,-11.999703)">
       <rect
          inkscape:label="#rect867"
          style="color:#000000;text-align:start;overflow:visible;fill:#888a85;fill-opacity:1;stroke:none;stroke-linecap:round"
