@@ -1,6 +1,6 @@
-# Logitech G900, G903 and G403 over wireless USB
+# Logitech G900, G903, G603 and G403 over wireless USB
 [Device]
-Name=Logitech G900, G903, G403
+Name=Logitech G900, G903, G603, G403
 DeviceMatch=usb:046d:c539
 Driver=hidpp20
 Svg=logitech-g900.svg
