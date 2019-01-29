@@ -290,6 +290,7 @@ data_files = files(
 	'data/devices/logitech-g502-Proteus-Spectrum-over-USB.device',
 	'data/devices/logitech-g600.device',
 	'data/devices/logitech-g602.device',
+	'data/devices/logitech-g603.device',
 	'data/devices/logitech-g7.device',
 	'data/devices/logitech-g700-wireless.device',
 	'data/devices/logitech-g700.device',
