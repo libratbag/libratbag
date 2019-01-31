@@ -126,7 +126,7 @@ Device-specific notes
 ---------------------
 
 A number of device-specific notes and observations can be found in our
-"device-notes" repository: http://libratbag.github.io/device-notes/
+wiki: https://github.com/libratbag/libratbag/wiki/Devices
 
 License
 -------
