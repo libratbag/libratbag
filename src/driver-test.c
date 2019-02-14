@@ -243,6 +243,10 @@ test_read_profile(struct ratbag_profile *profile)
 
 	profile->is_active = p->active;
 	profile->is_enabled = !p->disabled;
+	if (p->name) {
+		free(profile->name);
+		profile->name = strdup(p->name);
+	}
 
 	for (i = 0; i < ARRAY_LENGTH(p->caps) && p->caps[i]; i++) {
 		ratbag_profile_set_cap(profile, p->caps[i]);

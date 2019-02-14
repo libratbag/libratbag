@@ -141,7 +141,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
     def test_profile_name_get(self):
         command = "profile 0 name get"
         r = self.launch_good_test(command + " test_device")
-        self.assertEqual(r, 'Profile 1')
+        self.assertEqual(r, 'test profile 1')
         self.launch_fail_test(command)
         self.launch_fail_test(command + " X test_device")
         self.launch_fail_test("profile name get test_device")
