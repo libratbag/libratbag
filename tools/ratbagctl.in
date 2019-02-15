@@ -1523,8 +1523,8 @@ def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
         r = Ratbagd()
         r.verbose = verbose
-    except RatbagdUnavailable:
-        print("Unable to connect to ratbagd")
+    except RatbagdUnavailable as e:
+        print("Unable to connect to ratbagd: {}".format(e))
         return None
 
     if ratbagd_process is not None:
