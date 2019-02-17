@@ -116,6 +116,27 @@ snprintf_safe(char *buf, size_t n, const char *fmt, ...)
 	return rc;
 }
 
+/**
+ * Returns a strdup'd string with all non-ascii characters replaced with a
+ * space.
+ */
+static inline char *
+strdup_ascii_only(const char *str_in)
+{
+	char *str, *ascii_only;
+
+	ascii_only = strdup_safe(str_in);
+	str = ascii_only;
+	while (str && *str) {
+		unsigned char c = *str;
+		if (c > 127)
+			*str = ' ';
+
+		str++;
+	}
+	return ascii_only;
+}
+
 #define sprintf_safe(buf, fmt, ...) \
 	snprintf_safe(buf, ARRAY_LENGTH(buf), fmt, __VA_ARGS__)
 

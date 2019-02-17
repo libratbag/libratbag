@@ -382,8 +382,15 @@ ratbagd_profile_get_name(sd_bus *bus,
 {
 	struct ratbagd_profile *profile = userdata;
 	const char *name = ratbag_profile_get_name(profile->lib_profile);
+	_cleanup_free_ char *asciiname;
 
-	CHECK_CALL(sd_bus_message_append(reply, "s", name));
+	/* This should really be a UTF8 check and it should really be in
+	 * libratbag, but for now this will do to at least not kick us off
+	 * the bus. https://github.com/libratbag/libratbag/issues/617
+	 */
+	asciiname = strdup_ascii_only(name);
+
+	CHECK_CALL(sd_bus_message_append(reply, "s", asciiname));
 
 	return 0;
 }
