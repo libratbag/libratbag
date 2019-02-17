@@ -83,8 +83,8 @@ def start_ratbagd(verbosity=0):
     dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
 
     name_owner = None
-    start_time = time.clock()
-    while name_owner is None and time.clock() - start_time < 30:
+    start_time = time.perf_counter()
+    while name_owner is None and time.perf_counter() - start_time < 30:
         proxy = Gio.DBusProxy.new_sync(dbus,
                                        Gio.DBusProxyFlags.NONE,
                                        None,
