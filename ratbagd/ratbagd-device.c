@@ -135,59 +135,6 @@ static int ratbagd_device_get_device_name(sd_bus *bus,
 	return 0;
 }
 
-static int ratbagd_device_get_svg(sd_bus *bus,
-				  const char *path,
-				  const char *interface,
-				  const char *property,
-				  sd_bus_message *reply,
-				  void *userdata,
-				  sd_bus_error *error)
-{
-	struct ratbagd_device *device = userdata;
-	const char *svg;
-
-	svg = ratbag_device_get_svg_name(device->lib_device);
-	if (!svg) {
-		log_error("%s: failed to fetch SVG\n",
-			  ratbagd_device_get_sysname(device));
-		svg = "";
-	}
-
-	CHECK_CALL(sd_bus_message_append(reply, "s", svg));
-
-	return 0;
-}
-
-static int ratbagd_device_get_theme_svg(sd_bus_message *m,
-					void *userdata,
-					sd_bus_error *error)
-{
-	struct ratbagd_device *device = userdata;
-	char svg_path[PATH_MAX] = {0};
-	const char *theme;
-	const char *svg;
-	const char *datadir;
-
-	datadir = getenv("LIBRATBAG_DATA_DIR");
-	if (!datadir)
-		datadir = LIBRATBAG_DATA_DIR;
-
-	CHECK_CALL(sd_bus_message_read(m, "s", &theme));
-
-	svg = ratbag_device_get_svg_name(device->lib_device);
-	if (!svg) {
-		log_error("%s: failed to fetch SVG, using fallback\n",
-			  ratbagd_device_get_sysname(device));
-		svg = FALLBACK_SVG_NAME;
-	}
-
-	snprintf(svg_path, sizeof(svg_path), "%s/%s/%s", datadir, theme, svg);
-
-	CHECK_CALL(sd_bus_reply_method_return(m, "s", svg_path));
-
-	return 0;
-}
-
 static int ratbagd_device_get_theme_svg_fd(sd_bus_message *m,
 					   void *userdata,
 					   sd_bus_error *error)
@@ -327,9 +274,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, sysname), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Svg", "s", ratbagd_device_get_svg, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_METHOD("GetSvg", "s", "s", ratbagd_device_get_theme_svg, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetSvgFd", "s", "h", ratbagd_device_get_theme_svg_fd, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_SIGNAL("Resync", "", 0),

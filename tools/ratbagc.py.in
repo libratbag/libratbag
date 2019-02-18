@@ -283,21 +283,6 @@ class RatbagdDevice(metaclass=MetaRatbag):
         print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
         return self._profiles[0]
 
-    def get_svg(self, theme):
-        """Gets the full path to the SVG for the given theme, or the empty
-        string if none is available.
-
-        The theme must be one of org.freedesktop.ratbag1.Manager.Themes. The
-        theme 'default' is guaranteed to be available.
-
-        @param theme The theme from which to retrieve the SVG, as str
-        """
-        svg = libratbag.ratbag_device_get_svg_name(self._device)
-        if svg is None:
-            return ''
-
-        return os.path.join(LIBRATBAG_DATA_DIR, theme, svg)
-
     def get_svg_fd(self, theme):
         """Returns a File-like object to the SVG for the given theme, or
         raises FileNotFoundError if the file is not available.
