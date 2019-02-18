@@ -458,21 +458,23 @@ org.freedesktop.ratbag1.Led
         :type: u
         :flags: read-write, mutable
 
-        uint mapping to the mode enum from libratbag
+        Enum describing the current mode, see
+        :cpp:enum:`ratbag_led_mode`.
 
 .. attribute:: Modes
 
-	:type: au
-	:flags: read-only, constant
+        :type: au
+        :flags: read-only, constant
 
-	A list of modes supported by this LED
+        A list of modes supported by this LED, see
+        :cpp:enum:`ratbag_led_mode`.
 
 .. attribute:: Type
 
         :type: u
         :flags: read-only, mutable
 
-        enum describing the LED type
+        The LED type, see :cpp:enum:`ratbag_led_type`.
 
 .. attribute:: Color
 
@@ -486,7 +488,7 @@ org.freedesktop.ratbag1.Led
         :type: u
         :flags: read-only, constant
 
-        The color depth of this LED as one of the constants in libratbag-enums.h
+        The color depth of this LED, see :cpp:enum:`ratbag_led_colordepth`.
 
 .. attribute:: EffectDuration
 
