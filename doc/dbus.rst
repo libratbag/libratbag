@@ -137,14 +137,6 @@ known to ratbagd.
         ratbag_device_capability` in libratbag-enums.h for the list of permissible
         capabilities.
 
-
-.. attribute:: Svg
-
-        :type: s
-        :flags: read-only, constant
-
-        The device's SVG file name, without path.
-
 .. attribute:: Profiles
 
         :type: ao
@@ -160,20 +152,6 @@ known to ratbagd.
 
         Commits the changes to the device. Changes to the device are batched; they
         are not written to the hardware until :func:`Commit` is invoked.
-
-.. function:: GetSvg(s) → (s)
-
-        :param s: the theme name
-        :returns: A full path to the SVG for the given theme
-
-        Returns the full path to the SVG for the given theme or an
-        empty string if none is available.  The theme must be one of
-	:func:`org.freedesktop.ratbag1.Manager.Themes <Themes>`.
-
-        The theme **'default'** is guaranteed to be available.
-        ratbagd may return the path to a file that doesn't exist.
-        This is the case if the device has SVGs available but not
-        for the given theme.
 
 .. function:: GetSvgFd(s) → (h)
 

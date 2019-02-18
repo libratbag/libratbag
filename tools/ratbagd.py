@@ -394,17 +394,6 @@ class RatbagdDevice(_RatbagdDBus):
         fd = self._dbus_call_return_one_fd("GetSvgFd", "s", theme)
         return os.fdopen(fd)
 
-    def get_svg(self, theme):
-        """Gets the full path to the SVG for the given theme, or the empty
-        string if none is available.
-
-        The theme must be one of org.freedesktop.ratbag1.Manager.Themes. The
-        theme 'default' is guaranteed to be available.
-
-        @param theme The theme from which to retrieve the SVG, as str
-        """
-        return self._dbus_call("GetSvg", "s", theme)
-
     def commit(self):
         """Commits all changes made to the device.
 
