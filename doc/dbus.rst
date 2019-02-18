@@ -20,10 +20,13 @@ object. Properties marked as **mutable** may change, and a
 ``org.freedesktop.DBus.Properties.PropertyChanged`` signal is sent for those
 unless otherwise specified.
 
-All setters (whether implicit for read-write properties or explicit) return
-success instead of the internal return value because DBus does not like
-non-standard error values. Upon a ratbag error, the `Resync` signal is emitted
-on the device, indicating that clients should resync their values.
+Changing settings on a device is a three-step process:
+
+- change the various properties to the desired value
+- invoke ``org.freedesktop.ratbag1.Device.Commit()``
+- optional: if an error occured writing the new data to the device,
+  a ``org.freedesktop.ratbag1.Resync`` signal is emitted on the device and
+  all properties are updated accordingly.
 
 Values listed as enums are defined in `libratbag-enums.h <https://github.com/libratbag/libratbag/blob/master/src/libratbag-enums.h>`_
 
@@ -135,7 +138,7 @@ org.freedesktop.ratbag1.Device
         :returns: An open file descriptor to the SVG for the given theme
 
         Returns an open file descriptor to the SVG for the given theme or an
-        errno on error. The theme must be one of :js:attr:`Themes`.
+        errno on error. The theme must be one of :js:attr:`Manager.Themes`.
 
         The theme **'default'** is guaranteed to be available.
         ratbagd may return ENOENT if a file doesn't exist.
@@ -146,8 +149,9 @@ org.freedesktop.ratbag1.Device
 
         :type: Signal
 
-        Emitted when an internal error occurs. Upon receiving this
-        signal, clients are expected to resync their values with
+        Emitted when an internal error occurs, usually on writing values to
+        the device after :js:func:`Commit()`. Upon receiving this
+        signal, clients are expected to resync their property values with
         ratbagd.
 
 
@@ -161,7 +165,7 @@ org.freedesktop.ratbag1.Profile
         :type: u
         :flags: read-only, constant
 
-        The index of this profile
+        The zero-based index of this profile
 
     .. js:attribute:: Name
 
@@ -178,8 +182,8 @@ org.freedesktop.ratbag1.Profile
         True if this is the profile is enabled, false otherwise.
 
         Note that a disabled profile might not have correct bindings, so it's
-        a good thing to rebind everything before calling :js:func:`Commit()` on the
-        :js:class:`Device`.
+	a good thing to rebind everything before calling
+	:js:func:`Device.Commit()`.
 
     .. js:attribute:: Resolutions
 
