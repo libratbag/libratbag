@@ -256,7 +256,7 @@ class RatbagdDevice(metaclass=MetaRatbag):
         """The capabilities of this device as an array. Capabilities not
         present on the device are not in the list. Thus use e.g.
 
-        if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.capabilities:
+        if RatbagdDevice.CAP_RESOLUTION_SWITCHABLE is in device.capabilities:
             do something
         """
         return self._capabilities

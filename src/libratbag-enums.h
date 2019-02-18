@@ -112,7 +112,7 @@ enum ratbag_device_capability {
 	 * query that, even if we can't switch it ourselves? Maybe better to
 	 * have a separate cap for that then.
 	 */
-	RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION,
+	RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE,
 
 	/**
 	 * The device provides read and/or write access to one or more
@@ -127,7 +127,7 @@ enum ratbag_device_capability {
 	 * possibly with a button.
 	 * Devices without this capability will only have a single profile.
 	 */
-	RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE,
+	RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE,
 
 	/**
 	 * The device has the capability to disable and enable profiles.  While
@@ -136,7 +136,7 @@ enum ratbag_device_capability {
 	 * next time ratbag runs. Furthermore, the order of profiles may get
 	 * changed the next time ratbag runs if profiles are disabled.
 	 */
-	RATBAG_DEVICE_CAP_DISABLE_PROFILE,
+	RATBAG_DEVICE_CAP_PROFILE_DISABLE,
 
 	/**
 	 * The device can have one profile assigned as a default profile.
@@ -144,7 +144,7 @@ enum ratbag_device_capability {
 	 * is plugged in. Devices without this capability may select the
 	 * last-used profile or a specific profile (usually the first).
 	 */
-	RATBAG_DEVICE_CAP_DEFAULT_PROFILE,
+	RATBAG_DEVICE_CAP_PROFILE_DEFAULT,
 
 	/**
 	 * The device provides read and/or write access to one or more
