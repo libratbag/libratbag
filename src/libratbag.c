@@ -720,7 +720,7 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 
 	if (num_profiles > 1) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE);
 
 		/* having more than one profile means we can remap the buttons
 		 * at least */
@@ -730,7 +730,7 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 
 	if (num_resolutions > 1) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
 	}
 
 	if (num_leds > 0)
@@ -812,7 +812,7 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 {
 	if (!ratbag_device_has_capability(profile->device,
-					  RATBAG_DEVICE_CAP_DISABLE_PROFILE))
+					  RATBAG_DEVICE_CAP_PROFILE_DISABLE))
 		return RATBAG_ERROR_CAPABILITY;
 
 	profile->is_enabled = enabled;
@@ -1004,7 +1004,7 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	struct ratbag_profile *p;
 	int rc;
 
-	if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE))
+	if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE))
 		return RATBAG_ERROR_CAPABILITY;
 
 	assert(device->driver->set_active_profile);
