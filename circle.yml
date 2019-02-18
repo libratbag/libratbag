@@ -55,12 +55,6 @@ libratbag_references:
   export_logs: &export_logs
     store_artifacts:
       path: ~/libratbag/build/meson-logs
-  ninja_scan_build: &ninja_scan_build
-    run:
-      <<: *build_default
-      name: Ninja scan-build
-      environment:
-        NINJA_ARGS: scan-build
   start_dbus: &start_dbus
     run:
       name: Start dbus daemon
@@ -124,22 +118,6 @@ ubuntu_settings: &ubuntu_settings
     - *check_install
     - *check_uninstall
     - *export_logs
-
-
-scan_build_run: &scan_build_run
-  <<: *default_settings
-  steps:
-    - *fedora_fetch_cache
-    - *fedora_install
-    - run:
-        name: Install clang and find
-        command: dnf install -y clang-analyzer findutils python3-beautifulsoup4
-    - checkout
-    - *ninja_scan_build
-    - *export_logs
-    - run:
-        name: Check scan-build results
-        command: python3 ~/libratbag/tools/check_scan_build.py ~/libratbag/build/meson-logs/scanbuild
 
 doc_build: &doc_build
   <<: *default_settings
@@ -219,10 +197,6 @@ jobs:
     <<: *doc_build
     docker:
       - image: fedora:28
-  scan_build:
-    <<: *scan_build_run
-    docker:
-      - image: fedora:28
   doc_deploy:
     <<: *docs_deploy
     docker:
@@ -235,9 +209,6 @@ workflows:
     jobs:
       # - fedora_rawhide
       - fedora_cache
-      - scan_build:
-          requires:
-            - fedora_cache
       - ubuntu_17_10
       - fedora_latest:
           requires:
