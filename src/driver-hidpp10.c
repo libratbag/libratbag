@@ -424,7 +424,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 		xres = 0xffff;
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
 
 	ratbag_profile_for_each_resolution(profile, res) {
 		unsigned int dpis[hidpp10->dpi_count];
@@ -503,8 +503,8 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 
 	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);

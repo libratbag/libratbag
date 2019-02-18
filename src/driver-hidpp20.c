@@ -1096,7 +1096,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		if (rc < 0)
 			return 0; /* this is not a hard failure */
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_SWITCHABLE_RESOLUTION);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
@@ -1178,7 +1178,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_DISABLE_PROFILE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);

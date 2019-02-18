@@ -258,13 +258,13 @@ def print_device(d, level):
     caps = {RatbagdDevice.CAP_RESOLUTION: "resolution",
             RatbagdDevice.CAP_PROFILE: "profile",
             RatbagdDevice.CAP_BUTTON: "button",
-            RatbagdDevice.CAP_SWITCHABLE_RESOLUTION: "switchable-resolution",
-            RatbagdDevice.CAP_SWITCHABLE_PROFILE: "switchable-profile",
+            RatbagdDevice.CAP_RESOLUTION_SWITCHABLE: "switchable-resolution",
+            RatbagdDevice.CAP_PROFILE_SWITCHABLE: "switchable-profile",
             RatbagdDevice.CAP_BUTTON_KEY: "button-keys",
             RatbagdDevice.CAP_BUTTON_MACROS: "button-macros",
-            RatbagdDevice.CAP_DEFAULT_PROFILE: "default-profile",
+            RatbagdDevice.CAP_PROFILE_DEFAULT: "default-profile",
             RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration",
-            RatbagdDevice.CAP_DISABLE_PROFILE: "disable-profile",
+            RatbagdDevice.CAP_PROFILE_DISABLE: "disable-profile",
             RatbagdDevice.CAP_LED: "led"}
     capabilities = [caps[c] for c in d.capabilities]
 
