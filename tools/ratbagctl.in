@@ -264,7 +264,17 @@ def print_device(d, level):
             RatbagdDevice.CAP_CONFIGURATION: "configuration",
             RatbagdDevice.CAP_PROFILE_DISABLE: "disable-profile",
             RatbagdDevice.CAP_LED: "led"}
-    capabilities = [caps[c] for c in d.capabilities]
+
+    capabilities = []
+    for c, name in caps.items():
+        s = ''
+        if c in d.capabilities['r']:
+            s += 'r'
+        if c in d.capabilities['w']:
+            s += 'w'
+        if not s:
+            continue
+        capabilities.append('{}({})'.format(name, s))
 
     svg_name = 'unknown'
     try:
@@ -277,11 +287,11 @@ def print_device(d, level):
         pass
 
     print(" " * level + "{} - {}".format(d.id, d.name))
-    print(" " * level + "               SVG: {}".format(svg_name))
-    print(" " * level + "      Capabilities: {}".format(", ".join(capabilities)))
-    print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))
-    print(" " * level + "    Number of Leds: {}".format(len(p.leds)))
-    print(" " * level + "Number of Profiles: {}".format(len(d.profiles)))
+    print(" " * level + "                 SVG: {}".format(svg_name))
+    print(" " * level + "        Capabilities: {}".format(", ".join(capabilities)))
+    print(" " * level + "   Number of Buttons: {}".format(len(p.buttons)))
+    print(" " * level + "      Number of Leds: {}".format(len(p.leds)))
+    print(" " * level + "  Number of Profiles: {}".format(len(d.profiles)))
     for p in d.profiles:
         print_profile(d, p, level + 2)
 
@@ -377,7 +387,7 @@ def func_button_get(r, args):
 
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
-    if not d.CAP_BUTTON in d.capabilities:
+    if not d.CAP_BUTTON in d.capabilities['w']:
         raise RatbagErrorCapability("assigning a button is not supported on this device")
     b.mapping = args.target_button
     commit(d, args)
@@ -385,7 +395,7 @@ def func_button_action_set_button(r, args):
 
 def func_button_action_set_special(r, args):
     b, p, d = find_button(r, args)
-    if not d.CAP_BUTTON in d.capabilities:
+    if not d.CAP_BUTTON in d.capabilities['w']:
         raise RatbagErrorCapability("assigning a button is not supported on this device")
 
     try:
@@ -399,7 +409,7 @@ def func_button_action_set_special(r, args):
 
 def func_button_action_set_macro(r, args):
     b, p, d = find_button(r, args)
-    if not d.CAP_BUTTON_MACROS in d.capabilities:
+    if not d.CAP_BUTTON_MACROS in d.capabilities['w']:
         raise RatbagErrorCapability("assigning a macro is not supported on this device")
 
     macro_keys = args.target_macro

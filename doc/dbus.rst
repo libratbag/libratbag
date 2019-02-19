@@ -129,12 +129,20 @@ known to ratbagd.
 
 .. attribute:: Capabilities
 
-        :type: au
+        :type: a(us)
         :flags: read-only, constant
 
 	The capabilities supported by this device. see
 	:cpp:enum:`ratbag_device_capability` in libratbag-enums.h for the
 	list of permissible capabilities.
+
+	The content of this property is a list of tuples with the
+	capability as first entry and a string specifying the modes as second
+	entry. Characters allowed in this string are 'r' for read-only, 'w'
+	for write-only.
+
+	Future versions of libratbag may add additional modes,
+	unknown characters must be ignored by the caller.
 
 .. attribute:: Profiles
 

@@ -253,13 +253,23 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 	};
 	size_t i;
 
-	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "u"));
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "(us)"));
 
 	for (i = 0; i < ELEMENTSOF(caps); i++) {
+		char *string;
+
 		cap = caps[i];
-		if (ratbag_device_has_capability(lib_device, cap, 'r')) {
-			CHECK_CALL(sd_bus_message_append(reply, "u", cap));
-		}
+		if (ratbag_device_has_capability(lib_device, cap, 'r') &&
+		    ratbag_device_has_capability(lib_device, cap, 'w'))
+			string = "rw";
+		else if (ratbag_device_has_capability(lib_device, cap, 'r'))
+			string = "r";
+		else if (ratbag_device_has_capability(lib_device, cap, 'w'))
+			string = "w";
+		else
+			continue;
+
+		CHECK_CALL(sd_bus_message_append(reply, "(us)", cap, string));
 	}
 
 	CHECK_CALL(sd_bus_message_close_container(reply));
@@ -270,7 +280,7 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, sysname), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "a(us)", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("GetSvgFd", "s", "h", ratbagd_device_get_theme_svg_fd, SD_BUS_VTABLE_UNPRIVILEGED),

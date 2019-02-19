@@ -214,6 +214,18 @@ class Ratbagd(object):
             libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_DEBUG)
 
 
+def get_device_capabilities(object):
+    capabilities = {'r': [], 'w': []}
+    for k in libratbag.__dict__.keys():
+            if k.startswith("RATBAG_DEVICE_CAP_") and "CAP_NONE" not in k:
+                cap = getattr(libratbag, k)
+                if libratbag.ratbag_device_has_capability(object, cap, 'r'):
+                    capabilities['r'].append(cap)
+                if libratbag.ratbag_device_has_capability(object, cap, 'w'):
+                    capabilities['w'].append(cap)
+    return capabilities
+
+
 def get_capabilities(type, object):
     capabilities = []
     for k in libratbag.__dict__.keys():
@@ -237,7 +249,7 @@ class RatbagdDevice(metaclass=MetaRatbag):
         if self._device is None:
             raise RatbagErrorDevice("device not compatible")
 
-        self._capabilities = get_capabilities("device", self._device)
+        self._capabilities = get_device_capabilities(self._device)
 
         self._profiles = [RatbagdProfile(self._device, i) for i in range(libratbag.ratbag_device_get_num_profiles(self._device))]
 

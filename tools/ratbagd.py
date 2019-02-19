@@ -360,13 +360,20 @@ class RatbagdDevice(_RatbagdDBus):
 
     @GObject.Property
     def capabilities(self):
-        """The capabilities of this device as an array. Capabilities not
-        present on the device are not in the list. Thus use e.g.
+        """The capabilities of this device as a dict of array with the mode
+        as key ('r' or 'w'). Capabilities not present on the device are not
+        in the list. Thus use e.g.
 
-        if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.capabilities:
+        if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.capabilities['w']:
             do something
         """
-        return self._get_dbus_property("Capabilities") or []
+        caps = self._get_dbus_property("Capabilities")
+        if not caps:
+            return []
+
+        d = {'r': [c for c, m in caps if 'r' in m],
+             'w': [c for c, m in caps if 'w' in m]}
+        return d
 
     @GObject.Property
     def name(self):
