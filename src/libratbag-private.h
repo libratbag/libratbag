@@ -135,7 +135,8 @@ struct ratbag_device {
 	struct ratbag_driver *driver;
 	struct ratbag *ratbag;
 	struct ratbag_device_data *data;
-	unsigned long capabilities[NLONGS(MAX_CAP)];
+	unsigned long capabilities_r[NLONGS(MAX_CAP)];
+	unsigned long capabilities_w[NLONGS(MAX_CAP)];
 
 	unsigned num_profiles;
 	struct list profiles;
@@ -438,11 +439,13 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 
 void
 ratbag_device_set_capability(struct ratbag_device *device,
-			     enum ratbag_device_capability cap);
+			     enum ratbag_device_capability cap,
+			     char mode);
 
 void
 ratbag_device_unset_capability(struct ratbag_device *device,
-			     enum ratbag_device_capability cap);
+			     enum ratbag_device_capability cap,
+			     char mode);
 
 static inline void
 ratbag_profile_set_drv_data(struct ratbag_profile *profile, void *drv_data)

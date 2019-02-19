@@ -423,8 +423,8 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 	if (rc)
 		xres = 0xffff;
 
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'w');
 
 	ratbag_profile_for_each_resolution(profile, res) {
 		unsigned int dpis[hidpp10->dpi_count];
@@ -502,12 +502,16 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 				    profile.num_leds);
 
 	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'w');
 	}
 
 	return 0;

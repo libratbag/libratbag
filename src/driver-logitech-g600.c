@@ -495,13 +495,16 @@ logitech_g600_probe(struct ratbag_device *device)
 	ratbag_device_for_each_profile(device, profile)
 		logitech_g600_read_profile(profile);
 
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'w');
 
 	rc = logitech_g600_get_active_profile_and_resolution(device);
 

@@ -192,8 +192,8 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	 * by default. The few devices that miss this capability should
 	 * unset it instead.
 	 */
-	ratbag_device_set_capability(device,
-				     RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_CONFIGURATION, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_CONFIGURATION, 'w');
 
 	return device;
 }
@@ -273,7 +273,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 			unsigned int vals[300];
 			unsigned int nvals = ARRAY_LENGTH(vals);
 
-			if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_RESOLUTION))
+			if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'r'))
 				break;
 
 			nvals = ratbag_resolution_get_dpi_list(resolution, vals, nvals);
@@ -730,22 +730,26 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 	device->num_profiles = num_profiles;
 
 	if (num_profiles > 1) {
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'w');
 
 		/* having more than one profile means we can remap the buttons
 		 * at least */
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'w');
 	}
 
 	if (num_resolutions > 1) {
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'w');
 	}
 
-	if (num_leds > 0)
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
+	if (num_leds > 0) {
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED, 'w');
+	}
 
 	return 0;
 }
@@ -823,7 +827,8 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 {
 	if (!ratbag_device_has_capability(profile->device,
-					  RATBAG_DEVICE_CAP_PROFILE_DISABLE))
+					  RATBAG_DEVICE_CAP_PROFILE_DISABLE,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	profile->is_enabled = enabled;
@@ -864,15 +869,29 @@ ratbag_device_get_num_leds(struct ratbag_device *device)
 
 void
 ratbag_device_set_capability(struct ratbag_device *device,
-			     enum ratbag_device_capability cap)
+			     enum ratbag_device_capability cap,
+			     char mode)
 {
+	unsigned long *capabilities;
+
 	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
 		abort();
 
-	if (cap != RATBAG_DEVICE_CAP_QUERY_CONFIGURATION && cap % 100) {
+	switch (mode) {
+	case 'r':
+		capabilities = device->capabilities_r;
+		break;
+	case 'w':
+		capabilities = device->capabilities_w;
+		break;
+	default:
+		abort();
+	}
+
+	if (cap != RATBAG_DEVICE_CAP_CONFIGURATION && cap % 100) {
 		enum ratbag_device_capability parent_cap = (cap/100) * 100;
 
-		if (!long_bit_is_set(device->capabilities, parent_cap)) {
+		if (!long_bit_is_set(capabilities, parent_cap)) {
 			log_bug_libratbag(device->ratbag,
 					  "Cap %d requires setting %d\n",
 					  cap, parent_cap);
@@ -880,27 +899,49 @@ ratbag_device_set_capability(struct ratbag_device *device,
 		}
 	}
 
-	long_set_bit(device->capabilities, cap);
+	long_set_bit(capabilities, cap);
 }
 
 void
 ratbag_device_unset_capability(struct ratbag_device *device,
-			     enum ratbag_device_capability cap)
+			     enum ratbag_device_capability cap,
+			     char mode)
 {
+	unsigned long *capabilities;
+
 	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
 		abort();
 
-	long_clear_bit(device->capabilities, cap);
+	switch (mode) {
+	case 'r':
+		capabilities = device->capabilities_r;
+		break;
+	case 'w':
+		capabilities = device->capabilities_w;
+		break;
+	default:
+		abort();
+	}
+
+	long_clear_bit(capabilities, cap);
 }
 
 LIBRATBAG_EXPORT bool
 ratbag_device_has_capability(const struct ratbag_device *device,
-			     enum ratbag_device_capability cap)
+			     enum ratbag_device_capability cap,
+			     char mode)
 {
 	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
 		abort();
 
-	return long_bit_is_set(device->capabilities, cap);
+	switch (mode) {
+	case 'r':
+		return long_bit_is_set(device->capabilities_r, cap);
+	case 'w':
+		return long_bit_is_set(device->capabilities_w, cap);
+	default:
+		abort();
+	}
 }
 
 static inline enum ratbag_error_code
@@ -1015,7 +1056,7 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	struct ratbag_profile *p;
 	int rc;
 
-	if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE))
+	if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	assert(device->driver->set_active_profile);
@@ -1358,7 +1399,8 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 	struct ratbag_button_action action = {0};
 
 	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+					  RATBAG_DEVICE_CAP_BUTTON_KEY,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
@@ -1389,7 +1431,8 @@ ratbag_button_set_special(struct ratbag_button *button,
 	/* FIXME: range checks */
 
 	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+					  RATBAG_DEVICE_CAP_BUTTON_KEY,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
@@ -1426,7 +1469,8 @@ ratbag_button_set_key(struct ratbag_button *button,
 	/* FIXME: range checks */
 
 	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+					  RATBAG_DEVICE_CAP_BUTTON_KEY,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	/* FIXME: modifiers */
@@ -1447,7 +1491,8 @@ ratbag_button_disable(struct ratbag_button *button)
 	struct ratbag_button_action action = {0};
 
 	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+					  RATBAG_DEVICE_CAP_BUTTON_KEY,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
@@ -1580,7 +1625,8 @@ ratbag_led_set_mode(struct ratbag_led *led, enum ratbag_led_mode mode)
 {
 
 	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
+					  RATBAG_DEVICE_CAP_LED,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	led->mode = mode;
@@ -1593,7 +1639,8 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color)
 {
 	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
+					  RATBAG_DEVICE_CAP_LED,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	led->color = color;
@@ -1606,7 +1653,8 @@ LIBRATBAG_EXPORT enum ratbag_led_colordepth
 ratbag_led_get_colordepth(struct ratbag_led *led)
 {
 	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
+					  RATBAG_DEVICE_CAP_LED,
+					  'r'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	return led->colordepth;
@@ -1616,7 +1664,8 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_led_set_effect_duration(struct ratbag_led *led, unsigned int ms)
 {
 	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
+					  RATBAG_DEVICE_CAP_LED,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	led->ms = ms;
@@ -1629,7 +1678,8 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_led_set_brightness(struct ratbag_led *led, unsigned int brightness)
 {
 	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
+					  RATBAG_DEVICE_CAP_LED,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	led->brightness = brightness;
@@ -1788,7 +1838,8 @@ ratbag_button_set_macro(struct ratbag_button *button,
 			const struct ratbag_button_macro *macro)
 {
 	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_MACROS))
+					  RATBAG_DEVICE_CAP_BUTTON_MACROS,
+					  'w'))
 		return RATBAG_ERROR_CAPABILITY;
 
 	ratbag_button_copy_macro(button, macro);

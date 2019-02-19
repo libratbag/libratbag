@@ -241,11 +241,9 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 	struct ratbag_device *lib_device = device->lib_device;
 	enum ratbag_device_capability cap;
 	enum ratbag_device_capability caps[] = {
-		RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
+		RATBAG_DEVICE_CAP_CONFIGURATION,
 		RATBAG_DEVICE_CAP_RESOLUTION,
-		RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE,
 		RATBAG_DEVICE_CAP_PROFILE,
-		RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE,
 		RATBAG_DEVICE_CAP_PROFILE_DISABLE,
 		RATBAG_DEVICE_CAP_PROFILE_DEFAULT,
 		RATBAG_DEVICE_CAP_BUTTON,
@@ -259,7 +257,7 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 
 	for (i = 0; i < ELEMENTSOF(caps); i++) {
 		cap = caps[i];
-		if (ratbag_device_has_capability(lib_device, cap)) {
+		if (ratbag_device_has_capability(lib_device, cap, 'r')) {
 			CHECK_CALL(sd_bus_message_append(reply, "u", cap));
 		}
 	}

@@ -1085,7 +1085,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		break;
 	case HIDPP_PAGE_MOUSE_POINTER_BASIC: {
 		drv_data->capabilities |= HIDPP_CAP_RESOLUTION_2200;
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'r');
 		break;
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {
@@ -1095,16 +1095,18 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return 0; /* this is not a hard failure */
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION, 'w');
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
 		log_debug(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'w');
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
 		if (!hidpp20drv_read_special_key_mouse(device))
@@ -1157,7 +1159,8 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		if (hidpp20drv_read_color_leds(device))
 			return 0;
 
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED, 'w');
 		device->num_leds = drv_data->num_leds;
 		break;
 	}
@@ -1171,17 +1174,23 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		if (hidpp20drv_read_leds(device))
 			return 0;
 
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED, 'w');
 		break;
 	}
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'w');
 
 		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
 		if (rc < 0)

@@ -82,21 +82,22 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_NONE = 0,
 
 	/**
-	 * The device has the capability to query the current hardware
-	 * configuration. If this capability is missing, libratbag cannot
-	 * query the device for its current configuration and the
+	 * read - The device has the capability to query the current
+	 * hardware configuration. If this capability is missing, libratbag
+	 * cannot query the device for its current configuration and the
 	 * configured resolutions and button mappings are unknown.
+	 *
 	 * libratbag will still provide information about the structure of
 	 * the device such as the number of buttons and resolutions.
 	 * Clients that encounter a device without this resolution are
 	 * encouraged to upload a configuration stored on-disk to the
 	 * device to reset the device to a known state.
 	 *
-	 * Any changes uploaded to the device will be cached in libratbag,
-	 * once a client has sent a full configuration to the device
-	 * libratbag can be used to query the device as normal.
+	 * write - The device has the capability to change the
+	 * configuration. Check other capabitilies for details.
 	 */
-	RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
+	RATBAG_DEVICE_CAP_CONFIGURATION,
+
 
 	/**
 	 * The device provides read and/or write access to one or more
@@ -105,29 +106,10 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_RESOLUTION = 100,
 
 	/**
-	 * The device can change resolution, either software-controlled or
-	 * by a hardware button.
-	 *
-	 * FIXME: what about devices that only have hw buttons? can we
-	 * query that, even if we can't switch it ourselves? Maybe better to
-	 * have a separate cap for that then.
-	 */
-	RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE,
-
-	/**
 	 * The device provides read and/or write access to one or more
 	 * profiles.
 	 */
 	RATBAG_DEVICE_CAP_PROFILE = 200,
-
-	/**
-	 * The device can switch between hardware profiles.
-	 * A device with this capability can store multiple profiles in the
-	 * hardware and provides the ability to switch between the profiles,
-	 * possibly with a button.
-	 * Devices without this capability will only have a single profile.
-	 */
-	RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE,
 
 	/**
 	 * The device has the capability to disable and enable profiles.  While
@@ -135,6 +117,9 @@ enum ratbag_device_capability {
 	 * guaranteed that the device will remember any disabled profiles the
 	 * next time ratbag runs. Furthermore, the order of profiles may get
 	 * changed the next time ratbag runs if profiles are disabled.
+	 *
+	 * read - the device's disabled profiles can be read
+	 * write - a profiles can be disabled
 	 */
 	RATBAG_DEVICE_CAP_PROFILE_DISABLE,
 
@@ -143,6 +128,9 @@ enum ratbag_device_capability {
 	 * A default profile is the profile that is selected when the device
 	 * is plugged in. Devices without this capability may select the
 	 * last-used profile or a specific profile (usually the first).
+	 *
+	 * read - the device's default profile can be read
+	 * write - a profiles can be set to be the default profile
 	 */
 	RATBAG_DEVICE_CAP_PROFILE_DEFAULT,
 

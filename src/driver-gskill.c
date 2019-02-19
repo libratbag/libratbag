@@ -1406,11 +1406,16 @@ gskill_probe(struct ratbag_device *device)
 	ratbag_device_init_profiles(device, GSKILL_PROFILE_MAX, GSKILL_NUM_DPI,
 				    GSKILL_BUTTON_MAX, GSKILL_NUM_LED);
 
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_CONFIGURATION, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_CONFIGURATION, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE, 'w');
 
 	ret = gskill_get_active_profile_idx(device);
 	if (ret < 0)

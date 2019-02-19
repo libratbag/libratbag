@@ -668,8 +668,10 @@ etekcity_probe(struct ratbag_device *device)
 	ratbag_device_for_each_profile(device, profile)
 		etekcity_read_profile(profile);
 
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'r');
+	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'w');
 
 	active_idx = etekcity_current_profile(device);
 	if (active_idx < 0) {

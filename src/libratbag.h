@@ -449,12 +449,23 @@ ratbag_device_get_svg_name(const struct ratbag_device* device);
  * options but none that are currently exposed by libratbag. A client is
  * expected to handle this situation.
  *
+ * Capabilities have two modes, read and write.
+ * Where the read capability is supported, libratbag can fetch information
+ * from the device. Where the write capability is supported, libratbag can
+ * write information back to the device. These two modes are independent,
+ * libratbag may be able to read but not write, or write but not read.
+ *
+ * @param device The device to query
+ * @param cap The capability to query
+ * @param mode 'r' for read capability, 'w' for write-capability.
+ *
  * @retval 1 The device has the capability
  * @retval 0 The device does not have the capability
  */
 bool
 ratbag_device_has_capability(const struct ratbag_device *device,
-			     enum ratbag_device_capability cap);
+			     enum ratbag_device_capability cap,
+			     char mode);
 
 /**
  * @ingroup device

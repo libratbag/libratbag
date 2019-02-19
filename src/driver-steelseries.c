@@ -303,14 +303,18 @@ steelseries_probe(struct ratbag_device *device)
 	/* only later models allow setting buttons on the device */
 	if (ratbag_device_data_steelseries_get_macro_length(device->data) > 0) {
 		/* set these caps manually as they are not assumed with only 1 profile */
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON, 'w');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'r');
+		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY, 'w');
 		if (short_button == 0) {
-			ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
+			ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'r');
+			ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS, 'w');
 		}
 	}
 
-	ratbag_device_unset_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
+	/* We can write to it, we just can't query it */
+	ratbag_device_unset_capability(device, RATBAG_DEVICE_CAP_CONFIGURATION, 'r');
 
 	/* The device does not support reading the current settings. Fall back
 	   to some sensible defaults */
