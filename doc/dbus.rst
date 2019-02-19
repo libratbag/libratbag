@@ -52,7 +52,7 @@ Types used by these interfaces:
 +----------+-----------------------------------+
 | ``u``    | Unsigned 32-bit integer           |
 +----------+-----------------------------------+
-|``(uuu)`` | Three 32-bit integers             |
+|``(uuu)`` | A triplet of 32-bit integers      |
 +----------+-----------------------------------+
 | ``ao``   | Array of object paths             |
 +----------+-----------------------------------+
@@ -85,8 +85,9 @@ interact with ratbagd.
 .. attribute:: Devices
 
 	:type: ao
+	:flags: read-only, mutable
 
-	An array of read-only **object paths** referencing the available
+	An array of read-only object paths referencing the available
 	devices. The devices implement the :ref:`device` interface.
 
 .. attribute:: Themes
@@ -96,12 +97,10 @@ interact with ratbagd.
 
 	The list of available theme names. This list is guaranteed to have
 	at least one theme available ('default'). Other themes are
-	implementation defined. A theme listed here is only a guarantee
+	implementation-defined. A theme listed here is only a guarantee
 	that the theme is known to libratbag and that SVGs *may* exist, it
 	is not a guarantee that the SVG for any specific device exists. In
 	other words, a device may not have an SVG for a specific theme.
-
-        This list is static for the lifetime of ratbagd.
 
 .. _device:
 
@@ -121,7 +120,7 @@ known to ratbagd.
 	content of the ID is undefined, the client should treat it as an
 	opaque string.
 
-.. attribute:: Description
+.. attribute:: Name
 
         :type: s
         :flags: read-only, constant
@@ -133,9 +132,9 @@ known to ratbagd.
         :type: au
         :flags: read-only, constant
 
-        The capabilities supported by this device. see `enum
-        ratbag_device_capability` in libratbag-enums.h for the list of permissible
-        capabilities.
+	The capabilities supported by this device. see
+	:cpp:enum:`ratbag_device_capability` in libratbag-enums.h for the
+	list of permissible capabilities.
 
 .. attribute:: Profiles
 
@@ -150,8 +149,10 @@ known to ratbagd.
 
 .. function:: Commit() → ()
 
-        Commits the changes to the device. Changes to the device are batched; they
-        are not written to the hardware until :func:`Commit` is invoked.
+        Commits the changes to the device. This call always succeeds,
+	the data is written to the device asynchronously. Where an error
+	occurs, the :func:`Resync` signal is emitted and all properties are
+	updated to the current state.
 
 .. function:: GetSvgFd(s) → (h)
 
@@ -163,11 +164,12 @@ known to ratbagd.
 	:func:`org.freedesktop.ratbag1.Manager.Themes <Themes>`.
 
         The theme **'default'** is guaranteed to be available.
-        ratbagd may return ENOENT if a file doesn't exist.
+
+        ratbagd may return ``ENOENT`` if a file doesn't exist.
         This is the case if the device has SVGs available but not
         for the given theme.
 
-.. exception:: Resync()
+.. function:: Resync()
 
         :type: Signal
 
