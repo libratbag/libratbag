@@ -1099,11 +1099,26 @@ ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 	return !!(resolution->capabilities & (1 << cap));
 }
 
+static inline bool
+resolution_has_dpi(struct ratbag_resolution *resolution,
+		   unsigned int dpi)
+{
+	for (size_t i = 0; i < resolution->ndpis; i++) {
+		if (dpi == resolution->dpis[i])
+			return true;
+	}
+
+	return false;
+}
+
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 			  unsigned int dpi)
 {
 	struct ratbag_profile *profile = resolution->profile;
+
+	if (!resolution_has_dpi(resolution, dpi))
+		return RATBAG_ERROR_VALUE;
 
 	if (resolution->dpi_x != dpi || resolution->dpi_y != dpi) {
 		resolution->dpi_x = dpi;
@@ -1126,6 +1141,9 @@ ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 		return RATBAG_ERROR_CAPABILITY;
 
 	if ((x == 0 && y != 0) || (x != 0 && y == 0))
+		return RATBAG_ERROR_VALUE;
+
+	if (!resolution_has_dpi(resolution, x) || !resolution_has_dpi(resolution, y))
 		return RATBAG_ERROR_VALUE;
 
 	if (resolution->dpi_x != x || resolution->dpi_y != y) {
