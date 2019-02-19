@@ -148,9 +148,14 @@ class _RatbagdDBus(GObject.GObject):
             raise RatbagdUnavailable("No one currently owns {}".format(ratbag1))
 
         self._proxy.connect("g-properties-changed", self._on_properties_changed)
+        self._proxy.connect("g-signal", self._on_signal_received)
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
         # Implement this in derived classes to respond to property changes.
+        pass
+
+    def _on_signal_received(self, proxy, sender_name, signal_name, parameters):
+        # Implement this in derived classes to respond to signals.
         pass
 
     def _find_object_with_path(self, iterable, object_path):
@@ -328,6 +333,8 @@ class RatbagdDevice(_RatbagdDBus):
     __gsignals__ = {
         "active-profile-changed":
             (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        "resync":
+            (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __init__(self, object_path):
@@ -339,6 +346,10 @@ class RatbagdDevice(_RatbagdDBus):
         self._profiles = [RatbagdProfile(objpath) for objpath in result]
         for profile in self._profiles:
             profile.connect("notify::is-active", self._on_active_profile_changed)
+
+    def _on_signal_received(self, proxy, sender_name, signal_name, parameters):
+        if signal_name == "Resync":
+            self.emit("resync")
 
     def _on_active_profile_changed(self, profile, pspec):
         if profile.is_active:
