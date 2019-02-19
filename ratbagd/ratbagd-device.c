@@ -152,6 +152,9 @@ static int ratbagd_device_get_theme_svg_fd(sd_bus_message *m,
 
 	CHECK_CALL(sd_bus_message_read(m, "s", &theme));
 
+	if (streq(theme, "default"))
+		theme = "gnome";
+
 	svg = ratbag_device_get_svg_name(device->lib_device);
 	if (!svg) {
 		log_error("%s: failed to fetch SVG, using fallback\n",
