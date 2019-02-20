@@ -222,7 +222,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	 */
 
 	name = udev_device_get_sysname(udevice);
-	if (!name || !startswith(name, "event"))
+	if (!name || !startswith(name, "hidraw"))
 		return;
 
 	device = ratbagd_device_lookup(ctx, name);
@@ -349,7 +349,7 @@ static int ratbagd_init_monitor(struct ratbagd *ctx)
 		return -ENOMEM;
 
 	r = udev_monitor_filter_add_match_subsystem_devtype(ctx->monitor,
-							    "input",
+							    "hidraw",
 							    NULL);
 	if (r < 0)
 		return r;
@@ -458,7 +458,7 @@ static int ratbagd_run_enumerate(struct ratbagd *ctx)
 	if (!e)
 		return -ENOMEM;
 
-	r = udev_enumerate_add_match_subsystem(e, "input");
+	r = udev_enumerate_add_match_subsystem(e, "hidraw");
 	if (r < 0)
 		goto exit;
 

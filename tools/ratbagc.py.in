@@ -139,10 +139,10 @@ class Ratbagd(object):
         self._devices_initialized = False
 
     def _init_devices(self):
-        for event in os.listdir("/dev/input"):
-            if not event.startswith("event"):
+        for event in os.listdir("/dev/"):
+            if not event.startswith("hidraw"):
                 continue
-            name = os.path.join("/dev/input/", event)
+            name = os.path.join("/dev/", event)
             try:
                 dev = RatbagdDevice(self._ratbag, name)
             except RatbagErrorDevice:
@@ -188,8 +188,8 @@ class Ratbagd(object):
 
     def __getitem__(self, id):
         """Returns the requested device, or None."""
-        if id.startswith("event"):
-            id = "/dev/input/{}".format(id)
+        if id.startswith("hidraw"):
+            id = "/dev/{}".format(id)
 
         if id not in self._devices.keys():
             try:

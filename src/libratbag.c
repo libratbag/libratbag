@@ -417,37 +417,29 @@ ratbag_assign_driver(struct ratbag_device *device,
 	return rc;
 }
 
-static int
-get_device_name(struct udev_device *device,
-		char *name, size_t sz)
+static char *
+get_device_name(struct udev_device *device)
 {
 	const char *prop;
 
-	prop = udev_prop_value(device, "NAME");
-	if (!prop)
-		return -EINVAL;
+	prop = udev_prop_value(device, "HID_NAME");
 
-	/* udev name is enclosed by " */
-	sz = min(sz, strlen(prop) - 1);
-	snprintf(name, sz, "%s", &prop[1]);
-
-	return 0;
+	return strdup_safe(prop);
 }
 
 static inline int
 get_product_id(struct udev_device *device, struct input_id *id)
 {
 	const char *product;
-	struct input_id ids;
+	struct input_id ids  = {0};
 	int rc;
 
-	product = udev_prop_value(device, "PRODUCT");
+	product = udev_prop_value(device, "HID_ID");
 	if (!product)
 		return -1;
 
-	rc = sscanf(product, "%hx/%hx/%hx/%hx", &ids.bustype,
-		    &ids.vendor, &ids.product, &ids.version);
-	if (rc != 4)
+	rc = sscanf(product, "%hx:%hx:%hx", &ids.bustype, &ids.vendor, &ids.product);
+	if (rc != 3)
 		return -1;
 
 	*id = ids;
@@ -461,20 +453,17 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 {
 	struct ratbag_device *device = NULL;
 	enum ratbag_error_code error = RATBAG_ERROR_DEVICE;
-	char name[128];
+	_cleanup_free_ char *name = NULL;
 	struct input_id id;
 
 	assert(ratbag != NULL);
 	assert(udev_device != NULL);
 	assert(device_out != NULL);
 
-	if (udev_prop_value(udev_device, "ID_INPUT_MOUSE") == NULL)
-		goto out_err;
-
 	if (get_product_id(udev_device, &id) != 0)
 		goto out_err;
 
-	if (get_device_name(udev_device, name, sizeof(name)) != 0)
+	if ((name = get_device_name(udev_device)) == 0)
 		goto out_err;
 
 	device = ratbag_device_new(ratbag, udev_device, name, &id);
