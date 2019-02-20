@@ -85,7 +85,6 @@ fedora_install: &fedora_install
         dnf upgrade -y libsolv
         dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml python3-devel swig
 
-
 fedora_settings: &fedora_settings
   <<: *default_settings
   steps:
@@ -99,6 +98,20 @@ fedora_settings: &fedora_settings
     - *check_uninstall
     - *export_logs
 
+arch_settings: &arch_settings
+  <<: *default_settings
+  steps:
+    - run:
+        name: Install prerequisites
+        command: |
+          pacman -Sy --noconfirm meson swig git check valgrind python-gobject python-lxml glib2 libevdev libudev.so python-evdev tree glibc systemd-libs
+    - checkout
+    - *start_dbus
+    - *build_and_test
+    - *install
+    - *check_install
+    - *check_uninstall
+    - *export_logs
 
 ubuntu_settings: &ubuntu_settings
   <<: *default_settings
@@ -189,6 +202,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:28
+  arch:
+    <<: *arch_settings
+    docker:
+      - image: archlinux/base
   ubuntu_17_10:
     <<: *ubuntu_settings
     docker:
@@ -210,6 +227,7 @@ workflows:
       # - fedora_rawhide
       - fedora_cache
       - ubuntu_17_10
+      - arch
       - fedora_latest:
           requires:
             - fedora_cache
