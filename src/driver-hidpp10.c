@@ -426,7 +426,6 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 		xres = 0xffff;
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
 
 	ratbag_profile_for_each_resolution(profile, res) {
 		unsigned int dpis[hidpp10->dpi_count];
