@@ -196,7 +196,8 @@ org.freedesktop.ratbag1.Profile
         :type: s
         :flags: read-write, mutable
 
-        The name of this profile.
+        The name of this profile. If the name is the empty string, the
+        profile name cannot be changed.
 
 .. attribute:: Enabled
 
