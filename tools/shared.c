@@ -27,14 +27,14 @@ struct udev_device*
 udev_device_from_path(struct udev *udev, const char *path)
 {
 	struct udev_device *udev_device;
-	const char *event_node_prefix = "/dev/input/event";
+	const char *hidraw_prefix = "/dev/";
 	_cleanup_(freep) char *path_canonical = NULL;
 
 	if ((path_canonical = realpath(path, NULL)) == NULL) {
 		error("Failed to canonicalize path '%s': %s\n", path, strerror(errno));
 		return NULL;
 	}
-	if (strneq(path_canonical, event_node_prefix, strlen(event_node_prefix))) {
+	if (strneq(path_canonical, hidraw_prefix, strlen(hidraw_prefix))) {
 		struct stat st;
 		if (stat(path_canonical, &st) == -1) {
 			error("Failed to stat '%s': %s\n", path, strerror(errno));

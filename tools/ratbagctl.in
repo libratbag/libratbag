@@ -671,7 +671,7 @@ def dpi(string):
         return (int_x, int_y)
 
 
-# note: 'eventX' is assumed at the end of each command
+# note: 'hidrawX' is assumed at the end of each command
 parser_def = [
     {
         of_type: command,
@@ -1228,7 +1228,7 @@ class RatbagParser(object):
         if self.func is not None:
             parser.set_defaults(func=self.func)
             if 'list' not in self.name:
-                parser.add_argument("device", metavar='eventX')
+                parser.add_argument("device", metavar='hidrawX')
 
     def _add_to_subparsers(self, parent, input_string, ns):
         raise ParseError("please implement _add_to_subparsers on {}".format(type(self)))
@@ -1355,7 +1355,7 @@ class RatbagParserSet(RatbagParserSwitch):
             self.store_function(parser)
         elif len(input_string) == 2:
             # missing device argument
-            parser.add_argument("device", metavar='eventX')
+            parser.add_argument("device", metavar='hidrawX')
         else:
             parser.set_defaults(subparse=self.sub_parse)
         return parser
@@ -1488,7 +1488,7 @@ class RatbagParserRoot(object):
         return ns
 
     def print_help(self):
-        print("usage: {} [OPTIONS] {{COMMAND}} ... /path/to/device\n".format(self.parser.prog))
+        print("usage: {} [OPTIONS] {{COMMAND}} ... /dev/hidrawX\n".format(self.parser.prog))
         print(self.parser.description)
         print("""
 Common options:
