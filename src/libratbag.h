@@ -572,8 +572,8 @@ ratbag_profile_set_name(struct ratbag_profile *profile,
 /**
  * @ingroup profile
  *
- * Enable/disable the ratbag profile. For this to work, the device must support
- * @ref RATBAG_DEVICE_CAP_PROFILE_DISABLE.
+ * Enable/disable the ratbag profile. For this to work, the profile must support
+ * @ref RATBAG_PROFILE_CAP_DISABLE.
  *
  * @param profile A previously initialized ratbag profile
  * @param enabled Whether to enable or disable the profile
@@ -587,7 +587,7 @@ ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled);
  * @ingroup profile
  *
  * Check whether the ratbag profile is enabled or not. For devices that don't
- * support @ref RATBAG_DEVICE_CAP_PROFILE_DISABLE the profile will always be
+ * support @ref RATBAG_PROFILE_CAP_DISABLE the profile will always be
  * set to enabled.
  *
  * @param profile A previously initialized ratbag profile

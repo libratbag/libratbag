@@ -130,16 +130,6 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE,
 
 	/**
-	 * The device has the capability to disable and enable profiles.  While
-	 * profiles are not immediately deleted after being disabled, it is not
-	 * guaranteed that the device will remember any disabled profiles the
-	 * next time ratbag runs. Furthermore, the order of profiles may get
-	 * changed the next time ratbag runs if profiles are disabled.
-	 */
-	RATBAG_DEVICE_CAP_PROFILE_DISABLE,
-
-
-	/**
 	 * The device provides read and/or write access to one or more
 	 * buttons.
 	 */
@@ -185,6 +175,21 @@ enum ratbag_profile_capability {
 	 * profile (usually the first).
 	 */
 	RATBAG_PROFILE_CAP_SET_DEFAULT,
+
+	/**
+	 * The profile can be disabled and enabled. Profiles are not
+	 * immediately deleted after being disabled, it is not guaranteed
+	 * that the device will remember any disabled profiles the next time
+	 * ratbag runs. Furthermore, the order of profiles may get changed
+	 * the next time ratbag runs if profiles are disabled.
+	 *
+	 * Note that this capability only notes the general capability. A
+	 * specific profile may still fail to be disabled, e.g. when it is
+	 * the last enabled profile on the device.
+	 */
+	RATBAG_PROFILE_CAP_DISABLE,
+
+
 };
 
 /**

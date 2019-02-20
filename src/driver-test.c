@@ -269,10 +269,8 @@ test_probe(struct ratbag_device *device, const void *data)
 				    test_device->num_buttons,
 				    test_device->num_leds);
 
-	if (test_device->num_profiles > 1) {
+	if (test_device->num_profiles > 1)
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
-	}
 
 	ratbag_device_for_each_profile(device, profile)
 		test_read_profile(profile);
