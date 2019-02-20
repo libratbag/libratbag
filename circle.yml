@@ -98,6 +98,21 @@ fedora_settings: &fedora_settings
     - *check_uninstall
     - *export_logs
 
+arch_settings: &arch_settings
+  <<: *default_settings
+  steps:
+    - run:
+        name: Install prerequisites
+        command: |
+          sed -i 's/systemd//' /etc/nsswitch.conf
+          pacman -Syu --noconfirm --noprogressbar base-devel meson swig git check valgrind dbus libevdev glib2 python-gobject python-lxml python-evdev tree
+    - checkout
+    - *start_dbus
+    - *build_and_test
+    - *install
+    - *check_install
+    - *check_uninstall
+    - *export_logs
 
 ubuntu_settings: &ubuntu_settings
   <<: *default_settings
@@ -189,6 +204,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:30
+  arch:
+    <<: *arch_settings
+    docker:
+      - image: archlinux/base
   ubuntu_19_04:
     <<: *ubuntu_settings
     docker:
@@ -210,6 +229,7 @@ workflows:
       # - fedora_rawhide
       - fedora_cache
       - ubuntu_19_04
+      - arch
       - fedora_latest:
           requires:
             - fedora_cache
