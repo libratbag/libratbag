@@ -318,7 +318,6 @@ class RatbagdDevice(_RatbagdDBus):
     """Represents a ratbagd device."""
 
     CAP_NONE = 0
-    CAP_QUERY_CONFIGURATION = 1
 
     __gsignals__ = {
         "active-profile-changed":
@@ -416,6 +415,7 @@ class RatbagdProfile(_RatbagdDBus):
     CAP_WRITABLE_NAME = 100
     CAP_SET_DEFAULT = 101
     CAP_DISABLE = 102
+    CAP_WRITE_ONLY = 103
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Profile", object_path)

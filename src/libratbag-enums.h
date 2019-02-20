@@ -80,23 +80,6 @@ enum ratbag_error_code {
  */
 enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_NONE = 0,
-
-	/**
-	 * The device has the capability to query the current hardware
-	 * configuration. If this capability is missing, libratbag cannot
-	 * query the device for its current configuration and the
-	 * configured resolutions and button mappings are unknown.
-	 * libratbag will still provide information about the structure of
-	 * the device such as the number of buttons and resolutions.
-	 * Clients that encounter a device without this resolution are
-	 * encouraged to upload a configuration stored on-disk to the
-	 * device to reset the device to a known state.
-	 *
-	 * Any changes uploaded to the device will be cached in libratbag,
-	 * once a client has sent a full configuration to the device
-	 * libratbag can be used to query the device as normal.
-	 */
-	RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
 };
 
 /**
@@ -136,7 +119,22 @@ enum ratbag_profile_capability {
 	 */
 	RATBAG_PROFILE_CAP_DISABLE,
 
-
+	/**
+	 * The profile information cannot be queried from the hardware.
+	 * Where this capability is present, libratbag cannot
+	 * query the device for its current configuration and the
+	 * configured resolutions and button mappings are unknown.
+	 * libratbag will still provide information about the structure of
+	 * the device such as the number of buttons and resolutions.
+	 * Clients that encounter a device without this resolution are
+	 * encouraged to upload a configuration stored on-disk to the
+	 * device to reset the device to a known state.
+	 *
+	 * Any changes uploaded to the device will be cached in libratbag,
+	 * once a client has sent a full configuration to the device
+	 * libratbag can be used to query the device as normal.
+	 */
+	RATBAG_PROFILE_CAP_WRITE_ONLY,
 };
 
 /**

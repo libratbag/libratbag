@@ -188,13 +188,6 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 
 	list_insert(&ratbag->devices, &device->link);
 
-	/* We assume that most devices have this capability, so let's set it
-	 * by default. The few devices that miss this capability should
-	 * unset it instead.
-	 */
-	ratbag_device_set_capability(device,
-				     RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
-
 	return device;
 }
 
@@ -835,17 +828,6 @@ ratbag_device_set_capability(struct ratbag_device *device,
 {
 	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
 		abort();
-
-	if (cap != RATBAG_DEVICE_CAP_QUERY_CONFIGURATION && cap % 100) {
-		enum ratbag_device_capability parent_cap = (cap/100) * 100;
-
-		if (!long_bit_is_set(device->capabilities, parent_cap)) {
-			log_bug_libratbag(device->ratbag,
-					  "Cap %d requires setting %d\n",
-					  cap, parent_cap);
-			abort();
-		}
-	}
 
 	long_set_bit(device->capabilities, cap);
 }
