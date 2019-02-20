@@ -1425,10 +1425,8 @@ gskill_probe(struct ratbag_device *device)
 		ratbag_profile_for_each_button(profile, button)
 			gskill_read_button(button);
 
-		if (profile->index == active_idx) {
+		if (profile->index == active_idx)
 			profile->is_active = true;
-			break;
-		}
 	}
 
 	return 0;
