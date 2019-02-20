@@ -209,7 +209,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 {
 	struct ratbag_device *lib_device;
 	struct ratbagd_device *device;
-	const char *name;
+	const char *sysname;
 	int r;
 
 	/*
@@ -217,15 +217,15 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	 *       device-grouping, just like libinput does. If multiple input
 	 *       devices belong to the same virtual device, we should not add
 	 *       it multiple times. Instead, libratbag should group them and
-	 *       provide *us* a unique name that identifies the group, rather
+	 *       provide *us* a unique sysname that identifies the group, rather
 	 *       than taking a random input-device as tag.
 	 */
 
-	name = udev_device_get_sysname(udevice);
-	if (!name || !startswith(name, "hidraw"))
+	sysname = udev_device_get_sysname(udevice);
+	if (!sysname || !startswith(sysname, "hidraw"))
 		return;
 
-	device = ratbagd_device_lookup(ctx, name);
+	device = ratbagd_device_lookup(ctx, sysname);
 
 	if (streq_ptr("remove", udev_device_get_action(udevice))) {
 		/* device was removed, unlink it and destroy our context */
@@ -251,13 +251,13 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		if (error != RATBAG_SUCCESS)
 			return; /* unsupported device */
 
-		r = ratbagd_device_new(&device, ctx, name, lib_device);
+		r = ratbagd_device_new(&device, ctx, sysname, lib_device);
 
 		/* the ratbagd_device takes its own reference, drop ours */
 		ratbag_device_unref(lib_device);
 
 		if (r < 0) {
-			log_error("%s: cannot track device\n", name);
+			log_error("%s: cannot track device\n", sysname);
 			return;
 		}
 
