@@ -384,11 +384,14 @@ ratbagd_profile_get_name(sd_bus *bus,
 	const char *name = ratbag_profile_get_name(profile->lib_profile);
 	_cleanup_free_ char *asciiname;
 
-	/* This should really be a UTF8 check and it should really be in
-	 * libratbag, but for now this will do to at least not kick us off
-	 * the bus. https://github.com/libratbag/libratbag/issues/617
-	 */
-	asciiname = strdup_ascii_only(name);
+	if (!name)
+		asciiname = strdup("");
+	else
+		/* This should really be a UTF8 check and it should really be in
+		 * libratbag, but for now this will do to at least not kick us off
+		 * the bus. https://github.com/libratbag/libratbag/issues/617
+		 */
+		asciiname = strdup_ascii_only(name);
 
 	CHECK_CALL(sd_bus_message_append(reply, "s", asciiname));
 
@@ -408,7 +411,6 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 	struct ratbag_profile *lib_profile = profile->lib_profile;
 	enum ratbag_profile_capability cap;
 	enum ratbag_profile_capability caps[] = {
-		RATBAG_PROFILE_CAP_WRITABLE_NAME,
 		RATBAG_PROFILE_CAP_SET_DEFAULT,
 		RATBAG_PROFILE_CAP_DISABLE,
 	};

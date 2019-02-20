@@ -671,7 +671,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->index = index;
 	profile->num_resolutions = 0;
 	profile->is_enabled = true;
-	profile->name = asprintf_safe("Profile %d", index + 1);
+	profile->name = NULL;
 
 	list_insert(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
@@ -1589,8 +1589,7 @@ ratbag_profile_set_name(struct ratbag_profile *profile,
 {
 	char *name_copy;
 
-	if (!ratbag_profile_has_capability(profile,
-					   RATBAG_PROFILE_CAP_WRITABLE_NAME))
+	if (!profile->name)
 		return RATBAG_ERROR_CAPABILITY;
 
 	name_copy = strdup_safe(name);

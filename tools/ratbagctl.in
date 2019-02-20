@@ -242,7 +242,7 @@ def print_profile(d, p, level):
                                                        " (disabled)" if not p.enabled else "",
                                                        " (active)" if p.is_active else ""))
     if p.enabled:
-        print(" " * level + "Name : '{}'".format(p.name))
+        print(" " * level + "Name: {}".format(p.name or 'n/a'))
         print(" " * level + "Resolutions:")
         for r in p.resolutions:
             print_resolution(d, p, r, level + 2)
@@ -512,7 +512,7 @@ def func_profile_name_get(r, args):
 
 def func_profile_name_set(r, args):
     p, d = find_profile(r, args)
-    if RatbagdProfile.CAP_WRITABLE_NAME not in p.capabilities:
+    if not p.name:
         raise RatbagErrorCapability("assigning a profile name is not supported on this profile")
     p.name = args.name
     commit(d, args)

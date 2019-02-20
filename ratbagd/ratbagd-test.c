@@ -42,7 +42,7 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 	.svg = "fallback.svg",
 	.profiles = {
 		{
-			.name = "test profile 1",
+			.name = NULL,
 			.buttons = {
 				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
 				  .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
@@ -115,7 +115,7 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 			},
 			.active = false,
 			.dflt = true,
-			.caps = { RATBAG_PROFILE_CAP_WRITABLE_NAME },
+			.name = "test profile 2",
 		},
 		{
 			.buttons = {

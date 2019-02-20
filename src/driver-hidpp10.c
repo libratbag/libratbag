@@ -407,7 +407,6 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 	if (rc)
 		return;
 
-	ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITABLE_NAME);
 	if (hidpp10->profile_type != HIDPP10_PROFILE_UNKNOWN)
 		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_DISABLE);
 

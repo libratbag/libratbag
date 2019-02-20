@@ -82,22 +82,13 @@ enum ratbag_profile_capability {
 	RATBAG_PROFILE_CAP_NONE = 0,
 
 	/**
-	 * The device has the capability to write a name to a profile
-	 * and store it in its flash.
-	 *
-	 * Any changes uploaded to the device will be cached in libratbag
-	 * and will be committed to it after a commit only.
-	 */
-	RATBAG_PROFILE_CAP_WRITABLE_NAME = 100,
-
-	/**
 	 * This profile can be assigned as the default profile. A default
 	 * profile is the profile that is selected when the device
 	 * is plugged in. Where no profile is assigned as the default
 	 * profile, the device either picks last-used profile or a specific
 	 * profile (usually the first).
 	 */
-	RATBAG_PROFILE_CAP_SET_DEFAULT,
+	RATBAG_PROFILE_CAP_SET_DEFAULT = 101,
 
 	/**
 	 * The profile can be disabled and enabled. Profiles are not
