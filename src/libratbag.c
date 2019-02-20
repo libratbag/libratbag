@@ -720,7 +720,6 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 
 	if (num_profiles > 1) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE);
 
 		/* having more than one profile means we can remap the buttons
 		 * at least */
@@ -1001,8 +1000,8 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	struct ratbag_profile *p;
 	int rc;
 
-	if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE))
-		return RATBAG_ERROR_CAPABILITY;
+	if (device->num_profiles == 1)
+		return RATBAG_SUCCESS;
 
 	assert(device->driver->set_active_profile);
 	rc = device->driver->set_active_profile(device, profile->index);

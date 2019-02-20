@@ -95,8 +95,7 @@ struct ratbag_device;
  * @ingroup profile
  * @struct ratbag_profile
  *
- * A handle to a profile context on devices with the @ref
- * RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE capability.
+ * A handle to a profile context on devices.
  * This struct is refcounted, use ratbag_profile_ref() and
  * ratbag_profile_unref().
  */

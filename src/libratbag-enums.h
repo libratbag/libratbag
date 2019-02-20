@@ -111,15 +111,6 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_PROFILE = 200,
 
 	/**
-	 * The device can switch between hardware profiles.
-	 * A device with this capability can store multiple profiles in the
-	 * hardware and provides the ability to switch between the profiles,
-	 * possibly with a button.
-	 * Devices without this capability will only have a single profile.
-	 */
-	RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE,
-
-	/**
 	 * The device provides read and/or write access to one or more
 	 * buttons.
 	 */

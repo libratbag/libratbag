@@ -258,7 +258,6 @@ def print_device(d, level):
     caps = {RatbagdDevice.CAP_RESOLUTION: "resolution",
             RatbagdDevice.CAP_PROFILE: "profile",
             RatbagdDevice.CAP_BUTTON: "button",
-            RatbagdDevice.CAP_PROFILE_SWITCHABLE: "switchable-profile",
             RatbagdDevice.CAP_BUTTON_KEY: "button-keys",
             RatbagdDevice.CAP_BUTTON_MACROS: "button-macros",
             RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration",
