@@ -117,17 +117,6 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_BUTTON = 300,
 
 	/**
-	 * The device supports assigning button numbers, key events or key +
-	 * modifier combinations.
-	 */
-	RATBAG_DEVICE_CAP_BUTTON_KEY,
-
-	/**
-	 * The device supports user-defined key or button sequences.
-	 */
-	RATBAG_DEVICE_CAP_BUTTON_MACROS,
-
-	/**
 	 * The device supports assigning LED colors and effects
 	 */
 	RATBAG_DEVICE_CAP_LED = 400,

@@ -669,7 +669,6 @@ etekcity_probe(struct ratbag_device *device)
 		etekcity_read_profile(profile);
 
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 	active_idx = etekcity_current_profile(device);
 	if (active_idx < 0) {

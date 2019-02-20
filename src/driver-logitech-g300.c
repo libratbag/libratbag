@@ -501,8 +501,6 @@ logitech_g300_probe(struct ratbag_device *device)
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 	active_idx = logitech_g300_get_active_profile_and_resolution(device);
 
