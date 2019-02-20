@@ -1104,7 +1104,6 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		log_debug(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		/* we read the profile once to get the correct number of
 		 * supported buttons. */
 		if (!hidpp20drv_read_special_key_mouse(device))
@@ -1179,8 +1178,6 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
 
 		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
 		if (rc < 0)

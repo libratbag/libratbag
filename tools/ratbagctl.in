@@ -258,8 +258,6 @@ def print_device(d, level):
     caps = {RatbagdDevice.CAP_RESOLUTION: "resolution",
             RatbagdDevice.CAP_PROFILE: "profile",
             RatbagdDevice.CAP_BUTTON: "button",
-            RatbagdDevice.CAP_BUTTON_KEY: "button-keys",
-            RatbagdDevice.CAP_BUTTON_MACROS: "button-macros",
             RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration",
             RatbagdDevice.CAP_LED: "led"}
     capabilities = [caps[c] for c in d.capabilities]
@@ -397,7 +395,7 @@ def func_button_action_set_special(r, args):
 
 def func_button_action_set_macro(r, args):
     b, p, d = find_button(r, args)
-    if not d.CAP_BUTTON_MACROS in d.capabilities:
+    if not b.ACTION_TYPE_MACRO in b.action_types:
         raise RatbagErrorCapability("assigning a macro is not supported on this device")
 
     macro_keys = args.target_macro

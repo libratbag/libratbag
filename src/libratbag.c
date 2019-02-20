@@ -724,7 +724,6 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 		/* having more than one profile means we can remap the buttons
 		 * at least */
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 	}
 
 	if (num_resolutions > 1)
@@ -1360,8 +1359,8 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 {
 	struct ratbag_button_action action = {0};
 
-	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+	if (!ratbag_button_has_action_type(button,
+					   RATBAG_BUTTON_ACTION_TYPE_BUTTON))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
@@ -1391,8 +1390,8 @@ ratbag_button_set_special(struct ratbag_button *button,
 
 	/* FIXME: range checks */
 
-	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+	if (!ratbag_button_has_action_type(button,
+					   RATBAG_BUTTON_ACTION_TYPE_SPECIAL))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
@@ -1428,8 +1427,8 @@ ratbag_button_set_key(struct ratbag_button *button,
 
 	/* FIXME: range checks */
 
-	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+	if (!ratbag_button_has_action_type(button,
+					   RATBAG_BUTTON_ACTION_TYPE_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
 	/* FIXME: modifiers */
@@ -1449,8 +1448,8 @@ ratbag_button_disable(struct ratbag_button *button)
 {
 	struct ratbag_button_action action = {0};
 
-	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_KEY))
+	if (!ratbag_button_has_action_type(button,
+					   RATBAG_BUTTON_ACTION_TYPE_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
@@ -1790,8 +1789,8 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_macro(struct ratbag_button *button,
 			const struct ratbag_button_macro *macro)
 {
-	if (!ratbag_device_has_capability(button->profile->device,
-					  RATBAG_DEVICE_CAP_BUTTON_MACROS))
+	if (!ratbag_button_has_action_type(button,
+					   RATBAG_BUTTON_ACTION_TYPE_MACRO))
 		return RATBAG_ERROR_CAPABILITY;
 
 	ratbag_button_copy_macro(button, macro);

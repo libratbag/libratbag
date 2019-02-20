@@ -322,8 +322,6 @@ class RatbagdDevice(_RatbagdDBus):
     CAP_RESOLUTION = 100
     CAP_PROFILE = 200
     CAP_BUTTON = 300
-    CAP_BUTTON_KEY = 301
-    CAP_BUTTON_MACROS = 302
     CAP_LED = 400
 
     __gsignals__ = {
