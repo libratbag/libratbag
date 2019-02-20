@@ -237,8 +237,6 @@ class RatbagdDevice(metaclass=MetaRatbag):
         if self._device is None:
             raise RatbagErrorDevice("device not compatible")
 
-        self._capabilities = get_capabilities("device", self._device)
-
         self._profiles = [RatbagdProfile(self._device, i) for i in range(libratbag.ratbag_device_get_num_profiles(self._device))]
 
     def __exit__(self):
@@ -250,16 +248,6 @@ class RatbagdDevice(metaclass=MetaRatbag):
     def id(self):
         """The unique identifier of this device."""
         return self._path
-
-    @property
-    def capabilities(self):
-        """The capabilities of this device as an array. Capabilities not
-        present on the device are not in the list. Thus use e.g.
-
-        if RatbagdDevice.CAP_RESOLUTION_SWITCHABLE is in device.capabilities:
-            do something
-        """
-        return self._capabilities
 
     @property
     def name(self):

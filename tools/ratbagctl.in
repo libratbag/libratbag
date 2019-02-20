@@ -255,9 +255,6 @@ def print_profile(d, p, level):
 def print_device(d, level):
     p = d.profiles[0]  # there should be always one
 
-    caps = {}
-    capabilities = [caps[c] for c in d.capabilities]
-
     svg_name = 'unknown'
     try:
         with d.get_svg_fd('gnome') as fd:
@@ -270,7 +267,6 @@ def print_device(d, level):
 
     print(" " * level + "{} - {}".format(d.id, d.name))
     print(" " * level + "               SVG: {}".format(svg_name))
-    print(" " * level + "      Capabilities: {}".format(", ".join(capabilities)))
     print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))
     print(" " * level + "    Number of Leds: {}".format(len(p.leds)))
     print(" " * level + "Number of Profiles: {}".format(len(d.profiles)))
