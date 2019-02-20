@@ -1406,8 +1406,6 @@ gskill_probe(struct ratbag_device *device)
 	ratbag_device_init_profiles(device, GSKILL_PROFILE_MAX, GSKILL_NUM_DPI,
 				    GSKILL_BUTTON_MAX, GSKILL_NUM_LED);
 
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
-
 	ret = gskill_get_active_profile_idx(device);
 	if (ret < 0)
 		goto err;

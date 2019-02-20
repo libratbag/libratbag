@@ -245,7 +245,6 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 	struct ratbag_device *lib_device = device->lib_device;
 	enum ratbag_device_capability cap;
 	enum ratbag_device_capability caps[] = {
-		RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
 	};
 	size_t i;
 

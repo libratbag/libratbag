@@ -300,12 +300,13 @@ steelseries_probe(struct ratbag_device *device)
 				    button_count,
 				    led_count);
 
-	ratbag_device_unset_capability(device, RATBAG_DEVICE_CAP_QUERY_CONFIGURATION);
 
 	/* The device does not support reading the current settings. Fall back
 	   to some sensible defaults */
 	ratbag_device_for_each_profile(device, profile) {
 		profile->is_active = true;
+
+		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (resolution->index == 0) {

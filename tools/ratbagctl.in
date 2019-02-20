@@ -255,7 +255,7 @@ def print_profile(d, p, level):
 def print_device(d, level):
     p = d.profiles[0]  # there should be always one
 
-    caps = {RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration"}
+    caps = {}
     capabilities = [caps[c] for c in d.capabilities]
 
     svg_name = 'unknown'
