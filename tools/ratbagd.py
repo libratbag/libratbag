@@ -319,10 +319,6 @@ class RatbagdDevice(_RatbagdDBus):
 
     CAP_NONE = 0
     CAP_QUERY_CONFIGURATION = 1
-    CAP_RESOLUTION = 100
-    CAP_PROFILE = 200
-    CAP_BUTTON = 300
-    CAP_LED = 400
 
     __gsignals__ = {
         "active-profile-changed":

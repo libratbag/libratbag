@@ -273,9 +273,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 			unsigned int vals[300];
 			unsigned int nvals = ARRAY_LENGTH(vals);
 
-			if (!ratbag_device_has_capability(device, RATBAG_DEVICE_CAP_RESOLUTION))
-				break;
-
 			nvals = ratbag_resolution_get_dpi_list(resolution, vals, nvals);
 			if (nvals == 0) {
 				log_bug_libratbag(ratbag,
@@ -717,20 +714,6 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 	}
 
 	device->num_profiles = num_profiles;
-
-	if (num_profiles > 1) {
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-
-		/* having more than one profile means we can remap the buttons
-		 * at least */
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
-	}
-
-	if (num_resolutions > 1)
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-
-	if (num_leds > 0)
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_LED);
 
 	return 0;
 }
@@ -1580,11 +1563,6 @@ ratbag_led_get_brightness(struct ratbag_led *led)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_led_set_mode(struct ratbag_led *led, enum ratbag_led_mode mode)
 {
-
-	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
-		return RATBAG_ERROR_CAPABILITY;
-
 	led->mode = mode;
 	led->dirty = true;
 	led->profile->dirty = true;
@@ -1594,10 +1572,6 @@ ratbag_led_set_mode(struct ratbag_led *led, enum ratbag_led_mode mode)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color)
 {
-	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
-		return RATBAG_ERROR_CAPABILITY;
-
 	led->color = color;
 	led->dirty = true;
 	led->profile->dirty = true;
@@ -1607,20 +1581,12 @@ ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color)
 LIBRATBAG_EXPORT enum ratbag_led_colordepth
 ratbag_led_get_colordepth(struct ratbag_led *led)
 {
-	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
-		return RATBAG_ERROR_CAPABILITY;
-
 	return led->colordepth;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_led_set_effect_duration(struct ratbag_led *led, unsigned int ms)
 {
-	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
-		return RATBAG_ERROR_CAPABILITY;
-
 	led->ms = ms;
 	led->dirty = true;
 	led->profile->dirty = true;
@@ -1630,10 +1596,6 @@ ratbag_led_set_effect_duration(struct ratbag_led *led, unsigned int ms)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_led_set_brightness(struct ratbag_led *led, unsigned int brightness)
 {
-	if (!ratbag_device_has_capability(led->profile->device,
-					  RATBAG_DEVICE_CAP_LED))
-		return RATBAG_ERROR_CAPABILITY;
-
 	led->brightness = brightness;
 	led->dirty = true;
 	led->profile->dirty = true;

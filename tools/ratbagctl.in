@@ -255,11 +255,7 @@ def print_profile(d, p, level):
 def print_device(d, level):
     p = d.profiles[0]  # there should be always one
 
-    caps = {RatbagdDevice.CAP_RESOLUTION: "resolution",
-            RatbagdDevice.CAP_PROFILE: "profile",
-            RatbagdDevice.CAP_BUTTON: "button",
-            RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration",
-            RatbagdDevice.CAP_LED: "led"}
+    caps = {RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration"}
     capabilities = [caps[c] for c in d.capabilities]
 
     svg_name = 'unknown'
@@ -373,17 +369,12 @@ def func_button_get(r, args):
 
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
-    if not d.CAP_BUTTON in d.capabilities:
-        raise RatbagErrorCapability("assigning a button is not supported on this device")
     b.mapping = args.target_button
     commit(d, args)
 
 
 def func_button_action_set_special(r, args):
     b, p, d = find_button(r, args)
-    if not d.CAP_BUTTON in d.capabilities:
-        raise RatbagErrorCapability("assigning a button is not supported on this device")
-
     try:
         special = args.target_special
     except AttributeError:
