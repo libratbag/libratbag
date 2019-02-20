@@ -822,36 +822,6 @@ ratbag_device_get_num_leds(struct ratbag_device *device)
 	return device->num_leds;
 }
 
-void
-ratbag_device_set_capability(struct ratbag_device *device,
-			     enum ratbag_device_capability cap)
-{
-	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
-		abort();
-
-	long_set_bit(device->capabilities, cap);
-}
-
-void
-ratbag_device_unset_capability(struct ratbag_device *device,
-			     enum ratbag_device_capability cap)
-{
-	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
-		abort();
-
-	long_clear_bit(device->capabilities, cap);
-}
-
-LIBRATBAG_EXPORT bool
-ratbag_device_has_capability(const struct ratbag_device *device,
-			     enum ratbag_device_capability cap)
-{
-	if (cap == RATBAG_DEVICE_CAP_NONE || cap >= MAX_CAP)
-		abort();
-
-	return long_bit_is_set(device->capabilities, cap);
-}
-
 static inline enum ratbag_error_code
 write_led_helper(struct ratbag_device *device, struct ratbag_led *led)
 {

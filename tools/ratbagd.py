@@ -317,8 +317,6 @@ class Ratbagd(_RatbagdDBus):
 class RatbagdDevice(_RatbagdDBus):
     """Represents a ratbagd device."""
 
-    CAP_NONE = 0
-
     __gsignals__ = {
         "active-profile-changed":
             (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
@@ -348,16 +346,6 @@ class RatbagdDevice(_RatbagdDBus):
     def id(self):
         """The unique identifier of this device."""
         return self._get_dbus_property("Id")
-
-    @GObject.Property
-    def capabilities(self):
-        """The capabilities of this device as an array. Capabilities not
-        present on the device are not in the list. Thus use e.g.
-
-        if RatbagdDevice.CAP_SWITCHABLE_RESOLUTION is in device.capabilities:
-            do something
-        """
-        return self._get_dbus_property("Capabilities") or []
 
     @GObject.Property
     def name(self):

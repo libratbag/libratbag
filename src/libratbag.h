@@ -442,22 +442,6 @@ ratbag_device_get_svg_name(const struct ratbag_device* device);
 /**
  * @ingroup device
  *
- * Note that a device may not support any of the capabilities but still
- * initialize fine otherwise. This is the case for devices that have no
- * configurable options set, or for devices that have some configuration
- * options but none that are currently exposed by libratbag. A client is
- * expected to handle this situation.
- *
- * @retval 1 The device has the capability
- * @retval 0 The device does not have the capability
- */
-bool
-ratbag_device_has_capability(const struct ratbag_device *device,
-			     enum ratbag_device_capability cap);
-
-/**
- * @ingroup device
- *
  * Write any changes to the device. Depending on the device, this may take
  * a couple of seconds.
  *
