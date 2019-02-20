@@ -168,7 +168,7 @@ extern const sd_bus_vtable ratbagd_device_vtable[];
 
 int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbagd *ctx,
-		       const char *name,
+		       const char *sysname,
 		       struct ratbag_device *lib_device);
 struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device);
 const char *ratbagd_device_get_sysname(struct ratbagd_device *device);
