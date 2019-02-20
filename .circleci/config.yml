@@ -5,6 +5,8 @@ libratbag_references:
     FEDORA_DEP_DOC: python3-sphinx python3-sphinx_rtd_theme
     UBUNTU_DEP_BUILD: gcc g++ meson pkg-config systemd libevdev-dev libglib2.0-dev libjson-glib-dev libsystemd-dev libudev-dev libunistring-dev python3-dev python3-evdev swig
     UBUNTU_DEP_TEST: check python3-gi python3-lxml valgrind
+    ARCH_DEP_BUILD: meson swig glib2 libevdev libudev.so libunistring json-glib python python-evdev python-gobject
+    ARCH_DEP_TEST: check valgrind python-lxml
   default_settings: &default_settings
     working_directory: ~/libratbag
     environment:
@@ -117,6 +119,25 @@ fedora_settings: &fedora_settings
   environment:
     *build_dependencies
 
+arch_settings: &arch_settings
+  <<: *default_settings
+  steps:
+    - run:
+        name: Prepare environment
+        command: mkdir -p /etc/dbus-1/system.d
+    - run:
+        name: Install prerequisites
+        command: pacman -Syu --noconfirm --noprogressbar --needed base-devel git tree ${ARCH_DEP_BUILD} ${ARCH_DEP_TEST}
+    - *start_dbus
+    - checkout
+    - *build_and_test
+    - *install
+    - *check_install
+    - *check_uninstall
+    - *export_logs
+  environment:
+    *build_dependencies
+
 ubuntu_settings: &ubuntu_settings
   <<: *default_settings
   steps:
@@ -209,6 +230,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:31
+  arch:
+    <<: *arch_settings
+    docker:
+      - image: archlinux
   ubuntu_19_10:
     <<: *ubuntu_settings
     docker:
@@ -229,6 +254,7 @@ workflows:
     jobs:
       - fedora_cache
       - ubuntu_19_10
+      - arch
       - fedora_31:
           requires:
             - fedora_cache
