@@ -1410,7 +1410,6 @@ gskill_probe(struct ratbag_device *device)
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
-	ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
 
 	ret = gskill_get_active_profile_idx(device);
 	if (ret < 0)
@@ -1424,6 +1423,8 @@ gskill_probe(struct ratbag_device *device)
 
 		ratbag_profile_for_each_button(profile, button)
 			gskill_read_button(button);
+
+		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_DISABLE);
 
 		if (profile->index == active_idx)
 			profile->is_active = true;

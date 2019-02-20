@@ -263,7 +263,6 @@ def print_device(d, level):
             RatbagdDevice.CAP_BUTTON_KEY: "button-keys",
             RatbagdDevice.CAP_BUTTON_MACROS: "button-macros",
             RatbagdDevice.CAP_QUERY_CONFIGURATION: "query-configuration",
-            RatbagdDevice.CAP_PROFILE_DISABLE: "disable-profile",
             RatbagdDevice.CAP_LED: "led"}
     capabilities = [caps[c] for c in d.capabilities]
 

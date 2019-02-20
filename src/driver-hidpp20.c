@@ -1048,6 +1048,7 @@ hidpp20drv_read_profile(struct ratbag_profile *profile)
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 		hidpp20drv_read_profile_8100(profile);
+		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_DISABLE);
 	} else {
 		hidpp20drv_read_resolution_dpi(profile);
 		hidpp20drv_read_special_key_mouse(device);
@@ -1178,7 +1179,6 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);

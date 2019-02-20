@@ -811,8 +811,7 @@ ratbag_device_get_profile(struct ratbag_device *device, unsigned int index)
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 {
-	if (!ratbag_device_has_capability(profile->device,
-					  RATBAG_DEVICE_CAP_PROFILE_DISABLE))
+	if (!ratbag_profile_has_capability(profile, RATBAG_PROFILE_CAP_DISABLE))
 		return RATBAG_ERROR_CAPABILITY;
 
 	profile->is_enabled = enabled;

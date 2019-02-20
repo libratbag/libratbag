@@ -408,6 +408,8 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 		return;
 
 	ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITABLE_NAME);
+	if (hidpp10->profile_type != HIDPP10_PROFILE_UNKNOWN)
+		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_DISABLE);
 
 	profile->is_enabled = p.enabled;
 
@@ -504,7 +506,6 @@ hidpp10drv_fill_from_profile(struct ratbag_device *device, struct hidpp10_device
 	if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_SWITCHABLE);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_PROFILE_DISABLE);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_KEY);
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_BUTTON_MACROS);
