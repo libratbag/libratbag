@@ -1097,7 +1097,6 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		if (rc < 0)
 			return 0; /* this is not a hard failure */
 		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION);
-		ratbag_device_set_capability(device, RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE);
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}

@@ -105,16 +105,6 @@ enum ratbag_device_capability {
 	RATBAG_DEVICE_CAP_RESOLUTION = 100,
 
 	/**
-	 * The device can change resolution, either software-controlled or
-	 * by a hardware button.
-	 *
-	 * FIXME: what about devices that only have hw buttons? can we
-	 * query that, even if we can't switch it ourselves? Maybe better to
-	 * have a separate cap for that then.
-	 */
-	RATBAG_DEVICE_CAP_RESOLUTION_SWITCHABLE,
-
-	/**
 	 * The device provides read and/or write access to one or more
 	 * profiles.
 	 */
