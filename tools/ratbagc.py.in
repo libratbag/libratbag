@@ -293,7 +293,9 @@ class RatbagdDevice(metaclass=MetaRatbag):
 
         @param theme The theme from which to retrieve the SVG, as str
         """
-        return open(self.get_svg(theme))
+        svg = libratbag.ratbag_device_get_svg_name(self._device)
+        path = os.path.join(LIBRATBAG_DATA_DIR, 'gnome', svg)
+        return open(path)
 
     def commit(self):
         """Commits all changes made to the device.
