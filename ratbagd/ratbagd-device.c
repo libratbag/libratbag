@@ -44,6 +44,7 @@ struct ratbagd_device {
 	struct ratbagd *ctx;
 	RBNode node;
 	char *sysname;
+	char *id;
 	char *path;
 	struct ratbag_device *lib_device;
 
@@ -274,7 +275,7 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
-	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, sysname), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, id), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_device_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
@@ -287,6 +288,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbagd *ctx,
 		       const char *sysname,
+		       const char *id,
 		       struct ratbag_device *lib_device)
 {
 	_cleanup_(ratbagd_device_freep) struct ratbagd_device *device = NULL;
@@ -297,6 +299,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	assert(out);
 	assert(ctx);
 	assert(sysname);
+	assert(id);
 
 	device = zalloc(sizeof(*device));
 	device->ctx = ctx;
@@ -304,6 +307,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	device->lib_device = ratbag_device_ref(lib_device);
 
 	device->sysname = strdup_safe(sysname);
+	device->id = strdup_safe(id);
 
 	r = sd_bus_path_encode(RATBAGD_OBJ_ROOT "/device",
 			       device->sysname,
@@ -357,10 +361,17 @@ struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
 	device->lib_device = ratbag_device_unref(device->lib_device);
 	device->path = mfree(device->path);
 	device->sysname = mfree(device->sysname);
+	device->id = mfree(device->id);
 
 	assert(!device->lib_device); /* ratbag yields !NULL if still pinned */
 
 	return mfree(device);
+}
+
+const char *ratbagd_device_get_id(struct ratbagd_device *device)
+{
+	assert(device);
+	return device->sysname;
 }
 
 const char *ratbagd_device_get_sysname(struct ratbagd_device *device)

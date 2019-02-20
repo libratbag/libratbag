@@ -204,6 +204,67 @@ static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_END,
 };
 
+/* 32 pre-picked names. If you have more than 32 devices connected and need
+ * ratbag to control them all, congratulations, you are official a niche
+ * use-case.
+ */
+static const char *device_ids[] = {
+"mara", "capybara", "porcupine", "paca",
+"vole", "woodrat", "gerbil", "shrew",
+"hare", "beaver", "gopher", "chinchilla",
+"mouse", "rat", "rabbit", "guineapig",
+"hutia", "degu", "gundi", "acouchy",
+"nutria", "tuco-tuco", "paca", "hamster",
+"zokor", "chipmunk", "squirrel", "marmot",
+"groundhog", "suslik", "agouti", "blesmol",
+};
+
+/* bitmask telling us which ones of the above are free. */
+static uint32_t device_ids_free = (1UL << ARRAY_LENGTH(device_ids)) - 1;
+
+static inline const char *
+pick_device_id(const char *sysname)
+{
+	int index;
+
+	/* search for the first number in the sysname and where we find it,
+	 * use that as lookup index. This way we get some sort of
+	 * consistency, hidraw2 is always "rat", etc.
+	 * Totally not necessary but we might as well have some fun here.
+	 * Where this fails or picks an id already chosen, we fall back to
+	 * "choose the first one free".
+	 */
+	if (sscanf(sysname, "%*[^0-9]%d", &index) == 1 &&
+	    index >= 0 && (unsigned)index < sizeof(device_ids_free) * 8 &&
+	    !!(device_ids_free & (1 << index)))
+	    goto assign;
+
+	index = ffs(device_ids_free);
+
+	/* This can only happen if you have >32 devices, so let's not worry
+	 * about this too much */
+	if (index == 0)
+		return sysname;
+
+	index -= 1; /* ffs is 1-based */
+
+assign:
+	device_ids_free &= ~(1 << index);
+
+	return device_ids[index];
+}
+
+static inline void
+release_device_id(const char *id)
+{
+	for (size_t i = 0; i < ARRAY_LENGTH(device_ids); i++) {
+		if (streq(id, device_ids[i])) {
+			device_ids_free |= (1 << i);
+			break;
+		}
+	}
+}
+
 static void ratbagd_process_device(struct ratbagd *ctx,
 				   struct udev_device *udevice)
 {
@@ -230,8 +291,10 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	if (streq_ptr("remove", udev_device_get_action(udevice))) {
 		/* device was removed, unlink it and destroy our context */
 		if (device) {
+			release_device_id(ratbagd_device_get_id(device));
 			ratbagd_device_unlink(device);
 			ratbagd_device_free(device);
+
 
 			(void) sd_bus_emit_properties_changed(ctx->bus,
 							      RATBAGD_OBJ_ROOT,
@@ -242,6 +305,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	} else if (device) {
 		/* device already known, refresh our view of the device */
 	} else {
+		const char *id;
 		enum ratbag_error_code error;
 
 		/* device unknown, create new one and link it */
@@ -251,7 +315,8 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		if (error != RATBAG_SUCCESS)
 			return; /* unsupported device */
 
-		r = ratbagd_device_new(&device, ctx, sysname, lib_device);
+		id = pick_device_id(sysname);
+		r = ratbagd_device_new(&device, ctx, sysname, id, lib_device);
 
 		/* the ratbagd_device takes its own reference, drop ours */
 		ratbag_device_unref(lib_device);
