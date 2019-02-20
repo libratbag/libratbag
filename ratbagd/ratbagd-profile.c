@@ -409,6 +409,7 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 	enum ratbag_profile_capability cap;
 	enum ratbag_profile_capability caps[] = {
 		RATBAG_PROFILE_CAP_WRITABLE_NAME,
+		RATBAG_PROFILE_CAP_SET_DEFAULT,
 	};
 	size_t i;
 

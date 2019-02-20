@@ -324,7 +324,6 @@ class RatbagdDevice(_RatbagdDBus):
     CAP_PROFILE = 200
     CAP_PROFILE_SWITCHABLE = 201
     CAP_PROFILE_DISABLE = 202
-    CAP_PROFILE_DEFAULT = 203
     CAP_BUTTON = 300
     CAP_BUTTON_KEY = 301
     CAP_BUTTON_MACROS = 302
@@ -424,6 +423,7 @@ class RatbagdProfile(_RatbagdDBus):
     """Represents a ratbagd profile."""
 
     CAP_WRITABLE_NAME = 100
+    CAP_SET_DEFAULT = 101
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Profile", object_path)

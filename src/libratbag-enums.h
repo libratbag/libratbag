@@ -138,13 +138,6 @@ enum ratbag_device_capability {
 	 */
 	RATBAG_DEVICE_CAP_PROFILE_DISABLE,
 
-	/**
-	 * The device can have one profile assigned as a default profile.
-	 * A default profile is the profile that is selected when the device
-	 * is plugged in. Devices without this capability may select the
-	 * last-used profile or a specific profile (usually the first).
-	 */
-	RATBAG_DEVICE_CAP_PROFILE_DEFAULT,
 
 	/**
 	 * The device provides read and/or write access to one or more
@@ -183,6 +176,15 @@ enum ratbag_profile_capability {
 	 * and will be committed to it after a commit only.
 	 */
 	RATBAG_PROFILE_CAP_WRITABLE_NAME = 100,
+
+	/**
+	 * This profile can be assigned as the default profile. A default
+	 * profile is the profile that is selected when the device
+	 * is plugged in. Where no profile is assigned as the default
+	 * profile, the device either picks last-used profile or a specific
+	 * profile (usually the first).
+	 */
+	RATBAG_PROFILE_CAP_SET_DEFAULT,
 };
 
 /**
