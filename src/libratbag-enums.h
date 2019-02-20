@@ -97,29 +97,6 @@ enum ratbag_device_capability {
 	 * libratbag can be used to query the device as normal.
 	 */
 	RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
-
-	/**
-	 * The device provides read and/or write access to one or more
-	 * resolutions.
-	 */
-	RATBAG_DEVICE_CAP_RESOLUTION = 100,
-
-	/**
-	 * The device provides read and/or write access to one or more
-	 * profiles.
-	 */
-	RATBAG_DEVICE_CAP_PROFILE = 200,
-
-	/**
-	 * The device provides read and/or write access to one or more
-	 * buttons.
-	 */
-	RATBAG_DEVICE_CAP_BUTTON = 300,
-
-	/**
-	 * The device supports assigning LED colors and effects
-	 */
-	RATBAG_DEVICE_CAP_LED = 400,
 };
 
 /**

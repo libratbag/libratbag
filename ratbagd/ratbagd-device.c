@@ -246,10 +246,6 @@ ratbagd_device_get_capabilities(sd_bus *bus,
 	enum ratbag_device_capability cap;
 	enum ratbag_device_capability caps[] = {
 		RATBAG_DEVICE_CAP_QUERY_CONFIGURATION,
-		RATBAG_DEVICE_CAP_RESOLUTION,
-		RATBAG_DEVICE_CAP_PROFILE,
-		RATBAG_DEVICE_CAP_BUTTON,
-		RATBAG_DEVICE_CAP_LED,
 	};
 	size_t i;
 
