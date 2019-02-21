@@ -2,7 +2,6 @@
 Name=SteelSeries Rival
 DeviceMatch=usb:1038:1384
 Driver=steelseries
-Svg=steelseries-rival.svg
 
 [Driver/steelseries]
 DeviceVersion=1

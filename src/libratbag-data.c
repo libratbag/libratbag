@@ -81,7 +81,6 @@ struct ratbag_device_data {
 	int refcount;
 	char *name;
 	char *driver;
-	char *svg;
 
 	enum driver drivertype;
 
@@ -261,12 +260,6 @@ ratbag_device_data_get_name(const struct ratbag_device_data *data)
 	return data->name;
 }
 
-const char *
-ratbag_device_data_get_svg(const struct ratbag_device_data *data)
-{
-	return data->svg;
-}
-
 enum ratbag_led_type
 ratbag_device_data_get_led_type(const struct ratbag_device_data *data,
 				unsigned int index)
@@ -295,7 +288,6 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 	}
 	free(data->name);
 	free(data->driver);
-	free(data->svg);
 	free(data);
 }
 
@@ -435,8 +427,6 @@ file_data_matches(struct ratbag *ratbag,
 			return false;
 		}
 	}
-
-	data->svg = g_key_file_get_string(keyfile, GROUP_DEVICE, "Svg", NULL);
 
 	ledtypes_strv = g_key_file_get_string_list(keyfile, GROUP_DEVICE, "LedTypes", NULL, NULL);
 	if (parse_ledtypes(ledtypes_strv, data->led_types, ARRAY_LENGTH(data->led_types)) < 0) {

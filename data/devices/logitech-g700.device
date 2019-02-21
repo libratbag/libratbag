@@ -4,7 +4,6 @@
 Name=Logitech G700
 DeviceMatch=usb:046d:c06b
 Driver=hidpp10
-Svg=logitech-g700.svg
 
 [Driver/hidpp10]
 DpiRange=0:5700@23.53

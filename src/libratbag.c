@@ -505,19 +505,6 @@ ratbag_device_get_name(const struct ratbag_device* device)
 }
 
 LIBRATBAG_EXPORT const char *
-ratbag_device_get_svg_name(const struct ratbag_device* device)
-{
-	const char *name = NULL;
-
-	if (device->data)
-		name = ratbag_device_data_get_svg(device->data);
-	if (!name && device->driver->get_svg_name)
-		name = device->driver->get_svg_name(device);
-
-	return name;
-}
-
-LIBRATBAG_EXPORT const char *
 ratbag_device_get_bustype(const struct ratbag_device *device)
 {
 	switch (device->ids.bustype) {

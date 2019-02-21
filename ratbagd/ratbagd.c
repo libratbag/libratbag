@@ -49,12 +49,6 @@ enum log_level {
 	LL_RAW,
 } log_level = LL_INFO;
 
-static const char *SVG_THEMES[] = {
-	"default",
-	"gnome",
-	NULL
-};
-
 void log_info(const char *fmt, ...)
 {
 	va_list args;
@@ -170,34 +164,9 @@ static int ratbagd_get_devices(sd_bus *bus,
 	return 0;
 }
 
-static int ratbagd_get_themes(sd_bus *bus,
-			      const char *path,
-			      const char *interface,
-			      const char *property,
-			      sd_bus_message *reply,
-			      void *userdata,
-			      sd_bus_error *error)
-{
-	struct ratbagd *ctx = userdata;
-	const char **theme;
-
-	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "s"));
-
-	theme = ctx->themes;
-	while(*theme) {
-		CHECK_CALL(sd_bus_message_append(reply, "s", *theme));
-		theme++;
-	}
-
-	CHECK_CALL(sd_bus_message_close_container(reply));
-
-	return 0;
-}
-
 static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("Themes", "as", ratbagd_get_themes, 0, 0),
 #ifdef RATBAG_DEVELOPER_EDITION
 	SD_BUS_METHOD("ResetTestDevice", "", "u", ratbagd_reset_test_device, SD_BUS_VTABLE_UNPRIVILEGED),
 #endif /* RATBAG_DEVELOPER_EDITION */
@@ -441,7 +410,6 @@ static int ratbagd_new(struct ratbagd **out)
 	int r;
 
 	ctx = zalloc(sizeof(*ctx));
-	ctx->themes = SVG_THEMES;
 
 	r = sd_event_default(&ctx->event);
 	if (r < 0)

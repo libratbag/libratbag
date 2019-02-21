@@ -3,7 +3,6 @@
 Name=Logitech G PowerPlay mouse pad.
 DeviceMatch=usb:046d:c53a
 Driver=hidpp20
-Svg=logitech-g900.svg
 
 [Driver/hidpp20]
 DeviceIndex=1

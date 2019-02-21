@@ -12,9 +12,6 @@ Name=Logitech Example Device
 # zeroes.
 DeviceMatch=usb:12ab:00f2
 
-# The file name of the SVG file representing this device
-Svg=logitech-example.svg
-
 # The libratbag driver backend
 Driver=hidpp10
 

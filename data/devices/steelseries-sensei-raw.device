@@ -2,7 +2,6 @@
 Name=SteelSeries Sensei Raw
 DeviceMatch=usb:1038:1369
 Driver=steelseries
-Svg=steelseries-senseiraw.svg
 LedTypes=logo;dpi
 
 [Driver/steelseries]

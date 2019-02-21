@@ -35,7 +35,6 @@ libratbag_references:
       command: |
         PREFIX=/usr/local/
         diff -u <(cd data/devices; ls *.device) <(cd $PREFIX/share/libratbag/devices; ls *.device)
-        diff -u <(cd data/gnome; ls *.svg) <(cd $PREFIX/share/libratbag/gnome; ls *.svg)
   check_uninstall: &check_uninstall
     run:
       name: Checking if any files are left after uninstall

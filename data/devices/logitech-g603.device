@@ -3,4 +3,3 @@
 Name=Logitech G603
 DeviceMatch=bluetooth:046d:b01c
 Driver=hidpp20
-Svg=logitech-g603.svg
