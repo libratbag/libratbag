@@ -7,12 +7,15 @@
 The libratbag DBus API
 **********************
 
+.. image:: ../../data/logo.svg
+  :width: 400
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
      The DBus Interfaces <dbus.rst>
-     Enumerations <enums.rst>	
+     Enumerations <enums.rst>
 
 This document describes the DBus API that is the public interface for
 libratbag.
