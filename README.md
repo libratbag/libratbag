@@ -1,12 +1,15 @@
 libratbag <img src="https://libratbag.github.io/_images/logo.svg" alt="" width="30%" align="right">
 =========
 
-libratbag is a configuration library for gaming mice. It provides a generic
-way to access the various features exposed by these mice and abstracts away
-hardware-specific and kernel-specific quirks.
+libratbag provides **ratbagd**, a DBus daemon to configure gaming mice.
+The daemon provides a generic way to access the various features exposed by
+these mice and abstracts away hardware-specific and kernel-specific quirks.
 
-libratbag exports the devices over a DBus daemon called **ratbagd**, see the
-[ratbagd DBus Interface description](https://libratbag.github.io/).
+libratbag currently supports devices from Logitech, Etekcity, GSkill,
+Roccat, Steelseries. See [the device
+files](https://github.com/libratbag/libratbag/tree/master/data/devices) for
+a complete list of supported devices.
+
 Users interact through a GUI like
 [Piper](https://github.com/libratbag/piper/). For developers, the
 `ratbagctl` tool is the prime tool for debugging.
@@ -28,10 +31,12 @@ libratbag and initialize the build:
     git clone https://github.com/libratbag/libratbag.git
     cd libratbag
     meson builddir
+    ninja -C builddir
+    sudo ninja -C builddir install
 
-This will inititialize libratbag so that it installs under `/usr/local`,
-i.e. it will not overwrite the system installation. For more information,
-see [the wiki](https://github.com/libratbag/libratbag/wiki/Installation).
+The default prefix is `/usr/local`, i.e. it will not overwrite the system
+installation. For more information, see [the
+wiki](https://github.com/libratbag/libratbag/wiki/Installation).
 
 And to build or re-build after code-changes, run:
 
@@ -41,7 +46,7 @@ And to build or re-build after code-changes, run:
 Note: `builddir` is the build output directory and can be changed to any
 other directory name. To set configure-time options, use e.g.
 
-    meson configure builddir -Denable-documentation=false
+    meson configure builddir -Ddocumentation=false
 
 Run `meson configure builddir` to list the options.
 
@@ -73,16 +78,31 @@ And finally, to enable the service:
 This places the required symlink into the systemd directory so that dbus
 activation is possible.
 
+The DBus Interface
+-------------------
+
+Full documentation of the DBus interface to interact with devices is
+available here: [ratbagd DBus Interface description](https://libratbag.github.io/).
+
 libratbag Internal Architecture
 -------------------------------
 
-libratbag has two main components, libratbag and ratbagd.
-The former is a library to access the devices. It consists of
-the front-end API and wrapper code, and the back-end HW-specific drivers:
+libratbag has two main components, libratbag and ratbagd. Applications like
+Piper talk over DBus to ratbagd. ratbagd uses libratbag to access the actual
+devices.
 
-    +-----+    +-----+    +-----------+    +----------+
-    | app | -> | API | -> | hw-driver | -> | protocol | -> device
-    +-----+    +-----+    +-----------+    +----------+
+    +-------+    +------+    +---------+    +-----------+
+    | Piper | -> | DBus | -> | ratbagd | -> | libratbag | -> device
+    +-------+    +------+    +---------+    +-----------+
+
+
+Inside libratbag, we have the general frontend and API. Each device is
+handled by a HW-specific backend.  That HW backend is responsible for the
+device-specific communication (usually some vendor-specific HID protocol).
+
+    +---------+    +-----+    +------------+    +----------+
+    | ratbagd | -> | API | -> | hw backend | -> | protocol | -> device
+    +---------+    +-----+    +------------+    +----------+
 
 The API layer is HW agnostic. Depend on the HW, the protocol may be part of
 the driver implementation (e.g. etekcity) or a separate set of files
@@ -95,15 +115,20 @@ Adding Devices to libratbag
 ---------------------------
 
 libratbag relies on a device database to match a device with the drivers.
-See the data/devices/ directory for the set of known devices. These files
-are usually installed into $prefix/$datadir (e.g. /usr/share/libratbag/).
+See the [data/devices/](https://github.com/libratbag/libratbag/tree/master/data/devices)
+directory for the set of known devices. These files
+are usually installed into `$prefix/$datadir` (e.g. `/usr/share/libratbag/`).
 
-To add a new device to libratbag, simply drop a new device file into that
-directory and restart ratbagd. See the data/devices/device.example file for
-guidance on what information must be set.
+Adding a new device can be as simple as adding a new `.device` file. This is
+the case for many devices with a shared protocol (e.g. Logitech's HID++).
+See the
+[data/devices/device.example](https://github.com/libratbag/libratbag/tree/master/data/devices/device.example)
+file for guidance on what information must be set. Look for existing devices
+from the same vendor as guidance too.
 
-If the device doesn't work after adding the device file, you'll have to
-start reverse-engineering the device-specific protocol. Good luck :)
+If the device has a different protocol and doesn't work after adding the
+device file, you'll have to start reverse-engineering the device-specific
+protocol. Good luck :)
 
 Source
 ------
@@ -113,14 +138,14 @@ Source
 Bugs
 ----
 
-Bugs can be reported in the issue tracker on our github repo:
-https://github.com/libratbag/libratbag/issues
+Bugs can be reported in [our issue tracker](https://github.com/libratbag/libratbag/issues)
 
 Mailing list
 ------------
 
-libratbag discussions happen on the input-tools mailing list hosted on
-freedesktop.org: http://lists.freedesktop.org/archives/input-tools/
+libratbag discussions happen on the [input-tools mailing
+list](http://lists.freedesktop.org/archives/input-tools/) hosted on
+freedesktop.org
 
 Device-specific notes
 ---------------------
