@@ -120,6 +120,48 @@ known to ratbagd.
 	content of the ID is undefined, the client should treat it as an
 	opaque string.
 
+.. attribute:: Model
+
+	:type: s
+	:flags: read-only, constant
+
+	An ID identifying the physical device model. This string is
+	guaranteed to be unique for a specific model and always identical
+	for devices of that model.
+
+	This is a string of one of the following formats:
+
+	- ``usb:1234:abcd:0``
+	- ``bluetooth:5678:ef01:0``
+	- ``unknown``
+
+	In the future, other formats may get added. Clients must ignore
+	unknown string formats.
+
+	For a string starting with `usb:`, the format is the bus type (USB)
+	followed by a 4-digit lowercase hex USB vendor ID, followed by a
+	4-digit lowercase hex USB product ID, followed by an decimal version
+	number of unspecified length. These four elements are separated by a
+	colon (``:``).
+
+	For a string starting with `bluetooth:`, the format is the bus type
+	(Bluetooth) followed by a 4-digit lowercase hex Bluetooth vendor ID,
+	followed by a 4-digit lowercase hex Bluetooth product ID, followed
+	by an decimal version number of unspecified length. These four
+	elements are separated by a colon (``:``).
+
+	For the string ``unknown``, the model of the device cannot be
+	determined. This is usually a bug in libratbag.
+
+	For ``DeviceId``s of type ``usb`` and ``bluetooth``, the version
+	number is reserved for use by libratbag. Device with identical
+	vendor and product IDs but different versions must be considered
+	different devices. For example, the version may increase when a
+	manufacturer re-uses USB Ids.
+
+	Vendor or product IDs of 0 are valid IDs (e.g. used used by test
+	devices).
+
 .. attribute:: Name
 
         :type: s

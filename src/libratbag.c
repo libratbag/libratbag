@@ -517,6 +517,39 @@ ratbag_device_get_svg_name(const struct ratbag_device* device)
 	return name;
 }
 
+LIBRATBAG_EXPORT const char *
+ratbag_device_get_bustype(const struct ratbag_device *device)
+{
+	switch (device->ids.bustype) {
+	case BUS_USB:
+		return "usb";
+	case BUS_BLUETOOTH:
+		return "bluetooth";
+	default:
+		return NULL;
+	}
+}
+
+LIBRATBAG_EXPORT uint32_t
+ratbag_device_get_vendor_id(const struct ratbag_device *device)
+{
+	return device->ids.vendor;
+}
+
+LIBRATBAG_EXPORT uint32_t
+ratbag_device_get_product_id(const struct ratbag_device *device)
+{
+	return device->ids.product;
+}
+
+LIBRATBAG_EXPORT uint32_t
+ratbag_device_get_product_version(const struct ratbag_device *device)
+{
+	/* change this when we have a need for it, i.e. when we start supporting devices
+	 * where the USB ID gets reused */
+	return 0;
+}
+
 void
 ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver)
 {

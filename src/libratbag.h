@@ -24,6 +24,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <libudev.h>
@@ -438,6 +439,47 @@ ratbag_device_get_name(const struct ratbag_device* device);
  */
 const char *
 ratbag_device_get_svg_name(const struct ratbag_device* device);
+
+/**
+ * @ingroup device
+ *
+ * Returns the bustype of the device, "usb", "bluetooth" or NULL for
+ * unknown.
+ */
+const char *
+ratbag_device_get_bustype(const struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Returns the vendor ID of the device.
+ */
+uint32_t
+ratbag_device_get_vendor_id(const struct ratbag_device *device);
+
+
+/**
+ * @ingroup device
+ *
+ * Returns the product ID of the device.
+ */
+uint32_t
+ratbag_device_get_product_id(const struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Returns the product version of the device. This is a made-up number,
+ * internal to libratbag. It's purpose is to provide an extra bit of
+ * differentiation where devices use the same VID/PID for different models.
+ *
+ * Devices with identical VID/PID but different versions must be considered
+ * different devices.
+ *
+ * Usually the version will be 0.
+ */
+uint32_t
+ratbag_device_get_product_version(const struct ratbag_device *device);
 
 /**
  * @ingroup device
