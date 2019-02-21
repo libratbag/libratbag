@@ -319,47 +319,7 @@ install_data(data_files,
 	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'devices'))
 
 data_parse_test = find_program(join_paths(meson.source_root(), 'data/devices/data-parse-test.py'))
-test('data-parse-test', data_parse_test,
-     args : [ '--svg-dir', join_paths(meson.source_root(), 'data/default'),
-	      '--svg-dir', join_paths(meson.source_root(), 'data/gnome') ] + data_files)
-
-#### svg files ####
-# list ordered by git ls-files data/gnome/*.svg
-gnome_svg_files = files(
-	'data/gnome/fallback.svg',
-	'data/gnome/logitech-g102-g203.svg',
-	'data/gnome/logitech-g300.svg',
-	'data/gnome/logitech-g303.svg',
-	'data/gnome/logitech-g402.svg',
-	'data/gnome/logitech-g403.svg',
-	'data/gnome/logitech-g500.svg',
-	'data/gnome/logitech-g500s.svg',
-	'data/gnome/logitech-g502.svg',
-	'data/gnome/logitech-g600.svg',
-	'data/gnome/logitech-g603.svg',
-	'data/gnome/logitech-g700.svg',
-	'data/gnome/logitech-g703.svg',
-	'data/gnome/logitech-g9.svg',
-	'data/gnome/logitech-g900.svg',
-	'data/gnome/logitech-g-pro.svg',
-	'data/gnome/logitech-g-pro-wireless.svg',
-	'data/gnome/logitech-mx-anywhere2.svg',
-	'data/gnome/logitech-mx-anywhere2s.svg',
-	'data/gnome/logitech-mx-master-2s.svg',
-	'data/gnome/logitech-mx-master.svg',
-	'data/gnome/roccat-kone-xtd.svg',
-	'data/gnome/steelseries-kinzu-v2.svg',
-	'data/gnome/steelseries-rival.svg',
-	'data/gnome/steelseries-rival310.svg',
-	'data/gnome/steelseries-rival600.svg',
-	'data/gnome/steelseries-sensei310.svg',
-	'data/gnome/steelseries-senseiraw.svg',
-)
-install_data(gnome_svg_files,
-	     install_dir : join_paths(get_option('datadir'), 'libratbag', 'gnome'))
-
-test_svg_files = find_program('data/gnome/check-svg.py')
-test('check-svg', test_svg_files, args : gnome_svg_files)
+test('data-parse-test', data_parse_test, args:  data_files)
 
 #### tests ####
 enable_tests = get_option('tests')

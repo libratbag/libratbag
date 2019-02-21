@@ -201,12 +201,6 @@ class Ratbagd(object):
 
         return self._devices[id] if id in self._devices.keys() else None
 
-    @property
-    def themes(self):
-        """A list of theme names. The theme 'default' is guaranteed to be
-        available."""
-        return ["default", "gnome"]
-
     def set_verbose(self, verbose):
         if verbose > 2:
             libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_RAW)
@@ -281,20 +275,6 @@ class RatbagdDevice(metaclass=MetaRatbag):
                 return profile
         print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
         return self._profiles[0]
-
-    def get_svg_fd(self, theme):
-        """Returns a File-like object to the SVG for the given theme, or
-        raises FileNotFoundError if the file is not available.
-
-        The theme must be one of org.freedesktop.ratbag1.Manager.Themes. The
-        theme 'default' is guaranteed to be available (but the file itself
-        may not be).
-
-        @param theme The theme from which to retrieve the SVG, as str
-        """
-        svg = libratbag.ratbag_device_get_svg_name(self._device)
-        path = os.path.join(LIBRATBAG_DATA_DIR, 'gnome', svg)
-        return open(path)
 
     def commit(self):
         """Commits all changes made to the device.

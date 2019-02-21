@@ -29,9 +29,6 @@ import argparse
 import os
 import configparser
 
-# Set on commandline with --svg-dir
-svg_dirs = []
-
 def assertIn(element, l):
     if element not in l:
         raise AssertionError('{} must be in {}'.format(element, l))
@@ -40,18 +37,6 @@ def assertIn(element, l):
 def assertNotIn(element, l):
     if element in l:
         raise AssertionError('{} must not be in {}'.format(element, l))
-
-
-def check_svg_str(string):
-    assert(string.endswith('.svg'))
-
-    svg_file_found = False
-    for svg_dir in svg_dirs:
-        files = os.listdir(svg_dir)
-        if string in files:
-            svg_file_found = True
-            break
-    assert(svg_file_found)
 
 
 def check_match_str(string):
@@ -84,18 +69,13 @@ def check_ledtypes_str(string):
 
 def check_section_device(section):
     required_keys = ['Name', 'Driver', 'DeviceMatch']
-    permitted_keys = required_keys + ['Svg', 'LedTypes']
+    permitted_keys = required_keys + ['LedTypes']
 
     for key in section.keys():
         assertIn(key, permitted_keys)
 
     for r in required_keys:
         assertIn(r, section)
-
-    try:
-        check_svg_str(section['Svg'])
-    except KeyError:
-        pass
 
     try:
         check_ledtypes_str(section['LedTypes'])
@@ -234,10 +214,6 @@ def parse_data_file(path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Device data-file checker")
     parser.add_argument('file', nargs='+')
-    parser.add_argument('--svg-dir', metavar='dir', action='append',
-                        type=str,
-                        help='Directory to check for SVG files (may be given multiple times)')
     args = parser.parse_args()
-    svg_dirs = args.svg_dir
     for path in args.file:
         parse_data_file(path)

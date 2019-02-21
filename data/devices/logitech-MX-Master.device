@@ -3,4 +3,3 @@
 Name=Logitech MX Master
 DeviceMatch=usb:046d:4041;bluetooth:046d:b012;usb:046d:4060
 Driver=hidpp20
-Svg=logitech-mx-master.svg

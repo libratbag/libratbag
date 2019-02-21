@@ -2,7 +2,6 @@
 Name=SteelSeries Kinzu V2
 DeviceMatch=usb:1038:1378
 Driver=steelseries
-Svg=steelseries-kinzu-v2.svg
 
 [Driver/steelseries]
 DeviceVersion=1

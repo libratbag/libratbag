@@ -3,4 +3,3 @@
 Name=Logitech G300
 DeviceMatch=usb:046d:c246
 Driver=logitech_g300
-Svg=logitech-g300.svg

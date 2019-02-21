@@ -3,4 +3,3 @@
 Name=Logitech G403
 DeviceMatch=usb:046d:c082;usb:046d:c083
 Driver=hidpp20
-Svg=logitech-g403.svg

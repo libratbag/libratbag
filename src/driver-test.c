@@ -156,13 +156,6 @@ test_write_led(struct ratbag_led *led,
 	return 0;
 }
 
-static const char* test_get_svg_name(const struct ratbag_device *device)
-{
-	struct ratbag_test_device *d = ratbag_get_drv_data(device);
-
-	return d->svg;
-}
-
 static int
 test_fake_probe(struct ratbag_device *device)
 {
@@ -294,7 +287,6 @@ struct ratbag_driver test_driver = {
 	.probe = test_fake_probe,
 	.test_probe = test_probe,
 	.remove = test_remove,
-	.get_svg_name = test_get_svg_name,
 	.write_profile = test_write_profile,
 	.set_active_profile = test_set_active_profile,
 	.write_button = test_write_button,

@@ -192,15 +192,6 @@ struct ratbag_driver {
 	 */
 	int (*commit)(struct ratbag_device *device);
 
-	/**
-	 * Callback called when the device doesn't have a .device file with
-	 * an SVG name set.
-	 *
-	 * The returned value must not be free by the caller, the driver
-	 * has to free it during .remove().
-	 */
-	const char *(*get_svg_name)(const struct ratbag_device *device);
-
 	/*
 	 * FIXME: This function is deprecated and should be removed. Once
 	 * we've updated all the device drivers to stop using it we'll remove

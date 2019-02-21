@@ -3,4 +3,3 @@
 Name=Logitech G502 Proteus Spectrum
 DeviceMatch=usb:046d:c332
 Driver=hidpp20
-Svg=logitech-g502.svg

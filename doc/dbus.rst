@@ -90,18 +90,6 @@ interact with ratbagd.
 	An array of read-only object paths referencing the available
 	devices. The devices implement the :ref:`device` interface.
 
-.. attribute:: Themes
-
-        :type: as
-        :flags: read-only, constant
-
-	The list of available theme names. This list is guaranteed to have
-	at least one theme available ('default'). Other themes are
-	implementation-defined. A theme listed here is only a guarantee
-	that the theme is known to libratbag and that SVGs *may* exist, it
-	is not a guarantee that the SVG for any specific device exists. In
-	other words, a device may not have an SVG for a specific theme.
-
 .. _device:
 
 org.freedesktop.ratbag1.Device
@@ -195,21 +183,6 @@ known to ratbagd.
 	the data is written to the device asynchronously. Where an error
 	occurs, the :func:`Resync` signal is emitted and all properties are
 	updated to the current state.
-
-.. function:: GetSvgFd(s) → (h)
-
-        :param s: the theme name
-        :returns: An open file descriptor to the SVG for the given theme
-
-        Returns an open file descriptor to the SVG for the given theme or an
-        errno on error. The theme must be one of
-	:func:`org.freedesktop.ratbag1.Manager.Themes <Themes>`.
-
-        The theme **'default'** is guaranteed to be available.
-
-        ratbagd may return ``ENOENT`` if a file doesn't exist.
-        This is the case if the device has SVGs available but not
-        for the given theme.
 
 .. function:: Resync()
 
