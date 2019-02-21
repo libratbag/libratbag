@@ -1,4 +1,4 @@
-libratbag <img src="https://libratbag.github.io/_images/logo.svg" alt="" width="300" align="right">
+libratbag <img src="https://libratbag.github.io/_images/logo.svg" alt="" width="30%" align="right">
 =========
 
 libratbag is a configuration library for gaming mice. It provides a generic
