@@ -348,6 +348,11 @@ class RatbagdDevice(_RatbagdDBus):
         return self._get_dbus_property("Id")
 
     @GObject.Property
+    def model(self):
+        """The unique identifier for this device model."""
+        return self._get_dbus_property("Model")
+
+    @GObject.Property
     def name(self):
         """The device name, usually provided by the kernel."""
         return self._get_dbus_property("Name")

@@ -250,6 +250,17 @@ class RatbagdDevice(metaclass=MetaRatbag):
         return self._path
 
     @property
+    def model(self):
+        """The unique identifier for this device model."""
+        bus = libratbag.ratbag_device_get_bus(self._device)
+        if not bus:
+            return "unknown"
+        vid = libratbag.ratbag_device_get_vendor_id(self._device)
+        pid = libratbag.ratbag_device_get_product_id(self._device)
+        version = libratbag.ratbag_device_get_product_version(self._device)
+        return "{}:{04x}:{04x}:{d}".format(bus, vid, pid, version)
+
+    @property
     def name(self):
         """The device name, usually provided by the kernel."""
         return libratbag.ratbag_device_get_name(self._device)

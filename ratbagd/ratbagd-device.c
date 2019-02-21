@@ -232,9 +232,36 @@ static int ratbagd_device_commit(sd_bus_message *m,
 	return 0;
 }
 
+static int
+ratbag_device_get_model(sd_bus *bus,
+			   const char *path,
+			   const char *interface,
+			   const char *property,
+			   sd_bus_message *reply,
+			   void *userdata,
+			   sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	struct ratbag_device *lib_device = device->lib_device;
+	const char *bustype = ratbag_device_get_bustype(lib_device);
+	uint32_t vid = ratbag_device_get_vendor_id(lib_device),
+		 pid = ratbag_device_get_product_id(lib_device),
+		 version = ratbag_device_get_product_version(lib_device);
+	char model[64];
+
+	if (!bustype)
+		return sd_bus_message_append(reply, "s", "unknown");
+
+	snprintf(model, sizeof(model), "%s:%04x:%04x:%d",
+		 bustype, vid, pid, version);
+
+	return sd_bus_message_append(reply, "s", model);
+}
+
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, id), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Model", "s", ratbag_device_get_model, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("GetSvgFd", "s", "h", ratbagd_device_get_theme_svg_fd, SD_BUS_VTABLE_UNPRIVILEGED),
