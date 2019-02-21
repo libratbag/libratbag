@@ -1,5 +1,7 @@
-libratbag <img src="https://libratbag.github.io/_images/logo.svg" alt="" width="30%" align="right">
+libratbag
 =========
+
+<img src="https://libratbag.github.io/_images/logo.svg" alt="" width="30%" align="right">
 
 libratbag provides **ratbagd**, a DBus daemon to configure gaming mice.
 The daemon provides a generic way to access the various features exposed by
