@@ -23,6 +23,7 @@
 
 import os
 import sys
+import hashlib
 
 from enum import IntEnum
 from evdev import ecodes
@@ -299,6 +300,9 @@ class RatbagdDevice(_RatbagdDBus):
         for profile in self._profiles:
             profile.connect("notify::is-active", self._on_active_profile_changed)
 
+        # Use a SHA1 of our object path as our device's ID
+        self._id = hashlib.sha1(object_path.encode('utf-8')).hexdigest()
+
     def _on_signal_received(self, proxy, sender_name, signal_name, parameters):
         if signal_name == "Resync":
             self.emit("resync")
@@ -309,8 +313,7 @@ class RatbagdDevice(_RatbagdDBus):
 
     @GObject.Property
     def id(self):
-        """The unique identifier of this device."""
-        return self._get_dbus_property("Id")
+        return self._id
 
     @GObject.Property
     def model(self):

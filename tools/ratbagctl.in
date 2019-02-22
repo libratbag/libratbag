@@ -61,7 +61,7 @@ def list_devices(r, args):
         print("No devices available.")
 
     for d in r.devices:
-        print("{:10s} {:32s}".format(d.id + ":", d.name))
+        print("{:20s} {:32s}".format(d.id + ":", d.name))
 
 
 def find_device(r, args):
