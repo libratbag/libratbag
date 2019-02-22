@@ -1059,25 +1059,6 @@ ratbag_button_get_user_data(const struct ratbag_button *button);
 /**
  * @ingroup button
  *
- * Return the type of the physical button. This function is intended to be
- * used by configuration tools to provide a generic list of button names or
- * handles to configure devices. The type describes the physical location of
- * the button and remains constant for the lifetime of the device.
- * For example, a button of type @ref RATBAG_BUTTON_TYPE_WHEEL_CLICK may be
- * mapped to a logical middle button, but the physical description is that
- * of a wheel click.
- *
- * For the button currently mapped to this physical button, see
- * ratbag_button_get_button()
- *
- * @return The type of the button
- */
-enum ratbag_button_type
-ratbag_button_get_type(struct ratbag_button *button);
-
-/**
- * @ingroup button
- *
  * @return The type of the action currently configured for this button
  */
 enum ratbag_button_action_type

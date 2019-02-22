@@ -142,6 +142,10 @@ enum ratbag_resolution_capability {
  * @ingroup enums
  *
  * Button types describing the physical button.
+ *
+ * This enum is deprecated and should not be used.
+ *
+ * @deprecated
  */
 enum ratbag_button_type {
 	RATBAG_BUTTON_TYPE_UNKNOWN = 0,
