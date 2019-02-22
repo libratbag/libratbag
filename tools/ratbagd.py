@@ -315,6 +315,10 @@ class RatbagdDevice(_RatbagdDBus):
     def id(self):
         return self._id
 
+    @id.setter
+    def id(self, id):
+        self._id = id
+
     @GObject.Property
     def model(self):
         """The unique identifier for this device model."""

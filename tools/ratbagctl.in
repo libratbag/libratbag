@@ -1466,10 +1466,48 @@ def get_parser():
     return RatbagParserRoot(parser_def)
 
 
+def on_device_added(ratbagd, device):
+    device_names = [
+            'mara', 'capybara', 'porcupine', 'paca',
+            'vole', 'woodrat', 'gerbil', 'shrew',
+            'hutia', 'beaver', 'squirrel', 'chinchilla',
+            'rabbit', 'viscacha', 'hare', 'degu',
+            'gundi', 'acouchy', 'nutria', 'paca',
+            'hamster', 'zokor', 'chipmunk', 'gopher',
+            'marmot', 'groundhog', 'suslik', 'agouti',
+            'blesmol',
+    ]
+
+    device_attr = [
+            'sobbing', 'whooping', 'barking', 'yapping',
+            'howling', 'squawking', 'cheering', 'warbling',
+            'thundering', 'booming', 'blustering', 'humming',
+            'crying', 'bawling', 'roaring', 'raging',
+            'chanting', 'crooning', 'murmuring', 'bellowing',
+            'wailing', 'weeping', 'screaming', 'yelling',
+            'yodeling', 'singing', 'honking', 'hooting',
+            'whispering', 'hollering',
+    ]
+
+    # Let's convert the sha into something not boring. This takes the first
+    # 4 characters, creates two different indices from it to generate a
+    # name. The rest is hope hope that never get a collision here but it's
+    # unlikely enough.
+    name = device_names[int(device.id[0:2], 16) % len(device_names)]
+    attr = device_attr[int(device.id[2:4], 16) % len(device_attr)]
+    device.id = "-".join([attr, name])
+
 def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
         r = Ratbagd()
         r.verbose = verbose
+        try:
+            r.connect('device-added', on_device_added)
+            for d in r.devices:
+                on_device_added(r, d)
+        except AttributeError:
+            pass  # the ratbag-command case
+
     except RatbagdUnavailable as e:
         print("Unable to connect to ratbagd: {}".format(e))
         return None

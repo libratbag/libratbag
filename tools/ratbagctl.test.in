@@ -42,6 +42,7 @@ class TestRatbagCtl(unittest.TestCase):
     def setUpClass(cls):
         super(TestRatbagCtl, cls).setUpClass()
         cls.reset_test_device()
+        cls.find_test_device()
 
     @classmethod
     def run_ratbagctl_subprocess(cls, params):
@@ -83,6 +84,7 @@ class TestRatbagCtl(unittest.TestCase):
 
     @classmethod
     def run_ratbagctl(cls, params):
+        params = params.replace('test_device', cls.test_device)
         if run_ratbagctl_in_subprocess:
             return cls.run_ratbagctl_subprocess(params)
         return cls.run_ratbagctl_fast(params)
@@ -92,6 +94,18 @@ class TestRatbagCtl(unittest.TestCase):
         global ratbagd
         ratbagd._dbus_call("ResetTestDevice", "")
         toolbox.sync_dbus()
+
+    @classmethod
+    def find_test_device(cls):
+        rc, stdout, stderr = cls.run_ratbagctl_subprocess('list')
+        testdevice = None
+        for line in stdout.split('\n'):
+            if 'Test device' in line:
+                testdevice = line.split(':')[0]
+                break
+
+        assert testdevice is not None
+        cls.test_device = testdevice
 
     def launch_good_test(self, params):
         returncode, stdout, stderr = self.run_ratbagctl(params)
@@ -116,7 +130,7 @@ class TestRatbagCtl(unittest.TestCase):
 class TestRatbagCtlList(TestRatbagCtl):
     def test_list(self):
         r = self.launch_good_test("list")
-        self.assertIn('test_device', r)
+        self.assertIn(self.test_device, r)
         self.launch_fail_test("test_device list")
         self.launch_fail_test("list test_device")
 
