@@ -786,12 +786,6 @@ class RatbagdLed(metaclass=MetaRatbag):
         libratbag.ratbag_led_set_mode(self._led, mode)
 
     @property
-    def type(self):
-        """An enum describing this led's type, one of RatbagdLed.TYPE_UNKNOWN,
-        RatbagdLed.TYPE_LOGO or RatbagdLed.TYPE_SIDE."""
-        return libratbag.ratbag_led_get_type(self._led)
-
-    @property
     def color(self):
         """An integer triple of the current LED color."""
         c = libratbag.ratbag_led_get_color(self._led)

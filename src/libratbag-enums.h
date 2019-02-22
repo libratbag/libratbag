@@ -348,10 +348,15 @@ enum ratbag_led_mode {
 	 */
 	RATBAG_LED_BREATHING,
 };
+
 /**
  * @ingroup enums
  *
  * LED types, usually based on their physical location
+ *
+ * This enum is deprecated and should not be used.
+ *
+ * @deprecated
  */
 enum ratbag_led_type {
 	RATBAG_LED_TYPE_LOGO = 1,
