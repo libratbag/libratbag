@@ -920,12 +920,6 @@ class RatbagdLed(_RatbagdDBus):
         return self._get_dbus_property("Modes")
 
     @GObject.Property
-    def type(self):
-        """An enum describing this led's type,
-        RatbagdLed.TYPE_LOGO or RatbagdLed.TYPE_SIDE."""
-        return self._get_dbus_property("Type")
-
-    @GObject.Property
     def color(self):
         """An integer triple of the current LED color."""
         return self._get_dbus_property("Color")

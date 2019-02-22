@@ -1470,12 +1470,6 @@ ratbag_led_get_mode(struct ratbag_led *led)
 	return led->mode;
 }
 
-LIBRATBAG_EXPORT enum ratbag_led_type
-ratbag_led_get_type(struct ratbag_led *led)
-{
-	return led->type;
-}
-
 LIBRATBAG_EXPORT bool
 ratbag_led_has_mode(struct ratbag_led *led,
 		    enum ratbag_led_mode mode)

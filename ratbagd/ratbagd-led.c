@@ -113,26 +113,6 @@ static int ratbagd_led_set_mode(sd_bus *bus,
 	return 0;
 }
 
-static int ratbagd_led_get_type(sd_bus *bus,
-				const char *path,
-				const char *interface,
-				const char *property,
-				sd_bus_message *reply,
-				void *userdata,
-				sd_bus_error *error)
-{
-	struct ratbagd_led *led = userdata;
-	enum ratbag_led_type type;
-
-	type = ratbag_led_get_type(led->lib_led);
-
-	verify_unsigned_int(type);
-
-	CHECK_CALL(sd_bus_message_append(reply, "u", type));
-
-	return 0;
-}
-
 static int ratbagd_led_get_color(sd_bus *bus,
 				 const char *path,
 				 const char *interface,
@@ -295,7 +275,6 @@ const sd_bus_vtable ratbagd_led_vtable[] = {
 				 ratbagd_led_get_mode,
 				 ratbagd_led_set_mode, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("Type", "u", ratbagd_led_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("Color", "(uuu)",
 				 ratbagd_led_get_color, ratbagd_led_set_color, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),

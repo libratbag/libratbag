@@ -123,41 +123,30 @@ def print_led(d, p, l, level):
         RatbagdLed.MODE_OFF: "off",
         RatbagdLed.MODE_ON: "on",
     }
-    types = {
-        RatbagdLed.TYPE_LOGO: "logo",
-        RatbagdLed.TYPE_SIDE: "side",
-        RatbagdLed.TYPE_BATTERY: "battery",
-        RatbagdLed.TYPE_DPI: "dpi",
-        RatbagdLed.TYPE_WHEEL: "wheel",
-    }
     depths = {
         RatbagdLed.COLORDEPTH_MONOCHROME: "monochrome",
         RatbagdLed.COLORDEPTH_RGB_888: "rgb",
         RatbagdLed.COLORDEPTH_RGB_111: "rgb111",
     }
     if l.mode == RatbagdLed.MODE_OFF:
-        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}".format(l.index,
-                                                                           types[l.type],
+        print(" " * level + "LED: {}, depth: {}, mode: {}".format(l.index,
                                                                            depths[l.colordepth],
                                                                            leds[l.mode]))
     elif l.mode == RatbagdLed.MODE_ON:
-        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(l.index,
-                                                                                                      types[l.type],
+        print(" " * level + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(l.index,
                                                                                                       depths[l.colordepth],
                                                                                                       leds[l.mode],
                                                                                                       l.color[0],
                                                                                                       l.color[1],
                                                                                                       l.color[2]))
     elif l.mode == RatbagdLed.MODE_CYCLE:
-        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(l.index,
-                                                                                                         types[l.type],
+        print(" " * level + "LED: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(l.index,
                                                                                                          depths[l.colordepth],
                                                                                                          leds[l.mode],
                                                                                                          l.effect_duration,
                                                                                                          l.brightness))
     elif l.mode == RatbagdLed.MODE_BREATHING:
-        print(" " * level + "LED: {} type: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(l.index,
-                                                                                                                                    types[l.type],
+        print(" " * level + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(l.index,
                                                                                                                                     depths[l.colordepth],
                                                                                                                                     leds[l.mode],
                                                                                                                                     l.color[0],

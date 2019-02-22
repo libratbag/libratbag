@@ -1157,18 +1157,6 @@ ratbag_button_get_special(struct ratbag_button *button);
  */
 struct ratbag_led *
 ratbag_profile_get_led(struct ratbag_profile *profile, unsigned int index);
-/**
- * @ingroup led
- *
- * This function returns the type for ratbag_led.
- *
- * @param led A previously initialized ratbag LED
- * @return The LED type @ref ratbag_led_type
- *
- * @see ratbag_led_set_mode
- */
-enum ratbag_led_type
-ratbag_led_get_type(struct ratbag_led *led);
 
 /**
  * @ingroup led
