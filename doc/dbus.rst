@@ -98,16 +98,6 @@ org.freedesktop.ratbag1.Device
 The **org.freedesktop.ratbag1.Device** interface describes a single device
 known to ratbagd.
 
-.. attribute:: Id
-
-        :type: as
-        :flags: read-only, constant
-
-        A unique ID describing this device. This ID should not be used for presentation to
-	the user. This ID may be recycled when the device is removed. The
-	content of the ID is undefined, the client should treat it as an
-	opaque string.
-
 .. attribute:: Model
 
 	:type: s

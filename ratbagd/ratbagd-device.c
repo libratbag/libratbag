@@ -217,7 +217,6 @@ ratbag_device_get_model(sd_bus *bus,
 
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
-	SD_BUS_PROPERTY("Id", "s", NULL, offsetof(struct ratbagd_device, sysname), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Model", "s", ratbag_device_get_model, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
