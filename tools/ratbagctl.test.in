@@ -109,12 +109,12 @@ class TestRatbagCtl(unittest.TestCase):
 
     def launch_good_test(self, params):
         returncode, stdout, stderr = self.run_ratbagctl(params)
-        self.assertEqual(returncode, 0)
+        self.assertEqual(returncode, 0, msg=stderr + stdout)
         return stdout
 
     def launch_fail_test(self, params):
         returncode, stdout, stderr = self.run_ratbagctl(params)
-        self.assertNotEqual(returncode, 0)
+        self.assertNotEqual(returncode, 0, msg=stderr + stdout)
         return stdout
 
     def launch_fail_with_exception_test(self, params, exception):
