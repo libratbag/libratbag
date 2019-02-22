@@ -682,31 +682,6 @@ class RatbagdButton(_RatbagdDBus):
     MACRO_KEY_RELEASE = 2
     MACRO_WAIT = 3
 
-    TYPE_UNKNOWN = 0
-    TYPE_LEFT = 1
-    TYPE_MIDDLE = 2
-    TYPE_RIGHT = 3
-    TYPE_THUMB = 4
-    TYPE_THUMB2 = 5
-    TYPE_THUMB3 = 6
-    TYPE_THUMB4 = 7
-    TYPE_WHEEL_LEFT = 8
-    TYPE_WHEEL_RIGHT = 9
-    TYPE_WHEEL_CLICK = 10
-    TYPE_WHEEL_UP = 11
-    TYPE_WHEEL_DOWN = 12
-    TYPE_WHEEL_RATCHET_MODE_SHIFT = 13
-    TYPE_EXTRA = 14
-    TYPE_SIDE = 15
-    TYPE_PINKIE = 16
-    TYPE_PINKIE2 = 17
-    TYPE_RESOLUTION_CYCLE_UP = 18
-    TYPE_RESOLUTION_UP = 19
-    TYPE_RESOLUTION_DOWN = 20
-    TYPE_PROFILE_CYCLE_UP = 21
-    TYPE_PROFILE_UP = 22
-    TYPE_PROFILE_DOWN = 23
-
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
     BUTTON_DESCRIPTION = {
@@ -752,11 +727,6 @@ class RatbagdButton(_RatbagdDBus):
     def index(self):
         """The index of this button."""
         return self._get_dbus_property("Index")
-
-    @GObject.Property
-    def type(self):
-        """An enum describing this button's type."""
-        return self._get_dbus_property("Type")
 
     @GObject.Property
     def mapping(self):

@@ -366,16 +366,6 @@ org.freedesktop.ratbag1.Button
 
         Index of the button
 
-.. attribute:: Type
-
-        :type: u
-        :flags: read-only, constant
-
-        Enum describing the button physical type, see
-        :cpp:enum:`ratbag_button_type`. This type is unrelated to the
-        logical button mapping and serves to easily identify the button on
-        the device.
-
 .. attribute:: ButtonMapping
 
         :type: u

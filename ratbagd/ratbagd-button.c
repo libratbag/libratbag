@@ -45,24 +45,6 @@ struct ratbagd_button {
 	char *path;
 };
 
-static int ratbagd_button_get_type(sd_bus *bus,
-				   const char *path,
-				   const char *interface,
-				   const char *property,
-				   sd_bus_message *reply,
-				   void *userdata,
-				   sd_bus_error *error)
-{
-	struct ratbagd_button *button = userdata;
-	enum ratbag_button_type t;
-
-	t = ratbag_button_get_type(button->lib_button);
-
-	verify_unsigned_int(t);
-
-	return sd_bus_message_append(reply, "u", t);
-}
-
 static int ratbagd_button_get_button(sd_bus *bus,
 				     const char *path,
 				     const char *interface,
@@ -363,7 +345,6 @@ static int ratbagd_button_disable(sd_bus_message *m,
 const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_button, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Type", "u", ratbagd_button_get_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("ButtonMapping", "u",
 				 ratbagd_button_get_button,
 				 ratbagd_button_set_button,

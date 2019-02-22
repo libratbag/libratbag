@@ -578,11 +578,6 @@ class RatbagdButton(metaclass=MetaRatbag):
         return self._id
 
     @property
-    def type(self):
-        """An enum describing this button's type."""
-        return libratbag.ratbag_button_get_type(self._button)
-
-    @property
     def mapping(self):
         """An integer of the current button mapping, if mapping to a button."""
         return libratbag.ratbag_button_get_button(self._button)
