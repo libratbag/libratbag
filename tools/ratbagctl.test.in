@@ -91,6 +91,7 @@ class TestRatbagCtl(unittest.TestCase):
     def reset_test_device(cls):
         global ratbagd
         ratbagd._dbus_call("ResetTestDevice", "")
+        toolbox.sync_dbus()
 
     def launch_good_test(self, params):
         returncode, stdout, stderr = self.run_ratbagctl(params)
