@@ -147,15 +147,6 @@ known to ratbagd.
 
         The device's name, suitable for presentation to the user.
 
-.. attribute:: Capabilities
-
-        :type: au
-        :flags: read-only, constant
-
-	The capabilities supported by this device. see
-	:cpp:enum:`ratbag_device_capability` in libratbag-enums.h for the
-	list of permissible capabilities.
-
 .. attribute:: Profiles
 
         :type: ao
