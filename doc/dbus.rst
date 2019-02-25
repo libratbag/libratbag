@@ -22,7 +22,7 @@ Changing settings on a device is a three-step process:
    all properties are updated accordingly.
 
 The time it takes to write settings to a device varies greatly, any caller
-must be prepared to receive a :func:`org.freedesktop.ratbag1.Resync
+must be prepared to receive a :func:`org.freedesktop.ratbag1.Device.Resync
 <Resync>` signal several seconds after
 :func:`org.freedesktop.ratbag1.Device.Commit() <Commit>`.
 
@@ -131,7 +131,7 @@ known to ratbagd.
 	For the string ``unknown``, the model of the device cannot be
 	determined. This is usually a bug in libratbag.
 
-	For ``DeviceId``s of type ``usb`` and ``bluetooth``, the version
+	For a ``Model`` of type ``usb`` and ``bluetooth``, the version
 	number is reserved for use by libratbag. Device with identical
 	vendor and product IDs but different versions must be considered
 	different devices. For example, the version may increase when a
@@ -215,6 +215,17 @@ org.freedesktop.ratbag1.Profile
 	a good thing to rebind everything before calling
 	:func:`Commit`.
 
+.. attribute:: IsActive
+
+        :type: b
+        :flags: read-only, mutable
+
+        True if this is the currently active profile, false otherwise.
+
+        Profiles can only be set to active, but never to not active - at least one
+        profile must be active at all times. This property is read-only, use the
+        :func:`SetActive` method to activate a profile.
+
 .. attribute:: Resolutions
 
         :type: ao
@@ -241,17 +252,6 @@ org.freedesktop.ratbag1.Profile
 
         Provides the object paths of all LEDs in this profile, see
 	:ref:`led`.
-
-.. attribute:: IsActive
-
-        :type: b
-        :flags: read-only, mutable
-
-        True if this is the currently active profile, false otherwise.
-
-        Profiles can only be set to active, but never to not active - at least one
-        profile must be active at all times. This property is read-only, use the
-        :func:`SetActive` method to activate a profile.
 
 .. function:: SetActive() → ()
 
