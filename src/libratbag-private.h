@@ -250,10 +250,7 @@ struct ratbag_resolution {
 
 	unsigned int dpi_x;	/**< x resolution in dpi */
 	unsigned int dpi_y;	/**< y resolution in dpi */
-	unsigned int hz;	/**< report rate in Hz */
 
-	unsigned int rates[8];
-	size_t nrates;
 
 	bool is_active;
 	bool is_default;
@@ -290,6 +287,10 @@ struct ratbag_profile {
 	void *user_data;
 	struct list resolutions;
 	struct list leds;
+
+	unsigned int hz;	/**< report rate in Hz */
+	unsigned int rates[8];	/**< report rates available */
+	size_t nrates;		/**< number of entries in rates */
 
 	unsigned int num_resolutions;
 
@@ -485,11 +486,10 @@ ratbag_action_keycode_from_macro(struct ratbag_button_action *action,
 
 static inline void
 ratbag_resolution_set_resolution(struct ratbag_resolution *res,
-				 int dpi_x, int dpi_y, int hz)
+				 int dpi_x, int dpi_y)
 {
 	res->dpi_x = dpi_x;
 	res->dpi_y = dpi_y;
-	res->hz = hz;
 }
 
 static inline void
@@ -546,19 +546,19 @@ ratbag_resolution_set_dpi_list(struct ratbag_resolution *res,
 }
 
 static inline void
-ratbag_resolution_set_report_rate_list(struct ratbag_resolution *res,
-				       unsigned int *rates,
-				       size_t nrates)
+ratbag_profile_set_report_rate_list(struct ratbag_profile *profile,
+				    unsigned int *rates,
+				    size_t nrates)
 {
-	assert(nrates <= ARRAY_LENGTH(res->rates));
-	_Static_assert(sizeof(*rates) == sizeof(*res->rates), "Mismatching size");
+	assert(nrates <= ARRAY_LENGTH(profile->rates));
+	_Static_assert(sizeof(*rates) == sizeof(*profile->rates), "Mismatching size");
 
 	for (size_t i = 0; i < nrates; i++) {
-		res->rates[i] = rates[i];
+		profile->rates[i] = rates[i];
 		if (i > 0)
 			assert(rates[i] > rates[i - 1]);
 	}
-	res->nrates = nrates;
+	profile->nrates = nrates;
 }
 
 static inline void

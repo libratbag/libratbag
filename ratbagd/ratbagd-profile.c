@@ -430,6 +430,94 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 	return 0;
 }
 
+static int
+ratbagd_profile_get_report_rate(sd_bus *bus,
+				const char *path,
+				const char *interface,
+				const char *property,
+				sd_bus_message *reply,
+				void *userdata,
+				sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	int rate;
+
+	rate = ratbag_profile_get_report_rate(lib_profile);
+	verify_unsigned_int(rate);
+	return sd_bus_message_append(reply, "u", rate);
+}
+
+static int
+ratbagd_profile_get_report_rates(sd_bus *bus,
+				 const char *path,
+				 const char *interface,
+				 const char *property,
+				 sd_bus_message *reply,
+				 void *userdata,
+				 sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	unsigned int rates[8];
+	unsigned int nrates = ARRAY_LENGTH(rates);
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	nrates = ratbag_profile_get_report_rate_list(lib_profile,
+						     rates, nrates);
+	assert(nrates <= ARRAY_LENGTH(rates));
+
+	for (unsigned int i = 0; i < nrates; i++) {
+		verify_unsigned_int(rates[i]);
+		r = sd_bus_message_append(reply, "u", rates[i]);
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
+
+static int
+ratbagd_profile_set_report_rate(sd_bus *bus,
+				const char *path,
+				const char *interface,
+				const char *property,
+				sd_bus_message *m,
+				void *userdata,
+				sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	unsigned int rate;
+	int r;
+
+	r = sd_bus_message_read(m, "u", &rate);
+	if (r < 0)
+		return r;
+
+	/* basic sanity check */
+	if (rate > 5000)
+		rate = 5000;
+	else if (rate % 100)
+		rate = rate - (rate % 100);
+
+	r = ratbag_profile_set_report_rate(profile->lib_profile, rate);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "ReportRate",
+					       NULL);
+	}
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_WRITABLE_PROPERTY("Name", "s",
@@ -446,6 +534,11 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_profile_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("ReportRate", "u",
+				 ratbagd_profile_get_report_rate,
+				 ratbagd_profile_set_report_rate, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("ReportRates", "au", ratbagd_profile_get_report_rates, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };

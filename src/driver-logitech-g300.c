@@ -443,6 +443,9 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 
 	hz = logitech_g300_raw_to_frequency(report->frequency);
 
+	ratbag_profile_set_report_rate_list(profile, &hz, 1);
+	ratbag_profile_set_report_rate(profile, hz);
+
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		struct logitech_g300_resolution *res =
 			&report->dpi_levels[resolution->index];
@@ -451,13 +454,11 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 
 		resolution->dpi_x = res->dpi * 250;
 		resolution->dpi_y = res->dpi * 250;
-		resolution->hz = hz;
 		resolution->is_default = res->is_default;
 		resolution->is_active = res->is_default;
 
 		ratbag_resolution_set_dpi_list(resolution, dpis,
 					       ARRAY_LENGTH(dpis));
-		ratbag_resolution_set_report_rate_list(resolution, &hz, 1);
 	}
 
 	ratbag_profile_for_each_button(profile, button)
@@ -534,11 +535,12 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 	struct ratbag_led *led;
 
 	uint8_t *buf;
-	unsigned int hz;
 	int rc;
 
 	pdata = &drv_data->profile_data[profile->index];
 	report = &pdata->report;
+
+	report->frequency = logitech_g300_frequency_to_raw(profile->hz);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		struct logitech_g300_resolution *res =
@@ -550,12 +552,6 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 		if (profile->is_active && resolution->is_active)
 			logitech_g300_set_current_resolution(device,
 							     resolution->index);
-
-		/* The same hz is used for all resolutions */
-		if (resolution->index == 0) {
-			hz = resolution->hz;
-			report->frequency = logitech_g300_frequency_to_raw(hz);
-		}
 	}
 
 	list_for_each(button, &profile->buttons, link) {

@@ -241,6 +241,8 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 
 	ratbag_device_for_each_profile(device, profile) {
 		struct ratbag_resolution *resolution;
+		unsigned int vals[300];
+		unsigned int nvals = ARRAY_LENGTH(vals);
 
 		/* Allow max 1 active profile */
 		if (profile->is_active) {
@@ -263,9 +265,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		}
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
-			unsigned int vals[300];
-			unsigned int nvals = ARRAY_LENGTH(vals);
-
 			nvals = ratbag_resolution_get_dpi_list(resolution, vals, nvals);
 			if (nvals == 0) {
 				log_bug_libratbag(ratbag,
@@ -274,13 +273,14 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 				goto out;
 			}
 
-			nvals = ratbag_resolution_get_report_rate_list(resolution, vals, nvals);
-			if (nvals == 0) {
-				log_bug_libratbag(ratbag,
-						  "%s: invalid report rate list\n",
-						  device->name);
-				goto out;
-			}
+		}
+
+		nvals = ratbag_profile_get_report_rate_list(profile, vals, nvals);
+		if (nvals == 0) {
+			log_bug_libratbag(ratbag,
+					  "%s: invalid report rate list\n",
+					  device->name);
+			goto out;
 		}
 	}
 
@@ -1028,7 +1028,6 @@ ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 				 enum ratbag_resolution_capability cap)
 {
 	switch (cap) {
-	case RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE:
 	case RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION:
 		break;
 	default:
@@ -1096,29 +1095,12 @@ ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
-ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
-				  unsigned int hz)
+ratbag_profile_set_report_rate(struct ratbag_profile *profile,
+			       unsigned int hz)
 {
-	if (ratbag_resolution_has_capability(resolution,
-					      RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE)) {
-		if (resolution->hz != hz) {
-			resolution->hz = hz;
-			resolution->dirty = true;
-			resolution->profile->dirty = true;
-		}
-	} else {
-		struct ratbag_profile *profile = resolution->profile;
-		struct ratbag_resolution *res;
-
-		/* No indvidual report rate per resolution. Loop through all of
-		 * them and update. */
-		ratbag_profile_for_each_resolution(profile, res) {
-			if (res->hz != hz) {
-				res->hz = hz;
-				res->dirty = true;
-				profile->dirty = true;
-			}
-		}
+	if (profile->hz != hz) {
+		profile->hz = hz;
+		profile->dirty = true;
 	}
 
 	return RATBAG_SUCCESS;
@@ -1161,27 +1143,27 @@ ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution)
 }
 
 LIBRATBAG_EXPORT int
-ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution)
+ratbag_profile_get_report_rate(struct ratbag_profile *profile)
 {
-	return resolution->hz;
+	return profile->hz;
 }
 
 LIBRATBAG_EXPORT size_t
-ratbag_resolution_get_report_rate_list(struct ratbag_resolution *resolution,
-				       unsigned int *rates,
-				       size_t nrates)
+ratbag_profile_get_report_rate_list(struct ratbag_profile *profile,
+				    unsigned int *rates,
+				    size_t nrates)
 {
-	_Static_assert(sizeof(*rates) == sizeof(*resolution->rates), "type mismatch");
+	_Static_assert(sizeof(*rates) == sizeof(*profile->rates), "type mismatch");
 
 	assert(nrates > 0);
 
-	if (resolution->nrates == 0)
+	if (profile->nrates == 0)
 		return 0;
 
-	memcpy(rates, resolution->rates,
-	       sizeof(unsigned int) * min(nrates, resolution->nrates));
+	memcpy(rates, profile->rates,
+	       sizeof(unsigned int) * min(nrates, profile->nrates));
 
-	return resolution->nrates;
+	return profile->nrates;
 }
 
 LIBRATBAG_EXPORT bool

@@ -150,13 +150,6 @@ ratbagd_resolution_get_capabilities(sd_bus *bus,
 	if (r < 0)
 		return r;
 
-	cap = RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE;
-	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
-		if (r < 0)
-			return r;
-	}
-
 	cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
 	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
 		r = sd_bus_message_append(reply, "u", cap);
@@ -299,95 +292,6 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 	return 0;
 }
 
-static int
-ratbagd_resolution_get_report_rate(sd_bus *bus,
-				   const char *path,
-				   const char *interface,
-				   const char *property,
-				   sd_bus_message *reply,
-				   void *userdata,
-				   sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	int rate;
-
-	rate = ratbag_resolution_get_report_rate(lib_resolution);
-	verify_unsigned_int(rate);
-	return sd_bus_message_append(reply, "u", rate);
-}
-
-static int
-ratbagd_resolution_get_report_rates(sd_bus *bus,
-				    const char *path,
-				    const char *interface,
-				    const char *property,
-				    sd_bus_message *reply,
-				    void *userdata,
-				    sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	unsigned int rates[8];
-	unsigned int nrates = ARRAY_LENGTH(rates);
-	int r;
-
-	r = sd_bus_message_open_container(reply, 'a', "u");
-	if (r < 0)
-		return r;
-
-	nrates = ratbag_resolution_get_report_rate_list(lib_resolution,
-							rates, nrates);
-	assert(nrates <= ARRAY_LENGTH(rates));
-
-	for (unsigned int i = 0; i < nrates; i++) {
-		verify_unsigned_int(rates[i]);
-		r = sd_bus_message_append(reply, "u", rates[i]);
-		if (r < 0)
-			return r;
-	}
-
-	return sd_bus_message_close_container(reply);
-}
-
-
-static int
-ratbagd_resolution_set_report_rate(sd_bus *bus,
-				   const char *path,
-				   const char *interface,
-				   const char *property,
-				   sd_bus_message *m,
-				   void *userdata,
-				   sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	unsigned int rate;
-	int r;
-
-	r = sd_bus_message_read(m, "u", &rate);
-	if (r < 0)
-		return r;
-
-	/* basic sanity check */
-	if (rate > 5000)
-		rate = 5000;
-	else if (rate % 100)
-		rate = rate - (rate % 100);
-
-	r = ratbag_resolution_set_report_rate(resolution->lib_resolution,
-					      rate);
-	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
-		sd_bus_emit_properties_changed(bus,
-					       resolution->path,
-					       RATBAGD_NAME_ROOT ".Resolution",
-					       "ReportRate",
-					       NULL);
-	}
-
-	return 0;
-}
-
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
@@ -399,11 +303,6 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 				 ratbagd_resolution_set_resolution, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Resolutions", "au", ratbagd_resolution_get_resolutions, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_WRITABLE_PROPERTY("ReportRate", "u",
-				 ratbagd_resolution_get_report_rate,
-				 ratbagd_resolution_set_report_rate, 0,
-				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("ReportRates", "au", ratbagd_resolution_get_report_rates, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_resolution_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,

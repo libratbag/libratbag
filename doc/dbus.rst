@@ -244,6 +244,26 @@ org.freedesktop.ratbag1.Profile
         Provides the object paths of all LEDs in this profile, see
 	:ref:`led`.
 
+.. attribute:: ReportRate
+
+        :type: u
+        :flags: read-write, mutable
+
+        uint for the report rate in Hz assigned to this profile. This rate
+        must be one of those listed in :attr:`ReportRates`.
+
+.. attribute:: ReportRates
+
+        :type: au
+        :flags: read-write, constant
+
+        A list of permitted report rates. Values in this list may be used
+        in the :attr:`ReportRate` property. This list is always sorted
+        ascending, the lowest report rate is the first item in the list.
+
+        This list may be empty if the device does not support reading and/or
+        writing to resolutions.
+
 .. function:: SetActive() → ()
 
         Set this profile to be the active profile
@@ -323,29 +343,6 @@ org.freedesktop.ratbag1.Resolution
         A list of permitted resolutions. Values in this list may be used in
         the :attr:`Resolution` property. This list is always sorted
         ascending, the lowest resolution is the first item in the list.
-
-        This list may be empty if the device does not support reading and/or
-        writing to resolutions.
-
-.. attribute:: ReportRate
-
-        :type: u
-        :flags: read-write, mutable
-
-        uint for the report rate in Hz assigned to this entry
-
-        If the resolution does not have the individual report rate
-        capability, changing the report rate on one resolution will
-        change the report rate on all resolutions.
-
-.. attribute:: ReportRates
-
-        :type: au
-        :flags: read-write, constant
-
-        A list of permitted report rates. Values in this list may be used
-        in the :attr:`ReportRate` property. This list is always sorted
-        ascending, the lowest report rate is the first item in the list.
 
         This list may be empty if the device does not support reading and/or
         writing to resolutions.

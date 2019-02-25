@@ -307,6 +307,9 @@ steelseries_probe(struct ratbag_device *device)
 		profile->is_active = true;
 
 		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
+		ratbag_profile_set_report_rate_list(profile, report_rates,
+						    ARRAY_LENGTH(report_rates));
+		ratbag_profile_set_report_rate(profile, 1000);
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (resolution->index == 0) {
@@ -327,10 +330,6 @@ steelseries_probe(struct ratbag_device *device)
 			 * by all known devices. */
 			resolution->dpi_x = 800 * (resolution->index + 1);
 			resolution->dpi_y = 800 * (resolution->index + 1);
-
-			ratbag_resolution_set_report_rate_list(resolution, report_rates,
-							       ARRAY_LENGTH(report_rates));
-			resolution->hz = 1000;
 		}
 
 		ratbag_profile_for_each_button(profile, button) {
@@ -434,9 +433,9 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 }
 
 static int
-steelseries_write_report_rate(struct ratbag_resolution *resolution)
+steelseries_write_report_rate(struct ratbag_profile *profile)
 {
-	struct ratbag_device *device = resolution->profile->device;
+	struct ratbag_device *device = profile->device;
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	int ret;
 	size_t buf_len;
@@ -445,15 +444,15 @@ steelseries_write_report_rate(struct ratbag_resolution *resolution)
 	if (device_version == 1) {
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
 		buf[0] = STEELSERIES_ID_REPORT_RATE_SHORT;
-		buf[2] = 1000 / resolution->hz;
+		buf[2] = 1000 / profile->hz;
 	} else if (device_version == 2) {
 		buf_len = STEELSERIES_REPORT_SIZE;
 		buf[0] = STEELSERIES_ID_REPORT_RATE;
-		buf[2] = 1000 / resolution->hz;
+		buf[2] = 1000 / profile->hz;
 	} else if (device_version == 3) {
 		buf_len = STEELSERIES_REPORT_SIZE;
 		buf[0] = STEELSERIES_ID_REPORT_RATE_PROTOCOL3;
-		buf[2] = 1000 / resolution->hz;
+		buf[2] = 1000 / profile->hz;
 	} else {
 		return -ENOTSUP;
 	}
@@ -882,6 +881,10 @@ steelseries_write_profile(struct ratbag_profile *profile)
 	int rc;
 	bool buttons_dirty = false;
 
+	rc = steelseries_write_report_rate(profile);
+	if (rc != 0)
+		return rc;
+
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (!resolution->dirty)
 			continue;
@@ -894,9 +897,6 @@ steelseries_write_profile(struct ratbag_profile *profile)
 		if (resolution->index > 0)
 			continue;
 
-		rc = steelseries_write_report_rate(resolution);
-		if (rc != 0)
-			return rc;
 	}
 
 	ratbag_profile_for_each_button(profile, button) {

@@ -175,6 +175,7 @@ test_read_profile(struct ratbag_profile *profile)
 	unsigned int i;
 	bool active_set = false;
 	bool default_set = false;
+	size_t nrates = 0;
 
 	assert(profile->index < d->num_profiles);
 
@@ -182,29 +183,30 @@ test_read_profile(struct ratbag_profile *profile)
 	p0 = &d->profiles[0];
 	r0 = &p0->resolutions[0];
 
+	for (size_t r = 0; r < ARRAY_LENGTH(p0->report_rates); r++) {
+		if (p0->report_rates[r] > 0)
+			nrates++;
+	}
+
+	if (nrates > 0)
+		ratbag_profile_set_report_rate_list(profile,
+						    p0->report_rates,
+						    nrates);
+	ratbag_profile_set_report_rate(profile, p->hz);
+
 	for (i = 0; i < d->num_resolutions; i++) {
 		_cleanup_resolution_ struct ratbag_resolution *res = NULL;
-		size_t nrates = 0;
 
 		r = &p->resolutions[i];
 
 		res = ratbag_profile_get_resolution(profile, i);
 		assert(res);
-		ratbag_resolution_set_resolution(res, r->xres, r->yres, r->hz);
+		ratbag_resolution_set_resolution(res, r->xres, r->yres);
 		if (r0->dpi_min != 0 && r0->dpi_max != 0)
 			ratbag_resolution_set_dpi_list_from_range(res,
 								  r0->dpi_min,
 								  r0->dpi_max);
 
-		for (size_t r = 0; r < ARRAY_LENGTH(r0->report_rates); r++) {
-			if (r0->report_rates[r] > 0)
-				nrates++;
-		}
-
-		if (nrates > 0)
-			ratbag_resolution_set_report_rate_list(res,
-							       r0->report_rates,
-							       nrates);
 
 		res->is_active = r->active;
 		if (r->active)
@@ -213,7 +215,6 @@ test_read_profile(struct ratbag_profile *profile)
 		if (r->dflt)
 			default_set = true;
 		ratbag_resolution_set_cap(res, r->caps);
-		res->hz = r->hz;
 	}
 
 	/* special case triggered by the test suite when num_resolutions is 0 */
