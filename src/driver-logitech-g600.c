@@ -438,19 +438,19 @@ logitech_g600_read_profile(struct ratbag_profile *profile)
 		return;
 	}
 
+	ratbag_profile_set_report_rate_list(profile, report_rates,
+					    ARRAY_LENGTH(report_rates));
+	ratbag_profile_set_report_rate(profile, 1000 / (report->frequency + 1));
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		resolution->dpi_x = report->dpi[resolution->index] * 50;
 		resolution->dpi_y = report->dpi[resolution->index] * 50;
-		resolution->hz = 1000 / (report->frequency + 1);
 		resolution->is_default = report->dpi_default - 1U == resolution->index;
 		resolution->is_active = resolution->is_default;
 
 		ratbag_resolution_set_dpi_list_from_range(resolution,
 							  LOGITECH_G600_DPI_MIN,
 							  LOGITECH_G600_DPI_MAX);
-		ratbag_resolution_set_report_rate_list(resolution, report_rates,
-						       ARRAY_LENGTH(report_rates));
 	}
 
 	ratbag_profile_for_each_button(profile, button)
@@ -531,6 +531,8 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 	pdata = &drv_data->profile_data[profile->index];
 	report = &pdata->report;
 
+	report->frequency = (1000 / profile->hz) - 1;
+
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		report->dpi[resolution->index] = resolution->dpi_x / 50;
 
@@ -539,10 +541,6 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 
 		if (profile->is_active && resolution->is_active)
 			active_resolution = resolution->index;
-
-		/* The same hz is used for all resolutions */
-		if (resolution->index == 0)
-			report->frequency = (1000 / resolution->hz) - 1;
 	}
 
 	list_for_each(button, &profile->buttons, link) {

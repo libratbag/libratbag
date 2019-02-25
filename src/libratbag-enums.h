@@ -126,16 +126,9 @@ enum ratbag_profile_capability {
  */
 enum ratbag_resolution_capability {
 	/**
-	 * The report rate can be set per resolution mode. If this property
-	 * is not available, all resolutions within the same profile have
-	 * the same report rate and changing one changes the others.
-	 */
-	RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE = 1,
-
-	/**
 	 * The resolution can be set for x and y separately.
 	 */
-	RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION,
+	RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION = 1,
 };
 
 /**

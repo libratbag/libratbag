@@ -51,13 +51,11 @@ struct ratbag_test_button {
 
 struct ratbag_test_resolution {
 	int xres, yres;
-	int hz;
 	bool active;
 	bool dflt;
 	uint32_t caps;
 
 	int dpi_min, dpi_max;
-	unsigned int report_rates[5];
 };
 
 struct ratbag_test_color {
@@ -83,6 +81,9 @@ struct ratbag_test_profile {
 	bool dflt;
 	bool disabled;
 	uint32_t caps[10];
+
+	int hz;
+	unsigned int report_rates[5];
 };
 
 struct ratbag_test_device {

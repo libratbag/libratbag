@@ -363,6 +363,26 @@ class RatbagdProfile(metaclass=MetaRatbag):
         libratbag.ratbag_profile_set_enabled(self._profile, enabled)
 
     @property
+    def report_rate(self):
+        """The report rate in Hz."""
+        return libratbag.ratbag_profile_get_report_rate(self._profile)
+
+    @report_rate.setter
+    def report_rate(self, rate):
+        """Set the report rate in Hz.
+
+        @param rate The new report rate, as int
+        """
+        libratbag.ratbag_profile_set_report_rate(self._profile, rate)
+
+    @property
+    def report_rates(self):
+        """The list of supported report rates"""
+        rates = [0 for i in range(300)]
+        n = libratbag.ratbag_resolution_get_report_rate_list(self._profile, rates)
+        return rates[:n]
+
+    @property
     def resolutions(self):
         """A list of RatbagdResolution objects with this profile's resolutions.
         Note that the list of resolutions differs between profiles but the number
@@ -455,31 +475,11 @@ class RatbagdResolution(metaclass=MetaRatbag):
             libratbag.ratbag_resolution_set_dpi(self._res, res[0])
 
     @property
-    def report_rate(self):
-        """The report rate in Hz."""
-        return libratbag.ratbag_resolution_get_report_rate(self._res)
-
-    @report_rate.setter
-    def report_rate(self, rate):
-        """Set the report rate in Hz.
-
-        @param rate The new report rate, as int
-        """
-        libratbag.ratbag_resolution_set_report_rate(self._res, rate)
-
-    @property
     def resolutions(self):
         """The list of supported DPI values"""
         dpis = [0 for i in range(300)]
         n = libratbag.ratbag_resolution_get_dpi_list(self._res, dpis)
         return dpis[:n]
-
-    @property
-    def report_rates(self):
-        """The list of supported report rates"""
-        rates = [0 for i in range(300)]
-        n = libratbag.ratbag_resolution_get_report_rate_list(self._res, rates)
-        return rates[:n]
 
     @property
     def is_active(self):

@@ -259,14 +259,14 @@ class TestRatbagCtlResolution(TestRatbagCtl):
 
     def test_resolution_n_get(self):
         r = self.launch_good_test("test_device resolution 1 get")
-        self.assertEqual(r, "1: 1200x1300dpi @ 2000Hz (default)")
+        self.assertEqual(r, "1: 1200x1300dpi (default)")
         self.launch_fail_test("test_device resolution 10 get")
         self.launch_fail_test("test_device resolution 1 get X")
         self.launch_fail_test("resolution 1 get X")
 
     def test_profile_resolution(self):
         r = self.launch_good_test("test_device profile 2 resolution 2 get")
-        self.assertEqual(r, "2: 2300x2400dpi @ 3000Hz")
+        self.assertEqual(r, "2: 2300x2400dpi")
 
     def test_resolution_default_get(self):
         command = "resolution default get"
@@ -393,13 +393,14 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
         self.launch_fail_test("test_device " + command + " 100 X")
 
     def test_prefix_rate(self):
+        r = self.launch_good_test("test_device rate get")
+        self.assertEqual(int(r), 1000)
         r = self.launch_good_test("test_device profile 1 rate get")
         self.assertEqual(int(r), 2000)
-        r = self.launch_good_test("test_device profile 1 resolution 1 rate get")
-        self.assertEqual(int(r), 2000)
-        r = self.launch_good_test("test_device resolution 2 rate get")
-        self.assertEqual(int(r), 1000)
+        r = self.launch_good_test("test_device profile 2 rate get")
+        self.assertEqual(int(r), 3000)
         self.launch_fail_test("test_device profile 1 profile 1 rate get")
+        self.launch_fail_test("test_device profile 1 resolution 0 rate get")
         self.launch_fail_test("test_device profile 1 resolution 1 resolution 2 rate get")
 
 

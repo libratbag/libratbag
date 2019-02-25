@@ -194,12 +194,11 @@ def print_resolution(d, p, r, level):
     else:
         dpi = "{}".format(r.resolution[0])
 
-    print(" " * level + "{}: {}dpi @ {}Hz{}{}".format(r.index,
-                                                      dpi,
-                                                      r.report_rate,
-                                                      " (active)" if r.is_active else "",
-                                                      " (default)" if r.is_default else "",
-                                                      ))
+    print(" " * level + "{}: {}dpi{}{}".format(r.index,
+                                               dpi,
+                                               " (active)" if r.is_active else "",
+                                               " (default)" if r.is_default else "",
+                                               ))
 
 
 def print_profile(d, p, level):
@@ -208,6 +207,7 @@ def print_profile(d, p, level):
                                                        " (active)" if p.is_active else ""))
     if p.enabled:
         print(" " * level + "Name: {}".format(p.name or 'n/a'))
+        print(" " * level + "Report Rate: {}Hz".format(p.report_rate))
         print(" " * level + "Resolutions:")
         for r in p.resolutions:
             print_resolution(d, p, r, level + 2)
@@ -405,19 +405,19 @@ def func_dpi_set(r, args):
 
 
 def func_report_rate_get(r, args):
-    r, p, d = find_resolution(r, args)
-    print(r.report_rate)
+    p, d = find_profile(r, args)
+    print(p.report_rate)
 
 
 def func_report_rate_get_all(r, args):
-    r, p, d = find_resolution(r, args)
-    rates = r.report_rates
+    p, d = find_profile(r, args)
+    rates = p.report_rates
     print(" ".join([str(x) for x in rates]))
 
 
 def func_report_rate_set(r, args):
-    r, p, d = find_resolution(r, args)
-    r.report_rate = args.rate_n
+    p, d = find_profile(r, args)
+    p.report_rate = args.rate_n
 
 
 def func_resolution_get(r, args):
@@ -817,10 +817,6 @@ active profile if none is given.""",
                     of_type: link,
                     dest: 'dpi',
                 },
-                {
-                    of_type: link,
-                    dest: 'rate',
-                },
             ],
         },
     },
@@ -868,8 +864,7 @@ active resolution of the active profile if none are given.""",
         name: 'rate',
         help_str: """Access report rate information
 
-Rate commands work on the given profile and resolution, or on the
-active resolution of the active profile if none are given.""",
+Rate commands work on the given profile, or on the active profile if none is given.""",
         tag: 'rate',
         group: 'Rate',
         switch: [

@@ -429,8 +429,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 
 		ratbag_resolution_set_resolution(res,
 						 p.dpi_modes[res->index].xres,
-						 p.dpi_modes[res->index].yres,
-						 p.refresh_rate);
+						 p.dpi_modes[res->index].yres);
 		ratbag_resolution_set_cap(res,
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		if (profile->is_active &&
@@ -458,9 +457,10 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 			ratbag_resolution_set_dpi_list(res, dpis, hidpp10->dpi_count);
 		}
 
-		ratbag_resolution_set_report_rate_list(res, rates,
-						       ARRAY_LENGTH(rates));
 	}
+
+	ratbag_profile_set_report_rate_list(profile, rates, ARRAY_LENGTH(rates));
+	ratbag_profile_set_report_rate(profile, p.refresh_rate);
 
 	ratbag_profile_for_each_button(profile, button)
 		hidpp10drv_read_button(button);

@@ -688,6 +688,61 @@ ratbag_profile_set_active(struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
+ * Set the report rate in Hz for the profile.
+ *
+ * A value of 0 hz disables the mode.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param hz Set to the report rate in Hz, may be 0
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_report_rate(struct ratbag_profile *profile,
+			       unsigned int hz);
+
+/**
+ * @ingroup profile
+ *
+ * Get the report rate in Hz for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return The report rate for this profile in Hz
+ */
+int
+ratbag_profile_get_report_rate(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Get the number of report rates in Hz available for this profile.
+ * The list of report rates is sorted in ascending order but may be filtered
+ * by libratbag and does not necessarily reflect all report rates supported by
+ * the physical device.
+ *
+ * This function writes at most nrates values but returns the number of
+ * report rates available on this resolution. In other words, if it returns a
+ * number larger than nrates, call it again with an array the size of the
+ * return value.
+ *
+ * @param[out] rates Set to the supported report rates in ascending order
+ * @param[in] nrates The number of elements in resolutions
+ *
+ * @return The number of valid items in rates. If the returned value
+ * is larger than nrates, the list was truncated.
+ */
+size_t
+ratbag_profile_get_report_rate_list(struct ratbag_profile *profile,
+				    unsigned int *rates,
+				    size_t nrates);
+
+/**
+ * @ingroup profile
+ *
  * Get the number of @ref ratbag_resolution available in this profile. A
  * resolution mode is a tuple of (resolution, report rate), each mode can be
  * fetched with ratbag_profile_get_resolution().
@@ -913,67 +968,6 @@ ratbag_resolution_get_dpi_x(struct ratbag_resolution *resolution);
 int
 ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution);
 
-/**
- * @ingroup resolution
- *
- * Set the report rate in Hz for the resolution mode.
- *
- * A value of 0 hz disables the mode.
- *
- * If the resolution mode is the currently active mode and the profile is
- * the currently active profile, the change takes effect immediately.
- *
- * If the resolution does not have the @ref
- * RATBAG_RESOLUTION_CAP_INDIVIDUAL_REPORT_RATE capability, changing the
- * report rate on one resolution changes the report rate for all resolutions
- * in this profile.
- *
- * @param resolution A previously initialized ratbag resolution
- * @param hz Set to the report rate in Hz, may be 0
- *
- * @return zero on success or an error code on failure
- */
-enum ratbag_error_code
-ratbag_resolution_set_report_rate(struct ratbag_resolution *resolution,
-				  unsigned int hz);
-
-/**
- * @ingroup resolution
- *
- * Get the report rate in Hz for the resolution mode.
- *
- * A value of 0 hz indicates the mode is disabled.
- *
- * @param resolution A previously initialized ratbag resolution
- *
- * @return The report rate for this resolution in Hz
- */
-int
-ratbag_resolution_get_report_rate(struct ratbag_resolution *resolution);
-
-/**
- * @ingroup resolution
- *
- * Get the number of report rates in Hz available for this resolution.
- * The list of report rates is sorted in ascending order but may be filtered
- * by libratbag and does not necessarily reflect all report rates supported by
- * the physical device.
- *
- * This function writes at most nrates values but returns the number of
- * report rates available on this resolution. In other words, if it returns a
- * number larger than nrates, call it again with an array the size of the
- * return value.
- *
- * @param[out] rates Set to the supported report rates in ascending order
- * @param[in] nrates The number of elements in resolutions
- *
- * @return The number of valid items in rates. If the returned value
- * is larger than nrates, the list was truncated.
- */
-size_t
-ratbag_resolution_get_report_rate_list(struct ratbag_resolution *resolution,
-				       unsigned int *rates,
-				       size_t nrates);
 /**
  * @ingroup resolution
  *

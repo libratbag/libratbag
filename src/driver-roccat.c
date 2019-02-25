@@ -702,7 +702,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	struct roccat_settings_report *setting_report;
 	uint8_t *buf;
 	unsigned int report_rate;
-	int dpi_x, dpi_y, hz;
+	int dpi_x, dpi_y;
 	int rc;
 	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
@@ -730,24 +730,24 @@ roccat_read_profile(struct ratbag_profile *profile)
 		report_rate = 0;
 	}
 
+	ratbag_profile_set_report_rate_list(profile, report_rates,
+					    ARRAY_LENGTH(report_rates));
+	ratbag_profile_set_report_rate(profile, report_rate);
+
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		dpi_x = setting_report->xres[resolution->index] * 50;
 		dpi_y = setting_report->yres[resolution->index] * 50;
-		hz = report_rate;
 		if (!(setting_report->dpi_mask & (1 << resolution->index))) {
 			/* the profile is disabled, overwrite it */
 			dpi_x = 0;
 			dpi_y = 0;
-			hz = 0;
 		}
 
-		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y, hz);
+		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y);
 		ratbag_resolution_set_cap(resolution,
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		resolution->is_active = (resolution->index == setting_report->current_dpi);
 
-		ratbag_resolution_set_report_rate_list(resolution, report_rates,
-						       ARRAY_LENGTH(report_rates));
 		ratbag_resolution_set_dpi_list_from_range(resolution, 200, 8200);
 	}
 

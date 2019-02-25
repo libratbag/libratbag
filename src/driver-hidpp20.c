@@ -805,7 +805,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			sensor = &drv_data->sensors[0];
 
 			/* FIXME: retrieve the refresh rate */
-			ratbag_resolution_set_resolution(res, sensor->dpi, sensor->dpi, 0);
+			ratbag_resolution_set_resolution(res, sensor->dpi, sensor->dpi);
 			ratbag_resolution_set_dpi_list_from_range(res,
 								  sensor->dpi_min,
 								  sensor->dpi_max);
@@ -823,13 +823,11 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		if (rc < 0)
 			return rc;
 
-		ratbag_profile_for_each_resolution(profile, res)
-			ratbag_resolution_set_report_rate_list(res,
-							       drv_data->report_rates,
-							       drv_data->num_report_rates);
+		ratbag_profile_set_report_rate_list(profile,
+						    drv_data->report_rates,
+						    drv_data->num_report_rates);
 	} else {
-		ratbag_profile_for_each_resolution(profile, res)
-			ratbag_resolution_set_report_rate_list(res, &default_rate, 1);
+		ratbag_profile_set_report_rate_list(profile, &default_rate, 1);
 	}
 
 	return 0;
@@ -1017,8 +1015,7 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 
 		ratbag_resolution_set_resolution(res,
 						 p->dpi[res->index],
-						 p->dpi[res->index],
-						 p->report_rate);
+						 p->dpi[res->index]);
 
 		if (profile->is_active &&
 		    res->index == (unsigned int)dpi_index)
@@ -1032,10 +1029,12 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 		ratbag_resolution_set_dpi_list_from_range(res,
 							  sensor->dpi_min,
 							  sensor->dpi_max);
-		ratbag_resolution_set_report_rate_list(res,
-						       drv_data->report_rates,
-						       drv_data->num_report_rates);
 	}
+
+	ratbag_profile_set_report_rate_list(profile,
+					    drv_data->report_rates,
+					    drv_data->num_report_rates);
+	ratbag_profile_set_report_rate(profile, p->report_rate);
 }
 
 static void

@@ -64,14 +64,16 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				}
 			},
 			.resolutions = {
-				{ .xres = 100, .yres = 200, .hz = 1000,
-					.dpi_min = 50, .dpi_max = 5000,
-					.report_rates = { 500, 1000 } },
-				{ .xres = 200, .yres = 300, .hz = 1000, .active = true, .dflt = true },
-				{ .xres = 300, .yres = 400, .hz = 1000 },
+				{ .xres = 100, .yres = 200,
+					.dpi_min = 50, .dpi_max = 5000},
+				{ .xres = 200, .yres = 300, .active = true, .dflt = true },
+				{ .xres = 300, .yres = 400 },
 			},
 			.active = true,
 			.dflt = false,
+			.hz = 1000,
+			.report_rates = {500, 1000},
+
 			.leds = {
 				{
 					.mode = RATBAG_LED_OFF,
@@ -108,10 +110,11 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				  .key = 7 },
 			},
 			.resolutions = {
-				{ .xres = 1100, .yres = 1200, .hz = 2000, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
-				{ .xres = 1200, .yres = 1300, .hz = 2000, .dflt = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
-				{ .xres = 1300, .yres = 1400, .hz = 2000, .active = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
+				{ .xres = 1100, .yres = 1200, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
+				{ .xres = 1200, .yres = 1300, .dflt = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
+				{ .xres = 1300, .yres = 1400, .active = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
 			},
+			.hz = 2000,
 			.active = false,
 			.dflt = true,
 			.name = "test profile 2",
@@ -137,10 +140,11 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				  .button = 3 },
 			},
 			.resolutions = {
-				{ .xres = 2100, .yres = 2200, .hz = 3000, .active = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
-				{ .xres = 2200, .yres = 2300, .hz = 3000, .dflt = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
-				{ .xres = 2300, .yres = 2400, .hz = 3000, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
+				{ .xres = 2100, .yres = 2200, .active = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
+				{ .xres = 2200, .yres = 2300, .dflt = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
+				{ .xres = 2300, .yres = 2400, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
 			},
+			.hz = 3000,
 			.leds = {
 				{
 					.mode = RATBAG_LED_ON,

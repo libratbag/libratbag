@@ -450,6 +450,24 @@ class RatbagdProfile(_RatbagdDBus):
         self._set_dbus_property("Enabled", "b", enabled)
 
     @GObject.Property
+    def report_rate(self):
+        """The report rate in Hz."""
+        return self._get_dbus_property("ReportRate")
+
+    @report_rate.setter
+    def report_rate(self, rate):
+        """Set the report rate in Hz.
+
+        @param rate The new report rate, as int
+        """
+        self._set_dbus_property("ReportRate", "u", rate)
+
+    @GObject.Property
+    def report_rates(self):
+        """The list of supported report rates"""
+        return self._get_dbus_property("ReportRates") or []
+
+    @GObject.Property
     def resolutions(self):
         """A list of RatbagdResolution objects with this profile's resolutions.
         Note that the list of resolutions differs between profiles but the number
@@ -497,8 +515,7 @@ class RatbagdProfile(_RatbagdDBus):
 class RatbagdResolution(_RatbagdDBus):
     """Represents a ratbagd resolution."""
 
-    CAP_INDIVIDUAL_REPORT_RATE = 1
-    CAP_SEPARATE_XY_RESOLUTION = 2
+    CAP_SEPARATE_XY_RESOLUTION = 1
 
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Resolution", object_path)
@@ -558,27 +575,9 @@ class RatbagdResolution(_RatbagdDBus):
         self._set_dbus_property("Resolution", "v", variant)
 
     @GObject.Property
-    def report_rate(self):
-        """The report rate in Hz."""
-        return self._get_dbus_property("ReportRate")
-
-    @report_rate.setter
-    def report_rate(self, rate):
-        """Set the report rate in Hz.
-
-        @param rate The new report rate, as int
-        """
-        self._set_dbus_property("ReportRate", "u", rate)
-
-    @GObject.Property
     def resolutions(self):
         """The list of supported DPI values"""
         return self._get_dbus_property("Resolutions") or []
-
-    @GObject.Property
-    def report_rates(self):
-        """The list of supported report rates"""
-        return self._get_dbus_property("ReportRates") or []
 
     @GObject.Property
     def is_active(self):
