@@ -436,13 +436,6 @@ org.freedesktop.ratbag1.Led
         A list of modes supported by this LED, see
         :cpp:enum:`ratbag_led_mode`.
 
-.. attribute:: Type
-
-        :type: u
-        :flags: read-only, mutable
-
-        The LED type, see :cpp:enum:`ratbag_led_type`.
-
 .. attribute:: Color
 
         :type: (uuu)
