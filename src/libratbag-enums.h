@@ -310,7 +310,7 @@ enum ratbag_led_colordepth {
 	 * The device only supports a single color.
 	 * All color components should be set to 255.
 	 */
-	RATBAG_LED_COLORDEPTH_MONOCHROME = 400,
+	RATBAG_LED_COLORDEPTH_MONOCHROME = 0,
 	/**
 	 * The device supports RBG color with 8 bits per color.
 	 */
