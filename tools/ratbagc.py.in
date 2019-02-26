@@ -51,6 +51,10 @@ class MetaRatbag(type):
         c = type.__new__(cls, name, bases, dct)
         if "__late_init__" in dct:
             c.__late_init__()
+
+        # Add a noop self.notify() so we're compatible with GObjects
+        c.notify = lambda *args : None
+
         return c
 
 
