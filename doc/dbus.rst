@@ -359,38 +359,27 @@ org.freedesktop.ratbag1.Button
 
         Index of the button
 
-.. attribute:: ButtonMapping
+.. attribute:: Mapping
 
-        :type: u
+        :type: (uv)
         :flags: read-write, mutable
 
-        uint of the current button mapping (if mapping to button)
+        The current button mapping. The first element is the ActionType
+        selected for this button.
 
-.. attribute:: SpecialMapping
+        If the ActionType is Button, the variant is an unsigned integer
+        (``u``) denoting the button number to map to.
 
-        :type: u
-        :flags: read-write, mutable
+        If the ActionType is Special, the variant is an unsigned integer
+        (``u``) denoting the special value to map to.
 
-        Enum describing the current special mapping (if mapped to special)
-
-.. attribute:: Macro
-
-        :type: a(uu)
-        :flags: read-write, mutable
-
-        Array of (type, keycode), where type may be one of
-        :cpp:enumerator:`RATBAG_MACRO_EVENT_KEY_PRESSED` or
+        If the ActionType is Macro, the variant is an array of integer
+        tuples (``a(uu)``) where each tuple is ``(type, keycode)`` and the
+        type is one of :cpp:enumerator:`RATBAG_MACRO_EVENT_KEY_PRESSED` or
         :cpp:enumerator:`RATBAG_MACRO_EVENT_KEY_RELEASED`.
 
-.. attribute:: ActionType
-
-        :type: u
-        :flags: read-only, mutable
-
-        An enum describing the action type of the button, see
-        :cpp:enum:`ratbag_button_action_type` for the list of enums.
-        This decides which one of :attr:`ButtonMapping`,
-	:attr:`SpecialMapping` and :attr:`Macro` has a value.
+        If the ActionType is Unknown, the variant is an unsigned integer
+        (``u``) of value 0.
 
 .. attribute:: ActionTypes
 
@@ -398,7 +387,7 @@ org.freedesktop.ratbag1.Button
         :flags: read-only, constant
 
         Array of :cpp:enum:`ratbag_button_action_type`, possible values
-        for ActionType on the current device
+        for ActionType on the current device.
 
 .. function:: Disable() → ()
 
