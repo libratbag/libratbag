@@ -116,13 +116,13 @@ known to ratbagd.
 	In the future, other formats may get added. Clients must ignore
 	unknown string formats.
 
-	For a string starting with `usb:`, the format is the bus type (USB)
+	For a string starting with ``usb:``, the format is the bus type (USB)
 	followed by a 4-digit lowercase hex USB vendor ID, followed by a
 	4-digit lowercase hex USB product ID, followed by an decimal version
 	number of unspecified length. These four elements are separated by a
 	colon (``:``).
 
-	For a string starting with `bluetooth:`, the format is the bus type
+	For a string starting with ``bluetooth:``, the format is the bus type
 	(Bluetooth) followed by a 4-digit lowercase hex Bluetooth vendor ID,
 	followed by a 4-digit lowercase hex Bluetooth product ID, followed
 	by an decimal version number of unspecified length. These four
