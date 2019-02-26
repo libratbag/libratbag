@@ -67,6 +67,9 @@ def list_devices(r, args):
 def find_device(r, args):
     dev = r[args.device]
     if dev is None:
+        for d in r.devices:
+            if args.device in d.name:
+                return d
         print("Unable to find device {}".format(args.device))
         sys.exit(1)
     return dev
