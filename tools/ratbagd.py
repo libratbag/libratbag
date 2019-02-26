@@ -678,6 +678,9 @@ class RatbagdButton(_RatbagdDBus):
         if "ActionType" in changed_props.keys():
             self.notify("action-type")
 
+    def _mapping(self):
+        return self._get_dbus_property("Mapping")
+
     @GObject.Property
     def index(self):
         """The index of this button."""
@@ -685,8 +688,12 @@ class RatbagdButton(_RatbagdDBus):
 
     @GObject.Property
     def mapping(self):
-        """An integer of the current button mapping, if mapping to a button."""
-        return self._get_dbus_property("ButtonMapping")
+        """An integer of the current button mapping, if mapping to a button
+        or None otherwise."""
+        type, button = self._mapping()
+        if type != RatbagdButton.ACTION_TYPE_BUTTON:
+            return None
+        return button
 
     @mapping.setter
     def mapping(self, button):
@@ -694,12 +701,18 @@ class RatbagdButton(_RatbagdDBus):
 
         @param button The button to map to, as int
         """
-        self._set_dbus_property("ButtonMapping", "u", button)
+        button = GLib.Variant("u", button)
+        self._set_dbus_property("Mapping", "(uv)",
+                (RatbagdButton.ACTION_TYPE_BUTTON, button))
 
     @GObject.Property
     def macro(self):
-        """A RatbagdMacro object representing the currently set macro."""
-        return RatbagdMacro.from_ratbag(self._get_dbus_property("Macro"))
+        """A RatbagdMacro object representing the currently set macro or
+        None otherwise."""
+        type, macro = self._mapping()
+        if type != RatbagdButton.ACTION_TYPE_MACRO:
+            return None
+        return RatbagdMacro.from_ratbag(macro)
 
     @macro.setter
     def macro(self, macro):
@@ -709,12 +722,18 @@ class RatbagdButton(_RatbagdDBus):
         @param macro A RatbagdMacro object representing the macro to apply to
                      the button, as RatbagdMacro.
         """
-        self._set_dbus_property("Macro", "a(uu)", macro.keys)
+        macro = GLib.Variant("a(uu)", macro.keys)
+        self._set_dbus_property("Mapping", "(uv)",
+                (RatbagdButton.ACTION_TYPE_MACRO, macro))
 
     @GObject.Property
     def special(self):
-        """An enum describing the current special mapping, if mapped to special."""
-        return self._get_dbus_property("SpecialMapping")
+        """An enum describing the current special mapping, if mapped to
+        special or None otherwise."""
+        type, special = self._mapping()
+        if type != RatbagdButton.ACTION_TYPE_SPECIAL:
+            return None
+        return special
 
     @special.setter
     def special(self, special):
@@ -722,7 +741,9 @@ class RatbagdButton(_RatbagdDBus):
 
         @param special The special entry, as one of RatbagdButton.ACTION_SPECIAL_*
         """
-        self._set_dbus_property("SpecialMapping", "u", special)
+        special = GLib.Variant("u", special)
+        self._set_dbus_property("Mapping", "(uv)",
+                (RatbagdButton.ACTION_TYPE_SPECIAL, special))
 
     @GObject.Property
     def action_type(self):
@@ -731,7 +752,8 @@ class RatbagdButton(_RatbagdDBus):
         ACTION_TYPE_MACRO. This decides which
         *Mapping property has a value.
         """
-        return self._get_dbus_property("ActionType")
+        type, mapping = self._mapping()
+        return type
 
     @GObject.Property
     def action_types(self):
