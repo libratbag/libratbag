@@ -1388,7 +1388,7 @@ class RatbagParserRoot(object):
 
         # retrieve the device and remove it from the command processing
         self.parser.add_argument('device_or_list', action="store")
-        ns, rest = self.parser.parse_known_args(rest)
+        ns, rest = self.parser.parse_known_args(rest, namespace=ns)
 
         if ns.device_or_list == 'list':
             if rest:
