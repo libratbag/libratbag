@@ -432,30 +432,62 @@ org.freedesktop.ratbag1.Led
         :type: u
         :flags: read-write, mutable
 
-        Enum describing the current mode, see
-        :cpp:enum:`ratbag_led_mode`.
+        Enum describing the current mode, see :attr:`Modes`.
 
 .. attribute:: Modes
 
         :type: au
         :flags: read-only, constant
 
-        A list of modes supported by this LED, see
-        :cpp:enum:`ratbag_led_mode`.
+        A list of modes supported by this LED.
+
+        +-------+-------------------------------------+
+        | Value | Definition                          |
+        +=======+=====================================+
+        |   0   | LED is off                          |
+        +-------+-------------------------------------+
+        |   1   | LED is on with constant brightness  |
+        +-------+-------------------------------------+
+        |   2   | LED cycles through a set of colors. |
+        |       | This mode ignores the :attr:`Color` |
+        |       | values.                             |
+        +-------+-------------------------------------+
+        |   3   | LED uses a breathing-style animation|
+        +-------+-------------------------------------+
+
+        In the future, extra values may get added. Clients must ignore
+        unknown Modes.
 
 .. attribute:: Color
 
         :type: (uuu)
         :flags: read-write, mutable
 
-        uint triplet (RGB) of the LED's color
+        32-bit unsigned int triplet (RGB) of the LED's color. Only the least
+        significant bits are valid, the :attr:`ColorDepth` property defines
+        the number of bits for each color. When writing to this property,
+        all bits outside the color depth must be 0.
 
 .. attribute:: ColorDepth
 
         :type: u
         :flags: read-only, constant
 
-        The color depth of this LED, see :cpp:enum:`ratbag_led_colordepth`.
+        An enum specifying the color depth of this LED. Permitted values are:
+
+        +-------+-------------------------------+
+        | Value | Definition                    |
+        +=======+===============================+
+        |   0   | 0 bits per color (monochrome) |
+        +-------+-------------------------------+
+        |   1   | 8 bits per color              |
+        +-------+-------------------------------+
+        |   2   | 1 bit per color               |
+        +-------+-------------------------------+
+
+        In the future, extra values may get added. Clients must ignore
+        unknown ``ColorDepths`` and not manipulate the LED color where
+        the ``ColorDepth`` is unknown.
 
 .. attribute:: EffectDuration
 
@@ -469,5 +501,8 @@ org.freedesktop.ratbag1.Led
         :type: u
         :flags: read-write, mutable
 
-        The brightness of the LED, possible values are in the range 0 - 255
+        The brightness of the LED, normalized to the range 0-255, inclusive.
+        Where the LED supports less than 8-bit of brightness, libratbag maps
+        the value to a device-supported value in an implementation-defined
+        manner.
 
