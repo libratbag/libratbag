@@ -249,13 +249,18 @@ ratbagd_resolution_get_resolution(sd_bus *bus,
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
 	int xres, yres;
 
+
 	xres = ratbag_resolution_get_dpi_x(lib_resolution);
 	yres = ratbag_resolution_get_dpi_y(lib_resolution);
 
 	verify_unsigned_int(xres);
 	verify_unsigned_int(yres);
 
-	return sd_bus_message_append(reply, "(uu)", xres, yres);
+	if (ratbag_resolution_has_capability(lib_resolution,
+					     RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION))
+		return sd_bus_message_append(reply, "v", "(uu)", xres, yres);
+	else
+		return sd_bus_message_append(reply, "v", "u", xres);
 }
 
 static int
@@ -273,15 +278,13 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 	int xres, yres;
 	int r;
 
-	r = sd_bus_message_read(m, "(uu)", &xres, &yres);
-	if (r < 0)
-		return r;
-
-	if (!ratbag_resolution_has_capability(lib_resolution, cap)) {
-		r = ratbag_resolution_set_dpi(resolution->lib_resolution, xres);
-	} else {
+	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
+		CHECK_CALL(sd_bus_message_read(m, "v", "(uu)", &xres, &yres));
 		r = ratbag_resolution_set_dpi_xy(resolution->lib_resolution,
 						 xres, yres);
+	} else {
+		CHECK_CALL(sd_bus_message_read(m, "v", "u", &xres));
+		r = ratbag_resolution_set_dpi(resolution->lib_resolution, xres);
 	}
 
 	if (r == 0) {
@@ -391,7 +394,7 @@ const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_resolution_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("IsDefault", "b", ratbagd_resolution_is_default, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_WRITABLE_PROPERTY("Resolution", "(uu)",
+	SD_BUS_WRITABLE_PROPERTY("Resolution", "v",
 				 ratbagd_resolution_get_resolution,
 				 ratbagd_resolution_set_resolution, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),

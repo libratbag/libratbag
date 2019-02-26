@@ -436,7 +436,8 @@ class RatbagdResolution(metaclass=MetaRatbag):
         dpi_y = dpi_x = libratbag.ratbag_resolution_get_dpi_x(self._res)
         if libratbag.RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION in self._capabilities:
             dpi_y = libratbag.ratbag_resolution_get_dpi_y(self._res)
-        return (dpi_x, dpi_y)
+            return (dpi_x, dpi_y)
+        return (dpi_x, )
 
     @resolution.setter
     def resolution(self, res):
