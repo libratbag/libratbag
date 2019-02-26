@@ -189,7 +189,7 @@ def print_resolution(d, p, r, level):
     if r.resolution == (0, 0):
         print(" " * level + "{}: <disabled>".format(r.index))
         return
-    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
+    if len(r.resolution) == 2:
         dpi = "{}x{}".format(r.resolution[0], r.resolution[1])
     else:
         dpi = "{}".format(r.resolution[0])
@@ -383,7 +383,7 @@ def func_button_count(r, args):
 
 def func_dpi_get(r, args):
     r, p, d = find_resolution(r, args)
-    if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in r.capabilities:
+    if len(r.resolution) == 2:
         print("{}x{}dpi".format(r.resolution[0], r.resolution[1]))
     else:
         print("{}dpi".format(r.resolution[0]))
@@ -397,7 +397,10 @@ def func_dpi_get_all(r, args):
 
 def func_dpi_set(r, args):
     r, p, d = find_resolution(r, args)
-    r.resolution = (args.dpi_n[0], args.dpi_n[1])
+    dpi = args.dpi_n
+    if len(r.resolution) > len(dpi):
+        dpi = (dpi[0], dpi[0])
+    r.resolution = dpi
     commit(d, args)
 
 
@@ -593,7 +596,7 @@ def dpi(string):
     except ValueError:
         pass
     else:
-        return (int_value, int_value)
+        return (int_value, )
     if string.endswith("dpi"):
         string = string[:-3]
     x, y = string.split("x")

@@ -298,15 +298,22 @@ org.freedesktop.ratbag1.Resolution
 
 .. attribute:: Resolution
 
-        :type: uu
+        :type: v
         :flags: read-write, mutable
 
-        uint for the x and y resolution assigned to this entry,
-        respectively.  The value for the resolution must be equal to
-        one of the values in :attr:`Resolutions`.
+        The resolution for this entry in dpi.
 
-        If the resolution does not support separate x/y resolutions,
-        x and y must be the same value.
+        If the variant is a single unsigned integer (``u``), the value is
+        the resolution for both the x- and the y- axis.
+
+        If the variant is a unsigned integer tuple (``(uu)``), the value is
+        the resolution for the x- and y- axis separately.
+
+        A client must leave the type intact, assigning a single ``u`` to a
+        resolution object previously exporting ``(uu)`` is invalid.
+
+        The value for the resolution must be equal to one of the values in
+        :attr:`Resolutions`.
 
 .. attribute:: Resolutions
 

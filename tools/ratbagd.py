@@ -534,16 +534,28 @@ class RatbagdResolution(_RatbagdDBus):
 
     @GObject.Property
     def resolution(self):
-        """The tuple (xres, yres) with each resolution in DPI."""
-        return self._get_dbus_property("Resolution")
+        """The resolution in DPI, either as single value tuple ``(res, )``
+        or as tuple ``(xres, yres)``.
+        """
+        res = self._get_dbus_property("Resolution")
+        if isinstance(res, int):
+            res = tuple([res])
+        return res
 
     @resolution.setter
-    def resolution(self, res):
+    def resolution(self, resolution):
         """Set the x- and y-resolution using the given (xres, yres) tuple.
 
         @param res The new resolution, as (int, int)
         """
-        self._set_dbus_property("Resolution", "(uu)", res)
+        res = self.resolution
+        if len(res) != len(resolution) or len(res) > 2:
+            raise ValueError('invalid resolution precision')
+        if len(res) == 1:
+            variant = GLib.Variant('u', resolution[0]);
+        else:
+            variant = GLib.Variant('(uu)', resolution);
+        self._set_dbus_property("Resolution", "v", variant)
 
     @GObject.Property
     def report_rate(self):
