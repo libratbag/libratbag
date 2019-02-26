@@ -1365,11 +1365,6 @@ class RatbagParserRoot(object):
         self.want_keepalive = False
 
     def parse(self, input_string):
-        # we do not care about case, use lower case for the input string
-        for i, string in enumerate(input_string):
-            if not string.startswith('-'):
-                input_string[i] = string.lower()
-
         self.parser = argparse.ArgumentParser(description="Inspect and modify a configurable device",
                                               add_help=False)
         self.parser.add_argument("-V", "--version", action="version", version="@version@")
