@@ -71,6 +71,7 @@ dep_udev = dependency('libudev')
 dep_libevdev = dependency('libevdev')
 dep_glib = dependency('glib-2.0')
 dep_lm = cc.find_library('m')
+dep_unistring = cc.find_library('unistring')
 
 if get_option('logind-provider') == 'elogind'
 	dep_logind = dependency('libelogind', version : '>=227')
@@ -412,6 +413,7 @@ deps_ratbagd = [
 	dep_udev,
 	dep_logind,
 	dep_libratbag,
+	dep_unistring,
 ]
 
 executable('ratbagd',

@@ -31,6 +31,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistr.h>
+#include <uniconv.h>
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
 #include "ratbagd.h"
@@ -382,18 +384,23 @@ ratbagd_profile_get_name(sd_bus *bus,
 {
 	struct ratbagd_profile *profile = userdata;
 	const char *name = ratbag_profile_get_name(profile->lib_profile);
-	_cleanup_free_ char *asciiname;
+	_cleanup_free_ char *utf8 = NULL;
 
-	if (!name)
-		asciiname = strdup("");
-	else
-		/* This should really be a UTF8 check and it should really be in
-		 * libratbag, but for now this will do to at least not kick us off
-		 * the bus. https://github.com/libratbag/libratbag/issues/617
-		 */
-		asciiname = strdup_ascii_only(name);
+	if (name) {
+		if (u8_check((const uint8_t*)name, strlen(name)) == NULL)
+			utf8 = strdup(name);
+		else
+			utf8 = (char*)u8_strconv_from_encoding(name,
+							       "ISO-8859-1",
+							       iconveh_question_mark);
+		if (!utf8)
+			utf8 = (char*)strdup_ascii_only(name);
+	} else {
+		utf8 = strdup("");
+	}
 
-	CHECK_CALL(sd_bus_message_append(reply, "s", asciiname));
+
+	CHECK_CALL(sd_bus_message_append(reply, "s", utf8));
 
 	return 0;
 }

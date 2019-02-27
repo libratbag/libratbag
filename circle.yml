@@ -66,7 +66,7 @@ fedora_prep_cache: &fedora_prep_cache
   steps:
     - run:
         name: Initializing Fedora dnf cache
-        command: dnf install -y --downloadonly libsolv tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml
+        command: dnf install -y --downloadonly libsolv tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml libunistring-devel
     - persist_to_workspace:
         root: /var/cache/
         paths:
@@ -82,7 +82,7 @@ fedora_install: &fedora_install
     command: |
         echo keepcache=1 >> /etc/dnf/dnf.conf
         dnf upgrade -y libsolv
-        dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml python3-devel swig
+        dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml python3-devel swig libunistring-devel
 
 
 fedora_settings: &fedora_settings
@@ -109,7 +109,7 @@ ubuntu_settings: &ubuntu_settings
           apt-get install -y software-properties-common
           add-apt-repository universe
           apt-get update
-          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev valgrind python3-gi python3-evdev libglib2.0-dev python3-lxml python3-dev swig systemd
+          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev valgrind python3-gi python3-evdev libglib2.0-dev python3-lxml python3-dev swig systemd libunistring-dev
     - checkout
     - *start_dbus
     - *build_and_test
