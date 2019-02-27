@@ -569,9 +569,9 @@ class RatbagdResolution(_RatbagdDBus):
         if len(res) != len(resolution) or len(res) > 2:
             raise ValueError('invalid resolution precision')
         if len(res) == 1:
-            variant = GLib.Variant('u', resolution[0]);
+            variant = GLib.Variant('u', resolution[0])
         else:
-            variant = GLib.Variant('(uu)', resolution);
+            variant = GLib.Variant('(uu)', resolution)
         self._set_dbus_property("Resolution", "v", variant)
 
     @GObject.Property
@@ -703,7 +703,7 @@ class RatbagdButton(_RatbagdDBus):
         """
         button = GLib.Variant("u", button)
         self._set_dbus_property("Mapping", "(uv)",
-                (RatbagdButton.ACTION_TYPE_BUTTON, button))
+                                (RatbagdButton.ACTION_TYPE_BUTTON, button))
 
     @GObject.Property
     def macro(self):
@@ -724,7 +724,7 @@ class RatbagdButton(_RatbagdDBus):
         """
         macro = GLib.Variant("a(uu)", macro.keys)
         self._set_dbus_property("Mapping", "(uv)",
-                (RatbagdButton.ACTION_TYPE_MACRO, macro))
+                                (RatbagdButton.ACTION_TYPE_MACRO, macro))
 
     @GObject.Property
     def special(self):
@@ -743,7 +743,7 @@ class RatbagdButton(_RatbagdDBus):
         """
         special = GLib.Variant("u", special)
         self._set_dbus_property("Mapping", "(uv)",
-                (RatbagdButton.ACTION_TYPE_SPECIAL, special))
+                                (RatbagdButton.ACTION_TYPE_SPECIAL, special))
 
     @GObject.Property
     def action_type(self):
