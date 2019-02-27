@@ -125,7 +125,7 @@ doc_build: &doc_build
     - *fedora_install
     - run:
         name: Install documentation build-deps
-        command: dnf install -y python3-sphinx python3-sphinx_rtd_theme doxygen libxslt
+        command: dnf install -y python3-sphinx python3-sphinx_rtd_theme
     - checkout
     - *build_with_docs
     - *export_logs

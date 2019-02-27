@@ -28,8 +28,6 @@ must be prepared to receive a :func:`org.freedesktop.ratbag1.Device.Resync
 
 Notes on the DBus API
 ---------------------
-Values listed as enums are defined in `libratbag-enums.h
-<https://github.com/libratbag/libratbag/blob/master/src/libratbag-enums.h>`_
 
 For easier debugging, objects paths are constructed from the device. e.g.
 ``/org/freedesktop/ratbag/button/event5/p0/b10`` is the button interface for
