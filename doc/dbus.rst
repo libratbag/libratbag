@@ -280,14 +280,6 @@ org.freedesktop.ratbag1.Resolution
 
         Index of the resolution
 
-.. attribute:: Capabilities
-
-        :type: au
-        :flags: read-only, constant
-
-	Array of uints from the :cpp:enum:`ratbag_resolution_capability`
-	from libratbag.h.
-
 .. attribute:: IsActive
 
         :type: b
