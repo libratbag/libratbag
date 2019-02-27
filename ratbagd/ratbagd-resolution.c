@@ -133,34 +133,6 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 }
 
 static int
-ratbagd_resolution_get_capabilities(sd_bus *bus,
-				    const char *path,
-				    const char *interface,
-				    const char *property,
-				    sd_bus_message *reply,
-				    void *userdata,
-				    sd_bus_error *error)
-{
-	struct ratbagd_resolution *resolution = userdata;
-	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	enum ratbag_resolution_capability cap;
-	int r;
-
-	r = sd_bus_message_open_container(reply, 'a', "u");
-	if (r < 0)
-		return r;
-
-	cap = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION;
-	if (ratbag_resolution_has_capability(lib_resolution, cap)) {
-		r = sd_bus_message_append(reply, "u", cap);
-		if (r < 0)
-			return r;
-	}
-
-	return sd_bus_message_close_container(reply);
-}
-
-static int
 ratbagd_resolution_is_active(sd_bus *bus,
 			     const char *path,
 			     const char *interface,
@@ -295,7 +267,6 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_resolution_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("IsDefault", "b", ratbagd_resolution_is_default, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("Resolution", "v",
