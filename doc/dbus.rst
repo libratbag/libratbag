@@ -364,21 +364,28 @@ org.freedesktop.ratbag1.Button
         :type: (uv)
         :flags: read-write, mutable
 
-        The current button mapping. The first element is the ActionType
-        selected for this button.
+        The current button mapping. The first element is the ``ActionType``
+        for this button and must be one of those in :attr:`ActionTypes`.
 
-        If the ActionType is Button, the variant is an unsigned integer
+        If the ActionType is *Button*, the variant is an unsigned integer
         (``u``) denoting the button number to map to.
 
-        If the ActionType is Special, the variant is an unsigned integer
+        If the ActionType is *Special*, the variant is an unsigned integer
         (``u``) denoting the special value to map to.
 
-        If the ActionType is Macro, the variant is an array of integer
+        If the ActionType is *Macro*, the variant is an array of integer
         tuples (``a(uu)``) where each tuple is ``(type, keycode)`` and the
-        type is one of :cpp:enumerator:`RATBAG_MACRO_EVENT_KEY_PRESSED` or
-        :cpp:enumerator:`RATBAG_MACRO_EVENT_KEY_RELEASED`.
+        type is one of the following:
 
-        If the ActionType is Unknown, the variant is an unsigned integer
+        +---------+--------------------------------------+
+        | Value   | Description                          |
+        +=========+======================================+
+        |   0     | Key release event                    |
+        +---------+--------------------------------------+
+        |   1     | Key press event                      |
+        +---------+--------------------------------------+
+
+        If the ActionType is *Unknown*, the variant is an unsigned integer
         (``u``) of value 0.
 
 .. attribute:: ActionTypes
@@ -386,8 +393,24 @@ org.freedesktop.ratbag1.Button
         :type: au
         :flags: read-only, constant
 
-        Array of :cpp:enum:`ratbag_button_action_type`, possible values
-        for ActionType on the current device.
+        +---------+---------+--------------------------------------+
+        | Value   | Name    | Description                          |
+        +=========+=========+======================================+
+        |   0     | None    | No mapping configured                |
+        +---------+---------+--------------------------------------+
+        |   1     | Button  | Mapping to a logical button number   |
+        +---------+---------+--------------------------------------+
+        |   2     | Special | Mapping to a special function        |
+        +---------+---------+--------------------------------------+
+        |   3     | Macro   | Mapping to a macro key sequence      |
+        +---------+---------+--------------------------------------+
+        | 1000    | Unknown | An unknown or unreadable mapping type|
+        +---------+---------+--------------------------------------+
+
+        See :ref:`button_special` for a list of supported special
+        functions.
+
+        Clients must ignore :attr:`ActionTypes` unknown to them.
 
 .. function:: Disable() → ()
 
@@ -484,3 +507,53 @@ org.freedesktop.ratbag1.Led
         the value to a device-supported value in an implementation-defined
         manner.
 
+
+.. _button_special:
+
+Special button functions
+------------------------
+
+        All special button function values are based on the value
+        ``0x40000000`` (``1 << 30``).
+
+        +------------+------------+---------------------------------------------------+
+        | Offset     | Value      |Description                                        |
+        +============+============+===================================================+
+        |  0         | 0x40000000 | Unknown                                           |
+        +------------+------------+---------------------------------------------------+
+        |  1         | 0x40000001 | Doublelick                                        |
+        +------------+------------+---------------------------------------------------+
+        |  2         | 0x40000002 | Wheel left                                        |
+        +------------+------------+---------------------------------------------------+
+        |  3         | 0x40000003 | Wheel right                                       |
+        +------------+------------+---------------------------------------------------+
+        |  4         | 0x40000004 | Wheel up                                          |
+        +------------+------------+---------------------------------------------------+
+        |  5         | 0x40000005 | Wheel down                                        |
+        +------------+------------+---------------------------------------------------+
+        |  6         | 0x40000006 | Ratchet mode switch                               |
+        +------------+------------+---------------------------------------------------+
+        |  7         | 0x40000007 | Resolution cycle up                               |
+        +------------+------------+---------------------------------------------------+
+        |  8         | 0x40000008 | Resolution cycle down                             |
+        +------------+------------+---------------------------------------------------+
+        |  9         | 0x40000009 | Resolution up                                     |
+        +------------+------------+---------------------------------------------------+
+        |  10        | 0x4000000a | Resolution down                                   |
+        +------------+------------+---------------------------------------------------+
+        |  11        | 0x4000000b | Resolution alternate                              |
+        +------------+------------+---------------------------------------------------+
+        |  12        | 0x4000000c | Resolution default                                |
+        +------------+------------+---------------------------------------------------+
+        |  13        | 0x4000000d | Profile cycle up                                  |
+        +------------+------------+---------------------------------------------------+
+        |  14        | 0x4000000e | Profile cycle down                                |
+        +------------+------------+---------------------------------------------------+
+        |  15        | 0x4000000f | Profile up                                        |
+        +------------+------------+---------------------------------------------------+
+        |  16        | 0x40000010 | Profile down                                      |
+        +------------+------------+---------------------------------------------------+
+        |  17        | 0x40000011 | Second mode                                       |
+        +------------+------------+---------------------------------------------------+
+        |  18        | 0x40000012 | Battery level                                     |
+        +------------+------------+---------------------------------------------------+
