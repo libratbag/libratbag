@@ -82,11 +82,11 @@ interact with ratbagd.
 
 .. attribute:: Devices
 
-	:type: ao
-	:flags: read-only, mutable
+        :type: ao
+        :flags: read-only, mutable
 
-	An array of read-only object paths referencing the available
-	devices. The devices implement the :ref:`device` interface.
+        An array of read-only object paths referencing the available
+        devices. The devices implement the :ref:`device` interface.
 
 .. _device:
 
@@ -98,45 +98,45 @@ known to ratbagd.
 
 .. attribute:: Model
 
-	:type: s
-	:flags: read-only, constant
+        :type: s
+        :flags: read-only, constant
 
-	An ID identifying the physical device model. This string is
-	guaranteed to be unique for a specific model and always identical
-	for devices of that model.
+        An ID identifying the physical device model. This string is
+        guaranteed to be unique for a specific model and always identical
+        for devices of that model.
 
-	This is a string of one of the following formats:
+        This is a string of one of the following formats:
 
-	- ``usb:1234:abcd:0``
-	- ``bluetooth:5678:ef01:0``
-	- ``unknown``
+        - ``usb:1234:abcd:0``
+        - ``bluetooth:5678:ef01:0``
+        - ``unknown``
 
-	In the future, other formats may get added. Clients must ignore
-	unknown string formats.
+        In the future, other formats may get added. Clients must ignore
+        unknown string formats.
 
-	For a string starting with ``usb:``, the format is the bus type (USB)
-	followed by a 4-digit lowercase hex USB vendor ID, followed by a
-	4-digit lowercase hex USB product ID, followed by an decimal version
-	number of unspecified length. These four elements are separated by a
-	colon (``:``).
+        For a string starting with ``usb:``, the format is the bus type (USB)
+        followed by a 4-digit lowercase hex USB vendor ID, followed by a
+        4-digit lowercase hex USB product ID, followed by an decimal version
+        number of unspecified length. These four elements are separated by a
+        colon (``:``).
 
-	For a string starting with ``bluetooth:``, the format is the bus type
-	(Bluetooth) followed by a 4-digit lowercase hex Bluetooth vendor ID,
-	followed by a 4-digit lowercase hex Bluetooth product ID, followed
-	by an decimal version number of unspecified length. These four
-	elements are separated by a colon (``:``).
+        For a string starting with ``bluetooth:``, the format is the bus type
+        (Bluetooth) followed by a 4-digit lowercase hex Bluetooth vendor ID,
+        followed by a 4-digit lowercase hex Bluetooth product ID, followed
+        by an decimal version number of unspecified length. These four
+        elements are separated by a colon (``:``).
 
-	For the string ``unknown``, the model of the device cannot be
-	determined. This is usually a bug in libratbag.
+        For the string ``unknown``, the model of the device cannot be
+        determined. This is usually a bug in libratbag.
 
-	For a ``Model`` of type ``usb`` and ``bluetooth``, the version
-	number is reserved for use by libratbag. Device with identical
-	vendor and product IDs but different versions must be considered
-	different devices. For example, the version may increase when a
-	manufacturer re-uses USB Ids.
+        For a ``Model`` of type ``usb`` and ``bluetooth``, the version
+        number is reserved for use by libratbag. Device with identical
+        vendor and product IDs but different versions must be considered
+        different devices. For example, the version may increase when a
+        manufacturer re-uses USB Ids.
 
-	Vendor or product IDs of 0 are valid IDs (e.g. used used by test
-	devices).
+        Vendor or product IDs of 0 are valid IDs (e.g. used used by test
+        devices).
 
 .. attribute:: Name
 
@@ -154,14 +154,14 @@ known to ratbagd.
         profiles.
 
         Provides the list of profile paths for all profiles on this device, see
-	:ref:`profile`
+        :ref:`profile`
 
 .. function:: Commit() → ()
 
         Commits the changes to the device. This call always succeeds,
-	the data is written to the device asynchronously. Where an error
-	occurs, the :func:`Resync` signal is emitted and all properties are
-	updated to the current state.
+        the data is written to the device asynchronously. Where an error
+        occurs, the :func:`Resync` signal is emitted and all properties are
+        updated to the current state.
 
 .. function:: Resync()
 
@@ -201,8 +201,8 @@ org.freedesktop.ratbag1.Profile
         True if this is the profile is enabled, false otherwise.
 
         Note that a disabled profile might not have correct bindings, so it's
-	a good thing to rebind everything before calling
-	:func:`Commit`.
+        a good thing to rebind everything before calling
+        :func:`Commit`.
 
 .. attribute:: IsActive
 
@@ -224,7 +224,7 @@ org.freedesktop.ratbag1.Profile
         resolutions.
 
         Provides the object paths of all resolutions in this profile, see
-	:ref:`resolution`.
+        :ref:`resolution`.
 
 .. attribute:: Buttons
 
@@ -232,7 +232,7 @@ org.freedesktop.ratbag1.Profile
         :flags: read-only, constant
 
         Provides the object paths of all buttons in this profile, see
-	:ref:`button`.
+        :ref:`button`.
 
 .. attribute:: Leds
 
@@ -240,7 +240,7 @@ org.freedesktop.ratbag1.Profile
         :flags: read-only, constant
 
         Provides the object paths of all LEDs in this profile, see
-	:ref:`led`.
+        :ref:`led`.
 
 .. attribute:: ReportRate
 
