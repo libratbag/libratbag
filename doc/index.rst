@@ -15,7 +15,6 @@ The libratbag DBus API
    :caption: Contents:
 
      The DBus Interfaces <dbus.rst>
-     Enumerations <enums.rst>
 
 This document describes the DBus API that is the public interface for
 libratbag.
