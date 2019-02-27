@@ -515,8 +515,6 @@ class RatbagdProfile(_RatbagdDBus):
 class RatbagdResolution(_RatbagdDBus):
     """Represents a ratbagd resolution."""
 
-    CAP_SEPARATE_XY_RESOLUTION = 1
-
     def __init__(self, object_path):
         _RatbagdDBus.__init__(self, "Resolution", object_path)
         self._active = self._get_dbus_property("IsActive")
@@ -538,16 +536,6 @@ class RatbagdResolution(_RatbagdDBus):
     def index(self):
         """The index of this resolution."""
         return self._get_dbus_property("Index")
-
-    @GObject.Property
-    def capabilities(self):
-        """The capabilities of this resolution as a list. Capabilities not
-        present on the resolution are not in the list. Thus use e.g.
-
-        if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION is in resolution.capabilities:
-            do something
-        """
-        return self._get_dbus_property("Capabilities") or []
 
     @GObject.Property
     def resolution(self):

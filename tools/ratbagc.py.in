@@ -445,16 +445,6 @@ class RatbagdResolution(metaclass=MetaRatbag):
         return self._id
 
     @property
-    def capabilities(self):
-        """The capabilities of this resolution as a list. Capabilities not
-        present on the resolution are not in the list. Thus use e.g.
-
-        if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION is in resolution.capabilities:
-            do something
-        """
-        return self._capabilities
-
-    @property
     def resolution(self):
         """The tuple (xres, yres) with each resolution in DPI."""
         dpi_y = dpi_x = libratbag.ratbag_resolution_get_dpi_x(self._res)
