@@ -2,7 +2,7 @@ project('libratbag', 'c', 'cpp',
 	version : '0.9.905',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
-	meson_version : '>= 0.40.0')
+	meson_version : '>= 0.46.0')
 
 libratbag_version = meson.project_version().split('.')
 
