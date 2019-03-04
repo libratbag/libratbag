@@ -73,9 +73,9 @@ dep_glib = dependency('glib-2.0')
 dep_lm = cc.find_library('m')
 
 if get_option('logind-provider') == 'elogind'
-	logind_dep = dependency('libelogind', version : '>=227')
+	dep_logind = dependency('libelogind', version : '>=227')
 else
-	logind_dep = dependency('libsystemd', version : '>=227')
+	dep_logind = dependency('libsystemd', version : '>=227')
 endif
 
 enable_systemd = get_option('systemd')
@@ -410,7 +410,7 @@ src_ratbagd = [
 
 deps_ratbagd = [
 	dep_udev,
-	logind_dep,
+	dep_logind,
 	dep_libratbag,
 ]
 
