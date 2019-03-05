@@ -9,3 +9,6 @@
 *.rej
 *.trs
 tags
+build/
+builddir/
+test-build/
