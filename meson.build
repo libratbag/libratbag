@@ -275,7 +275,6 @@ data_files = files(
 	'data/devices/logitech-Wireless-Touchpad.device',
 	'data/devices/logitech-g-pro-wireless.device',
 	'data/devices/logitech-g-pro.device',
-	'data/devices/logitech-g100s.device',
 	'data/devices/logitech-g102-g203.device',
 	'data/devices/logitech-g300.device',
 	'data/devices/logitech-g302.device',
