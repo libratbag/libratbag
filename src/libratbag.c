@@ -395,10 +395,12 @@ ratbag_assign_driver(struct ratbag_device *device,
 	if (!test_device) {
 		driver_name = ratbag_device_data_get_driver(device->data);
 	} else {
+		log_debug(device->ratbag, "This is a test device\n");
 		driver_name = "test_driver";
 	}
 
 	if (driver_name) {
+		log_debug(device->ratbag, "device assigned driver %s\n", driver_name);
 		rc = ratbag_test_driver(device, dev_id, driver_name, test_device);
 	} else {
 		rc = ratbag_driver_fallback_logitech(device, dev_id);
@@ -455,6 +457,8 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 
 	if ((name = get_device_name(udev_device)) == 0)
 		goto out_err;
+
+	log_debug(ratbag, "New device: %s\n", name);
 
 	device = ratbag_device_new(ratbag, udev_device, name, &id);
 	if (!device || !device->data)

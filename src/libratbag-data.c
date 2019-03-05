@@ -470,6 +470,7 @@ ratbag_device_data_new_for_id(struct ratbag *ratbag, const struct input_id *id)
 	datadir = getenv("LIBRATBAG_DATA_DIR");
 	if (!datadir)
 		datadir = LIBRATBAG_DATA_DIR;
+	log_debug(ratbag, "Using data directory '%s'\n", datadir);
 
 	snprintf(devicedir, sizeof(devicedir), "%s/devices", datadir);
 
@@ -491,6 +492,9 @@ ratbag_device_data_new_for_id(struct ratbag *ratbag, const struct input_id *id)
 		if (file_data_matches(ratbag, file, id, &data))
 			goto out;
 	}
+
+	if (!data)
+		log_debug(ratbag, "No data file found for %04x:%04x\n", id->vendor, id->product);
 
 out:
 	while(nfiles--)

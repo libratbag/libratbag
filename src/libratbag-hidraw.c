@@ -1260,7 +1260,7 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 		switch (hid) {
 		case HID_REPORT_ID:
 			if (hidraw->reports) {
-				log_debug(device->ratbag, "report ID %02x\n", content);
+				log_debug(device->ratbag, "HID report ID %02x\n", content);
 				hidraw->reports[hidraw->num_reports].report_id = content;
 				hidraw->reports[hidraw->num_reports].usage_page = usage_page;
 				hidraw->reports[hidraw->num_reports].usage = usage;
@@ -1327,6 +1327,10 @@ ratbag_open_hidraw_node(struct ratbag_device *device, struct udev_device *hidraw
 			  "error while getting info from device");
 		goto err;
 	}
+
+	log_debug(device->ratbag,
+		  "hidraw info: bus %#04x vendor %#04x product %#04x\n",
+		  info.bustype, info.vendor, info.product);
 
 	/* check basic matching between the hidraw node and the ratbag device */
 	if (info.bustype != device->ids.bustype ||
