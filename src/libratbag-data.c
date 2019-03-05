@@ -465,19 +465,16 @@ ratbag_device_data_new_for_id(struct ratbag *ratbag, const struct input_id *id)
 	struct dirent **files;
 	int n, nfiles;
 	const char *datadir;
-	char devicedir[PATH_MAX] = {0};
 
 	datadir = getenv("LIBRATBAG_DATA_DIR");
 	if (!datadir)
 		datadir = LIBRATBAG_DATA_DIR;
 	log_debug(ratbag, "Using data directory '%s'\n", datadir);
 
-	snprintf(devicedir, sizeof(devicedir), "%s/devices", datadir);
-
-	n = scandir(devicedir, &files, filter_device_files, alphasort);
+	n = scandir(datadir, &files, filter_device_files, alphasort);
 	if (n <= 0) {
 		log_error(ratbag, "Unable to locate device files in %s: %s\n",
-			  devicedir, n == 0 ? "No files found" : strerror(errno));
+			  datadir, n == 0 ? "No files found" : strerror(errno));
 		return NULL;
 	}
 
@@ -486,7 +483,7 @@ ratbag_device_data_new_for_id(struct ratbag *ratbag, const struct input_id *id)
 		_cleanup_(freep) char *file = NULL;
 		int rc;
 
-		rc = xasprintf(&file, "%s/%s", devicedir, files[n]->d_name);
+		rc = xasprintf(&file, "%s/%s", datadir, files[n]->d_name);
 		if (rc == -1)
 			goto out;
 		if (file_data_matches(ratbag, file, id, &data))
