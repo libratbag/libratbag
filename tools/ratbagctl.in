@@ -32,25 +32,25 @@ from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, Ratbag
 
 
 button_specials_strmap = {
-    RatbagdButton.ACTION_SPECIAL_UNKNOWN: "unknown",
-    RatbagdButton.ACTION_SPECIAL_DOUBLECLICK: "doubleclick",
-    RatbagdButton.ACTION_SPECIAL_WHEEL_LEFT: "wheel-left",
-    RatbagdButton.ACTION_SPECIAL_WHEEL_RIGHT: "wheel-right",
-    RatbagdButton.ACTION_SPECIAL_WHEEL_UP: "wheel-up",
-    RatbagdButton.ACTION_SPECIAL_WHEEL_DOWN: "wheel-down",
-    RatbagdButton.ACTION_SPECIAL_RATCHET_MODE_SWITCH: "ratchet-mode-switch",
-    RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_UP: "resolution-cycle-up",
-    RatbagdButton.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN: "resolution-cycle-down",
-    RatbagdButton.ACTION_SPECIAL_RESOLUTION_UP: "resolution-up",
-    RatbagdButton.ACTION_SPECIAL_RESOLUTION_DOWN: "resolution-down",
-    RatbagdButton.ACTION_SPECIAL_RESOLUTION_ALTERNATE: "resolution-alternate",
-    RatbagdButton.ACTION_SPECIAL_RESOLUTION_DEFAULT: "resolution-default",
-    RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_UP: "profile-cycle-up",
-    RatbagdButton.ACTION_SPECIAL_PROFILE_CYCLE_DOWN: "profile-cycle-down",
-    RatbagdButton.ACTION_SPECIAL_PROFILE_UP: "profile-up",
-    RatbagdButton.ACTION_SPECIAL_PROFILE_DOWN: "profile-down",
-    RatbagdButton.ACTION_SPECIAL_SECOND_MODE: "second-mode",
-    RatbagdButton.ACTION_SPECIAL_BATTERY_LEVEL: "battery-level",
+    RatbagdButton.ActionSpecial.UNKNOWN: "unknown",
+    RatbagdButton.ActionSpecial.DOUBLECLICK: "doubleclick",
+    RatbagdButton.ActionSpecial.WHEEL_LEFT: "wheel-left",
+    RatbagdButton.ActionSpecial.WHEEL_RIGHT: "wheel-right",
+    RatbagdButton.ActionSpecial.WHEEL_UP: "wheel-up",
+    RatbagdButton.ActionSpecial.WHEEL_DOWN: "wheel-down",
+    RatbagdButton.ActionSpecial.RATCHET_MODE_SWITCH: "ratchet-mode-switch",
+    RatbagdButton.ActionSpecial.RESOLUTION_CYCLE_UP: "resolution-cycle-up",
+    RatbagdButton.ActionSpecial.RESOLUTION_CYCLE_DOWN: "resolution-cycle-down",
+    RatbagdButton.ActionSpecial.RESOLUTION_UP: "resolution-up",
+    RatbagdButton.ActionSpecial.RESOLUTION_DOWN: "resolution-down",
+    RatbagdButton.ActionSpecial.RESOLUTION_ALTERNATE: "resolution-alternate",
+    RatbagdButton.ActionSpecial.RESOLUTION_DEFAULT: "resolution-default",
+    RatbagdButton.ActionSpecial.PROFILE_CYCLE_UP: "profile-cycle-up",
+    RatbagdButton.ActionSpecial.PROFILE_CYCLE_DOWN: "profile-cycle-down",
+    RatbagdButton.ActionSpecial.PROFILE_UP: "profile-up",
+    RatbagdButton.ActionSpecial.PROFILE_DOWN: "profile-down",
+    RatbagdButton.ActionSpecial.SECOND_MODE: "second-mode",
+    RatbagdButton.ActionSpecial.BATTERY_LEVEL: "battery-level",
 }
 for k, v in [(v, k) for k, v in button_specials_strmap.items()]:
     button_specials_strmap[k] = v
@@ -121,34 +121,34 @@ def find_led(r, args):
 
 def print_led(d, p, l, level):
     leds = {
-        RatbagdLed.MODE_BREATHING: "breathing",
-        RatbagdLed.MODE_CYCLE: "cycle",
-        RatbagdLed.MODE_OFF: "off",
-        RatbagdLed.MODE_ON: "on",
+        RatbagdLed.Mode.BREATHING: "breathing",
+        RatbagdLed.Mode.CYCLE: "cycle",
+        RatbagdLed.Mode.OFF: "off",
+        RatbagdLed.Mode.ON: "on",
     }
     depths = {
-        RatbagdLed.COLORDEPTH_MONOCHROME: "monochrome",
-        RatbagdLed.COLORDEPTH_RGB_888: "rgb",
-        RatbagdLed.COLORDEPTH_RGB_111: "rgb111",
+        RatbagdLed.ColorDepth.MONOCHROME: "monochrome",
+        RatbagdLed.ColorDepth.RGB_888: "rgb",
+        RatbagdLed.ColorDepth.RGB_111: "rgb111",
     }
-    if l.mode == RatbagdLed.MODE_OFF:
+    if l.mode == RatbagdLed.Mode.OFF:
         print(" " * level + "LED: {}, depth: {}, mode: {}".format(l.index,
                                                                            depths[l.colordepth],
                                                                            leds[l.mode]))
-    elif l.mode == RatbagdLed.MODE_ON:
+    elif l.mode == RatbagdLed.Mode.ON:
         print(" " * level + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(l.index,
                                                                                                       depths[l.colordepth],
                                                                                                       leds[l.mode],
                                                                                                       l.color[0],
                                                                                                       l.color[1],
                                                                                                       l.color[2]))
-    elif l.mode == RatbagdLed.MODE_CYCLE:
+    elif l.mode == RatbagdLed.Mode.CYCLE:
         print(" " * level + "LED: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(l.index,
                                                                                                          depths[l.colordepth],
                                                                                                          leds[l.mode],
                                                                                                          l.effect_duration,
                                                                                                          l.brightness))
-    elif l.mode == RatbagdLed.MODE_BREATHING:
+    elif l.mode == RatbagdLed.Mode.BREATHING:
         print(" " * level + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(l.index,
                                                                                                                                     depths[l.colordepth],
                                                                                                                                     leds[l.mode],
@@ -161,10 +161,10 @@ def print_led(d, p, l, level):
 
 def print_led_caps(d, p, l, level):
     leds = {
-        RatbagdLed.MODE_BREATHING: "breathing",
-        RatbagdLed.MODE_CYCLE: "cycle",
-        RatbagdLed.MODE_OFF: "off",
-        RatbagdLed.MODE_ON: "on",
+        RatbagdLed.Mode.BREATHING: "breathing",
+        RatbagdLed.Mode.CYCLE: "cycle",
+        RatbagdLed.Mode.OFF: "off",
+        RatbagdLed.Mode.ON: "on",
     }
     supported = sorted([v for k, v in leds.items() if k in l.modes])
     print(" " * level + "Modes: {}".format(", ".join(supported)))
@@ -173,13 +173,13 @@ def print_led_caps(d, p, l, level):
 def print_button(d, p, b, level):
     header = " " * level + "Button: {} is mapped to ".format(b.index)
 
-    if b.action_type == RatbagdButton.ACTION_TYPE_BUTTON:
+    if b.action_type == RatbagdButton.ActionType.BUTTON:
         print("{}'button {}'".format(header, b.mapping))
-    elif b.action_type == RatbagdButton.ACTION_TYPE_SPECIAL:
+    elif b.action_type == RatbagdButton.ActionType.SPECIAL:
         print("{}'{}'".format(header, button_specials_strmap[b.special]))
-    elif b.action_type == RatbagdButton.ACTION_TYPE_MACRO:
+    elif b.action_type == RatbagdButton.ActionType.MACRO:
         print("{}macro '{}'".format(header, str(b.macro)))
-    elif b.action_type == RatbagdButton.ACTION_TYPE_NONE:
+    elif b.action_type == RatbagdButton.ActionType.NONE:
         print("{}none".format(header))
     else:
         print("{}UNKNOWN".format(header))
@@ -279,10 +279,10 @@ def func_led_set(r, args):
         pass
     else:
         leds = {
-            "breathing": RatbagdLed.MODE_BREATHING,
-            "cycle": RatbagdLed.MODE_CYCLE,
-            "off": RatbagdLed.MODE_OFF,
-            "on": RatbagdLed.MODE_ON,
+            "breathing": RatbagdLed.Mode.BREATHING,
+            "cycle": RatbagdLed.Mode.CYCLE,
+            "off": RatbagdLed.Mode.OFF,
+            "on": RatbagdLed.Mode.ON,
         }
         l.mode = leds[mode]
     try:
@@ -336,7 +336,7 @@ def func_button_action_set_special(r, args):
 
 def func_button_action_set_macro(r, args):
     b, p, d = find_button(r, args)
-    if not b.ACTION_TYPE_MACRO in b.action_types:
+    if not b.ActionType.MACRO in b.action_types:
         raise RatbagErrorCapability("assigning a macro is not supported on this device")
 
     macro_keys = args.target_macro
@@ -360,7 +360,7 @@ def func_button_action_set_macro(r, args):
 
         if is_timeout:
             t = int(s[1:])
-            macro.append(RatbagdButton.MACRO_WAIT, t)
+            macro.append(RatbagdButton.Macro.WAIT, t)
         else:
             if not s.startswith("KEY_") and not s.startswith("BTN_"):
                 msg = "Don't know how to convert {}".format(s)
@@ -368,9 +368,9 @@ def func_button_action_set_macro(r, args):
 
             code = evdev.ecodes.ecodes[s]
             if is_press:
-                macro.append(RatbagdButton.MACRO_KEY_PRESS, code)
+                macro.append(RatbagdButton.Macro.KEY_PRESS, code)
             if is_release:
-                macro.append(RatbagdButton.MACRO_KEY_RELEASE, code)
+                macro.append(RatbagdButton.Macro.KEY_RELEASE, code)
 
     b.macro = macro
     commit(d, args)

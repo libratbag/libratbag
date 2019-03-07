@@ -24,6 +24,7 @@
 import libratbag
 import os
 import sys
+from enum import IntEnum
 
 from evdev import ecodes
 
@@ -497,9 +498,38 @@ class RatbagdButton(metaclass=MetaRatbag):
 
     _PREFIX = "RATBAG_BUTTON_"
 
-    MACRO_KEY_PRESS = libratbag.RATBAG_MACRO_EVENT_KEY_PRESSED
-    MACRO_KEY_RELEASE = libratbag.RATBAG_MACRO_EVENT_KEY_RELEASED
-    MACRO_WAIT = libratbag.RATBAG_MACRO_EVENT_WAIT
+    class ActionType(IntEnum):
+        NONE = libratbag.RATBAG_BUTTON_ACTION_TYPE_NONE
+        BUTTON = libratbag.RATBAG_BUTTON_ACTION_TYPE_BUTTON
+        SPECIAL = libratbag.RATBAG_BUTTON_ACTION_TYPE_SPECIAL
+        MACRO = libratbag.RATBAG_BUTTON_ACTION_TYPE_MACRO
+
+    class ActionSpecial(IntEnum):
+        INVALID = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_INVALID
+        UNKNOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN
+        DOUBLECLICK = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK
+        WHEEL_LEFT = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT
+        WHEEL_RIGHT = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT
+        WHEEL_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP
+        WHEEL_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN
+        RATCHET_MODE_SWITCH = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH
+        RESOLUTION_CYCLE_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP
+        RESOLUTION_CYCLE_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN
+        RESOLUTION_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP
+        RESOLUTION_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN
+        RESOLUTION_ALTERNATE = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE
+        RESOLUTION_DEFAULT = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT
+        PROFILE_CYCLE_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP
+        PROFILE_CYCLE_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_DOWN
+        PROFILE_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP
+        PROFILE_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN
+        SECOND_MODE = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE
+        BATTERY_LEVEL = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL
+
+    class Macro(IntEnum):
+        KEY_PRESS = libratbag.RATBAG_MACRO_EVENT_KEY_PRESSED
+        KEY_RELEASE = libratbag.RATBAG_MACRO_EVENT_KEY_RELEASED
+        WAIT = libratbag.RATBAG_MACRO_EVENT_WAIT
 
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
@@ -517,25 +547,25 @@ class RatbagdButton(metaclass=MetaRatbag):
     @classmethod
     def __late_init__(cls):
         cls.SPECIAL_DESCRIPTION = {
-            cls.ACTION_SPECIAL_UNKNOWN: N_("Unknown"),
-            cls.ACTION_SPECIAL_DOUBLECLICK: N_("Doubleclick"),
-            cls.ACTION_SPECIAL_WHEEL_LEFT: N_("Wheel Left"),
-            cls.ACTION_SPECIAL_WHEEL_RIGHT: N_("Wheel Right"),
-            cls.ACTION_SPECIAL_WHEEL_UP: N_("Wheel Up"),
-            cls.ACTION_SPECIAL_WHEEL_DOWN: N_("Wheel Down"),
-            cls.ACTION_SPECIAL_RATCHET_MODE_SWITCH: N_("Ratchet Mode"),
-            cls.ACTION_SPECIAL_RESOLUTION_CYCLE_UP: N_("Cycle Resolution Up"),
-            cls.ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN: N_("Cycle Resolution Down"),
-            cls.ACTION_SPECIAL_RESOLUTION_UP: N_("Resolution Up"),
-            cls.ACTION_SPECIAL_RESOLUTION_DOWN: N_("Resolution Down"),
-            cls.ACTION_SPECIAL_RESOLUTION_ALTERNATE: N_("Resolution Switch"),
-            cls.ACTION_SPECIAL_RESOLUTION_DEFAULT: N_("Default Resolution"),
-            cls.ACTION_SPECIAL_PROFILE_CYCLE_UP: N_("Cycle Profile Up"),
-            cls.ACTION_SPECIAL_PROFILE_CYCLE_DOWN: N_("Cycle Profile Down"),
-            cls.ACTION_SPECIAL_PROFILE_UP: N_("Profile Up"),
-            cls.ACTION_SPECIAL_PROFILE_DOWN: N_("Profile Down"),
-            cls.ACTION_SPECIAL_SECOND_MODE: N_("Second Mode"),
-            cls.ACTION_SPECIAL_BATTERY_LEVEL: N_("Battery Level"),
+            cls.ActionSpecial.UNKNOWN: N_("Unknown"),
+            cls.ActionSpecial.DOUBLECLICK: N_("Doubleclick"),
+            cls.ActionSpecial.WHEEL_LEFT: N_("Wheel Left"),
+            cls.ActionSpecial.WHEEL_RIGHT: N_("Wheel Right"),
+            cls.ActionSpecial.WHEEL_UP: N_("Wheel Up"),
+            cls.ActionSpecial.WHEEL_DOWN: N_("Wheel Down"),
+            cls.ActionSpecial.RATCHET_MODE_SWITCH: N_("Ratchet Mode"),
+            cls.ActionSpecial.RESOLUTION_CYCLE_UP: N_("Cycle Resolution Up"),
+            cls.ActionSpecial.RESOLUTION_CYCLE_DOWN: N_("Cycle Resolution Down"),
+            cls.ActionSpecial.RESOLUTION_UP: N_("Resolution Up"),
+            cls.ActionSpecial.RESOLUTION_DOWN: N_("Resolution Down"),
+            cls.ActionSpecial.RESOLUTION_ALTERNATE: N_("Resolution Switch"),
+            cls.ActionSpecial.RESOLUTION_DEFAULT: N_("Default Resolution"),
+            cls.ActionSpecial.PROFILE_CYCLE_UP: N_("Cycle Profile Up"),
+            cls.ActionSpecial.PROFILE_CYCLE_DOWN: N_("Cycle Profile Down"),
+            cls.ActionSpecial.PROFILE_UP: N_("Profile Up"),
+            cls.ActionSpecial.PROFILE_DOWN: N_("Profile Down"),
+            cls.ActionSpecial.SECOND_MODE: N_("Second Mode"),
+            cls.ActionSpecial.BATTERY_LEVEL: N_("Battery Level"),
         }
 
     def __init__(self, profile, id):
@@ -594,15 +624,15 @@ class RatbagdButton(metaclass=MetaRatbag):
     def special(self, special):
         """Set the button mapping to the given special entry.
 
-        @param special The special entry, as one of RatbagdButton.ACTION_SPECIAL_*
+        @param special The special entry, as one of RatbagdButton.ActionSpecial
         """
         libratbag.ratbag_button_set_special(self._button, special)
 
     @property
     def action_type(self):
         """An enum describing the action type of the button. One of
-        ACTION_TYPE_NONE, ACTION_TYPE_BUTTON, ACTION_TYPE_SPECIAL,
-        ACTION_TYPE_MACRO. This decides which
+        ActionType.NONE, ActionType.BUTTON, ActionType.SPECIAL,
+        ActionType.MACRO. This decides which
         *Mapping property has a value.
         """
         return libratbag.ratbag_button_get_action_type(self._button)
@@ -610,7 +640,7 @@ class RatbagdButton(metaclass=MetaRatbag):
     @property
     def action_types(self):
         """An array of possible values for ActionType."""
-        return [t for t in (RatbagdButton.ACTION_TYPE_BUTTON, RatbagdButton.ACTION_TYPE_SPECIAL, RatbagdButton.ACTION_TYPE_MACRO)
+        return [t for t in (RatbagdButton.ActionType.BUTTON, RatbagdButton.ActionType.SPECIAL, RatbagdButton.ActionType.MACRO)
                 if libratbag.ratbag_button_has_action_type(self._button, t)]
 
     def disable(self):
@@ -630,11 +660,11 @@ class RatbagdMacro(metaclass=MetaRatbag):
     _MACRO_KEY = 1000
 
     _MACRO_DESCRIPTION = {
-        RatbagdButton.MACRO_KEY_PRESS: lambda key:
+        RatbagdButton.Macro.KEY_PRESS: lambda key:
             "↓{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
-        RatbagdButton.MACRO_KEY_RELEASE: lambda key:
+        RatbagdButton.Macro.KEY_RELEASE: lambda key:
             "↑{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
-        RatbagdButton.MACRO_WAIT: lambda val:
+        RatbagdButton.Macro.WAIT: lambda val:
             "{}ms".format(val),
         _MACRO_KEY: lambda key:
             "↕{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
@@ -652,10 +682,10 @@ class RatbagdMacro(metaclass=MetaRatbag):
         while idx < len(self._macro):
             t, v = self._macro[idx]
             try:
-                if t == RatbagdButton.MACRO_KEY_PRESS:
+                if t == RatbagdButton.Macro.KEY_PRESS:
                     # Check for a paired press/release event
                     t2, v2 = self._macro[idx + 1]
-                    if t2 == RatbagdButton.MACRO_KEY_RELEASE and v == v2:
+                    if t2 == RatbagdButton.Macro.KEY_RELEASE and v == v2:
                         t = self._MACRO_KEY
                         idx += 1
             except IndexError:
@@ -714,21 +744,27 @@ class RatbagdLed(metaclass=MetaRatbag):
 
     _PREFIX = "RATBAG_LED_"
 
-    MODE_OFF = libratbag.RATBAG_LED_OFF
-    MODE_ON = libratbag.RATBAG_LED_ON
-    MODE_CYCLE = libratbag.RATBAG_LED_CYCLE
-    MODE_BREATHING = libratbag.RATBAG_LED_BREATHING
+    class Mode(IntEnum):
+        OFF = libratbag.RATBAG_LED_OFF
+        ON = libratbag.RATBAG_LED_ON
+        CYCLE = libratbag.RATBAG_LED_CYCLE
+        BREATHING = libratbag.RATBAG_LED_BREATHING
+
+    class ColorDepth(IntEnum):
+        MONOCHROME = libratbag.RATBAG_LED_COLORDEPTH_MONOCHROME
+        RGB_888 = libratbag.RATBAG_LED_COLORDEPTH_RGB_888
+        RGB_111 = libratbag.RATBAG_LED_COLORDEPTH_RGB_111
 
     LED_DESCRIPTION = {
         # Translators: the LED is off.
-        MODE_OFF: N_("Off"),
+        Mode.OFF: N_("Off"),
         # Translators: the LED has a single, solid color.
-        MODE_ON: N_("Solid"),
+        Mode.ON: N_("Solid"),
         # Translators: the LED is cycling between red, green and blue.
-        MODE_CYCLE: N_("Cycle"),
+        Mode.CYCLE: N_("Cycle"),
         # Translators: the LED's is pulsating a single color on different
         # brightnesses.
-        MODE_BREATHING: N_("Breathing"),
+        Mode.BREATHING: N_("Breathing"),
     }
 
     def __init__(self, profile, id):
@@ -746,16 +782,16 @@ class RatbagdLed(metaclass=MetaRatbag):
 
     @property
     def mode(self):
-        """This led's mode, one of MODE_OFF, MODE_ON, MODE_CYCLE and
-        MODE_BREATHING."""
+        """This led's mode, one of Mode.OFF, Mode.ON, Mode.CYCLE and
+        Mode.BREATHING."""
         return libratbag.ratbag_led_get_mode(self._led)
 
     @mode.setter
     def mode(self, mode):
         """Set the led's mode to the given mode.
 
-        @param mode The new mode, as one of MODE_OFF, MODE_ON, MODE_CYCLE and
-                    MODE_BREATHING.
+        @param mode The new mode, as one of Mode.OFF, Mode.ON, Mode.CYCLE and
+                    Mode.BREATHING.
         """
         libratbag.ratbag_led_set_mode(self._led, mode)
 
@@ -776,7 +812,7 @@ class RatbagdLed(metaclass=MetaRatbag):
     @property
     def colordepth(self):
         """An enum describing this led's colordepth, one of
-        RatbagdLed.COLORDEPTH_MONOCHROME, RatbagdLed.COLORDEPTH_RGB"""
+        RatbagdLed.ColorDepth.MONOCHROME, RatbagdLed.ColorDepth.RGB"""
         return libratbag.ratbag_led_get_colordepth(self._led)
 
     @property
