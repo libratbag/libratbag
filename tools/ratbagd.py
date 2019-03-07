@@ -663,7 +663,7 @@ class RatbagdButton(_RatbagdDBus):
         _RatbagdDBus.__init__(self, "Button", object_path)
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "ActionType" in changed_props.keys():
+        if "Mapping" in changed_props.keys():
             self.notify("action-type")
 
     def _mapping(self):
