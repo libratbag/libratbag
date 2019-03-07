@@ -355,6 +355,7 @@ logitech_g600_read_button(struct ratbag_button *button)
 	profile_report = &pdata->report;
 	button_report = &profile_report->buttons[button->index];
 
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);

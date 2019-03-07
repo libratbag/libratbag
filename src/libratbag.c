@@ -1203,6 +1203,7 @@ ratbag_button_has_action_type(struct ratbag_button *button,
 			      enum ratbag_button_action_type action_type)
 {
 	switch (action_type) {
+	case RATBAG_BUTTON_ACTION_TYPE_NONE:
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
@@ -1329,10 +1330,6 @@ LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_disable(struct ratbag_button *button)
 {
 	struct ratbag_button_action action = {0};
-
-	if (!ratbag_button_has_action_type(button,
-					   RATBAG_BUTTON_ACTION_TYPE_KEY))
-		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 
