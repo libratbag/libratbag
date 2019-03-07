@@ -784,9 +784,16 @@ class RatbagdButton(_RatbagdDBus):
         """An array of possible values for ActionType."""
         return self._get_dbus_property("ActionTypes")
 
+    @GObject.Property
+    def disabled(self):
+        type, unused = self._mapping()
+        return type == RatbagdButton.ActionType.NONE
+
     def disable(self):
         """Disables this button."""
-        return self._dbus_call("Disable", "")
+        zero = GLib.Variant('u', 0)
+        self._set_dbus_property("Mapping", "(uv)",
+                                (RatbagdButton.ActionType.NONE, zero))
 
 
 class RatbagdMacro(GObject.Object):

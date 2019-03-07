@@ -323,6 +323,12 @@ def func_button_get(r, args):
     print_button(b, p, b, 0)
 
 
+def func_button_action_set_none(r, args):
+    b, p, d = find_button(r, args)
+    b.disable()
+    commit(d, args)
+
+
 def func_button_action_set_button(r, args):
     b, p, d = find_button(r, args)
     b.mapping = args.target_button
@@ -1025,6 +1031,13 @@ active profile if none is given.""",
                                         },
                                     ],
                                     func: func_button_action_set_macro,
+                                },
+                                {
+                                    of_type: command,
+                                    name: 'disabled',
+                                    help_str: 'Disable this button',
+                                    pos_args: [],
+                                    func: func_button_action_set_none,
                                 },
                             ]
                         },
