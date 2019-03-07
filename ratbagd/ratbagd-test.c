@@ -136,8 +136,7 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 				},
 				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 2 },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
-				  .button = 3 },
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_NONE },
 			},
 			.resolutions = {
 				{ .xres = 2100, .yres = 2200, .active = true, .caps = RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION },
