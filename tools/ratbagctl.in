@@ -32,28 +32,9 @@ from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, Ratbag
 
 
 button_specials_strmap = {
-    RatbagdButton.ActionSpecial.UNKNOWN: "unknown",
-    RatbagdButton.ActionSpecial.DOUBLECLICK: "doubleclick",
-    RatbagdButton.ActionSpecial.WHEEL_LEFT: "wheel-left",
-    RatbagdButton.ActionSpecial.WHEEL_RIGHT: "wheel-right",
-    RatbagdButton.ActionSpecial.WHEEL_UP: "wheel-up",
-    RatbagdButton.ActionSpecial.WHEEL_DOWN: "wheel-down",
-    RatbagdButton.ActionSpecial.RATCHET_MODE_SWITCH: "ratchet-mode-switch",
-    RatbagdButton.ActionSpecial.RESOLUTION_CYCLE_UP: "resolution-cycle-up",
-    RatbagdButton.ActionSpecial.RESOLUTION_CYCLE_DOWN: "resolution-cycle-down",
-    RatbagdButton.ActionSpecial.RESOLUTION_UP: "resolution-up",
-    RatbagdButton.ActionSpecial.RESOLUTION_DOWN: "resolution-down",
-    RatbagdButton.ActionSpecial.RESOLUTION_ALTERNATE: "resolution-alternate",
-    RatbagdButton.ActionSpecial.RESOLUTION_DEFAULT: "resolution-default",
-    RatbagdButton.ActionSpecial.PROFILE_CYCLE_UP: "profile-cycle-up",
-    RatbagdButton.ActionSpecial.PROFILE_CYCLE_DOWN: "profile-cycle-down",
-    RatbagdButton.ActionSpecial.PROFILE_UP: "profile-up",
-    RatbagdButton.ActionSpecial.PROFILE_DOWN: "profile-down",
-    RatbagdButton.ActionSpecial.SECOND_MODE: "second-mode",
-    RatbagdButton.ActionSpecial.BATTERY_LEVEL: "battery-level",
+    **{e: e.name.lower().replace("_", "-") for e in RatbagdButton.ActionSpecial},
+    **{e.name.lower().replace("_", "-"): e for e in RatbagdButton.ActionSpecial}
 }
-for k, v in [(v, k) for k, v in button_specials_strmap.items()]:
-    button_specials_strmap[k] = v
 
 
 def list_devices(r, args):
