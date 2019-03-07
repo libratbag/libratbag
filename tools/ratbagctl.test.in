@@ -487,7 +487,7 @@ class TestRatbagCtlButton(TestRatbagCtl):
 
     def test_prefix_button(self):
         r = self.launch_good_test("test_device profile 2 button 3 get")
-        self.assertEqual(r, "Button: 3 is mapped to 'button 3'")
+        self.assertEqual(r, "Button: 3 is mapped to none")
         self.launch_fail_test("test_device profile 2 profile 2 button 3 get")
         self.launch_fail_test("test_device profile 2 resolution 2 button 3 get")
 
