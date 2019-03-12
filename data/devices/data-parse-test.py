@@ -26,8 +26,8 @@
 #
 
 import argparse
-import os
 import configparser
+
 
 def assertIn(element, l):
     if element not in l:
@@ -61,7 +61,7 @@ def check_ledtypes_str(string):
 
     types = string.split(';')
     for t in types:
-        if not t: # emtpy string if trailing ;
+        if not t:  # emtpy string if trailing ;
             continue
 
         assertIn(t, permitted_types)
@@ -88,7 +88,7 @@ def check_section_device(section):
 def check_dpi_range_str(string):
     import re
 
-    m = re.search('^([0-9]+):([0-9]+)@([0-9\.]+)$', string)
+    m = re.search('^([0-9]+):([0-9]+)@([0-9.]+)$', string)
     assert(m is not None)
     min = int(m.group(1))
     max = int(m.group(2))

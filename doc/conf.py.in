@@ -152,6 +152,3 @@ texinfo_documents = [
      author, '@PACKAGE_NAME@', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-

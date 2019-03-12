@@ -31,8 +31,8 @@ import sys
 
 def print_ratbagctl(ratbagctl_path, ratbagd_path, version_string):
     with open(ratbagctl_path, 'r', encoding='utf-8') as ratbagctl, open(ratbagd_path, 'r', encoding='utf-8') as ratbagd:
-        for l in ratbagctl.readlines():
-            if l.startswith("from ratbagd import "):
+        for line in ratbagctl.readlines():
+            if line.startswith("from ratbagd import "):
                 headers = True
                 for r in ratbagd.readlines():
                     if not r.startswith('#') and r.strip():
@@ -40,9 +40,9 @@ def print_ratbagctl(ratbagctl_path, ratbagd_path, version_string):
                     if not headers:
                         print(r.rstrip('\n'))
             else:
-                if '@version@' in l:
-                    l = l.replace('@version@', version_string)
-                print(l.rstrip('\n'))
+                if '@version@' in line:
+                    line = line.replace('@version@', version_string)
+                print(line.rstrip('\n'))
 
 
 def main(argv):
