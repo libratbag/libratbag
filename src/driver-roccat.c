@@ -34,7 +34,7 @@
 #include "libratbag-hidraw.h"
 
 #define ROCCAT_PROFILE_MAX			4
-#define ROCCAT_BUTTON_MAX			23
+#define ROCCAT_BUTTON_MAX			17
 #define ROCCAT_NUM_DPI				5
 #define ROCCAT_LED_MAX				0
 
@@ -46,8 +46,8 @@
 #define ROCCAT_REPORT_ID_KEY_MAPPING		7
 #define ROCCAT_REPORT_ID_MACRO			8
 
-#define ROCCAT_REPORT_SIZE_PROFILE		77
-#define ROCCAT_REPORT_SIZE_SETTINGS		43
+#define ROCCAT_REPORT_SIZE_PROFILE		59
+#define ROCCAT_REPORT_SIZE_SETTINGS		31
 #define ROCCAT_REPORT_SIZE_MACRO		2082
 
 #define ROCCAT_CONFIG_SETTINGS		0x80
@@ -68,8 +68,8 @@ struct roccat_settings_report {
 	uint8_t yres[5];
 	uint8_t padding1;
 	uint8_t report_rate;
-	uint8_t padding2[21];
-	uint16_t checksum;
+	uint8_t padding2[11];
+//	uint16_t checksum;
 //	uint8_t padding2[4];
 //	uint8_t light;
 //	uint8_t light_heartbit;
@@ -112,24 +112,24 @@ static const struct roccat_button_type_mapping roccat_button_type_mapping[] = {
 	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
 	{ 3, RATBAG_BUTTON_TYPE_EXTRA },
 	{ 4, RATBAG_BUTTON_TYPE_SIDE },
-	{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 7, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 8, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 9, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 10, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+//	{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+//	{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+	{ 5, RATBAG_BUTTON_TYPE_WHEEL_UP },
+	{ 6, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+	{ 7, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+	{ 8, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
 //	{ 11, RATBAG_BUTTON_TYPE_ }, /* top button above the wheel */
-	{ 12, RATBAG_BUTTON_TYPE_LEFT },
-	{ 13, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 14, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 15, RATBAG_BUTTON_TYPE_EXTRA },
-	{ 16, RATBAG_BUTTON_TYPE_SIDE },
-	{ 17, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 18, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 19, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 20, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 21, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 22, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+	{ 9, RATBAG_BUTTON_TYPE_LEFT },
+	{ 10, RATBAG_BUTTON_TYPE_RIGHT },
+	{ 11, RATBAG_BUTTON_TYPE_MIDDLE },
+	{ 12, RATBAG_BUTTON_TYPE_EXTRA },
+	{ 13, RATBAG_BUTTON_TYPE_SIDE },
+//	{ 17, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+//	{ 18, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+	{ 14, RATBAG_BUTTON_TYPE_WHEEL_UP },
+	{ 15, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+	{ 16, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+	{ 17, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
 //	{ 23, RATBAG_BUTTON_TYPE_ }, /* top button above the wheel */
 };
 
@@ -161,8 +161,8 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 6, BUTTON_ACTION_NONE },
 	{ 7, BUTTON_ACTION_BUTTON(4) },
 	{ 8, BUTTON_ACTION_BUTTON(5) },
-	{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
-	{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
+	//{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
+	//{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
 /* FIXME:	{ 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 */
@@ -174,7 +174,7 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 22, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
 	{ 26, BUTTON_ACTION_KEY(KEY_LEFTMETA) },
 /* FIXME:	{ 27, open driver },  -> hidraw report 02 83 01 00 00 00 00 00 */
-	{ 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
+	//{ 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
 	{ 33, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
 	{ 34, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
 	{ 35, BUTTON_ACTION_KEY(KEY_PLAYPAUSE) },
@@ -659,19 +659,22 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	uint8_t *buf;
 	int rc;
 
-	if (dpi_x < 200 || dpi_x > 8200 || dpi_x % 50)
+	if (dpi_x < 100 || dpi_x > 5000 || dpi_x % 50)
 		return -EINVAL;
-	if (dpi_y < 200 || dpi_y > 8200 || dpi_y % 50)
+	if (dpi_y < 100 || dpi_y > 5000 || dpi_y % 50)
 		return -EINVAL;
 
 	settings_report = &drv_data->settings[profile->index];
 
 	settings_report->xres[resolution->index] = dpi_x / 50;
 	settings_report->yres[resolution->index] = dpi_y / 50;
+	if (resolution->is_active)
+		settings_report->current_dpi = resolution->index;
 
 	buf = (uint8_t*)settings_report;
 
-	settings_report->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_SETTINGS);
+	// No checksum for settings report on Kone Pure.
+	//settings_report->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_SETTINGS);
 
 	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_SETTINGS,
 				       buf, ROCCAT_REPORT_SIZE_SETTINGS,
@@ -748,11 +751,11 @@ roccat_read_profile(struct ratbag_profile *profile)
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		resolution->is_active = (resolution->index == setting_report->current_dpi);
 
-		ratbag_resolution_set_dpi_list_from_range(resolution, 200, 8200);
+		ratbag_resolution_set_dpi_list_from_range(resolution, 100, 5000);
 	}
 
-	ratbag_profile_for_each_button(profile, button)
-		roccat_read_button(button);
+//	ratbag_profile_for_each_button(profile, button)
+//		roccat_read_button(button);
 
 	buf = drv_data->profiles[profile->index];
 	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_KEY_MAPPING);
@@ -764,6 +767,10 @@ roccat_read_profile(struct ratbag_profile *profile)
 
 	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
 		return;
+
+	// Was wrong before, as buttons were read from the buffer that was yet un-initialized with the device data.
+	ratbag_profile_for_each_button(profile, button)
+		roccat_read_button(button);
 
 	if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_PROFILE))
 		log_error(device->ratbag,
