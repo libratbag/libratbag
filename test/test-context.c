@@ -144,12 +144,14 @@ test_context_suite(bool using_valgrind)
 
 	s = suite_create("context");
 	tc = tcase_create("init");
+#ifndef NDEBUG
 	if (!using_valgrind) {
 		tcase_add_test_raise_signal(tc, context_init_NULL, SIGABRT);
 		tcase_add_test_raise_signal(tc, context_init_bad_iface, SIGABRT);
 		tcase_add_test_raise_signal(tc, context_init_bad_iface_open, SIGABRT);
 		tcase_add_test_raise_signal(tc, context_init_bad_iface_close, SIGABRT);
 	}
+#endif
 	tcase_add_test(tc, context_init);
 	tcase_add_test(tc, context_ref);
 	suite_add_tcase(s, tc);
