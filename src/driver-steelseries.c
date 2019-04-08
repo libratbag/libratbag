@@ -572,7 +572,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 
 	msleep(10);
 	if (device_version == 3)
-		ret = ratbag_hidraw_raw_request(device, STEELSERIES_ID_BUTTONS, 
+		ret = ratbag_hidraw_raw_request(device, STEELSERIES_ID_BUTTONS,
 			buf,sizeof(buf),HID_FEATURE_REPORT,HID_REQ_SET_REPORT);
 	else
 		ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
@@ -699,7 +699,7 @@ construct_cycle_buffer(struct steelseries_led_cycle *cycle,
 
 	/* this seems to be the minimum allowed */
 	duration = max(buf[spec->point_count_idx] * 330, cycle->duration);
-	
+
 	hidpp_set_unaligned_le_u16(&buf[spec->duration_idx], duration);
 }
 
@@ -709,6 +709,7 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 {
 	struct ratbag_device *device = led->profile->device;
 	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
+	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	int ret;
 
 	struct steelseries_led_cycle cycle;
@@ -739,7 +740,7 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 
 		list_append(&cycle.points, &point[0].link);
 		break;
-	case RATBAG_LED_CYCLE:		
+	case RATBAG_LED_CYCLE:
 		point[0].color = red;
 		point[0].pos = 0x00;
 
@@ -768,7 +769,7 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 
 		point[2].color = black;
 		point[2].pos = 0x7F;
-		
+
 		list_append(&cycle.points, &point[0].link);
 		list_append(&cycle.points, &point[1].link);
 		list_append(&cycle.points, &point[2].link);
@@ -782,8 +783,12 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 	construct_cycle_buffer(&cycle, cycle_spec, buf, sizeof(buf));
 
 	msleep(10);
-	ret = ratbag_hidraw_raw_request(device, cycle_spec->cmd_val, buf, 
-			sizeof(buf), cycle_spec->hid_report_type, HID_REQ_SET_REPORT);
+	if (device_version == 3)
+		ret = ratbag_hidraw_raw_request(device, cycle_spec->cmd_val, buf,
+				sizeof(buf), cycle_spec->hid_report_type, HID_REQ_SET_REPORT);
+	else
+		ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+
 	if (ret < 0)
 		return ret;
 
