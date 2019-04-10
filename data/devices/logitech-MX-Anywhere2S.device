@@ -1,4 +1,4 @@
 [Device]
 Name=Logitech MX Anywhere 2S
-DeviceMatch=usb:046d:406a
+DeviceMatch=bluetooth:046d:b01a;usb:046d:406a
 Driver=hidpp20
