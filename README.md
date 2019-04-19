@@ -25,6 +25,24 @@ wiki](https://github.com/libratbag/libratbag/wiki/Installation) for details.
 
 Compiling libratbag
 -------------------
+Requirements:
+
+- git
+- ninja
+- meson
+  - *Hint: You need to have meson installed globaly (otherwise the installation will fail with something like "module mesonbuild not found")*
+- valgrind
+- swig
+- Build dependencies 
+  - libudev
+  - libevdev
+  - glib-2.0
+  - libelogind or libsystemd
+  - systemd
+  - check
+  - python3
+
+> Meson will complain about missing dependencies, so you don't need to worry that you forgot any
 
 libratbag uses the [meson build system](http://mesonbuild.com) which in
 turn uses ninja to invoke the compiler. Run the following commands to clone
