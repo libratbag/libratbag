@@ -713,7 +713,7 @@ class RatbagdMacro(metaclass=MetaRatbag):
         for i in range(libratbag.ratbag_button_macro_get_num_events(macro_object)):
             type = libratbag.ratbag_button_macro_get_event_type(macro_object, i)
             value = None
-            if type == RatbagdButton.MACRO_WAIT:
+            if type == RatbagdButton.Macro.WAIT:
                 value = libratbag.ratbag_button_macro_get_event_timeout(macro_object, i)
             else:
                 value = libratbag.ratbag_button_macro_get_event_key(macro_object, i)
