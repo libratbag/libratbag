@@ -527,6 +527,7 @@ class RatbagdButton(metaclass=MetaRatbag):
         BATTERY_LEVEL = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_BATTERY_LEVEL
 
     class Macro(IntEnum):
+        NONE = libratbag.RATBAG_MACRO_EVENT_NONE
         KEY_PRESS = libratbag.RATBAG_MACRO_EVENT_KEY_PRESSED
         KEY_RELEASE = libratbag.RATBAG_MACRO_EVENT_KEY_RELEASED
         WAIT = libratbag.RATBAG_MACRO_EVENT_WAIT
@@ -660,6 +661,8 @@ class RatbagdMacro(metaclass=MetaRatbag):
     _MACRO_KEY = 1000
 
     _MACRO_DESCRIPTION = {
+        RatbagdButton.Macro.NONE: lambda key:
+            ".",
         RatbagdButton.Macro.KEY_PRESS: lambda key:
             "↓{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
         RatbagdButton.Macro.KEY_RELEASE: lambda key:

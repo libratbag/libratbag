@@ -624,6 +624,7 @@ class RatbagdButton(_RatbagdDBus):
         BATTERY_LEVEL = (1 << 30) + 18
 
     class Macro(IntEnum):
+        NONE = 0
         KEY_PRESS = 1
         KEY_RELEASE = 2
         WAIT = 3
