@@ -898,6 +898,34 @@ out:
 }
 
 static int
+hidpp20drv_update_report_rate_8100(struct ratbag_profile *profile, int hz)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *h_profile;
+
+	h_profile = &drv_data->profiles->profiles[profile->index];
+	h_profile->report_rate = hz;
+
+	return RATBAG_SUCCESS;
+}
+
+static int
+hidpp20drv_update_report_rate(struct ratbag_profile *profile, int hz)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+		return hidpp20drv_update_report_rate_8100(profile, hz);
+
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060)
+		return -ENOTSUP;
+
+	return -ENOTSUP;
+}
+
+static int
 hidpp20drv_read_special_key_mouse(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -1213,9 +1241,15 @@ hidpp20drv_commit(struct ratbag_device *device)
 		if (!profile->dirty)
 			continue;
 
+		rc = hidpp20drv_update_report_rate(profile, profile->hz);
+		if (rc)
+			return RATBAG_ERROR_DEVICE;
+
 		ratbag_profile_for_each_resolution(profile, resolution) {
-			if (resolution->is_active)
+			if (resolution->is_active) {
+				log_raw(device->ratbag, "dpi index: %d, profile %d\n", resolution->index, profile->index);
 				dpi_index = resolution->index;
+			}
 
 			rc = hidpp20drv_update_resolution_dpi(resolution,
 							      resolution->dpi_x,

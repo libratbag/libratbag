@@ -399,6 +399,7 @@ def func_report_rate_get_all(r, args):
 def func_report_rate_set(r, args):
     p, d = find_profile(r, args)
     p.report_rate = args.rate_n
+    commit(d, args)
 
 
 def func_resolution_get(r, args):
