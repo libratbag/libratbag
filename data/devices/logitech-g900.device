@@ -1,5 +1,5 @@
-# Logitech G900 over USB
+# Logitech G900
 [Device]
 Name=Logitech G900
-DeviceMatch=usb:046d:c081
+DeviceMatch=usb:046d:c081;usb:046d:4053
 Driver=hidpp20
