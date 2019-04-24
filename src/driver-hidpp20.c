@@ -1254,9 +1254,14 @@ hidpp20drv_commit(struct ratbag_device *device)
 			return RATBAG_ERROR_DEVICE;
 
 		list_for_each(profile, &device->profiles, link) {
-			if (profile->is_active)
+			if (profile->is_active) {
+				ratbag_profile_for_each_resolution(profile, resolution) {
+					if (resolution->is_active)
+						dpi_index = resolution->index;
+				}
 				hidpp20_onboard_profiles_set_current_dpi_index(drv_data->dev,
 									       dpi_index);
+			}
 		}
 	}
 
