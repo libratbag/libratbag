@@ -32,6 +32,10 @@
 #include "libratbag-util.h"
 #include "libratbag-hidraw.h"
 
+#ifdef NDEBUG
+#error "libratbag relies on assert(). Do not define NDEBUG"
+#endif
+
 #define RATBAG_LED_TYPE_UNKNOWN 0
 
 void
