@@ -139,6 +139,25 @@ int hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 					   uint16_t *next_level);
 
 /* -------------------------------------------------------------------------- */
+/* 0x1001: Battery Voltage                                                    */
+/* -------------------------------------------------------------------------- */
+#define HIDPP_PAGE_BATTERY_VOLTAGE		0x1001
+
+enum hidpp20_battery_voltage_status {
+	BATTERY_VOLTAGE_STATUS_DISCHARGING = 0,
+	BATTERY_VOLTAGE_STATUS_WIRELESS_CHARGING = 0x10,
+	BATTERY_VOLTAGE_STATUS_CHARGING = 0x80,
+};
+
+/**
+ * Retrieves the battery voltage
+ *
+ * @return the battery status or a negative errno on error
+ */
+int hidpp20_batteryvoltage_get_battery_voltage(struct hidpp20_device *device,
+					       uint16_t *voltage);
+
+/* -------------------------------------------------------------------------- */
 /* 0x1300: LED software control                                               */
 /* -------------------------------------------------------------------------- */
 
