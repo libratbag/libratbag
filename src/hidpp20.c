@@ -58,6 +58,7 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_DEVICE_NAME);
 	CASE_RETURN_STRING(HIDPP_PAGE_RESET);
 	CASE_RETURN_STRING(HIDPP_PAGE_BATTERY_LEVEL_STATUS);
+	CASE_RETURN_STRING(HIDPP_PAGE_BATTERY_VOLTAGE);
 	CASE_RETURN_STRING(HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS);
 	CASE_RETURN_STRING(HIDPP_PAGE_SPECIAL_KEYS_BUTTONS);
 	CASE_RETURN_STRING(HIDPP_PAGE_WIRELESS_DEVICE_STATUS);
@@ -426,6 +427,40 @@ hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 
 	*level = msg.msg.parameters[0];
 	*next_level = msg.msg.parameters[1];
+
+	return msg.msg.parameters[2];
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x1000: Battery level status                                               */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_BATTERY_VOLTAGE_GET_BATTERY_VOLTAGE 0x00
+
+int
+hidpp20_batteryvoltage_get_battery_voltage(struct hidpp20_device *device,
+					   uint16_t *voltage)
+{
+	uint8_t feature_index;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_BATTERY_VOLTAGE_GET_BATTERY_VOLTAGE,
+	};
+	int rc;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_BATTERY_VOLTAGE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*voltage = (msg.msg.parameters[0] << 8) + msg.msg.parameters[1];
 
 	return msg.msg.parameters[2];
 }

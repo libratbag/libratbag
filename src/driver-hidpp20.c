@@ -56,6 +56,7 @@
 #define HIDPP_CAP_ONBOARD_PROFILES_8100			(1 << 6)
 #define HIDPP_CAP_LED_SW_CONTROL_1300			(1 << 7)
 #define HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060		(1 << 8)
+#define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
@@ -1147,6 +1148,22 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 			  level, next_level, status);
 
 		drv_data->capabilities |= HIDPP_CAP_BATTERY_LEVEL_1000;
+		break;
+	}
+	case HIDPP_PAGE_BATTERY_VOLTAGE: {
+		uint16_t voltage;
+		enum hidpp20_battery_voltage_status status;
+
+		rc = hidpp20_batteryvoltage_get_battery_voltage(drv_data->dev, &voltage);
+		if (rc < 0)
+			return rc;
+
+		status = rc;
+
+		log_debug(ratbag, "device battery voltage is %dmv, status %02x \n",
+			  voltage, status);
+
+		drv_data->capabilities |= HIDPP_CAP_BATTERY_VOLTAGE_1001;
 		break;
 	}
 	case HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS: {
