@@ -107,6 +107,7 @@ ubuntu_settings: &ubuntu_settings
         command: |
           apt-get update
           apt-get install -y software-properties-common
+          apt-get remove -y libnss-systemd
           add-apt-repository universe
           apt-get update
           apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev valgrind python3-gi python3-evdev libglib2.0-dev python3-lxml python3-dev swig systemd libunistring-dev
