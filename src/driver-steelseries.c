@@ -271,8 +271,8 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_button *button;
 	struct ratbag_led *led;
 	int rc, button_count, led_count, device_version, mono_led, short_button;
-	_cleanup_(dpi_list_freep) struct dpi_list *dpilist = NULL;
-	_cleanup_(freep) struct dpi_range *dpirange = NULL;
+	struct dpi_list *dpilist = NULL;
+	struct dpi_range *dpirange = NULL;
 
 	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
