@@ -366,10 +366,11 @@ steelseries_probe(struct ratbag_device *device)
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
 
-	steelseries_get_firmware_version(device);
-	log_debug(device->ratbag, "SteelSeries firmware version %d.%d\n",
-		  drv_data->firmware_major,
-		  drv_data->firmware_minor);
+	rc = steelseries_get_firmware_version(device);
+	if(rc == 0)
+		log_debug(device->ratbag, "SteelSeries firmware version %d.%d\n",
+			drv_data->firmware_major,
+			drv_data->firmware_minor);
 
 	steelseries_read_settings(device);
 
