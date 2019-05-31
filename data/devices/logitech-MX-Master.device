@@ -1,5 +1,5 @@
 # Logitech MX Master
 [Device]
 Name=Logitech MX Master
-DeviceMatch=usb:046d:4041;bluetooth:046d:b012;usb:046d:4060
+DeviceMatch=usb:046d:4041;bluetooth:046d:b012;usb:046d:4060;bluetooth:046d:b017
 Driver=hidpp20
