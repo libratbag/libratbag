@@ -1,0 +1,5 @@
+# Logitech MX Ergo
+[Device]
+Name=Logitech MX Ergo
+DeviceMatch=bluetooth:046d:b01d
+Driver=hidpp20
