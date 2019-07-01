@@ -58,6 +58,8 @@
 #define HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060		(1 << 8)
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 
+#define HIDPP_HIDDEN_FEATURE				(1 << 6)
+
 struct hidpp20drv_data {
 	struct hidpp20_device *dev;
 	unsigned long capabilities;
@@ -1106,6 +1108,10 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 				    &feature_version);
 	if (rc < 0)
 		return rc;
+
+	/* check if it is a hidden feature */
+	if (feature_type & HIDPP_HIDDEN_FEATURE)
+		return 0;
 
 	switch (feature) {
 	case HIDPP_PAGE_ROOT:
