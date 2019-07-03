@@ -1,6 +1,6 @@
 [Device]
 Name=Logitech G Pro Wireless
-DeviceMatch=usb:046d:c539;usb:046d:c088
+DeviceMatch=usb:046d:4079;usb:046d:c088
 LedTypes=logo;battery;dpi;
 Driver=hidpp20
 
