@@ -1,7 +1,0 @@
-[Device]
-Name=Logitech Device (via Lightspeed connector)
-DeviceMatch=usb:046d:c539
-Driver=hidpp20
-
-[Driver/hidpp20]
-DeviceIndex=1
