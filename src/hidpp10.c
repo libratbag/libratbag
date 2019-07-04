@@ -1161,7 +1161,7 @@ hidpp10_onboard_profiles_parse_macro(struct hidpp10_device *device,
 	hidpp_log_raw(&device->base, "*** macro starts at (0x%02x, 0x%04x) ***\n", page, offset);
 
 	rc = hidpp10_onboard_profiles_read_macro(device, page, offset, &macro);
-	if (rc < 0)
+	if (rc)
 		return rc;
 
 	count = rc;
