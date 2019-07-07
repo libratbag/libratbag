@@ -1,0 +1,5 @@
+[Device]
+Name=Logitech Gaming Mouse G Pro Hero
+DeviceMatch=usb:046d:c08c
+Driver=hidpp20
+LedTypes=logo;side;
