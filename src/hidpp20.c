@@ -1558,7 +1558,7 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 			return rc;
 
 		/* msg.msg.parameters is guaranteed to have a size >= 16 */
-		memcpy(data + offset, buf.msg.parameters, min(count, 16));
+		memcpy(data + offset, buf.msg.parameters, 16);
 
 		/*
 		 * no need to check for count >= 0:
