@@ -1464,6 +1464,14 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
+#define HIDPP20_USER_PROFILES_G402			0x0000
+#define HIDPP20_ROM_PROFILES_G402			0x0100
+
+#define HIDPP20_PROFILE_DIR_END1			0
+#define HIDPP20_PROFILE_DIR_END2			1
+#define HIDPP20_PROFILE_DIR_END_VALUE			0xFF
+#define HIDPP20_PROFILE_DIR_ENABLED			2
+
 union hidpp20_internal_profile {
 	uint8_t data[HIDPP20_PROFILE_SIZE];
 	struct {
@@ -2384,16 +2392,17 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 	return 0;
 }
 
-static int
-hidpp20_onboard_profiles_parse(struct hidpp20_device *device,
-			      struct hidpp20_profiles *profiles,
-			      uint16_t dict_address,
-			      bool check_crc)
+int
+hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
+				    struct hidpp20_profiles *profiles)
 {
 	_cleanup_free_ uint8_t *data = NULL;
 	int rc;
 	unsigned i;
 	bool crc_valid;
+	bool read_userdata = true;
+
+	assert(profiles);
 
 	for (i = 0; i < profiles->num_profiles; i++) {
 		profiles->profiles[i].address = 0;
@@ -2403,7 +2412,7 @@ hidpp20_onboard_profiles_parse(struct hidpp20_device *device,
 	data = hidpp20_onboard_profiles_allocate_sector(profiles);
 
 	rc = hidpp20_onboard_profiles_read_sector(device,
-						  dict_address,
+						  HIDPP20_USER_PROFILES_G402,
 						  profiles->sector_size,
 						  data);
 	if (rc < 0)
@@ -2412,91 +2421,62 @@ hidpp20_onboard_profiles_parse(struct hidpp20_device *device,
 	crc_valid = hidpp20_onboard_profiles_is_sector_valid(device,
 							     profiles->sector_size,
 							     data);
-	if (crc_valid || !check_crc) {
+	if (crc_valid) {
 		for (i = 0; i < profiles->num_profiles; i++) {
 			uint8_t *d = data + 4 * i;
 
-			if (d[0] == 0xFF && d[1] == 0xFF)
+			if (d[HIDPP20_PROFILE_DIR_END1] == HIDPP20_PROFILE_DIR_END_VALUE &&
+			    d[HIDPP20_PROFILE_DIR_END2] == HIDPP20_PROFILE_DIR_END_VALUE)
 				break;
 
 			profiles->profiles[i].address = hidpp_get_unaligned_be_u16(d);
-			if (profiles->profiles[i].address != (dict_address | (i + 1)))
+
+			/* profile address sanity check */
+			if (profiles->profiles[i].address != (HIDPP20_USER_PROFILES_G402 | (i + 1)))
 				hidpp_log_info(&device->base,
-						"profile %d: error in the address: 0x%04x instead of 0x%04x\n",
-						i + 1,
-						profiles->profiles[i].address,
-						dict_address | (i + 1));
-			profiles->profiles[i].enabled = !!d[2];
+					       "profile %d: error in the address: 0x%04x instead of 0x%04x\n",
+					       i + 1,
+					       profiles->profiles[i].address,
+					       HIDPP20_USER_PROFILES_G402 | (i + 1));
+
+			profiles->profiles[i].enabled = !!d[HIDPP20_PROFILE_DIR_ENABLED];
 		}
+	} else {
+		hidpp_log_debug(device, "Profile directory has an invalid CRC... Reading ROM profiles.\n");
+
+		read_userdata = false;
 	}
 
-	/*
-	 * Even if the crc is wrong, we still fetch all the profiles, so as
-	 * to have the current stored values if some profiles are legitimate.
-	 */
-	 for (i = 0; i < profiles->num_profiles; i++) {
-		if (profiles->profiles[i].address == 0x0000) {
-			switch (dict_address) {
-			case 0x0000:
-				profiles->profiles[i].address = i + 1;
-				break;
-			case 0x0100:
-				if (i >= profiles->num_rom_profiles) {
-					profiles->profiles[i].address = dict_address | profiles->num_rom_profiles;
-				} else {
-					profiles->profiles[i].address = dict_address | (i + 1);
-				}
-				break;
-			default:
-				hidpp_log_error(&device->base,
-						"this should never happen: dict address is 0x%04x\n",
-						dict_address);
-				return -EINVAL;
-			}
+	for (i = 0; i < profiles->num_profiles; i++) {
+		if (read_userdata) {
+			hidpp_log_debug(device, "Parsing profile %u\n", i);
+			rc = hidpp20_onboard_profiles_parse_profile(device,
+								    profiles,
+								    i,
+								    true);
+
+			/* on fail to read the user profile fallback to the default profile */
+			if (rc)
+				hidpp_log_debug("Profile %u is bad. Falling back to the ROM settings.\n", i);
+			else
+				continue;
 		}
+
+		/* the number of rom profiles can be different than the number of user profiles
+		   so we if there are not enough rom profiles to populate all the user profiles
+		   we just use the first rom profile */
+		if (i + 1 > profiles->num_rom_profiles)
+			profiles->profiles[i].address = HIDPP20_ROM_PROFILES_G402 + 1;
+		else
+			profiles->profiles[i].address = HIDPP20_ROM_PROFILES_G402 + i + 1;
+
 		rc = hidpp20_onboard_profiles_parse_profile(device,
-							    profiles,
-							    i,
-							    check_crc);
-		if (rc == -EAGAIN)
-			crc_valid = false;
+							profiles,
+							i,
+							false);
+		if (rc < 0)
+			return rc;
 	}
-
-	if (check_crc && !crc_valid)
-		return -EAGAIN;
-
-	return 0;
-}
-
-int
-hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
-				    struct hidpp20_profiles *profiles)
-{
-	int rc;
-
-	assert(profiles);
-
-	rc = hidpp20_onboard_profiles_parse(device, profiles, 0x0000, true);
-	if (rc == 0)
-		return profiles->num_profiles;
-
-	if (rc != -EAGAIN) {
-		/* something went wrong */
-		return rc;
-	}
-
-	/*
-	 * One of the used sector has a bad crc, the device is using the ROM
-	 * profiles.
-	 */
-
-	hidpp_log_debug(&device->base, "device is using ROM settings\n");
-
-	rc = hidpp20_onboard_profiles_parse(device, profiles, 0x0100, false);
-	if (rc < 0)
-		return rc;
-
-	hidpp_log_debug(&device->base, "ROM settings loaded\n");
 
 	return profiles->num_profiles;
 }
