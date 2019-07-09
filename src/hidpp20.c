@@ -1542,6 +1542,8 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_READ,
 	};
 
+	hidpp_log_debug(device, "Reading sector 0x%04x\n", sector);
+
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ONBOARD_PROFILES);
 	if (feature_index == 0)
@@ -1588,6 +1590,9 @@ hidpp20_onboard_profiles_is_sector_valid(struct hidpp20_device *device,
 
 	crc = hidpp_crc_ccitt(data, sector_size - 2);
 	read_crc = hidpp_get_unaligned_be_u16(&data[sector_size - 2]);
+
+	if (crc != read_crc)
+		hidpp_log_debug(device, "Invalid CRC (%04x != %04x)\n", read_crc, crc);
 
 	return crc == read_crc;
 }
