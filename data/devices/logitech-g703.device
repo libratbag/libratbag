@@ -1,5 +1,5 @@
 [Device]
 Name=Logitech G703
-DeviceMatch=usb:046d:c087
+DeviceMatch=usb:046d:c087;usb:046d:4070
 Driver=hidpp20
 
