@@ -1,5 +1,0 @@
-# Logitech G502 HERO over USB
-[Device]
-Name=Logitech G502 HERO
-DeviceMatch=usb:046d:c08b
-Driver=hidpp20
