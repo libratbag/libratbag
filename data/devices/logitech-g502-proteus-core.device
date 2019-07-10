@@ -1,4 +1,3 @@
-# Logitech G502 Proteus Core over USB
 [Device]
 Name=Logitech G502 Proteus Core
 DeviceMatch=usb:046d:c07d
