@@ -299,6 +299,7 @@ data_files = files(
 	'data/devices/logitech-g700.device',
 	'data/devices/logitech-g700s-wireless.device',
 	'data/devices/logitech-g700s.device',
+	'data/devices/logitech-g703-hero.device',
 	'data/devices/logitech-g703.device',
 	'data/devices/logitech-g9.device',
 	'data/devices/logitech-g900.device',
