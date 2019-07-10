@@ -1,8 +1,0 @@
-# Logitech G PowerPlay mouse pad + wireless USB receiver.
-[Device]
-Name=Logitech G PowerPlay mouse pad.
-DeviceMatch=usb:046d:c53a
-Driver=hidpp20
-
-[Driver/hidpp20]
-DeviceIndex=1
