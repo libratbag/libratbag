@@ -1467,9 +1467,7 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 #define HIDPP20_USER_PROFILES_G402			0x0000
 #define HIDPP20_ROM_PROFILES_G402			0x0100
 
-#define HIDPP20_PROFILE_DIR_END1			0
-#define HIDPP20_PROFILE_DIR_END2			1
-#define HIDPP20_PROFILE_DIR_END_VALUE			0xFF
+#define HIDPP20_PROFILE_DIR_END				0xFFFF
 #define HIDPP20_PROFILE_DIR_ENABLED			2
 
 union hidpp20_internal_profile {
@@ -2404,6 +2402,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 	_cleanup_free_ uint8_t *data = NULL;
 	int rc;
 	unsigned i;
+	uint16_t addr;
 	bool crc_valid;
 	bool read_userdata = true;
 
@@ -2430,11 +2429,12 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		for (i = 0; i < profiles->num_profiles; i++) {
 			uint8_t *d = data + 4 * i;
 
-			if (d[HIDPP20_PROFILE_DIR_END1] == HIDPP20_PROFILE_DIR_END_VALUE &&
-			    d[HIDPP20_PROFILE_DIR_END2] == HIDPP20_PROFILE_DIR_END_VALUE)
+			addr = hidpp_get_unaligned_be_u16(d);
+
+			if(addr == HIDPP20_PROFILE_DIR_END)
 				break;
 
-			profiles->profiles[i].address = hidpp_get_unaligned_be_u16(d);
+			profiles->profiles[i].address = addr;
 
 			/* profile address sanity check */
 			if (profiles->profiles[i].address != (HIDPP20_USER_PROFILES_G402 | (i + 1)))
