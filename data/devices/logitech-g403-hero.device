@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G403 Hero
+DeviceMatch=usb:046d:c08f
+Driver=hidpp20
