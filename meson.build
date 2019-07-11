@@ -283,6 +283,7 @@ data_files = files(
 	'data/devices/logitech-g302.device',
 	'data/devices/logitech-g303.device',
 	'data/devices/logitech-g402.device',
+	'data/devices/logitech-g403-wireless.device',
 	'data/devices/logitech-g403.device',
 	'data/devices/logitech-g5-2007.device',
 	'data/devices/logitech-g5.device',

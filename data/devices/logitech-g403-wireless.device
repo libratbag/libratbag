@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G403 Wireless
+DeviceMatch=usb:046d:405d
+Driver=hidpp20
