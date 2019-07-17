@@ -1540,7 +1540,7 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_READ,
 	};
 
-	hidpp_log_debug(device, "Reading sector 0x%04x\n", sector);
+	hidpp_log_debug(&device->base, "Reading sector 0x%04x\n", sector);
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ONBOARD_PROFILES);
@@ -1590,7 +1590,7 @@ hidpp20_onboard_profiles_is_sector_valid(struct hidpp20_device *device,
 	read_crc = hidpp_get_unaligned_be_u16(&data[sector_size - 2]);
 
 	if (crc != read_crc)
-		hidpp_log_debug(device, "Invalid CRC (%04x != %04x)\n", read_crc, crc);
+		hidpp_log_debug(&device->base, "Invalid CRC (%04x != %04x)\n", read_crc, crc);
 
 	return crc == read_crc;
 }
@@ -2447,14 +2447,14 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 			profiles->profiles[i].enabled = !!d[HIDPP20_PROFILE_DIR_ENABLED];
 		}
 	} else {
-		hidpp_log_debug(device, "Profile directory has an invalid CRC... Reading ROM profiles.\n");
+		hidpp_log_debug(&device->base, "Profile directory has an invalid CRC... Reading ROM profiles.\n");
 
 		read_userdata = false;
 	}
 
 	for (i = 0; i < profiles->num_profiles; i++) {
 		if (read_userdata) {
-			hidpp_log_debug(device, "Parsing profile %u\n", i);
+			hidpp_log_debug(&device->base, "Parsing profile %u\n", i);
 			rc = hidpp20_onboard_profiles_parse_profile(device,
 								    profiles,
 								    i,
@@ -2462,7 +2462,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 
 			/* on fail to read the user profile fallback to the default profile */
 			if (rc)
-				hidpp_log_debug("Profile %u is bad. Falling back to the ROM settings.\n", i);
+				hidpp_log_debug(&device->base, "Profile %u is bad. Falling back to the ROM settings.\n", i);
 			else
 				continue;
 		}
