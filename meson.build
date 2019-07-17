@@ -1,4 +1,4 @@
-project('libratbag', 'c', 'cpp',
+project('libratbag', 'c',
 	version : '0.9.905',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
@@ -28,11 +28,11 @@ liblur_so_version = '@0@.@1@.@2@'.format((liblur_so_c-liblur_so_a),
 
 # Compiler setup
 cc = meson.get_compiler('c')
-cpp = meson.get_compiler('cpp')
-cppflags = ['-Wno-unused-parameter', '-fvisibility=hidden']
-cflags = cppflags + ['-Wmissing-prototypes', '-Wstrict-prototypes']
+cflags = ['-Wno-unused-parameter',
+	  '-fvisibility=hidden',
+	  '-Wmissing-prototypes',
+	  '-Wstrict-prototypes']
 add_project_arguments(cflags, language: 'c')
-add_project_arguments(cppflags, language: 'cpp')
 
 # Initialize config.h, to be added to in the various options below, config.h
 # is generated at the end of this file
@@ -371,30 +371,6 @@ if enable_tests
 			       '--error-exitcode=3',
 			       '--suppressions=' + valgrind_suppressions_file ],
 		       timeout_multiplier: 5)
-
-	executable('test-build-cxx',
-		   ['test/build-cxx.cc'],
-		   dependencies : [ dep_libratbag ],
-		   include_directories : include_directories('src'),
-		   cpp_args : ['-Wall', '-Wextra', '-Wno-unused-parameter'],
-		   install : false)
-	executable('test-build-linker',
-		   ['test/build-pedantic.c'],
-		   dependencies : [ dep_libratbag ],
-		   include_directories : include_directories('src'),
-		   install : false)
-	executable('test-build-gnuc90',
-		   ['test/build-pedantic.c'],
-		   dependencies : [ dep_libratbag ],
-		   include_directories : include_directories('src'),
-		   c_args : ['-std=gnu90', '-Werror'],
-		   install : false)
-	executable('test-build-pedantic',
-		   ['test/build-pedantic.c'],
-		   dependencies : [ dep_libratbag ],
-		   include_directories : include_directories('src'),
-		   c_args : ['-std=c99', '-pedantic', '-Werror'],
-		   install : false)
 endif
 
 #### ratbagd ####
