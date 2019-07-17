@@ -573,8 +573,14 @@ swig_gen = generator(
                 '@INPUT@'],
 )
 
+# From python 3.8 we neeed python3-embed
+dep_python3 = dependency('python3-embed', required: false)
+if not dep_python3.found()
+	dep_python3 = dependency('python3')
+endif
+
 wrapper_deps = [
-    dependency('python3'),
+    dep_python3,
     dep_libratbag,
     dep_libshared,
 ]
