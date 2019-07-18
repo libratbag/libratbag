@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech MX Vertical
+DeviceMatch=usb:046d:407b
+Driver=hidpp20

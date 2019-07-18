@@ -312,6 +312,7 @@ data_files = files(
 	'data/devices/logitech-Marathon-M705.device',
 	'data/devices/logitech-MX-Anywhere2.device',
 	'data/devices/logitech-MX-Anywhere2S.device',
+	'data/devices/logitech-MX-Vertical.device',
 	'data/devices/roccat-kone-xtd.device',
 	'data/devices/steelseries-kinzu-v2.device',
 	'data/devices/steelseries-rival-310.device',
