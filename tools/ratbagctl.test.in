@@ -40,7 +40,7 @@ run_ratbagctl_in_subprocess = False
 class TestRatbagCtl(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super(TestRatbagCtl, cls).setUpClass()
+        super().setUpClass()
         cls.reset_test_device()
         cls.find_test_device()
 
@@ -155,7 +155,7 @@ class TestRatbagCtlName(TestRatbagCtl):
 class TestRatbagCtlProfile(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):
-        super(TestRatbagCtlProfile, cls).setUpClass()
+        super().setUpClass()
         cls.setProfile(0)
         cls.setProfile(1)
         cls.setProfile(0)
@@ -237,7 +237,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
 class TestRatbagCtlResolution(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):
-        super(TestRatbagCtlResolution, cls).setUpClass()
+        super().setUpClass()
         cls.setProfile(1)
 
     def test_resolution_active_get(self):
@@ -292,7 +292,7 @@ class TestRatbagCtlResolution(TestRatbagCtl):
 class TestRatbagCtlDPI(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):
-        super(TestRatbagCtlDPI, cls).setUpClass()
+        super().setUpClass()
         cls.setProfile(0)
 
     def test_dpi_get(self):
@@ -362,7 +362,7 @@ class TestRatbagCtlDPI(TestRatbagCtl):
 class TestRatbagCtlReportRate(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):
-        super(TestRatbagCtlReportRate, cls).setUpClass()
+        super().setUpClass()
         cls.setProfile(0)
 
     def test_rate_get(self):
@@ -409,7 +409,7 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
 class TestRatbagCtlButton(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):
-        super(TestRatbagCtlButton, cls).setUpClass()
+        super().setUpClass()
         cls.setProfile(0)
 
     def test_button_count(self):
@@ -495,7 +495,7 @@ class TestRatbagCtlButton(TestRatbagCtl):
 class TestRatbagCtlLED(TestRatbagCtl):
     @classmethod
     def setUpClass(cls):
-        super(TestRatbagCtlLED, cls).setUpClass()
+        super().setUpClass()
         cls.setProfile(0)
 
     def test_led_n_get(self):
