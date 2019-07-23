@@ -1587,6 +1587,23 @@ ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 }
 
 int
+ratbag_hidraw_get_feature_report(struct ratbag_device *device, unsigned char reportnum,
+				 uint8_t *buf, size_t len)
+{
+	return ratbag_hidraw_raw_request(device, reportnum, buf, len,
+					 HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+}
+
+int
+ratbag_hidraw_set_feature_report(struct ratbag_device *device, unsigned char reportnum,
+				 uint8_t *buf, size_t len)
+{
+	return ratbag_hidraw_raw_request(device, reportnum, buf, len,
+					 HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+}
+
+
+int
 ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t len)
 {
 	int rc;

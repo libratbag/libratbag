@@ -101,7 +101,7 @@ void ratbag_close_hidraw_index(struct ratbag_device *device, int idx);
  *
  * @param device the ratbag device
  * @param reportnum report ID
- * @param buf in/out data to transfer
+ * @param buf[in/out] data to transfer
  * @param len length of buf
  * @param rtype HID report type
  * @param reqtype HID_REQ_GET_REPORT or HID_REQ_SET_REPORT
@@ -114,6 +114,41 @@ int ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char report
 			      uint8_t *buf, size_t len, unsigned char rtype,
 			      int reqtype);
 
+/**
+ * Get feature report from device.
+ *
+ * This call sends a HID_REQ_GET_REPORT to the device for the given feature
+ * and returns the data in the caller-allocated buffer buf of size len.
+ *
+ * @param device the ratbag device
+ * @param reportnum report ID
+ * @param buf[out] data returned from device
+ * @param len length of buf
+ *
+ * @return count of data transfered, or a negative errno on error
+ *
+ * Convenience wrapper around ratbag_hidraw_raw_request()
+ */
+int ratbag_hidraw_get_feature_report(struct ratbag_device *device, unsigned char reportnum,
+				     uint8_t *buf, size_t len);
+
+/**
+ * Set feature report on device.
+ *
+ * This call sends a HID_REQ_SET_REPORT to the device for the given feature
+ * and the buffer buf of size len.
+ *
+ * @param device the ratbag device
+ * @param reportnum report ID
+ * @param buf[in] data returned from device
+ * @param len length of buf
+ *
+ * @return count of data transfered, or a negative errno on error
+ *
+ * Convenience wrapper around ratbag_hidraw_raw_request()
+ */
+int ratbag_hidraw_set_feature_report(struct ratbag_device *device, unsigned char reportnum,
+				     uint8_t *buf, size_t len);
 /**
  * Send output report to device
  *
