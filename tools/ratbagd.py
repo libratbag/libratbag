@@ -116,7 +116,7 @@ class _RatbagdDBus(GObject.GObject):
     _dbus = None
 
     def __init__(self, interface, object_path):
-        GObject.GObject.__init__(self)
+        super().__init__()
 
         if _RatbagdDBus._dbus is None:
             try:
@@ -239,7 +239,7 @@ class Ratbagd(_RatbagdDBus):
     }
 
     def __init__(self):
-        _RatbagdDBus.__init__(self, "Manager", None)
+        super().__init__("Manager", None)
         result = self._get_dbus_property("Devices") or []
         self._devices = [RatbagdDevice(objpath) for objpath in result]
         self._proxy.connect("notify::g-name-owner", self._on_name_owner_changed)
@@ -291,7 +291,7 @@ class RatbagdDevice(_RatbagdDBus):
     }
 
     def __init__(self, object_path):
-        _RatbagdDBus.__init__(self, "Device", object_path)
+        super().__init__("Device", object_path)
 
         # FIXME: if we start adding and removing objects from this list,
         # things will break!
@@ -370,7 +370,7 @@ class RatbagdProfile(_RatbagdDBus):
     CAP_WRITE_ONLY = 103
 
     def __init__(self, object_path):
-        _RatbagdDBus.__init__(self, "Profile", object_path)
+        super().__init__("Profile", object_path)
         self._dirty = False
         self._active = self._get_dbus_property("IsActive")
 
@@ -516,7 +516,7 @@ class RatbagdResolution(_RatbagdDBus):
     """Represents a ratbagd resolution."""
 
     def __init__(self, object_path):
-        _RatbagdDBus.__init__(self, "Resolution", object_path)
+        super().__init__("Resolution", object_path)
         self._active = self._get_dbus_property("IsActive")
         self._default = self._get_dbus_property("IsDefault")
 
@@ -664,7 +664,7 @@ class RatbagdButton(_RatbagdDBus):
     }
 
     def __init__(self, object_path):
-        _RatbagdDBus.__init__(self, "Button", object_path)
+        super().__init__("Button", object_path)
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
         if "Mapping" in changed_props.keys():
@@ -784,7 +784,7 @@ class RatbagdMacro(GObject.Object):
     }
 
     def __init__(self, **kwargs):
-        GObject.Object.__init__(self, **kwargs)
+        super().__init__(**kwargs)
         self._macro = []
 
     def __str__(self):
@@ -883,7 +883,7 @@ class RatbagdLed(_RatbagdDBus):
     }
 
     def __init__(self, object_path):
-        _RatbagdDBus.__init__(self, "Led", object_path)
+        super().__init__("Led", object_path)
 
     @GObject.Property
     def index(self):
