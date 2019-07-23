@@ -267,9 +267,8 @@ roccat_is_ready(struct ratbag_device *device)
 	uint8_t buf[3] = { 0 };
 	int rc;
 
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_CONFIGURE_PROFILE,
-					buf, sizeof(buf),
-					HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_CONFIGURE_PROFILE,
+					      buf, sizeof(buf));
 	if (rc < 0)
 		return rc;
 	if (rc != sizeof(buf))
@@ -315,8 +314,8 @@ roccat_current_profile(struct ratbag_device *device)
 	uint8_t buf[3];
 	int ret;
 
-	ret = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_PROFILE, buf,
-			sizeof(buf), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	ret = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_PROFILE, buf,
+					       sizeof(buf));
 	if (ret < 0)
 		return ret;
 
@@ -335,8 +334,8 @@ roccat_set_current_profile(struct ratbag_device *device, unsigned int index)
 	if (index > ROCCAT_PROFILE_MAX)
 		return -EINVAL;
 
-	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
-			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+	ret = ratbag_hidraw_set_feature_report(device, buf[0], buf,
+					       sizeof(buf));
 
 	if (ret < 0)
 		return ret;
@@ -362,8 +361,8 @@ roccat_set_config_profile(struct ratbag_device *device, uint8_t profile, uint8_t
 	if (profile > ROCCAT_PROFILE_MAX)
 		return -EINVAL;
 
-	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
-				 HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+	ret = ratbag_hidraw_set_feature_report(device, buf[0], buf,
+					       sizeof(buf));
 	if (ret < 0)
 		return ret;
 
@@ -409,9 +408,8 @@ roccat_write_profile(struct ratbag_profile *profile)
 	*crc = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_PROFILE);
 
 	roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-			buf, ROCCAT_REPORT_SIZE_PROFILE,
-			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
+					      buf, ROCCAT_REPORT_SIZE_PROFILE);
 
 	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
 		return -EIO;
@@ -468,9 +466,8 @@ roccat_read_button(struct ratbag_button *button)
 		macro = &drv_data->macros[button->profile->index][button->index];
 		buf = (uint8_t*)macro;
 		buf[0] = ROCCAT_REPORT_ID_MACRO;
-		rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_MACRO,
-				buf, ROCCAT_REPORT_SIZE_MACRO,
-				HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
+						      buf, ROCCAT_REPORT_SIZE_MACRO);
 		if (rc != ROCCAT_REPORT_SIZE_MACRO) {
 			log_error(device->ratbag,
 				  "Unable to retrieve the macro for button %d of profile %d: %s (%d)\n",
@@ -594,9 +591,8 @@ roccat_write_macro(struct ratbag_button *button,
 	macro->length = count;
 	macro->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_MACRO);
 
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_MACRO,
-		buf, ROCCAT_REPORT_SIZE_MACRO,
-		HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
+					      buf, ROCCAT_REPORT_SIZE_MACRO);
 	if (rc < 0)
 		return rc;
 
@@ -673,9 +669,8 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 
 	settings_report->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_SETTINGS);
 
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_SETTINGS,
-				       buf, ROCCAT_REPORT_SIZE_SETTINGS,
-				       HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_SETTINGS,
+					      buf, ROCCAT_REPORT_SIZE_SETTINGS);
 
 	if (rc < 0)
 		return rc;
@@ -713,9 +708,8 @@ roccat_read_profile(struct ratbag_profile *profile)
 	setting_report = &drv_data->settings[profile->index];
 	buf = (uint8_t*)setting_report;
 	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_SETTINGS);
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_SETTINGS,
-			buf, ROCCAT_REPORT_SIZE_SETTINGS,
-			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_SETTINGS,
+					      buf, ROCCAT_REPORT_SIZE_SETTINGS);
 
 	if (rc < ROCCAT_REPORT_SIZE_SETTINGS)
 		return;
@@ -756,9 +750,8 @@ roccat_read_profile(struct ratbag_profile *profile)
 
 	buf = drv_data->profiles[profile->index];
 	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_KEY_MAPPING);
-	rc = ratbag_hidraw_raw_request(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-			buf, ROCCAT_REPORT_SIZE_PROFILE,
-			HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
+					      buf, ROCCAT_REPORT_SIZE_PROFILE);
 
 	msleep(10);
 
