@@ -603,9 +603,23 @@ class TestRatbagCtlLED(TestRatbagCtl):
 def setUpModule():
     global ratbagd_process, ratbagd, parser
 
-    ratbagd_process = toolbox.start_ratbagd()
-
-    assert ratbagd_process is not None
+    # if the environment variable is set, we're manually debugging.
+    # To do actually do this:
+    # - copy the org.freedesktop.ratbag_devel1.conf to
+    # /etc/dbus-1/system.d
+    # - start builddir/ratbagd.devel (in gdb if need be)
+    # - set RATBAGCTL_DEVEL to org.freesktop.ratbag_devel1_<8-digit-git-sha>
+    # - run builddir/ratbagctl.test
+    # Note that the .conf will be overwritten if you run the test normally
+    # and you have to re-copy it.
+    # Note that the git sha will obviously change and you have to re-do all
+    # this.
+    #
+    # Yes, this is a bit insane.
+    ratbagd_process = None
+    if not os.environ.get('RATBAGCTL_DEVEL'):
+        ratbagd_process = toolbox.start_ratbagd()
+        assert ratbagd_process is not None
 
     ratbagd = toolbox.open_ratbagd(ratbagd_process)
     assert ratbagd is not None
