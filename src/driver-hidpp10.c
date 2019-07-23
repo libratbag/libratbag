@@ -412,9 +412,12 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 
 	profile->is_enabled = p.enabled;
 
-	if (profile->name)
+	if (profile->name) {
 		free(profile->name);
-	profile->name = strdup_safe((char*)p.name);
+		profile->name = NULL;
+	}
+	if (p.name && p.name[0] != '\0')
+		profile->name = strdup_safe((char*)p.name);
 
 	rc = hidpp10_get_current_profile(hidpp10, &idx);
 	if (rc == 0 && (unsigned int)idx == profile->index)
