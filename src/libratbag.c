@@ -628,7 +628,7 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 	button->index = index;
 	button->type = RATBAG_BUTTON_TYPE_UNKNOWN;
 
-	list_insert(&profile->buttons, &button->link);
+	list_append(&profile->buttons, &button->link);
 
 	return button;
 }
@@ -648,7 +648,7 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 	if (device->data)
 		led->type = ratbag_device_data_get_led_type(device->data, led->index);
 
-	list_insert(&profile->leds, &led->link);
+	list_append(&profile->leds, &led->link);
 
 	return led;
 }
@@ -673,7 +673,7 @@ ratbag_create_resolution(struct ratbag_profile *profile, int index)
 	res->profile = profile;
 	res->index = index;
 
-	list_insert(&profile->resolutions, &res->link);
+	list_append(&profile->resolutions, &res->link);
 
 	profile->num_resolutions++;
 }
@@ -697,7 +697,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->is_enabled = true;
 	profile->name = NULL;
 
-	list_insert(&device->profiles, &profile->link);
+	list_append(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
 	list_init(&profile->leds);
 	list_init(&profile->resolutions);
