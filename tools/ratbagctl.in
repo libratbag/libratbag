@@ -1164,7 +1164,7 @@ class RatbagParser(object):
 
 class RatbagParserSwitch(RatbagParser):
     def __init__(self, type, name, group=None, switch=[], N_access=None, tag=None, func=None, help=None):
-        super(RatbagParserSwitch, self).__init__(type, name, group, tag, func, help)
+        super().__init__(type, name, group, tag, func, help)
         self.switch = [classes[obj[of_type]](**obj) for obj in switch]
         if N_access is not None:
             self.N_access = RatbagParserNAccess(**N_access)
@@ -1218,7 +1218,7 @@ class RatbagParserSwitch(RatbagParser):
 
 class RatbagParserNAccess(RatbagParserSwitch):
     def __init__(self, type, name, group=None, switch=[], metavar=None, tag=None, func=None, help=None):
-        super(RatbagParserNAccess, self).__init__(type, name, group, switch, None, tag, func, help)
+        super().__init__(type, name, group, switch, None, tag, func, help)
         self.metavar = metavar
 
     def _sub_parse(self, parent, input_string, ns):
@@ -1244,7 +1244,7 @@ class RatbagParserNAccess(RatbagParserSwitch):
 
 class RatbagParserSet(RatbagParserSwitch):
     def __init__(self, type, name, group=None, switch=[], N_access=None, tag=None, func=None, help=None):
-        super(RatbagParserSet, self).__init__(type, name, group, switch, N_access, tag, func, help)
+        super().__init__(type, name, group, switch, N_access, tag, func, help)
 
     def _add_to_subparsers(self, parent):
         parser = parent.add_parser(self.name, help=self.help)
@@ -1276,7 +1276,7 @@ class RatbagParserSet(RatbagParserSwitch):
 
 class RatbagParserCommand(RatbagParser):
     def __init__(self, type, name, group=None, pos_args=[], tag=None, func=None, help=None):
-        super(RatbagParserCommand, self).__init__(type, name, group, tag, func, help)
+        super().__init__(type, name, group, tag, func, help)
         self.pos_args = [classes[obj[of_type]](**obj) for obj in pos_args]
 
     def _add_to_subparsers(self, parent):
@@ -1301,7 +1301,7 @@ class RatbagParserCommand(RatbagParser):
 
 class RatbagParserArgument(RatbagParser):
     def __init__(self, type, name, group=None, arg_type=None, metavar=None, nargs=None, choices=None, tag=None, func=None, help=None):
-        super(RatbagParserArgument, self).__init__(type, name, group, tag, func, help)
+        super().__init__(type, name, group, tag, func, help)
         self.arg_type = arg_type
         self.metavar = metavar
         self.nargs = nargs
@@ -1313,7 +1313,7 @@ class RatbagParserArgument(RatbagParser):
 
 class RatbagParserLink(RatbagParser):
     def __init__(self, type, dest=None, group=None, tag=None, func=None, help=None):
-        super(RatbagParserLink, self).__init__(type, dest, group, tag, func, help)
+        super().__init__(type, dest, group, tag, func, help)
         self.dest = dest
 
     def get_dest(self):
