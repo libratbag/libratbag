@@ -432,10 +432,11 @@ hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 }
 
 /* -------------------------------------------------------------------------- */
-/* 0x1000: Battery level status                                               */
+/* 0x1001: Battery voltage                                                    */
 /* -------------------------------------------------------------------------- */
 
 #define CMD_BATTERY_VOLTAGE_GET_BATTERY_VOLTAGE 0x00
+#define CMD_BATTERY_VOLTAGE_GET_SHOW_BATTERY_STATUS 0x10
 
 int
 hidpp20_batteryvoltage_get_battery_voltage(struct hidpp20_device *device,
@@ -460,7 +461,7 @@ hidpp20_batteryvoltage_get_battery_voltage(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	*voltage = (msg.msg.parameters[0] << 8) + msg.msg.parameters[1];
+	*voltage = get_unaligned_be_u16(msg.msg.parameters);
 
 	return msg.msg.parameters[2];
 }
