@@ -701,7 +701,7 @@ construct_cycle_buffer(struct steelseries_led_cycle *cycle,
 	/* this seems to be the minimum allowed */
 	duration = max(buf[spec->point_count_idx] * 330, cycle->duration);
 
-	hidpp_set_unaligned_le_u16(&buf[spec->duration_idx], duration);
+	set_unaligned_le_u16(&buf[spec->duration_idx], duration);
 }
 
 static int

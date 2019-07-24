@@ -32,6 +32,8 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#include "libratbag-util.h"
+
 #define HIDPP_RECEIVER_IDX			0xFF
 #define HIDPP_WIRED_DEVICE_IDX			0x00
 
@@ -164,61 +166,29 @@ hidpp_log_buffer(struct hidpp_device *dev,
 uint16_t hidpp_crc_ccitt(uint8_t *data, unsigned int length);
 
 static inline uint16_t
-hidpp_get_unaligned_be_u16(uint8_t *buf)
-{
-	return (buf[0] << 8) | buf[1];
-}
-
-static inline uint16_t
 hidpp_be_u16_to_cpu(uint16_t data)
 {
-	return hidpp_get_unaligned_be_u16((uint8_t *)&data);
-}
-
-static inline void
-hidpp_set_unaligned_be_u16(uint8_t *buf, uint16_t value)
-{
-	buf[0] = value >> 8;
-	buf[1] = value & 0xFF;
+	return get_unaligned_be_u16((uint8_t *)&data);
 }
 
 static inline uint16_t
 hidpp_cpu_to_be_u16(uint16_t data)
 {
 	uint16_t result;
-	hidpp_set_unaligned_be_u16((uint8_t *)&result, data);
+	set_unaligned_be_u16((uint8_t *)&result, data);
 	return result;
-}
-
-static inline uint16_t
-hidpp_get_unaligned_le_u16(uint8_t *buf)
-{
-	return (buf[1] << 8) | buf[0];
 }
 
 static inline uint16_t
 hidpp_le_u16_to_cpu(uint16_t data)
 {
-	return hidpp_get_unaligned_le_u16((uint8_t *)&data);
-}
-
-static inline void
-hidpp_set_unaligned_le_u16(uint8_t *buf, uint16_t value)
-{
-	buf[0] = value & 0xFF;
-	buf[1] = value >> 8;
+	return get_unaligned_le_u16((uint8_t *)&data);
 }
 
 static inline uint16_t
 hidpp_cpu_to_le_u16(uint16_t data)
 {
 	uint16_t result;
-	hidpp_set_unaligned_le_u16((uint8_t *)&result, data);
+	set_unaligned_le_u16((uint8_t *)&result, data);
 	return result;
-}
-
-static inline uint32_t
-hidpp_get_unaligned_be_u32(uint8_t *buf)
-{
-	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 }
