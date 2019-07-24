@@ -700,7 +700,7 @@ hidpp10_write_profile_directory(struct hidpp10_device *dev)
 	}
 
 	crc = hidpp_crc_ccitt(bytes, HIDPP10_PAGE_SIZE - 2);
-	hidpp_set_unaligned_be_u16(&bytes[HIDPP10_PAGE_SIZE - 2], crc);
+	set_unaligned_be_u16(&bytes[HIDPP10_PAGE_SIZE - 2], crc);
 
 	res = hidpp10_send_hot_payload(dev,
 				       0x00, 0x0000, /* destination: RAM */
@@ -964,9 +964,9 @@ hidpp10_fill_dpi_modes_16(struct hidpp10_device *dev,
 		struct _hidpp10_dpi_mode_16 *dpi = &dpi_list[i];
 
 		be = (uint8_t*)&dpi->xres;
-		profile->dpi_modes[i].xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
+		profile->dpi_modes[i].xres = hidpp10_get_dpi_value(dev, get_unaligned_be_u16(be));
 		be = (uint8_t*)&dpi->yres;
-		profile->dpi_modes[i].yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_be_u16(be));
+		profile->dpi_modes[i].yres = hidpp10_get_dpi_value(dev, get_unaligned_be_u16(be));
 
 		profile->dpi_modes[i].led[0] = dpi->led1 == 0x2;
 		profile->dpi_modes[i].led[1] = dpi->led2 == 0x2;
@@ -988,9 +988,9 @@ hidpp10_write_dpi_modes_16(struct hidpp10_device *dev,
 		struct _hidpp10_dpi_mode_16 *dpi = &dpi_list[i];
 
 		be = (uint8_t*)&dpi->xres;
-		hidpp_set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres));
+		set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].xres));
 		be = (uint8_t*)&dpi->yres;
-		hidpp_set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].yres));
+		set_unaligned_be_u16(be, hidpp10_get_dpi_mapping(dev, profile->dpi_modes[i].yres));
 
 		dpi->led1 = profile->dpi_modes[i].led[0] ? 0x02 : 0x01;
 		dpi->led2 = profile->dpi_modes[i].led[1] ? 0x02 : 0x01;
@@ -1757,7 +1757,7 @@ hidpp10_set_profile(struct hidpp10_device *dev, uint8_t number, struct hidpp10_p
 	}
 
 	crc = hidpp_crc_ccitt(page_data, HIDPP10_PAGE_SIZE - 2);
-	hidpp_set_unaligned_be_u16(&page_data[HIDPP10_PAGE_SIZE - 2], crc);
+	set_unaligned_be_u16(&page_data[HIDPP10_PAGE_SIZE - 2], crc);
 
 	/*
 	 * writing the data in several steps to prevent shroedinger state
@@ -2094,15 +2094,15 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 		if (res)
 			return res;
 		/* resolution is in 50dpi multiples */
-		*xres = *yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution.data[4]));
+		*xres = *yres = hidpp10_get_dpi_value(dev, get_unaligned_le_u16(&resolution.data[4]));
 		break;
         default:
 		res = hidpp10_request_command(dev, &resolution_long);
 		if (res)
 			return res;
 		/* resolution is in 50dpi multiples */
-		*xres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution_long.data[4]));
-		*yres = hidpp10_get_dpi_value(dev, hidpp_get_unaligned_le_u16(&resolution_long.data[6]));
+		*xres = hidpp10_get_dpi_value(dev, get_unaligned_le_u16(&resolution_long.data[4]));
+		*yres = hidpp10_get_dpi_value(dev, get_unaligned_le_u16(&resolution_long.data[6]));
         }
 
 	return 0;
@@ -2124,8 +2124,8 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 		res = hidpp10_request_command(dev, &resolution);
 		break;
         default:
-		hidpp_set_unaligned_le_u16(&resolution_long.data[4], hidpp10_get_dpi_mapping(dev, xres));
-		hidpp_set_unaligned_le_u16(&resolution_long.data[6], hidpp10_get_dpi_mapping(dev, yres));
+		set_unaligned_le_u16(&resolution_long.data[4], hidpp10_get_dpi_mapping(dev, xres));
+		set_unaligned_le_u16(&resolution_long.data[6], hidpp10_get_dpi_mapping(dev, yres));
 
 		res = hidpp10_request_command(dev, &resolution_long);
 		break;
@@ -2483,7 +2483,7 @@ hidpp10_read_page(struct hidpp10_device *dev, uint8_t page,
 	}
 
 	crc = hidpp_crc_ccitt(bytes, HIDPP10_PAGE_SIZE - 2);
-	read_crc = hidpp_get_unaligned_be_u16(&bytes[HIDPP10_PAGE_SIZE - 2]);
+	read_crc = get_unaligned_be_u16(&bytes[HIDPP10_PAGE_SIZE - 2]);
 
 	if (crc != read_crc)
 		return -EILSEQ; /* return illegal sequence */
@@ -2573,7 +2573,7 @@ hidpp10_get_pairing_information(struct hidpp10_device *dev,
 		return -1;
 
 	*report_interval = pairing_information.msg.string[2];
-	*wpid = hidpp_get_unaligned_be_u16(&pairing_information.msg.string[3]);
+	*wpid = get_unaligned_be_u16(&pairing_information.msg.string[3]);
 	*device_type = pairing_information.msg.string[7];
 
 	return 0;
@@ -2613,7 +2613,7 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 	if (res)
 		return -1;
 
-	*serial = hidpp_get_unaligned_be_u32(&info.msg.string[1]);
+	*serial = get_unaligned_be_u32(&info.msg.string[1]);
 
 	return 0;
 }
@@ -2665,7 +2665,7 @@ hidpp10_get_firmare_information(struct hidpp10_device *dev,
 	res = hidpp10_request_command(dev, &build_information);
 	if (res)
 		return res;
-	build = hidpp_get_unaligned_be_u16(&build_information.msg.string[1]);
+	build = get_unaligned_be_u16(&build_information.msg.string[1]);
 
 	*major_out = maj;
 	*minor_out = min;
