@@ -40,7 +40,7 @@ def main(argv, start_ratbagd=True):
 
                                        # replaced by meson
     os.environ['LIBRATBAG_DATA_DIR'] = '@LIBRATBAG_DATA_DIR@'
-    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1"
+    os.environ['RATBAG_TEST'] = "1"
 
     if not argv:
         argv = ["list"]

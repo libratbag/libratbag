@@ -125,8 +125,8 @@ class _RatbagdDBus(GObject.GObject):
                 raise RatbagdUnavailable(e.message)
 
         ratbag1 = "org.freedesktop.ratbag1"
-        if os.environ.get('RATBAGCTL_DEVEL'):
-            ratbag1 = os.environ['RATBAGCTL_DEVEL']
+        if os.environ.get('RATBAG_TEST'):
+            ratbag1 = "org.freedesktop.ratbag_devel1"
 
         if object_path is None:
             object_path = "/" + ratbag1.replace('.', '/')

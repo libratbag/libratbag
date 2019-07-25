@@ -50,7 +50,7 @@ class TestRatbagCtl(unittest.TestCase):
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      shell=True,
-                                     env={"RATBAGCTL_DEVEL": "org.freedesktop.ratbag_devel1"})
+                                     env={"RATBAG_TEST": "1"})
 
         (stdout, stderr) = ratbagctl.communicate()
         return (ratbagctl.returncode,
@@ -607,7 +607,6 @@ def setUpModule():
     # - copy the org.freedesktop.ratbag_devel1.conf to
     # /etc/dbus-1/system.d
     # - start builddir/ratbagd.devel (in gdb if need be)
-    # - set RATBAGCTL_DEVEL to org.freesktop.ratbag_devel1
     # - run builddir/ratbagctl.test
     ratbagd_process = None
     if start_ratbagd:
@@ -648,7 +647,6 @@ def parse(input_string):
 
 def main(argv):
     os.environ['RATBAG_TEST'] = '1'
-    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1"
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
     args = parse(argv)
