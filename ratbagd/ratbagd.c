@@ -200,7 +200,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		/* device was removed, unlink it and destroy our context */
 		if (device) {
 			ratbagd_device_unlink(device);
-			ratbagd_device_free(device);
+			ratbagd_device_unref(device);
 
 			(void) sd_bus_emit_properties_changed(ctx->bus,
 							      RATBAGD_OBJ_ROOT,
@@ -283,7 +283,7 @@ static struct ratbagd *ratbagd_free(struct ratbagd *ctx)
 
 	RATBAGD_DEVICE_FOREACH_SAFE(device, tmp, ctx) {
 		ratbagd_device_unlink(device);
-		ratbagd_device_free(device);
+		ratbagd_device_unref(device);
 	}
 
 	ctx->bus = sd_bus_flush_close_unref(ctx->bus);

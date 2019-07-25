@@ -170,7 +170,8 @@ int ratbagd_device_new(struct ratbagd_device **out,
 		       struct ratbagd *ctx,
 		       const char *sysname,
 		       struct ratbag_device *lib_device);
-struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device);
+struct ratbagd_device *ratbagd_device_ref(struct ratbagd_device *device);
+struct ratbagd_device *ratbagd_device_unref(struct ratbagd_device *device);
 const char *ratbagd_device_get_sysname(struct ratbagd_device *device);
 const char *ratbagd_device_get_path(struct ratbagd_device *device);
 unsigned int ratbagd_device_get_num_buttons(struct ratbagd_device *device);
@@ -181,7 +182,7 @@ bool ratbagd_device_linked(struct ratbagd_device *device);
 void ratbagd_device_link(struct ratbagd_device *device);
 void ratbagd_device_unlink(struct ratbagd_device *device);
 
-DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_device *, ratbagd_device_free);
+DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbagd_device *, ratbagd_device_unref);
 
 struct ratbagd_device *ratbagd_device_lookup(struct ratbagd *ctx,
 					     const char *name);
