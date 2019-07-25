@@ -41,6 +41,8 @@
 #include "libratbag-util.h"
 
 struct ratbagd_device {
+	unsigned int refcount;
+
 	struct ratbagd *ctx;
 	RBNode node;
 	char *sysname;
@@ -230,7 +232,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 		       const char *sysname,
 		       struct ratbag_device *lib_device)
 {
-	_cleanup_(ratbagd_device_freep) struct ratbagd_device *device = NULL;
+	_cleanup_(ratbagd_device_unrefp) struct ratbagd_device *device = NULL;
 	struct ratbag_profile *profile;
 	unsigned int i;
 	int r;
@@ -240,6 +242,7 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	assert(sysname);
 
 	device = zalloc(sizeof(*device));
+	device->refcount = 1;
 	device->ctx = ctx;
 	rbnode_init(&device->node);
 	device->lib_device = ratbag_device_ref(lib_device);
@@ -282,12 +285,12 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	return 0;
 }
 
-struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
+static void ratbagd_device_free(struct ratbagd_device *device)
 {
 	unsigned int i;
 
 	if (!device)
-		return NULL;
+		return;
 
 	assert(!ratbagd_device_linked(device));
 
@@ -301,7 +304,26 @@ struct ratbagd_device *ratbagd_device_free(struct ratbagd_device *device)
 
 	assert(!device->lib_device); /* ratbag yields !NULL if still pinned */
 
-	return mfree(device);
+	mfree(device);
+}
+
+struct ratbagd_device *ratbagd_device_ref(struct ratbagd_device *device)
+{
+	assert(device->refcount > 0);
+
+	++device->refcount;
+	return device;
+}
+
+struct ratbagd_device *ratbagd_device_unref(struct ratbagd_device *device)
+{
+	assert(device->refcount > 0);
+
+	--device->refcount;
+	if (device->refcount == 0)
+		ratbagd_device_free(device);
+
+	return NULL;
 }
 
 const char *ratbagd_device_get_sysname(struct ratbagd_device *device)

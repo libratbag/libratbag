@@ -185,7 +185,7 @@ int ratbagd_reset_test_device(sd_bus_message *m,
 
 	if (ratbagd_test_device) {
 		ratbagd_device_unlink(ratbagd_test_device);
-		ratbagd_device_free(ratbagd_test_device);
+		ratbagd_device_unref(ratbagd_test_device);
 
 		(void) sd_bus_emit_properties_changed(ctx->bus,
 						      RATBAGD_OBJ_ROOT,
