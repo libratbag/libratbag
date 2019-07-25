@@ -456,16 +456,16 @@ class RatbagdProfile(_RatbagdDBus):
         return self._dirty
 
     @GObject.Property
-    def enabled(self):
-        """tells if the profile is enabled."""
-        return self._get_dbus_property("Enabled")
+    def disabled(self):
+        """tells if the profile is disabled."""
+        return self._get_dbus_property("Disabled")
 
-    @enabled.setter
-    def enabled(self, enabled):
+    @disabled.setter
+    def disabled(self, disabled):
         """Enable/Disable this profile.
 
-        @param enabled The new state, as boolean"""
-        self._set_dbus_property("Enabled", "b", enabled)
+        @param disabled The new state, as boolean"""
+        self._set_dbus_property("Disabled", "b", disabled)
 
     @GObject.Property
     def report_rate(self):
