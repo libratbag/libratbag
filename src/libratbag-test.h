@@ -53,7 +53,7 @@ struct ratbag_test_resolution {
 	int xres, yres;
 	bool active;
 	bool dflt;
-	uint32_t caps;
+	uint32_t caps[10];
 
 	int dpi_min, dpi_max;
 };
