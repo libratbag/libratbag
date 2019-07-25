@@ -25,6 +25,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import argparse
 import os
 import time
 import toolbox
@@ -33,11 +34,13 @@ import sys
 from ratbagctl import RatbagErrorCapability  # NOQA
 
 
-def main(argv):
+def main(argv, start_ratbagd=True):
     if not os.geteuid() == 0:
         sys.exit('Script must be run as root')
 
+                                       # replaced by meson
     os.environ['LIBRATBAG_DATA_DIR'] = '@LIBRATBAG_DATA_DIR@'
+    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1"
 
     if not argv:
         argv = ["list"]
@@ -52,9 +55,10 @@ def main(argv):
             parser.print_help()
             return
 
-        ratbagd_process = toolbox.start_ratbagd(verbosity=cmd.verbose)
-        if ratbagd_process is None:
-            sys.exit("Failed to start or connect to ratbagd")
+        if start_ratbagd:
+            ratbagd_process = toolbox.start_ratbagd(verbosity=cmd.verbose)
+            if ratbagd_process is None:
+                sys.exit("Failed to start or connect to ratbagd")
 
         _ratbagd = toolbox.open_ratbagd()
         if _ratbagd is not None:
@@ -75,14 +79,20 @@ def main(argv):
     finally:
         try:
             if cmd.keepalive:
-                print('\nexport RATBAGCTL_DEVEL="{}"\n'.format(os.environ['RATBAGCTL_DEVEL']))
                 signal.pause()
         except KeyboardInterrupt:
             pass
         except AttributeError:  # in case the parsing failed and cmd is None
             pass
-        toolbox.terminate_ratbagd(ratbagd_process)
+
+        if ratbagd_process:
+            toolbox.terminate_ratbagd(ratbagd_process)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    parser = argparse.ArgumentParser(description='commandline tool to access the ratbagd.devel debug server')
+    parser.add_argument('--use-existing-ratbagd', dest='use_existing', action='store_true', default=False,
+                        help='Don\'t start up ratbagd.devel, connect to the already running one')
+
+    args, remainder = parser.parse_known_args()
+    main(remainder, not args.use_existing)
