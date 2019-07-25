@@ -214,7 +214,10 @@ test_read_profile(struct ratbag_profile *profile)
 		res->is_default = r->dflt;
 		if (r->dflt)
 			default_set = true;
-		ratbag_resolution_set_cap(res, r->caps);
+
+		for (size_t j = 0; j < ARRAY_LENGTH(r->caps) && r->caps[j]; j++) {
+			ratbag_resolution_set_cap(res, r->caps[j]);
+		}
 	}
 
 	/* special case triggered by the test suite when num_resolutions is 0 */
