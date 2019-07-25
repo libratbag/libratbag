@@ -96,7 +96,7 @@ def start_ratbagd(verbosity=0):
         if name_owner is None:
             time.sleep(0.2)
 
-    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1"
+    os.environ['RATBAG_TEST'] = "1"
 
     if name_owner is None or ratbagd_process.poll() is not None:
         return None
