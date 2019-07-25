@@ -528,6 +528,10 @@ static bool install_ratbagd_devel_dbus_policy(void)
 	_cleanup_close_ int in = -1, out = -1;
 	int nread, nwrite;
 	char buf[40960];
+	int r;
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	sd_bus_message *m = NULL;
+	sd_bus *bus = NULL;
 
 	rc = false;
 
@@ -557,9 +561,32 @@ static bool install_ratbagd_devel_dbus_policy(void)
 		goto out;
 	}
 
+	/* Now poke DBus to reload itself */
+	r = sd_bus_open_system(&bus);
+	if (r < 0) {
+		log_error("Unable to open system bus: %s\n", strerror(-r));
+		goto out;
+	}
+	r = sd_bus_call_method(bus, "org.freedesktop.DBus",
+			       "/org/freedesktop/DBus",
+			       "org.freedesktop.DBus",
+			       "ReloadConfig",
+			       &error,
+			       &m,
+			       "");
+	if (r < 0) {
+		log_error("Failed to call DBus ReloadConfig: %s\n",
+			  error.message);
+		goto out;
+	}
+
 	rc = true;
 
 out:
+	sd_bus_error_free(&error);
+	sd_bus_message_unref(m);
+	sd_bus_unref(bus);
+
 #endif
 	return rc;
 }
