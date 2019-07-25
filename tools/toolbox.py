@@ -36,9 +36,6 @@ RATBAGCTL_NAME = 'ratbagctl'
 RATBAGCTL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_NAME)
 RATBAGCTL_DEVEL_NAME = 'ratbagctl.devel'
 RATBAGCTL_DEVEL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_DEVEL_NAME)
-DBUS_CONF_DIR = '/etc/dbus-1/system.d'
-DBUS_CONF_NAME = 'org.freedesktop.ratbag_devel1.conf'
-DBUS_CONF_PATH = os.path.join(DBUS_CONF_DIR, DBUS_CONF_NAME)
 
 
 def import_non_standard_path(name, path):
@@ -60,12 +57,6 @@ def import_non_standard_path(name, path):
 def start_ratbagd(verbosity=0):
     from gi.repository import Gio
     import time
-
-    os.makedirs(DBUS_CONF_DIR, exist_ok=True)
-
-    # first copy the policy for the ratbagd daemon to be allowed to run
-    shutil.copy(os.path.join('@MESON_BUILD_ROOT@', DBUS_CONF_NAME),
-                DBUS_CONF_PATH)
 
     # FIXME: kill any running ratbagd.devel
 
@@ -111,10 +102,6 @@ def terminate_ratbagd(ratbagd):
             ratbagd.wait(5)
         except subprocess.TimeoutExpired:
             ratbagd.kill()
-    try:
-        os.unlink(DBUS_CONF_PATH)
-    except FileNotFoundError:
-        pass
 
 
 def sync_dbus():
@@ -130,9 +117,6 @@ from ratbagctl import open_ratbagd, get_parser, RatbagError, RatbagErrorCapabili
 __all__ = [
     RATBAGCTL_NAME,
     RATBAGCTL_PATH,
-    DBUS_CONF_DIR,
-    DBUS_CONF_NAME,
-    DBUS_CONF_PATH,
     start_ratbagd,
     terminate_ratbagd,
     open_ratbagd,

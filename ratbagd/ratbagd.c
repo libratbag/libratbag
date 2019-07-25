@@ -521,6 +521,56 @@ static int ratbagd_run(struct ratbagd *ctx)
 	return sd_event_loop(ctx->event);
 }
 
+static bool install_ratbagd_devel_dbus_policy(void)
+{
+	bool rc = true;
+#ifdef RATBAG_DEVELOPER_EDITION
+	_cleanup_close_ int in = -1, out = -1;
+	int nread, nwrite;
+	char buf[40960];
+
+	rc = false;
+
+	log_verbose("Installing DBus policy file to %s\n", DBUS_POLICY_DST);
+
+	in = open(DBUS_POLICY_SRC, O_RDONLY);
+	if (in == -1) {
+		log_error("Failed to source policy file: %m\n");
+		goto out;
+	}
+	out = open(DBUS_POLICY_DST, O_CREAT|O_WRONLY, 0644);
+	if (out == -1) {
+		log_error("Failed to open destination: %m\n");
+		goto out;
+	}
+
+
+	nread = read(in, buf, sizeof(buf));
+	if (nread < 0) {
+		log_error("Failed to read policy file: %m\n");
+		goto out;
+	}
+
+	nwrite = write(out, buf, nread);
+	if (nread != nwrite) {
+		log_error("Failed to write policy file: %m\n");
+		goto out;
+	}
+
+	rc = true;
+
+out:
+#endif
+	return rc;
+}
+
+static void remove_ratbagd_devel_dbus_policy(void)
+{
+#ifdef RATBAG_DEVELOPER_EDITION
+	unlink(DBUS_POLICY_DST);
+#endif
+}
+
 int main(int argc, char *argv[])
 {
 	struct ratbagd *ctx = NULL;
@@ -550,6 +600,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!install_ratbagd_devel_dbus_policy())
+		goto exit;
+
 	r = ratbagd_new(&ctx);
 	if (r < 0)
 		goto exit;
@@ -558,6 +611,7 @@ int main(int argc, char *argv[])
 
 	r = ratbagd_run(ctx);
 
+	remove_ratbagd_devel_dbus_policy();
 exit:
 	ratbagd_free(ctx);
 
