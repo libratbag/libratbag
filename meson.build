@@ -483,7 +483,7 @@ endif
 
 dbusdir = get_option('dbus-root-dir')
 if dbusdir == ''
-	dbusdir = join_paths(get_option('datadir'), 'dbus-1')
+	dbusdir = join_paths(get_option('prefix'), get_option('datadir'), 'dbus-1')
 endif
 
 configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
