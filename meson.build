@@ -422,19 +422,29 @@ install_man('ratbagd/ratbagd.8')
 # (org.freedesktop.ratbag_devel1). This server is used by ratbagdctl.devel.
 #
 
+config_ratbagd_devel = configuration_data()
+dbus_devel_policy = configure_file(input : 'dbus/org.freedesktop.ratbag_devel1.conf.in',
+				   output : 'org.freedesktop.ratbag_devel1.conf',
+				   configuration : config_ratbagd_devel)
+
+# This is a hack. We always install the devel policy file into
+# /etc/dbus-1/system.d, independent of any prefixes we use otherwise.
+# This should never be used outside of developer machines anyway, but
+# installations on those may use different prefixes for building.
+# This is not set in stone, suggest something better if you can.
+dbussystemdir = join_paths('/', get_option('sysconfdir'), 'dbus-1', 'system.d')
+
 executable('ratbagd.devel',
 	   src_ratbagd,
 	   dependencies : deps_ratbagd,
 	   include_directories : include_directories('src'),
 	   install : false,
 	   c_args : ['-DRATBAG_DBUS_INTERFACE="ratbag_devel1"',
+		     '-DDBUS_POLICY_SRC="@0@/@1@"'.format(meson.build_root(), dbus_devel_policy),
+		     '-DDBUS_POLICY_DST="@0@/@1@"'.format(dbussystemdir, dbus_devel_policy),
 		     '-DDISABLE_COREDUMP=1'],
 )
 
-config_ratbagd_devel = configuration_data()
-configure_file(input : 'dbus/org.freedesktop.ratbag_devel1.conf.in',
-	       output : 'org.freedesktop.ratbag_devel1.conf',
-	       configuration : config_ratbagd_devel)
 
 #### unit file ####
 if enable_systemd

@@ -603,11 +603,6 @@ class TestRatbagCtlLED(TestRatbagCtl):
 def setUpModule():
     global ratbagd_process, ratbagd, parser
 
-    # To do actually do this:
-    # - copy the org.freedesktop.ratbag_devel1.conf to
-    # /etc/dbus-1/system.d
-    # - start builddir/ratbagd.devel (in gdb if need be)
-    # - run builddir/ratbagctl.test
     ratbagd_process = None
     if start_ratbagd:
         ratbagd_process = toolbox.start_ratbagd()
