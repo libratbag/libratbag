@@ -12,15 +12,15 @@
 <busconfig>
 
         <policy user="root">
-                <allow own="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
-                <allow send_destination="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
-                <allow receive_sender="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
+                <allow own="org.freedesktop.ratbag_devel1"/>
+                <allow send_destination="org.freedesktop.ratbag_devel1"/>
+                <allow receive_sender="org.freedesktop.ratbag_devel1"/>
         </policy>
 
 	<!-- allow everyone to talk to the daemon -->
         <policy context="default">
-                <allow send_destination="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
-                <allow receive_sender="org.freedesktop.ratbag_devel1_@ratbagd_sha@"/>
+                <allow send_destination="org.freedesktop.ratbag_devel1"/>
+                <allow receive_sender="org.freedesktop.ratbag_devel1"/>
         </policy>
 
 </busconfig>

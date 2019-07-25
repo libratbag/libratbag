@@ -6,10 +6,6 @@ project('libratbag', 'c',
 
 libratbag_version = meson.project_version().split('.')
 
-git = find_program('git')
-r = run_command('tools/ratbag-git-sha.sh')
-ratbagd_sha = r.stdout().strip()
-
 # We use libtool-version numbers because it's easier to understand.
 # Before making a release, the libratbag_so_* and liblur_so_*
 # numbers should be modified. The components are of the form C:R:A.
@@ -422,9 +418,8 @@ install_man('ratbagd/ratbagd.8')
 
 #### ratbagd_devel ####
 #
-# A development ratbagd server that owns a different name on the bus (named
-# after the git sha). Do not use directly, this server is used by
-# ratbagdctl.devel
+# A development ratbagd server that owns a different name on the bus
+# (org.freedesktop.ratbag_devel1). This server is used by ratbagdctl.devel.
 #
 
 executable('ratbagd.devel',
@@ -432,12 +427,11 @@ executable('ratbagd.devel',
 	   dependencies : deps_ratbagd,
 	   include_directories : include_directories('src'),
 	   install : false,
-	   c_args : ['-DRATBAG_DBUS_INTERFACE="ratbag_devel1_@0@"'.format(ratbagd_sha),
+	   c_args : ['-DRATBAG_DBUS_INTERFACE="ratbag_devel1"',
 		     '-DDISABLE_COREDUMP=1'],
 )
 
 config_ratbagd_devel = configuration_data()
-config_ratbagd_devel.set('ratbagd_sha', ratbagd_sha)
 configure_file(input : 'dbus/org.freedesktop.ratbag_devel1.conf.in',
 	       output : 'org.freedesktop.ratbag_devel1.conf',
 	       configuration : config_ratbagd_devel)
@@ -535,7 +529,6 @@ man_ratbagctl = configure_file (
 )
 
 config_ratbagctl_devel = configuration_data()
-config_ratbagctl_devel.set('ratbagd_sha', ratbagd_sha)
 config_ratbagctl_devel.set('MESON_BUILD_ROOT', meson.build_root())
 config_ratbagctl_devel.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 
