@@ -603,18 +603,14 @@ class TestRatbagCtlLED(TestRatbagCtl):
 def setUpModule():
     global ratbagd_process, ratbagd, parser
 
-    # if the environment variable is set, we're manually debugging.
     # To do actually do this:
     # - copy the org.freedesktop.ratbag_devel1.conf to
     # /etc/dbus-1/system.d
     # - start builddir/ratbagd.devel (in gdb if need be)
     # - set RATBAGCTL_DEVEL to org.freesktop.ratbag_devel1
     # - run builddir/ratbagctl.test
-    # Note that the .conf will be overwritten if you run the test normally
-    # and you have to re-copy it.
-    # Yes, this is a bit insane.
     ratbagd_process = None
-    if not os.environ.get('RATBAGCTL_DEVEL'):
+    if start_ratbagd:
         ratbagd_process = toolbox.start_ratbagd()
         assert ratbagd_process is not None
 
@@ -626,24 +622,33 @@ def setUpModule():
 
 def tearDownModule():
     global ratbagd_process
-    toolbox.terminate_ratbagd(ratbagd_process)
+
+    if start_ratbagd:
+        toolbox.terminate_ratbagd(ratbagd_process)
 
 
 def parse(input_string):
-    global run_ratbagctl_in_subprocess
+    global run_ratbagctl_in_subprocess, start_ratbagd
+
     parser_test = argparse.ArgumentParser(description="Testsuite for ratbagd/ratbagctl", add_help=False)
     parser_test.add_argument("--subprocess", action='store_true', default=False)
+    parser_test.add_argument("--use-existing-ratbagd", dest='use_existing',
+                             action='store_true', default=False,
+                             help='Don\'t start up ratbagd.devel, connect to the already running one')
     ns, rest = parser_test.parse_known_args(input_string)
     run_ratbagctl_in_subprocess = ns.subprocess
+    start_ratbagd = not ns.use_existing
+
+    if start_ratbagd and not os.geteuid() == 0:
+        print('Script must be run as root', file=sys.stderr)
+        sys.exit(77)
+
     return rest
 
 
 def main(argv):
-    if not os.geteuid() == 0:
-        print('Script must be run as root', file=sys.stderr)
-        sys.exit(77)
-
     os.environ['RATBAG_TEST'] = '1'
+    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1"
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
     args = parse(argv)
