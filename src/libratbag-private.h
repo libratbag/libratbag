@@ -571,7 +571,7 @@ ratbag_resolution_set_cap(struct ratbag_resolution *res,
 {
 	assert(cap <= RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 
-	res->capabilities = (1 << cap);
+	res->capabilities |= (1 << cap);
 }
 
 static inline void
