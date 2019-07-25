@@ -88,15 +88,15 @@ def start_ratbagd(verbosity=0):
         proxy = Gio.DBusProxy.new_sync(dbus,
                                        Gio.DBusProxyFlags.NONE,
                                        None,
-                                       "org.freedesktop.ratbag_devel1_@ratbagd_sha@",
-                                       "/org/freedesktop/ratbag_devel1_@ratbagd_sha@",
-                                       "org.freedesktop.ratbag_devel1_@ratbagd_sha@.Manager",
+                                       "org.freedesktop.ratbag_devel1",
+                                       "/org/freedesktop/ratbag_devel1",
+                                       "org.freedesktop.ratbag_devel1.Manager",
                                        None)
         name_owner = proxy.get_name_owner()
         if name_owner is None:
             time.sleep(0.2)
 
-    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1_@ratbagd_sha@"
+    os.environ['RATBAGCTL_DEVEL'] = "org.freedesktop.ratbag_devel1"
 
     if name_owner is None or ratbagd_process.poll() is not None:
         return None

@@ -50,7 +50,7 @@ class TestRatbagCtl(unittest.TestCase):
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      shell=True,
-                                     env={"RATBAGCTL_DEVEL": "org.freedesktop.ratbag_devel1_@ratbagd_sha@"})
+                                     env={"RATBAGCTL_DEVEL": "org.freedesktop.ratbag_devel1"})
 
         (stdout, stderr) = ratbagctl.communicate()
         return (ratbagctl.returncode,
@@ -608,13 +608,10 @@ def setUpModule():
     # - copy the org.freedesktop.ratbag_devel1.conf to
     # /etc/dbus-1/system.d
     # - start builddir/ratbagd.devel (in gdb if need be)
-    # - set RATBAGCTL_DEVEL to org.freesktop.ratbag_devel1_<8-digit-git-sha>
+    # - set RATBAGCTL_DEVEL to org.freesktop.ratbag_devel1
     # - run builddir/ratbagctl.test
     # Note that the .conf will be overwritten if you run the test normally
     # and you have to re-copy it.
-    # Note that the git sha will obviously change and you have to re-do all
-    # this.
-    #
     # Yes, this is a bit insane.
     ratbagd_process = None
     if not os.environ.get('RATBAGCTL_DEVEL'):
