@@ -202,6 +202,7 @@ def print_device(d, level):
     p = d.profiles[0]  # there should be always one
 
     print(" " * level + "{} - {}".format(d.id, d.name))
+    print(" " * level + "             Model: {}".format(d.model))
     print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))
     print(" " * level + "    Number of Leds: {}".format(len(p.leds)))
     print(" " * level + "Number of Profiles: {}".format(len(d.profiles)))
