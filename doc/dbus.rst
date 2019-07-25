@@ -206,12 +206,12 @@ org.freedesktop.ratbag1.Profile
         The name of this profile. If the name is the empty string, the
         profile name cannot be changed.
 
-.. attribute:: Enabled
+.. attribute:: Disabled
 
         :type: b
         :flags: read-write, mutable
 
-        True if this is the profile is enabled, false otherwise.
+        True if this is the profile is disabled, false otherwise.
 
         Note that a disabled profile might not have correct bindings, so it's
         a good thing to rebind everything before calling

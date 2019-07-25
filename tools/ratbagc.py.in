@@ -350,16 +350,16 @@ class RatbagdProfile(metaclass=MetaRatbag):
         return self._dirty
 
     @property
-    def enabled(self):
-        """tells if the profile is enabled."""
-        return libratbag.ratbag_profile_is_enabled(self._profile)
+    def disabled(self):
+        """tells if the profile is disabled."""
+        return not libratbag.ratbag_profile_is_enabled(self._profile)
 
-    @enabled.setter
-    def enabled(self, enabled):
+    @disabled.setter
+    def disabled(self, disabled):
         """Enable/Disable this profile.
 
-        @param enabled The new state, as boolean"""
-        libratbag.ratbag_profile_set_enabled(self._profile, enabled)
+        @param disabled The new state, as boolean"""
+        libratbag.ratbag_profile_set_enabled(self._profile, not disabled)
 
     @property
     def report_rate(self):
