@@ -174,6 +174,7 @@ static void ratbagd_device_commit_pending(void *data)
 	r = ratbag_device_commit(device->lib_device);
 	if (r < 0)
 		ratbagd_device_resync(device, device->ctx->bus);
+	ratbagd_device_unref(device);
 }
 
 static int ratbagd_device_commit(sd_bus_message *m,
@@ -184,7 +185,7 @@ static int ratbagd_device_commit(sd_bus_message *m,
 
 	ratbagd_schedule_task(device->ctx,
 			      ratbagd_device_commit_pending,
-			      device);
+			      ratbagd_device_ref(device));
 
 	CHECK_CALL(sd_bus_reply_method_return(m, "u", 0));
 

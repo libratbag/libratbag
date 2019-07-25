@@ -178,10 +178,12 @@ int ratbagd_reset_test_device(sd_bus_message *m,
 			      void *userdata,
 			      sd_bus_error *error)
 {
+	static int count;
 	static struct ratbagd_device *ratbagd_test_device = NULL;
 	struct ratbagd *ctx = userdata;
 	struct ratbag_device *device;
 	int r;
+	char devicename[64];
 
 	if (ratbagd_test_device) {
 		ratbagd_device_unlink(ratbagd_test_device);
@@ -196,7 +198,8 @@ int ratbagd_reset_test_device(sd_bus_message *m,
 
 	device = ratbag_device_new_test_device(ctx->lib_ctx, &ratbagd_test_device_descr);
 
-	r = ratbagd_device_new(&ratbagd_test_device, ctx, "test_device", device);
+	snprintf(devicename, sizeof(devicename), "test_device_%d", count++);
+	r = ratbagd_device_new(&ratbagd_test_device, ctx, devicename, device);
 
 	/* the ratbagd_device takes its own reference, drop ours */
 	ratbag_device_unref(device);
