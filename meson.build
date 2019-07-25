@@ -119,7 +119,10 @@ lib_libhidpp = static_library('hidpp',
 	dependencies : deps_libhidpp)
 dep_libhidpp = declare_dependency(link_with: lib_libhidpp)
 
-### liblur.a ####
+### liblur ####
+#
+# liblur is the library to handle logitech unifying receivers.
+#
 install_headers('src/liblur.h')
 
 src_liblur = [
@@ -155,6 +158,9 @@ pkgconfig.generate (
 )
 
 #### libratbag.so ####
+#
+# libratbag is an internal-only library and the bit that does the actual
+# work talking to the mouse. it's used by ratbagd.
 src_libratbag = [
 	'src/libratbag-enums.h',
 	'src/libratbag.h',
@@ -243,6 +249,8 @@ executable('hidpp20-reset',
 )
 
 #### lur-command ####
+#
+# A tool to access and manipulate logitech unifying receivers.
 src_lur_command = [ 'tools/lur-command.c' ]
 executable('lur-command',
 	src_lur_command,
@@ -376,6 +384,10 @@ if enable_tests
 endif
 
 #### ratbagd ####
+#
+# The main item of this repo, a DBus server that uses libratbag to talk to
+# the mice. The DBus API is the public-facing API.
+#
 src_ratbagd = [
 	'src/shared-macro.h',
 	'src/shared-rbtree.h',
@@ -409,6 +421,11 @@ executable('ratbagd',
 install_man('ratbagd/ratbagd.8')
 
 #### ratbagd_devel ####
+#
+# A development ratbagd server that owns a different name on the bus (named
+# after the git sha). Do not use directly, this server is used by
+# ratbagdctl.devel
+#
 
 executable('ratbagd.devel',
 	   src_ratbagd,
@@ -497,7 +514,7 @@ else
   py3 = pymod.find_installation()
 endif
 
-# ratbagctl calls ratbagd over DBus
+# ratbagctl is the commandline tool to interact with ratbagd over DBus.
 custom_target('ratbagctl',
   output : 'ratbagctl',
   input : ['tools/ratbagctl.in', 'tools/ratbagd.py'],
@@ -582,6 +599,10 @@ ratbagc_py_conf.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 ratbagc_py = configure_file(input: 'tools/ratbagc.py.in',
 			    output: 'ratbagc.py',
 			    configuration: ratbagc_py_conf)
+
+# ratbag-command is a commandline tool with the UI as ratbagctl but instead
+# of connecting to ratbagd over DBus, it uses libratbag directly. This is a
+# development tool for protocol debugging etc.
 custom_target('ratbag-command',
   output : 'ratbag-command',
   input : ['tools/ratbagctl.in', ratbagc_py],
