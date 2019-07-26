@@ -27,6 +27,7 @@ cc = meson.get_compiler('c')
 cflags = ['-Wno-unused-parameter',
 	  '-fvisibility=hidden',
 	  '-Wmissing-prototypes',
+	  '-Wformat', # required by format-security
 	  '-Werror=format-security',
 	  '-Wstrict-prototypes']
 add_project_arguments(cflags, language: 'c')
