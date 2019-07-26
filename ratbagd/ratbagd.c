@@ -169,6 +169,7 @@ static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 #ifdef RATBAG_DEVELOPER_EDITION
 	SD_BUS_METHOD("ResetTestDevice", "", "u", ratbagd_reset_test_device, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("LoadTestDevice", "s", "i", ratbagd_load_test_device, SD_BUS_VTABLE_UNPRIVILEGED),
 #endif /* RATBAG_DEVELOPER_EDITION */
 	SD_BUS_VTABLE_END,
 };

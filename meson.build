@@ -65,6 +65,7 @@ pkgconfig = import('pkgconfig')
 dep_udev = dependency('libudev')
 dep_libevdev = dependency('libevdev')
 dep_glib = dependency('glib-2.0')
+dep_json_glib = dependency('json-glib-1.0')
 dep_lm = cc.find_library('m')
 dep_unistring = cc.find_library('unistring')
 
@@ -183,6 +184,7 @@ deps_libratbag = [
 	dep_udev,
 	dep_libevdev,
 	dep_glib,
+	dep_json_glib,
 	dep_libutil,
 	dep_libhidpp,
 ]
@@ -394,6 +396,8 @@ src_ratbagd = [
 	'ratbagd/ratbagd-profile.c',
 	'ratbagd/ratbagd-resolution.c',
 	'ratbagd/ratbagd-test.c',
+	'ratbagd/ratbagd-json.c',
+	'ratbagd/ratbagd-json.h',
 	'src/libratbag-util.h',
 	'src/libratbag-util.c',
 ]

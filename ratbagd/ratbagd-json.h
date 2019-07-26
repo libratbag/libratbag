@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017 Red Hat, Inc.
+ * Copyright © 2019 Red Hat, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,15 +24,5 @@
 #pragma once
 
 #include "libratbag-test.h"
-#include "ratbagd.h"
 
-void ratbagd_init_test_device(struct ratbagd *ctx);
-
-#ifdef RATBAG_DEVELOPER_EDITION
-int ratbagd_reset_test_device(sd_bus_message *m,
-			      void *userdata,
-			      sd_bus_error *error);
-int ratbagd_load_test_device(sd_bus_message *m,
-			     void *userdata,
-			     sd_bus_error *error);
-#endif /* RATBAG_DEVELOPER_EDITION */
+int ratbagd_parse_json(const char *data, struct ratbag_test_device *device);

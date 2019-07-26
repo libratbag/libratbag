@@ -30,6 +30,7 @@
 #include <systemd/sd-event.h>
 
 #include "libratbag-test.h"
+#include "ratbagd-json.h"
 
 /* A pre-setup sane device. Use for sanity testing by toggling the various
  * error conditions.
@@ -173,14 +174,12 @@ static const struct ratbag_test_device ratbagd_test_device_descr = {
 	.destroyed_data = NULL,
 };
 
-
-int ratbagd_reset_test_device(sd_bus_message *m,
-			      void *userdata,
-			      sd_bus_error *error)
+static int load_test_device(sd_bus_message *m,
+			    struct ratbagd *ctx,
+			    const struct ratbag_test_device *source)
 {
 	static int count;
 	static struct ratbagd_device *ratbagd_test_device = NULL;
-	struct ratbagd *ctx = userdata;
 	struct ratbag_device *device;
 	int r;
 	char devicename[64];
@@ -196,7 +195,7 @@ int ratbagd_reset_test_device(sd_bus_message *m,
 						      NULL);
 	}
 
-	device = ratbag_device_new_test_device(ctx->lib_ctx, &ratbagd_test_device_descr);
+	device = ratbag_device_new_test_device(ctx->lib_ctx, source);
 
 	snprintf(devicename, sizeof(devicename), "testdevice%d", count++);
 	r = ratbagd_device_new(&ratbagd_test_device, ctx, devicename, device);
@@ -220,6 +219,64 @@ int ratbagd_reset_test_device(sd_bus_message *m,
 	}
 
 	return 0;
+}
+
+int ratbagd_reset_test_device(sd_bus_message *m,
+			      void *userdata,
+			      sd_bus_error *error)
+{
+	struct ratbagd *ctx = userdata;
+
+	return load_test_device(m, ctx, &ratbagd_test_device_descr);
+}
+
+static const struct ratbag_test_device default_device_descr = {
+	.num_profiles = 1,
+	.num_resolutions = 1,
+	.num_buttons = 1,
+	.num_leds = 0,
+	.profiles = {
+		{
+			.name = NULL,
+			.buttons = {
+				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
+				  .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				  .button = 0 },
+			},
+			.resolutions = {
+				{ .xres = 1000, .yres = 1000,
+				  .dpi_min = 1000, .dpi_max = 1000},
+			},
+			.disabled = false,
+			.active = true,
+			.dflt = true,
+			.hz = 1000,
+			.report_rates = {1000},
+		},
+	},
+	.destroyed = NULL,
+	.destroyed_data = NULL,
+};
+
+
+int ratbagd_load_test_device(sd_bus_message *m,
+			     void *userdata,
+			     sd_bus_error *error)
+{
+	struct ratbagd *ctx = userdata;
+	struct ratbag_test_device td = default_device_descr;
+	char *data;
+	int r = 0;
+
+	CHECK_CALL(sd_bus_message_read(m, "s", &data));
+
+	r = ratbagd_parse_json(data, &td);
+	if (r != 0) {
+		log_error("Failed to parse JSON data\n");
+	} else {
+		r = load_test_device(m, ctx, &td);
+	}
+	return sd_bus_reply_method_return(m, "i", r);
 }
 
 #endif
