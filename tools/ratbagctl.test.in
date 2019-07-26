@@ -358,10 +358,46 @@ class TestRatbagCtlResolution(TestRatbagCtl):
 
 
 class TestRatbagCtlDPI(TestRatbagCtl):
+    json = '''
+    {
+      "profiles": [
+        { "is_active": true,
+          "resolutions": [
+            { "xres": 200,
+              "is_active": true,
+              "dpi_min": 50,
+              "dpi_max": 5000 },
+            { "xres": 250,
+              "is_active": false },
+            { "xres": 300,
+              "is_active": false }
+          ]
+        },
+        { "is_active": false,
+          "resolutions": [
+            { "xres": 1000, "yres": 1100,
+              "is_active": false },
+            { "xres": 1300, "yres": 1400,
+              "capabilities": [1],
+              "is_active": true }
+          ]
+        },
+        { "is_active": false,
+          "resolutions": [
+            { "xres": 2100, "yres": 2200,
+              "capabilities": [1],
+              "is_active": true},
+            { "xres": 2200, "yres": 2300,
+              "capabilities": [1],
+              "is_active": false }
+          ]
+        }
+      ]
+    }
+    '''
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.setProfile(0)
 
     def test_dpi_get(self):
         command = "dpi get"
@@ -419,8 +455,8 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         self.setProfile(0)
         r = self.launch_good_test("test_device profile 1 dpi get")
         self.assertEqual(r, "1300x1400dpi")
-        r = self.launch_good_test("test_device profile 1 resolution 1 dpi get")
-        self.assertEqual(r, "1200x1300dpi")
+        r = self.launch_good_test("test_device profile 2 resolution 1 dpi get")
+        self.assertEqual(r, "2200x2300dpi")
         r = self.launch_good_test("test_device resolution 2 dpi get")
         self.assertEqual(int(r[:-3]), 300)  # drop 'dpi' suffix
         self.launch_fail_test("test_device profile 1 profile 1 dpi get")
