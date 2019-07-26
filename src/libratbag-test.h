@@ -73,7 +73,7 @@ struct ratbag_test_led {
 };
 
 struct ratbag_test_profile {
-	const char *name;
+	char *name;
 	struct ratbag_test_button buttons[RATBAG_TEST_MAX_BUTTONS];
 	struct ratbag_test_resolution resolutions[RATBAG_TEST_MAX_RESOLUTIONS];
 	struct ratbag_test_led leds[RATBAG_TEST_MAX_LEDS];
