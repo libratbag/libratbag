@@ -198,7 +198,7 @@ int ratbagd_reset_test_device(sd_bus_message *m,
 
 	device = ratbag_device_new_test_device(ctx->lib_ctx, &ratbagd_test_device_descr);
 
-	snprintf(devicename, sizeof(devicename), "test_device_%d", count++);
+	snprintf(devicename, sizeof(devicename), "testdevice%d", count++);
 	r = ratbagd_device_new(&ratbagd_test_device, ctx, devicename, device);
 
 	/* the ratbagd_device takes its own reference, drop ours */
