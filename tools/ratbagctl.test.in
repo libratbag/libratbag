@@ -464,10 +464,25 @@ class TestRatbagCtlDPI(TestRatbagCtl):
 
 
 class TestRatbagCtlReportRate(TestRatbagCtl):
+    json = '''
+    {
+      "profiles": [
+        { "is_active": true,
+          "rate":  1000,
+          "report_rates": [500, 1000]
+        },
+        { "is_active": false,
+          "rate":  2000
+        },
+        { "is_active": false,
+          "rate":  3000
+        }
+      ]
+    }
+    '''
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.setProfile(0)
 
     def test_rate_get(self):
         command = "rate get"
