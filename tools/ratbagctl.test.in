@@ -38,10 +38,22 @@ run_ratbagctl_in_subprocess = False
 
 
 class TestRatbagCtl(unittest.TestCase):
+    json = None
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.reset_test_device()
+
+        # it's a lot easier to debug a validataion failure here than
+        # with ratbagd failing
+        if cls.json is not None:
+            import json
+            json.loads(cls.json)
+
+        if cls.json is None:
+            cls.reset_test_device()
+        else:
+            cls.load_test_device(cls.json)
         cls.find_test_device()
 
     @classmethod
@@ -93,6 +105,13 @@ class TestRatbagCtl(unittest.TestCase):
     def reset_test_device(cls):
         global ratbagd
         ratbagd._dbus_call("ResetTestDevice", "")
+        toolbox.sync_dbus()
+
+    @classmethod
+    def load_test_device(cls, json):
+        global ratbagd
+        rc = ratbagd._dbus_call("LoadTestDevice", "s", json)
+        assert(rc == 0)
         toolbox.sync_dbus()
 
     @classmethod
@@ -153,24 +172,42 @@ class TestRatbagCtlName(TestRatbagCtl):
 
 
 class TestRatbagCtlProfile(TestRatbagCtl):
+    json = '''
+    {
+      "profiles": [
+        {
+          "is_active": false
+        },
+        {
+          "name": "test profile x2",
+          "is_active": false
+        },
+        {
+          "is_active": true
+        },
+        {
+          "is_active": false,
+          "is_disabled": true
+        }
+      ]
+    }
+    '''
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.setProfile(0)
-        cls.setProfile(1)
-        cls.setProfile(0)
 
     def test_profile_name_get(self):
         command = "profile 1 name get"
         r = self.launch_good_test("test_device " + command)
-        self.assertEqual(r, 'test profile 2')
+        self.assertEqual(r, 'test profile x2')
         self.launch_fail_test(command)
         self.launch_fail_test("test_device " + command + " X")
         self.launch_fail_test("test_device profile name get")
 
     def test_profile_name_set(self):
         r = self.launch_good_test("test_device profile 1 name get")
-        self.assertEqual(r, 'test profile 2')
+        self.assertEqual(r, 'test profile x2')
         self.launch_good_test("test_device profile 1 name set banana")
         r = self.launch_good_test("test_device profile 1 name get")
         self.assertEqual(r, 'banana')
@@ -186,7 +223,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
     def test_profile_active_get(self):
         command = "profile active get"
         r = self.launch_good_test("test_device " + command)
-        self.assertEqual(int(r), 0)
+        self.assertEqual(int(r), 2)
         self.launch_fail_test(command)
         self.launch_fail_test("test_device " + command + " X")
 
