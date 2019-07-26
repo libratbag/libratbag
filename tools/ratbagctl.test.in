@@ -272,10 +272,41 @@ class TestRatbagCtlProfile(TestRatbagCtl):
 
 
 class TestRatbagCtlResolution(TestRatbagCtl):
+    json = '''
+    {
+      "profiles": [
+        {
+          "is_active": false
+        },
+        {
+          "is_active": false
+        },
+        {
+          "is_active": true,
+          "resolutions": [
+            { "is_active": false,
+              "is_default": true },
+            { "xres": 1200, "yres": 1300,
+              "capabilities": [1],
+              "is_default": false,
+              "is_active": false },
+            { "xres": 2300, "yres": 2400,
+              "capabilities": [1],
+              "is_active": true,
+              "is_default": false }
+          ]
+        },
+        {
+          "is_active": false,
+          "is_disabled": true
+        }
+      ]
+    }
+    '''
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.setProfile(1)
 
     def test_resolution_active_get(self):
         command = "resolution active get"
@@ -304,13 +335,13 @@ class TestRatbagCtlResolution(TestRatbagCtl):
         self.launch_fail_test("resolution 1 get X")
 
     def test_profile_resolution(self):
-        r = self.launch_good_test("test_device profile 2 resolution 2 get")
-        self.assertEqual(r, "2: 2300x2400dpi")
+        r = self.launch_good_test("test_device profile 2 resolution 1 get")
+        self.assertEqual(r, "1: 1200x1300dpi")
 
     def test_resolution_default_get(self):
         command = "resolution default get"
         r = self.launch_good_test("test_device " + command)
-        self.assertEqual(int(r), 1)
+        self.assertEqual(int(r), 0)
         self.launch_fail_test("test_device " + command + " X")
         self.launch_fail_test("test_device " + command + " 10")
 
