@@ -612,10 +612,57 @@ class TestRatbagCtlButton(TestRatbagCtl):
 
 
 class TestRatbagCtlLED(TestRatbagCtl):
+    json = '''
+    {
+      "profiles": [
+        { "is_active": true,
+          "leds": [
+            { "type": 1,
+              "mode": 0,
+              "duration": 1000,
+              "brightness": 20 },
+            { "type": 1,
+              "mode": 1,
+              "duration": 333,
+              "brightness": 40,
+              "color": [255, 0, 0] },
+            { "type": 1,
+              "mode": 2,
+              "duration": 333,
+              "brightness": 40 }
+          ]
+        },
+        {
+          "leds": [
+            { "type": 1,
+              "mode": 1 },
+            { "type": 1,
+              "mode": 0 },
+            { "type": 1,
+              "mode": 1 }
+          ]
+        },
+        {
+          "leds": [
+            { "type": 1,
+              "mode": 1,
+              "color": [255, 0, 0],
+              "duration": 1000 },
+            { "type": 1,
+              "mode": 2,
+              "brightness": 40,
+              "duration": 333 },
+            { "type": 1,
+              "mode": 1 }
+          ]
+        }
+      ]
+    }
+    '''
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.setProfile(0)
 
     def test_led_n_get(self):
         self.setProfile(0)
