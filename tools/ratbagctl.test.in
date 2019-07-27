@@ -50,9 +50,7 @@ class TestRatbagCtl(unittest.TestCase):
             import json
             json.loads(cls.json)
 
-        if cls.json is None:
-            cls.reset_test_device()
-        else:
+        if cls.json is not None:
             cls.load_test_device(cls.json)
         cls.find_test_device()
 

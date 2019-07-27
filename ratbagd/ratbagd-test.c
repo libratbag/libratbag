@@ -32,148 +32,6 @@
 #include "libratbag-test.h"
 #include "ratbagd-json.h"
 
-/* A pre-setup sane device. Use for sanity testing by toggling the various
- * error conditions.
- */
-static const struct ratbag_test_device ratbagd_test_device_descr = {
-	.num_profiles = 4,
-	.num_resolutions = 3,
-	.num_buttons = 4,
-	.num_leds = 3,
-	.profiles = {
-		{
-			.name = NULL,
-			.buttons = {
-				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
-				  .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
-				  .button = 0 },
-				{ .button_type = RATBAG_BUTTON_TYPE_MIDDLE,
-				  .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
-				  .key = KEY_3 },
-				{ .button_type = RATBAG_BUTTON_TYPE_RIGHT,
-				  .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
-				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
-				  .macro = {
-					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
-					    .value = KEY_B },
-					  { .type = RATBAG_MACRO_EVENT_KEY_RELEASED,
-					    .value = KEY_B },
-					  { .type = RATBAG_MACRO_EVENT_WAIT,
-					    .value = 300 },
-				  },
-				}
-			},
-			.resolutions = {
-				{ .xres = 100, .yres = 200,
-					.dpi_min = 50, .dpi_max = 5000},
-				{ .xres = 200, .yres = 300, .active = true, .dflt = true },
-				{ .xres = 300, .yres = 400 },
-			},
-			.active = true,
-			.dflt = false,
-			.hz = 1000,
-			.report_rates = {500, 1000},
-
-			.leds = {
-				{
-					.mode = RATBAG_LED_OFF,
-					.color = { .red = 255, .green = 0, .blue = 0 },
-					.ms = 1000,
-					.brightness = 20,
-					.type = RATBAG_LED_TYPE_LOGO,
-				},
-				{
-					.mode = RATBAG_LED_ON,
-					.color = { .red = 255, .green = 0, .blue = 0 },
-					.ms = 1000,
-					.brightness = 20,
-					.type = RATBAG_LED_TYPE_SIDE,
-				},
-				{
-					.mode = RATBAG_LED_CYCLE,
-					.color = { .red = 255, .green = 255, .blue = 0 },
-					.ms = 333,
-					.brightness = 40,
-					.type = RATBAG_LED_TYPE_SIDE,
-				}
-			},
-		},
-		{
-			.buttons = {
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
-				  .key = 4 },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
-				  .key = 5 },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
-				  .key = 6 },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_KEY,
-				  .key = 7 },
-			},
-			.resolutions = {
-				{ .xres = 1100, .yres = 1200,
-				  .caps = {RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION} },
-				{ .xres = 1200, .yres = 1300, .dflt = true,
-				  .caps = {RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION} },
-				{ .xres = 1300, .yres = 1400, .active = true,
-				  .caps = {RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION} },
-			},
-			.hz = 2000,
-			.active = false,
-			.dflt = true,
-			.name = "test profile 2",
-		},
-		{
-			.buttons = {
-				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
-				  .action_type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
-				  .special = RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO,
-				  .macro = {
-					  { .type = RATBAG_MACRO_EVENT_KEY_PRESSED,
-					    .value = KEY_A },
-					  { .type = RATBAG_MACRO_EVENT_KEY_RELEASED,
-					    .value = KEY_A },
-					  { .type = RATBAG_MACRO_EVENT_WAIT,
-					    .value = 150 },
-				  }
-				},
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
-				  .button = 2 },
-				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
-				  .button = 3 },
-			},
-			.resolutions = {
-				{ .xres = 2100, .yres = 2200, .active = true, .caps = {RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION} },
-				{ .xres = 2200, .yres = 2300, .dflt = true, .caps = {RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION} },
-				{ .xres = 2300, .yres = 2400, .caps = {RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION} },
-			},
-			.hz = 3000,
-			.leds = {
-				{
-					.mode = RATBAG_LED_ON,
-					.color = { .red = 255, .green = 0, .blue = 0 },
-					.ms = 1000,
-					.brightness = 20
-				},
-				{
-					.mode = RATBAG_LED_CYCLE,
-					.color = { .red = 255, .green = 255, .blue = 0 },
-					.ms = 333,
-					.brightness = 40
-				}
-			},
-			.active = false,
-			.dflt = false,
-		},
-		{
-			.disabled = true,
-		},
-	},
-	.destroyed = NULL,
-	.destroyed_data = NULL,
-};
-
 static int load_test_device(sd_bus_message *m,
 			    struct ratbagd *ctx,
 			    const struct ratbag_test_device *source)
@@ -219,15 +77,6 @@ static int load_test_device(sd_bus_message *m,
 	}
 
 	return 0;
-}
-
-int ratbagd_reset_test_device(sd_bus_message *m,
-			      void *userdata,
-			      sd_bus_error *error)
-{
-	struct ratbagd *ctx = userdata;
-
-	return load_test_device(m, ctx, &ratbagd_test_device_descr);
 }
 
 static const struct ratbag_test_device default_device_descr = {
@@ -286,7 +135,7 @@ void ratbagd_init_test_device(struct ratbagd *ctx)
 #ifdef RATBAG_DEVELOPER_EDITION
 	setenv("RATBAG_TEST", "1", 0);
 
-	ratbagd_reset_test_device(NULL, ctx, NULL);
+	load_test_device(NULL, ctx, &default_device_descr);
 #endif
 }
 
