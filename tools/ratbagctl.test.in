@@ -526,10 +526,38 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
 
 
 class TestRatbagCtlButton(TestRatbagCtl):
+    json = '''
+    {
+      "profiles": [
+        { "is_active": true,
+          "buttons": [
+              { "button": 0 },
+              { "action_type": "none" },
+              { "action_type": "special",
+                "special": "profile-cycle-up" },
+              { "action_type": "macro",
+                "macro": [ "+B", "-B", "t300" ] }
+          ]
+        },
+        { "is_active": false
+        },
+        { "is_active": false,
+          "buttons": [
+              { "action_type": "special",
+                "special": "profile-cycle-up" },
+              { "action_type": "special" },
+              { "button": 2,
+                "action_type": "button" },
+              { "button": 3,
+                "action_type": "button" }
+          ]
+        }
+      ]
+    }
+    '''
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.setProfile(0)
 
     def test_button_count(self):
         command = "button count"
