@@ -800,8 +800,13 @@ def setUpModule():
         ratbagd_process = toolbox.start_ratbagd()
         assert ratbagd_process is not None
 
-    ratbagd = toolbox.open_ratbagd(ratbagd_process)
-    assert ratbagd is not None
+    try:
+        ratbagd = toolbox.open_ratbagd(ratbagd_process)
+        assert ratbagd is not None
+    except Exception as e:
+        if ratbagd_process is not None:
+            toolbox.terminate_ratbagd(ratbagd_process)
+        raise e
 
     parser = toolbox.get_parser()
 
