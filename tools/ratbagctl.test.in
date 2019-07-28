@@ -642,6 +642,7 @@ def parse(input_string):
 
 def main(argv):
     os.environ['RATBAG_TEST'] = '1'
+    os.environ['LIBRATBAG_DATA_DIR'] = '@LIBRATBAG_DATA_DIR@'
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
     args = parse(argv)
