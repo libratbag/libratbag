@@ -811,7 +811,7 @@ class RatbagdMacro(GObject.Object):
 
     @GObject.Property
     def keys(self):
-        """A list of (RatbagdButton.MACRO_*, value) tuples representing the
+        """A list of (RatbagdButton.Macro.*, value) tuples representing the
         current macro."""
         return self._macro
 
@@ -821,7 +821,7 @@ class RatbagdMacro(GObject.Object):
         libratbag format.
 
         @param macro The macro in libratbag format, as
-                     [(RatbagdButton.MACRO_*, value)].
+                     [(RatbagdButton.Macro.*, value)].
         """
         ratbagd_macro = RatbagdMacro()
 
@@ -838,7 +838,7 @@ class RatbagdMacro(GObject.Object):
     def append(self, type, value):
         """Appends the given event to the current macro.
 
-        @param type The type of event, as one of RatbagdButton.MACRO_*.
+        @param type The type of event, as one of RatbagdButton.Macro.*.
         @param value If the type denotes a key event, the X.Org or Gdk keycode
                      of the event, as int. Otherwise, the value of the timeout
                      in milliseconds, as int.
