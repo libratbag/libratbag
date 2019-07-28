@@ -35,7 +35,6 @@ add_project_arguments(cflags, language: 'c')
 config_h = configuration_data()
 config_h.set('_GNU_SOURCE', '1')
 config_h.set_quoted('RATBAG_VERSION', meson.project_version())
-config_h.set_quoted('FALLBACK_SVG_NAME', 'fallback.svg')
 libratbag_data_dir = join_paths(get_option('prefix'),
 				get_option('datadir'),
 				'libratbag')
