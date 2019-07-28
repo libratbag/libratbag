@@ -4,6 +4,12 @@ project('libratbag', 'c',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
 	meson_version : '>= 0.40.0')
 
+# The DBus API version. Increase this every time the DBus API changes.
+# No backwards/forwards guarantee, clients are expected to understand
+# whatever ratbagd speaks or bail out. This should be removed if we ever
+# finish the API and declare it stable.
+ratbagd_api_version = 1
+
 # We use libtool-version numbers because it's easier to understand.
 # Before making a release, the libratbag_so_* and liblur_so_*
 # numbers should be modified. The components are of the form C:R:A.
@@ -35,6 +41,7 @@ add_project_arguments(cflags, language: 'c')
 config_h = configuration_data()
 config_h.set('_GNU_SOURCE', '1')
 config_h.set_quoted('RATBAG_VERSION', meson.project_version())
+config_h.set('RATBAGD_API_VERSION', ratbagd_api_version)
 libratbag_data_dir = join_paths(get_option('prefix'),
 				get_option('datadir'),
 				'libratbag')
@@ -520,15 +527,22 @@ else
   py3 = pymod.find_installation()
 endif
 
+config_ratbagctl = configuration_data()
+config_ratbagctl.set('RATBAGD_API_VERSION', ratbagd_api_version)
+config_ratbagctl.set('version', meson.project_version())
+
+ratbagctl_in = configure_file(input : 'tools/ratbagctl.in.in',
+			      output : 'ratbagctl.in',
+			      configuration: config_ratbagctl)
+
 # ratbagctl is the commandline tool to interact with ratbagd over DBus.
 custom_target('ratbagctl',
   output : 'ratbagctl',
-  input : ['tools/ratbagctl.in', 'tools/ratbagd.py'],
+  input : [ratbagctl_in, 'tools/ratbagd.py'],
   build_by_default : true,
   command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
-				'--output', '@OUTPUT@',
-				'--version', meson.project_version()],
+				'--output', '@OUTPUT@'],
   install: true,
   install_dir: get_option('bindir'))
 
@@ -543,6 +557,7 @@ man_ratbagctl = configure_file (
 config_ratbagctl_devel = configuration_data()
 config_ratbagctl_devel.set('MESON_BUILD_ROOT', meson.build_root())
 config_ratbagctl_devel.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
+config_ratbagctl_devel.set('RATBAGD_API_VERSION', ratbagd_api_version)
 
 configure_file(input : 'tools/toolbox.py',
 	       output : 'toolbox.py',
@@ -610,12 +625,11 @@ ratbagc_py = configure_file(input: 'tools/ratbagc.py.in',
 # development tool for protocol debugging etc.
 custom_target('ratbag-command',
   output : 'ratbag-command',
-  input : ['tools/ratbagctl.in', ratbagc_py],
+  input : [ratbagctl_in, ratbagc_py],
   build_by_default : true,
   command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
-				'--output', '@OUTPUT@',
-				'--version', meson.project_version()],
+				'--output', '@OUTPUT@'],
   install: false)
 
 #### output files ####

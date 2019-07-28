@@ -1465,7 +1465,7 @@ def on_device_added(ratbagd, device):
 
 def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
-        r = Ratbagd()
+        r = Ratbagd(@RATBAGD_API_VERSION@)
         r.verbose = verbose
         try:
             r.connect('device-added', on_device_added)

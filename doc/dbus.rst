@@ -80,6 +80,19 @@ org.freedesktop.ratbag1.Manager
 The **org.freedesktop.ratbag1.Manager** interface is the entry point to
 interact with ratbagd.
 
+.. attribute:: APIVersion
+
+        :type: i
+        :flags: read-only,constant
+
+	The DBus API version. This is a stopgap feature while the DBus API
+	is still in flux. The version has no backwards or
+	forward-compatibilty guarantees - your client must understand
+	**exactly** the same version, it is not enough to support an older
+	or a newer version.
+
+	This API will be removed once the DBus API is declared stable.
+
 .. attribute:: Devices
 
         :type: ao
