@@ -4,8 +4,6 @@ project('libratbag', 'c',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
 	meson_version : '>= 0.40.0')
 
-libratbag_version = meson.project_version().split('.')
-
 # We use libtool-version numbers because it's easier to understand.
 # Before making a release, the libratbag_so_* and liblur_so_*
 # numbers should be modified. The components are of the form C:R:A.
