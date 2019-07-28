@@ -166,6 +166,7 @@ static int ratbagd_get_devices(sd_bus *bus,
 
 static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_START(0),
+	SD_BUS_PROPERTY("APIVersion", "i", 0, offsetof(struct ratbagd, api_version), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Devices", "ao", ratbagd_get_devices, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 #ifdef RATBAG_DEVELOPER_EDITION
 	SD_BUS_METHOD("LoadTestDevice", "s", "i", ratbagd_load_test_device, SD_BUS_VTABLE_UNPRIVILEGED),
@@ -345,6 +346,7 @@ static int ratbagd_new(struct ratbagd **out)
 	int r;
 
 	ctx = zalloc(sizeof(*ctx));
+	ctx->api_version = RATBAGD_API_VERSION;
 
 	r = sd_event_default(&ctx->event);
 	if (r < 0)

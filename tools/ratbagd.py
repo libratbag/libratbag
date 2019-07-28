@@ -62,6 +62,18 @@ class RatbagErrorCode(IntEnum):
     IMPLEMENTATION = -1004
 
 
+class RatbagdIncompatible(Exception):
+    """ratbagd is incompatible with this client"""
+    def __init__(self, ratbagd_version, required_version):
+        super().__init__()
+        self.ratbagd_version = ratbagd_version
+        self.required_version = required_version
+        self.message = "ratbagd API version is {} but we require {}".format(ratbagd_version, required_version)
+
+    def __str__(self):
+        return self.message
+
+
 class RatbagdUnavailable(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
     pass
@@ -238,11 +250,13 @@ class Ratbagd(_RatbagdDBus):
             (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
-    def __init__(self):
+    def __init__(self, api_version):
         super().__init__("Manager", None)
         result = self._get_dbus_property("Devices") or []
         self._devices = [RatbagdDevice(objpath) for objpath in result]
         self._proxy.connect("notify::g-name-owner", self._on_name_owner_changed)
+        if self.api_version != api_version:
+            raise RatbagdIncompatible(self.api_version or -1, api_version)
 
     def _on_name_owner_changed(self, *kwargs):
         self.emit("daemon-disappeared")
@@ -260,6 +274,10 @@ class Ratbagd(_RatbagdDBus):
                     self._devices.remove(device)
                     self.emit("device-removed", device)
             self.notify("devices")
+
+    @GObject.Property
+    def api_version(self):
+        return self._get_dbus_property("APIVersion")
 
     @GObject.Property
     def devices(self):

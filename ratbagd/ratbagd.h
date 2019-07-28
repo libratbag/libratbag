@@ -218,6 +218,8 @@ struct ratbagd_device *ratbagd_device_next(struct ratbagd_device *device);
  */
 
 struct ratbagd {
+	int api_version;
+
 	sd_event *event;
 	struct ratbag *lib_ctx;
 	struct udev_monitor *monitor;
