@@ -1634,6 +1634,7 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G903_HERO	0x04
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -1652,7 +1653,9 @@ union hidpp20_internal_profile {
 		struct hidpp20_color profile_color;
 		uint8_t power_mode;
 		uint8_t angle_snapping;
-		uint8_t reserved[14];
+		uint8_t reserved[10];
+		uint16_t powersave_timeout;
+		uint16_t poweroff_timeout;
 		union hidpp20_button_binding buttons[16];
 		union hidpp20_button_binding alternate_buttons[16];
 		union {
@@ -1660,7 +1663,8 @@ union hidpp20_internal_profile {
 			uint8_t raw[16 * 3];
 		} name;
 		struct hidpp20_internal_led leds[2]; /* G303, g502, g900 only */
-		uint8_t free[24];
+		struct hidpp20_internal_led alt_leds[2];
+		uint8_t free[2];
 		uint16_t crc;
 	} __attribute__((packed)) profile;
 };
@@ -2049,7 +2053,8 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G903_HERO)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -2543,12 +2548,18 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 	profile->default_dpi = pdata->profile.default_dpi;
 	profile->switched_dpi = pdata->profile.switched_dpi;
 
+	profile->powersave_timeout = pdata->profile.powersave_timeout;
+	profile->poweroff_timeout = pdata->profile.poweroff_timeout;
+
 	for (i = 0; i < 5; i++) {
 		profile->dpi[i] = get_unaligned_le_u16(&data[2 * i + 3]);
 	}
 
 	for (i = 0; i < profiles_list->num_leds; i++)
+	{
 		hidpp20_onboard_profiles_read_led(&profile->leds[i], pdata->profile.leds[i]);
+		hidpp20_onboard_profiles_read_led(&profile->alt_leds[i], pdata->profile.alt_leds[i]);
+	}
 
 	hidpp20_buttons_to_cpu(device, profiles_list, profile, pdata->profile.buttons, profiles_list->num_buttons);
 
@@ -2723,12 +2734,19 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	pdata->profile.default_dpi = profile->default_dpi;
 	pdata->profile.switched_dpi = profile->switched_dpi;
 
+	pdata->profile.powersave_timeout = profile->powersave_timeout;
+	pdata->profile.poweroff_timeout = profile->poweroff_timeout;
+
 	for (i = 0; i < 5; i++) {
 		pdata->profile.dpi[i] = hidpp_cpu_to_le_u16(profile->dpi[i]);
 	}
 
 	for (i = 0; i < profiles_list->num_leds; i++)
+	{
 		hidpp20_onboard_profiles_write_led(&pdata->profile.leds[i], &profile->leds[i]);
+		/* we write the current led instead of the stored value */
+		hidpp20_onboard_profiles_write_led(&pdata->profile.alt_leds[i], &profile->leds[i]);
+	}
 
 	hidpp20_buttons_from_cpu(profile, pdata->profile.buttons, profiles_list->num_buttons);
 
