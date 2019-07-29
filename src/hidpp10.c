@@ -161,7 +161,6 @@ hidpp10_build_dpi_table_from_dpi_info(struct hidpp10_device *dev,
 	return 0;
 }
 
-
 static int
 hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 {
@@ -171,6 +170,7 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	int ret;
 	uint8_t hidpp_err = 0;
 	int command_size;
+	_cleanup_free_ char *rxdata = NULL, *txdata = NULL;
 
 	switch (msg->msg.report_id) {
 	case REPORT_ID_SHORT:
@@ -186,9 +186,19 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 	/* create the expected header */
 	expected_header = *msg;
 
+	txdata = hidpp_buffer_to_string(&msg->data[4], command_size - 4);
+	hidpp_log_raw(&dev->base, "hidpp10 tx:  %02x | %02x | %02x | %02x | %s\n",
+		      msg->msg.report_id,
+		      msg->msg.device_idx,
+		      msg->msg.sub_id,
+		      msg->msg.address,
+		      txdata);
+
 	/* response message length doesn't depend on request length */
+#if 0
 	hidpp_log_buf_raw(&dev->base, "  expected_header:		?? ", &expected_header.data[1], 3);
 	hidpp_log_buf_raw(&dev->base, "  expected_error_dev:	", expected_error_dev.data, SHORT_MESSAGE_LENGTH);
+#endif
 
 	/* Send the message to the Device */
 	ret = hidpp_write_command(&dev->base, msg->data, command_size);
@@ -238,8 +248,15 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		goto out_err;
 	}
 
+	rxdata = hidpp_buffer_to_string(&read_buffer.data[4], ret - 4);
+	hidpp_log_raw(&dev->base, "hidpp10 rx:  %02x | %02x | %02x | %02x | %s\n",
+		      read_buffer.msg.report_id,
+		      read_buffer.msg.device_idx,
+		      read_buffer.msg.sub_id,
+		      read_buffer.msg.address,
+		      rxdata);
+
 	if (!hidpp_err) {
-		hidpp_log_buf_raw(&dev->base, "  received: ", read_buffer.data, ret);
 		/* copy the answer for the caller */
 		*msg = read_buffer;
 	}
@@ -277,7 +294,8 @@ hidpp10_get_hidpp_notifications(struct hidpp10_device *dev,
 	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, GET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching HID++ notifications\n");
+	hidpp_log_raw(&dev->base, "Fetching HID++ notifications (%#02x)\n",
+		      __CMD_HIDPP_NOTIFICATIONS);
 
 	res = hidpp10_request_command(dev, &notifications);
 	if (res)
@@ -298,7 +316,8 @@ hidpp10_set_hidpp_notifications(struct hidpp10_device *dev,
 	union hidpp10_message notifications = CMD_HIDPP_NOTIFICATIONS(idx, SET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Setting HID++ notifications\n");
+	hidpp_log_raw(&dev->base, "Setting HID++ notifications (%#02x\n",
+		      __CMD_HIDPP_NOTIFICATIONS);
 
 	notifications.msg.parameters[0] = reporting_flags & 0xFF;
 	notifications.msg.parameters[1] = (reporting_flags >> 8) & 0x1F;
@@ -333,7 +352,8 @@ hidpp10_get_individual_features(struct hidpp10_device *dev,
 	union hidpp10_message features = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, GET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching individual features\n");
+	hidpp_log_raw(&dev->base, "Fetching individual features (%#02x)\n",
+		      __CMD_ENABLE_INDIVIDUAL_FEATURES);
 
 	res = hidpp10_request_command(dev, &features);
 	if (res)
@@ -356,7 +376,8 @@ hidpp10_set_individual_features(struct hidpp10_device *dev,
 	union hidpp10_message mode = CMD_ENABLE_INDIVIDUAL_FEATURES(idx, SET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Setting individual features\n");
+	hidpp_log_raw(&dev->base, "Setting individual features (%#02x)\n",
+		      __CMD_ENABLE_INDIVIDUAL_FEATURES);
 
 	mode.msg.device_idx = dev->index;
 
@@ -782,7 +803,8 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, uint8_t *current_profile
 	unsigned i;
 	uint8_t type, page, offset;
 
-	hidpp_log_raw(&dev->base, "Fetching current profile\n");
+	hidpp_log_raw(&dev->base, "Fetching current profile (%#02x)\n",
+		      __CMD_PROFILE);
 
 	res = hidpp10_request_command(dev, &profile);
 	if (res)
@@ -829,7 +851,8 @@ hidpp10_set_internal_current_profile(struct hidpp10_device *dev,
 	union hidpp10_message profile = CMD_PROFILE(idx, SET_REGISTER_REQ);
 	int8_t page, offset;
 
-	hidpp_log_raw(&dev->base, "Setting current profile\n");
+	hidpp_log_raw(&dev->base, "Setting current profile (%#02x)\n",
+		      __CMD_PROFILE);
 
 	profile.msg.parameters[0] = profile_type;
 
@@ -1532,57 +1555,62 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 		}
 		profile->initialized = 1;
 
-		hidpp_log_buf_raw(&dev->base,
-				  "+++++++++++++++++++ Profile data: +++++++++++++++++ \n",
-				  data->data, 78);
+		hidpp_log_raw(&dev->base,
+			      "+++++++++++++++++++ Profile data: +++++++++++++++++ \n");
+		for (size_t x = 0; x < 78; x += 8) {
+			hidpp_log_buf_raw(&dev->base, NULL, &data->data[x], min(8, 78 - x));
+		}
+		hidpp_log_raw(&dev->base,
+			      "+++++++++++++++++++ Profile data end +++++++++++++++++ \n");
+
 	}
 
 	hidpp_log_raw(&dev->base, "Profile %d:\n", number);
 	for (i = 0; i < 5; i++) {
 		hidpp_log_raw(&dev->base,
-			"DPI mode: %dx%d dpi\n",
+			"  DPI mode: %dx%d dpi\n",
 			profile->dpi_modes[i].xres,
 			profile->dpi_modes[i].yres);
 		hidpp_log_raw(&dev->base,
-			"LED status: 1:%s 2:%s 3:%s 4:%s\n",
+			"  LED status: 1:%s 2:%s 3:%s 4:%s\n",
 			profile->dpi_modes[i].led[0] ? "on" : "off",
 			profile->dpi_modes[i].led[1] ? "on" : "off",
 			profile->dpi_modes[i].led[2] ? "on" : "off",
 			profile->dpi_modes[i].led[3] ? "on" : "off");
 	}
-	hidpp_log_raw(&dev->base, "Angle correction: %d\n", profile->angle_correction);
-	hidpp_log_raw(&dev->base, "Default DPI mode: %d\n", profile->default_dpi_mode);
-	hidpp_log_raw(&dev->base, "Refresh rate: %d\n", profile->refresh_rate);
+	hidpp_log_raw(&dev->base, "  Angle correction: %d\n", profile->angle_correction);
+	hidpp_log_raw(&dev->base, "  Default DPI mode: %d\n", profile->default_dpi_mode);
+	hidpp_log_raw(&dev->base, "  Refresh rate: %d\n", profile->refresh_rate);
 	for (i = 0; i < 13; i++) {
 		union hidpp10_button *button = &profile->buttons[i];
 		switch (button->any.type) {
 		case PROFILE_BUTTON_TYPE_BUTTON:
 			hidpp_log_raw(&dev->base,
-				"Button %zd: button %d\n",
+				"  Button %zd: button %d\n",
 				i,
 				button->button.button);
 			break;
 		case PROFILE_BUTTON_TYPE_KEYS:
 			hidpp_log_raw(&dev->base,
-				"Button %zd: key %d modifier %x\n",
+				"  Button %zd: key %d modifier %x\n",
 				i,
 				button->keys.key,
 				button->keys.modifier_flags);
 			break;
 		case PROFILE_BUTTON_TYPE_SPECIAL:
 			hidpp_log_raw(&dev->base,
-				"Button %zd: special %x\n",
+				"  Button %zd: special %x\n",
 				i,
 				button->special.special);
 			break;
 		case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 			hidpp_log_raw(&dev->base,
-				"Button %zd: consumer: %x\n",
+				"  Button %zd: consumer: %x\n",
 				i,
 				button->consumer_control.consumer_control);
 			break;
 		case PROFILE_BUTTON_TYPE_DISABLED:
-			hidpp_log_raw(&dev->base, "Button %zd: disabled\n", i);
+			hidpp_log_raw(&dev->base, "  Button %zd: disabled\n", i);
 			break;
 		default:
 			/* FIXME: this is the page number for the macro,
@@ -1851,7 +1879,8 @@ hidpp10_get_led_status(struct hidpp10_device *dev,
 	uint8_t *status = led_status.msg.parameters;
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching LED status\n");
+	hidpp_log_raw(&dev->base, "Fetching LED status (%#02x)\n",
+		      __CMD_LED_STATUS);
 
 	res = hidpp10_request_command(dev, &led_status);
 	if (res)
@@ -1877,7 +1906,8 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 	int res;
 	int i;
 
-	hidpp_log_raw(&dev->base, "Setting LED status\n");
+	hidpp_log_raw(&dev->base, "Setting LED status (%#02x)\n",
+		      __CMD_LED_STATUS);
 
 	for (i = 0; i < 6; i++) {
 		switch (led[i]) {
@@ -1928,7 +1958,8 @@ hidpp10_get_led_intensity(struct hidpp10_device *dev,
 	uint8_t *intensity = led_intensity.msg.parameters;
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching LED intensity\n");
+	hidpp_log_raw(&dev->base, "Fetching LED intensity (%#02x)\n",
+		      __CMD_LED_INTENSITY);
 
 	res = hidpp10_request_command(dev, &led_intensity);
 	if (res)
@@ -1953,7 +1984,8 @@ hidpp10_set_led_intensity(struct hidpp10_device *dev,
 	uint8_t *intensity = led_intensity.msg.parameters;
 	int res;
 
-	hidpp_log_raw(&dev->base, "Setting LED intensity\n");
+	hidpp_log_raw(&dev->base, "Setting LED intensity (%#02x)\n",
+		      __CMD_LED_INTENSITY);
 
 	intensity[0]  = led_intensity_in_percent[0]/10 & 0xF;
 	intensity[0] |= (led_intensity_in_percent[1]/10 & 0xF) << 4;
@@ -1992,7 +2024,8 @@ hidpp10_get_led_color(struct hidpp10_device *dev,
 	union hidpp10_message led_color = CMD_LED_COLOR(idx, GET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching LED color\n");
+	hidpp_log_raw(&dev->base, "Fetching LED color (%#02x)\n",
+		      __CMD_LED_COLOR);
 
 	res = hidpp10_request_command(dev, &led_color);
 	if (res)
@@ -2015,7 +2048,8 @@ hidpp10_set_led_color(struct hidpp10_device *dev,
 	union hidpp10_message led_color = CMD_LED_COLOR(idx, SET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Setting LED color\n");
+	hidpp_log_raw(&dev->base, "Setting LED color (%#02x)\n",
+		      __CMD_LED_COLOR);
 
 	led_color.msg.parameters[0] = red;
 	led_color.msg.parameters[1] = green;
@@ -2048,7 +2082,8 @@ hidpp10_get_optical_sensor_settings(struct hidpp10_device *dev,
 	union hidpp10_message sensor = CMD_OPTICAL_SENSOR_SETTINGS(idx, GET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching optical sensor settings\n");
+	hidpp_log_raw(&dev->base, "Fetching optical sensor settings (%#02x)\n",
+		      __CMD_OPTICAL_SENSOR_SETTINGS);
 
 	res = hidpp10_request_command(dev, &sensor);
 	if (res)
@@ -2086,7 +2121,8 @@ hidpp10_get_current_resolution(struct hidpp10_device *dev,
 	union hidpp10_message resolution_long = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, GET_LONG_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching current resolution\n");
+	hidpp_log_raw(&dev->base, "Fetching current resolution (%#02x)\n",
+		      __CMD_CURRENT_RESOLUTION);
 
 	switch (dev->profile_type) {
 	case HIDPP10_PROFILE_G9:
@@ -2117,6 +2153,9 @@ hidpp10_set_current_resolution(struct hidpp10_device *dev,
 	union hidpp10_message resolution = CMD_CURRENT_RESOLUTION(REPORT_ID_SHORT, idx, SET_REGISTER_REQ);
 	union hidpp10_message resolution_long = CMD_CURRENT_RESOLUTION(REPORT_ID_LONG, idx, SET_LONG_REGISTER_REQ);
 	int res;
+
+	hidpp_log_raw(&dev->base, "Setting current resolution (%#02x)\n",
+		      __CMD_CURRENT_RESOLUTION);
 
 	switch (dev->profile_type) {
 	case HIDPP10_PROFILE_G9:
@@ -2157,7 +2196,8 @@ hidpp10_get_usb_refresh_rate(struct hidpp10_device *dev,
 	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
 	int res;
 
-	hidpp_log_raw(&dev->base, "Fetching USB refresh rate\n");
+	hidpp_log_raw(&dev->base, "Fetching USB refresh rate (%#02x)\n",
+		      __CMD_USB_REFRESH_RATE);
 
 	res = hidpp10_request_command(dev, &refresh);
 	if (res)
@@ -2178,7 +2218,8 @@ hidpp10_set_usb_refresh_rate(struct hidpp10_device *dev,
 	unsigned idx = dev->index;
 	union hidpp10_message refresh = CMD_USB_REFRESH_RATE(idx, GET_REGISTER_REQ);
 
-	hidpp_log_raw(&dev->base, "Setting USB refresh rate\n");
+	hidpp_log_raw(&dev->base, "Setting USB refresh rate (%#02x)\n",
+		      __CMD_USB_REFRESH_RATE);
 
 	refresh.msg.parameters[0] = 1000/rate;
 

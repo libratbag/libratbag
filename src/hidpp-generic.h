@@ -147,6 +147,9 @@ hidpp_log(struct hidpp_device *dev,
 	  ...)
 	__attribute__ ((format (printf, 3, 4)));
 
+char *
+hidpp_buffer_to_string(const uint8_t *buf, size_t len);
+
 void
 hidpp_log_buffer(struct hidpp_device *dev,
 		 enum hidpp_log_priority priority,

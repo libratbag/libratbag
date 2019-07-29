@@ -322,6 +322,21 @@ hidpp_log(struct hidpp_device *dev,
 	va_end(args);
 }
 
+char *
+hidpp_buffer_to_string(const uint8_t *buf, size_t len)
+{
+	size_t dstlen = len * 6;
+	char *dst = zalloc(dstlen);
+	unsigned int n = 0;
+	char *sep = "";
+
+	for (unsigned i = 0; i < len; ++i) {
+		n += snprintf_safe(&dst[n], dstlen - n, "%s%02x", sep, buf[i] & 0xFF);
+		sep = " ";
+	}
+	return dst;
+}
+
 void
 hidpp_log_buffer(struct hidpp_device *dev,
 		 enum hidpp_log_priority priority,
@@ -329,23 +344,10 @@ hidpp_log_buffer(struct hidpp_device *dev,
 		 uint8_t *buf, size_t len)
 {
 	_cleanup_free_ char *output_buf = NULL;
-	char *sep = "";
-	unsigned int i, n;
-	unsigned int buf_len;
+	_cleanup_free_ char *bytes = NULL;
 
-	buf_len = header ? strlen(header) : 0;
-	buf_len += len * 3;
-	buf_len += 1; /* terminating '\0' */
-
-	output_buf = zalloc(buf_len);
-	n = 0;
-	if (header)
-		n += snprintf_safe(output_buf, buf_len - n, "%s", header);
-
-	for (i = 0; i < len; ++i) {
-		n += snprintf_safe(&output_buf[n], buf_len - n, "%s%02x", sep, buf[i] & 0xFF);
-		sep = " ";
-	}
+	bytes = hidpp_buffer_to_string(buf, len);
+	asprintf(&output_buf, "%s %s", header ? header : "", bytes);
 
 	hidpp_log(dev, priority, "%s\n", output_buf);
 }
