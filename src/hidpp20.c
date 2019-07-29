@@ -66,6 +66,7 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_DPI);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_REPORT_RATE);
 	CASE_RETURN_STRING(HIDPP_PAGE_COLOR_LED_EFFECTS);
+	CASE_RETURN_STRING(HIDPP_PAGE_RGB_EFFECTS);
 	CASE_RETURN_STRING(HIDPP_PAGE_ONBOARD_PROFILES);
 	CASE_RETURN_STRING(HIDPP_PAGE_MOUSE_BUTTON_SPY);
 	default:
@@ -942,7 +943,7 @@ hidpp20_color_led_effects_get_zone_infos(struct hidpp20_device *device,
 			      "led_info %d: location: %d type %s num_effects: %d persistency_caps: 0x%02x\n",
 			      info->index,
 			      info->location,
-			      hidpp20_8070_get_location_mapping_name(info->location),
+			      hidpp20_led_get_location_mapping_name(info->location),
 			      info->num_effects,
 			      info->persistency_caps);
 	}
@@ -986,6 +987,176 @@ hidpp20_color_led_effect_get_zone_effect_info(struct hidpp20_device *device,
 
 	info->effect_id = get_unaligned_be_u16(&msg.msg.parameters[2]);
 	info->effect_caps = get_unaligned_be_u16(&msg.msg.parameters[4]);
+	info->effect_period = get_unaligned_be_u16(&msg.msg.parameters[6]);
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x8071: RGB Effects                                                        */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_RGB_EFFECTS_GET_INFO				0x00
+#define CMD_RGB_EFFECTS_SET_RGB_CLUSTER_EFFECT			0x10
+#define CMD_RGB_EFFECTS_SET_MULTI_LED_RGB_CLUSTER_PATTERN	0x20
+#define CMD_RGB_EFFECTS_MANAGE_NV_CONFIG			0x30
+#define CMD_RGB_EFFECTS_MANAGE_RGB_LED_BIN_INFO			0x40
+#define CMD_RGB_EFFECTS_MANAGE_SW_CONTROL			0x50
+#define CMD_RGB_EFFECTS_SET_EFFECT_SYNC_CORRECTION		0x60
+#define CMD_RGB_EFFECTS_MANAGE_RGB_POWER_MODE_CONFIG		0x70
+#define CMD_RGB_EFFECTS_MANAGE_RGB_POWER_MODE			0x80
+
+int
+hidpp20_rgb_effects_get_device_info(struct hidpp20_device *device,
+				    struct hidpp20_rgb_device_info *info)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_RGB_EFFECTS_GET_INFO,
+		.msg.parameters[0] = HIDPP20_RGB_EFFECTS_INDEX_ALL,
+		.msg.parameters[1] = HIDPP20_RGB_EFFECTS_INDEX_ALL,
+		.msg.parameters[2] = HIDPP20_RGB_EFFECTS_TOI_GENERAL,
+	};
+	uint8_t feature_index;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_RGB_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	info->cluster_index = msg.msg.parameters[0];
+	info->effect_index = msg.msg.parameters[1];
+	info->cluster_count = msg.msg.parameters[2];
+
+	info->nv_caps = get_unaligned_be_u16(&msg.msg.parameters[3]);
+	info->ext_caps = get_unaligned_be_u16(&msg.msg.parameters[4]);
+
+	return 0;
+}
+
+int
+hidpp20_rgb_effects_get_cluster_info(struct hidpp20_device *device,
+				     uint8_t cluster_index,
+				     struct hidpp20_rgb_cluster_info *info)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_RGB_EFFECTS_GET_INFO,
+		.msg.parameters[0] = cluster_index,
+		.msg.parameters[1] = HIDPP20_RGB_EFFECTS_INDEX_ALL,
+		.msg.parameters[2] = HIDPP20_RGB_EFFECTS_TOI_GENERAL,
+	};
+	uint8_t feature_index;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_RGB_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	info->index = msg.msg.parameters[0];
+	info->effect_index = msg.msg.parameters[1];
+
+	info->location = get_unaligned_be_u16(&msg.msg.parameters[2]);
+	info->num_effects = get_unaligned_be_u16(&msg.msg.parameters[4]);
+	info->persistency_caps = get_unaligned_be_u16(&msg.msg.parameters[6]);
+
+	return 0;
+}
+
+int
+hidpp20_rgb_effects_get_cluster_infos(struct hidpp20_device *device,
+				      struct hidpp20_rgb_cluster_info **infos_list)
+{
+	struct hidpp20_rgb_cluster_info *i_list, *info;
+	struct hidpp20_rgb_device_info device_info = {0};
+	uint8_t num_infos;
+	unsigned i;
+	int rc;
+
+	rc = hidpp20_rgb_effects_get_device_info(device, &device_info);
+	if (rc < 0)
+		return rc;
+
+	num_infos = device_info.cluster_count;
+	if (num_infos == 0) {
+		*infos_list = NULL;
+		return 0;
+	}
+
+	i_list = zalloc(num_infos * sizeof(struct hidpp20_rgb_cluster_info));
+
+	for (i = 0; i < num_infos; i++) {
+		info = &i_list[i];
+		info->index = i;
+		rc = hidpp20_rgb_effects_get_cluster_info(device, i, info);
+		if (rc)
+			goto err;
+
+		hidpp_log_raw(&device->base,
+			      "cluster_info %d: location: %d type %s num_effects: %d persistency_caps: 0x%02x\n",
+			      info->index,
+			      info->location,
+			      hidpp20_led_get_location_mapping_name(info->location),
+			      info->num_effects,
+			      info->persistency_caps);
+	}
+
+	*infos_list = i_list;
+	return num_infos;
+err:
+	free(i_list);
+	return rc;
+}
+
+int
+hidpp20_rgb_effects_get_effect_info(struct hidpp20_device *device,
+				    uint8_t cluster_index,
+				    uint8_t effect_index,
+				    struct hidpp20_rgb_effect_info *info)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_RGB_EFFECTS_GET_INFO,
+		.msg.parameters[0] = cluster_index,
+		.msg.parameters[1] = effect_index,
+		.msg.parameters[2] = HIDPP20_RGB_EFFECTS_TOI_GENERAL,
+	};
+	uint8_t feature_index;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_RGB_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	info->cluster_index = msg.msg.parameters[0];
+	info->effect_index = msg.msg.parameters[1];
+
+	info->effect_id = get_unaligned_be_u16(&msg.msg.parameters[2]);
+	info->capabilities = get_unaligned_be_u16(&msg.msg.parameters[4]);
 	info->effect_period = get_unaligned_be_u16(&msg.msg.parameters[6]);
 
 	return 0;

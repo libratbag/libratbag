@@ -458,6 +458,31 @@ hidpp20_color_led_effect_get_zone_effect_info(struct hidpp20_device *device,
 					      uint8_t zone_effect_index,
 					      struct hidpp20_color_led_zone_effect_info *info);
 
+struct hidpp20_rgb_device_info;
+
+int
+hidpp20_rgb_effects_get_device_info(struct hidpp20_device *device,
+				    struct hidpp20_rgb_device_info *info);
+
+struct hidpp20_rgb_cluster_info;
+
+int
+hidpp20_rgb_effects_get_cluster_info(struct hidpp20_device *device,
+				     uint8_t cluster_index,
+				     struct hidpp20_rgb_cluster_info *info);
+
+int
+hidpp20_rgb_effects_get_cluster_infos(struct hidpp20_device *device,
+				      struct hidpp20_rgb_cluster_info **infos_list);
+
+struct hidpp20_rgb_effect_info;
+
+int
+hidpp20_rgb_effects_get_effect_info(struct hidpp20_device *device,
+				    uint8_t cluster_index,
+				    uint8_t effect_index,
+				    struct hidpp20_rgb_effect_info *info);
+
 enum hidpp20_color_led_location {
 	HIDPP20_COLOR_LED_LOCATION_UNDEFINED = 0,
 	HIDPP20_COLOR_LED_LOCATION_PRIMARY,
@@ -491,7 +516,29 @@ enum hidpp20_color_led_zone_effect {
 	HIDPP20_COLOR_LED_ZONE_EFFECT_BOOT_UP = 8,
 	HIDPP20_COLOR_LED_ZONE_EFFECT_DEMO_MODE = 8,
 	HIDPP20_COLOR_LED_ZONE_EFFECT_BREATHING = 10,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_RIPPLE = 11,
+	HIDPP20_COLOR_LED_ZONE_EFFECT_CUSTOM = 12,
 };
+
+/* -------------------------------------------------------------------------- */
+/* 0x8071 - RGB Effects                                                       */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_RGB_EFFECTS				0x8071
+
+#define HIDPP20_RGB_EFFECTS_INDEX_ALL			0xFF
+
+/* type of info */
+#define HIDPP20_RGB_EFFECTS_TOI_GENERAL			0x00
+#define HIDPP20_RGB_EFFECTS_TOI_EFFECT			0x01
+
+#define HIDPP20_RGB_EFFECTS_SLOT_INFO_STATE		0x00
+#define HIDPP20_RGB_EFFECTS_SLOT_INFO_DEFAULTS		0x01
+#define HIDPP20_RGB_EFFECTS_SLOT_INFO_UUID_0_10		0x02
+#define HIDPP20_RGB_EFFECTS_SLOT_INFO_UUID_11_16	0x03
+#define HIDPP20_RGB_EFFECTS_SLOT_INFO_EFCT_NAME_0_10	0x04
+#define HIDPP20_RGB_EFFECTS_SLOT_INFO_EFCT_NAME_11_21	0x05
+#define HIDPP20_RGB_EFFECTS_SLOT_INFO_EFCT_NAME_21_31	0x06
 
 /* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
@@ -578,11 +625,6 @@ struct hidpp20_color_led_zone_info {
 } __attribute__((packed));
 _Static_assert(sizeof(struct hidpp20_color_led_zone_info) == 5, "Invalid size");
 
-union hidpp20_generic_led_zone_info {
-	struct hidpp20_led_sw_ctrl_led_info* leds;
-	struct hidpp20_color_led_zone_info* color_leds;
-};
-
 struct hidpp20_color_led_zone_effect_info {
        uint8_t zone_index;
        uint8_t zone_effect_index;
@@ -591,6 +633,41 @@ struct hidpp20_color_led_zone_effect_info {
        uint16_t effect_period;
 } __attribute__((packed));
 _Static_assert(sizeof(struct hidpp20_color_led_zone_effect_info) == 8, "Invalid size");
+
+struct hidpp20_rgb_device_info {
+	uint8_t cluster_index;
+	uint8_t effect_index;
+	uint8_t cluster_count;
+	/* we don't care about NV capabilities for libratbag, they just
+	 * indicate sale demo effects */
+	uint16_t nv_caps;
+	uint16_t ext_caps;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_rgb_device_info) == 7, "Invalid size");
+
+struct hidpp20_rgb_cluster_info {
+	uint8_t index;
+	uint8_t effect_index;
+	uint16_t location;
+	uint16_t num_effects;
+	uint16_t persistency_caps;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_rgb_cluster_info) == 8, "Invalid size");
+
+struct hidpp20_rgb_effect_info {
+	uint8_t cluster_index;
+	uint8_t effect_index;
+	uint16_t effect_id;
+	uint16_t capabilities;
+	uint16_t effect_period;
+} __attribute__((packed));
+_Static_assert(sizeof(struct hidpp20_rgb_effect_info) == 8, "Invalid size");
+
+union hidpp20_generic_led_zone_info {
+	struct hidpp20_led_sw_ctrl_led_info* leds;
+	struct hidpp20_color_led_zone_info* color_leds_8070;
+	struct hidpp20_rgb_cluster_info* color_leds_8071;
+};
 
 struct hidpp20_color {
 	uint8_t red;

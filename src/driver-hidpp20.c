@@ -57,6 +57,7 @@
 #define HIDPP_CAP_LED_SW_CONTROL_1300			(1 << 7)
 #define HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060		(1 << 8)
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
+#define HIDPP_CAP_RGB_EFFECTS_8071			(1 << 10)
 
 #define HIDPP_HIDDEN_FEATURE				(1 << 6)
 
@@ -338,7 +339,7 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	struct hidpp20_color_led_info info;
 	int rc;
 
-	led_info = &drv_data->led_infos.color_leds[led->index];
+	led_info = &drv_data->led_infos.color_leds_8070[led->index];
 	profile = &drv_data->profiles->profiles[led->profile->index];
 	h_led = &profile->leds[led->index];
 
@@ -359,7 +360,7 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 
 	/* pre-filled, only override if unknown */
 	if (led->type == RATBAG_LED_TYPE_UNKNOWN)
-		led->type = hidpp20_8070_get_location_mapping(led_info->location);
+		led->type = hidpp20_led_get_location_mapping(led_info->location);
 	led->color.red = h_led->color.red;
 	led->color.green = h_led->color.green;
 	led->color.blue = h_led->color.blue;
@@ -406,6 +407,81 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 }
 
 static void
+hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_data)
+{
+	struct hidpp20_profile *profile;
+	struct hidpp20_led *h_led;
+	struct hidpp20_rgb_device_info device_info;
+	struct hidpp20_rgb_cluster_info *cluster_info;
+	int rc;
+
+	hidpp20_rgb_effects_get_device_info(drv_data->dev, &device_info);
+	cluster_info = &drv_data->led_infos.color_leds_8071[led->index];
+	profile = &drv_data->profiles->profiles[led->profile->index];
+	h_led = &profile->leds[led->index];
+
+	switch (h_led->mode) {
+	case HIDPP20_LED_ON:
+		led->mode = RATBAG_LED_ON;
+		break;
+	case HIDPP20_LED_CYCLE:
+		led->mode = RATBAG_LED_CYCLE;
+		break;
+	case HIDPP20_LED_BREATHING:
+		led->mode = RATBAG_LED_BREATHING;
+		break;
+	default:
+		led->mode = RATBAG_LED_OFF;
+		break;
+	}
+
+	/* pre-filled, only override if unknown */
+	if (led->type == RATBAG_LED_TYPE_UNKNOWN)
+		led->type = hidpp20_led_get_location_mapping(cluster_info->location);
+	led->color.red = h_led->color.red;
+	led->color.green = h_led->color.green;
+	led->color.blue = h_led->color.blue;
+	led->ms = h_led->period;
+	led->brightness = h_led->brightness * 255 / 100;
+
+	if (device_info.ext_caps & HIDPP20_COLOR_LED_INFO_EXT_CAP_MONOCHROME_ONLY)
+		led->colordepth = RATBAG_LED_COLORDEPTH_MONOCHROME;
+	else
+		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+
+	for (int i = 0; i < cluster_info->num_effects; i++) {
+		struct hidpp20_rgb_effect_info ei;
+		rc = hidpp20_rgb_effects_get_effect_info(drv_data->dev,
+							 cluster_info->index,
+							 i, &ei);
+		if (rc < 0)
+			break;
+
+		switch (ei.effect_id) {
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_DISABLED:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+			break;
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_FIXED:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+			break;
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_CYCLING:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+			break;
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_WAVE:
+		case HIDPP20_COLOR_LED_ZONE_EFFECT_BREATHING:
+			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+			break;
+		default:
+			log_bug_libratbag(led->profile->device->ratbag,
+					  "%s: Unknown effect id %d\n",
+					  led->profile->device->name,
+					  ei.effect_id);
+			break;
+		}
+	}
+}
+
+static void
 hidpp20drv_read_led(struct ratbag_led *led)
 {
 	struct ratbag_device *device = led->profile->device;
@@ -413,6 +489,8 @@ hidpp20drv_read_led(struct ratbag_led *led)
 
 	if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070)
 		hidpp20drv_read_led_8070(led, drv_data);
+	else if (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071)
+		hidpp20drv_read_led_8071(led, drv_data);
 	else if (drv_data->capabilities & HIDPP_CAP_LED_SW_CONTROL_1300)
 		hidpp20drv_read_led_1300(led, drv_data);
 }
@@ -609,8 +687,8 @@ hidpp20drv_update_led_1300(struct ratbag_led *led, struct hidpp20drv_data *data)
 }
 
 static int
-hidpp20drv_update_led_8070(struct ratbag_led *led, struct ratbag_profile* profile,
-						   struct hidpp20drv_data *drv_data)
+hidpp20drv_update_led_8070_8071(struct ratbag_led *led, struct ratbag_profile* profile,
+				struct hidpp20drv_data *drv_data)
 {
 	struct hidpp20_profile *h_profile;
 	struct hidpp20_led *h_led;
@@ -652,8 +730,9 @@ hidpp20drv_update_led(struct ratbag_led *led)
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 
-	if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070)
-		return hidpp20drv_update_led_8070(led, profile, drv_data);
+	if ((drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070) |
+	    (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071))
+		return hidpp20drv_update_led_8070_8071(led, profile, drv_data);
 
 	if (drv_data->capabilities & HIDPP_CAP_LED_SW_CONTROL_1300)
 		return hidpp20drv_update_led_1300(led, drv_data);
@@ -971,19 +1050,15 @@ hidpp20drv_read_kbd_reprogrammable_key(struct ratbag_device *device)
 }
 
 static int
-hidpp20drv_read_color_leds(struct ratbag_device *device)
+hidpp20drv_read_color_leds_8070(struct hidpp20drv_data *drv_data)
 {
-	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	int rc;
 
-	if (!(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070))
-		return 0;
-
-	free(drv_data->led_infos.color_leds);
-	drv_data->led_infos.color_leds = NULL;
+	free(drv_data->led_infos.color_leds_8070);
+	drv_data->led_infos.color_leds_8070 = NULL;
 	drv_data->num_leds = 0;
 
-	rc = hidpp20_color_led_effects_get_zone_infos(drv_data->dev, &drv_data->led_infos.color_leds);
+	rc = hidpp20_color_led_effects_get_zone_infos(drv_data->dev, &drv_data->led_infos.color_leds_8070);
 
 	if (rc > 0) {
 		drv_data->num_leds = rc;
@@ -991,6 +1066,38 @@ hidpp20drv_read_color_leds(struct ratbag_device *device)
 	}
 
 	return rc;
+}
+
+static int
+hidpp20drv_read_color_leds_8071(struct hidpp20drv_data *drv_data)
+{
+	int rc;
+
+	free(drv_data->led_infos.color_leds_8071);
+	drv_data->led_infos.color_leds_8071 = NULL;
+	drv_data->num_leds = 0;
+
+	rc = hidpp20_rgb_effects_get_cluster_infos(drv_data->dev, &drv_data->led_infos.color_leds_8071);
+
+	if (rc > 0) {
+		drv_data->num_leds = rc;
+		rc = 0;
+	}
+
+	return rc;
+}
+
+static int
+hidpp20drv_read_color_leds(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+
+	if(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070)
+		return hidpp20drv_read_color_leds_8070(drv_data);
+	else if (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071)
+		return hidpp20drv_read_color_leds_8071(drv_data);
+
+	return 0;
 }
 
 static int
@@ -1206,6 +1313,18 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		device->num_leds = drv_data->num_leds;
 		break;
 	}
+	case HIDPP_PAGE_RGB_EFFECTS: {
+		log_debug(ratbag, "device has color effects\n");
+		drv_data->capabilities |= HIDPP_CAP_RGB_EFFECTS_8071;
+
+		/* we read the profile once to get the correct number of
+		 * supported leds. */
+		if (hidpp20drv_read_color_leds(device))
+			return 0;
+
+		device->num_leds = drv_data->num_leds;
+		break;
+	}
 	case HIDPP_PAGE_LED_SW_CONTROL: {
 		log_debug(ratbag, "device has non-rgb leds\n");
 		drv_data->capabilities |= HIDPP_CAP_LED_SW_CONTROL_1300;
@@ -1380,7 +1499,8 @@ hidpp20drv_remove(struct ratbag_device *device)
 
 	if (drv_data->profiles)
 		hidpp20_onboard_profiles_destroy(drv_data->profiles);
-	free(drv_data->led_infos.color_leds);
+	free(drv_data->led_infos.color_leds_8070);
+	free(drv_data->led_infos.color_leds_8071);
 	free(drv_data->controls);
 	free(drv_data->sensors);
 	if (drv_data->dev)
