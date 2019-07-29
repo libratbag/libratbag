@@ -692,6 +692,8 @@ struct hidpp20_profile {
 	uint16_t address;
 	uint8_t enabled;
 	char name[16 * 3];
+	uint16_t powersave_timeout;
+	uint16_t poweroff_timeout;
 	unsigned report_rate;
 	unsigned default_dpi;
 	unsigned switched_dpi;
@@ -700,6 +702,7 @@ struct hidpp20_profile {
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
+	struct hidpp20_led alt_leds[HIDPP20_LED_COUNT];
 };
 
 struct hidpp20_onboard_profiles_info {
