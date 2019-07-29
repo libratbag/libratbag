@@ -1239,6 +1239,8 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 	if (rc < 0)
 		return rc;
 
+	log_debug(device->ratbag, "Parsing HID report descriptor\n");
+
 	i = 0;
 	usage_page = 0;
 	usage = 0;
@@ -1260,7 +1262,7 @@ ratbag_hidraw_parse_report_descriptor(struct ratbag_device *device)
 		switch (hid) {
 		case HID_REPORT_ID:
 			if (hidraw->reports) {
-				log_debug(device->ratbag, "HID report ID %02x\n", content);
+				log_debug(device->ratbag, "- HID report ID %02x\n", content);
 				hidraw->reports[hidraw->num_reports].report_id = content;
 				hidraw->reports[hidraw->num_reports].usage_page = usage_page;
 				hidraw->reports[hidraw->num_reports].usage = usage;
