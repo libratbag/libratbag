@@ -3,12 +3,27 @@
 ratbagd \- system daemon to introspect and modify configurable mice
 .SH SYNOPSIS
 .B ratbagd
-.RB [ \-\-verbose ]
+.RB [ \-\-verbose[=raw]|\-\-quiet|\-\-version|\-\-help]
 .SH DESCRIPTION
 .B ratbagd
 starts the daemon. It shouldn't be invoked directly;
 .B ratbagd
 is normally started through DBus activation.
+.SH OPTIONS
+.TP 8
+.B \-\-help
+Print help and exit
+.TP 8
+.B \-\-verbose, \-\-verbose=raw
+Enable verbose output, optionally including raw messages as sent and
+received from the device. This should be use to debug any issues with the
+device.
+.TP 8
+.B \-\-quiet
+Disable any output but error messages.
+.TP 8
+.B \-\-version
+Show the version number.
 .SH SEE ALSO
 .BR ratbagctl (1)
 .SH AUTHORS
