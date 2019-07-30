@@ -81,9 +81,9 @@ class TestRatbagCtl(unittest.TestCase):
             cmd.func(ratbagd, cmd)
         except SystemExit as e:
             returncode = e.code
-        except AttributeError as e:
+        except AttributeError:
             returncode = 2
-        except argparse.ArgumentTypeError as e:
+        except argparse.ArgumentTypeError:
             returncode = 2
         output = sys.stdout.getvalue()
         error = sys.stderr.getvalue()
