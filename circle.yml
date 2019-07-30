@@ -13,6 +13,24 @@ libratbag_references:
       ninja -v -C build ${NINJA_ARGS}
     environment:
       MESON_PARAMS: --prefix=/usr
+  build_buildtype_plain: &build_buildtype_plain
+    name: Build
+    command: |
+      rm -rf build
+      meson build ${MESON_PARAMS}
+      meson configure build
+      ninja -v -C build ${NINJA_ARGS}
+    environment:
+      MESON_PARAMS: --prefix=/usr -Dbuildtype=plain
+  build_buildtype_release: &build_buildtype_release
+    name: Build
+    command: |
+      rm -rf build
+      meson build ${MESON_PARAMS}
+      meson configure build
+      ninja -v -C build ${NINJA_ARGS}
+    environment:
+      MESON_PARAMS: --prefix=/usr -Dbuildtype=release
   build_and_test: &build_and_test
     run:
       <<: *build_default
@@ -96,6 +114,8 @@ fedora_settings: &fedora_settings
     - *install
     - *check_install
     - *check_uninstall
+    - *build_builtype_plain
+    - *build_builtype_release
     - *export_logs
 
 
@@ -117,6 +137,8 @@ ubuntu_settings: &ubuntu_settings
     - *install
     - *check_install
     - *check_uninstall
+    - *build_builtype_plain
+    - *build_builtype_release
     - *export_logs
 
 doc_build: &doc_build
