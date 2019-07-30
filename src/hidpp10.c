@@ -835,13 +835,18 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, uint8_t *current_profile
 		break;
 	case PROFILE_TYPE_FACTORY:
 		/* Factory profile is selected and profile switching is
-		 * disabled. Let's default to the first profile because what
-		 * else?
-		 */
-		*current_profile = 0;
-		hidpp_log_info(&dev->base,
-			  "current profile is factory profile, pretending it's profile 0\n");
-		return 0;
+		 * disabled. Let's switch to the first profile because the
+		 * factory profile doesn't help anywone */
+		res = hidpp10_set_current_profile(dev, 0);
+		if (res == 0) {
+			hidpp_log_info(&dev->base, "switched from factory profile to 0\n");
+			*current_profile = 0;
+			return 0;
+		}
+
+		hidpp_log_error(&dev->base,
+				"current profile is factory profile but switching to 0 failed.\n");
+		break;
 	default:
 		hidpp_log_error(&dev->base,
 			  "Unexpected value: %02x\n",
