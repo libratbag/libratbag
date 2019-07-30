@@ -322,7 +322,7 @@ out:
 }
 
 static inline bool
-ratbag_test_driver(struct ratbag_device *device,
+ratbag_try_driver(struct ratbag_device *device,
 		   const struct input_id *dev_id,
 		   const char *driver_name,
 		   const struct ratbag_test_device *test_device)
@@ -377,9 +377,9 @@ ratbag_driver_fallback_logitech(struct ratbag_device *device,
 	if (dev_id->vendor != USB_VENDOR_ID_LOGITECH)
 		return false;
 
-	rc = ratbag_test_driver(device, dev_id, "hidpp20", NULL);
+	rc = ratbag_try_driver(device, dev_id, "hidpp20", NULL);
 	if (!rc)
-		rc = ratbag_test_driver(device, dev_id, "hidpp10", NULL);
+		rc = ratbag_try_driver(device, dev_id, "hidpp10", NULL);
 
 	return rc;
 }
@@ -401,7 +401,7 @@ ratbag_assign_driver(struct ratbag_device *device,
 
 	if (driver_name) {
 		log_debug(device->ratbag, "device assigned driver %s\n", driver_name);
-		rc = ratbag_test_driver(device, dev_id, driver_name, test_device);
+		rc = ratbag_try_driver(device, dev_id, driver_name, test_device);
 	} else {
 		rc = ratbag_driver_fallback_logitech(device, dev_id);
 	}
