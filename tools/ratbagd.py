@@ -196,7 +196,7 @@ class _RatbagdDBus(GObject.GObject):
         # Calls a method synchronously on the bus, using the given method name,
         # type signature and values.
         #
-        # It the result is valid, it is returned. Invalid results raise the
+        # If the result is valid, it is returned. Invalid results raise the
         # appropriate RatbagError* or RatbagdDBus* exception, or GLib.Error if
         # it is an unexpected exception that probably shouldn't be passed up to
         # the UI.
