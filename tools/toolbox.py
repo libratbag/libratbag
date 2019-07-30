@@ -25,7 +25,6 @@
 
 import imp
 import os
-import shutil
 import subprocess
 import sys
 
@@ -112,7 +111,7 @@ def sync_dbus():
 
 ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
-from ratbagctl import open_ratbagd, get_parser, RatbagError, RatbagErrorCapability
+from ratbagctl import open_ratbagd, get_parser, RatbagError, RatbagErrorCapability  # NOQA
 
 __all__ = [
     RATBAGCTL_NAME,

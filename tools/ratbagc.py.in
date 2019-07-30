@@ -216,11 +216,11 @@ class Ratbagd(object):
 def get_capabilities(type, object):
     capabilities = []
     for k in libratbag.__dict__.keys():
-            if k.startswith("RATBAG_{}_CAP_".format(type.upper())) and "CAP_NONE" not in k:
-                cap = getattr(libratbag, k)
-                func = getattr(libratbag, "ratbag_{}_has_capability".format(type.lower()))
-                if func(object, cap):
-                    capabilities.append(cap)
+        if k.startswith("RATBAG_{}_CAP_".format(type.upper())) and "CAP_NONE" not in k:
+            cap = getattr(libratbag, k)
+            func = getattr(libratbag, "ratbag_{}_has_capability".format(type.lower()))
+            if func(object, cap):
+                capabilities.append(cap)
     return capabilities
 
 
