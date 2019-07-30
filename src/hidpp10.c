@@ -833,6 +833,15 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, uint8_t *current_profile
 			  "unable to find the profile at (%d,%d) in the directory\n",
 			  page, offset);
 		break;
+	case PROFILE_TYPE_FACTORY:
+		/* Factory profile is selected and profile switching is
+		 * disabled. Let's default to the first profile because what
+		 * else?
+		 */
+		*current_profile = 0;
+		hidpp_log_info(&dev->base,
+			  "current profile is factory profile, pretending it's profile 0\n");
+		return 0;
 	default:
 		hidpp_log_error(&dev->base,
 			  "Unexpected value: %02x\n",
