@@ -2737,8 +2737,7 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 
 	hidpp10_get_optical_sensor_settings(dev, &reflect);
 
-	hidpp10_get_current_profile(dev, &current_profile);
-	return 0;
+	return hidpp10_get_current_profile(dev, &current_profile);
 }
 
 struct hidpp10_device*
