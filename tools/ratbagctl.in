@@ -31,6 +31,13 @@ import re
 from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
 
 
+def humanize(string):
+    return string.lower().replace('_', '-')
+
+
+button_special_names = [humanize(e.name) for e in RatbagdButton.ActionSpecial if e.name != "INVALID"]
+led_mode_names = [humanize(e.name) for e in RatbagdLed.Mode]
+
 button_specials_strmap = {
     **{e: e.name.lower().replace("_", "-") for e in RatbagdButton.ActionSpecial},
     **{e.name.lower().replace("_", "-"): e for e in RatbagdButton.ActionSpecial}
@@ -950,27 +957,7 @@ active profile if none is given.""",
                                             name: 'target_special',
                                             metavar: 'S',
                                             help_str: 'The new special value to assign',
-                                            choices: [
-                                                "unknown",
-                                                "doubleclick",
-                                                "wheel-left",
-                                                "wheel-right",
-                                                "wheel-up",
-                                                "wheel-down",
-                                                "ratchet-mode-switch",
-                                                "resolution-cycle-up",
-                                                "resolution-cycle-down",
-                                                "resolution-up",
-                                                "resolution-down",
-                                                "resolution-alternate",
-                                                "resolution-default",
-                                                "profile-cycle-up",
-                                                "profile-cycle-down",
-                                                "profile-up",
-                                                "profile-down",
-                                                "second-mode",
-                                                "battery-level",
-                                            ]
+                                            choices: button_special_names
                                         },
                                     ],
                                     func: func_button_action_set_special,
@@ -1055,7 +1042,7 @@ active profile if none is given.""",
                                     name: 'mode',
                                     metavar: 'mode',
                                     help_str: 'The mode to set as current',
-                                    choices: ['on', 'off', 'cycle', 'breathing'],
+                                    choices: led_mode_names,
                                 },
                             ],
                         },
