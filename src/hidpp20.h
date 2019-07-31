@@ -58,11 +58,14 @@ struct hidpp20_device {
 	unsigned proto_minor;
 	unsigned feature_count;
 	struct hidpp20_feature *feature_list;
+	unsigned quirk;
 };
 
 int hidpp20_request_command(struct hidpp20_device *dev, union hidpp20_message *msg);
 
 const char *hidpp20_feature_get_name(uint16_t feature);
+
+const char *hidpp20_get_quirk_string(unsigned quirk);
 
 /* -------------------------------------------------------------------------- */
 /* generic hidpp20 device operations                                          */
@@ -73,6 +76,15 @@ hidpp20_device_new(const struct hidpp_device *base, unsigned int idx);
 
 void
 hidpp20_device_destroy(struct hidpp20_device *device);
+
+/* -------------------------------------------------------------------------- */
+/* quirks                                                                     */
+/* -------------------------------------------------------------------------- */
+
+enum {
+	HIDPP20_QUIRK_NONE,
+}
+#define HIDPP20_QUIRK_G305				1
 
 /* -------------------------------------------------------------------------- */
 /* 0x0000: Root                                                               */

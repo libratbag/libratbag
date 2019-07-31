@@ -99,6 +99,24 @@ hidpp20_sw_led_control_get_mode_string(const enum hidpp20_led_sw_ctrl_led_mode m
 		str = numeric;
 		break;
 	}
+
+	return str;
+}
+
+const char*
+hidpp20_get_quirk_string(unsigned quirk)
+{
+	static char numeric[8];
+	const char* str = NULL;
+	switch (quirk)
+	{
+	CASE_RETURN_STRING(HIDPP20_QUIRK_NONE);
+	CASE_RETURN_STRING(HIDPP20_QUIRK_G305);
+	default:
+		sprintf_safe(numeric, "%#4x", quirk);
+		str = numeric;
+		break;
+	}
 #undef CASE_RETURN_STRING
 
 	return str;
