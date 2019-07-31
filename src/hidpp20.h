@@ -83,8 +83,8 @@ hidpp20_device_destroy(struct hidpp20_device *device);
 
 enum {
 	HIDPP20_QUIRK_NONE,
-	HIDPP20_QUIRK_G305,
 }
+#define HIDPP20_QUIRK_G305				1
 
 /* -------------------------------------------------------------------------- */
 /* 0x0000: Root                                                               */
