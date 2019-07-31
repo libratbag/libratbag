@@ -48,7 +48,6 @@ hidpp20_feature_get_name(uint16_t feature)
 {
 	static char numeric[8];
 	const char *str;
-#define CASE_RETURN_STRING(a) case a: return #a; break
 
 	switch(feature)
 	{
@@ -99,9 +98,19 @@ hidpp20_sw_led_control_get_mode_string(const enum hidpp20_led_sw_ctrl_led_mode m
 		str = numeric;
 		break;
 	}
-#undef CASE_RETURN_STRING
 
 	return str;
+}
+
+const char*
+hidpp20_get_quirk_string(enum hidpp20_quirk quirk)
+{
+	switch (quirk) {
+	CASE_RETURN_STRING(HIDPP20_QUIRK_NONE);
+	CASE_RETURN_STRING(HIDPP20_QUIRK_G305);
+	}
+
+	abort();
 }
 
 static int

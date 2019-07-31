@@ -51,6 +51,10 @@ struct hidpp20_feature {
 	uint8_t type;
 };
 
+enum hidpp20_quirk {
+	HIDPP20_QUIRK_NONE,
+};
+
 struct hidpp20_device {
 	struct hidpp_device base;
 	unsigned int index;
@@ -58,11 +62,16 @@ struct hidpp20_device {
 	unsigned proto_minor;
 	unsigned feature_count;
 	struct hidpp20_feature *feature_list;
+	enum hidpp20_quirk quirk;
 };
 
 int hidpp20_request_command(struct hidpp20_device *dev, union hidpp20_message *msg);
 
+#define CASE_RETURN_STRING(a) case a: return #a; break
+
 const char *hidpp20_feature_get_name(uint16_t feature);
+
+const char *hidpp20_get_quirk_string(enum hidpp20_quirk quirk);
 
 /* -------------------------------------------------------------------------- */
 /* generic hidpp20 device operations                                          */
