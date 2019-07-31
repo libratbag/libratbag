@@ -1,7 +1,0 @@
-[Device]
-Name=Logitech Gaming Mouse G305
-DeviceMatch=usb:046d:4074
-Driver=hidpp20
-
-[Driver/hidpp20]
-Quirk=G305
