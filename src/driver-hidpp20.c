@@ -1560,14 +1560,9 @@ hidpp20drv_probe(struct ratbag_device *device)
 		goto err;
 	}
 
-	dev->quirk = ratbag_device_data_hidpp20_get_quirk(device->data);
-
 	drv_data->dev = dev;
 
 	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), dev->proto_major, dev->proto_minor);
-
-	if(dev->quirk != HIDPP20_QUIRK_NONE)
-		log_debug(device->ratbag, "'%s' is quirked (%s)\n", ratbag_device_get_name(device), hidpp20_get_quirk_string(dev->quirk));
 
 	/* add some defaults that will be overwritten by the device */
 	drv_data->num_profiles = 1;

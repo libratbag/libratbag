@@ -80,9 +80,6 @@ ratbag_device_data_hidpp10_get_led_count(const struct ratbag_device_data *data);
 int
 ratbag_device_data_hidpp20_get_index(const struct ratbag_device_data *data);
 
-int
-ratbag_device_data_hidpp20_get_quirk(const struct ratbag_device_data *data);
-
 /* SteelSeries */
 
 /**

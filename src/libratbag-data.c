@@ -33,7 +33,6 @@
 #include "libratbag.h"
 #include "libratbag-private.h"
 #include "libratbag-data.h"
-#include "hidpp20.h"
 
 #define GROUP_DEVICE "Device"
 
@@ -55,7 +54,6 @@ enum driver {
 
 struct data_hidpp20 {
 	int index;
-	unsigned quirk;
 };
 
 struct data_hidpp10 {
@@ -154,7 +152,6 @@ init_data_hidpp20(struct ratbag *ratbag,
 	const char *group = "Driver/hidpp20";
 	GError *error = NULL;
 	int num;
-	char *str;
 
 	data->hidpp20.index = -1;
 
@@ -163,9 +160,6 @@ init_data_hidpp20(struct ratbag *ratbag,
 		data->hidpp20.index = num;
 	if (error)
 		g_error_free(error);
-
-	str = g_key_file_get_string(keyfile, group, "Quirk", NULL);
-	data->hidpp20.quirk = HIDPP20_QUIRK_NONE;
 }
 
 static void
@@ -566,14 +560,6 @@ ratbag_device_data_hidpp20_get_index(const struct ratbag_device_data *data)
 	assert(data->drivertype == HIDPP20);
 
 	return data->hidpp20.index;
-}
-
-int
-ratbag_device_data_hidpp20_get_quirk(const struct ratbag_device_data *data)
-{
-	assert(data->drivertype == HIDPP20);
-
-	return data->hidpp20.quirk;
 }
 
 /* SteelSeries */
