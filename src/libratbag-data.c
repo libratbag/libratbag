@@ -166,6 +166,10 @@ init_data_hidpp20(struct ratbag *ratbag,
 
 	str = g_key_file_get_string(keyfile, group, "Quirk", NULL);
 	data->hidpp20.quirk = HIDPP20_QUIRK_NONE;
+	if (str) {
+		if (streq(str, "G305"))
+			data->hidpp20.quirk = HIDPP20_QUIRK_G305;
+	}
 }
 
 static void

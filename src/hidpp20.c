@@ -2620,6 +2620,15 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 						  HIDPP20_USER_PROFILES_G402,
 						  profiles->sector_size,
 						  data);
+
+	if (rc && device->quirk != HIDPP20_QUIRK_G305) {
+		/* The G305 has a bug where it throws an ERR_INVALID_ARGUMENT
+		   if the sector has not been written to yet. If this happens
+		   we will read the ROM profiles.*/
+		read_userdata = false;
+		goto read_profiles;
+	}
+
 	if (rc < 0)
 		return rc; // ignore_clang_sa_mem_leak
 
@@ -2653,6 +2662,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 		read_userdata = false;
 	}
 
+read_profiles:
 	for (i = 0; i < profiles->num_profiles; i++) {
 		if (read_userdata) {
 			hidpp_log_debug(&device->base, "Parsing profile %u\n", i);
