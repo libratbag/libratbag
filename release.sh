@@ -110,7 +110,7 @@ Subject: [ANNOUNCE] $pkg_name $pkg_version
 To: $list_to
 Cc: $list_cc
 
-libratbag $tag_name is out.
+$pkg_name $tag_name is out.
 
 The list of interesting changes are:
 
@@ -127,7 +127,7 @@ RELEASE
 The libratbag project does not generate tarballs for releases, you can
 grab one directly from github:
 
-https://github.com/libratbag/libratbag/archive/$tag_name/$tarball
+https://github.com/libratbag/$pkg_name/archive/$tag_name/$tarball
 
 RELEASE
     done
@@ -226,15 +226,23 @@ process_module() {
     current_branch=`git branch | $GREP "\*" | sed -e "s/\* //"`
     remote_name=`git config --get branch.$current_branch.remote`
     remote_branch=`git config --get branch.$current_branch.merge | cut -d'/' -f3,4`
-    remote_url_root="https://github.com/libratbag/libratbag/archive"
     echo "Info: working off the \"$current_branch\" branch tracking the remote \"$remote_name/$remote_branch\"."
 
     # Find out the tarname from meson.build
     pkg_name=$($GREP '^project(' meson.build | sed 's|project(\([^\s,]*\).*|\1|' | sed "s/'//g")
-    pkg_version=$($GREP -m 1 '^	version : ' meson.build | sed 's|	version : \([^\s,]*\).*|\1|' | sed "s/'//g")
+    pkg_version=$($GREP -m 1 '^[	 ]*version \?: ' meson.build | sed 's|[	 ]*version \?: \([^\s,]*\).*|\1|' | sed "s/'//g")
     tar_name="$pkg_name-$pkg_version"
     targz=$tar_name.tar.gz
-    tag_name=$(echo "v$pkg_version" | sed 's|\.0$||')
+    # libratbag tags with v0.3 but piper user just 0.3
+    case `git describe` in
+	    v*)
+		    tag_name=$(echo "v$pkg_version" | sed 's|\.0$||')
+		    ;;
+	    *)
+		    tag_name=$(echo "$pkg_version" | sed 's|\.0$||')
+		    ;;
+    esac
+    remote_url_root="https://github.com/libratbag/$pkg_name/archive"
 
     # Now get the tarballs from github directly to compute their checksum
     remote_targz_url=$remote_url_root/$tag_name/$targz
