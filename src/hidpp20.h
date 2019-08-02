@@ -840,7 +840,8 @@ struct hidpp20_onboard_profiles_info {
 	uint16_t sector_size;
 	uint8_t mechanical_layout;
 	uint8_t various_info;
-	uint8_t reserved[5];
+	uint8_t sector_count_rule;
+	uint8_t reserved[4];
 } __attribute__((packed));
 _Static_assert(sizeof(struct hidpp20_onboard_profiles_info) == 16, "Invalid size");
 
