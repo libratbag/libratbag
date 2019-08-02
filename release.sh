@@ -90,13 +90,11 @@ check_option_args() {
 #
 check_modules_specification() {
 
-if [ x"$MODFILE" = x ]; then
-    if [ x"${INPUT_MODULES}" = x ]; then
-	echo ""
-	echo "Error: no modules specified (blank command line)."
-	usage
-	exit 1
-    fi
+if [ x"${INPUT_MODULES}" = x ]; then
+    echo ""
+    echo "Error: no modules specified (blank command line)."
+    usage
+    exit 1
 fi
 
 }
@@ -133,37 +131,6 @@ https://github.com/libratbag/libratbag/archive/$tag_name/$tarball
 
 RELEASE
     done
-}
-
-#------------------------------------------------------------------------------
-#			Function: read_modfile
-#------------------------------------------------------------------------------
-#
-# Read the module names from the file and set a variable to hold them
-# This will be the same interface as cmd line supplied modules
-#
-read_modfile() {
-
-    if [ x"$MODFILE" != x ]; then
-	# Make sure the file is sane
-	if [ ! -r "$MODFILE" ]; then
-	    echo "Error: module file '$MODFILE' is not readable or does not exist."
-	    exit 1
-	fi
-	# read from input file, skipping blank and comment lines
-	while read line; do
-	    # skip blank lines
-	    if [ x"$line" = x ]; then
-		continue
-	    fi
-	    # skip comment lines
-	    if echo "$line" | $GREP -q "^#" ; then
-		continue;
-	    fi
-	    INPUT_MODULES="$INPUT_MODULES $line"
-	done <"$MODFILE"
-    fi
-    return 0
 }
 
 #------------------------------------------------------------------------------
@@ -216,46 +183,6 @@ process_modules() {
 }
 
 #------------------------------------------------------------------------------
-#			Function: get_section
-#------------------------------------------------------------------------------
-# Code 'return 0' on success
-# Code 'return 1' on error
-# Sets global variable $section
-get_section() {
-    local module_url
-    local full_module_url
-
-    # Obtain the git url in order to find the section to which this module belongs
-    full_module_url=`git config --get remote.$remote_name.url | sed 's:\.git$::'`
-    if [ $? -ne 0 ]; then
-	echo "Error: unable to obtain git url for remote \"$remote_name\"."
-	return 1
-    fi
-
-    # The last part of the git url will tell us the section. Look for xorg first
-    echo "$full_module_url"
-    module_url=`echo "$full_module_url" | $GREP -o "libratbag/.*"`
-    if [ $? -eq 0 ]; then
-	module_url=`echo $module_url | cut -d'/' -f2,3`
-    else
-	echo "Error: unable to locate a valid project url from \"$full_module_url\"."
-	echo "Cannot establish url as one of libratbag"
-	cd $top_src
-	return 1
-    fi
-
-    # Find the section (subdirs) where the tarballs are to be uploaded
-    # The module relative path can be app/xfs, xserver, or mesa/drm for example
-    section=`echo $module_url | cut -d'/' -f1`
-    if [ $? -ne 0 ]; then
-	echo "Error: unable to extract section from $module_url first field."
-	return 1
-    fi
-
-    return 0
-}
-
-#------------------------------------------------------------------------------
 #			Function: process_module
 #------------------------------------------------------------------------------
 # Code 'return 0' on success to process the next module
@@ -301,13 +228,6 @@ process_module() {
     remote_branch=`git config --get branch.$current_branch.merge | cut -d'/' -f3,4`
     remote_url_root="https://github.com/libratbag/libratbag/archive"
     echo "Info: working off the \"$current_branch\" branch tracking the remote \"$remote_name/$remote_branch\"."
-
-    # Obtain the section
-    get_section
-    if [ $? -ne 0 ]; then
-	cd $top_src
-	return 1
-    fi
 
     # Find out the tarname from meson.build
     pkg_name=$($GREP '^project(' meson.build | sed 's|project(\([^\s,]*\).*|\1|' | sed "s/'//g")
@@ -513,13 +433,6 @@ do
 	exit 1
 	;;
     *)
-	if [ x"${MODFILE}" != x ]; then
-	    echo ""
-	    echo "Error: specifying both modules and --modfile is not permitted"
-	    echo ""
-	    usage
-	    exit 1
-	fi
 	INPUT_MODULES="${INPUT_MODULES} $1"
 	;;
     esac
@@ -529,9 +442,6 @@ done
 
 # If no modules specified (blank cmd line) display help
 check_modules_specification
-
-# Read the module file and normalize input in INPUT_MODULES
-read_modfile
 
 # Loop through each module to release
 # Exit on error if --no-quit no specified
