@@ -314,11 +314,11 @@ process_module() {
     pkg_version=$($GREP -m 1 '^	version : ' meson.build | sed 's|	version : \([^\s,]*\).*|\1|' | sed "s/'//g")
     tar_name="$pkg_name-$pkg_version"
     targz=$tar_name.tar.gz
-    tag_name=$(echo "v$pkg_version" | sed 's|.0$||')
+    tag_name=$(echo "v$pkg_version" | sed 's|\.0$||')
 
     # Now get the tarballs from github directly to compute their checksum
     remote_targz_url=$remote_url_root/$tag_name/$targz
-    echo "downloading the tarbal from $remote_targz_url"
+    echo "downloading the tarball from $remote_targz_url"
     curl $remote_targz_url > $targz
 
     # Obtain the top commit SHA which should be the version bump
