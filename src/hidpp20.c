@@ -2316,12 +2316,8 @@ hidpp20_onboard_profiles_destroy(struct hidpp20_profiles *profiles_list)
 	if (!profiles_list)
 		return;
 
-	for (i = 0; i < profiles_list->num_profiles; i++) {
-		profile = &profiles_list->profiles[i];
-
-		ARRAY_FOR_EACH(profile->macros, macro) {
-			free(*macro);
-		}
+	ARRAY_FOR_EACH(profiles_list->macros, macro) {
+		free(*macro);
 	}
 
 	free(profiles_list->profiles);
@@ -2404,15 +2400,15 @@ hidpp20_buttons_to_cpu(struct hidpp20_device *device,
 			button->special.special = b->special.special;
 			break;
 		case HIDPP20_BUTTON_MACRO:
-			if (profile->macros[i]) {
-				free(profile->macros[i]);
-				profile->macros[i] = NULL;
+			if (profiles->macros[i]) {
+				free(profiles->macros[i]);
+				profiles->macros[i] = NULL;
 			}
 			hidpp20_onboard_profiles_parse_macro(device,
 							     profiles,
 							     b->macro.page,
 							     b->macro.offset,
-							     &profile->macros[i]);
+							     &profiles->macros[i]);
 
 			/* the actual page is stored in the 'zero' field */
 			button->macro.page = i;

@@ -825,7 +825,6 @@ struct hidpp20_profile {
 	unsigned current_dpi;
 	uint16_t dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
-	union hidpp20_macro_data *macros[32];
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
 	struct hidpp20_led alt_leds[HIDPP20_LED_COUNT];
 };
@@ -857,6 +856,7 @@ struct hidpp20_profiles {
 	uint8_t wireless;
 	uint8_t sector_count;
 	uint16_t sector_size;
+	union hidpp20_macro_data *macros[32];
 	struct hidpp20_profile *profiles;
 };
 

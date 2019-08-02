@@ -132,6 +132,7 @@ hidpp20drv_read_macro_key_8100(struct ratbag_device *device, union hidpp20_macro
 
 static int
 hidpp20drv_read_macro_8100(struct ratbag_button *button,
+			   struct hidpp20_profiles *profiles,
 			   struct hidpp20_profile *profile,
 			   union hidpp20_button_binding *binding)
 {
@@ -141,7 +142,7 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 	unsigned int i, keycode;
 	bool delay = true;
 
-	macro = profile->macros[binding->macro.page];
+	macro = profiles->macros[binding->macro.page];
 
 	if (!macro)
 		return -EINVAL;
@@ -234,7 +235,7 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 		button->action.action.special = hidpp20_onboard_profiles_get_special(profile->buttons[button->index].special.special);
 		break;
 	case HIDPP20_BUTTON_MACRO:
-		rc = hidpp20drv_read_macro_8100(button, profile, &profile->buttons[button->index]);
+		rc = hidpp20drv_read_macro_8100(button, &drv_data->profiles, profile, &profile->buttons[button->index]);
 		if (rc)
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 		break;
