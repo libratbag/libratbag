@@ -928,6 +928,9 @@ hidpp20drv_update_resolution_dpi_8100(struct ratbag_resolution *resolution,
 	h_profile = &drv_data->profiles->profiles[profile->index];
 	h_profile->dpi[resolution->index] = dpi;
 
+	if (resolution->is_default)
+		h_profile->default_dpi = resolution->index;
+
 	return RATBAG_SUCCESS;
 }
 
