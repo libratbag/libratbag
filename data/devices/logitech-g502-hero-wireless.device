@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G502 Hero Wireless
+DeviceMatch=usb:046d:407f
+Driver=hidpp20
