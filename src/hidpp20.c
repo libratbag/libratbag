@@ -1643,7 +1643,7 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402	0x01
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
-#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G903_HERO	0x04
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915	0x04
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -2063,7 +2063,7 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G903_HERO)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
