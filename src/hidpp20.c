@@ -1082,8 +1082,8 @@ hidpp20_rgb_effects_get_cluster_info(struct hidpp20_device *device,
 	info->effect_index = msg.msg.parameters[1];
 
 	info->location = get_unaligned_be_u16(&msg.msg.parameters[2]);
-	info->num_effects = get_unaligned_be_u16(&msg.msg.parameters[4]);
-	info->persistency_caps = get_unaligned_be_u16(&msg.msg.parameters[6]);
+	info->num_effects = msg.msg.parameters[4];
+	info->persistency_caps = msg.msg.parameters[5];
 
 	return 0;
 }
