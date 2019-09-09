@@ -1516,6 +1516,7 @@ hidpp20drv_init_device(struct ratbag_device *device,
 		       struct hidpp20drv_data *drv_data)
 {
 	struct ratbag_profile *profile;
+	bool active_profile = false;
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
@@ -1525,6 +1526,18 @@ hidpp20drv_init_device(struct ratbag_device *device,
 
 	ratbag_device_for_each_profile(device, profile)
 		hidpp20drv_read_profile(profile);
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+		/* Fallback to the first profile if no profile is active */
+		list_for_each(profile, &device->profiles, link)
+			if (profile->is_active)
+				active_profile = true;
+
+		if (!active_profile && device->num_profiles >= 1) {
+			profile = ratbag_device_get_profile(device, 0);
+			profile->is_active = true;
+		}
+	}
 }
 
 static int
