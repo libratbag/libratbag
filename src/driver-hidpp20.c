@@ -412,11 +412,11 @@ hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	struct hidpp20_profile *profile;
 	struct hidpp20_led *h_led;
 	struct hidpp20_rgb_device_info device_info;
-	struct hidpp20_rgb_cluster_info *cluster_info;
+	struct hidpp20_rgb_cluster_info cluster_info;
 	int rc;
 
 	hidpp20_rgb_effects_get_device_info(drv_data->dev, &device_info);
-	cluster_info = &drv_data->led_infos.color_leds_8071[led->index];
+	cluster_info = drv_data->led_infos.color_leds_8071[led->index];
 	profile = &drv_data->profiles->profiles[led->profile->index];
 	h_led = &profile->leds[led->index];
 
@@ -437,7 +437,7 @@ hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 
 	/* pre-filled, only override if unknown */
 	if (led->type == RATBAG_LED_TYPE_UNKNOWN)
-		led->type = hidpp20_led_get_location_mapping(cluster_info->location);
+		led->type = hidpp20_led_get_location_mapping(cluster_info.location);
 	led->color.red = h_led->color.red;
 	led->color.green = h_led->color.green;
 	led->color.blue = h_led->color.blue;
@@ -449,10 +449,10 @@ hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	else
 		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 
-	for (int i = 0; i < cluster_info->num_effects; i++) {
+	for (int i = 0; i < cluster_info.num_effects; i++) {
 		struct hidpp20_rgb_effect_info ei;
 		rc = hidpp20_rgb_effects_get_effect_info(drv_data->dev,
-							 cluster_info->index,
+							 cluster_info.index,
 							 i, &ei);
 		if (rc < 0)
 			break;
