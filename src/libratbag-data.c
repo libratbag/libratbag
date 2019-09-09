@@ -169,6 +169,8 @@ init_data_hidpp20(struct ratbag *ratbag,
 	if (str) {
 		if (streq(str, "G305"))
 			data->hidpp20.quirk = HIDPP20_QUIRK_G305;
+		else if(streq(str, "G602"))
+			data->hidpp20.quirk = HIDPP20_QUIRK_G602;
 	}
 }
 

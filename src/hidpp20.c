@@ -108,6 +108,7 @@ hidpp20_get_quirk_string(enum hidpp20_quirk quirk)
 	switch (quirk) {
 	CASE_RETURN_STRING(HIDPP20_QUIRK_NONE);
 	CASE_RETURN_STRING(HIDPP20_QUIRK_G305);
+	CASE_RETURN_STRING(HIDPP20_QUIRK_G602);
 	}
 
 	abort();
@@ -1441,6 +1442,11 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 		.msg.parameters[0] = sensor->index,
 	};
 
+	if (device->quirk == HIDPP20_QUIRK_G602) {
+		msg.msg.parameters[0] = 1;
+		i = 0;
+	}
+
 	rc = hidpp20_request_command(device, &msg);
 	if (rc)
 		return rc;
@@ -1451,6 +1457,9 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 	while (i < LONG_MESSAGE_LENGTH - 4U &&
 	       get_unaligned_be_u16(&msg.msg.parameters[i]) != 0) {
 		uint16_t value = get_unaligned_be_u16(&msg.msg.parameters[i]);
+
+		if (device->quirk == HIDPP20_QUIRK_G602 && i == 2)
+			value += 0xe000;
 
 		if (value > 0xe000) {
 			sensor->dpi_steps = value - 0xe000;
@@ -1480,6 +1489,9 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI,
 		.msg.parameters[0] = sensor->index,
 	};
+
+	if (device->quirk == HIDPP20_QUIRK_G602)
+		msg.msg.parameters[0] = 1;
 
 	rc = hidpp20_request_command(device, &msg);
 	if (rc)
@@ -1559,6 +1571,9 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 		.msg.address = CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI,
 		.msg.parameters[0] = sensor->index,
 	};
+
+	if (device->quirk == HIDPP20_QUIRK_G602)
+		msg.msg.parameters[0] = 1;
 
 	set_unaligned_be_u16(&msg.msg.parameters[1], dpi);
 
