@@ -54,6 +54,7 @@ struct hidpp20_feature {
 enum hidpp20_quirk {
 	HIDPP20_QUIRK_NONE,
 	HIDPP20_QUIRK_G305,
+	HIDPP20_QUIRK_G602,
 };
 
 struct hidpp20_device {

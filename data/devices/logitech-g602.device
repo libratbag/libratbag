@@ -6,3 +6,4 @@ Driver=hidpp20
 
 [Driver/hidpp20]
 DeviceIndex=1
+Quirk=G602

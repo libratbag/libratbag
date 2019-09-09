@@ -859,7 +859,8 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 	unsigned int default_rate = 500;
 	int rc;
 
-	if (drv_data->capabilities & HIDPP_CAP_RESOLUTION_2200) {
+	if ((drv_data->capabilities & HIDPP_CAP_RESOLUTION_2200) &&
+	    (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) == 0) {
 		uint16_t resolution;
 		uint8_t flags;
 
@@ -1305,6 +1306,11 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		break;
 	}
 	case HIDPP_PAGE_COLOR_LED_EFFECTS: {
+		/* The 8070 feauture implemented in the G602 doesn't follow the spec,
+		 * so we ignore it */
+		if (ratbag_device_data_hidpp20_get_quirk(device->data) == HIDPP20_QUIRK_G602)
+			break;
+
 		log_debug(ratbag, "device has color effects\n");
 		drv_data->capabilities |= HIDPP_CAP_COLOR_LED_EFFECTS_8070;
 
