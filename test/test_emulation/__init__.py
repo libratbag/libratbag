@@ -88,7 +88,7 @@ class TestDevice(object):
             rules_dest.unlink()
             self.reload_udev_rules()
 
-    @pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True, scope='session')
     def client(self):
         yield RatbagemuClient()
 
