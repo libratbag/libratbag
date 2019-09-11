@@ -15,7 +15,7 @@ class TestSteelseriesDevice2(TestDevice):
         new_dpi = 1000
 
         client.set_dpi(id, dpi_id, old_dpi)
-        subprocess.run(f'ratbagctl ratbag-emu resolution {str(dpi_id)} dpi set {str(new_dpi)}', shell=True)
+        subprocess.run(f"ratbagctl 'ratbag-emu test device #{id}' resolution {str(dpi_id)} dpi set {str(new_dpi)}", shell=True)
 
         x = y = 5
         data = [
