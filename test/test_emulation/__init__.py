@@ -92,6 +92,14 @@ class TestDevice(object):
     def client(self):
         yield RatbagemuClient()
 
+    @pytest.fixture
+    def id(self, client):
+        id = client.create(self.shortname)
+
+        yield id
+
+        client.delete(id)
+
     def _simulate(self, client, id, data):
         input_nodes = client.get_input_nodes(id)
 
