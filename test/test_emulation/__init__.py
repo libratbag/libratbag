@@ -89,6 +89,18 @@ class TestDevice(object):
             self.reload_udev_rules()
 
     @pytest.fixture(autouse=True, scope='session')
+    def server(self):
+        p = None
+        try:
+            p = subprocess.Popen('python -m ratbag_emu 2&>1 >/dev/null', shell=True)
+            sleep(2)
+            yield
+        finally:
+            if p:
+                p.kill()
+
+    @pytest.fixture(autouse=True, scope='session')
+    @pytest.mark.usesfixtures('server')
     def client(self):
         yield RatbagemuClient()
 
