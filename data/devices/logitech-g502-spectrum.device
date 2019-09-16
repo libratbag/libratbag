@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G502 Spectrum
+DeviceMatch=usb:04d9:0169
+Driver=hidpp20
