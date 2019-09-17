@@ -1,2 +1,2 @@
 # Ignore ratbag-emu test devices
-KERNELS=="*input*", ATTRS{name}=="ratbag-emu test device *", ENV{LIBINPUT_IGNORE_DEVICE}="1"
+KERNELS=="*input*", ATTRS{name}=="ratbag-emu *", ENV{LIBINPUT_IGNORE_DEVICE}="1"
