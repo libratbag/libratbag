@@ -9,3 +9,4 @@
 *.rej
 *.trs
 tags
+ratbag-emu-log-*.txt
