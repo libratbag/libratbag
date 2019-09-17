@@ -92,12 +92,19 @@ class TestDevice(object):
     def server(self):
         p = None
         try:
-            p = subprocess.Popen('python -m ratbag_emu 2&>1 >/dev/null', shell=True)
+            stdout = open('ratbag-emu-log-stdout.txt', 'w')
+            stderr = open('ratbag-emu-log-stderr.txt', 'w')
+
+            p = subprocess.Popen(['/usr/bin/env', 'python3', '-m', 'ratbag_emu'], stdout=stdout, stderr=stderr)
             sleep(2)
             yield
         finally:
             if p:
                 p.kill()
+            if stdout:
+                stdout.close()
+            if stderr:
+                stderr.close()
 
     @pytest.fixture(autouse=True, scope='session')
     @pytest.mark.usesfixtures('server')
