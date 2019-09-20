@@ -285,6 +285,7 @@ data_files = files(
 	'data/devices/logitech-MX-Ergo.device',
 	'data/devices/logitech-MX-Master.device',
 	'data/devices/logitech-MX-Master-2S.device',
+	'data/devices/logitech-MX-Master-3.device',
 	'data/devices/logitech-MX518.device',
 	'data/devices/logitech-T650.device',
 	'data/devices/logitech-Wireless-Touchpad.device',
