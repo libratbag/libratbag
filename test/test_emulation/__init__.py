@@ -8,7 +8,7 @@ import pytest
 import threading
 
 from pathlib import Path
-from time import sleep
+from time import sleep, strftime, time
 
 
 MM_TO_INCH = 0.0393700787
@@ -90,20 +90,17 @@ class TestDevice(object):
     @pytest.fixture(autouse=True, scope='session')
     def server(self):
         p = None
-        try:
-            stdout = open('ratbag-emu-log-stdout.txt', 'w')
-            stderr = open('ratbag-emu-log-stderr.txt', 'w')
-
-            p = subprocess.Popen(['/usr/bin/env', 'python3', '-m', 'ratbag_emu'], stdout=stdout, stderr=stderr)
-            sleep(2)
-            yield
-        finally:
-            if p:
-                p.kill()
-            if stdout:
-                stdout.close()
-            if stderr:
-                stderr.close()
+        logs = f'ratbag-emu-log-{strftime("%Y-%m-%d_%H:%M")}'
+        with open(f'{logs}-stdout.txt', 'w') as stdout, \
+             open(f'{logs}-stderr.txt', 'w') as stderr:
+            try:
+                args = ['/usr/bin/env', 'python3', '-m', 'ratbag_emu']
+                p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
+                sleep(2)
+                yield
+            finally:
+                if p:
+                    p.kill()
 
     @pytest.fixture(autouse=True, scope='session')
     @pytest.mark.usesfixtures('server')
