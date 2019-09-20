@@ -284,6 +284,11 @@ class Ratbagd(_RatbagdDBus):
         """A list of RatbagdDevice objects supported by ratbagd."""
         return self._devices
 
+    def find_device(self, name):
+        for device in self._devices:
+            if device.name.startswith(name):
+                return device
+
     def __getitem__(self, id):
         """Returns the requested device, or None."""
         for d in self.devices:

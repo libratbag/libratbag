@@ -88,6 +88,23 @@ class TestDevice(object):
             self.reload_udev_rules()
 
     @pytest.fixture(autouse=True, scope='session')
+    def ratbagd_src(self):
+        ratbagd_src = Path('tools/ratbagd.py')
+        ratbagd_dest = Path('test/test_emulation/ratbagd.py')
+        shutil.copyfile(ratbagd_src, ratbagd_dest)
+
+        yield
+
+        if ratbagd_dest.is_file():
+            ratbagd_dest.unlink()
+
+    @pytest.fixture(autouse=True)
+    @pytest.mark.usesfixtures(['ratbagd_src', 'id'])
+    def ratbagd(self):
+        import test_emulation.ratbagd
+        yield ratbagd.Ratbagd(api_version=1)
+
+    @pytest.fixture(autouse=True, scope='session')
     def server(self):
         p = None
         logs = f'ratbag-emu-log-{strftime("%Y-%m-%d_%H:%M")}'
@@ -107,7 +124,8 @@ class TestDevice(object):
     def client(self):
         yield RatbagemuClient()
 
-    @pytest.fixture
+    @pytest.fixture(autouse=True)
+    @pytest.mark.first
     def id(self, client):
         id = client.create(self.shortname)
 

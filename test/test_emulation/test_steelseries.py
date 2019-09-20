@@ -1,20 +1,26 @@
 import subprocess
 
+from time import sleep
+
 from test_emulation import TestDevice, MouseData, MM_TO_INCH
 
 
 class TestSteelseriesDevice2(TestDevice):
     shortname = 'steelseries-rival310'
 
-    def test_create(self, id, client):
-        subprocess.check_call(f"ratbagctl 'ratbag-emu {id}' info >/dev/null", shell=True)
+    def test_create(self, id, ratbagd, client):
+        assert ratbagd.find_device(f'ratbag-emu {id}')
 
-    def test_dpi(self, id, client, dpi_id=0):
+    def test_dpi(self, id, ratbagd, client, dpi_id=0):
         old_dpi = 500
         new_dpi = 1000
 
         client.set_dpi(id, dpi_id, old_dpi)
-        subprocess.check_call(f"ratbagctl 'ratbag-emu {id}' resolution {str(dpi_id)} dpi set {str(new_dpi)}", shell=True)
+
+        device = ratbagd.find_device(f'ratbag-emu {id}')
+        device.active_profile.resolutions[dpi_id].resolution = (new_dpi,)
+        device.commit()
+        sleep(0.1)
 
         x = y = 5
         data = [
