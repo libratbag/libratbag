@@ -15,9 +15,8 @@ MM_TO_INCH = 0.0393700787
 
 
 class RatbagemuClient(object):
-    def __init__(self, url='http://localhost:8080'):
-        self.url = url
-
+    def __init__(self, url='http://localhost', port=8080):
+        self.url = f'{url}:{port}'
 
     # Internal wrappers around the http requests
     def _get(self, path):
