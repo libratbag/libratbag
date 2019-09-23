@@ -618,6 +618,19 @@ shared_library(
    install: false,
 )
 
+i_source = join_paths(meson.source_root(), 'src', 'hidpp.i')
+c_source = swig_gen.process(i_source)
+shared_library(
+   'hidpp',
+   c_source,
+   name_prefix: '_',
+   c_args : ['-Wno-missing-prototypes', '-Wno-format-nonliteral'],
+   extra_files: [ i_source ] + src_libratbag ,
+   dependencies: deps_libratbag + wrapper_deps,
+   include_directories : include_directories('src', 'tools'),
+   install: false,
+)
+
 # ratbagc is the layer that maps ratbagctl to the swig bindings
 ratbagc_py_conf = configuration_data()
 ratbagc_py_conf.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
