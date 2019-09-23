@@ -7,15 +7,20 @@ from test_emulation import TestDevice, MouseData, MM_TO_INCH
 
 class TestSteelseriesDevice2(TestDevice):
     shortname = 'steelseries-rival310'
+    initial_state = {
+        'dpi': [
+            800,
+            1600
+        ],
+        'active_dpi': 1
+    }
 
     def test_create(self, id, ratbagd, client):
         assert ratbagd.find_device(f'ratbag-emu {id}')
 
     def test_dpi(self, id, ratbagd, client, dpi_id=0):
-        old_dpi = 500
+        old_dpi = self.initial_state['dpi'][self.initial_state['active_dpi']]
         new_dpi = 1000
-
-        client.set_dpi(id, dpi_id, old_dpi)
 
         device = ratbagd.find_device(f'ratbag-emu {id}')
         device.active_profile.resolutions[dpi_id].resolution = (new_dpi,)

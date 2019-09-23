@@ -34,10 +34,12 @@ class RatbagemuClient(object):
     '''
     ratbag-emu functions
     '''
-    def create(self, shortname):
+    def create(self, shortname, initial_state=None):
         data = {
             'shortname': shortname
         }
+        if initial_state:
+            data['initial_state'] =  initial_state
         response = self._post('/devices/add', json=data)
         assert response.status_code == 201
         return response.json()['id']
@@ -66,6 +68,8 @@ class RatbagemuClient(object):
 
 
 class TestDevice(object):
+    initial_state = None
+
     def reload_udev_rules(self):
         subprocess.run('udevadm control --reload-rules'.split())
 
@@ -127,7 +131,7 @@ class TestDevice(object):
     @pytest.fixture(autouse=True)
     @pytest.mark.first
     def id(self, client):
-        id = client.create(self.shortname)
+        id = client.create(self.shortname, initial_state=self.initial_state)
 
         yield id
 
