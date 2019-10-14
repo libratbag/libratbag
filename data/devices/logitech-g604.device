@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G604
+DeviceMatch=usb:046d:4085;bluetooth:046d:b024
+Driver=hidpp20
