@@ -520,7 +520,7 @@ class RatbagdProfile(_RatbagdDBus):
 
     @GObject.Property
     def is_active(self):
-        """Returns True if the profile is currenly active, false otherwise."""
+        """Returns True if the profile is currently active, false otherwise."""
         return self._active
 
     def set_active(self):
