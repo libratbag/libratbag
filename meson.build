@@ -330,6 +330,7 @@ data_files = files(
 	'data/devices/logitech-MX-Vertical.device',
 	'data/devices/roccat-kone-xtd.device',
 	'data/devices/steelseries-kinzu-v2.device',
+	'data/devices/steelseries-kinzu-v3.device',
 	'data/devices/steelseries-rival-310.device',
 	'data/devices/steelseries-rival-600.device',
 	'data/devices/steelseries-rival.device',
