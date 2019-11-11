@@ -253,6 +253,8 @@ class Ratbagd(_RatbagdDBus):
         result = self._get_dbus_property("Devices") or []
         self._devices = [RatbagdDevice(objpath) for objpath in result]
         self._proxy.connect("notify::g-name-owner", self._on_name_owner_changed)
+        if self.api_version == None and not self._proxy.get_cached_property_names():
+            raise RatbagdUnavailable("Make sure it is running and your user is in the required groups.")
         if self.api_version != api_version:
             raise RatbagdIncompatible(self.api_version or -1, api_version)
 
