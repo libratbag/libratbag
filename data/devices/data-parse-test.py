@@ -27,6 +27,7 @@
 
 import argparse
 import configparser
+import re
 
 
 def assertIn(element, l):
@@ -190,6 +191,15 @@ def check_section_driver(driver, section):
         assert('Unsupported driver section {}'.format(driver))
 
 
+def validate_data_file_name(path):
+    # Matching any of the characters in the regular expression will throw an
+    # error. Currently only tests the square brackets [], parentheses, and curly
+    # braces.
+    illegal_characters_regex = '([\[\]\{\}\(\)])'
+    found_characters = re.findall(illegal_characters_regex, path)
+    if found_characters:
+        raise AssertionError("data file name '{}' contains illegal characters: '{}'".format(path, ''.join(found_characters)))
+
 def parse_data_file(path):
     print('Parsing file {}'.format(path))
     data = configparser.ConfigParser(strict=True)
@@ -216,4 +226,5 @@ if __name__ == "__main__":
     parser.add_argument('file', nargs='+')
     args = parser.parse_args()
     for path in args.file:
+        validate_data_file_name(path)
         parse_data_file(path)
