@@ -200,11 +200,11 @@ jobs:
   fedora_cache:
     <<: *fedora_prep_cache
     docker:
-      - image: fedora:30
+      - image: fedora:31
   fedora_latest:
     <<: *fedora_settings
     docker:
-      - image: fedora:30
+      - image: fedora:31
   ubuntu_19_04:
     <<: *ubuntu_settings
     docker:
@@ -212,11 +212,11 @@ jobs:
   doc_build:
     <<: *doc_build
     docker:
-      - image: fedora:30
+      - image: fedora:31
   doc_deploy:
     <<: *docs_deploy
     docker:
-      - image: fedora:30
+      - image: fedora:31
 
 
 workflows:
