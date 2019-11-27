@@ -1,5 +1,5 @@
 # Logitech M585/M590
 [Device]
 Name=Logitech M585/M590
-DeviceMatch=usb:046d:406B
+DeviceMatch=usb:046d:406b
 Driver=hidpp20
