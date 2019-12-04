@@ -62,9 +62,9 @@ def start_ratbagd(verbosity=0):
     args = [os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")]
 
     if verbosity >= 3:
-        args.append('--verbose=raw')
-    elif verbosity >= 2:
         args.append('--verbose')
+    elif verbosity >= 2:
+        args.append('--verbose=debug')
     elif verbosity == 0:
         args.append('--quiet')
 
