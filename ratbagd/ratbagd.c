@@ -356,6 +356,7 @@ static int ratbagd_new(struct ratbagd **out)
 	if (r < 0)
 		return r;
 
+	log_verbose("Initializing libratbag\n");
 	ctx->lib_ctx = ratbag_create_context(&ratbagd_lib_interface, ctx);
 	if (!ctx->lib_ctx)
 		return -ENOMEM;
@@ -519,6 +520,8 @@ static int ratbagd_run(struct ratbagd *ctx)
 			  on_timeout_cb,
 			  ctx);
 	sd_event_add_post(ctx->event, NULL, before_idle_cb, ctx);
+
+	log_verbose("DBus server ready\n");
 
 	return sd_event_loop(ctx->event);
 }
