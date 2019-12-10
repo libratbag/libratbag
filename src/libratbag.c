@@ -71,17 +71,29 @@ ratbag_default_log_func(struct ratbag *ratbag,
 			const char *format, va_list args)
 {
 	const char *prefix;
+	FILE *out = stdout;
 
 	switch(priority) {
-	case RATBAG_LOG_PRIORITY_RAW: prefix = "raw"; break;
-	case RATBAG_LOG_PRIORITY_DEBUG: prefix = "debug"; break;
-	case RATBAG_LOG_PRIORITY_INFO: prefix = "info"; break;
-	case RATBAG_LOG_PRIORITY_ERROR: prefix = "error"; break;
-	default: prefix="<invalid priority>"; break;
+	case RATBAG_LOG_PRIORITY_RAW:
+		prefix = "raw";
+		break;
+	case RATBAG_LOG_PRIORITY_DEBUG:
+		prefix = "debug";
+		break;
+	case RATBAG_LOG_PRIORITY_INFO:
+		prefix = "info";
+		break;
+	case RATBAG_LOG_PRIORITY_ERROR:
+		prefix = "error";
+		out = stderr;
+		break;
+	default:
+		prefix="<invalid priority>";
+		break;
 	}
 
-	fprintf(stderr, "ratbag %s: ", prefix);
-	vfprintf(stderr, format, args);
+	fprintf(out, "ratbag %s: ", prefix);
+	vfprintf(out, format, args);
 }
 
 void
