@@ -193,15 +193,11 @@ docs_deploy: &docs_deploy
 
 version: 2
 jobs:
-  fedora_rawhide:
-    <<: *fedora_settings
-    docker:
-      - image: fedora:rawhide
   fedora_cache:
     <<: *fedora_prep_cache
     docker:
       - image: fedora:31
-  fedora_latest:
+  fedora_31:
     <<: *fedora_settings
     docker:
       - image: fedora:31
@@ -223,10 +219,9 @@ workflows:
   version: 2
   compile_and_test:
     jobs:
-      # - fedora_rawhide
       - fedora_cache
       - ubuntu_19_04
-      - fedora_latest:
+      - fedora_31:
           requires:
             - fedora_cache
       - doc_build:
