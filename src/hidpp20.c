@@ -2627,7 +2627,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 						  profiles->sector_size,
 						  data);
 
-	if (rc && device->quirk != HIDPP20_QUIRK_G305) {
+	if (rc && device->quirk == HIDPP20_QUIRK_G305) {
 		/* The G305 has a bug where it throws an ERR_INVALID_ARGUMENT
 		   if the sector has not been written to yet. If this happens
 		   we will read the ROM profiles.*/
