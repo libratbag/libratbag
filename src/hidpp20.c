@@ -133,6 +133,16 @@ hidpp20_request_command_allow_error(struct hidpp20_device *device, union hidpp20
 	}
 	msg->msg.address |= DEVICE_SW_ID;
 
+	/* some mice don't support short reports */
+	if (msg->msg.report_id == REPORT_ID_SHORT && !(device->base.supported_report_types & HIDPP_REPORT_SHORT))
+		msg->msg.report_id = REPORT_ID_LONG;
+
+	/* sanity check */
+	if (msg->msg.report_id == REPORT_ID_LONG && !(device->base.supported_report_types & HIDPP_REPORT_LONG)) {
+		hidpp_log_error(&device->base, "hidpp20: trying to use unsupported report type\n");
+		return -EINVAL;
+	}
+
 	msg_len = msg->msg.report_id == REPORT_ID_SHORT ? SHORT_MESSAGE_LENGTH : LONG_MESSAGE_LENGTH;
 
 	/* Send the message to the Device */
@@ -2871,7 +2881,7 @@ hidpp20_onboard_profiles_get_code_from_special(enum ratbag_button_action_special
 /* -------------------------------------------------------------------------- */
 
 struct hidpp20_device *
-hidpp20_device_new(const struct hidpp_device *base, unsigned int idx)
+hidpp20_device_new(const struct hidpp_device *base, unsigned int idx, struct hidpp_hid_report *reports, unsigned int num_reports)
 {
 	struct hidpp20_device *dev;
 	int rc;
@@ -2883,6 +2893,12 @@ hidpp20_device_new(const struct hidpp_device *base, unsigned int idx)
 
 	dev->proto_major = 1;
 	dev->proto_minor = 0;
+
+	hidpp_get_supported_report_types(&(dev->base), reports, num_reports);
+
+	if (!(dev->base.supported_report_types & HIDPP_REPORT_SHORT) &&
+	    !(dev->base.supported_report_types & HIDPP_REPORT_LONG))
+	    goto err;
 
 	rc = hidpp20_root_get_protocol_version(dev, &dev->proto_major, &dev->proto_minor);
 	if (rc) {

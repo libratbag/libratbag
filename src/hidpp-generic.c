@@ -307,6 +307,33 @@ hidpp_read_response(struct hidpp_device *dev, uint8_t *buf, size_t size)
 }
 
 void
+hidpp_get_supported_report_types(struct hidpp_device *dev, struct hidpp_hid_report *reports, unsigned int num_reports)
+{
+	if (!reports) {
+		hidpp_log_debug(dev, "hidpp: we don't have information about the hid reports, ignoring checks\n");
+		dev->supported_report_types = 0xffff;
+		return;
+	}
+
+	/* reset the bits we are gonna check */
+	dev->supported_report_types &= (0xff & ~HIDPP_REPORT_SHORT);
+	dev->supported_report_types &= (0xff & ~HIDPP_REPORT_LONG);
+
+	for (unsigned i = 0; i < num_reports; i++)
+		if ((reports[i].usage_page & 0xff00) == 0xff00) /* vendor defined usage page (0xff00-0xffff) */
+			switch (reports[i].report_id) {
+				case REPORT_ID_SHORT:
+					hidpp_log_debug(dev, "hidpp: device supports short reports\n");
+					dev->supported_report_types |= HIDPP_REPORT_SHORT;
+					break;
+				case REPORT_ID_LONG:
+					hidpp_log_debug(dev, "hidpp: device supports long reports\n");
+					dev->supported_report_types |= HIDPP_REPORT_LONG;
+					break;
+			}
+}
+
+void
 hidpp_log(struct hidpp_device *dev,
 	  enum hidpp_log_priority priority,
 	  const char *format,
@@ -363,6 +390,7 @@ hidpp_device_init(struct hidpp_device *dev, int fd)
 {
 	dev->hidraw_fd = fd;
 	hidpp_device_set_log_handler(dev, simple_log, HIDPP_LOG_PRIORITY_INFO, NULL);
+	dev->supported_report_types = 0;
 }
 
 void

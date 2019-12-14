@@ -1575,7 +1575,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 	 * If there is a special need like for G900, we can add this in the
 	 * device data file.
 	 */
-	dev = hidpp20_device_new(&base, device_idx);
+	dev = hidpp20_device_new(&base, device_idx, (struct hidpp_hid_report*) device->hidraw[0].reports, device->hidraw[0].num_reports);
 	if (!dev) {
 		rc = -ENODEV;
 		goto err;
