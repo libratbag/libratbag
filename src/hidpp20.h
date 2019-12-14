@@ -80,7 +80,8 @@ const char *hidpp20_get_quirk_string(enum hidpp20_quirk quirk);
 /* -------------------------------------------------------------------------- */
 
 struct hidpp20_device *
-hidpp20_device_new(const struct hidpp_device *base, unsigned int idx);
+hidpp20_device_new(const struct hidpp_device *base, unsigned int idx,
+		   struct hidpp_hid_report *reports, unsigned int num_reports);
 
 void
 hidpp20_device_destroy(struct hidpp20_device *device);
