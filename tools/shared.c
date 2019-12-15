@@ -74,6 +74,9 @@ led_type_to_str(enum ratbag_led_type type)
 	case RATBAG_LED_TYPE_WHEEL:
 		str = "wheel";
 		break;
+	case RATBAG_LED_TYPE_SWITCHES:
+		str = "switches";
+		break;
 	default:
 		assert(!"Invalid LED type");
 		break;

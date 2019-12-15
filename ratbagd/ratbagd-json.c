@@ -170,7 +170,7 @@ static void parse_led_member(JsonObject *obj, const gchar *name,
 	if (streq(name, "type")) {
 		gboolean v = json_object_get_int_member(obj, name);
 
-		if (v < 0 || v > RATBAG_LED_TYPE_WHEEL)
+		if (v < 0 || v > RATBAG_LED_TYPE_SWITCHES)
 			parser_error("type");
 
 		led->type = v;

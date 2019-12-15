@@ -346,6 +346,8 @@ parse_ledtypes(char **strv, enum ratbag_led_type *types, size_t ntypes)
 			types[i] = RATBAG_LED_TYPE_SIDE;
 		else if (streq(s, "wheel"))
 			types[i] = RATBAG_LED_TYPE_WHEEL;
+		else if (streq(s, "switches"))
+			types[i] = RATBAG_LED_TYPE_SWITCHES;
 		else
 			return -1;
 

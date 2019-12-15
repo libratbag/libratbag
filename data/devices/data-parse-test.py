@@ -58,7 +58,7 @@ def check_match_str(string):
 
 
 def check_ledtypes_str(string):
-    permitted_types = ['logo', 'side', 'battery', 'dpi']
+    permitted_types = ['logo', 'side', 'battery', 'dpi', 'switches']
 
     types = string.split(';')
     for t in types:
