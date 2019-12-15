@@ -268,7 +268,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		}
 
 		nres = ratbag_profile_get_num_resolutions(profile);
-		if (nres == 0 || nres > 16) {
+		if (nres > 16) {
 				log_bug_libratbag(ratbag,
 						  "%s: invalid number of resolutions (%d)\n",
 						  device->name,
