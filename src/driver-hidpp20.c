@@ -1179,6 +1179,34 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 	ratbag_profile_set_report_rate(profile, p->report_rate);
 }
 
+static int
+hidpp20drv_init_profile_8100(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag *ratbag = device->ratbag;
+	int rc;
+
+	log_debug(ratbag, "initializing onboard profiles\n");
+	rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
+	if (rc < 0)
+		return rc;
+
+	rc = hidpp20_onboard_profiles_initialize(drv_data->dev, drv_data->profiles);
+	if (rc < 0)
+		return rc;
+
+	drv_data->num_profiles = drv_data->profiles->num_profiles;
+	drv_data->num_buttons = drv_data->profiles->num_buttons;
+
+	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201)
+		drv_data->num_resolutions = drv_data->profiles->num_modes;
+	/* We ignore the profile's num_leds and require
+	* HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
+	*/
+
+	return 0;
+}
+
 static void
 hidpp20drv_read_profile(struct ratbag_profile *profile)
 {
@@ -1349,22 +1377,6 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	case HIDPP_PAGE_ONBOARD_PROFILES: {
 		log_debug(ratbag, "device has onboard profiles\n");
 		drv_data->capabilities |= HIDPP_CAP_ONBOARD_PROFILES_8100;
-
-		rc = hidpp20_onboard_profiles_allocate(drv_data->dev, &drv_data->profiles);
-		if (rc < 0)
-			return rc;
-
-		rc = hidpp20_onboard_profiles_initialize(drv_data->dev, drv_data->profiles);
-		if (rc < 0)
-			return rc;
-
-		drv_data->num_profiles = drv_data->profiles->num_profiles;
-		drv_data->num_resolutions = drv_data->profiles->num_modes;
-		drv_data->num_buttons = drv_data->profiles->num_buttons;
-		/* We ignore the profile's num_leds and require
-		 * HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
-		 */
-
 		break;
 	}
 	case HIDPP_PAGE_MOUSE_BUTTON_SPY: {
@@ -1472,6 +1484,13 @@ hidpp20drv_20_probe(struct ratbag_device *device)
 			hidpp20_feature_get_name(feature_list[i].feature),
 			feature_list[i].feature);
 		rc = hidpp20drv_init_feature(device, feature_list[i].feature);
+		if (rc < 0)
+			return rc;
+	}
+
+	/* initializations that depend on other features */
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+		rc = hidpp20drv_init_profile_8100(device);
 		if (rc < 0)
 			return rc;
 	}
@@ -1592,7 +1611,7 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	/* add some defaults that will be overwritten by the device */
 	drv_data->num_profiles = 1;
-	drv_data->num_resolutions = 1;
+	drv_data->num_resolutions = 0;
 	drv_data->num_buttons = 8;
 	drv_data->num_leds = 0;
 
