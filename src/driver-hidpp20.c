@@ -1180,6 +1180,38 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 }
 
 static int
+hidpp20drv_init_leds_8070_8071(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag *ratbag = device->ratbag;
+
+	/* we only support 0x8070/0x8071 via 0x8100 */
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)) {
+		if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070) {
+			log_debug(ratbag, "disabling 0x8070 (Color Leds Effects) feature because the device doesn't have 0x8100 (Onboard Memory Profiles)\n");
+			drv_data->capabilities &= !HIDPP_CAP_COLOR_LED_EFFECTS_8070;
+		}
+
+		if (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071) {
+			log_debug(ratbag, "disabling 0x8071 (RGB Effects) feature because the device doesn't have 0x8100 (Onboard Memory Profiles)\n");
+			drv_data->capabilities &= !HIDPP_CAP_RGB_EFFECTS_8071;
+		}
+	}
+
+	if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070 ||
+	    drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071) {
+		/* we read the profile once to get the correct number of
+		 * supported leds. */
+		if (hidpp20drv_read_color_leds(device))
+			return 0;
+
+		device->num_leds = drv_data->num_leds;
+	}
+
+	return 0;
+}
+
+static int
 hidpp20drv_init_profile_8100(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -1341,25 +1373,11 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 
 		log_debug(ratbag, "device has color effects\n");
 		drv_data->capabilities |= HIDPP_CAP_COLOR_LED_EFFECTS_8070;
-
-		/* we read the profile once to get the correct number of
-		 * supported leds. */
-		if (hidpp20drv_read_color_leds(device))
-			return 0;
-
-		device->num_leds = drv_data->num_leds;
 		break;
 	}
 	case HIDPP_PAGE_RGB_EFFECTS: {
 		log_debug(ratbag, "device has color effects\n");
 		drv_data->capabilities |= HIDPP_CAP_RGB_EFFECTS_8071;
-
-		/* we read the profile once to get the correct number of
-		 * supported leds. */
-		if (hidpp20drv_read_color_leds(device))
-			return 0;
-
-		device->num_leds = drv_data->num_leds;
 		break;
 	}
 	case HIDPP_PAGE_LED_SW_CONTROL: {
@@ -1489,6 +1507,13 @@ hidpp20drv_20_probe(struct ratbag_device *device)
 	}
 
 	/* initializations that depend on other features */
+	if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070 ||
+	    drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071) {
+		rc = hidpp20drv_init_leds_8070_8071(device);
+		if (rc < 0)
+			return rc;
+	}
+
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 		rc = hidpp20drv_init_profile_8100(device);
 		if (rc < 0)
@@ -1496,7 +1521,6 @@ hidpp20drv_20_probe(struct ratbag_device *device)
 	}
 
 	return 0;
-
 }
 
 static int
