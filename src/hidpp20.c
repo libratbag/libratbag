@@ -2378,7 +2378,7 @@ hidpp20_onboard_profiles_write_dict(struct hidpp20_device *device,
 
 	memset(data + buffer_index, 0xff, sector_size - buffer_index);
 
-	hidpp_log_buf_debug(&device->base,
+	hidpp_log_buf_raw(&device->base,
 			   "dictionary: ",
 			   data,
 			   hidpp20_onboard_profiles_compute_dict_size(device,
