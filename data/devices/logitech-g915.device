@@ -1,0 +1,8 @@
+[Device]
+Name=Logitech G915
+DeviceMatch=usb:046d:c33e
+LedTypes=logo;switches
+Driver=hidpp20
+
+[Driver/hidpp20]
+DeviceIndex=1
