@@ -1,6 +1,4 @@
-# vim: set expandtab shiftwidth=4 tabstop=4:
-#
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -428,7 +426,7 @@ class RatbagdProfile(_RatbagdDBus):
         """The capabilities of this profile as an array. Capabilities not
         present on the profile are not in the list. Thus use e.g.
 
-        if RatbagdProfile.CAP_WRITABLE_NAME is in profile.capabilities:
+        if RatbagdProfile.CAP_WRITABLE_NAME in profile.capabilities:
             do something
         """
         return self._get_dbus_property("Capabilities") or []
