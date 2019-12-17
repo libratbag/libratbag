@@ -374,6 +374,7 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         { "is_active": false,
           "resolutions": [
             { "xres": 1000, "yres": 1100,
+              "capabilities": [1],
               "is_active": false },
             { "xres": 1300, "yres": 1400,
               "capabilities": [1],
