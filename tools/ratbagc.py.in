@@ -137,7 +137,7 @@ class Ratbagd(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, apiversion):
         os.environ['LIBRATBAG_DATA_DIR'] = LIBRATBAG_DATA_DIR
         self._ratbag = libratbag.ratbag_create_context(libratbag.interface, None)
         self._devices = {}
@@ -251,13 +251,13 @@ class RatbagdDevice(metaclass=MetaRatbag):
     @property
     def model(self):
         """The unique identifier for this device model."""
-        bus = libratbag.ratbag_device_get_bus(self._device)
+        bus = libratbag.ratbag_device_get_bustype(self._device)
         if not bus:
             return "unknown"
         vid = libratbag.ratbag_device_get_vendor_id(self._device)
         pid = libratbag.ratbag_device_get_product_id(self._device)
         version = libratbag.ratbag_device_get_product_version(self._device)
-        return "{}:{04x}:{04x}:{d}".format(bus, vid, pid, version)
+        return "{}:{:04x}:{:04x}:{:d}".format(bus, vid, pid, version)
 
     @property
     def name(self):
