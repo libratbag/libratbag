@@ -138,9 +138,8 @@ def check_section_hidpp10(section):
         pass
 
     try:
-        index = int(section['DeviceIndex'])
-        # 10 is arbitrarily chosen
-        assert(index > 0 and index < 10)
+        index = int(section['DeviceIndex'], 16)
+        assert(index > 0 and index <= 0xff)
     except KeyError:
         pass
 
@@ -175,9 +174,8 @@ def check_section_hidpp20(section):
         assertIn(key, permitted)
 
     try:
-        index = int(section['DeviceIndex'])
-        # 10 is arbitrarily chosen
-        assert(index > 0 and index < 10)
+        index = int(section['DeviceIndex'], 16)
+        assert(index > 0 and index <= 0xff)
     except KeyError:
         pass
 
