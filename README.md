@@ -3,9 +3,10 @@ libratbag
 
 <img src="https://libratbag.github.io/_images/logo.svg" alt="" width="30%" align="right">
 
-libratbag provides **ratbagd**, a DBus daemon to configure gaming mice.
-The daemon provides a generic way to access the various features exposed by
-these mice and abstracts away hardware-specific and kernel-specific quirks.
+libratbag provides **ratbagd**, a DBus daemon to configure input devices,
+mainly gaming mice. The daemon provides a generic way to access the various
+features exposed by these mice and abstracts away hardware-specific and
+kernel-specific quirks.
 
 libratbag currently supports devices from Logitech, Etekcity, GSkill,
 Roccat, Steelseries. See [the device
