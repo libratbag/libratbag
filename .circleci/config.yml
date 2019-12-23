@@ -1,4 +1,3 @@
-# vim: set expandtab shiftwidth=2 tabstop=8:
 libratbag_references:
   build_dependencies: &build_dependencies
     FEDORA_DEP_BUILD: gcc gcc-c++ meson dbus-daemon glib2-devel json-glib-devel libevdev-devel libudev-devel libunistring-devel python3-devel python3-evdev swig
