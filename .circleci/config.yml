@@ -1,5 +1,11 @@
 # vim: set expandtab shiftwidth=2 tabstop=8:
 libratbag_references:
+  build_dependencies: &build_dependencies
+    FEDORA_DEP_BUILD: gcc gcc-c++ meson dbus-daemon glib2-devel json-glib-devel libevdev-devel libudev-devel libunistring-devel python3-devel python3-evdev swig
+    FEDORA_DEP_TEST: check-devel python3-gobject python3-lxml valgrind
+    FEDORA_DEP_DOC: python3-sphinx python3-sphinx_rtd_theme
+    UBUNTU_DEP_BUILD: gcc g++ meson pkg-config systemd libevdev-dev libglib2.0-dev libjson-glib-dev libsystemd-dev libudev-dev libunistring-dev python3-dev python3-evdev swig
+    UBUNTU_DEP_TEST: check python3-gi python3-lxml valgrind
   default_settings: &default_settings
     working_directory: ~/libratbag
     environment:
@@ -52,10 +58,7 @@ libratbag_references:
       name: Checking if any files are left after uninstall
       command: |
         PREFIX=/root/test_install
-        # workaround until https://github.com/mesonbuild/meson/pull/2033 is merged
-        # and a new release appears
-        git clone https://github.com/whot/meson -b wip/remove-directories-on-uninstall
-        ./meson/meson.py build_install --prefix=$PREFIX
+        meson build_install --prefix=$PREFIX
         ninja -C build_install install
         ninja -C build_install uninstall
         if [ -d $PREFIX ]
@@ -78,11 +81,13 @@ fedora_prep_cache: &fedora_prep_cache
   steps:
     - run:
         name: Initializing Fedora dnf cache
-        command: dnf install -y --downloadonly libsolv tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml libunistring-devel dbus-daemon json-glib-devel diffutils
+        command: dnf install -y --downloadonly git ${FEDORA_DEP_BUILD} ${FEDORA_DEP_TEST} ${FEDORA_DEP_DOC}
     - persist_to_workspace:
         root: /var/cache/
         paths:
           - dnf/*
+  environment:
+    *build_dependencies
 
 fedora_fetch_cache: &fedora_fetch_cache
   attach_workspace:
@@ -93,8 +98,7 @@ fedora_install: &fedora_install
     name: Install prerequisites
     command: |
         echo keepcache=1 >> /etc/dnf/dnf.conf
-        dnf upgrade -y libsolv
-        dnf install -y tree git gcc gcc-c++ meson check-devel libudev-devel libevdev-devel valgrind python3-gobject python3-evdev glib2-devel python3-lxml python3-devel swig libunistring-devel dbus-daemon json-glib-devel diffutils
+        dnf install -y git ${FEDORA_DEP_BUILD} ${FEDORA_DEP_TEST}
         sed -i 's/systemd//' /etc/nsswitch.conf
 
 fedora_settings: &fedora_settings
@@ -111,7 +115,8 @@ fedora_settings: &fedora_settings
     - *build_buildtype_plain
     - *build_buildtype_release
     - *export_logs
-
+  environment:
+    *build_dependencies
 
 ubuntu_settings: &ubuntu_settings
   <<: *default_settings
@@ -124,7 +129,7 @@ ubuntu_settings: &ubuntu_settings
           apt-get remove -y libnss-systemd
           add-apt-repository universe
           apt-get update
-          apt-get install -y tree git gcc g++ pkg-config meson check libudev-dev libevdev-dev libsystemd-dev valgrind python3-gi python3-evdev libglib2.0-dev python3-lxml python3-dev swig systemd libunistring-dev libjson-glib-dev
+          apt-get install -y git ${UBUNTU_DEP_BUILD} ${UBUNTU_DEP_TEST}
     - checkout
     - *start_dbus
     - *build_and_test
@@ -134,6 +139,8 @@ ubuntu_settings: &ubuntu_settings
     - *build_buildtype_plain
     - *build_buildtype_release
     - *export_logs
+  environment:
+    *build_dependencies
 
 doc_build: &doc_build
   <<: *default_settings
@@ -142,7 +149,7 @@ doc_build: &doc_build
     - *fedora_install
     - run:
         name: Install documentation build-deps
-        command: dnf install -y python3-sphinx python3-sphinx_rtd_theme
+        command: dnf install -y ${FEDORA_DEP_DOC}
     - checkout
     - *build_with_docs
     - *export_logs
@@ -152,6 +159,8 @@ doc_build: &doc_build
         root: build
         paths:
           - doc/html/*
+  environment:
+    *build_dependencies
 
 docs_deploy: &docs_deploy
   <<: *default_settings
