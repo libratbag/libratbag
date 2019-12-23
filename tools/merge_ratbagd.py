@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 #
-# vim: set expandtab shiftwidth=4 tabstop=4:
-#
 # Copyright 2017 Red Hat, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a

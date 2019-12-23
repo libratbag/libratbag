@@ -1,4 +1,3 @@
-# vim: set expandtab shiftwidth=2 tabstop=8:
 libratbag_references:
   default_settings: &default_settings
     working_directory: ~/libratbag
