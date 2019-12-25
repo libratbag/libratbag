@@ -977,7 +977,7 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_sensor *sensor;
-	int rc, i;
+	int i;
 	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
@@ -993,14 +993,13 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 	sensor = &drv_data->sensors[0];
 
 	/* validate that the sensor accepts the given DPI */
-	rc = -EINVAL;
 	if (dpi < sensor->dpi_min || dpi > sensor->dpi_max)
-		goto out;
+		return -EINVAL;
 	if (sensor->dpi_steps) {
 		for (i = sensor->dpi_min; i < dpi; i += sensor->dpi_steps) {
 		}
 		if (i != dpi)
-			goto out;
+			return -EINVAL;
 	} else {
 		i = 0;
 		while (sensor->dpi_list[i]) {
@@ -1008,13 +1007,10 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 				break;
 		}
 		if (sensor->dpi_list[i] != dpi)
-			goto out;
+			return -EINVAL;
 	}
 
-	rc = hidpp20_adjustable_dpi_set_sensor_dpi(drv_data->dev, sensor, dpi);
-
-out:
-	return rc;
+	return hidpp20_adjustable_dpi_set_sensor_dpi(drv_data->dev, sensor, dpi);
 }
 
 static int
