@@ -172,6 +172,8 @@ static void ratbagd_device_commit_pending(void *data)
 	int r;
 
 	r = ratbag_device_commit(device->lib_device);
+	if (r)
+		log_error("error committing device (%d)\n", r);
 	if (r < 0)
 		ratbagd_device_resync(device, device->ctx->bus);
 	ratbagd_device_unref(device);
