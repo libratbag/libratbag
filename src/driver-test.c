@@ -190,6 +190,7 @@ test_read_profile(struct ratbag_profile *profile)
 		res->is_default = r->dflt;
 		if (r->dflt)
 			default_set = true;
+		res->is_disabled = r->disabled;
 
 		for (size_t j = 0; j < ARRAY_LENGTH(r->caps) && r->caps[j]; j++) {
 			ratbag_resolution_set_cap(res, r->caps[j]);

@@ -976,12 +976,7 @@ LIBRATBAG_EXPORT bool
 ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 				 enum ratbag_resolution_capability cap)
 {
-	switch (cap) {
-	case RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION:
-		break;
-	default:
-		return 0;
-	}
+	assert(cap <= RATBAG_RESOLUTION_CAP_DISABLE);
 
 	return !!(resolution->capabilities & (1 << cap));
 }
@@ -1128,6 +1123,11 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_resolution *res;
 
+	if (resolution->is_disabled) {
+		log_error(profile->device->ratbag, "%s: setting the active resolution to a disabled resolution is not allowed\n", profile->device->name);
+		return RATBAG_ERROR_VALUE;
+	}
+
 	ratbag_profile_for_each_resolution(profile, res)
 		res->is_active = false;
 
@@ -1136,7 +1136,6 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 	profile->dirty = true;
 	return RATBAG_SUCCESS;
 }
-
 
 LIBRATBAG_EXPORT bool
 ratbag_resolution_is_default(const struct ratbag_resolution *resolution)
@@ -1149,6 +1148,11 @@ ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_resolution *other;
+
+	if (resolution->is_disabled) {
+		log_error(profile->device->ratbag, "%s: setting the default resolution to a disabled resolution is not allowed\n", profile->device->name);
+		return RATBAG_ERROR_VALUE;
+	}
 
 	/* Unset the default on the other resolutions */
 	ratbag_profile_for_each_resolution(profile, other) {
@@ -1165,6 +1169,38 @@ ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 		resolution->dirty = true;
 		profile->dirty = true;
 	}
+
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT bool
+ratbag_resolution_is_disabled(const struct ratbag_resolution *resolution)
+{
+	return !!resolution->is_disabled;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_resolution_set_disabled(struct ratbag_resolution *resolution, bool disable)
+{
+	struct ratbag_profile *profile = resolution->profile;
+
+	if (!ratbag_resolution_has_capability(resolution, RATBAG_RESOLUTION_CAP_DISABLE))
+		return RATBAG_ERROR_CAPABILITY;
+
+	if (disable) {
+		if (resolution->is_active) {
+			log_error(profile->device->ratbag, "%s: disabling the active resolution is not allowed\n", profile->device->name);
+			return RATBAG_ERROR_VALUE;
+		}
+		if (resolution->is_default) {
+			log_error(profile->device->ratbag, "%s: disabling the default resolution is not allowed\n", profile->device->name);
+			return RATBAG_ERROR_VALUE;
+		}
+	}
+
+	resolution->is_disabled = disable;
+	resolution->dirty = true;
+	profile->dirty = true;
 
 	return RATBAG_SUCCESS;
 }

@@ -244,9 +244,9 @@ class TestRatbagCtlProfile(TestRatbagCtl):
 
     def test_profile_enable(self):
         r = self.launch_good_test("test_device profile 0 get")
-        self.assertNotIn('disabled', r)
+        self.assertNotIn('Profile 0: (disabled)', r)
         r = self.launch_good_test("test_device profile 3 get")
-        self.assertIn('disabled', r)
+        self.assertIn('Profile 3: (disabled)', r)
         self.launch_good_test("test_device profile 3 enable")
         r = self.launch_good_test("test_device profile 3 get")
         self.assertNotIn('Profile 3: (disabled)', r)
@@ -257,7 +257,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
 
     def test_profile_disable(self):
         r = self.launch_good_test("test_device profile 2 get")
-        self.assertNotIn('disabled', r)
+        self.assertNotIn('Profile 2: (disabled)', r)
         self.launch_good_test("test_device profile 2 disable")
         r = self.launch_good_test("test_device profile 2 get")
         self.assertEqual('Profile 2: (disabled)', r)
@@ -280,7 +280,8 @@ class TestRatbagCtlResolution(TestRatbagCtl):
         {
           "is_active": true,
           "resolutions": [
-            { "is_active": false,
+            { "xres": 800,
+              "is_active": false,
               "is_default": true },
             { "xres": 1200, "yres": 1300,
               "capabilities": [1],
@@ -289,6 +290,11 @@ class TestRatbagCtlResolution(TestRatbagCtl):
             { "xres": 2300, "yres": 2400,
               "capabilities": [1],
               "is_active": true,
+              "is_default": false },
+            { "xres": 400,
+              "capabilities": [2],
+              "is_active": false,
+              "is_disabled": false,
               "is_default": false }
           ]
         },
@@ -333,6 +339,38 @@ class TestRatbagCtlResolution(TestRatbagCtl):
         self.launch_fail_test(command)
         self.launch_fail_test("test_device " + command + " X")
         self.launch_fail_test("test_device " + command + " 1 X")
+
+    def test_resolution_disabled_get(self):
+        command = "disabled get"
+        r = self.launch_good_test("test_device resolution 3 " + command)
+        self.assertEqual(r, "False")
+        self.launch_fail_test("test_device resolution 10 " + command)
+        self.launch_fail_test("test_device resolution 3 " + command + " X")
+
+    def test_resolution_disabled_set(self):
+        command = "disabled set"
+        self.launch_good_test("test_device resolution 3 " + command)
+        r = self.launch_good_test("test_device resolution 3 disabled get")
+        self.assertEqual(r, "True")
+        self.launch_fail_test("resolution " + command)
+        self.launch_fail_test("test_device resolution 10 " + command)
+        self.launch_fail_test("test_device resolution 3 " + command + " X")
+
+    def test_resolution_enabled_get(self):
+        command = "enabled get"
+        r = self.launch_good_test("test_device resolution 3 " + command)
+        self.assertEqual(r, "False")
+        self.launch_fail_test("test_device resolution 10 " + command)
+        self.launch_fail_test("test_device resolution 3 " + command + " X")
+
+    def test_resolution_enabled_set(self):
+        command = "enabled set"
+        self.launch_good_test("test_device resolution 3 " + command)
+        r = self.launch_good_test("test_device resolution 3 enabled get")
+        self.assertEqual(r, "True")
+        self.launch_fail_test("resolution " + command)
+        self.launch_fail_test("test_device resolution 10 " + command)
+        self.launch_fail_test("test_device resolution 3 " + command + " X")
 
     def test_resolution_default_get(self):
         command = "resolution default get"

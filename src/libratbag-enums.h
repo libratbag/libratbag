@@ -129,6 +129,20 @@ enum ratbag_resolution_capability {
 	 * The resolution can be set for x and y separately.
 	 */
 	RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION = 1,
+
+	/**
+	 * The resolution can be disabled and enabled. This is intended for
+	 * devices with a static number of resolutions that can not be
+	 * changed.
+	 *
+	 * Note that this capability only notes the general capability. A
+	 * specific resolution may still fail to be disabled, e.g. when it
+	 * is the active resolution on the device.
+	 *
+	 * TODO: Devices with a dynamic amount of resolutions need an own
+	 * capability to add or remove resolutions.
+	 */
+	RATBAG_RESOLUTION_CAP_DISABLE,
 };
 
 /**

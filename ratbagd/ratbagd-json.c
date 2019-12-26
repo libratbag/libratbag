@@ -41,6 +41,7 @@
 	     "dpi_max", int,
 	     "is_active": bool,
 	     "is_default": bool,
+	     "is_disabled": bool,
 	     "capabilities": [int, ...] # resolution capabilities
 	   }
 	 ]
@@ -129,13 +130,17 @@ static void parse_resolution_member(JsonObject *obj, const gchar *name,
 		gboolean v = json_object_get_boolean_member(obj, name);
 		resolution->dflt = v;
 		log_verbose("json:    is_default: %d\n", v);
+	} else if (streq(name, "is_disabled")) {
+		gboolean v = json_object_get_boolean_member(obj, name);
+		resolution->disabled = v;
+		log_verbose("json:    is_disabled: %d\n", v);
 	} else if (streq(name, "capabilities")) {
 		JsonArray *a = json_object_get_array_member(obj, name);
 
 		assert(json_array_get_length(a) < ARRAY_LENGTH(resolution->caps));
 		for (size_t s = 0; s < json_array_get_length(a); s++) {
 			int v = json_array_get_int_element(a, s);
-			if (v > RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION)
+			if (v > RATBAG_RESOLUTION_CAP_DISABLE)
 				parser_error("capabilities");
 			resolution->caps[s] = v;
 		}

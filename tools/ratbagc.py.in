@@ -439,6 +439,16 @@ class RatbagdResolution(metaclass=MetaRatbag):
         libratbag.ratbag_resolution_unref(self._res)
 
     @property
+    def capabilities(self):
+        """The capabilities of this resolution as a list. Capabilities not
+        present on the resolution are not in the list. Thus use e.g.
+
+        if RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION in resolution.capabilities:
+            do something
+        """
+        return self._capabilities
+
+    @property
     def index(self):
         """The index of this resolution."""
         return self._id
@@ -482,6 +492,11 @@ class RatbagdResolution(metaclass=MetaRatbag):
         otherwise"""
         return libratbag.ratbag_resolution_is_default(self._res)
 
+    @property
+    def is_disabled(self):
+        """True if this is currently disabled, False otherwise"""
+        return libratbag.ratbag_resolution_is_disabled(self._res)
+
     def set_active(self):
         """Set this resolution to be the active one."""
         return libratbag.ratbag_resolution_set_active(self._res)
@@ -489,6 +504,10 @@ class RatbagdResolution(metaclass=MetaRatbag):
     def set_default(self):
         """Set this resolution to be the default."""
         return libratbag.ratbag_resolution_set_default(self._res)
+
+    def set_disabled(self, disable):
+        """Set this resolution to be disabled."""
+        return libratbag.ratbag_resolution_set_disabled(self._res, disable)
 
 
 class RatbagdButton(metaclass=MetaRatbag):

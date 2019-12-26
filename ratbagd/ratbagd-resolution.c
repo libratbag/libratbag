@@ -55,6 +55,7 @@ int ratbagd_resolution_resync(sd_bus *bus,
 					      "ReportRate",
 					      "IsActive",
 					      "IsDefault",
+					      "IsDisabled",
 					      NULL);
 }
 
@@ -169,6 +170,51 @@ ratbagd_resolution_is_default(sd_bus *bus,
 }
 
 static int
+ratbagd_resolution_is_disabled(sd_bus *bus,
+			       const char *path,
+			       const char *interface,
+			       const char *property,
+			       sd_bus_message *reply,
+			       void *userdata,
+			       sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	const int is_disabled = ratbag_resolution_is_disabled(lib_resolution);
+
+	CHECK_CALL(sd_bus_message_append(reply, "b", is_disabled));
+
+	return 0;
+}
+
+static int ratbagd_resolution_set_disabled(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *m,
+					   void *userdata,
+					   sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	bool is_disabled;
+	int r;
+
+	CHECK_CALL(sd_bus_message_read(m, "b", &is_disabled));
+
+	r = ratbag_resolution_set_disabled(resolution->lib_resolution, is_disabled);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       resolution->path,
+					       RATBAGD_NAME_ROOT ".Resolution",
+					       "IsDisabled",
+					       NULL);
+	}
+
+	return 0;
+}
+
+static int
 ratbagd_resolution_get_resolutions(sd_bus *bus,
 				  const char *path,
 				  const char *interface,
@@ -264,16 +310,53 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 	return 0;
 }
 
+static int
+ratbagd_resolution_get_capabilities(sd_bus *bus,
+				 const char *path,
+				 const char *interface,
+				 const char *property,
+				 sd_bus_message *reply,
+				 void *userdata,
+				 sd_bus_error *error)
+{
+	struct ratbagd_resolution *resolution = userdata;
+	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
+	enum ratbag_resolution_capability cap;
+	enum ratbag_resolution_capability caps[] = {
+		RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION,
+		RATBAG_RESOLUTION_CAP_DISABLE,
+	};
+	size_t i;
+
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "u"));
+
+	for (i = 0; i < ELEMENTSOF(caps); i++) {
+		cap = caps[i];
+		if (ratbag_resolution_has_capability(lib_resolution, cap)) {
+			CHECK_CALL(sd_bus_message_append(reply, "u", cap));
+		}
+	}
+
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_resolution_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_resolution, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_resolution_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("IsDefault", "b", ratbagd_resolution_is_default, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("IsDisabled", "b",
+				 ratbagd_resolution_is_disabled,
+				 ratbagd_resolution_set_disabled,
+				 0, SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("Resolution", "v",
 				 ratbagd_resolution_get_resolution,
 				 ratbagd_resolution_set_resolution, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Resolutions", "au", ratbagd_resolution_get_resolutions, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_resolution_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_resolution_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("SetDefault", "", "u", ratbagd_resolution_set_default, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
