@@ -350,13 +350,13 @@ org.freedesktop.ratbag1.Resolution
         This list may be empty if the device does not support reading and/or
         writing to resolutions.
 
-.. function:: SetDefault() → ()
-
-        Set this resolution to be the default
-
 .. function:: SetActive() → ()
 
         Set this resolution to be the active one
+
+.. function:: SetDefault() → ()
+
+        Set this resolution to be the default
 
 .. _button:
 

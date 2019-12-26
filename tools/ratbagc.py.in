@@ -482,13 +482,13 @@ class RatbagdResolution(metaclass=MetaRatbag):
         otherwise"""
         return libratbag.ratbag_resolution_is_default(self._res)
 
-    def set_default(self):
-        """Set this resolution to be the default."""
-        return libratbag.ratbag_resolution_set_default(self._res)
-
     def set_active(self):
         """Set this resolution to be the active one."""
         return libratbag.ratbag_resolution_set_active(self._res)
+
+    def set_default(self):
+        """Set this resolution to be the default."""
+        return libratbag.ratbag_resolution_set_default(self._res)
 
 
 class RatbagdButton(metaclass=MetaRatbag):

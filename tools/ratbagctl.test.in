@@ -304,6 +304,17 @@ class TestRatbagCtlResolution(TestRatbagCtl):
     def setUpClass(cls):
         super().setUpClass()
 
+    def test_resolution_n_get(self):
+        r = self.launch_good_test("test_device resolution 1 get")
+        self.assertEqual(r, "1: 1200x1300dpi (default)")
+        self.launch_fail_test("test_device resolution 10 get")
+        self.launch_fail_test("test_device resolution 1 get X")
+        self.launch_fail_test("resolution 1 get X")
+
+    def test_profile_resolution(self):
+        r = self.launch_good_test("test_device profile 2 resolution 1 get")
+        self.assertEqual(r, "1: 1200x1300dpi")
+
     def test_resolution_active_get(self):
         command = "resolution active get"
         r = self.launch_good_test("test_device " + command)
@@ -322,17 +333,6 @@ class TestRatbagCtlResolution(TestRatbagCtl):
         self.launch_fail_test(command)
         self.launch_fail_test("test_device " + command + " X")
         self.launch_fail_test("test_device " + command + " 1 X")
-
-    def test_resolution_n_get(self):
-        r = self.launch_good_test("test_device resolution 1 get")
-        self.assertEqual(r, "1: 1200x1300dpi (default)")
-        self.launch_fail_test("test_device resolution 10 get")
-        self.launch_fail_test("test_device resolution 1 get X")
-        self.launch_fail_test("resolution 1 get X")
-
-    def test_profile_resolution(self):
-        r = self.launch_good_test("test_device profile 2 resolution 1 get")
-        self.assertEqual(r, "1: 1200x1300dpi")
 
     def test_resolution_default_get(self):
         command = "resolution default get"

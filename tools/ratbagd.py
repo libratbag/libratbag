@@ -605,16 +605,16 @@ class RatbagdResolution(_RatbagdDBus):
         otherwise"""
         return self._default
 
-    def set_default(self):
-        """Set this resolution to be the default."""
-        ret = self._dbus_call("SetDefault", "")
-        self._set_dbus_property("IsDefault", "b", True, readwrite=False)
-        return ret
-
     def set_active(self):
         """Set this resolution to be the active one."""
         ret = self._dbus_call("SetActive", "")
         self._set_dbus_property("IsActive", "b", True, readwrite=False)
+        return ret
+
+    def set_default(self):
+        """Set this resolution to be the default."""
+        ret = self._dbus_call("SetDefault", "")
+        self._set_dbus_property("IsDefault", "b", True, readwrite=False)
         return ret
 
 
