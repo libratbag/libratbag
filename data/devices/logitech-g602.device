@@ -1,7 +1,7 @@
 # Logitech G602 over wireless USB
 [Device]
 Name=Logitech G602
-DeviceMatch=usb:046d:402c
+DeviceMatch=usb:046d:402c;usb:046d:c537
 Driver=hidpp20
 
 [Driver/hidpp20]
