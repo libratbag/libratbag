@@ -106,7 +106,7 @@ struct hidpp_device {
 	void *userdata;
 	hidpp_log_handler log_handler;
 	enum hidpp_log_priority log_priority;
-	uint8_t supported_report_types;
+	unsigned supported_report_types;
 };
 
 #define HIDPP_REPORT_SHORT	(1 << 0)
