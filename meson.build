@@ -33,7 +33,8 @@ cflags = ['-Wno-unused-parameter',
 	  '-Wmissing-prototypes',
 	  '-Wformat', # required by format-security
 	  '-Werror=format-security',
-	  '-Wstrict-prototypes']
+	  '-Wstrict-prototypes',
+	  '-Wno-address-of-packed-member']
 add_project_arguments(cflags, language: 'c')
 
 # Initialize config.h, to be added to in the various options below, config.h
