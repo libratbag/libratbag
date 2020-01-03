@@ -295,6 +295,7 @@ struct ratbag_profile {
 	unsigned int hz;	/**< report rate in Hz */
 	unsigned int rates[8];	/**< report rates available */
 	size_t nrates;		/**< number of entries in rates */
+	bool rate_dirty;
 
 	unsigned int num_resolutions;
 

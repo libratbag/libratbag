@@ -949,6 +949,8 @@ ratbag_device_commit(struct ratbag_device *device)
 	list_for_each(profile, &device->profiles, link) {
 		profile->dirty = false;
 
+		profile->rate_dirty = false;
+
 		list_for_each(button, &profile->buttons, link)
 			button->dirty = false;
 
@@ -1117,6 +1119,7 @@ ratbag_profile_set_report_rate(struct ratbag_profile *profile,
 	if (profile->hz != hz) {
 		profile->hz = hz;
 		profile->dirty = true;
+		profile->rate_dirty = true;
 	}
 
 	return RATBAG_SUCCESS;
