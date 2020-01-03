@@ -1422,9 +1422,11 @@ hidpp20drv_commit(struct ratbag_device *device)
 		if (!profile->dirty)
 			continue;
 
-		rc = hidpp20drv_update_report_rate(profile, profile->hz);
-		if (rc)
-			return RATBAG_ERROR_DEVICE;
+		if (profile->rate_dirty) {
+			rc = hidpp20drv_update_report_rate(profile, profile->hz);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (resolution->is_active) {
