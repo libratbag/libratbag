@@ -1189,12 +1189,12 @@ hidpp20drv_init_leds_8070_8071(struct ratbag_device *device)
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)) {
 		if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070) {
 			log_debug(ratbag, "disabling 0x8070 (Color Leds Effects) feature because the device doesn't have 0x8100 (Onboard Memory Profiles)\n");
-			drv_data->capabilities &= !HIDPP_CAP_COLOR_LED_EFFECTS_8070;
+			drv_data->capabilities &= ~HIDPP_CAP_COLOR_LED_EFFECTS_8070;
 		}
 
 		if (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071) {
 			log_debug(ratbag, "disabling 0x8071 (RGB Effects) feature because the device doesn't have 0x8100 (Onboard Memory Profiles)\n");
-			drv_data->capabilities &= !HIDPP_CAP_RGB_EFFECTS_8071;
+			drv_data->capabilities &= ~HIDPP_CAP_RGB_EFFECTS_8071;
 		}
 	}
 
