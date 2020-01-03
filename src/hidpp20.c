@@ -260,7 +260,7 @@ hidpp_root_get_feature(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_FEATURE,
@@ -287,7 +287,7 @@ hidpp20_root_get_protocol_version(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = HIDPP_PAGE_ROOT_IDX,
 		.msg.address = CMD_ROOT_GET_PROTOCOL_VERSION,
@@ -321,7 +321,7 @@ hidpp20_feature_set_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_FEATURE_SET_GET_COUNT,
@@ -343,7 +343,7 @@ hidpp20_feature_set_get_feature_id(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_FEATURE_SET_GET_FEATURE_ID,
@@ -429,7 +429,7 @@ hidpp20_batterylevel_get_battery_level(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_BATTERY_LEVEL_STATUS_GET_BATTERY_LEVEL_STATUS,
 	};
@@ -566,7 +566,7 @@ int hidpp20_led_sw_control_get_led_count(struct hidpp20_device* device)
 {
 	union hidpp20_message msg = {
 		.msg = {
-			.report_id = REPORT_ID_LONG,
+			.report_id = REPORT_ID_SHORT,
 			.address = CMD_LED_SW_CONTROL_GET_LED_COUNT,
 			.device_idx = device->index,
 		},
@@ -594,7 +594,7 @@ int hidpp20_led_sw_control_get_led_info(struct hidpp20_device* device,
 {
 	union hidpp20_message msg = {
 		.msg = {
-			.report_id = REPORT_ID_LONG,
+			.report_id = REPORT_ID_SHORT,
 			.address = CMD_LED_SW_CONTROL_GET_LED_INFO,
 			.device_idx = device->index,
 		},
@@ -682,7 +682,7 @@ int hidpp20_led_sw_control_get_led_state(struct hidpp20_device* device,
 	uint8_t feature_idx;
 	union hidpp20_message msg = {
 		.msg = {
-			.report_id = REPORT_ID_LONG,
+			.report_id = REPORT_ID_SHORT,
 			.address = CMD_LED_SW_CONTROL_GET_LED_STATE,
 			.device_idx = device->index,
 		}
@@ -767,7 +767,7 @@ static int
 hidpp20_kbd_reprogrammable_keys_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_COUNT,
@@ -788,7 +788,7 @@ hidpp20_kbd_reprogrammable_keys_get_info(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_KBD_REPROGRAMMABLE_KEYS_GET_CTRL_ID_INFO,
@@ -908,7 +908,7 @@ hidpp20_color_led_effects_get_zone_info(struct hidpp20_device *device,
 	int rc;
 	struct hidpp20_color_led_zone_info *msg_info;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_COLOR_LED_EFFECTS_GET_ZONE_INFO,
@@ -1109,7 +1109,7 @@ hidpp20_rgb_effects_get_device_info(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_RGB_EFFECTS_GET_INFO,
 		.msg.parameters[0] = HIDPP20_RGB_EFFECTS_INDEX_ALL,
@@ -1146,7 +1146,7 @@ hidpp20_rgb_effects_get_cluster_info(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_RGB_EFFECTS_GET_INFO,
 		.msg.parameters[0] = cluster_index,
@@ -1229,7 +1229,7 @@ hidpp20_rgb_effects_get_effect_info(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_RGB_EFFECTS_GET_INFO,
 		.msg.parameters[0] = cluster_index,
@@ -1273,7 +1273,7 @@ hidpp20_special_keys_buttons_get_count(struct hidpp20_device *device, uint8_t re
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_COUNT,
@@ -1293,7 +1293,7 @@ hidpp20_special_keys_buttons_get_info(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_INFO,
@@ -1323,7 +1323,7 @@ hidpp20_special_keys_buttons_get_reporting(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_SPECIAL_KEYS_BUTTONS_GET_REPORTING,
@@ -1464,7 +1464,7 @@ hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_MOUSE_POINTER_BASIC_GET_INFO,
 	};
@@ -1501,7 +1501,7 @@ hidpp20_adjustable_dpi_get_count(struct hidpp20_device *device, uint8_t reg)
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_COUNT,
@@ -1522,7 +1522,7 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 	int rc;
 	unsigned i = 1, dpi_index = 0;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
@@ -1570,7 +1570,7 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 {
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.sub_id = reg,
 		.msg.address = CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI,
@@ -1653,7 +1653,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 	uint16_t returned_parameters;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ADJUSTABLE_DPI_SET_SENSOR_DPI,
 		.msg.parameters[0] = sensor->index,
@@ -1698,10 +1698,9 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 	uint8_t feature_index;
 	int rc;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_LONG,
+		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE_LIST,
-		.msg.parameters[0] = 0,
 	};
 
 	feature_index = hidpp_root_get_feature_idx(device,
