@@ -432,6 +432,12 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
 							uint8_t *bitflags_ms);
 
+int hidpp20_adjustable_report_rate_get_report_rate(struct hidpp20_device *device,
+						   uint8_t *rate_ms);
+
+int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
+						   uint8_t rate_ms);
+
 /* -------------------------------------------------------------------------- */
 /* 0x8070v4 - Color LED effects                                               */
 /* -------------------------------------------------------------------------- */

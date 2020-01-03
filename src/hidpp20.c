@@ -1612,6 +1612,8 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 /* -------------------------------------------------------------------------- */
 
 #define CMD_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE_LIST 0x00
+#define CMD_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE	0x10
+#define CMD_ADJUSTABLE_REPORT_RATE_SET_REPORT_RATE	0x20
 
 int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
 							uint8_t *bitflags_ms)
@@ -1637,6 +1639,60 @@ int hidpp20_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *d
 		return rc;
 
 	*bitflags_ms = msg.msg.parameters[0];
+
+	return 0;
+}
+
+int hidpp20_adjustable_report_rate_get_report_rate(struct hidpp20_device *device,
+						   uint8_t *rate_ms)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE,
+		.msg.parameters[0] = 0,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ADJUSTABLE_REPORT_RATE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*rate_ms = msg.msg.parameters[0];
+
+	return 0;
+}
+
+int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
+						   uint8_t rate_ms)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_ADJUSTABLE_REPORT_RATE_SET_REPORT_RATE,
+		.msg.parameters[0] = rate_ms,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_ADJUSTABLE_REPORT_RATE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
 
 	return 0;
 }
