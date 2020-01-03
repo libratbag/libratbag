@@ -822,9 +822,12 @@ hidpp20drv_read_report_rate_8060(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag *ratbag = device->ratbag;
+	struct ratbag_profile *profile;
 	uint8_t bitflags_ms;
 	int nrates = 0;
 	int rc;
+	uint8_t rate_ms;
+	unsigned rate_hz;
 
 	rc = hidpp20_adjustable_report_rate_get_report_rate_list(drv_data->dev,
 								 &bitflags_ms);
@@ -842,6 +845,37 @@ hidpp20drv_read_report_rate_8060(struct ratbag_device *device)
 		drv_data->report_rates[nrates++] = 1000;
 
 	drv_data->num_report_rates = nrates;
+
+	if (!hidpp20_adjustable_report_rate_get_report_rate(drv_data->dev, &rate_ms)) {
+		switch (rate_ms)
+		{
+		case 1:
+			rate_hz = 1000;
+			break;
+		case 2:
+		case 3: /* 3ms = 333.(3)Hz, we round to 500Hz */
+			rate_hz = 500;
+			break;
+		case 4:
+		case 5: /* 5ms = 200Hz, we round to 250Hz */
+			rate_hz = 250;
+			break;
+		case 6: /* 6ms = 166.(6)Hz, we round to 125Hz */
+		case 7: /* 7ms = 142Hz, we round to 125Hz */
+		case 8:
+			rate_hz = 125;
+			break;
+		default:
+			rate_hz = 0;
+			break;
+		}
+
+		if (rate_hz) {
+			log_debug(ratbag, "report rate is %u\n", rate_hz);
+			ratbag_device_for_each_profile(device, profile)
+				profile->hz = rate_hz;
+		}
+	}
 
 	log_debug(ratbag, "device has %d report rates\n", nrates);
 
@@ -984,6 +1018,20 @@ out:
 }
 
 static int
+hidpp20drv_update_report_rate_8060(struct ratbag_profile *profile, int hz)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+
+	rc = hidpp20_adjustable_report_rate_set_report_rate(drv_data->dev, 1000/hz);
+	if (rc)
+		return rc;
+
+	return RATBAG_SUCCESS;
+}
+
+static int
 hidpp20drv_update_report_rate_8100(struct ratbag_profile *profile, int hz)
 {
 	struct ratbag_device *device = profile->device;
@@ -1001,12 +1049,20 @@ hidpp20drv_update_report_rate(struct ratbag_profile *profile, int hz)
 {
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
 		return hidpp20drv_update_report_rate_8100(profile, hz);
 
-	if (drv_data->capabilities & HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060)
-		return -ENOTSUP;
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060) {
+		rc = hidpp20drv_update_report_rate_8060(profile, hz);
+
+		/* re-populate the profile with the correct value if we fail */
+		if (rc)
+			hidpp20drv_read_report_rate_8060(profile->device);
+
+		return rc;
+	}
 
 	return -ENOTSUP;
 }
