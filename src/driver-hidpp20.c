@@ -1487,11 +1487,6 @@ hidpp20drv_commit(struct ratbag_device *device)
 		}
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
-			if (resolution->is_active) {
-				log_raw(device->ratbag, "dpi index: %d, profile %d\n", resolution->index, profile->index);
-				dpi_index = resolution->index;
-			}
-
 			rc = hidpp20drv_update_resolution_dpi(resolution,
 							      resolution->dpi_x,
 							      resolution->dpi_y);
@@ -1522,7 +1517,6 @@ hidpp20drv_commit(struct ratbag_device *device)
 				return RATBAG_ERROR_DEVICE;
 			}
 		}
-
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
