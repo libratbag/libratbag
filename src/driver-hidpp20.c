@@ -69,6 +69,7 @@ struct hidpp20drv_data {
 	unsigned num_controls;
 	struct hidpp20_control_id *controls;
 	struct hidpp20_profiles *profiles;
+	struct hidpp20_led *leds;
 	union hidpp20_generic_led_zone_info led_infos;
 
 	unsigned int report_rates[4];
@@ -334,14 +335,20 @@ static void
 hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_data)
 {
 	struct hidpp20_profile *profile;
-	struct hidpp20_led *h_led;
+	struct hidpp20_led h_led_val;
+	struct hidpp20_led *h_led = &h_led_val;
 	struct hidpp20_color_led_zone_info* led_info;
 	struct hidpp20_color_led_info info;
 	int rc;
 
 	led_info = &drv_data->led_infos.color_leds_8070[led->index];
-	profile = &drv_data->profiles->profiles[led->profile->index];
-	h_led = &profile->leds[led->index];
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+		profile = &drv_data->profiles->profiles[led->profile->index];
+		h_led = &profile->leds[led->index];
+	} else {
+		hidpp20_color_led_effects_get_zone_effect(drv_data->dev, led->index, h_led);
+	}
 
 	switch (h_led->mode) {
 	case HIDPP20_LED_ON:
@@ -691,11 +698,13 @@ hidpp20drv_update_led_8070_8071(struct ratbag_led *led, struct ratbag_profile* p
 				struct hidpp20drv_data *drv_data)
 {
 	struct hidpp20_profile *h_profile;
-	struct hidpp20_led *h_led;
+	struct hidpp20_led h_led_val;
+	struct hidpp20_led *h_led = &h_led_val;
 
-	h_profile = &drv_data->profiles->profiles[profile->index];
-
-	h_led = &(h_profile->leds[led->index]);
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+		h_profile = &drv_data->profiles->profiles[profile->index];
+		h_led = &(h_profile->leds[led->index]);
+	}
 
 	if (!h_led)
 		return -EINVAL;
@@ -719,6 +728,13 @@ hidpp20drv_update_led_8070_8071(struct ratbag_led *led, struct ratbag_profile* p
 	h_led->color.blue = led->color.blue;
 	h_led->period = led->ms;
 	h_led->brightness = led->brightness * 100 / 255;
+
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)) {
+		if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070)
+			hidpp20_color_led_effects_set_zone_effect(drv_data->dev,
+								  led->index,
+								  h_led_val);
+	}
 
 	return RATBAG_SUCCESS;
 }
@@ -1237,17 +1253,11 @@ hidpp20drv_init_leds_8070_8071(struct ratbag_device *device)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag *ratbag = device->ratbag;
 
-	/* we only support 0x8070/0x8071 via 0x8100 */
-	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)) {
-		if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070) {
-			log_debug(ratbag, "disabling 0x8070 (Color Leds Effects) feature because the device doesn't have 0x8100 (Onboard Memory Profiles)\n");
-			drv_data->capabilities &= ~HIDPP_CAP_COLOR_LED_EFFECTS_8070;
-		}
-
-		if (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071) {
-			log_debug(ratbag, "disabling 0x8071 (RGB Effects) feature because the device doesn't have 0x8100 (Onboard Memory Profiles)\n");
-			drv_data->capabilities &= ~HIDPP_CAP_RGB_EFFECTS_8071;
-		}
+	/* we only support 0x8071 via 0x8100 */
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) &&
+	    drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071) {
+		log_debug(ratbag, "disabling 0x8071 (RGB Effects) feature because the device doesn't have 0x8100 (Onboard Memory Profiles)\n");
+		drv_data->capabilities &= ~HIDPP_CAP_RGB_EFFECTS_8071;
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070 ||
@@ -1612,6 +1622,7 @@ hidpp20drv_remove(struct ratbag_device *device)
 	free(drv_data->led_infos.color_leds_8070);
 	free(drv_data->controls);
 	free(drv_data->sensors);
+	free(drv_data->leds);
 	if (drv_data->dev)
 		hidpp20_device_destroy(drv_data->dev);
 	free(drv_data);

@@ -501,6 +501,18 @@ hidpp20_rgb_effects_get_effect_info(struct hidpp20_device *device,
 				    uint8_t effect_index,
 				    struct hidpp20_rgb_effect_info *info);
 
+struct hidpp20_led;
+
+int
+hidpp20_color_led_effects_set_zone_effect(struct hidpp20_device *device,
+					  uint8_t zone_index,
+					  struct hidpp20_led led);
+
+int
+hidpp20_color_led_effects_get_zone_effect(struct hidpp20_device *device,
+					  uint8_t zone_index,
+					  struct hidpp20_led *led);
+
 enum hidpp20_color_led_location {
 	HIDPP20_COLOR_LED_LOCATION_UNDEFINED = 0,
 	HIDPP20_COLOR_LED_LOCATION_PRIMARY,
@@ -924,6 +936,14 @@ hidpp20_onboard_profiles_allocate_sector(struct hidpp20_profiles *profiles)
 {
 	return zalloc(profiles->sector_size);
 }
+
+void
+hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
+				  struct hidpp20_internal_led internal_led);
+
+void
+hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
+				   struct hidpp20_led *led);
 
 /* -------------------------------------------------------------------------- */
 /* 0x8110 - Mouse Button Spy                                                  */
