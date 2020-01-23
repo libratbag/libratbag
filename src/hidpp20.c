@@ -868,6 +868,8 @@ err:
 #define CMD_COLOR_LED_EFFECTS_GET_INFO 0x00
 #define CMD_COLOR_LED_EFFECTS_GET_ZONE_INFO 0x10
 #define CMD_COLOR_LED_EFFECTS_GET_ZONE_EFFECT_INFO 0x20
+#define CMD_COLOR_LED_EFFECTS_SET_ZONE_EFFECT 0x30
+#define CMD_COLOR_LED_EFFECTS_GET_ZONE_EFFECT 0xe0
 
 int
 hidpp20_color_led_effects_get_info(struct hidpp20_device *device,
@@ -1008,6 +1010,76 @@ hidpp20_color_led_effect_get_zone_effect_info(struct hidpp20_device *device,
 	info->effect_id = get_unaligned_be_u16(&msg.msg.parameters[2]);
 	info->effect_caps = get_unaligned_be_u16(&msg.msg.parameters[4]);
 	info->effect_period = get_unaligned_be_u16(&msg.msg.parameters[6]);
+
+	return 0;
+}
+
+int
+hidpp20_color_led_effects_set_zone_effect(struct hidpp20_device *device,
+					  uint8_t zone_index,
+					  struct hidpp20_led led)
+{
+	uint8_t feature_index;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.address = CMD_COLOR_LED_EFFECTS_SET_ZONE_EFFECT,
+		.msg.device_idx = device->index,
+		.msg.parameters[0] = zone_index,
+		.msg.parameters[12] = 1, /* write to RAM and flash */
+	};
+	int rc;
+	struct hidpp20_internal_led *internal_led = (struct hidpp20_internal_led*) &msg.msg.parameters[1];
+
+	hidpp20_onboard_profiles_write_led(internal_led, &led);
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_COLOR_LED_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+int
+hidpp20_color_led_effects_get_zone_effect(struct hidpp20_device *device,
+					  uint8_t zone_index,
+					  struct hidpp20_led *led)
+{
+	uint8_t feature_index;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.address = CMD_COLOR_LED_EFFECTS_GET_ZONE_EFFECT,
+		.msg.device_idx = device->index,
+		.msg.parameters[0] = zone_index,
+	};
+	struct hidpp20_internal_led *internal_led;
+	int rc;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_COLOR_LED_EFFECTS);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	if (msg.msg.parameters[0] != zone_index)
+		return -EPROTO;
+
+	internal_led = (struct hidpp20_internal_led*) &msg.msg.parameters[1];
+
+	hidpp20_onboard_profiles_read_led(led, *internal_led);
+
+	hidpp_log_debug(&device->base, "zone %u has effect %u\n", zone_index, led->mode);
 
 	return 0;
 }
@@ -2566,7 +2638,7 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 	}
 }
 
-static void
+void
 hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
 				  struct hidpp20_internal_led internal_led)
 {
@@ -2769,7 +2841,7 @@ read_profiles:
 	return profiles->num_profiles;
 }
 
-static void
+void
 hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 				   struct hidpp20_led *led)
 {
