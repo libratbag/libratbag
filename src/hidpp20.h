@@ -65,6 +65,7 @@ struct hidpp20_device {
 	unsigned feature_count;
 	struct hidpp20_feature *feature_list;
 	enum hidpp20_quirk quirk;
+	unsigned int led_ext_caps;
 };
 
 int hidpp20_request_command(struct hidpp20_device *dev, union hidpp20_message *msg);
