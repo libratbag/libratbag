@@ -404,10 +404,10 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
 			break;
 		default:
-			log_bug_libratbag(led->profile->device->ratbag,
-					  "%s: Unknown effect id %d\n",
-					  led->profile->device->name,
-					  ei.effect_id);
+			log_debug(led->profile->device->ratbag,
+				  "%s: Unsupported effect (%d)\n",
+				  led->profile->device->name,
+				  ei.effect_id);
 			break;
 		}
 	}
@@ -479,10 +479,10 @@ hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
 			break;
 		default:
-			log_bug_libratbag(led->profile->device->ratbag,
-					  "%s: Unknown effect id %d\n",
-					  led->profile->device->name,
-					  ei.effect_id);
+			log_debug(led->profile->device->ratbag,
+				  "%s: Unsupported effect (%d)\n",
+				  led->profile->device->name,
+				  ei.effect_id);
 			break;
 		}
 	}
