@@ -88,4 +88,4 @@ str_to_special_action(const char *str);
 struct ratbag_device *
 ratbag_cmd_open_device(struct ratbag *ratbag, const char *path);
 
-const struct ratbag_interface interface;
+extern const struct ratbag_interface interface;

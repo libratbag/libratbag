@@ -31,7 +31,7 @@
 #include "libratbag-util.h"
 #include "libratbag-test.h"
 
-struct ratbag_driver test_driver;
+extern struct ratbag_driver test_driver;
 
 static inline void
 ratbag_register_test_drivers(struct ratbag *ratbag)
