@@ -347,7 +347,11 @@ hidpp20drv_read_led_8070(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 		profile = &drv_data->profiles->profiles[led->profile->index];
 		h_led = &profile->leds[led->index];
 	} else {
-		hidpp20_color_led_effects_get_zone_effect(drv_data->dev, led->index, h_led);
+		rc = hidpp20_color_led_effects_get_zone_effect(drv_data->dev, led->index, h_led);
+		if (rc) {
+			log_debug(led->profile->device->ratbag,
+				  "Failed to read led settings\n");
+		}
 	}
 
 	switch (h_led->mode) {
