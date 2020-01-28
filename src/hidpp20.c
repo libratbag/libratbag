@@ -895,6 +895,7 @@ hidpp20_color_led_effects_get_info(struct hidpp20_device *device,
 		return rc;
 
 	*info = *(struct hidpp20_color_led_info *)msg.msg.parameters;
+	device->led_ext_caps = info->ext_caps;
 
 	return 0;
 }
@@ -1060,6 +1061,10 @@ hidpp20_color_led_effects_get_zone_effect(struct hidpp20_device *device,
 	};
 	struct hidpp20_internal_led *internal_led;
 	int rc;
+
+	/* hidpp20_color_led_effects_get_info() must be called first to set the capabilities */
+	if (!(device->led_ext_caps & HIDPP20_COLOR_LED_INFO_EXT_CAP_HAS_ZONE_EFFECT))
+		return -ENOTSUP;
 
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_COLOR_LED_EFFECTS);
@@ -3021,6 +3026,8 @@ hidpp20_device_new(const struct hidpp_device *base, unsigned int idx, struct hid
 
 	dev->proto_major = 1;
 	dev->proto_minor = 0;
+
+	dev->led_ext_caps = 0;
 
 	hidpp_get_supported_report_types(&(dev->base), reports, num_reports);
 
