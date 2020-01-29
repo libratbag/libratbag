@@ -2572,6 +2572,7 @@ hidpp20_buttons_to_cpu(struct hidpp20_device *device,
 			break;
 		case HIDPP20_BUTTON_SPECIAL:
 			button->special.special = b->special.special;
+			button->special.profile = b->special.profile;
 			break;
 		case HIDPP20_BUTTON_MACRO:
 			if (profile->macros[i]) {
@@ -2631,6 +2632,7 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 			break;
 		case HIDPP20_BUTTON_SPECIAL:
 			button->special.special = b->special.special;
+			button->special.profile = b->special.profile;
 			break;
 		case HIDPP20_BUTTON_DISABLED:
 			break;

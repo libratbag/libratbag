@@ -618,6 +618,8 @@ union hidpp20_button_binding {
 	struct {
 		uint8_t type; /* HIDPP20_BUTTON_SPECIAL */
 		uint8_t special;
+		uint8_t reserved;
+		uint8_t profile;
 	} __attribute__((packed)) special;
 	struct {
 		uint8_t type; /* HIDPP20_BUTTON_MACRO */
