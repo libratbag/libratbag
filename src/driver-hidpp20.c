@@ -1482,7 +1482,6 @@ hidpp20drv_commit(struct ratbag_device *device)
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	int rc;
-	unsigned int dpi_index = 0;
 
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
@@ -1544,10 +1543,9 @@ hidpp20drv_commit(struct ratbag_device *device)
 			if (profile->is_active) {
 				ratbag_profile_for_each_resolution(profile, resolution) {
 					if (resolution->is_active)
-						dpi_index = resolution->index;
+						hidpp20_onboard_profiles_set_current_dpi_index(drv_data->dev,
+											       resolution->index);
 				}
-				hidpp20_onboard_profiles_set_current_dpi_index(drv_data->dev,
-									       dpi_index);
 			}
 		}
 	}
