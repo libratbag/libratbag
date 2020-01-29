@@ -2532,6 +2532,9 @@ hidpp20_onboard_profiles_write_dict(struct hidpp20_device *device,
 						   sector_size,
 						   data,
 						   true);
+	if (rc)
+		hidpp_log_error(&device->base, "failed to write profile dictionary\n");
+
 	return rc;
 }
 
@@ -2930,8 +2933,10 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	memcpy(pdata->profile.name.txt, profile->name, sizeof(profile->name));
 
 	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
-	if (rc < 0)
+	if (rc < 0) {
+		hidpp_log_error(&device->base, "failed to write profile\n");
 		return rc;
+	}
 
 	return 0;
 }
