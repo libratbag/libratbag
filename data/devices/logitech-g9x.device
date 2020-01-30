@@ -1,0 +1,14 @@
+# Logitech G9x
+# https://support.logi.com/hc/en-us/articles/360024318973 [Original] usb:046d:c066
+# https://support.logi.com/hc/en-us/articles/360024156514 [Call of Duty MW3 Edition] usb:046d:c249
+[Device]
+Name=Logitech G9x
+DeviceMatch=usb:046d:c066;usb:046d:c249
+Driver=hidpp10
+LedTypes=dpi
+
+[Driver/hidpp10]
+DpiRange=200:5700@50
+ProfileType=G500
+Profiles=5
+Leds=1
