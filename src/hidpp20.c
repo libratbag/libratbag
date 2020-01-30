@@ -2883,9 +2883,7 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 		internal_led->effect.starlight.color_star = led->extra_color;
 		break;
 	case HIDPP20_LED_BREATHING:
-		internal_led->effect.breath.color.red = led->color.red;
-		internal_led->effect.breath.color.blue = led->color.blue;
-		internal_led->effect.breath.color.green = led->color.green;
+		internal_led->effect.breath.color = led->color;
 		internal_led->effect.breath.period_or_speed = hidpp_cpu_to_be_u16(period);
 		if (brightness < 100)
 			internal_led->effect.breath.intensity = brightness;
@@ -2897,9 +2895,7 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 		internal_led->effect.ripple.period = hidpp_cpu_to_be_u16(period);
 		break;
 	case HIDPP20_LED_ON:
-		internal_led->effect.fixed.color.red = led->color.red;
-		internal_led->effect.fixed.color.blue = led->color.blue;
-		internal_led->effect.fixed.color.green = led->color.green;
+		internal_led->effect.fixed.color = led->color;
 		internal_led->effect.fixed.effect = 0;
 		break;
 	case HIDPP20_LED_OFF:
