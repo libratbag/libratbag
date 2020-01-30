@@ -719,7 +719,11 @@ enum hidpp20_led_mode {
 	HIDPP20_LED_OFF = 0x00,
 	HIDPP20_LED_ON = 0x01,
 	HIDPP20_LED_CYCLE = 0x03,
+	HIDPP20_LED_COLOR_WAVE = 0x04,
+	HIDPP20_LED_STARLIGHT = 0x05,
 	HIDPP20_LED_BREATHING = 0x0a,
+	HIDPP20_LED_RIPPLE = 0x0b,
+	HIDPP20_LED_CUSTOM = 0x0c,
 };
 
 enum hidpp20_led_waveform {
@@ -744,25 +748,45 @@ struct hidpp20_internal_led {
 			uint16_t period_or_speed; /* period in ms, speed is device dependent */
 			uint8_t intensity; /* 1 - 100 percent, 0 means 100 */
 		} __attribute__((packed)) cycle;
+		struct hidpp20_led_starlight {
+			struct hidpp20_color color_sky;
+			struct hidpp20_color color_star;
+		} __attribute__((packed)) starlight;
 		struct hidpp20_led_breath {
 			struct hidpp20_color color;
 			uint16_t period_or_speed; /* period in ms, speed is device dependent */
 			uint8_t waveform; /* enum hidpp20_led_waveform */
 			uint8_t intensity; /* 1 - 100 percent, 0 means 100 */
 		} __attribute__((packed)) breath;
+		struct hidpp20_led_ripple {
+			struct hidpp20_color color;
+			uint8_t reserved;
+			uint16_t period;
+		} __attribute__((packed)) ripple;
+		struct hidpp20_led_custom {
+			uint8_t slot;
+			uint16_t init_frame;
+			uint16_t lenght;
+			uint16_t frame_period;
+			uint8_t intensity;
+		} __attribute__((packed)) custom;
 		uint8_t padding[10];
 	} __attribute__((packed)) effect;
 };
 _Static_assert(sizeof(struct hidpp20_led_fixed) == 4, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_led_cycle) == 8, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_starlight) == 6, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_led_breath) == 7, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_internal_led) == 11, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_ripple) == 6, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_custom) == 8, "Invalid size");
 
 typedef uint8_t percent_t;
 
 struct hidpp20_led {
 	enum hidpp20_led_mode mode;
 	struct hidpp20_color color;
+	struct hidpp20_color extra_color;
 	uint16_t period;
 	percent_t brightness;
 };
