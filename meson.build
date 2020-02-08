@@ -291,6 +291,7 @@ data_files = files(
 	'data/devices/logitech-MX518.device',
 	'data/devices/logitech-T650.device',
 	'data/devices/logitech-Wireless-Touchpad.device',
+	'data/devices/logitech-g-powerplay.device',
 	'data/devices/logitech-g-pro-wireless.device',
 	'data/devices/logitech-g-pro.device',
 	'data/devices/logitech-g102-g203.device',
