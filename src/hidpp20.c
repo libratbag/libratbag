@@ -2684,6 +2684,9 @@ hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
 		break;
 	case HIDPP20_LED_OFF:
 		break;
+	default:
+		memcpy(led->original, &internal_led, sizeof(internal_led));
+		break;
 	}
 
 	led->period = period;
@@ -2899,6 +2902,9 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 		internal_led->effect.fixed.effect = 0;
 		break;
 	case HIDPP20_LED_OFF:
+		break;
+	default:
+		memcpy(internal_led, led->original, sizeof(*internal_led));
 		break;
 	}
 }

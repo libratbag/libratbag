@@ -789,6 +789,7 @@ struct hidpp20_led {
 	struct hidpp20_color extra_color;
 	uint16_t period;
 	percent_t brightness;
+	uint8_t original[sizeof(struct hidpp20_internal_led)];
 };
 
 #define HIDPP20_MACRO_NOOP			0x01
