@@ -2,4 +2,5 @@
 [Device]
 Name=Logitech G402 Gaming Mouse
 DeviceMatch=usb:046d:c07e
+LedTypes=logo
 Driver=hidpp20
