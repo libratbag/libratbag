@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech M720
+DeviceMatch=usb:046d:405e
+Driver=hidpp20
