@@ -558,8 +558,10 @@ hidpp10drv_commit(struct ratbag_device *device)
 				continue;
 
 			rc = hidpp10drv_write_button(&p, button, &action);
-			if (rc)
+			if (rc) {
+				log_error(device->ratbag, "hidpp10: failed to update buttons (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
+			}
 		}
 
 		ratbag_profile_for_each_led(profile, led)
@@ -567,8 +569,10 @@ hidpp10drv_commit(struct ratbag_device *device)
 
 		if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
 			rc = hidpp10_set_profile(dev, profile->index, &p);
-			if (rc)
+			if (rc) {
+				log_error(device->ratbag, "hidpp10: failed to set profile (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
+			}
 		}
 
 		/* Update the current resolution in case it changed */
@@ -576,8 +580,10 @@ hidpp10drv_commit(struct ratbag_device *device)
 			rc = hidpp10_set_current_resolution(dev,
 						       active_resolution->dpi_x,
 						       active_resolution->dpi_y);
-			if (rc)
+			if (rc) {
+				log_error(device->ratbag, "hidpp10: failed to set active resolution (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
+			}
 
 			active_resolution = NULL;
 		}
