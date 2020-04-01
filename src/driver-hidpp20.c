@@ -1490,7 +1490,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 		if (profile->rate_dirty) {
 			rc = hidpp20drv_update_report_rate(profile, profile->hz);
 			if (rc) {
-				log_error(device->ratbag, "hidpp20: failed to update report rate\n");
+				log_error(device->ratbag, "hidpp20: failed to update report rate (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
 			}
 		}
@@ -1500,7 +1500,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 							      resolution->dpi_x,
 							      resolution->dpi_y);
 			if (rc) {
-				log_error(device->ratbag, "hidpp20: failed to update resolution\n");
+				log_error(device->ratbag, "hidpp20: failed to update resolution (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
 			}
 		}
@@ -1511,7 +1511,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 
 			rc = hidpp20drv_update_button(button);
 			if (rc) {
-				log_error(device->ratbag, "hidpp20: failed to update button\n");
+				log_error(device->ratbag, "hidpp20: failed to update button (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
 			}
 		}
@@ -1522,7 +1522,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 
 			rc = hidpp20drv_update_led(led);
 			if (rc) {
-				log_error(device->ratbag, "hidpp20: failed to update led\n");
+				log_error(device->ratbag, "hidpp20: failed to update led (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
 			}
 		}
@@ -1535,7 +1535,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 		rc = hidpp20_onboard_profiles_commit(drv_data->dev,
 						     drv_data->profiles);
 		if (rc) {
-			log_error(device->ratbag, "hidpp20: failed to commit profile\n");
+			log_error(device->ratbag, "hidpp20: failed to commit profile (%d)\n", rc);
 			return RATBAG_ERROR_DEVICE;
 		}
 
