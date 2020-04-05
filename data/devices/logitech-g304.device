@@ -2,3 +2,4 @@
 Name=Logitech Gaming Mouse G304
 DeviceMatch=usb:046d:c53f
 Driver=hidpp20
+DpiRange=200:12000@100
