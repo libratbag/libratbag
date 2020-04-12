@@ -299,6 +299,8 @@ hidpp10drv_write_button(struct hidpp10_profile *profile,
 	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp10_device *hidpp10 = drv_data->dev;
 	uint8_t code;
+	unsigned int modifiers, key;
+	int rc;
 
 	if (hidpp10->profile_type == HIDPP10_PROFILE_UNKNOWN)
 		return -ENOTSUP;
@@ -330,6 +332,26 @@ hidpp10drv_write_button(struct hidpp10_profile *profile,
 		profile->buttons[button->index].special.special = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		rc = ratbag_action_keycode_from_macro(action, &key, &modifiers);
+		if (rc < 0) {
+			log_error(device->ratbag, "hidpp10: can't convert macro action to keycode in button %d\n", button->index);
+			return -EINVAL;
+		}
+
+		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+		if (code == 0) {
+			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, key);
+			if (code == 0)
+				return -EINVAL;
+
+			profile->buttons[button->index].consumer_control.type = PROFILE_BUTTON_TYPE_CONSUMER_CONTROL;
+			profile->buttons[button->index].consumer_control.consumer_control = code;
+		} else {
+			profile->buttons[button->index].keys.type = PROFILE_BUTTON_TYPE_KEYS;
+			profile->buttons[button->index].keys.key = code;
+			profile->buttons[button->index].keys.modifier_flags = modifiers;
+		}
+		break;
 	default:
 		return -ENOTSUP;
 	}
