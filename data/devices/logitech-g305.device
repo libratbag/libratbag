@@ -4,4 +4,5 @@ DeviceMatch=usb:046d:4074
 Driver=hidpp20
 
 [Driver/hidpp20]
+Leds=0
 Quirk=G305
