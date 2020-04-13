@@ -575,7 +575,7 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
 		if (code == 0) {
 			subtype = HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL;
-			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, action->action.key.key);
+			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, key);
 			if (code == 0)
 				return -EINVAL;
 		}
