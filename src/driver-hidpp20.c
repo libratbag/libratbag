@@ -1636,6 +1636,11 @@ hidpp20drv_init_device(struct ratbag_device *device,
 {
 	struct ratbag_profile *profile;
 	bool active_profile = false;
+	int num;
+
+	num = ratbag_device_data_hidpp20_get_led_count(device->data);
+	if (num >= 0)
+		drv_data->num_leds = num;
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
