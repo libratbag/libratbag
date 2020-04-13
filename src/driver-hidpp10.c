@@ -164,6 +164,7 @@ hidpp10drv_map_button(struct ratbag_device *device,
 {
 	struct hidpp10_profile profile;
 	int ret;
+	unsigned int modifiers = 0;
 
 	ret = hidpp10_get_profile(hidpp10, button->profile->index, &profile);
 	if (ret)
@@ -178,6 +179,7 @@ hidpp10drv_map_button(struct ratbag_device *device,
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 							profile.buttons[button->index].keys.key);
+		modifiers = profile.buttons[button->index].keys.modifier_flags;
 		break;
 	case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
@@ -196,6 +198,14 @@ hidpp10drv_map_button(struct ratbag_device *device,
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 		} else {
 			hidpp10drv_read_macro(button, &profile, &profile.buttons[button->index]);
+		}
+	}
+
+	if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		ret = ratbag_button_macro_new_from_keycode(button, button->action.action.key.key, modifiers);
+		if (ret < 0) {
+			log_error(device->ratbag, "hidpp10: error while reading button %d\n", button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 		}
 	}
 
