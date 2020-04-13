@@ -1022,7 +1022,7 @@ hidpp20_color_led_effects_set_zone_effect(struct hidpp20_device *device,
 {
 	uint8_t feature_index;
 	union hidpp20_message msg = {
-		.msg.report_id = REPORT_ID_SHORT,
+		.msg.report_id = REPORT_ID_LONG,
 		.msg.address = CMD_COLOR_LED_EFFECTS_SET_ZONE_EFFECT,
 		.msg.device_idx = device->index,
 		.msg.parameters[0] = zone_index,
