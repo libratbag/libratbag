@@ -752,14 +752,14 @@ static void
 hidpp10drv_remove(struct ratbag_device *device)
 {
 	struct hidpp10drv_data *drv_data;
-	struct hidpp10_device *dev;
 
 	ratbag_close_hidraw(device);
 
 	drv_data = ratbag_get_drv_data(device);
-	dev = drv_data->dev;
+	if (!drv_data)
+		return;
 
-	hidpp10_device_destroy(dev);
+	hidpp10_device_destroy(drv_data->dev);
 
 	free(drv_data);
 }
