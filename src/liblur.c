@@ -140,20 +140,21 @@ hidraw_is_receiver(int fd)
 	return true;
 }
 
-static struct hidpp10_device *
-hidpp10_init(int fd)
+static int
+hidpp10_init(int fd, struct hidpp10_device **out)
 {
 	struct hidpp_device base;
 
 	hidpp_device_init(&base, fd);
 
 	return hidpp10_device_new(&base, HIDPP_RECEIVER_IDX,
-				  HIDPP10_PROFILE_UNKNOWN, 1);
+				  HIDPP10_PROFILE_UNKNOWN, 1, out);
 }
 
 _EXPORT_ int
 lur_receiver_new_from_hidraw(int fd, void *userdata, struct lur_receiver **out)
 {
+	int rc;
 	struct lur_receiver *receiver;
 
 	if (!hidraw_is_receiver(fd))
@@ -165,8 +166,8 @@ lur_receiver_new_from_hidraw(int fd, void *userdata, struct lur_receiver **out)
 	receiver->userdata = userdata;
 	list_init(&receiver->devices);
 
-	receiver->hidppdev = hidpp10_init(fd);
-	if (!receiver->hidppdev)
+	rc = hidpp10_init(fd, &receiver->hidppdev);
+	if (rc)
 		goto error;
 
 	*out = receiver;
@@ -174,8 +175,7 @@ lur_receiver_new_from_hidraw(int fd, void *userdata, struct lur_receiver **out)
 
 error:
 	free(receiver);
-	return -errno;
-
+	return rc;
 }
 
 _EXPORT_ int
@@ -203,7 +203,7 @@ lur_receiver_enumerate(struct lur_receiver *lur,
 		uint32_t serial;
 		bool is_new_device = true;
 
-		d = hidpp10_device_new(&base, i, HIDPP10_PROFILE_UNKNOWN, 1);
+		rc = hidpp10_device_new(&base, i, HIDPP10_PROFILE_UNKNOWN, 1, &d);
 		if (!d)
 			continue;
 

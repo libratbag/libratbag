@@ -2759,12 +2759,14 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	return hidpp10_get_current_profile(dev, &current_profile);
 }
 
-struct hidpp10_device*
+int
 hidpp10_device_new(const struct hidpp_device *base,
 		   int idx,
 		   enum hidpp10_profile_type type,
-		   unsigned int profile_count)
+		   unsigned int profile_count,
+		   struct hidpp10_device **out)
 {
+	int rc;
 	struct hidpp10_device *dev;
 
 	dev = zalloc(sizeof(*dev));
@@ -2775,12 +2777,14 @@ hidpp10_device_new(const struct hidpp_device *base,
 	dev->profile_count = profile_count;
 	dev->profiles = zalloc(dev->profile_count * sizeof(struct hidpp10_profile));
 
-	if (hidpp10_get_device_info(dev) != 0) {
+	if ((rc = hidpp10_get_device_info(dev)) != 0) {
 		hidpp10_device_destroy(dev);
 		dev = NULL;
 	}
 
-	return dev;
+	*out = dev;
+
+	return rc;
 }
 
 int
