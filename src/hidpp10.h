@@ -69,11 +69,12 @@ struct hidpp10_device  {
 	unsigned int profile_count;
 };
 
-struct hidpp10_device*
+int
 hidpp10_device_new(const struct hidpp_device *base,
 		   int idx,
 		   enum hidpp10_profile_type type,
-		   unsigned int profile_count);
+		   unsigned int profile_count,
+		   struct hidpp10_device **out);
 
 int
 hidpp10_device_read_profiles(struct hidpp10_device *dev);

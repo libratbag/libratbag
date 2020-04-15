@@ -637,9 +637,9 @@ hidpp10drv_probe(struct ratbag_device *device)
 	 * If there is a special need like for G700(s), then add a DeviceIndex
 	 * entry to the .device file.
 	 */
-	dev = hidpp10_device_new(&base, device_idx, type, profile_count);
+	rc = hidpp10_device_new(&base, device_idx, type, profile_count, &dev);
 
-	if (!dev) {
+	if (rc) {
 		log_error(device->ratbag,
 			  "Failed to get HID++1.0 device for %s\n",
 			  device->name);
