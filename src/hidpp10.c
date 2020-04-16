@@ -1144,6 +1144,9 @@ hidpp10_onboard_profiles_read_macro(struct hidpp10_device *device,
 		}
 
 		if (rc == -ENOMEM) {
+			if ((unsigned) offset + mem_index > 0xff)
+				goto out_err;
+
 			offset += mem_index;
 			if (offset & 0x01)
 				offset--;
