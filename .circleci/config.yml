@@ -119,9 +119,27 @@ fedora_settings: &fedora_settings
   environment:
     *build_dependencies
 
+arch_prep_cache: &arch_prep_cache
+  <<: *default_settings
+  steps:
+    - run:
+        name: Initializing Arch Linux pacman cache
+        command: pacman -Syu --noconfirm --noprogressbar --needed --downloadonly base-devel git tree ${ARCH_DEP_BUILD} ${ARCH_DEP_TEST}
+    - persist_to_workspace:
+        root: /var/cache/
+        paths:
+          - pacman/pkg/*
+  environment:
+    *build_dependencies
+
+arch_fetch_cache: &arch_fetch_cache
+  attach_workspace:
+    at: /var/cache/
+
 arch_settings: &arch_settings
   <<: *default_settings
   steps:
+    - *arch_fetch_cache
     - run:
         name: Prepare environment
         command: mkdir -p /etc/dbus-1/system.d
@@ -230,6 +248,10 @@ jobs:
     <<: *fedora_settings
     docker:
       - image: fedora:31
+  arch_cache:
+    <<: *arch_prep_cache
+    docker:
+      - image: archlinux
   arch:
     <<: *arch_settings
     docker:
@@ -253,8 +275,11 @@ workflows:
   compile_and_test:
     jobs:
       - fedora_cache
+      - arch_cache
       - ubuntu_19_10
-      - arch
+      - arch:
+          requires:
+            - arch_cache
       - fedora_31:
           requires:
             - fedora_cache
