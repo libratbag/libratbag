@@ -77,22 +77,21 @@ libratbag_references:
         mkdir /run/dbus
         /usr/bin/dbus-daemon --system --fork
 
-fedora_prep_cache: &fedora_prep_cache
-  <<: *default_settings
-  steps:
-    - run:
-        name: Initializing Fedora dnf cache
-        command: dnf install -y --downloadonly git ${FEDORA_DEP_BUILD} ${FEDORA_DEP_TEST} ${FEDORA_DEP_DOC}
-    - persist_to_workspace:
-        root: /var/cache/
-        paths:
-          - dnf/*
-  environment:
-    *build_dependencies
+save_date: &save_date
+  run:
+    name: Save date
+    command: date +%F > /tmp/date
+
+fedora_save_cache: &fedora_save_cache
+  save_cache:
+    key: fedora-cache-v1-{{ checksum "/tmp/date" }}
+    paths:
+      - /var/cache/dnf
 
 fedora_fetch_cache: &fedora_fetch_cache
-  attach_workspace:
-    at: /var/cache/
+  restore_cache:
+    keys:
+      - fedora-cache-v1
 
 fedora_install: &fedora_install
   run:
@@ -105,6 +104,7 @@ fedora_install: &fedora_install
 fedora_settings: &fedora_settings
   <<: *default_settings
   steps:
+    - *save_date
     - *fedora_fetch_cache
     - *fedora_install
     - checkout
@@ -116,29 +116,25 @@ fedora_settings: &fedora_settings
     - *build_buildtype_plain
     - *build_buildtype_release
     - *export_logs
+    - *fedora_save_cache
   environment:
     *build_dependencies
 
-arch_prep_cache: &arch_prep_cache
-  <<: *default_settings
-  steps:
-    - run:
-        name: Initializing Arch Linux pacman cache
-        command: pacman -Syu --noconfirm --noprogressbar --needed --downloadonly base-devel git tree ${ARCH_DEP_BUILD} ${ARCH_DEP_TEST}
-    - persist_to_workspace:
-        root: /var/cache/
-        paths:
-          - pacman/pkg/*
-  environment:
-    *build_dependencies
+arch_save_cache: &arch_save_cache
+  save_cache:
+    key: arch-cache-v1-{{ checksum "/tmp/date" }}
+    paths:
+      - /var/cache/pacman/pkg
 
 arch_fetch_cache: &arch_fetch_cache
-  attach_workspace:
-    at: /var/cache/
+  restore_cache:
+    keys:
+      - arch-cache-v1
 
 arch_settings: &arch_settings
   <<: *default_settings
   steps:
+    - *save_date
     - *arch_fetch_cache
     - run:
         name: Prepare environment
@@ -153,6 +149,7 @@ arch_settings: &arch_settings
     - *check_install
     - *check_uninstall
     - *export_logs
+    - *arch_save_cache
   environment:
     *build_dependencies
 
@@ -240,18 +237,10 @@ docs_deploy: &docs_deploy
 
 version: 2
 jobs:
-  fedora_cache:
-    <<: *fedora_prep_cache
-    docker:
-      - image: fedora:31
   fedora_31:
     <<: *fedora_settings
     docker:
       - image: fedora:31
-  arch_cache:
-    <<: *arch_prep_cache
-    docker:
-      - image: archlinux
   arch:
     <<: *arch_settings
     docker:
@@ -274,21 +263,12 @@ workflows:
   version: 2
   compile_and_test:
     jobs:
-      - fedora_cache
-      - arch_cache
       - ubuntu_19_10
-      - arch:
-          requires:
-            - arch_cache
-      - fedora_31:
-          requires:
-            - fedora_cache
-      - doc_build:
-          requires:
-            - fedora_cache
+      - arch
+      - fedora_31
+      - doc_build
       - doc_deploy:
           requires:
-            - fedora_cache
             - doc_build
           filters:
               branches:
