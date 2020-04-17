@@ -62,6 +62,8 @@ int list_empty(const struct list *list);
 	     pos = tmp,							\
 	     tmp = container_of(pos->member.next, tmp, member))
 
+int mkdir_p(char *dir, mode_t mode);
+
 static inline char*
 strncpy_safe(char *dest, const char *src, size_t n)
 {
