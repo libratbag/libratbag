@@ -137,9 +137,6 @@ arch_settings: &arch_settings
     - *save_date
     - *arch_fetch_cache
     - run:
-        name: Prepare environment
-        command: mkdir -p /etc/dbus-1/system.d
-    - run:
         name: Install prerequisites
         command: pacman -Syu --noconfirm --noprogressbar --needed base-devel git tree ${ARCH_DEP_BUILD} ${ARCH_DEP_TEST}
     - *start_dbus
