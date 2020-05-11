@@ -538,12 +538,28 @@ configure_file(input : 'dbus/org.freedesktop.ratbag1.conf.in',
 
 #### tools ####
 
+# This is a special idiomatic construct in meson to get a fast dependency that
+# doesn't exist and isn't logged as "not found".
+dep_python3 = dependency('', required : false)
 if meson.version().version_compare('<0.48.0')
   python = import('python3')
   py3 = python.find_python()
 else
   pymod = import('python')
   py3 = pymod.find_installation()
+  if meson.version().version_compare('>= 0.53.0')
+    dep_python3 = py3.dependency(embed : true)
+  endif
+endif
+
+# From python 3.8 we neeed python3-embed
+py_version = py3.language_version()
+embed = py_version.version_compare('>= 3.8') ? '-embed' : ''
+if not dep_python3.found()
+  dep_python3 = dependency('python-@0@@1@'.format(py_version, embed), required : false)
+  if not dep_python3.found()
+    dep_python3 = dependency('python3@0@'.format(embed))
+  endif
 endif
 
 config_ratbagctl = configuration_data()
@@ -606,12 +622,6 @@ swig_gen = generator(
                 '-I' + join_paths(meson.source_root(), 'tools'),
                 '@INPUT@'],
 )
-
-# From python 3.8 we neeed python3-embed
-dep_python3 = dependency('python3-embed', required: false)
-if not dep_python3.found()
-	dep_python3 = dependency('python3')
-endif
 
 wrapper_deps = [
     dep_python3,
