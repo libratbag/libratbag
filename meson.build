@@ -545,16 +545,17 @@ dep_python3 = dependency('', required : false)
 if meson.version().version_compare('<0.48.0')
   python = import('python3')
   py3 = python.find_python()
+  py_version = python.language_version()
 else
   pymod = import('python')
   py3 = pymod.find_installation()
   if meson.version().version_compare('>= 0.53.0')
     dep_python3 = py3.dependency(embed : true)
   endif
+  py_version = py3.language_version()
 endif
 
 # From python 3.8 we neeed python3-embed
-py_version = py3.language_version()
 embed = py_version.version_compare('>= 3.8') ? '-embed' : ''
 if not dep_python3.found()
   dep_python3 = dependency('python-@0@@1@'.format(py_version, embed), required : false)
