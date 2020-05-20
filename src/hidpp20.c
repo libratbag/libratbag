@@ -2592,6 +2592,7 @@ hidpp20_buttons_to_cpu(struct hidpp20_device *device,
 		case HIDPP20_BUTTON_DISABLED:
 			break;
 		default:
+			memcpy(b, button, sizeof(*b));
 			break;
 		}
 	}
@@ -2642,6 +2643,7 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 			button->macro.zero = 0;
 			break;
 		default:
+			memcpy(b, button, sizeof(*b));
 			break;
 		}
 	}
