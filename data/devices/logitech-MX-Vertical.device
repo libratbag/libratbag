@@ -1,4 +1,4 @@
 [Device]
 Name=Logitech MX Vertical
-DeviceMatch=usb:046d:407b
+DeviceMatch=bluetooth:046d:b020;usb:046d:407b
 Driver=hidpp20
