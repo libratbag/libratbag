@@ -835,7 +835,7 @@ roccat_remove(struct ratbag_device *device)
 
 struct ratbag_driver roccat_driver = {
 	.name = "Roccat Kone Pure",
-	.id = "roccat",
+	.id = "roccat-kone-pure",
 	.probe = roccat_probe,
 	.remove = roccat_remove,
 	.write_profile = roccat_write_profile,
