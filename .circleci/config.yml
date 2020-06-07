@@ -156,10 +156,7 @@ ubuntu_settings: &ubuntu_settings
     - run:
         name: Install prerequisites
         command: |
-          apt-get update
-          apt-get install -y software-properties-common
-          apt-get remove -y libnss-systemd
-          add-apt-repository universe
+          export DEBIAN_FRONTEND=noninteractive
           apt-get update
           apt-get install -y git ${UBUNTU_DEP_BUILD} ${UBUNTU_DEP_TEST}
     - checkout
@@ -242,10 +239,10 @@ jobs:
     <<: *arch_settings
     docker:
       - image: archlinux
-  ubuntu_19_10:
+  ubuntu_20_04:
     <<: *ubuntu_settings
     docker:
-      - image: ubuntu:19.10
+      - image: ubuntu:20.04
   doc_build:
     <<: *doc_build
     docker:
@@ -260,7 +257,7 @@ workflows:
   version: 2
   compile_and_test:
     jobs:
-      - ubuntu_19_10
+      - ubuntu_20_04
       - arch
       - fedora_31
       - doc_build
