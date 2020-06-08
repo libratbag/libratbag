@@ -2,7 +2,7 @@ project('libratbag', 'c',
 	version : '0.16',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
-	meson_version : '>= 0.50.0')
+	meson_version : '>= 0.40.0')
 
 # The DBus API version. Increase this every time the DBus API changes.
 # No backwards/forwards guarantee, clients are expected to understand
@@ -188,6 +188,7 @@ src_libratbag = [
 	'src/driver-roccat.c',
 	'src/driver-roccat-kone-emp.c',
 	'src/driver-roccat-kone-pure.c',
+	'src/driver-roccat-kone-aimo.c',
 	'src/driver-gskill.c',
 	'src/driver-openinput.c',
 	'src/driver-steelseries.c',
