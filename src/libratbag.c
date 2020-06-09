@@ -196,6 +196,10 @@ ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
 	device->udev_device = udev_device_ref(udev_device);
 	device->ids = *id;
 	device->data = ratbag_device_data_new_for_id(ratbag, id);
+
+	if (device->data != NULL)
+		device->devicetype = ratbag_device_data_get_device_type(device->data);
+
 	list_init(&device->profiles);
 
 	list_insert(&ratbag->devices, &device->link);
@@ -519,6 +523,12 @@ LIBRATBAG_EXPORT const char *
 ratbag_device_get_name(const struct ratbag_device* device)
 {
 	return device->name;
+}
+
+LIBRATBAG_EXPORT enum ratbag_device_type
+ratbag_device_get_device_type(const struct ratbag_device *device)
+{
+	return device->devicetype;
 }
 
 LIBRATBAG_EXPORT const char *

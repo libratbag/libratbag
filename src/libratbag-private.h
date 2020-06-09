@@ -132,6 +132,7 @@ struct ratbag {
 struct ratbag_device {
 	char *name;
 	void *userdata;
+	enum ratbag_device_type devicetype;
 
 	struct udev_device *udev_device;
 	struct ratbag_hidraw hidraw[MAX_HIDRAW];

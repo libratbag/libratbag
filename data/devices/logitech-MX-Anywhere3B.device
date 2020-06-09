@@ -2,4 +2,5 @@
 [Device]
 Driver=hidpp20
 Name=Logitech MX Anywhere 3B
+DeviceType=mouse
 DeviceMatch=bluetooth:046d:b02d

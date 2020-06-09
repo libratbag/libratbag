@@ -2,3 +2,4 @@
 Name=Logitech G403 Wireless
 DeviceMatch=usb:046d:405d;usb:046d:c082
 Driver=hidpp20
+DeviceType=mouse

@@ -1,6 +1,7 @@
 [Device]
 Name=Logitech G635
 DeviceMatch=usb:046d:0a89
+DeviceType=mouse
 LedTypes=logo;side
 Driver=hidpp20
 

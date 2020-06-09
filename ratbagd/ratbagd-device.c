@@ -137,6 +137,28 @@ static int ratbagd_device_get_device_name(sd_bus *bus,
 	return 0;
 }
 
+static int ratbagd_device_get_device_type(sd_bus *bus,
+					  const char *path,
+					  const char *interface,
+					  const char *property,
+					  sd_bus_message *reply,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	enum ratbag_device_type devicetype;
+
+	devicetype = ratbag_device_get_device_type(device->lib_device);
+	if (!devicetype) {
+		log_error("%s: device type unspecified\n",
+			  ratbagd_device_get_sysname(device));
+	}
+
+	CHECK_CALL(sd_bus_message_append(reply, "u", devicetype));
+
+	return 0;
+}
+
 static int ratbagd_device_get_profiles(sd_bus *bus,
 				       const char *path,
 				       const char *interface,
@@ -239,6 +261,7 @@ ratbagd_device_get_firmware_version(sd_bus *bus,
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Model", "s", ratbag_device_get_model, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("DeviceType", "u", ratbagd_device_get_device_type, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("FirmwareVersion", "s", ratbagd_device_get_firmware_version, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),

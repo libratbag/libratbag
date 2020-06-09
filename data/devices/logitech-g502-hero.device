@@ -2,3 +2,4 @@
 Name=Logitech G502 Hero
 DeviceMatch=usb:046d:c08b
 Driver=hidpp20
+DeviceType=mouse

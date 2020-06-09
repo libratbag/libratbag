@@ -60,6 +60,22 @@ class RatbagErrorCode(IntEnum):
     IMPLEMENTATION = -1004
 
 
+class RatbagDeviceType(IntEnum):
+    """DeviceType property specified in the .device files"""
+
+    """There was no DeviceType specified for this device"""
+    UNSPECIFIED = 0
+
+    """Device is specified as anything other than a mouse or a keyboard"""
+    OTHER = 1
+
+    """Device is specified as a mouse"""
+    MOUSE = 2
+
+    """Device is specified as a keyboard"""
+    KEYBOARD = 3
+
+
 class RatbagdIncompatible(Exception):
     """ratbagd is incompatible with this client"""
     def __init__(self, ratbagd_version, required_version):
@@ -346,6 +362,11 @@ class RatbagdDevice(_RatbagdDBus):
     def name(self):
         """The device name, usually provided by the kernel."""
         return self._get_dbus_property("Name")
+
+    @GObject.Property
+    def device_type(self):
+        """The device type, see RatbagDeviceType"""
+        return RatbagDeviceType(self._get_dbus_property("DeviceType"))
 
     @GObject.Property
     def firmware_version(self):

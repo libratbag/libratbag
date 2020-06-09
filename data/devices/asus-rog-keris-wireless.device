@@ -1,6 +1,7 @@
 [Device]
 Name=ASUS ROG Keris Wireless
 DeviceMatch=usb:0b05:195e;usb:0b05:1960
+DeviceType=mouse
 Driver=asus
 
 [Driver/asus]

@@ -2,4 +2,5 @@
 [Device]
 Name=Logitech M500s
 DeviceMatch=usb:046d:c093
+DeviceType=mouse
 Driver=hidpp20

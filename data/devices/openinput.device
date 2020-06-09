@@ -1,4 +1,5 @@
 [Device]
 Name=openinput
 DeviceMatch=usb:1d50:616a
+DeviceType=mouse
 Driver=openinput

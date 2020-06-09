@@ -2,3 +2,4 @@
 Name=Logitech G502 Proteus Core
 DeviceMatch=usb:046d:c07d
 Driver=hidpp20
+DeviceType=mouse

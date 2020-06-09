@@ -1,6 +1,7 @@
 [Device]
 Name=ASUS ROG Gladius II
 DeviceMatch=usb:0b05:1845
+DeviceType=mouse
 Driver=asus
 
 [Driver/asus]

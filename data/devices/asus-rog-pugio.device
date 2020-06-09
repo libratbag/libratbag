@@ -1,6 +1,7 @@
 [Device]
 Name=ASUS ROG Pugio
 DeviceMatch=usb:0b05:1846
+DeviceType=mouse
 Driver=asus
 
 [Driver/asus]

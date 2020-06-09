@@ -3,3 +3,4 @@
 Name=Logitech MX Master 3
 DeviceMatch=bluetooth:046d:b023;usb:046d:4082
 Driver=hidpp20
+DeviceType=mouse

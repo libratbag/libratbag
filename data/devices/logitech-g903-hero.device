@@ -2,3 +2,4 @@
 Name=Logitech G903 Hero
 DeviceMatch=usb:046d:c091;usb:046d:4087
 Driver=hidpp20
+DeviceType=mouse

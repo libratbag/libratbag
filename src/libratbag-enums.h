@@ -341,3 +341,29 @@ enum ratbag_macro_event_type {
 	RATBAG_MACRO_EVENT_KEY_RELEASED,
 	RATBAG_MACRO_EVENT_WAIT,
 };
+
+/**
+ * @ingroup enums
+ *
+ * Device Types
+ * Describes the types specified in the .device files
+ */
+enum ratbag_device_type {
+	/**
+	 * Used when no DeviceType property could be found
+	 */
+	TYPE_UNSPECIFIED = 0,
+	/**
+	 * Used for any other device type than a mouse or a keyboard
+	 * for example headsets, mousepads etc.
+	 */
+	TYPE_OTHER,
+	/**
+	 * Used for mice
+	 */
+	TYPE_MOUSE,
+	/**
+	 * Used for keyboards
+	 */
+	TYPE_KEYBOARD,
+};

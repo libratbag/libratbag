@@ -4,6 +4,7 @@
 Name=Logitech G7
 DeviceMatch=usb:046d:c51a
 Driver=hidpp10
+DeviceType=mouse
 
 [Driver/hidpp10]
 Profiles=1

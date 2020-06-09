@@ -1,6 +1,7 @@
 [Device]
 Name=Glorious Model O/O-
 DeviceMatch=usb:258a:0036
+DeviceType=mouse
 Driver=sinowealth
 
 [Driver/sinowealth/devices/GloriousModelO]

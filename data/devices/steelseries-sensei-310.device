@@ -2,6 +2,7 @@
 Name=SteelSeries Sensei 310
 DeviceMatch=usb:1038:1722
 Driver=steelseries
+DeviceType=mouse
 
 [Driver/steelseries]
 DeviceVersion=2

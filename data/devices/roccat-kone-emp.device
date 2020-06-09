@@ -1,4 +1,5 @@
 [Device]
 Name=Roccat Kone EMP
 DeviceMatch=usb:1e7d:2e24
+DeviceType=mouse
 Driver=roccat-kone-emp

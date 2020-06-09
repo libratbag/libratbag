@@ -1,6 +1,7 @@
 [Device]
 Name=ASUS ROG Strix Impact
 DeviceMatch=usb:0b05:1847
+DeviceType=mouse
 Driver=asus
 
 [Driver/asus]

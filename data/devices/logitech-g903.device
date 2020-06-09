@@ -2,3 +2,4 @@
 Name=Logitech G903
 DeviceMatch=usb:046d:c086;usb:046d:4067
 Driver=hidpp20
+DeviceType=mouse

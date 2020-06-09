@@ -26,7 +26,7 @@ import sys
 import argparse
 import re
 
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability, RatbagDeviceType  # NOQA
 
 
 def humanize(string):
@@ -229,6 +229,7 @@ def print_device(d, level):
 
     print(" " * level + "{} - {}".format(d.id, d.name))
     print(" " * level + "             Model: {}".format(d.model))
+    print(" " * level + "       Device Type: {}".format(d.device_type.name))
     if d.firmware_version:
         print(" " * level + "  Firmware version: {}".format(d.firmware_version))
     print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))

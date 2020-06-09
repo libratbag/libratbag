@@ -1,6 +1,7 @@
 [Device]
 Name=ASUS ROG Chakram
 DeviceMatch=usb:0b05:18e3;usb:0b05:18e5
+DeviceType=mouse
 Driver=asus
 
 [Driver/asus]

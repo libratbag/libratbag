@@ -83,6 +83,22 @@ class RatbagErrorCode(metaclass=MetaRatbag):
     IMPLEMENTATION = libratbag.RATBAG_ERROR_IMPLEMENTATION
 
 
+class RatbagDeviceType(IntEnum):
+    """DeviceType property specified in the .device files"""
+
+    """There was no DeviceType specified for this device"""
+    UNSPECIFIED = 0
+
+    """Device is specified as anything other than a mouse or a keyboard"""
+    OTHER = 1
+
+    """Device is specified as a mouse"""
+    MOUSE = 2
+
+    """Device is specified as a keyboard"""
+    KEYBOARD = 3
+
+
 class RatbagdUnavailable(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
     pass
@@ -261,6 +277,11 @@ class RatbagdDevice(metaclass=MetaRatbag):
     def name(self):
         """The device name, usually provided by the kernel."""
         return libratbag.ratbag_device_get_name(self._device)
+
+    @property
+    def device_type(self):
+        """The device type, see RatbagDeviceType"""
+        return RatbagDeviceType(libratbag.ratbag_device_get_device_type(self._device))
 
     @property
     def firmware_version(self):

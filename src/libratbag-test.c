@@ -71,6 +71,8 @@ ratbag_device_new_test_device(struct ratbag *ratbag,
 
 	device = ratbag_device_new(ratbag, NULL, "Test device", &id);
 
+	device->devicetype = TYPE_MOUSE;
+
 	if (!ratbag_assign_driver(device, &device->ids, test_device)) {
 		ratbag_device_destroy(device);
 		return NULL;

@@ -1,6 +1,7 @@
 [Device]
 Name=ASUS ROG Strix Carry
 DeviceMatch=usb:0b05:18b4
+DeviceType=mouse
 Driver=asus
 
 [Driver/asus]

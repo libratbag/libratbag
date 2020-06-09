@@ -453,6 +453,15 @@ ratbag_device_get_name(const struct ratbag_device* device);
 /**
  * @ingroup device
  *
+ * @param device A previously initialized ratbag device
+ * @return the type of the device: unspecified, mouse, keyboard or other
+ */
+enum ratbag_device_type
+ratbag_device_get_device_type(const struct ratbag_device* device);
+
+/**
+ * @ingroup device
+ *
  * Returns the bustype of the device, "usb", "bluetooth" or NULL for
  * unknown.
  */

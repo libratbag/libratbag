@@ -3,3 +3,4 @@
 Name=Logitech MX Ergo
 DeviceMatch=bluetooth:046d:b01d;usb:046d:406f
 Driver=hidpp20
+DeviceType=mouse

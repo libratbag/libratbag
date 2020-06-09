@@ -3,6 +3,7 @@ Name=SteelSeries Sensei Raw
 DeviceMatch=usb:1038:1369
 Driver=steelseries
 LedTypes=logo;dpi
+DeviceType=mouse
 
 [Driver/steelseries]
 DeviceVersion=1

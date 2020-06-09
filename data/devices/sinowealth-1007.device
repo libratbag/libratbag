@@ -1,5 +1,6 @@
 [Device]
 DeviceMatch=usb:258a:1007
+DeviceType=mouse
 Driver=sinowealth
 Name=SinoWealth Generic Mouse (1007)
 

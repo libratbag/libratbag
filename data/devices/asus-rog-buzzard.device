@@ -1,6 +1,7 @@
 [Device]
 Name=ASUS ROG GX860 Buzzard Mouse
 DeviceMatch=usb:0b05:1816
+DeviceType=mouse
 Driver=asus
 
 [Driver/asus]

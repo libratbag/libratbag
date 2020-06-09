@@ -64,6 +64,11 @@ def check_match_str(string: str):
         assert(pid == '{:04x}'.format(int(pid, 16)))
 
 
+def check_devicetype_str(string):
+    permitted_types = ['mouse', 'keyboard', 'other']
+    assertIn(string, permitted_types)
+
+
 def check_ledtypes_str(string: str):
     permitted_types = [
         'battery',
@@ -83,7 +88,7 @@ def check_ledtypes_str(string: str):
 
 
 def check_section_device(section: configparser.SectionProxy):
-    required_keys = ['Name', 'Driver', 'DeviceMatch']
+    required_keys = ['Name', 'Driver', 'DeviceMatch', 'DeviceType']
     permitted_keys = required_keys + ['LedTypes']
 
     for key in section.keys():
@@ -91,6 +96,8 @@ def check_section_device(section: configparser.SectionProxy):
 
     for r in required_keys:
         assertIn(r, section)
+
+    check_devicetype_str(section['DeviceType'])
 
     try:
         check_ledtypes_str(section['LedTypes'])
