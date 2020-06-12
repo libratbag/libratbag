@@ -1,0 +1,8 @@
+[Device]
+Name=Logitech G915 TKL
+DeviceMatch=usb:046d:c343;bluetooth:046d:b35f
+LedTypes=logo;switches
+Driver=hidpp20
+
+[Driver/hidpp20]
+DeviceIndex=1
