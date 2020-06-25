@@ -1,0 +1,5 @@
+[Device]
+Name=SINOWEALTH Wired Gaming Mouse
+DeviceMatch=usb:258a:0036
+Driver=sinowealth
+
