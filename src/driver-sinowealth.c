@@ -32,7 +32,7 @@
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
 
-/* The PC software only goes down to 400, but PMW3360 doesn't care */
+/* The PC software only goes down to 400, but the PMW3360 doesn't care */
 #define SINOWEALTH_DPI_MIN 100
 #define SINOWEALTH_DPI_MAX 12000
 #define SINOWEALTH_DPI_STEP 100
@@ -216,8 +216,6 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	struct sinowealth_config_report *config = &drv_data->config;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	int num_dpis = (SINOWEALTH_DPI_MAX - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1 + 1;
-	unsigned int dpis[num_dpis];
 	unsigned int hz = 1000; /* TODO */
 	int rc;
 
@@ -240,12 +238,6 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_set_report_rate_list(profile, &hz, 1);
 	ratbag_profile_set_report_rate(profile, hz);
 
-	/* Generate DPI list */
-	dpis[0] = 0; /* 0 DPI = disabled */
-	for(int i = 1; i < num_dpis; i++) {
-		dpis[i] = SINOWEALTH_DPI_MIN + i * SINOWEALTH_DPI_STEP;
-	}
-
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if(config->config & SINOWEALTH_XY_INDEPENDENT) {
 			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2]);
@@ -261,19 +253,10 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		}
 		resolution->is_active = resolution->index == config->active_dpi - 1;
 		resolution->is_default = resolution->is_active;
-		ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
-		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 	}
 
 	/* Body lighting */
 	led = ratbag_profile_get_led(profile, 0);
-	led->type = RATBAG_LED_TYPE_SIDE;
-	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-
 	switch (config->rgb_effect) {
 	case RGB_OFF:
 		led->mode = RATBAG_LED_OFF;
@@ -305,17 +288,62 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	/* DPI indicator LED */
 	for (int i = 1; i < SINOWEALTH_NUM_DPIS + 1; i++) {
 		led = ratbag_profile_get_led(profile, i);
-		led->type = RATBAG_LED_TYPE_DPI;
-		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 		led->mode = RATBAG_LED_ON;
 		led->color = sinowealth_raw_to_color(config->dpi_color[i - 1]);
-		ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
 		ratbag_led_unref(led);
 	}
 
 	profile->is_active = true;
 
 	return 0;
+}
+
+static void
+sinowealth_init_profile(struct ratbag_device *device)
+{
+	struct ratbag_profile *profile;
+	struct ratbag_resolution *resolution;
+	struct ratbag_led *led;
+	int num_dpis = (SINOWEALTH_DPI_MAX - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1 + 1;
+	unsigned int dpis[num_dpis];
+
+	/* TODO: Button remapping */
+	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, SINOWEALTH_NUM_DPIS + 1);
+
+	profile = ratbag_device_get_profile(device, 0);
+
+	/* Generate DPI list */
+	dpis[0] = 0; /* 0 DPI = disabled */
+	for(int i = 1; i < num_dpis; i++) {
+		dpis[i] = SINOWEALTH_DPI_MIN + i * SINOWEALTH_DPI_STEP;
+	}
+
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
+		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+	}
+
+	/* Set up LED capabilities */
+	led = ratbag_profile_get_led(profile, 0);
+	led->type = RATBAG_LED_TYPE_SIDE;
+	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+	ratbag_led_unref(led);
+
+	/* Set up DPI indicator LEDs */
+	for (int i = 1; i < SINOWEALTH_NUM_DPIS + 1; i++) {
+		led = ratbag_profile_get_led(profile, i);
+		led->type = RATBAG_LED_TYPE_DPI;
+		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+		led->mode = RATBAG_LED_ON;
+		ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+		ratbag_led_unref(led);
+	}
+
+	ratbag_profile_unref(profile);
 }
 
 static int
@@ -339,8 +367,7 @@ sinowealth_probe(struct ratbag_device *device)
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
 
-	/* TODO: Button remapping */
-	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, SINOWEALTH_NUM_DPIS + 1);
+	sinowealth_init_profile(device);
 
 	profile = ratbag_device_get_profile(device, 0);
 	rc = sinowealth_read_profile(profile);
