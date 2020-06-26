@@ -44,6 +44,8 @@ typedef struct __attribute__((packed)) {
 	uint8_t r, g, b;
 } RGB8;
 
+_Static_assert(sizeof(RGB8) == 3, "Invalid size");
+
 enum rgb_effect {
 	RGB_OFF = 0,
 	RGB_GLORIOUS = 0x1,   /* unicorn mode */
@@ -81,58 +83,51 @@ struct sinowealth_config_report {
 	 * while in XY independent mode each entry takes two chars for X and Y.
 	 */
 	RGB8 dpi_color[8];
-
 	uint8_t rgb_effect;
 	/* see enum rgb_effect */
-
-	char glorious_mode;
+	uint8_t glorious_mode;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
-	char glorious_direction;
-
+	uint8_t glorious_direction;
 	RGB8 single_color;
-
-	char breathing_mode;
+	uint8_t breathing_mode;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
-	char breathing_colorcount;
+	uint8_t breathing_colorcount;
 	/* 7, constant */
 	RGB8 breathing_colors[7];
-
-	char tail_mode;
+	uint8_t tail_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
-
-	char rave_mode;
+	uint8_t rave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
 	RGB8 rave_colors[2];
-
-	char wave_mode;
+	uint8_t wave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
-
-	char breathing1_mode;
+	uint8_t breathing1_mode;
 	/* 0x1/2/3 - speed */
 	RGB8 breathing1_color;
-
-	char unk4;
-	char lift_off_distance;
+	uint8_t unk4;
+	uint8_t lift_off_distance;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
 	 */
+	uint8_t unk5[423];
 } __attribute__((packed));
+
+_Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
 
 struct sinowealth_data {
 	/* this is kinda unnecessary at this time, but all the other drivers do it too ;) */
 	struct sinowealth_config_report config;
 };
-
 
 static int
 sinowealth_raw_to_dpi(int raw)
@@ -170,7 +165,6 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	unsigned int dpis[num_dpis];
 	unsigned int hz = 1000; /* TODO */
 	int rc;
-	uint8_t *data;
 
 	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG};
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
@@ -179,17 +173,13 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		return -1;
 	}
 
-	data = zalloc(SINOWEALTH_CONFIG_SIZE);
 	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
-					      data, SINOWEALTH_CONFIG_SIZE);
+					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
 	if (rc < sizeof(*config)) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
-
-	memcpy(config, data, sizeof(*config));
-	free(data);
 
 	/* TODO */
 	ratbag_profile_set_report_rate_list(profile, &hz, 1);
@@ -315,7 +305,6 @@ sinowealth_commit(struct ratbag_device *device)
 	struct sinowealth_config_report *config = &drv_data->config;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	uint8_t *data;
 	int rc;
 
 	config->config &= ~SINOWEALTH_XY_INDEPENDENT;
@@ -369,11 +358,8 @@ sinowealth_commit(struct ratbag_device *device)
 
 	config->config_write = 0x7b; /* magic */
 
-	data = zalloc(SINOWEALTH_CONFIG_SIZE);
-	memcpy(data, config, sizeof(*config));
-
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG, data, SINOWEALTH_CONFIG_SIZE);
-	free(data);
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
+					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	if(rc != SINOWEALTH_CONFIG_SIZE) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
 		ratbag_profile_unref(profile);
