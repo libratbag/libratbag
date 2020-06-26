@@ -40,6 +40,9 @@
 /* other models might have up to eight */
 #define SINOWEALTH_NUM_DPIS 6
 
+#define SINOWEALTH_RGB_BRIGHTNESS_BITS 0xF0
+#define SINOWEALTH_RGB_SPEED_BITS 0x0F
+
 typedef struct __attribute__((packed)) {
 	uint8_t r, g, b;
 } RGB8;
@@ -174,6 +177,38 @@ sinowealth_color_to_rbg(struct ratbag_color color)
 }
 
 static int
+sinowealth_rgb_mode_to_brightness(uint8_t mode)
+{
+	return max(mode >> 4 << 6, 255);
+}
+
+static int
+sinowealth_rgb_mode_to_speed(uint8_t mode)
+{
+	switch (mode & SINOWEALTH_RGB_SPEED_BITS) {
+	case 0: return 10000; /* static: does not translate to duration */
+	case 1: return 1500;
+	case 2: return 1000;
+	case 3: return 500;
+	default: return 0;
+	}
+}
+
+static uint8_t
+sinowealth_to_rgb_mode(int brightness, int speed_ms)
+{
+	uint8_t mode = (brightness + 1) >> 6 << 4;
+	if (speed_ms <= 500) {
+		mode |= 3;
+	} else if (speed_ms <= 1000) {
+		mode |= 2;
+	} else {
+		mode |= 1;
+	}
+	return mode;
+}
+
+static int
 sinowealth_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
@@ -246,6 +281,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	case RGB_SINGLE:
 		led->mode = RATBAG_LED_ON;
 		led->color = sinowealth_rbg_to_color(config->single_color);
+		led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
 		break;
 	case RGB_GLORIOUS:
 	case RGB_BREATHING:
@@ -254,10 +290,14 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	case RGB_RAVE:
 	case RGB_WAVE:
 		led->mode = RATBAG_LED_CYCLE;
+		led->brightness = sinowealth_rgb_mode_to_brightness(config->glorious_mode);
+		led->ms = sinowealth_rgb_mode_to_speed(config->glorious_mode);
 		break;
 	case RGB_BREATHING1:
 		led->mode = RATBAG_LED_BREATHING;
 		led->color = sinowealth_rbg_to_color(config->breathing1_color);
+		led->brightness = sinowealth_rgb_mode_to_brightness(config->breathing1_mode);
+		led->ms = sinowealth_rgb_mode_to_speed(config->breathing1_mode);
 		break;
 	}
 	ratbag_led_unref(led);
@@ -361,11 +401,12 @@ sinowealth_commit(struct ratbag_device *device)
 		break;
 	case RATBAG_LED_CYCLE:
 		config->rgb_effect = RGB_GLORIOUS;
+		config->glorious_mode = sinowealth_to_rgb_mode(led->brightness, led->ms);
 		break;
 	case RATBAG_LED_BREATHING:
 		config->rgb_effect = RGB_BREATHING1;
 		config->breathing1_color = sinowealth_color_to_rbg(led->color);
-		config->breathing1_mode = 0x43;
+		config->breathing1_mode = sinowealth_to_rgb_mode(led->brightness, led->ms);
 		break;
 	}
 	ratbag_led_unref(led);
