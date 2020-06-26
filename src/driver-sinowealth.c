@@ -46,6 +46,12 @@ typedef struct __attribute__((packed)) {
 
 _Static_assert(sizeof(RGB8) == 3, "Invalid size");
 
+typedef struct __attribute__((packed)) {
+	uint8_t r, b, g;
+} RBG8;
+
+_Static_assert(sizeof(RBG8) == 3, "Invalid size");
+
 enum rgb_effect {
 	RGB_OFF = 0,
 	RGB_GLORIOUS = 0x1,   /* unicorn mode */
@@ -90,36 +96,38 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t glorious_direction;
-	RGB8 single_color;
+	uint8_t single_mode;
+	RBG8 single_color;
 	uint8_t breathing_mode;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing_colorcount;
 	/* 7, constant */
-	RGB8 breathing_colors[7];
+	RBG8 breathing_colors[7];
 	uint8_t tail_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
+	uint8_t unk4[33];
 	uint8_t rave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
-	RGB8 rave_colors[2];
+	RBG8 rave_colors[2];
 	uint8_t wave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing1_mode;
 	/* 0x1/2/3 - speed */
-	RGB8 breathing1_color;
-	uint8_t unk4;
+	RBG8 breathing1_color;
+	uint8_t unk5;
 	uint8_t lift_off_distance;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
 	 */
-	uint8_t unk5[423];
+	uint8_t padding[520 - 131];
 } __attribute__((packed));
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
@@ -153,6 +161,18 @@ sinowealth_color_to_raw(struct ratbag_color color)
 	return (RGB8) {.r = color.red, .g = color.green, .b = color.blue};
 }
 
+static struct ratbag_color
+sinowealth_rbg_to_color(RBG8 raw)
+{
+	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
+}
+
+static RBG8
+sinowealth_color_to_rbg(struct ratbag_color color)
+{
+	return (RBG8) {.r = color.red, .g = color.green, .b = color.blue};
+}
+
 static int
 sinowealth_read_profile(struct ratbag_profile *profile)
 {
@@ -176,7 +196,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc < sizeof(*config)) {
+	if (rc < sizeof(*config) - sizeof(config->padding)) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
@@ -225,7 +245,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		break;
 	case RGB_SINGLE:
 		led->mode = RATBAG_LED_ON;
-		led->color = sinowealth_raw_to_color(config->single_color);
+		led->color = sinowealth_rbg_to_color(config->single_color);
 		break;
 	case RGB_GLORIOUS:
 	case RGB_BREATHING:
@@ -237,7 +257,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		break;
 	case RGB_BREATHING1:
 		led->mode = RATBAG_LED_BREATHING;
-		led->color = sinowealth_raw_to_color(config->breathing1_color);
+		led->color = sinowealth_rbg_to_color(config->breathing1_color);
 		break;
 	}
 	ratbag_led_unref(led);
@@ -337,14 +357,15 @@ sinowealth_commit(struct ratbag_device *device)
 		break;
 	case RATBAG_LED_ON:
 		config->rgb_effect = RGB_SINGLE;
-		config->single_color = sinowealth_color_to_raw(led->color);
+		config->single_color = sinowealth_color_to_rbg(led->color);
 		break;
 	case RATBAG_LED_CYCLE:
 		config->rgb_effect = RGB_GLORIOUS;
 		break;
 	case RATBAG_LED_BREATHING:
 		config->rgb_effect = RGB_BREATHING1;
-		config->breathing1_color = sinowealth_color_to_raw(led->color);
+		config->breathing1_color = sinowealth_color_to_rbg(led->color);
+		config->breathing1_mode = 0x43;
 		break;
 	}
 	ratbag_led_unref(led);
