@@ -43,17 +43,17 @@
 #define SINOWEALTH_RGB_BRIGHTNESS_BITS 0xF0
 #define SINOWEALTH_RGB_SPEED_BITS 0x0F
 
-typedef struct __attribute__((packed)) {
+struct RGB8 {
 	uint8_t r, g, b;
-} RGB8;
+} __attribute__((packed));
 
-_Static_assert(sizeof(RGB8) == 3, "Invalid size");
+_Static_assert(sizeof(struct RGB8) == 3, "Invalid size");
 
-typedef struct __attribute__((packed)) {
+struct RBG8 {
 	uint8_t r, b, g;
-} RBG8;
+} __attribute__((packed));
 
-_Static_assert(sizeof(RBG8) == 3, "Invalid size");
+_Static_assert(sizeof(struct RBG8) == 3, "Invalid size");
 
 enum rgb_effect {
 	RGB_OFF = 0,
@@ -91,7 +91,7 @@ struct sinowealth_config_report {
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
 	 * while in XY independent mode each entry takes two chars for X and Y.
 	 */
-	RGB8 dpi_color[8];
+	struct RGB8 dpi_color[8];
 	uint8_t rgb_effect;
 	/* see enum rgb_effect */
 	uint8_t glorious_mode;
@@ -100,14 +100,14 @@ struct sinowealth_config_report {
 	 */
 	uint8_t glorious_direction;
 	uint8_t single_mode;
-	RBG8 single_color;
+	struct RBG8 single_color;
 	uint8_t breathing_mode;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing_colorcount;
 	/* 7, constant */
-	RBG8 breathing_colors[7];
+	struct RBG8 breathing_colors[7];
 	uint8_t tail_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
@@ -117,14 +117,14 @@ struct sinowealth_config_report {
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
-	RBG8 rave_colors[2];
+	struct RBG8 rave_colors[2];
 	uint8_t wave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing1_mode;
 	/* 0x1/2/3 - speed */
-	RBG8 breathing1_color;
+	struct RBG8 breathing1_color;
 	uint8_t unk5;
 	uint8_t lift_off_distance;
 	/* 0x1 - 2 mm
@@ -153,27 +153,27 @@ sinowealth_dpi_to_raw(int dpi)
 }
 
 static struct ratbag_color
-sinowealth_raw_to_color(RGB8 raw)
+sinowealth_raw_to_color(struct RGB8 raw)
 {
 	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
 }
 
-static RGB8
+static struct RGB8
 sinowealth_color_to_raw(struct ratbag_color color)
 {
-	return (RGB8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct RGB8) {.r = color.red, .g = color.green, .b = color.blue};
 }
 
 static struct ratbag_color
-sinowealth_rbg_to_color(RBG8 raw)
+sinowealth_rbg_to_color(struct RBG8 raw)
 {
 	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
 }
 
-static RBG8
+static struct RBG8
 sinowealth_color_to_rbg(struct ratbag_color color)
 {
-	return (RBG8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct RBG8) {.r = color.red, .g = color.green, .b = color.blue};
 }
 
 static int
