@@ -412,6 +412,7 @@ sinowealth_commit(struct ratbag_device *device)
 		}
 	}
 
+	config->dpi_count = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
 			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(resolution->dpi_x);
@@ -421,6 +422,7 @@ sinowealth_commit(struct ratbag_device *device)
 		}
 		if (resolution->dpi_x && resolution->dpi_y) {
 			dpi_enabled |= 1<<resolution->index;
+			config->dpi_count++;
 		}
 	}
 	config->dpi_enabled = ~dpi_enabled; /* config->dpi_enabled is inverted */
