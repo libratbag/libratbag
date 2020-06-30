@@ -29,6 +29,7 @@
 #define SINOWEALTH_CMD_FIRMWARE_VERSION 0x1
 #define SINOWEALTH_CMD_GET_CONFIG 0x11
 #define SINOWEALTH_CONFIG_SIZE 520
+#define SINOWEALTH_CONFIG_SIZE_USED 131
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
 
@@ -43,39 +44,39 @@
 #define SINOWEALTH_RGB_BRIGHTNESS_BITS 0xF0
 #define SINOWEALTH_RGB_SPEED_BITS 0x0F
 
-struct RGB8 {
+struct sinowealth_rgb8 {
 	uint8_t r, g, b;
 } __attribute__((packed));
 
-_Static_assert(sizeof(struct RGB8) == 3, "Invalid size");
+_Static_assert(sizeof(struct sinowealth_rgb8) == 3, "Invalid size");
 
-struct RBG8 {
+struct sinowealth_rbg8 {
 	uint8_t r, b, g;
 } __attribute__((packed));
 
-_Static_assert(sizeof(struct RBG8) == 3, "Invalid size");
+_Static_assert(sizeof(struct sinowealth_rbg8) == 3, "Invalid size");
 
 enum rgb_effect {
 	RGB_OFF = 0,
 	RGB_GLORIOUS = 0x1,   /* unicorn mode */
 	RGB_SINGLE = 0x2,     /* single constant color */
-	RGB_BREATHING = 0x5,  /* RGB breathing */
-	RGB_BREATHING7 = 0x3, /* breathing with seven colors */
+	RGB_BREATHING = 0x5,  /* Full RGB breathing */
+	RGB_BREATHING7 = 0x3, /* breathing with seven user-defined colors */
 	RGB_BREATHING1 = 0xa, /* single color breathing */
-	RGB_TAIL = 0x4,       /* idk what this is supposed to be */
-	RGB_RAVE = 0x7,       /* ig */
+	RGB_TAIL = 0x4,
+	RGB_RAVE = 0x7,
 	RGB_WAVE = 0x9
 };
 
 struct sinowealth_config_report {
 	uint8_t report_id; /* SINOWEALTH_REPORT_ID_CONFIG */
 	uint8_t command_id;
-	uint8_t unk1;
+	uint8_t unknown1;
 	uint8_t config_write;
 	/* always 0 when config is read from device,
 	 * has to be 0x7b when writing config to device
 	 */
-	uint8_t unk2[6];
+	uint8_t unknown2[6];
 	uint8_t config;
 	/* 0x80 - SINOWEALTH_XY_INDEPENDENT */
 	uint8_t dpi_count:4;
@@ -91,7 +92,7 @@ struct sinowealth_config_report {
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
 	 * while in XY independent mode each entry takes two chars for X and Y.
 	 */
-	struct RGB8 dpi_color[8];
+	struct sinowealth_rgb8 dpi_color[8];
 	uint8_t rgb_effect;
 	/* see enum rgb_effect */
 	uint8_t glorious_mode;
@@ -100,37 +101,37 @@ struct sinowealth_config_report {
 	 */
 	uint8_t glorious_direction;
 	uint8_t single_mode;
-	struct RBG8 single_color;
-	uint8_t breathing_mode;
+	struct sinowealth_rbg8 single_color;
+	uint8_t breathing7_mode;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
-	uint8_t breathing_colorcount;
+	uint8_t breathing7_colorcount;
 	/* 7, constant */
-	struct RBG8 breathing_colors[7];
+	struct sinowealth_rbg8 breathing7_colors[7];
 	uint8_t tail_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
-	uint8_t unk4[33];
+	uint8_t unknown3[33];
 	uint8_t rave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
-	struct RBG8 rave_colors[2];
+	struct sinowealth_rbg8 rave_colors[2];
 	uint8_t wave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing1_mode;
 	/* 0x1/2/3 - speed */
-	struct RBG8 breathing1_color;
-	uint8_t unk5;
+	struct sinowealth_rbg8 breathing1_color;
+	uint8_t unknown4;
 	uint8_t lift_off_distance;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
 	 */
-	uint8_t padding[520 - 131];
+	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED];
 } __attribute__((packed));
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
@@ -153,33 +154,36 @@ sinowealth_dpi_to_raw(int dpi)
 }
 
 static struct ratbag_color
-sinowealth_raw_to_color(struct RGB8 raw)
+sinowealth_raw_to_color(struct sinowealth_rgb8 raw)
 {
 	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
 }
 
-static struct RGB8
+static struct sinowealth_rgb8
 sinowealth_color_to_raw(struct ratbag_color color)
 {
-	return (struct RGB8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct sinowealth_rgb8) {.r = color.red, .g = color.green, .b = color.blue};
 }
 
 static struct ratbag_color
-sinowealth_rbg_to_color(struct RBG8 raw)
+sinowealth_rbg_to_color(struct sinowealth_rbg8 raw)
 {
 	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
 }
 
-static struct RBG8
+static struct sinowealth_rbg8
 sinowealth_color_to_rbg(struct ratbag_color color)
 {
-	return (struct RBG8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct sinowealth_rbg8) {.r = color.red, .g = color.green, .b = color.blue};
 }
 
 static int
 sinowealth_rgb_mode_to_brightness(uint8_t mode)
 {
-	return max(mode >> 4 << 6, 255);
+	/* brightness is 0-4 in the upper nibble of mode,
+	 * while libratbag uses 0-255.
+	 */
+	return max((mode >> 4) * 64, 255);
 }
 
 static int
@@ -197,7 +201,8 @@ sinowealth_rgb_mode_to_speed(uint8_t mode)
 static uint8_t
 sinowealth_to_rgb_mode(int brightness, int speed_ms)
 {
-	uint8_t mode = (brightness + 1) >> 6 << 4;
+	/* convert 0-255 to 0-4 in the upper nibble of mode */
+	uint8_t mode = ((brightness + 1) / 64) << 4;
 	if (speed_ms <= 500) {
 		mode |= 3;
 	} else if (speed_ms <= 1000) {
@@ -221,7 +226,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 
 	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG};
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
-	if(rc != sizeof(cmd)) {
+	if (rc != sizeof(cmd)) {
 		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
 		return -1;
 	}
@@ -229,7 +234,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc < sizeof(*config) - sizeof(config->padding)) {
+	if (rc != SINOWEALTH_CONFIG_SIZE_USED) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
@@ -239,7 +244,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_set_report_rate(profile, hz);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		if(config->config & SINOWEALTH_XY_INDEPENDENT) {
+		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
 			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2]);
 			resolution->dpi_y = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2 + 1]);
 		} else {
@@ -304,7 +309,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	int num_dpis = (SINOWEALTH_DPI_MAX - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1 + 1;
+	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
+	 * to signal a disabled DPI step.
+	 */
+	int num_dpis = (SINOWEALTH_DPI_MAX - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
 	unsigned int dpis[num_dpis];
 
 	/* TODO: Button remapping */
@@ -314,7 +322,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	/* Generate DPI list */
 	dpis[0] = 0; /* 0 DPI = disabled */
-	for(int i = 1; i < num_dpis; i++) {
+	for (int i = 1; i < num_dpis; i++) {
 		dpis[i] = SINOWEALTH_DPI_MIN + i * SINOWEALTH_DPI_STEP;
 	}
 
@@ -393,16 +401,17 @@ sinowealth_commit(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
 	int rc;
+	uint8_t dpi_enabled = 0;
 
+	/* Check if any resolution requires independent XY DPIs */
 	config->config &= ~SINOWEALTH_XY_INDEPENDENT;
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (resolution->dpi_x != resolution->dpi_y && resolution->dpi_x && resolution->dpi_y) {
-			config->config &= SINOWEALTH_XY_INDEPENDENT;
+			config->config |= SINOWEALTH_XY_INDEPENDENT;
 			break;
 		}
 	}
 
-	config->dpi_enabled = 0xFF;
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
 			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(resolution->dpi_x);
@@ -411,10 +420,10 @@ sinowealth_commit(struct ratbag_device *device)
 			config->dpi[resolution->index] = sinowealth_dpi_to_raw(resolution->dpi_x);
 		}
 		if (resolution->dpi_x && resolution->dpi_y) {
-			/* enable DPI step (dpi_enabled is inverted) */
-			config->dpi_enabled &= ~(1<<resolution->index);
+			dpi_enabled |= 1<<resolution->index;
 		}
 	}
+	config->dpi_enabled = ~dpi_enabled; /* config->dpi_enabled is inverted */
 
 	/* Body lighting */
 	led = ratbag_profile_get_led(profile, 0);
@@ -449,7 +458,7 @@ sinowealth_commit(struct ratbag_device *device)
 
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
-	if(rc != SINOWEALTH_CONFIG_SIZE) {
+	if (rc != SINOWEALTH_CONFIG_SIZE) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
 		ratbag_profile_unref(profile);
 		return -1;
@@ -467,7 +476,7 @@ sinowealth_remove(struct ratbag_device *device)
 }
 
 struct ratbag_driver sinowealth_driver = {
-	.name = "Sinowealth Gaming Mouse",
+	.name = "Sinowealth",
 	.id = "sinowealth",
 	.probe = sinowealth_probe,
 	.remove = sinowealth_remove,
