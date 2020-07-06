@@ -182,7 +182,7 @@ sinowealth_rgb_mode_to_brightness(uint8_t mode)
 	/* brightness is 0-4 in the upper nibble of mode,
 	 * while libratbag uses 0-255.
 	 */
-	return max((mode >> 4) * 64, 255);
+	return min((mode >> 4) * 64, 255);
 }
 
 static uint8_t
