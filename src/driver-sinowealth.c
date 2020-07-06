@@ -72,65 +72,63 @@ struct sinowealth_config_report {
 	uint8_t report_id; /* SINOWEALTH_REPORT_ID_CONFIG */
 	uint8_t command_id;
 	uint8_t unknown1;
-	uint8_t config_write;
 	/* always 0 when config is read from device,
 	 * has to be 0x7b when writing config to device
 	 */
+	uint8_t config_write;
 	uint8_t unknown2[6];
-	uint8_t config;
 	/* 0x80 - SINOWEALTH_XY_INDEPENDENT */
+	uint8_t config;
 	uint8_t dpi_count:4;
 	uint8_t active_dpi:4;
-	uint8_t dpi_enabled;
 	/* bit set: disabled, unset: enabled
 	 * this structure has support for eight DPI slots,
 	 * but the glorious software only exposes six
 	 */
-	uint8_t dpi[16];
+	uint8_t dpi_enabled;
 	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it
 	 * value = (DPI - 100) / 100
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
 	 * while in XY independent mode each entry takes two chars for X and Y.
 	 */
+	uint8_t dpi[16];
 	struct sinowealth_rgb8 dpi_color[8];
-	uint8_t rgb_effect;
-	/* see enum rgb_effect */
-	uint8_t glorious_mode;
+	uint8_t rgb_effect; /* see enum rgb_effect */
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
+	uint8_t glorious_mode;
 	uint8_t glorious_direction;
 	uint8_t single_mode;
 	struct sinowealth_rbg8 single_color;
-	uint8_t breathing7_mode;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
-	uint8_t breathing7_colorcount;
-	/* 7, constant */
+	uint8_t breathing7_mode;
+	uint8_t breathing7_colorcount; /* 7, constant */
 	struct sinowealth_rbg8 breathing7_colors[7];
+	/* 0x10/20/30/40 - brightness
+	 * 0x1/2/3 - speed
+	 */
 	uint8_t tail_mode;
-	/* 0x10/20/30/40 - brightness
-	 * 0x1/2/3 - speed
-	 */
 	uint8_t unknown3[33];
+	/* 0x10/20/30/40 - brightness
+	 * 0x1/2/3 - speed
+	 */
 	uint8_t rave_mode;
-	/* 0x10/20/30/40 - brightness
-	 * 0x1/2/3 - speed
-	 */
 	struct sinowealth_rbg8 rave_colors[2];
-	uint8_t wave_mode;
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
-	uint8_t breathing1_mode;
+	uint8_t wave_mode;
 	/* 0x1/2/3 - speed */
+	uint8_t breathing1_mode;
 	struct sinowealth_rbg8 breathing1_color;
 	uint8_t unknown4;
-	uint8_t lift_off_distance;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
 	 */
+	uint8_t lift_off_distance;
 	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED];
 } __attribute__((packed));
 
@@ -150,6 +148,7 @@ sinowealth_raw_to_dpi(int raw)
 static int
 sinowealth_dpi_to_raw(int dpi)
 {
+	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= SINOWEALTH_DPI_MAX);
 	return dpi / 100 - 1;
 }
 
@@ -343,7 +342,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	/* Generate DPI list */
 	dpis[0] = 0; /* 0 DPI = disabled */
 	for (int i = 1; i < num_dpis; i++) {
-		dpis[i] = SINOWEALTH_DPI_MIN + i * SINOWEALTH_DPI_STEP;
+		dpis[i] = SINOWEALTH_DPI_MIN + (i - 1) * SINOWEALTH_DPI_STEP;
 	}
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
@@ -434,16 +433,16 @@ sinowealth_commit(struct ratbag_device *device)
 
 	config->dpi_count = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
+		if (!resolution->dpi_x || !resolution->dpi_y)
+			continue;
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
 			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(resolution->dpi_x);
 			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(resolution->dpi_y);
 		} else {
 			config->dpi[resolution->index] = sinowealth_dpi_to_raw(resolution->dpi_x);
 		}
-		if (resolution->dpi_x && resolution->dpi_y) {
-			dpi_enabled |= 1<<resolution->index;
-			config->dpi_count++;
-		}
+		dpi_enabled |= 1<<resolution->index;
+		config->dpi_count++;
 	}
 	config->dpi_enabled = ~dpi_enabled; /* config->dpi_enabled is inverted */
 
