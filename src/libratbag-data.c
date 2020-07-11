@@ -51,6 +51,7 @@ enum driver {
 	LOGITECH_G300,
 	LOGITECH_G600,
 	STEELSERIES,
+	ROCCATE_KONE_AIMO,
 };
 
 struct data_hidpp20 {
@@ -267,6 +268,7 @@ static const struct driver_map {
 	{ LOGITECH_G300, "logitech_g300", NULL},
 	{ LOGITECH_G600, "logitech_g600", NULL},
 	{ STEELSERIES, "steelseries", init_data_steelseries },
+	{ ROCCATE_KONE_AIMO, "roccat-kone-aimo", NULL }
 };
 
 const char *

@@ -602,6 +602,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag_register_driver(ratbag, &roccat_driver);
 	ratbag_register_driver(ratbag, &gskill_driver);
 	ratbag_register_driver(ratbag, &steelseries_driver);
+	ratbag_register_driver(ratbag, &roccat_kone_aimo_driver);
 
 	return ratbag;
 }
