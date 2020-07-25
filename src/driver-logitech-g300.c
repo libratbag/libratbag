@@ -449,10 +449,10 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		struct logitech_g300_resolution *res =
 			&report->dpi_levels[resolution->index];
-		unsigned int dpis[25] = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, };
+		unsigned int dpis[49] = { 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750, 1800, 1850, 1900, 1950, 2000, 2050, 2100, 2150, 2200, 2250, 2300, 2350, 2400, 2450, 2500, };
 
-		resolution->dpi_x = res->dpi * 100;
-		resolution->dpi_y = res->dpi * 100;
+		resolution->dpi_x = res->dpi * 50;
+		resolution->dpi_y = res->dpi * 50;
 		resolution->is_default = res->is_default;
 		resolution->is_active = res->is_default;
 
@@ -545,7 +545,7 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 		struct logitech_g300_resolution *res =
 			&report->dpi_levels[resolution->index];
 
-		res->dpi = resolution->dpi_x / 100;
+		res->dpi = resolution->dpi_x / 50;
 		res->is_default = resolution->is_default;
 
 		if (profile->is_active && resolution->is_active)
