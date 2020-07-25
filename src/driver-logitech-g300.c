@@ -37,7 +37,7 @@
 #define LOGITECH_G300_BUTTON_MAX			8
 #define LOGITECH_G300_NUM_DPI				4
 #define LOGITECH_G300_NUM_LED				1
-#define LOGITECH_G300_DPI_MIN				250
+#define LOGITECH_G300_DPI_MIN				100
 #define LOGITECH_G300_DPI_MAX				2500
 
 #define LOGITECH_G300_REPORT_ID_GET_ACTIVE		0xF0
@@ -51,7 +51,7 @@
 #define LOGITECH_G300_REPORT_SIZE_PROFILE		35
 
 struct logitech_g300_resolution {
-	uint8_t dpi :7; /* Range 1-10. dpi = 250*value */
+	uint8_t dpi :7; /* Range 1-10. dpi = 100*value */
 	uint8_t is_default :1;
 } __attribute__((packed));
 
@@ -449,11 +449,10 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		struct logitech_g300_resolution *res =
 			&report->dpi_levels[resolution->index];
-		unsigned int dpis[10] = { 250, 500, 750, 1000, 1250, 1500, 1750,
-					  2000, 2250, 2500 };
+		unsigned int dpis[25] = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, };
 
-		resolution->dpi_x = res->dpi * 250;
-		resolution->dpi_y = res->dpi * 250;
+		resolution->dpi_x = res->dpi * 100;
+		resolution->dpi_y = res->dpi * 100;
 		resolution->is_default = res->is_default;
 		resolution->is_active = res->is_default;
 
@@ -546,7 +545,7 @@ logitech_g300_write_profile(struct ratbag_profile *profile)
 		struct logitech_g300_resolution *res =
 			&report->dpi_levels[resolution->index];
 
-		res->dpi = resolution->dpi_x / 250;
+		res->dpi = resolution->dpi_x / 100;
 		res->is_default = resolution->is_default;
 
 		if (profile->is_active && resolution->is_active)
