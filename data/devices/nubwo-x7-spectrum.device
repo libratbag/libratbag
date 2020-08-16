@@ -1,0 +1,5 @@
+[Device]
+Name=Nubwo x7 spectrum
+DeviceMatch=usb:258a:0012
+Driver=sinowealth_nubwo
+
