@@ -91,23 +91,26 @@ sinowealthnubwo_test_hidraw(struct ratbag_device *device)
 		&& ratbag_hidraw_has_report(device, SINOWEALTHNUBWO_GET_FIRMWARE_CMD_REPORTID);
 }
 
-static char*
-sinowealth_get_firmware_string(struct ratbag_device *device)
+static int
+sinowealth_get_firmware_string(struct ratbag_device *device, char **output)
 {
-	uint8_t buff[SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE];
+	uint8_t buff[SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE + 1] = {0}; //Purposefully overalloacate to prevent buffer overrun
 	int size;
 
 	size = ratbag_hidraw_set_feature_report(device, SINOWEALTHNUBWO_PERF_CMD_REPORTID, PREFIRMWARE_QUERY_MSG, ARRAY_LENGTH(PREFIRMWARE_QUERY_MSG));
-	if (size < 0)
+	if (size < 0) {
 		log_error(device->ratbag, "Error while sending pre-firmware request message: %d\n", size);
+		return size;
+	}
 
 	size = ratbag_hidraw_get_feature_report(device, SINOWEALTHNUBWO_GET_FIRMWARE_CMD_REPORTID, buff, SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE);
-	if (size != SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE)
+	if (size != SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE) {
 		log_error(device->ratbag ,"Firmware report reply size mismatch expected %d got %d\n", SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE, size);
+		return size;
+	}
 	
-	char *fw_str = zalloc(SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE); //Purposefully overallocate zeros to prevent buffer overrun.
-	memcpy(fw_str, buff + SINOWEALTHNUBWO_GET_FIRMWARE_MSGOFFSET, SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE - SINOWEALTHNUBWO_GET_FIRMWARE_MSGOFFSET);
-	return fw_str;
+	*output = strdup_ascii_only((char *) buff + SINOWEALTHNUBWO_GET_FIRMWARE_MSGOFFSET);
+	return 0;
 }
 
 static int
@@ -122,6 +125,13 @@ sinowealthnubwo_probe(struct ratbag_device *device)
 	if (error)
 		return error;
 
+	char *fwstr;
+	error = sinowealth_get_firmware_string(device, &fwstr);
+	if (error)
+		return error;
+	log_info(device->ratbag, "Firmware: %s\n", fwstr);
+	free(fwstr);
+
 	ratbag_device_init_profiles(device,
 			SINOWEALTHNUBWO_NUM_PROFILES,
 			SINOWEALTHNUBWO_NUM_RESOLUTIONS,
@@ -135,16 +145,15 @@ sinowealthnubwo_probe(struct ratbag_device *device)
 		ratbag_profile_set_report_rate_list(profile, REPORT_RATES, ARRAY_LENGTH(REPORT_RATES));
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			ratbag_resolution_set_dpi_list(resolution, DPILIST, ARRAY_LENGTH(DPILIST));
-			resolution->dpi_x = resolution->dpi_y = DPILIST[0];
+			resolution->dpi_x = resolution->dpi_y = DPILIST[ARRAY_LENGTH(DPILIST)-1];
 			resolution->is_active = true;
 			resolution->is_default = true;
 		}
 		ratbag_profile_for_each_led(profile, led) {
 			led->mode = RATBAG_LED_OFF;
-			led->color.red = led->color.green = led->color.blue = 0;
+			led->color.red = led->color.green = led->color.blue = 0xFF;
 			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 			led->type = RATBAG_LED_TYPE_SIDE;
-			led->color.red = led->color.green = led->color.blue = 0;
 			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
@@ -153,9 +162,6 @@ sinowealthnubwo_probe(struct ratbag_device *device)
 		}
 	}
 
-	char *fwstr = sinowealth_get_firmware_string(device);
-	log_info(device->ratbag, "Firmware: %s\n", fwstr);
-	free(fwstr);
 	return 0;
 }
 
@@ -180,8 +186,7 @@ encode_report_rate(unsigned int reportrate)
 static int
 sinowealthnubwo_set_dpi(struct ratbag_device *device, int dpi)
 {
-	uint8_t buf[SINOWEALTHNUBWO_PERF_CMD_MSGSIZE];
-	memset(buf, 0, SINOWEALTHNUBWO_PERF_CMD_MSGSIZE);
+	uint8_t buf[SINOWEALTHNUBWO_PERF_CMD_MSGSIZE] = {0};
 	memcpy(buf, DPI_CMD, ARRAY_LENGTH(DPI_CMD));
 	buf[ARRAY_LENGTH(DPI_CMD)] = encode_dpi(dpi);
 	int error = ratbag_hidraw_set_feature_report(device, SINOWEALTHNUBWO_PERF_CMD_REPORTID, buf, SINOWEALTHNUBWO_PERF_CMD_MSGSIZE);
@@ -193,8 +198,7 @@ sinowealthnubwo_set_dpi(struct ratbag_device *device, int dpi)
 static int
 sinowealthnubwo_set_report_rate(struct ratbag_device *device, int reportrate)
 {
-	uint8_t buf[SINOWEALTHNUBWO_PERF_CMD_MSGSIZE];
-	memset(buf, 0, SINOWEALTHNUBWO_PERF_CMD_MSGSIZE);
+	uint8_t buf[SINOWEALTHNUBWO_PERF_CMD_MSGSIZE] = {0};
 	memcpy(buf, REPORT_RATES_CMD, ARRAY_LENGTH(REPORT_RATES_CMD));
 	buf[ARRAY_LENGTH(REPORT_RATES_CMD)] = encode_report_rate(reportrate);
 	int error = ratbag_hidraw_set_feature_report(device, SINOWEALTHNUBWO_PERF_CMD_REPORTID, buf, SINOWEALTHNUBWO_PERF_CMD_MSGSIZE);
@@ -223,14 +227,14 @@ static uint8_t normalize_duration(int duration)
 {
 	const int MAX_DURATION = 10000;
 	const uint8_t avail_dura[] = {0x01, 0x03, 0x05};
-	const int selected = (duration*((int) ARRAY_LENGTH(avail_dura)) -1)/MAX_DURATION;
+	const int selected = (duration * ((int) ARRAY_LENGTH(avail_dura)) - 1) / MAX_DURATION;
 	return avail_dura[selected];
 }
 
 static uint8_t normalize_brightness(int brightness)
 {
 	const int MAX_BRIGHTNESS = 255;
-	return 1 + (brightness*3-1)/MAX_BRIGHTNESS;
+	return 1 + (brightness * 3 - 1) / MAX_BRIGHTNESS;
 }
 
 static int
