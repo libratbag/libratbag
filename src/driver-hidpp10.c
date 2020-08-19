@@ -573,7 +573,8 @@ hidpp10drv_commit(struct ratbag_device *device)
 			return rc;
 
 		p.enabled = profile->is_enabled;
-		strncpy_safe((char*)p.name, profile->name, 24);
+		if (profile->name != NULL)
+			strncpy_safe((char*)p.name, profile->name, 24);
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			p.dpi_modes[resolution->index].xres = resolution->dpi_x;
