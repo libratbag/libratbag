@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "config.h"
 #include <linux/input.h>
 #include <stdint.h>
 #include <stdbool.h>
