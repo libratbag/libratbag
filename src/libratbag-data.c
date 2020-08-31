@@ -34,6 +34,7 @@
 #include "libratbag-private.h"
 #include "libratbag-data.h"
 #include "hidpp20.h"
+#include "usb-ids.h"
 
 #define GROUP_DEVICE "Device"
 
@@ -517,7 +518,9 @@ ratbag_device_data_new_for_id(struct ratbag *ratbag, const struct input_id *id)
 			goto out;
 	}
 
-	if (!data)
+	if (id->vendor == USB_VENDOR_ID_LOGITECH && (id->product & 0xff00) == 0xc500)
+		log_debug(ratbag, "%04x:%04x is a Logitech receiver, not a device. Ignoring...\n", id->vendor, id->product);
+	else if (!data)
 		log_debug(ratbag, "No data file found for %04x:%04x\n", id->vendor, id->product);
 
 out:
