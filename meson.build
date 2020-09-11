@@ -1,5 +1,5 @@
 project('libratbag', 'c',
-	version : '0.12',
+	version : '0.14',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
 	meson_version : '>= 0.40.0')
@@ -175,6 +175,7 @@ src_libratbag = [
 	'src/driver-roccat-kone-pure.c',
 	'src/driver-gskill.c',
 	'src/driver-steelseries.c',
+	'src/driver-sinowealth.c',
 	'src/driver-test.c',
 	'src/libratbag.c',
 	'src/libratbag.h',
@@ -284,6 +285,7 @@ data_files = files(
 	'data/devices/logitech-M570.device',
 	'data/devices/logitech-M585-M590.device',
 	'data/devices/logitech-M705.device',
+	'data/devices/logitech-M720.device',
 	'data/devices/logitech-MX-Ergo.device',
 	'data/devices/logitech-MX-Master.device',
 	'data/devices/logitech-MX-Master-2S.device',
@@ -291,6 +293,7 @@ data_files = files(
 	'data/devices/logitech-MX518.device',
 	'data/devices/logitech-T650.device',
 	'data/devices/logitech-Wireless-Touchpad.device',
+	'data/devices/logitech-g-powerplay.device',
 	'data/devices/logitech-g-pro-wireless.device',
 	'data/devices/logitech-g-pro.device',
 	'data/devices/logitech-g102-g203.device',
@@ -325,8 +328,10 @@ data_files = files(
 	'data/devices/logitech-g900.device',
 	'data/devices/logitech-g903-hero.device',
 	'data/devices/logitech-g903.device',
+	'data/devices/logitech-g815.device',
 	'data/devices/logitech-g910.device',
 	'data/devices/logitech-g915.device',
+	'data/devices/logitech-g935.device',
 	'data/devices/logitech-g9x-Call-of-Duty-MW3-Edition.device',
 	'data/devices/logitech-g9x-Original.device',
 	'data/devices/logitech-Marathon-M705.device',
@@ -342,6 +347,8 @@ data_files = files(
 	'data/devices/steelseries-rival.device',
 	'data/devices/steelseries-sensei-310.device',
 	'data/devices/steelseries-sensei-raw.device',
+	'data/devices/glorious-model-d.device',
+	'data/devices/glorious-model-o.device',
 )
 
 install_data(data_files,
@@ -535,12 +542,29 @@ configure_file(input : 'dbus/org.freedesktop.ratbag1.conf.in',
 
 #### tools ####
 
+# This is a special idiomatic construct in meson to get a fast dependency that
+# doesn't exist and isn't logged as "not found".
+dep_python3 = dependency('', required : false)
 if meson.version().version_compare('<0.48.0')
   python = import('python3')
   py3 = python.find_python()
+  py_version = python.language_version()
 else
   pymod = import('python')
   py3 = pymod.find_installation()
+  if meson.version().version_compare('>= 0.53.0')
+    dep_python3 = py3.dependency(embed : true)
+  endif
+  py_version = py3.language_version()
+endif
+
+# From python 3.8 we neeed python3-embed
+embed = py_version.version_compare('>= 3.8') ? '-embed' : ''
+if not dep_python3.found()
+  dep_python3 = dependency('python-@0@@1@'.format(py_version, embed), required : false)
+  if not dep_python3.found()
+    dep_python3 = dependency('python3@0@'.format(embed))
+  endif
 endif
 
 config_ratbagctl = configuration_data()
@@ -604,12 +628,6 @@ swig_gen = generator(
                 '@INPUT@'],
 )
 
-# From python 3.8 we neeed python3-embed
-dep_python3 = dependency('python3-embed', required: false)
-if not dep_python3.found()
-	dep_python3 = dependency('python3')
-endif
-
 wrapper_deps = [
     dep_python3,
     dep_libratbag,
@@ -622,7 +640,9 @@ shared_library(
    'libratbag',
    c_source,
    name_prefix: '_',
-   c_args : ['-Wno-missing-prototypes', '-Wno-format-nonliteral'],
+   c_args : ['-Wno-missing-prototypes',
+             '-Wno-format-nonliteral',
+             '-Wno-missing-field-initializers'],
    extra_files: [ i_source ] + src_libratbag ,
    dependencies: deps_libratbag + wrapper_deps,
    include_directories : include_directories('src', 'tools'),
@@ -635,7 +655,10 @@ shared_library(
    'hidpp',
    c_source,
    name_prefix: '_',
-   c_args : ['-Wno-missing-prototypes', '-Wno-format-nonliteral'],
+   c_args : ['-Wno-missing-prototypes',
+             '-Wno-format-nonliteral',
+             '-Wno-missing-field-initializers',
+             '-Wno-strict-prototypes'],
    extra_files: [ i_source ] + src_libratbag ,
    dependencies: deps_libratbag + wrapper_deps,
    include_directories : include_directories('src', 'tools'),

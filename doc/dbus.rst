@@ -85,13 +85,13 @@ interact with ratbagd.
         :type: i
         :flags: read-only,constant
 
-	The DBus API version. This is a stopgap feature while the DBus API
-	is still in flux. The version has no backwards or
-	forward-compatibilty guarantees - your client must understand
-	**exactly** the same version, it is not enough to support an older
-	or a newer version.
+        The DBus API version. This is a stopgap feature while the DBus API
+        is still in flux. The version has no backwards or
+        forward-compatibilty guarantees - your client must understand
+        **exactly** the same version, it is not enough to support an older
+        or a newer version.
 
-	This API will be removed once the DBus API is declared stable.
+        This API will be removed once the DBus API is declared stable.
 
 .. attribute:: Devices
 

@@ -164,6 +164,7 @@ hidpp10drv_map_button(struct ratbag_device *device,
 {
 	struct hidpp10_profile profile;
 	int ret;
+	unsigned int modifiers = 0;
 
 	ret = hidpp10_get_profile(hidpp10, button->profile->index, &profile);
 	if (ret)
@@ -178,6 +179,7 @@ hidpp10drv_map_button(struct ratbag_device *device,
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 		button->action.action.key.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 							profile.buttons[button->index].keys.key);
+		modifiers = profile.buttons[button->index].keys.modifier_flags;
 		break;
 	case PROFILE_BUTTON_TYPE_CONSUMER_CONTROL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
@@ -196,6 +198,14 @@ hidpp10drv_map_button(struct ratbag_device *device,
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 		} else {
 			hidpp10drv_read_macro(button, &profile, &profile.buttons[button->index]);
+		}
+	}
+
+	if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		ret = ratbag_button_macro_new_from_keycode(button, button->action.action.key.key, modifiers);
+		if (ret < 0) {
+			log_error(device->ratbag, "hidpp10: error while reading button %d\n", button->index);
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 		}
 	}
 
@@ -299,6 +309,8 @@ hidpp10drv_write_button(struct hidpp10_profile *profile,
 	struct hidpp10drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp10_device *hidpp10 = drv_data->dev;
 	uint8_t code;
+	unsigned int modifiers, key;
+	int rc;
 
 	if (hidpp10->profile_type == HIDPP10_PROFILE_UNKNOWN)
 		return -ENOTSUP;
@@ -330,6 +342,26 @@ hidpp10drv_write_button(struct hidpp10_profile *profile,
 		profile->buttons[button->index].special.special = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		rc = ratbag_action_keycode_from_macro(action, &key, &modifiers);
+		if (rc < 0) {
+			log_error(device->ratbag, "hidpp10: can't convert macro action to keycode in button %d\n", button->index);
+			return -EINVAL;
+		}
+
+		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+		if (code == 0) {
+			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, key);
+			if (code == 0)
+				return -EINVAL;
+
+			profile->buttons[button->index].consumer_control.type = PROFILE_BUTTON_TYPE_CONSUMER_CONTROL;
+			profile->buttons[button->index].consumer_control.consumer_control = code;
+		} else {
+			profile->buttons[button->index].keys.type = PROFILE_BUTTON_TYPE_KEYS;
+			profile->buttons[button->index].keys.key = code;
+			profile->buttons[button->index].keys.modifier_flags = modifiers;
+		}
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -541,7 +573,8 @@ hidpp10drv_commit(struct ratbag_device *device)
 			return rc;
 
 		p.enabled = profile->is_enabled;
-		strncpy_safe((char*)p.name, profile->name, 24);
+		if (profile->name != NULL)
+			strncpy_safe((char*)p.name, profile->name, 24);
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			p.dpi_modes[resolution->index].xres = resolution->dpi_x;
@@ -558,8 +591,10 @@ hidpp10drv_commit(struct ratbag_device *device)
 				continue;
 
 			rc = hidpp10drv_write_button(&p, button, &action);
-			if (rc)
+			if (rc) {
+				log_error(device->ratbag, "hidpp10: failed to update buttons (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
+			}
 		}
 
 		ratbag_profile_for_each_led(profile, led)
@@ -567,8 +602,10 @@ hidpp10drv_commit(struct ratbag_device *device)
 
 		if (dev->profile_type != HIDPP10_PROFILE_UNKNOWN) {
 			rc = hidpp10_set_profile(dev, profile->index, &p);
-			if (rc)
+			if (rc) {
+				log_error(device->ratbag, "hidpp10: failed to set profile (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
+			}
 		}
 
 		/* Update the current resolution in case it changed */
@@ -576,8 +613,10 @@ hidpp10drv_commit(struct ratbag_device *device)
 			rc = hidpp10_set_current_resolution(dev,
 						       active_resolution->dpi_x,
 						       active_resolution->dpi_y);
-			if (rc)
+			if (rc) {
+				log_error(device->ratbag, "hidpp10: failed to set active resolution (%d)\n", rc);
 				return RATBAG_ERROR_DEVICE;
+			}
 
 			active_resolution = NULL;
 		}
@@ -631,9 +670,9 @@ hidpp10drv_probe(struct ratbag_device *device)
 	 * If there is a special need like for G700(s), then add a DeviceIndex
 	 * entry to the .device file.
 	 */
-	dev = hidpp10_device_new(&base, device_idx, type, profile_count);
+	rc = hidpp10_device_new(&base, device_idx, type, profile_count, &dev);
 
-	if (!dev) {
+	if (rc) {
 		log_error(device->ratbag,
 			  "Failed to get HID++1.0 device for %s\n",
 			  device->name);
@@ -714,14 +753,14 @@ static void
 hidpp10drv_remove(struct ratbag_device *device)
 {
 	struct hidpp10drv_data *drv_data;
-	struct hidpp10_device *dev;
 
 	ratbag_close_hidraw(device);
 
 	drv_data = ratbag_get_drv_data(device);
-	dev = drv_data->dev;
+	if (!drv_data)
+		return;
 
-	hidpp10_device_destroy(dev);
+	hidpp10_device_destroy(drv_data->dev);
 
 	free(drv_data);
 }

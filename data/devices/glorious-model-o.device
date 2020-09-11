@@ -1,0 +1,5 @@
+[Device]
+Name=Glorious Model O
+DeviceMatch=usb:258a:0036
+Driver=sinowealth
+

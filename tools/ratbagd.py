@@ -193,7 +193,7 @@ class _RatbagdDBus(GObject.GObject):
         # args to .Set are "interface name", "function name",  value-variant
         val = GLib.Variant("{}".format(type), value)
         if readwrite:
-            pval = GLib.Variant("(ssv)".format(type), (self._interface, property, val))
+            pval = GLib.Variant("(ssv)", (self._interface, property, val))
             self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
                                   pval, Gio.DBusCallFlags.NO_AUTO_START,
                                   2000, None)

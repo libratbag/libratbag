@@ -193,14 +193,18 @@ def print_profile(d, p, level):
                                                        " (active)" if p.is_active else ""))
     if p.enabled:
         print(" " * level + "Name: {}".format(p.name or 'n/a'))
-        print(" " * level + "Report Rate: {}Hz".format(p.report_rate))
-        print(" " * level + "Resolutions:")
-        for r in p.resolutions:
-            print_resolution(d, p, r, level + 2)
-        for b in p.buttons:
-            print_button(d, p, b, level)
-        for l in p.leds:
-            print_led(d, p, l, level)
+        if p.report_rate:
+            print(" " * level + "Report Rate: {}Hz".format(p.report_rate))
+        if p.resolutions:
+            print(" " * level + "Resolutions:")
+            for r in p.resolutions:
+                print_resolution(d, p, r, level + 2)
+        if p.buttons:
+            for b in p.buttons:
+                print_button(d, p, b, level)
+        if p.leds:
+            for l in p.leds:
+                print_led(d, p, l, level)
 
 
 def print_device(d, level):

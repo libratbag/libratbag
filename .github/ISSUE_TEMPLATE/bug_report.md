@@ -13,6 +13,12 @@ assignees: ''
 - Distribution: 
 - Kernel version (ex. `uname -srmo`): `KERNEL VERSION HERE`
 
+Device info (if applicable):
+```
+$ ratbagctl <device> info
+OUTPUT HERE
+```
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 

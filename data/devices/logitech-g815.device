@@ -1,0 +1,5 @@
+[Device]
+Name=Logitech G815
+DeviceMatch=usb:046d:c33f
+LedTypes=logo;switches
+Driver=hidpp20

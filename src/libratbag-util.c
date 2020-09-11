@@ -37,6 +37,8 @@
 #include <stdlib.h>
 #include <iconv.h>
 #include <errno.h>
+#include <libgen.h>
+#include <sys/stat.h>
 
 #include "libratbag-util.h"
 #include "libratbag-private.h"
@@ -187,4 +189,19 @@ err:
 
 	iconv_close(converter);
 	return ret;
+}
+
+int mkdir_p(char *dir, mode_t mode)
+{
+    struct stat sb;
+
+    if (!dir)
+        return EINVAL;
+
+    if (!stat(dir, &sb))
+        return 0;
+
+    mkdir_p(dirname(strdupa(dir)), mode);
+
+    return mkdir(dir, mode);
 }

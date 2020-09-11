@@ -807,8 +807,12 @@ hidpp10_get_current_profile(struct hidpp10_device *dev, uint8_t *current_profile
 		      __CMD_PROFILE);
 
 	res = hidpp10_request_command(dev, &profile);
-	if (res)
-		return res;
+	if (res) {
+		/* Profiles not supported */
+		hidpp_log_debug(&dev->base, "Profiles not supported\n");
+		*current_profile = 0;
+		return 0;
+	}
 
 	type = profile.msg.parameters[0];
 	page = profile.msg.parameters[1];
@@ -1144,6 +1148,9 @@ hidpp10_onboard_profiles_read_macro(struct hidpp10_device *device,
 		}
 
 		if (rc == -ENOMEM) {
+			if ((unsigned) offset + mem_index > 0xff)
+				goto out_err;
+
 			offset += mem_index;
 			if (offset & 0x01)
 				offset--;
@@ -1198,8 +1205,10 @@ hidpp10_onboard_profiles_parse_macro(struct hidpp10_device *device,
 	hidpp_log_raw(&device->base, "*** macro starts at (0x%02x, 0x%04x) ***\n", page, offset);
 
 	rc = hidpp10_onboard_profiles_read_macro(device, page, offset, &macro);
-	if (rc)
+	if (rc) {
+		hidpp_log_raw(&device->base, "hidpp10: failed to read macro\n");
 		return rc;
+	}
 
 	count = rc;
 
@@ -2754,12 +2763,14 @@ hidpp10_get_device_info(struct hidpp10_device *dev)
 	return hidpp10_get_current_profile(dev, &current_profile);
 }
 
-struct hidpp10_device*
+int
 hidpp10_device_new(const struct hidpp_device *base,
 		   int idx,
 		   enum hidpp10_profile_type type,
-		   unsigned int profile_count)
+		   unsigned int profile_count,
+		   struct hidpp10_device **out)
 {
+	int rc;
 	struct hidpp10_device *dev;
 
 	dev = zalloc(sizeof(*dev));
@@ -2770,12 +2781,14 @@ hidpp10_device_new(const struct hidpp_device *base,
 	dev->profile_count = profile_count;
 	dev->profiles = zalloc(dev->profile_count * sizeof(struct hidpp10_profile));
 
-	if (hidpp10_get_device_info(dev) != 0) {
+	if ((rc = hidpp10_get_device_info(dev)) != 0) {
 		hidpp10_device_destroy(dev);
 		dev = NULL;
 	}
 
-	return dev;
+	*out = dev;
+
+	return rc;
 }
 
 int

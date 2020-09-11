@@ -1,10 +1,12 @@
 libratbag_references:
   build_dependencies: &build_dependencies
     FEDORA_DEP_BUILD: gcc gcc-c++ meson dbus-daemon glib2-devel json-glib-devel libevdev-devel libudev-devel libunistring-devel python3-devel python3-evdev swig
-    FEDORA_DEP_TEST: check-devel python3-gobject python3-lxml valgrind
+    FEDORA_DEP_TEST: check-devel python3-gobject python3-lxml valgrind diffutils
     FEDORA_DEP_DOC: python3-sphinx python3-sphinx_rtd_theme
     UBUNTU_DEP_BUILD: gcc g++ meson pkg-config systemd libevdev-dev libglib2.0-dev libjson-glib-dev libsystemd-dev libudev-dev libunistring-dev python3-dev python3-evdev swig
     UBUNTU_DEP_TEST: check python3-gi python3-lxml valgrind
+    ARCH_DEP_BUILD: meson swig glib2 libevdev libudev.so libunistring json-glib python python-evdev python-gobject
+    ARCH_DEP_TEST: check valgrind python-lxml
   default_settings: &default_settings
     working_directory: ~/libratbag
     environment:
@@ -75,22 +77,21 @@ libratbag_references:
         mkdir /run/dbus
         /usr/bin/dbus-daemon --system --fork
 
-fedora_prep_cache: &fedora_prep_cache
-  <<: *default_settings
-  steps:
-    - run:
-        name: Initializing Fedora dnf cache
-        command: dnf install -y --downloadonly git ${FEDORA_DEP_BUILD} ${FEDORA_DEP_TEST} ${FEDORA_DEP_DOC}
-    - persist_to_workspace:
-        root: /var/cache/
-        paths:
-          - dnf/*
-  environment:
-    *build_dependencies
+save_date: &save_date
+  run:
+    name: Save date
+    command: date +%F > /tmp/date
+
+fedora_save_cache: &fedora_save_cache
+  save_cache:
+    key: fedora-cache-v1-{{ checksum "/tmp/date" }}
+    paths:
+      - /var/cache/dnf
 
 fedora_fetch_cache: &fedora_fetch_cache
-  attach_workspace:
-    at: /var/cache/
+  restore_cache:
+    keys:
+      - fedora-cache-v1
 
 fedora_install: &fedora_install
   run:
@@ -103,6 +104,7 @@ fedora_install: &fedora_install
 fedora_settings: &fedora_settings
   <<: *default_settings
   steps:
+    - *save_date
     - *fedora_fetch_cache
     - *fedora_install
     - checkout
@@ -114,6 +116,37 @@ fedora_settings: &fedora_settings
     - *build_buildtype_plain
     - *build_buildtype_release
     - *export_logs
+    - *fedora_save_cache
+  environment:
+    *build_dependencies
+
+arch_save_cache: &arch_save_cache
+  save_cache:
+    key: arch-cache-v1-{{ checksum "/tmp/date" }}
+    paths:
+      - /var/cache/pacman/pkg
+
+arch_fetch_cache: &arch_fetch_cache
+  restore_cache:
+    keys:
+      - arch-cache-v1
+
+arch_settings: &arch_settings
+  <<: *default_settings
+  steps:
+    - *save_date
+    - *arch_fetch_cache
+    - run:
+        name: Install prerequisites
+        command: pacman -Syu --noconfirm --noprogressbar --needed base-devel git tree ${ARCH_DEP_BUILD} ${ARCH_DEP_TEST}
+    - *start_dbus
+    - checkout
+    - *build_and_test
+    - *install
+    - *check_install
+    - *check_uninstall
+    - *export_logs
+    - *arch_save_cache
   environment:
     *build_dependencies
 
@@ -123,10 +156,7 @@ ubuntu_settings: &ubuntu_settings
     - run:
         name: Install prerequisites
         command: |
-          apt-get update
-          apt-get install -y software-properties-common
-          apt-get remove -y libnss-systemd
-          add-apt-repository universe
+          export DEBIAN_FRONTEND=noninteractive
           apt-get update
           apt-get install -y git ${UBUNTU_DEP_BUILD} ${UBUNTU_DEP_TEST}
     - checkout
@@ -201,18 +231,18 @@ docs_deploy: &docs_deploy
 
 version: 2
 jobs:
-  fedora_cache:
-    <<: *fedora_prep_cache
-    docker:
-      - image: fedora:31
   fedora_31:
     <<: *fedora_settings
     docker:
       - image: fedora:31
-  ubuntu_19_04:
+  arch:
+    <<: *arch_settings
+    docker:
+      - image: archlinux
+  ubuntu_20_04:
     <<: *ubuntu_settings
     docker:
-      - image: ubuntu:19.04
+      - image: ubuntu:20.04
   doc_build:
     <<: *doc_build
     docker:
@@ -227,17 +257,12 @@ workflows:
   version: 2
   compile_and_test:
     jobs:
-      - fedora_cache
-      - ubuntu_19_04
-      - fedora_31:
-          requires:
-            - fedora_cache
-      - doc_build:
-          requires:
-            - fedora_cache
+      - ubuntu_20_04
+      - arch
+      - fedora_31
+      - doc_build
       - doc_deploy:
           requires:
-            - fedora_cache
             - doc_build
           filters:
               branches:

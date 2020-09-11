@@ -1,6 +1,6 @@
-# G102 and G203 (USB)
+# G102, G103 and G203 (USB)
 [Device]
-Name=Logitech Gaming Mouse G102/G103
-DeviceMatch=usb:046d:c084
+Name=Logitech Gaming Mouse G102/G103/G203
+DeviceMatch=usb:046d:c084;usb:046d:c092
 Driver=hidpp20
 LedTypes=logo;side;

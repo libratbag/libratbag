@@ -577,14 +577,42 @@ enum hidpp20_color_led_zone_effect {
 
 #define HIDPP_PAGE_ONBOARD_PROFILES			0x8100
 
+/* type */
 #define HIDPP20_BUTTON_HID_TYPE				0x80
+#define HIDPP20_BUTTON_SPECIAL				0x90
+
+/* standard opcodes (0x80) */
+#define HIDPP20_BUTTON_HID_TYPE_NOOP			0x00
 #define HIDPP20_BUTTON_HID_TYPE_MOUSE			0x01
 #define HIDPP20_BUTTON_HID_TYPE_KEYBOARD		0x02
 #define HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL	0x03
-#define HIDPP20_BUTTON_SPECIAL				0x90
+
+/* special opcodes (0x90) */
+#define HIDPP20_BUTTON_SPECIAL_NOOP			0x00
+#define HIDPP20_BUTTON_SPECIAL_TILT_LEFT		0x01
+#define HIDPP20_BUTTON_SPECIAL_TILT_RIGHT		0x02
+#define HIDPP20_BUTTON_SPECIAL_NEXT_DPI			0x03
+#define HIDPP20_BUTTON_SPECIAL_PREV_DPI			0x04
+#define HIDPP20_BUTTON_SPECIAL_CYCLE_DPI		0x05
+#define HIDPP20_BUTTON_SPECIAL_DEFAULT_DPI		0x06
+#define HIDPP20_BUTTON_SPECIAL_SHIFT_DPI		0x07
+#define HIDPP20_BUTTON_SPECIAL_NEXT_PROFILE		0x08
+#define HIDPP20_BUTTON_SPECIAL_PREV_PROFILE		0x09
+#define HIDPP20_BUTTON_SPECIAL_CYCLE_PROFILE		0x0a
+#define HIDPP20_BUTTON_SPECIAL_GSHIFT			0x0b
+/* memory model >= 3 */
+#define HIDPP20_BUTTON_SPECIAL_BATTERY_INDICATOR	0x0c
+#define HIDPP20_BUTTON_SPECIAL_ENABLE_PROFILE		0x0d
+#define HIDPP20_BUTTON_SPECIAL_PERFORMANCE_SWITCH	0x0e
+#define HIDPP20_BUTTON_SPECIAL_HOST			0x0f
+#define HIDPP20_BUTTON_SPECIAL_SCROLL_DOWN		0x10
+#define HIDPP20_BUTTON_SPECIAL_SCROLL_UP		0x11
+
+/* buttons */
 #define HIDPP20_BUTTON_MACRO				0x00
 #define HIDPP20_BUTTON_DISABLED				0xFF
 
+/* modifiers */
 #define HIDPP20_MODIFIER_KEY_CTRL			0x01
 #define HIDPP20_MODIFIER_KEY_SHIFT			0x02
 
@@ -618,6 +646,8 @@ union hidpp20_button_binding {
 	struct {
 		uint8_t type; /* HIDPP20_BUTTON_SPECIAL */
 		uint8_t special;
+		uint8_t reserved;
+		uint8_t profile;
 	} __attribute__((packed)) special;
 	struct {
 		uint8_t type; /* HIDPP20_BUTTON_MACRO */
@@ -717,7 +747,11 @@ enum hidpp20_led_mode {
 	HIDPP20_LED_OFF = 0x00,
 	HIDPP20_LED_ON = 0x01,
 	HIDPP20_LED_CYCLE = 0x03,
+	HIDPP20_LED_COLOR_WAVE = 0x04,
+	HIDPP20_LED_STARLIGHT = 0x05,
 	HIDPP20_LED_BREATHING = 0x0a,
+	HIDPP20_LED_RIPPLE = 0x0b,
+	HIDPP20_LED_CUSTOM = 0x0c,
 };
 
 enum hidpp20_led_waveform {
@@ -742,35 +776,76 @@ struct hidpp20_internal_led {
 			uint16_t period_or_speed; /* period in ms, speed is device dependent */
 			uint8_t intensity; /* 1 - 100 percent, 0 means 100 */
 		} __attribute__((packed)) cycle;
+		struct hidpp20_led_starlight {
+			struct hidpp20_color color_sky;
+			struct hidpp20_color color_star;
+		} __attribute__((packed)) starlight;
 		struct hidpp20_led_breath {
 			struct hidpp20_color color;
 			uint16_t period_or_speed; /* period in ms, speed is device dependent */
 			uint8_t waveform; /* enum hidpp20_led_waveform */
 			uint8_t intensity; /* 1 - 100 percent, 0 means 100 */
 		} __attribute__((packed)) breath;
+		struct hidpp20_led_ripple {
+			struct hidpp20_color color;
+			uint8_t reserved;
+			uint16_t period;
+		} __attribute__((packed)) ripple;
+		struct hidpp20_led_custom {
+			uint8_t slot;
+			uint16_t init_frame;
+			uint16_t lenght;
+			uint16_t frame_period;
+			uint8_t intensity;
+		} __attribute__((packed)) custom;
 		uint8_t padding[10];
 	} __attribute__((packed)) effect;
 };
 _Static_assert(sizeof(struct hidpp20_led_fixed) == 4, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_led_cycle) == 8, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_starlight) == 6, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_led_breath) == 7, "Invalid size");
 _Static_assert(sizeof(struct hidpp20_internal_led) == 11, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_ripple) == 6, "Invalid size");
+_Static_assert(sizeof(struct hidpp20_led_custom) == 8, "Invalid size");
 
 typedef uint8_t percent_t;
 
 struct hidpp20_led {
 	enum hidpp20_led_mode mode;
 	struct hidpp20_color color;
+	struct hidpp20_color extra_color;
 	uint16_t period;
 	percent_t brightness;
+	uint8_t original[sizeof(struct hidpp20_internal_led)];
 };
 
-#define HIDPP20_MACRO_NOOP			0x01
+/* macro opcodes */
+
+/* control commands */
+#define HIDPP20_MACRO_WAIT_FOR_RELEASE		0x01
+#define HIDPP20_MACRO_REPEAT_WHILE_PRESSED	0x02
+#define HIDPP20_MACRO_REPEAT_UNTIL_CANCELED	0x03
+#define HIDPP20_MACRO_END			0xff
+
+/* delay & jump commands */
+#define HIDPP20_MACRO_NOOP			0x00 /* wait the duration of a macro step */
 #define HIDPP20_MACRO_DELAY			0x40
+#define HIDPP20_MACRO_JUMP			0x60
+
+/* button & key event generation */
+#define HIDPP20_MACRO_BUTTON_DOWN		0x41
+#define HIDPP20_MACRO_BUTTON_UP			0x42
 #define HIDPP20_MACRO_KEY_PRESS			0x43
 #define HIDPP20_MACRO_KEY_RELEASE		0x44
-#define HIDPP20_MACRO_JUMP			0x60
-#define HIDPP20_MACRO_END			0xff
+#define HIDPP20_MACRO_CONS_DOWN			0x45
+#define HIDPP20_MACRO_CONS_UP			0x46
+
+/* analog commands */
+#define HIDPP20_MACRO_ROLLER			0x20
+#define HIDPP20_MACRO_ACPAN			0x21
+#define HIDPP20_MACRO_XY			0x61
+
 
 union hidpp20_macro_data {
 	struct {

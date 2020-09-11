@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech M720
+DeviceMatch=usb:046d:405e;bluetooth:046d:b015
+Driver=hidpp20
