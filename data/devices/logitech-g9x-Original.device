@@ -4,8 +4,10 @@
 Name=G9x [Original]
 DeviceMatch=usb:046d:c066
 Driver=hidpp10
+LedTypes=dpi
 
 [Driver/hidpp10]
-DpiRange=0:5700@23.53
+DpiRange=200:5700@50
 ProfileType=G500
 Profiles=5
+Leds=1
