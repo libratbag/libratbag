@@ -309,14 +309,6 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	}
 	ratbag_led_unref(led);
 
-	/* DPI indicator LED */
-	for (int i = 1; i < SINOWEALTH_NUM_DPIS + 1; i++) {
-		led = ratbag_profile_get_led(profile, i);
-		led->mode = RATBAG_LED_ON;
-		led->color = sinowealth_raw_to_color(config->dpi_color[i - 1]);
-		ratbag_led_unref(led);
-	}
-
 	profile->is_active = true;
 
 	return 0;
@@ -335,7 +327,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	unsigned int dpis[num_dpis];
 
 	/* TODO: Button remapping */
-	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, SINOWEALTH_NUM_DPIS + 1);
+	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, 1);
 
 	profile = ratbag_device_get_profile(device, 0);
 
@@ -359,16 +351,6 @@ sinowealth_init_profile(struct ratbag_device *device)
 	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
 	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
 	ratbag_led_unref(led);
-
-	/* Set up DPI indicator LEDs */
-	for (int i = 1; i < SINOWEALTH_NUM_DPIS + 1; i++) {
-		led = ratbag_profile_get_led(profile, i);
-		led->type = RATBAG_LED_TYPE_DPI;
-		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-		led->mode = RATBAG_LED_ON;
-		ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-		ratbag_led_unref(led);
-	}
 
 	ratbag_profile_unref(profile);
 }
@@ -467,13 +449,6 @@ sinowealth_commit(struct ratbag_device *device)
 		break;
 	}
 	ratbag_led_unref(led);
-
-	/* DPI indicator LED */
-	for (int i = 1; i < SINOWEALTH_NUM_DPIS + 1; i++) {
-		led = ratbag_profile_get_led(profile, i);
-		config->dpi_color[i - 1] = sinowealth_color_to_raw(led->color);
-		ratbag_led_unref(led);
-	}
 
 	config->config_write = 0x7b; /* magic */
 
