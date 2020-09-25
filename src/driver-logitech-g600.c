@@ -34,7 +34,7 @@
 #include "libratbag-hidraw.h"
 
 #define LOGITECH_G600_NUM_PROFILES			3
-#define LOGITECH_G600_NUM_BUTTONS			20
+#define LOGITECH_G600_NUM_BUTTONS			41 // 20 buttons + 1 color buffer + 20 G-shift
 #define LOGITECH_G600_NUM_DPI				4
 #define LOGITECH_G600_NUM_LED				1
 #define LOGITECH_G600_DPI_MIN				200
@@ -109,20 +109,41 @@ static const struct logitech_g600_button_type_mapping logitech_g600_button_type_
 	{ 3, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
 	{ 4, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
 	{ 5, RATBAG_BUTTON_TYPE_PINKIE },
-	{ 6, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP },
-	{ 7, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP },
-	{ 8, RATBAG_BUTTON_TYPE_SIDE }, // 8 = G9 ... 19 = G20
-	{ 9, RATBAG_BUTTON_TYPE_SIDE },
-	{ 10, RATBAG_BUTTON_TYPE_SIDE },
-	{ 11, RATBAG_BUTTON_TYPE_SIDE },
-	{ 12, RATBAG_BUTTON_TYPE_SIDE },
-	{ 13, RATBAG_BUTTON_TYPE_SIDE },
-	{ 14, RATBAG_BUTTON_TYPE_SIDE },
-	{ 15, RATBAG_BUTTON_TYPE_SIDE },
-	{ 16, RATBAG_BUTTON_TYPE_SIDE },
-	{ 17, RATBAG_BUTTON_TYPE_SIDE },
-	{ 18, RATBAG_BUTTON_TYPE_SIDE },
-	{ 19, RATBAG_BUTTON_TYPE_SIDE },
+	{ 6, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP }, // G07
+	{ 7, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP }, // G08
+	{ 8, RATBAG_BUTTON_TYPE_SIDE },  // G09
+	{ 9, RATBAG_BUTTON_TYPE_SIDE },  // G10
+	{ 10, RATBAG_BUTTON_TYPE_SIDE }, // G11
+	{ 11, RATBAG_BUTTON_TYPE_SIDE }, // G12
+	{ 12, RATBAG_BUTTON_TYPE_SIDE }, // G13
+	{ 13, RATBAG_BUTTON_TYPE_SIDE }, // G14
+	{ 14, RATBAG_BUTTON_TYPE_SIDE }, // G15
+	{ 15, RATBAG_BUTTON_TYPE_SIDE }, // G16
+	{ 16, RATBAG_BUTTON_TYPE_SIDE }, // G17
+	{ 17, RATBAG_BUTTON_TYPE_SIDE }, // G18
+	{ 18, RATBAG_BUTTON_TYPE_SIDE }, // G19
+	{ 19, RATBAG_BUTTON_TYPE_SIDE }, // G20
+	{ 20, RATBAG_BUTTON_TYPE_UNKNOWN }, //HACK is where the G-shift color information is located
+	{ 21, RATBAG_BUTTON_TYPE_LEFT }, // G-shift + left
+	{ 22, RATBAG_BUTTON_TYPE_RIGHT }, // G-shift + right click
+	{ 23, RATBAG_BUTTON_TYPE_MIDDLE }, // G-shift + middle
+	{ 24, RATBAG_BUTTON_TYPE_WHEEL_LEFT},  // G-shift + scroll left
+	{ 25, RATBAG_BUTTON_TYPE_WHEEL_RIGHT}, // G-shift + scroll right
+	{ 26, RATBAG_BUTTON_TYPE_PINKIE }, // G-shift + Pinky(shift modifer)
+	{ 27, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP }, // G-shift + 07
+	{ 28, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP }, // G-shift + G08
+	{ 29, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G09
+	{ 30, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G10
+	{ 31, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G11
+	{ 32, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G12
+	{ 33, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G13
+	{ 34, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G14
+	{ 35, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G15
+	{ 36, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G16
+    { 37, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G17
+    { 38, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G18
+    { 39, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G19
+    { 40, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G20
 };
 
 static enum ratbag_button_type
@@ -144,7 +165,7 @@ struct logitech_g600_button_mapping {
 };
 
 static struct logitech_g600_button_mapping logitech_g600_button_mapping[] = {
-	/* 0x00 is either key or unassigned. Must be handled separatly  */
+	/* 0x00 is either key or unassigned. Must be handled separately  */
 	{ 0x01, BUTTON_ACTION_BUTTON(1) },
 	{ 0x02, BUTTON_ACTION_BUTTON(2) },
 	{ 0x03, BUTTON_ACTION_BUTTON(3) },
@@ -599,6 +620,12 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 		if (report->led_duration > 0x0f)
 			report->led_duration = 0x0f;
 	}
+
+	// For now the default will copy over the main color into the g-shift color
+	// future update may add support to set this via cli command
+	report->g_shift_color[0] = report->led_red;
+	report->g_shift_color[1] = report->led_green;
+	report->g_shift_color[2] = report->led_blue;
 
 	buf = (uint8_t*)report;
 
