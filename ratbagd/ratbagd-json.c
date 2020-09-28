@@ -515,6 +515,7 @@ int ratbagd_parse_json(const char *data, struct ratbag_test_device *device)
 	JsonArray *arr;
 	int r = -EINVAL;
 	g_autoptr(GError) error = NULL;
+	g_autoptr(GList) list = NULL;
 
 	error = 0;
 	parser = json_parser_new();
@@ -540,7 +541,7 @@ int ratbagd_parse_json(const char *data, struct ratbag_test_device *device)
 	num_buttons = device->num_buttons;
 	num_leds = device->num_leds;
 
-	g_autoptr(GList) list = json_array_get_elements(arr);
+	list = json_array_get_elements(arr);
 	GList *l = list;
 	int idx = 0;
 	while (l != NULL) {
