@@ -351,6 +351,7 @@ data_files = files(
 	'data/devices/glorious-model-d.device',
 	'data/devices/glorious-model-o.device',
 	'data/devices/nubwo-x7-spectrum.device',
+	'data/devices/dream-machines-dm5-blink.device',
 )
 
 install_data(data_files,

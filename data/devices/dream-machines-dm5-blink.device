@@ -1,0 +1,5 @@
+[Device]
+Name=Dream Machines DM5 Blink
+DeviceMatch=usb:258a:0027
+Driver=sinowealth
+
