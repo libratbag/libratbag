@@ -343,6 +343,16 @@ class RatbagdDevice(_RatbagdDBus):
         return self._get_dbus_property("Model")
 
     @GObject.Property
+    def firmware_major(self):
+        """The firmware major version."""
+        return self._get_dbus_property("FirmwareMajor")
+
+    @GObject.Property
+    def firmware_minor(self):
+        """The firmware minor version."""
+        return self._get_dbus_property("FirmwareMinor")
+
+    @GObject.Property
     def name(self):
         """The device name, usually provided by the kernel."""
         return self._get_dbus_property("Name")
