@@ -231,10 +231,10 @@ docs_deploy: &docs_deploy
 
 version: 2
 jobs:
-  fedora_31:
+  fedora_32:
     <<: *fedora_settings
     docker:
-      - image: fedora:31
+      - image: fedora:32
   arch:
     <<: *arch_settings
     docker:
@@ -246,11 +246,11 @@ jobs:
   doc_build:
     <<: *doc_build
     docker:
-      - image: fedora:31
+      - image: fedora:32
   doc_deploy:
     <<: *docs_deploy
     docker:
-      - image: fedora:31
+      - image: fedora:32
 
 
 workflows:
@@ -259,7 +259,7 @@ workflows:
     jobs:
       - ubuntu_20_04
       - arch
-      - fedora_31
+      - fedora_32
       - doc_build
       - doc_deploy:
           requires:
