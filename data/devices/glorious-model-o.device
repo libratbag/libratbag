@@ -3,3 +3,7 @@ Name=Glorious Model O
 DeviceMatch=usb:258a:0036
 Driver=sinowealth
 
+[Driver/sinowealth]
+Buttons=6
+Leds=2
+DpiRange=100:12000@100

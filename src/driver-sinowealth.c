@@ -23,6 +23,7 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "libratbag-data.h"
 
 #define SINOWEALTH_REPORT_ID_CONFIG 0x4
 #define SINOWEALTH_REPORT_ID_CMD 0x5
@@ -32,11 +33,6 @@
 #define SINOWEALTH_CONFIG_SIZE_USED 131
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
-
-/* The PC software only goes down to 400, but the PMW3360 doesn't care */
-#define SINOWEALTH_DPI_MIN 100
-#define SINOWEALTH_DPI_MAX 12000
-#define SINOWEALTH_DPI_STEP 100
 
 /* other models might have up to eight */
 #define SINOWEALTH_NUM_DPIS 6
@@ -137,19 +133,39 @@ _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE
 struct sinowealth_data {
 	/* this is kinda unnecessary at this time, but all the other drivers do it too ;) */
 	struct sinowealth_config_report config;
+	bool is_sensor_3360;
 };
 
 static int
-sinowealth_raw_to_dpi(int raw)
+sinowealth_raw_to_dpi(struct ratbag_device *device, int raw)
 {
-	return (raw + 1) * 100;
+	struct sinowealth_data *drv_data = device->drv_data;
+	int dpi;
+
+	if (drv_data->is_sensor_3360)
+		dpi = (raw + 1) * 100;
+	else
+		dpi = raw * 100;
+
+	return dpi;
 }
 
 static int
-sinowealth_dpi_to_raw(int dpi)
+sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 {
-	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= SINOWEALTH_DPI_MAX);
-	return dpi / 100 - 1;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct dpi_range *dpirange = NULL;
+	int raw;
+
+	dpirange = ratbag_device_data_sinowealth_get_dpi_range(device->data);
+	assert(dpi >= dpirange->min && dpi <= dpirange->max);
+
+	if (drv_data->is_sensor_3360)
+		raw = dpi / 100 - 1;
+	else
+		raw = dpi / 100;
+
+	return raw;
 }
 
 static struct ratbag_color
@@ -266,10 +282,10 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
-			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2]);
-			resolution->dpi_y = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2 + 1]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2]);
+			resolution->dpi_y = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2 + 1]);
 		} else {
-			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index]);
 			resolution->dpi_y = resolution->dpi_x;
 		}
 		if (config->dpi_enabled & (1<<resolution->index)) {
@@ -320,37 +336,59 @@ sinowealth_init_profile(struct ratbag_device *device)
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
-	 * to signal a disabled DPI step.
-	 */
-	int num_dpis = (SINOWEALTH_DPI_MAX - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
-	unsigned int dpis[num_dpis];
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct dpi_range *dpirange = NULL;
+	int button_count, led_count;
 
+	dpirange = ratbag_device_data_sinowealth_get_dpi_range(device->data);
+	button_count = ratbag_device_data_sinowealth_get_button_count(device->data);
+	led_count = ratbag_device_data_sinowealth_get_led_count(device->data);
 	/* TODO: Button remapping */
-	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, 1);
+
+	if (!dpirange)
+	{
+		log_error(device->ratbag, "DpiRange must be defined in .device file\n");
+	}
+
+	if (button_count < 0)
+	{
+		log_error(device->ratbag, "Button count must be defined in .device file\n");
+		button_count = 0;
+	}
+
+	if (led_count < 0)
+	{
+		log_error(device->ratbag, "Led count must be defined in .device file\n");
+		led_count = 0;
+	}
+
+	drv_data->is_sensor_3360 = dpirange->max == 12000;
+
+	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, button_count, led_count);
 
 	profile = ratbag_device_get_profile(device, 0);
 
-	/* Generate DPI list */
-	dpis[0] = 0; /* 0 DPI = disabled */
-	for (int i = 1; i < num_dpis; i++) {
-		dpis[i] = SINOWEALTH_DPI_MIN + (i - 1) * SINOWEALTH_DPI_STEP;
-	}
-
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
+		ratbag_resolution_set_dpi_list_from_range(resolution,
+												  dpirange->min,
+												  dpirange->max);
 		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 	}
 
 	/* Set up LED capabilities */
-	led = ratbag_profile_get_led(profile, 0);
-	led->type = RATBAG_LED_TYPE_SIDE;
-	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-	ratbag_led_unref(led);
+	ratbag_profile_for_each_led(profile, led) {
+		if (led->index == 0) {
+			led->type = RATBAG_LED_TYPE_SIDE;
+			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+		} else {
+			led->type = RATBAG_LED_TYPE_DPI;
+			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+		}
+	}
 
 	ratbag_profile_unref(profile);
 }
@@ -418,10 +456,10 @@ sinowealth_commit(struct ratbag_device *device)
 		if (!resolution->dpi_x || !resolution->dpi_y)
 			continue;
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
-			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(resolution->dpi_x);
-			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(resolution->dpi_y);
+			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
+			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(device, resolution->dpi_y);
 		} else {
-			config->dpi[resolution->index] = sinowealth_dpi_to_raw(resolution->dpi_x);
+			config->dpi[resolution->index] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 		}
 		dpi_enabled |= 1<<resolution->index;
 		config->dpi_count++;
