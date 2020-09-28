@@ -78,11 +78,6 @@
 #define STEELSERIES_BUTTON_KBD			0x51
 #define STEELSERIES_BUTTON_CONSUMER		0x61
 
-struct steelseries_data {
-	int firmware_major;
-	int firmware_minor;
-};
-
 struct steelseries_point {
 	struct list link;
 
@@ -177,7 +172,6 @@ button_defaults_for_layout(struct ratbag_button *button, int button_count)
 static int
 steelseries_get_firmware_version(struct ratbag_device *device)
 {
-	struct steelseries_data *drv_data = device->drv_data;
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	size_t buf_len = STEELSERIES_REPORT_SIZE;
 	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
@@ -199,8 +193,8 @@ steelseries_get_firmware_version(struct ratbag_device *device)
 	if (ret < 0)
 		return ret;
 
-	drv_data->firmware_major = buf[1];
-	drv_data->firmware_minor = buf[0];
+	device->firmware_major = buf[1];
+	device->firmware_minor = buf[0];
 
 	return 0;
 }
@@ -265,7 +259,6 @@ steelseries_read_settings(struct ratbag_device *device)
 static int
 steelseries_probe(struct ratbag_device *device)
 {
-	struct steelseries_data *drv_data = NULL;
 	struct ratbag_profile *profile = NULL;
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
@@ -363,14 +356,11 @@ steelseries_probe(struct ratbag_device *device)
 		}
 	}
 
-	drv_data = zalloc(sizeof(*drv_data));
-	ratbag_set_drv_data(device, drv_data);
-
 	rc = steelseries_get_firmware_version(device);
 	if(rc == 0)
 		log_debug(device->ratbag, "SteelSeries firmware version %d.%d\n",
-			drv_data->firmware_major,
-			drv_data->firmware_minor);
+			device->firmware_major,
+			device->firmware_minor);
 
 	steelseries_read_settings(device);
 
@@ -960,7 +950,6 @@ steelseries_remove(struct ratbag_device *device)
 {
 	ratbag_close_hidraw_index(device, 0);
 	ratbag_close_hidraw_index(device, 1);
-	free(ratbag_get_drv_data(device));
 }
 
 struct ratbag_driver steelseries_driver = {
