@@ -29,8 +29,10 @@
 #define SINOWEALTH_REPORT_ID_CMD 0x5
 #define SINOWEALTH_CMD_FIRMWARE_VERSION 0x1
 #define SINOWEALTH_CMD_GET_CONFIG 0x11
+#define SINOWEALTH_CMD_GET_BUTTONS 0x12
 #define SINOWEALTH_CONFIG_SIZE 520
 #define SINOWEALTH_CONFIG_SIZE_USED 131
+#define SINOWEALTH_BUTTON_SIZE 88
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
 
@@ -39,6 +41,9 @@
 
 #define SINOWEALTH_RGB_BRIGHTNESS_BITS 0xF0
 #define SINOWEALTH_RGB_SPEED_BITS 0x0F
+
+#define SINOWEALTH_BUTTON_TYPE_BUTTON 0x11
+#define SINOWEALTH_BUTTON_TYPE_KEY 0x21
 
 struct sinowealth_rgb8 {
 	uint8_t r, g, b;
@@ -330,6 +335,106 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	return 0;
 }
 
+struct sinowealth_button_mapping {
+	uint8_t raw;
+	struct ratbag_button_action action;
+};
+static struct sinowealth_button_mapping sinowealth_button_mapping[] = {
+	{ 0x01, BUTTON_ACTION_BUTTON(1) },
+	{ 0x02, BUTTON_ACTION_BUTTON(2) },
+	{ 0x04, BUTTON_ACTION_BUTTON(3) },
+	{ 0x08, BUTTON_ACTION_BUTTON(5) },
+	{ 0x10, BUTTON_ACTION_BUTTON(4) },
+};
+
+static const struct ratbag_button_action*
+sinowealth_raw_to_button_action(uint8_t data)
+{
+	struct sinowealth_button_mapping *mapping;
+
+	ARRAY_FOR_EACH(sinowealth_button_mapping, mapping) {
+		if (mapping->raw == data)
+			return &mapping->action;
+	}
+
+	return NULL;
+}
+
+static int
+sinowealth_read_buttons(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag_button *button;
+	enum ratbag_button_type button_types[8] = {RATBAG_BUTTON_TYPE_UNKNOWN};
+	uint8_t buf[SINOWEALTH_BUTTON_SIZE] = {0};
+	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_BUTTONS};
+	int rc, offset;
+
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
+	if (rc != sizeof(cmd)) {
+		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+		return -1;
+	}
+
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG, buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Could not read device button configuration: %d\n", rc);
+		return -1;
+	}
+
+	button_types[0] = RATBAG_BUTTON_TYPE_LEFT;
+	button_types[1] = RATBAG_BUTTON_TYPE_RIGHT;
+	button_types[2] = RATBAG_BUTTON_TYPE_MIDDLE;
+	button_types[3] = RATBAG_BUTTON_TYPE_THUMB;
+	button_types[4] = RATBAG_BUTTON_TYPE_THUMB2;
+	button_types[5] = RATBAG_BUTTON_TYPE_RESOLUTION_UP;
+	button_types[6] = RATBAG_BUTTON_TYPE_RESOLUTION_DOWN;
+	button_types[7] = RATBAG_BUTTON_TYPE_THUMB3;
+
+	ratbag_profile_for_each_button(profile, button) {
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+
+		button->type = button_types[button->index];
+
+		offset = 8 + button->index * 4;
+
+		if (buf[offset + 0] == SINOWEALTH_BUTTON_TYPE_BUTTON) {
+			const struct ratbag_button_action *action;
+			action = sinowealth_raw_to_button_action(buf[offset + 1]);
+			if (action)
+				ratbag_button_set_action(button, action);
+		} else if (buf[offset + 0] == SINOWEALTH_BUTTON_TYPE_KEY) {
+			unsigned int key, modifiers;
+			int rc;
+
+			key = ratbag_hidraw_get_keycode_from_keyboard_usage(device, buf[offset + 2]);
+
+			modifiers = 0;
+			if (buf[offset + 1] & 0x01)
+				modifiers |= MODIFIER_LEFTCTRL;
+			if (buf[offset + 1] & 0x02)
+				modifiers |= MODIFIER_LEFTSHIFT;
+			if (buf[offset + 1] & 0x04)
+				modifiers |= MODIFIER_LEFTALT;
+			if (buf[offset + 1] & 0x08)
+				modifiers |= MODIFIER_LEFTMETA;
+
+			rc = ratbag_button_macro_new_from_keycode(button, key, modifiers);
+			if (rc < 0) {
+				log_error(device->ratbag,
+					"Error while reading button %d\n",
+					button->index);
+				button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static void
 sinowealth_init_profile(struct ratbag_device *device)
 {
@@ -343,7 +448,6 @@ sinowealth_init_profile(struct ratbag_device *device)
 	dpirange = ratbag_device_data_sinowealth_get_dpi_range(device->data);
 	button_count = ratbag_device_data_sinowealth_get_button_count(device->data);
 	led_count = ratbag_device_data_sinowealth_get_led_count(device->data);
-	/* TODO: Button remapping */
 
 	if (!dpirange)
 	{
@@ -418,6 +522,12 @@ sinowealth_probe(struct ratbag_device *device)
 
 	profile = ratbag_device_get_profile(device, 0);
 	rc = sinowealth_read_profile(profile);
+	if (rc) {
+		rc = -ENODEV;
+		goto err;
+	}
+
+	rc = sinowealth_read_buttons(profile);
 	if (rc) {
 		rc = -ENODEV;
 		goto err;
