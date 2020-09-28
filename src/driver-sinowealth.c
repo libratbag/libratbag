@@ -481,7 +481,7 @@ sinowealth_commit(struct ratbag_device *device)
 		config->glorious_mode = sinowealth_led_to_rgb_mode(led);
 		break;
 	case RATBAG_LED_BREATHING:
-		config->rgb_effect = RGB_BREATHING1;
+		config->rgb_effect = RGB_BREATHING7;
 		config->breathing1_color = sinowealth_color_to_rbg(led->color);
 		config->breathing1_mode = sinowealth_led_to_rgb_mode(led);
 		break;
