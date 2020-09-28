@@ -277,7 +277,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 			resolution->dpi_x = 0;
 			resolution->dpi_y = 0;
 		}
-		resolution->is_active = resolution->index == config->active_dpi - 1;
+		resolution->is_active = resolution->index == config->active_dpi - 1u;
 		resolution->is_default = resolution->is_active;
 	}
 
