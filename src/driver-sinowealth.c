@@ -100,7 +100,7 @@ struct sinowealth_config_report {
 	uint8_t glorious_mode;
 	uint8_t glorious_direction;
 	uint8_t single_mode;
-	struct sinowealth_rbg8 single_color;
+	struct sinowealth_rgb8 single_color;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
@@ -289,7 +289,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		break;
 	case RGB_SINGLE:
 		led->mode = RATBAG_LED_ON;
-		led->color = sinowealth_rbg_to_color(config->single_color);
+		led->color = sinowealth_raw_to_color(config->single_color);
 		led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
 		break;
 	case RGB_GLORIOUS:
@@ -436,7 +436,7 @@ sinowealth_commit(struct ratbag_device *device)
 		break;
 	case RATBAG_LED_ON:
 		config->rgb_effect = RGB_SINGLE;
-		config->single_color = sinowealth_color_to_rbg(led->color);
+		config->single_color = sinowealth_color_to_raw(led->color);
 		break;
 	case RATBAG_LED_CYCLE:
 		config->rgb_effect = RGB_GLORIOUS;
