@@ -44,6 +44,7 @@
 
 #define SINOWEALTH_BUTTON_TYPE_BUTTON 0x11
 #define SINOWEALTH_BUTTON_TYPE_KEY 0x21
+#define SINOWEALTH_BUTTON_TYPE_DISABLED 0x50
 
 struct sinowealth_rgb8 {
 	uint8_t r, g, b;
@@ -141,6 +142,16 @@ struct sinowealth_button_data {
 	uint8_t type;
 	uint8_t data[3];
 } __attribute__((packed));
+
+struct sinowealth_button_report {
+	uint8_t report_id;
+	uint8_t command_id;
+	uint8_t unknown1[6];
+	struct sinowealth_button_data buttons[20];
+	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_BUTTON_SIZE];
+} __attribute__((packed));
+
+_Static_assert(sizeof(struct sinowealth_button_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
 
 enum sinowealth_sensor {
 	PWM3360,
@@ -375,6 +386,20 @@ sinowealth_raw_to_button_action(uint8_t data)
 	return NULL;
 }
 
+static uint8_t
+sinowealth_button_action_to_raw(const struct ratbag_button_action *action)
+{
+	struct sinowealth_button_mapping *mapping;
+
+	ARRAY_FOR_EACH(sinowealth_button_mapping, mapping) {
+		if (ratbag_button_action_match(&mapping->action, action))
+			return mapping->raw;
+	}
+
+	return 0x00;
+}
+
+
 static int
 sinowealth_read_buttons(struct ratbag_profile *profile)
 {
@@ -447,6 +472,56 @@ sinowealth_read_buttons(struct ratbag_profile *profile)
 				button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
 			}
 		}
+	}
+
+	return 0;
+}
+
+static int
+sinowealth_write_buttons(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_button_report *buf = &drv_data->buttons;
+	struct ratbag_button *button;
+	int rc;
+
+	buf->report_id = 0x04;
+	buf->command_id = 0x12;
+	buf->unknown1[1] = 0x50;
+
+	ratbag_profile_for_each_button(profile, button) {
+		struct sinowealth_button_data button_data;
+		struct ratbag_button_action *action = &button->action;
+
+		button_data = buf->buttons[button->index];
+
+		if (action->type == RATBAG_BUTTON_ACTION_TYPE_BUTTON) {
+			button_data.type = SINOWEALTH_BUTTON_TYPE_BUTTON;
+			button_data.data[0] = sinowealth_button_action_to_raw(action);
+		} else if (action->type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+			unsigned int key, modifiers;
+
+			rc = ratbag_action_keycode_from_macro(action,
+												  &key,
+												  &modifiers);
+			if (rc < 0) {
+				log_error(device->ratbag,
+					  "Error while writing macro for button %d\n",
+					  button->index);
+			}
+
+			button_data.type = SINOWEALTH_BUTTON_TYPE_KEY;
+			button_data.data[0] = modifiers;
+			button_data.data[1] = key;
+		}
+	}
+
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
+					      (uint8_t*) buf, SINOWEALTH_CONFIG_SIZE);
+	if (rc != SINOWEALTH_CONFIG_SIZE) {
+		log_error(device->ratbag, "Error while writing buttons: %d\n", rc);
+		return -1;
 	}
 
 	return 0;
@@ -628,8 +703,10 @@ sinowealth_commit(struct ratbag_device *device)
 		return -1;
 	}
 
+	rc = sinowealth_write_buttons(profile);
+
 	ratbag_profile_unref(profile);
-	return 0;
+	return rc;
 }
 
 static void
