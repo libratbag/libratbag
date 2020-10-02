@@ -137,6 +137,11 @@ struct sinowealth_config_report {
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
 
+struct sinowealth_button_data {
+	uint8_t type;
+	uint8_t data[3];
+} __attribute__((packed));
+
 enum sinowealth_sensor {
 	PWM3360,
 	PWM3389,
@@ -374,11 +379,13 @@ static int
 sinowealth_read_buttons(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_button_report *buf = &drv_data->buttons;
 	struct ratbag_button *button;
+	struct sinowealth_button_data button_data;
 	enum ratbag_button_type button_types[8] = {RATBAG_BUTTON_TYPE_UNKNOWN};
-	uint8_t buf[SINOWEALTH_BUTTON_SIZE] = {0};
 	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_BUTTONS};
-	int rc, offset;
+	int rc;
 
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
@@ -386,8 +393,8 @@ sinowealth_read_buttons(struct ratbag_profile *profile)
 		return -1;
 	}
 
-	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG, buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG, (uint8_t*) buf, SINOWEALTH_CONFIG_SIZE);
+	if (rc != SINOWEALTH_BUTTON_SIZE) {
 		log_error(device->ratbag, "Could not read device button configuration: %d\n", rc);
 		return -1;
 	}
@@ -409,27 +416,27 @@ sinowealth_read_buttons(struct ratbag_profile *profile)
 
 		button->type = button_types[button->index];
 
-		offset = 8 + button->index * 4;
+		button_data = buf->buttons[button->index];
 
-		if (buf[offset + 0] == SINOWEALTH_BUTTON_TYPE_BUTTON) {
+		if (button_data.type == SINOWEALTH_BUTTON_TYPE_BUTTON) {
 			const struct ratbag_button_action *action;
-			action = sinowealth_raw_to_button_action(buf[offset + 1]);
+			action = sinowealth_raw_to_button_action(button_data.data[0]);
 			if (action)
 				ratbag_button_set_action(button, action);
-		} else if (buf[offset + 0] == SINOWEALTH_BUTTON_TYPE_KEY) {
+		} else if (button_data.type == SINOWEALTH_BUTTON_TYPE_KEY) {
 			unsigned int key, modifiers;
 			int rc;
 
-			key = ratbag_hidraw_get_keycode_from_keyboard_usage(device, buf[offset + 2]);
+			key = ratbag_hidraw_get_keycode_from_keyboard_usage(device, button_data.data[1]);
 
 			modifiers = 0;
-			if (buf[offset + 1] & 0x01)
+			if (button_data.data[0] & 0x01)
 				modifiers |= MODIFIER_LEFTCTRL;
-			if (buf[offset + 1] & 0x02)
+			if (button_data.data[0] & 0x02)
 				modifiers |= MODIFIER_LEFTSHIFT;
-			if (buf[offset + 1] & 0x04)
+			if (button_data.data[0] & 0x04)
 				modifiers |= MODIFIER_LEFTALT;
-			if (buf[offset + 1] & 0x08)
+			if (button_data.data[0] & 0x08)
 				modifiers |= MODIFIER_LEFTMETA;
 
 			rc = ratbag_button_macro_new_from_keycode(button, key, modifiers);
