@@ -89,6 +89,8 @@ struct sinowealth_config_report {
 	uint8_t dpi_enabled;
 	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it
 	 * value = (DPI - 100) / 100
+	 * or the way the PMW3389 sensor accepts it
+	 * value = DPI / 100
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
 	 * while in XY independent mode each entry takes two chars for X and Y.
 	 */
@@ -135,10 +137,18 @@ struct sinowealth_config_report {
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
 
+enum sinowealth_sensor {
+	PWM3360,
+	PWM3389,
+};
+
 struct sinowealth_data {
 	/* this is kinda unnecessary at this time, but all the other drivers do it too ;) */
 	struct sinowealth_config_report config;
-	bool is_sensor_3360;
+	/* holds button data so we can send back unchanged values for the buttons we do not parse yet */
+	struct sinowealth_button_report buttons;
+	/* Specifies sensor used in the device  */
+	enum sinowealth_sensor sensor;
 };
 
 static int
@@ -147,7 +157,7 @@ sinowealth_raw_to_dpi(struct ratbag_device *device, int raw)
 	struct sinowealth_data *drv_data = device->drv_data;
 	int dpi;
 
-	if (drv_data->is_sensor_3360)
+	if (drv_data->sensor == PWM3360)
 		dpi = (raw + 1) * 100;
 	else
 		dpi = raw * 100;
@@ -165,7 +175,7 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 	dpirange = ratbag_device_data_sinowealth_get_dpi_range(device->data);
 	assert(dpi >= dpirange->min && dpi <= dpirange->max);
 
-	if (drv_data->is_sensor_3360)
+	if (drv_data->sensor == PWM3360)
 		raw = dpi / 100 - 1;
 	else
 		raw = dpi / 100;
@@ -466,7 +476,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 		led_count = 0;
 	}
 
-	drv_data->is_sensor_3360 = dpirange->max == 12000;
+	if (dpirange->max == 12000)
+		drv_data->sensor = PWM3360;
+	else
+		drv_data->sensor = PWM3389;
 
 	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, button_count, led_count);
 
