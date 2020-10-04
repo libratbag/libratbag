@@ -85,6 +85,7 @@ struct data_steelseries {
 struct data_sinowealth {
 	int button_count;
 	int led_count;
+	char *led_type;
 	struct dpi_range *dpi_range;
 };
 
@@ -270,6 +271,7 @@ init_data_sinowealth(struct ratbag *ratbag,
 	GError *error = NULL;
 	_cleanup_(freep) char *str = NULL;
 	int num;
+	char *led_type;
 
 	data->sinowealth.button_count = -1;
 	data->sinowealth.led_count = -1;
@@ -284,6 +286,14 @@ init_data_sinowealth(struct ratbag *ratbag,
 	num = g_key_file_get_integer(keyfile, group, "Leds", &error);
 	if (num > 0 || !error)
 		data->sinowealth.led_count = num;
+	if (error)
+		g_error_free(error);
+
+	error = NULL;
+
+	led_type = g_key_file_get_string(keyfile, group, "LedType", NULL);
+	if (led_type)
+		data->sinowealth.led_type = led_type;
 	if (error)
 		g_error_free(error);
 
@@ -735,4 +745,12 @@ ratbag_device_data_sinowealth_get_dpi_range(const struct ratbag_device_data *dat
 	assert(data->drivertype == SINOWEALTH);
 
 	return data->sinowealth.dpi_range;
+}
+
+const char *
+ratbag_device_data_sinowealth_get_led_type(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == SINOWEALTH);
+
+	return data->sinowealth.led_type;
 }

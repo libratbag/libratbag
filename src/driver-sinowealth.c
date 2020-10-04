@@ -47,17 +47,11 @@
 #define SINOWEALTH_BUTTON_TPYE_SWITCH_DPI 0x41
 #define SINOWEALTH_BUTTON_TYPE_DISABLED 0x50
 
-struct sinowealth_rgb8 {
-	uint8_t r, g, b;
+struct sinowealth_color {
+	uint8_t data[3];
 } __attribute__((packed));
 
-_Static_assert(sizeof(struct sinowealth_rgb8) == 3, "Invalid size");
-
-struct sinowealth_rbg8 {
-	uint8_t r, b, g;
-} __attribute__((packed));
-
-_Static_assert(sizeof(struct sinowealth_rbg8) == 3, "Invalid size");
+_Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 
 enum rgb_effect {
 	RGB_OFF = 0,
@@ -97,7 +91,7 @@ struct sinowealth_config_report {
 	 * while in XY independent mode each entry takes two chars for X and Y.
 	 */
 	uint8_t dpi[16];
-	struct sinowealth_rgb8 dpi_color[8];
+	struct sinowealth_color dpi_color[8];
 	uint8_t rgb_effect; /* see enum rgb_effect */
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
@@ -105,13 +99,13 @@ struct sinowealth_config_report {
 	uint8_t glorious_mode;
 	uint8_t glorious_direction;
 	uint8_t single_mode;
-	struct sinowealth_rgb8 single_color;
+	struct sinowealth_color single_color;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing7_mode;
 	uint8_t breathing7_colorcount; /* 7, constant */
-	struct sinowealth_rbg8 breathing7_colors[7];
+	struct sinowealth_color breathing7_colors[7];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
@@ -121,14 +115,14 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t rave_mode;
-	struct sinowealth_rbg8 rave_colors[2];
+	struct sinowealth_color rave_colors[2];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t wave_mode;
 	/* 0x1/2/3 - speed */
 	uint8_t breathing1_mode;
-	struct sinowealth_rbg8 breathing1_color;
+	struct sinowealth_color breathing1_color;
 	uint8_t unknown4;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
@@ -159,6 +153,11 @@ enum sinowealth_sensor {
 	PWM3389,
 };
 
+enum sinowealth_led_format {
+	LED_RGB,
+	LED_RBG,
+};
+
 struct sinowealth_data {
 	/* this is kinda unnecessary at this time, but all the other drivers do it too ;) */
 	struct sinowealth_config_report config;
@@ -166,6 +165,8 @@ struct sinowealth_data {
 	struct sinowealth_button_report buttons;
 	/* Specifies sensor used in the device  */
 	enum sinowealth_sensor sensor;
+	/* whether the devices stores the main LED in RGB or RBG format */
+	enum sinowealth_led_format led_type;
 };
 
 static int
@@ -201,27 +202,27 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 }
 
 static struct ratbag_color
-sinowealth_raw_to_color(struct sinowealth_rgb8 raw)
+sinowealth_raw_to_color(struct sinowealth_color raw)
 {
-	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
+	return (struct ratbag_color) {.red = raw.data[0], .green = raw.data[1], .blue = raw.data[2]};
 }
 
-static struct sinowealth_rgb8
+static struct sinowealth_color
 sinowealth_color_to_raw(struct ratbag_color color)
 {
-	return (struct sinowealth_rgb8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct sinowealth_color) {.data[0] = color.red, .data[1] = color.green, .data[2] = color.blue};
 }
 
 static struct ratbag_color
-sinowealth_rbg_to_color(struct sinowealth_rbg8 raw)
+sinowealth_rbg_to_color(struct sinowealth_color raw)
 {
-	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
+	return (struct ratbag_color) {.red = raw.data[0], .green = raw.data[2], .blue = raw.data[1]};
 }
 
-static struct sinowealth_rbg8
+static struct sinowealth_color
 sinowealth_color_to_rbg(struct ratbag_color color)
 {
-	return (struct sinowealth_rbg8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct sinowealth_color) {.data[0] = color.red, .data[2] = color.green, .data[1] = color.blue};
 }
 
 static int
@@ -337,7 +338,10 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		break;
 	case RGB_SINGLE:
 		led->mode = RATBAG_LED_ON;
-		led->color = sinowealth_raw_to_color(config->single_color);
+		if (drv_data->led_type == LED_RGB)
+			led->color = sinowealth_raw_to_color(config->single_color);
+		else
+			led->color = sinowealth_rbg_to_color(config->single_color);
 		led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
 		break;
 	case RGB_GLORIOUS:
@@ -537,10 +541,12 @@ sinowealth_init_profile(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct dpi_range *dpirange = NULL;
 	int button_count, led_count;
+	const char *led_type;
 
 	dpirange = ratbag_device_data_sinowealth_get_dpi_range(device->data);
 	button_count = ratbag_device_data_sinowealth_get_button_count(device->data);
 	led_count = ratbag_device_data_sinowealth_get_led_count(device->data);
+	led_type = ratbag_device_data_sinowealth_get_led_type(device->data);
 
 	if (!dpirange)
 	{
@@ -559,10 +565,18 @@ sinowealth_init_profile(struct ratbag_device *device)
 		led_count = 0;
 	}
 
+	if (!led_type)
+		log_error(device->ratbag, "Led type must be defined in .device file. Defaulting to RGB.\n");
+
 	if (dpirange->max == 12000)
 		drv_data->sensor = PWM3360;
 	else
 		drv_data->sensor = PWM3389;
+
+	if (led_type && streq(led_type, "RBG"))
+		drv_data->led_type = LED_RBG;
+	else
+		drv_data->led_type = LED_RGB;
 
 	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, button_count, led_count);
 
@@ -680,7 +694,10 @@ sinowealth_commit(struct ratbag_device *device)
 		break;
 	case RATBAG_LED_ON:
 		config->rgb_effect = RGB_SINGLE;
-		config->single_color = sinowealth_color_to_raw(led->color);
+		if (drv_data->led_type == LED_RGB)
+			config->single_color = sinowealth_color_to_raw(led->color);
+		else
+			config->single_color = sinowealth_color_to_rbg(led->color);
 		break;
 	case RATBAG_LED_CYCLE:
 		config->rgb_effect = RGB_GLORIOUS;

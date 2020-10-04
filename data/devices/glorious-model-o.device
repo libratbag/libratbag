@@ -6,4 +6,5 @@ Driver=sinowealth
 [Driver/sinowealth]
 Buttons=6
 Leds=2
+LedType=RBG
 DpiRange=100:12000@100

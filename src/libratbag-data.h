@@ -135,3 +135,7 @@ ratbag_device_data_sinowealth_get_led_count(const struct ratbag_device_data *dat
 
 struct dpi_range *
 ratbag_device_data_sinowealth_get_dpi_range(const struct ratbag_device_data *data);
+
+const char *
+ratbag_device_data_sinowealth_get_led_type(const struct ratbag_device_data *data);
+

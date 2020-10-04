@@ -6,4 +6,5 @@ Driver=sinowealth
 [Driver/sinowealth]
 Buttons=8
 Leds=1
+LedType=RGB
 DpiRange=100:16000@100
