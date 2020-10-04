@@ -2,7 +2,7 @@ project('libratbag', 'c',
 	version : '0.15',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
-	meson_version : '>= 0.53.0')
+	meson_version : '>= 0.40.0')
 
 # The DBus API version. Increase this every time the DBus API changes.
 # No backwards/forwards guarantee, clients are expected to understand
@@ -456,9 +456,10 @@ install_man('ratbagd/ratbagd.8')
 # (org.freedesktop.ratbag_devel1). This server is used by ratbagdctl.devel.
 #
 
+config_ratbagd_devel = configuration_data()
 dbus_devel_policy = configure_file(input : 'dbus/org.freedesktop.ratbag_devel1.conf.in',
 				   output : 'org.freedesktop.ratbag_devel1.conf',
-				   copy : true)
+				   configuration : config_ratbagd_devel)
 
 # This is a hack. We always install the devel policy file into
 # /etc/dbus-1/system.d, independent of any prefixes we use otherwise.
