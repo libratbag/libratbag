@@ -499,7 +499,7 @@ sinowealth_write_buttons(struct ratbag_profile *profile)
 		if (action->type == RATBAG_BUTTON_ACTION_TYPE_BUTTON) {
 			button_data->type = SINOWEALTH_BUTTON_TYPE_BUTTON;
 			button_data->data[0] = sinowealth_button_action_to_raw(action);
-		} else if (action->type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		} else if (action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
 			unsigned int key, modifiers;
 
 			rc = ratbag_action_keycode_from_macro(action,
