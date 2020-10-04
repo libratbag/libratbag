@@ -513,8 +513,8 @@ sinowealth_write_buttons(struct ratbag_profile *profile)
 			}
 
 			button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
-			button_data->data[0] = key;
-			button_data->data[1] = modifiers;
+			button_data->data[0] = modifiers;
+			button_data->data[1] = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
 		}
 	}
 
