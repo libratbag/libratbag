@@ -491,14 +491,14 @@ sinowealth_write_buttons(struct ratbag_profile *profile)
 	buf->unknown1[1] = 0x50;
 
 	ratbag_profile_for_each_button(profile, button) {
-		struct sinowealth_button_data button_data;
+		struct sinowealth_button_data *button_data;
 		struct ratbag_button_action *action = &button->action;
 
-		button_data = buf->buttons[button->index];
+		button_data = &buf->buttons[button->index];
 
 		if (action->type == RATBAG_BUTTON_ACTION_TYPE_BUTTON) {
-			button_data.type = SINOWEALTH_BUTTON_TYPE_BUTTON;
-			button_data.data[0] = sinowealth_button_action_to_raw(action);
+			button_data->type = SINOWEALTH_BUTTON_TYPE_BUTTON;
+			button_data->data[0] = sinowealth_button_action_to_raw(action);
 		} else if (action->type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
 			unsigned int key, modifiers;
 
@@ -511,9 +511,9 @@ sinowealth_write_buttons(struct ratbag_profile *profile)
 					  button->index);
 			}
 
-			button_data.type = SINOWEALTH_BUTTON_TYPE_KEY;
-			button_data.data[0] = modifiers;
-			button_data.data[1] = key;
+			button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
+			button_data->data[0] = key;
+			button_data->data[1] = modifiers;
 		}
 	}
 
