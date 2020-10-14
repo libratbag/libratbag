@@ -1,0 +1,5 @@
+# Logitech MX Anywhere 3
+[Device]
+Name=Logitech MX Anywhere 3
+DeviceMatch=bluetooth:046d:b025;usb:046d:4090
+Driver=hidpp20
