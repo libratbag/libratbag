@@ -1,0 +1,11 @@
+[Device]
+Name=SteelSeries Kinzu V2 Pro Edition
+DeviceMatch=usb:1038:1366
+Driver=steelseries
+
+[Driver/steelseries]
+DeviceVersion=1
+Buttons=3
+Leds=0
+DpiList=400;800;1600;3200
+MacroLength=0
