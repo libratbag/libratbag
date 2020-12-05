@@ -833,9 +833,9 @@ roccat_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
-struct ratbag_driver roccat_driver = {
-	.name = "Roccat Kone Pure",
-	.id = "roccat-kone-pure",
+struct ratbag_driver roccat_emp_driver = {
+	.name = "Roccat Kone EMP",
+	.id = "roccat-kone-emp",
 	.probe = roccat_probe,
 	.remove = roccat_remove,
 	.write_profile = roccat_write_profile,

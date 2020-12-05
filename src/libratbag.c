@@ -600,7 +600,11 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag_register_driver(ratbag, &logitech_g300_driver);
 	ratbag_register_driver(ratbag, &logitech_g600_driver);
 	ratbag_register_driver(ratbag, &roccat_driver);
+<<<<<<< HEAD
 	ratbag_register_driver(ratbag, &roccat_kone_pure_driver);
+=======
+	ratbag_register_driver(ratbag, &roccat_emp_driver);
+>>>>>>> 54787d3 (Properly integrated the new driver for ROCCAT Kone EMP)
 	ratbag_register_driver(ratbag, &gskill_driver);
 	ratbag_register_driver(ratbag, &steelseries_driver);
 	ratbag_register_driver(ratbag, &sinowealth_driver);
