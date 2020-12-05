@@ -1,4 +1,4 @@
 [Device]
 Name=Roccat Kone EMP
 DeviceMatch=usb:1e7d:2e24
-Driver=roccat
+Driver=roccat-kone-emp
