@@ -33,10 +33,10 @@
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 
-#define ROCCAT_PROFILE_MAX			4
-#define ROCCAT_BUTTON_MAX			17
+#define ROCCAT_PROFILE_MAX			5
+#define ROCCAT_BUTTON_MAX			11 * 2 // (Easy Shift)
 #define ROCCAT_NUM_DPI				5
-#define ROCCAT_LED_MAX				0
+#define ROCCAT_LED_MAX				4
 
 #define ROCCAT_MAX_RETRY_READY			10
 
@@ -46,35 +46,41 @@
 #define ROCCAT_REPORT_ID_KEY_MAPPING		7
 #define ROCCAT_REPORT_ID_MACRO			8
 
-#define ROCCAT_REPORT_SIZE_PROFILE		59
-#define ROCCAT_REPORT_SIZE_SETTINGS		31
 #define ROCCAT_REPORT_SIZE_MACRO		2082
 
-#define ROCCAT_CONFIG_SETTINGS		0x80
-#define ROCCAT_CONFIG_KEY_MAPPING		0x90
+#define ROCCAT_CONFIG_SETTINGS		0x80 // (LED and mouse configuration)
+#define ROCCAT_CONFIG_KEY_MAPPING		0x90 // (Buttons configuration)
 
 #define ROCCAT_MAX_MACRO_LENGTH		500
 
+struct led_color {
+	uint8_t predefined; // 0x1e for user defined color
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+} __attribute__((packed));
+
 struct roccat_settings_report {
-	uint8_t reportID;
-	uint8_t twoB;
+	uint8_t reportID; // 0x06
+	uint8_t twoB;	  // 0x29
 	uint8_t profileID;
-	uint8_t x_y_linked;
+	uint8_t x_y_linked; // Not on EMP ?
 	uint8_t x_sensitivity; /* 0x06 means 0 */
 	uint8_t y_sensitivity; /* 0x06 means 0 */
 	uint8_t dpi_mask;
 	uint8_t xres[5];
-	uint8_t current_dpi;
+	//uint8_t current_dpi_x;
 	uint8_t yres[5];
-	uint8_t padding1;
+	uint8_t current_dpi; // X and Y are the same
 	uint8_t report_rate;
-	uint8_t padding2[11];
-//	uint16_t checksum;
-//	uint8_t padding2[4];
-//	uint8_t light;
-//	uint8_t light_heartbit;
-//	uint8_t padding3[5];
+	uint8_t led_status; // 0xfX where X is either f, or 0. 0xff, to light on all the LEDs, 0 to switch off the leds
+	uint8_t lighting_flow;
+	uint8_t lighting_effect;
+	uint8_t effect_speed;
+	struct led_color leds[ROCCAT_LED_MAX];
+	uint16_t checksum;
 } __attribute__((packed));
+#define ROCCAT_REPORT_SIZE_SETTINGS sizeof(struct roccat_settings_report)
 
 struct roccat_macro {
 	uint8_t reportID;
@@ -95,10 +101,26 @@ struct roccat_macro {
 	uint16_t checksum;
 } __attribute__((packed));
 
+
+struct button {
+	uint8_t keycode;
+	uint8_t undetermined1;
+	uint8_t undetermined2;
+} __attribute__((packed));
+
+struct roccat_buttons {
+	uint8_t reportID;
+	uint8_t reportID2;
+	uint8_t profileID;
+	struct button keys[ROCCAT_BUTTON_MAX];
+	uint16_t checksum;
+} __attribute__((packed));
+#define ROCCAT_REPORT_SIZE_BUTTONS sizeof(struct roccat_buttons)
+
 struct roccat_data {
-	uint8_t profiles[(ROCCAT_PROFILE_MAX + 1)][ROCCAT_REPORT_SIZE_PROFILE];
-	struct roccat_settings_report settings[(ROCCAT_PROFILE_MAX + 1)];
-	struct roccat_macro macros[(ROCCAT_PROFILE_MAX + 1)][(ROCCAT_BUTTON_MAX + 1)];
+	struct roccat_buttons buttons[(ROCCAT_PROFILE_MAX)];
+	struct roccat_settings_report settings[(ROCCAT_PROFILE_MAX)];
+	struct roccat_macro macros[(ROCCAT_PROFILE_MAX)][(ROCCAT_BUTTON_MAX + 1)];
 };
 
 struct roccat_button_type_mapping {
@@ -110,21 +132,27 @@ static const struct roccat_button_type_mapping roccat_button_type_mapping[] = {
 	{ 0, RATBAG_BUTTON_TYPE_LEFT },
 	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
 	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_EXTRA },
-	{ 4, RATBAG_BUTTON_TYPE_SIDE },
-	{ 5, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 6, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 7, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 8, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
-	{ 9, RATBAG_BUTTON_TYPE_LEFT },
-	{ 10, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 11, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 12, RATBAG_BUTTON_TYPE_EXTRA },
-	{ 13, RATBAG_BUTTON_TYPE_SIDE },
-	{ 14, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 15, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 16, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 17, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+	{ 3, RATBAG_BUTTON_TYPE_THUMB }, // Up
+	{ 4, RATBAG_BUTTON_TYPE_THUMB2 }, // Down
+	{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+	{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+	{ 7, RATBAG_BUTTON_TYPE_WHEEL_UP },
+	{ 8, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+	{ 9, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+	{ 10, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+
+	// Easy shift+, these buttons are not physical
+	{ 11, RATBAG_BUTTON_TYPE_LEFT },
+	{ 12, RATBAG_BUTTON_TYPE_RIGHT },
+	{ 13, RATBAG_BUTTON_TYPE_MIDDLE },
+	{ 14, RATBAG_BUTTON_TYPE_THUMB }, // Up
+	{ 15, RATBAG_BUTTON_TYPE_THUMB2 }, // Down
+	{ 16, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+	{ 17, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+	{ 18, RATBAG_BUTTON_TYPE_WHEEL_UP },
+	{ 19, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+	{ 20, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+	{ 21, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
 };
 
 static enum ratbag_button_type
@@ -248,9 +276,11 @@ roccat_crc_is_valid(struct ratbag_device *device, uint8_t *buf, unsigned int len
 	given_crc = roccat_get_unaligned_u16(&buf[len - 2]);
 
 	log_raw(device->ratbag,
-		"checksum computed: 0x%04x, checksum given: 0x%04x\n",
+		"checksum computed: 0x%04x, checksum given: 0x%04x - %s\n",
 		crc,
-		given_crc);
+		given_crc,
+		crc == given_crc ? "OK" : "FAIL");
+
 
 	return crc == given_crc;
 }
@@ -380,7 +410,7 @@ roccat_button_to_action(struct ratbag_profile *profile,
 	struct roccat_data *drv_data = ratbag_get_drv_data(device);
 	uint8_t data;
 
-	data = drv_data->profiles[profile->index][3 + button_index * 3];
+	data = drv_data->buttons[profile->index].keys[button_index].keycode;
 	return roccat_raw_to_button_action(data);
 }
 
@@ -397,15 +427,15 @@ roccat_write_profile(struct ratbag_profile *profile)
 	assert(index <= ROCCAT_PROFILE_MAX);
 
 	drv_data = ratbag_get_drv_data(device);
-	buf = drv_data->profiles[index];
-	crc = (uint16_t *)&buf[ROCCAT_REPORT_SIZE_PROFILE - 2];
-	*crc = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_PROFILE);
+	buf = (uint8_t*)&drv_data->buttons[index];
+	crc = (uint16_t *)&buf[ROCCAT_REPORT_SIZE_BUTTONS - 2];
+	*crc = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_BUTTONS);
 
 	roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-					      buf, ROCCAT_REPORT_SIZE_PROFILE);
+					      buf, ROCCAT_REPORT_SIZE_BUTTONS);
 
-	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
+	if (rc < (int)ROCCAT_REPORT_SIZE_BUTTONS)
 		return -EIO;
 
 	log_raw(device->ratbag, "profile: %d written %s:%d\n",
@@ -611,7 +641,7 @@ roccat_write_button(struct ratbag_button *button,
 	struct roccat_data *drv_data = ratbag_get_drv_data(device);
 	uint8_t rc, *data;
 
-	data = &drv_data->profiles[profile->index][3 + button->index * 3];
+	data = (uint8_t*)&drv_data->buttons[profile->index].keys[button->index];
 
 	rc = roccat_button_action_to_raw(action);
 	if (!rc)
@@ -708,7 +738,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_SETTINGS,
 					      buf, ROCCAT_REPORT_SIZE_SETTINGS);
 
-	if (rc < ROCCAT_REPORT_SIZE_SETTINGS)
+	if (rc < (int)ROCCAT_REPORT_SIZE_SETTINGS)
 		return;
 
 	/* first retrieve the report rate, it is set per profile */
@@ -739,24 +769,24 @@ roccat_read_profile(struct ratbag_profile *profile)
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		resolution->is_active = (resolution->index == setting_report->current_dpi);
 
-		ratbag_resolution_set_dpi_list_from_range(resolution, 100, 5000);
+		ratbag_resolution_set_dpi_list_from_range(resolution, 100, 12000);
 	}
 
-	buf = drv_data->profiles[profile->index];
+	buf = (uint8_t*)&drv_data->buttons[profile->index];
 	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_KEY_MAPPING);
 	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-					      buf, ROCCAT_REPORT_SIZE_PROFILE);
+					      buf, ROCCAT_REPORT_SIZE_BUTTONS);
 
 	msleep(10);
 
-	if (rc < ROCCAT_REPORT_SIZE_PROFILE)
+	if (rc < (int)ROCCAT_REPORT_SIZE_BUTTONS)
 		return;
 
 	// Buttons were read from the buffer that was yet un-initialized with the device data.
 	ratbag_profile_for_each_button(profile, button)
 		roccat_read_button(button);
 
-	if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_PROFILE))
+	if (!roccat_crc_is_valid(device, buf, ROCCAT_REPORT_SIZE_BUTTONS))
 		log_error(device->ratbag,
 			  "Error while reading profile %d, continuing...\n",
 			  profile->index);
@@ -788,7 +818,7 @@ roccat_probe(struct ratbag_device *device)
 
 	/* profiles are 0-indexed */
 	ratbag_device_init_profiles(device,
-				    ROCCAT_PROFILE_MAX + 1,
+				    ROCCAT_PROFILE_MAX,
 				    ROCCAT_NUM_DPI,
 				    ROCCAT_BUTTON_MAX + 1,
 				    ROCCAT_LED_MAX);
