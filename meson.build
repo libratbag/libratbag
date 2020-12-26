@@ -283,6 +283,7 @@ data_files = files(
 	'data/devices/etekcity-scroll-alpha.device',
 	'data/devices/gskill-MX-780.device',
 	'data/devices/logitech-M325.device',
+	'data/devices/logitech-M545.device',
 	'data/devices/logitech-M570.device',
 	'data/devices/logitech-M585-M590.device',
 	'data/devices/logitech-M705.device',
