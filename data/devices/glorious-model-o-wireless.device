@@ -1,0 +1,5 @@
+[Device]
+Name=Glorious Model O Wireless
+DeviceMatch=usb:258a:2022
+Driver=sinowealth
+
