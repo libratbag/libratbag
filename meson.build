@@ -346,6 +346,7 @@ data_files = files(
 	'data/devices/steelseries-kinzu-v2.device',
 	'data/devices/steelseries-kinzu-v2-pro.device',
 	'data/devices/steelseries-kinzu-v3.device',
+	'data/devices/steelseries-rival-110.device',
 	'data/devices/steelseries-rival-310.device',
 	'data/devices/steelseries-rival-600.device',
 	'data/devices/steelseries-rival.device',
