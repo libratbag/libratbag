@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "libratbag-enums.h"
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 
@@ -54,11 +55,23 @@
 
 #define ROCCAT_MAX_MACRO_LENGTH		480
 
-struct led_color {
-	uint8_t predefined; // 0x1e for user defined color
+struct color {
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
+} __attribute__((packed));
+struct color predefined_led_colors[] = { { 179, 0, 0 }, { 255, 0, 0 }, { 255, 71, 0}, { 255, 106, 0 },
+                                         { 255, 157, 71 }, { 248, 232, 0 }, { 246, 255, 78 }, { 201, 255, 78 }, 
+                                         { 185, 255, 78 }, { 132, 255, 78 }, { 0, 255, 0 }, { 0, 207, 55 },
+										 { 0, 166, 44 }, { 0, 207, 124 }, { 0,207, 158 }, { 0, 203, 207 }, 
+										 { 41, 197, 255 }, { 37, 162, 233 }, { 99, 158, 239 }, { 37, 132, 233 },
+										 { 0, 72, 255 }, { 15, 15, 255 }, { 15, 15, 188 }, { 89, 7, 255 }, 
+										 { 121, 12, 255 }, { 161, 12, 255 }, { 170, 108, 232 }, { 181, 10, 216 },
+										 { 205, 10, 217 }, { 217, 10, 125 } };
+
+struct led_data {
+	uint8_t predefined; // 0x1e for user defined color
+	struct color color;
 } __attribute__((packed));
 
 struct roccat_settings_report {
@@ -78,7 +91,7 @@ struct roccat_settings_report {
 	uint8_t lighting_flow;
 	uint8_t lighting_effect;
 	uint8_t effect_speed;
-	struct led_color leds[ROCCAT_LED_MAX];
+	struct led_data leds[ROCCAT_LED_MAX];
 	uint16_t checksum;
 } __attribute__((packed));
 #define ROCCAT_REPORT_SIZE_SETTINGS sizeof(struct roccat_settings_report)
@@ -182,8 +195,8 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 6, BUTTON_ACTION_NONE },
 	{ 7, BUTTON_ACTION_BUTTON(4) },
 	{ 8, BUTTON_ACTION_BUTTON(5) },
-	//{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
-	//{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
+	{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
+	{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
 /* FIXME:	{ 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 */
@@ -589,6 +602,45 @@ out_macro:
 	}
 }
 
+static void
+roccat_read_led(struct ratbag_led *led)
+{
+	struct ratbag_profile *profile = led->profile;
+	struct ratbag_device *device = profile->device;
+	struct roccat_data *drv_data = ratbag_get_drv_data(device);
+
+	struct roccat_settings_report* settings = &drv_data->settings[profile->index];
+
+	log_raw(device->ratbag,
+				"Read LED %d on Profile %d\n",
+				led->index,
+				profile->index);
+
+	led->type = RATBAG_LED_TYPE_SIDE;
+	if(settings->led_status == 0) {
+		led->mode = RATBAG_LED_OFF;
+	} else {
+		led->mode = RATBAG_LED_ON;
+	}
+
+	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+	if(settings->leds[led->index].predefined < 0x1e) {
+		led->color.red = predefined_led_colors[settings->leds[led->index].predefined].r;
+		led->color.green = predefined_led_colors[settings->leds[led->index].predefined].g;
+		led->color.blue = predefined_led_colors[settings->leds[led->index].predefined].b;
+	}
+	else {
+		led->color.red = settings->leds[led->index].color.r;
+		led->color.green = settings->leds[led->index].color.g;
+		led->color.blue = settings->leds[led->index].color.b;
+	}
+	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+}
+
+
 static int
 roccat_write_macro(struct ratbag_button *button,
 		     const struct ratbag_button_action *action)
@@ -864,6 +916,7 @@ roccat_probe(struct ratbag_device *device)
 	int rc;
 	struct ratbag_profile *profile;
 	struct roccat_data *drv_data;
+	struct ratbag_led *led;
 	int active_idx;
 
 	rc = ratbag_open_hidraw(device);
@@ -882,7 +935,7 @@ roccat_probe(struct ratbag_device *device)
 	ratbag_device_init_profiles(device,
 				    ROCCAT_PROFILE_MAX,
 				    ROCCAT_NUM_DPI,
-				    ROCCAT_BUTTON_MAX + 1,
+				    ROCCAT_BUTTON_MAX,
 				    ROCCAT_LED_MAX);
 
 	ratbag_device_for_each_profile(device, profile)
@@ -911,19 +964,9 @@ roccat_probe(struct ratbag_device *device)
 		profile->index);
 
 	// Initialise LED for each profile
-	list_for_each(profile, &device->profiles, link) {
-		for(int i = 0 ; i < ROCCAT_LED_MAX ; i++ ) {
-			/* Set up LED capabilities */
-			struct ratbag_led *led = ratbag_profile_get_led(profile, i);
-			led->type = RATBAG_LED_TYPE_SIDE;
-			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
-			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-			ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
-			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-			ratbag_led_unref(led);
-		}
-	}
+	ratbag_device_for_each_profile(device, profile)
+		ratbag_profile_for_each_led(profile, led)
+			roccat_read_led(led);
 
 	return 0;
 
