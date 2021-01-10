@@ -186,28 +186,29 @@ struct roccat_button_mapping {
 };
 
 static struct roccat_button_mapping roccat_button_mapping[] = {
-/* FIXME:	{ 0, Disabled }, */
+    { 0, BUTTON_ACTION_NONE },
 	{ 1, BUTTON_ACTION_BUTTON(1) },
 	{ 2, BUTTON_ACTION_BUTTON(2) },
 	{ 3, BUTTON_ACTION_BUTTON(3) },
 	{ 4, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK) },
 /* FIXME:	{ 5, Shortcut (modifier + key) }, */
-	{ 6, BUTTON_ACTION_NONE },
-	{ 7, BUTTON_ACTION_BUTTON(4) },
-	{ 8, BUTTON_ACTION_BUTTON(5) },
+	{ 7, BUTTON_ACTION_BUTTON(4) }, /* Next page in browser */
+	{ 8, BUTTON_ACTION_BUTTON(5) }, /* Previous page in browser */
 	{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
 	{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
-/* FIXME:	{ 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 */
+/* FIXME:	{ 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 -> Open any configurated app */
 	{ 16, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
 	{ 17, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 	{ 18, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN) },
 	{ 20, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) },
 	{ 21, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
 	{ 22, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
-	{ 26, BUTTON_ACTION_KEY(KEY_LEFTMETA) },
-/* FIXME:	{ 27, open driver },  -> hidraw report 02 83 01 00 00 00 00 00 */
+/* FIXME:	{ 23, Toogle sensibility }, */
+/* FIXME:	{ 24, Sensibility UP }, */
+/* FIXME:	{ 25, Sensibility Down }, */
+/* FIXME:	{ 27, open driver/swarm },  -> hidraw report 02 83 01 00 00 00 00 00 */
 	//{ 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
 	{ 33, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
 	{ 34, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
@@ -217,13 +218,92 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 38, BUTTON_ACTION_KEY(KEY_VOLUMEUP) },
 	{ 39, BUTTON_ACTION_KEY(KEY_VOLUMEDOWN) },
 	{ 48, BUTTON_ACTION_MACRO },
+/* FIXME:	{ 49, Start timer }, */
+/* FIXME:	{ 50, Stop timer}, */
+/* FIXME:	{ 51, EasyAim DPI 400 }, */
+/* FIXME:	{ 52, EasyAim DPI 400 }, */
+/* FIXME:	{ 53, EasyAim DPI 800 }, */
+/* FIXME:	{ 54, EasyAim DPI 1200 }, */
+/* FIXME:	{ 55, EasyAim DPI 1600 }, */
+/* FIXME:	{ 56, EasyAim DPI 3200 }, */
 	{ 65, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE) },
 /* FIXME:	{ 66, Easywheel sensitivity }, */
 /* FIXME:	{ 67, Easywheel profile }, */
-/* FIXME:	{ 68, Easywheel CPI }, */
-/* FIXME:	{ 81, Other Easyshift },	-> hidraw report 03 00 ff 05 01 00 00 00 */
-/* FIXME:	{ 82, Other Easyshift Lock },	-> hidraw report 03 00 ff 05 01 00 00 00 */
-/* FIXME:	{ 83, Both Easyshift },		-> hidraw report 03 00 ff 04 01 00 00 00 */
+/* FIXME:	{ 68, Easywheel DPI }, */
+/* FIXME:	{ 69, EasywheelVolume }, */
+/* FIXME:	{ 70, Easywheel Alt-Tab }, */
+/* FIXME:	{ 98, Home }, */
+/* FIXME:	{ 99, End }, */
+/* FIXME:	{ 100, Previous page }, */
+/* FIXME:	{ 100, Next page }, */
+/* FIXME:	{ 101, Maj left }, */
+/* FIXME:	{ 102, Maj right }, */
+/* FIXME:	{ 113, Sensibility -5 }, */
+/* FIXME:	{ 114, Sensibility -4 }, */
+/* FIXME:	{ 115, Sensibility -3 }, */
+/* FIXME:	{ 116, Sensibility -2 }, */
+/* FIXME:	{ 117, Sensibility -1 }, */
+/* FIXME:	{ 118, Sensibility 0 }, */
+/* FIXME:	{ 119, Sensibility 1 }, */
+/* FIXME:	{ 120, Sensibility 2 }, */
+/* FIXME:	{ 121, Sensibility 3 }, */
+/* FIXME:	{ 122, Sensibility 4 }, */
+/* FIXME:	{ 123, Sensibility 5 }, */
+/* FIXME:	{ 124, EasyAim DPI Userset }, - second byte of button_data is the DPI */
+/* FIXME:	{ 128, Browser search }, */
+/* FIXME:	{ 129, Browser home }, */
+/* FIXME:	{ 130, Browser stop }, */
+/* FIXME:	{ 131, Browser refresh }, */
+/* FIXME:	{ 132, Browser new tab (ctrl+T) }, */
+/* FIXME:	{ 133, Browser new window }, */
+/* FIXME:	{ 134, Open "Computer" }, */
+/* FIXME:	{ 135, Open calculator }, */
+/* FIXME:	{ 136, Open email }, */
+/* FIXME:	{ 137, Open file }, */
+/* FIXME:	{ 138, Open folder }, */
+/* FIXME:	{ 139, Open URL }, */
+/* FIXME:	{ 140, Mute mic }, */
+/* FIXME:	{ 141, Open Desktop }, */
+/* FIXME:	{ 142, Open Favorites }, */
+/* FIXME:	{ 143, Open Fonts }, */
+/* FIXME:	{ 144, Open My Documents }, */
+/* FIXME:	{ 145, Open Downloads }, */
+/* FIXME:	{ 146, Open Music }, */
+/* FIXME:	{ 147, Open Pictures }, */
+/* FIXME:	{ 148, Open Network }, */
+/* FIXME:	{ 149, Printers }, */
+/* FIXME:	{ 150, Network }, */
+
+/* FIXME:	{ 167, System hibernation }, */
+/* FIXME:	{ 168, System reboot }, */
+/* FIXME:	{ 169, System lock }, */
+/* FIXME:	{ 179, Logout }, */
+/* FIXME:	{ 171, Control panel }, */
+/* FIXME:	{ 172, System settings }, */
+/* FIXME:	{ 173, Task Manager }, */
+/* FIXME:	{ 174, Screen settings }, */
+/* FIXME:	{ 175, Screensaver settings }, */
+/* FIXME:	{ 176, Themes }, */
+/* FIXME:	{ 177, Date and Time }, */
+/* FIXME:	{ 178, Network settings }, */
+/* FIXME:	{ 179, Admin settings }, */
+/* FIXME:	{ 180, Firewall }, */
+/* FIXME:	{ 181, Regedit }, */
+/* FIXME:	{ 182, Event monitor }, */
+/* FIXME:	{ 183, Performance monitor }, */
+/* FIXME:	{ 184, Audio settings }, */
+/* FIXME:	{ 185, Internet settings }, */
+/* FIXME:	{ 186, Directx diagnostics }, */
+/* FIXME:	{ 187, Command line }, */
+/* FIXME:	{ 188, System poweroff }, */
+/* FIXME:	{ 189, System sleep }, */
+/* FIXME:	{ 190, System wakeup }, */
+
+/* FIXME:	{ 191, Set profile 1 }, */
+/* FIXME:	{ 192, Set profile 2 }, */
+/* FIXME:	{ 193, Set profile 3 }, */
+/* FIXME:	{ 194, Set profile 4 }, */
+/* FIXME:	{ 195, Set profile 5 }, */
 };
 
 static const struct ratbag_button_action*
