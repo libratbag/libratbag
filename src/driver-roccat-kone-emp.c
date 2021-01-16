@@ -880,8 +880,8 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 
 	settings_report = &drv_data->settings[profile->index];
 
-	settings_report->xres[resolution->index] = dpi_x / 50;
-	settings_report->yres[resolution->index] = dpi_y / 50;
+	settings_report->xres[resolution->index] = dpi_x / 100 - 1;
+	settings_report->yres[resolution->index] = dpi_y / 100 - 1;
 	if (resolution->is_active)
 		settings_report->current_dpi = resolution->index;
 
@@ -950,8 +950,8 @@ roccat_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_set_report_rate(profile, report_rate);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		dpi_x = setting_report->xres[resolution->index] * 50;
-		dpi_y = setting_report->yres[resolution->index] * 50;
+		dpi_x = setting_report->xres[resolution->index] * 100 + 100;
+		dpi_y = setting_report->yres[resolution->index] * 100 + 100;
 		if (!(setting_report->dpi_mask & (1 << resolution->index))) {
 			/* the profile is disabled, overwrite it */
 			dpi_x = 0;
