@@ -52,6 +52,9 @@ struct openinput_drv_data {
 	unsigned int num_resolutions;
 	unsigned int num_buttons;
 	unsigned int num_leds;
+	unsigned int fw_major;
+	unsigned int fw_minor;
+	unsigned int fw_patch;
 };
 
 struct oi_report_t {
@@ -104,6 +107,31 @@ openinput_send_report(struct ratbag_device *device, struct oi_report_t *report)
 	return 0;
 }
 
+static int
+openinput_info_version(struct ratbag_device *device)
+{
+	int ret;
+	struct openinput_drv_data *drv_data = ratbag_get_drv_data(device);
+	struct oi_report_t report = {
+		.id = OI_REPORT_SHORT,
+		.function_page = OI_PAGE_INFO,
+		.function = OI_FUNCTION_VERSION
+	};
+
+	ret = openinput_send_report(device, &report);
+	if (ret)
+		return ret;
+
+	drv_data->fw_major = report.data[0];
+	drv_data->fw_minor = report.data[1];
+	drv_data->fw_patch = report.data[2];
+
+	log_info(device->ratbag, "openinput: protocol version %u.%u.%u\n",
+		 drv_data->fw_major, drv_data->fw_minor, drv_data->fw_patch);
+
+	return 0;
+}
+
 static void
 openinput_read_profile(struct ratbag_profile *profile)
 {
@@ -133,6 +161,9 @@ openinput_probe(struct ratbag_device *device)
 	drv_data->num_profiles = 1;
 
 	ratbag_set_drv_data(device, drv_data);
+
+	openinput_info_version(device);
+
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
 				    drv_data->num_resolutions,
