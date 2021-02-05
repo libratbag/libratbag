@@ -32,8 +32,9 @@
 #define OI_REPORT_SHORT_SIZE	8
 #define OI_REPORT_LONG_SIZE	32
 
-#define OI_REPORT_MAX_SIZE	OI_REPORT_LONG_SIZE
-#define OI_REPORT_DATA_INDEX	3
+#define OI_REPORT_MAX_SIZE		OI_REPORT_LONG_SIZE
+#define OI_REPORT_DATA_INDEX		3
+#define OI_REPORT_DATA_MAX_SIZE		OI_REPORT_LONG_SIZE - OI_REPORT_DATA_INDEX
 
 /* protocol function pages */
 #define OI_PAGE_INFO			0x00
@@ -167,6 +168,32 @@ openinput_info_version(struct ratbag_device *device)
 	return 0;
 }
 
+#define OI_FUNCTION_FW_INFO_VENDOR	0x00
+#define OI_FUNCTION_FW_INFO_VERSION	0x01
+
+static int
+openinput_info_fw_info(struct ratbag_device *device,
+				  uint8_t field_id,
+				  unsigned char *description,
+				  size_t description_size)
+{
+	int ret;
+	struct oi_report_t report = {
+		.id = OI_REPORT_SHORT,
+		.function_page = OI_PAGE_INFO,
+		.function = OI_FUNCTION_FW_INFO,
+		.data = {field_id}
+	};
+
+	ret = openinput_send_report(device, &report);
+	if (ret)
+		return ret;
+
+	memcpy(description, report.data, min(sizeof(report.data), description_size));
+
+	return 0;
+}
+
 static void
 openinput_read_profile(struct ratbag_profile *profile)
 {
@@ -186,6 +213,7 @@ openinput_probe(struct ratbag_device *device)
 	int ret;
 	struct openinput_drv_data *drv_data;
 	struct ratbag_profile *profile;
+	unsigned char str[OI_REPORT_DATA_MAX_SIZE];
 
 	ret = ratbag_find_hidraw(device, openinput_test_hidraw);
 	if (ret)
@@ -198,6 +226,14 @@ openinput_probe(struct ratbag_device *device)
 	ratbag_set_drv_data(device, drv_data);
 
 	openinput_info_version(device);
+
+	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_VENDOR, str, sizeof(str));
+	if (!ret)
+		log_info(device->ratbag, "openinput: firmware vendor: %s\n", str);
+
+	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_VERSION, str, sizeof(str));
+	if (!ret)
+		log_info(device->ratbag, "openinput: firmware version: %s\n", str);
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
