@@ -25,6 +25,26 @@
 
 #include "libratbag-private.h"
 
+
+/* reports */
+#define OI_REPORT_SHORT		0x20
+#define OI_REPORT_LONG		0x21
+#define OI_REPORT_SHORT_SIZE	8
+#define OI_REPORT_LONG_SIZE	32
+
+#define OI_REPORT_MAX_SIZE	OI_REPORT_LONG_SIZE
+
+/* protocol function pages */
+#define OI_PAGE_INFO			0x00
+#define OI_PAGE_GIMMICKS		0xFD
+#define OI_PAGE_DEBUG			0xFE
+#define OI_PAGE_ERROR			0xFF
+
+/* info page (0x00) functions */
+#define OI_FUNCTION_VERSION 0x00
+#define OI_FUNCTION_FW_INFO 0x01
+
+
 static unsigned int report_rates[] = { 125, 250, 500, 750, 1000 };
 
 struct openinput_drv_data {
@@ -34,6 +54,56 @@ struct openinput_drv_data {
 	unsigned int num_leds;
 };
 
+struct oi_report_t {
+	uint8_t id;
+	uint8_t function_page;
+	uint8_t function;
+	uint8_t data[29];
+} __attribute__((__packed__));
+
+static size_t
+openinput_get_report_size(unsigned int report)
+{
+	switch (report) {
+	case OI_REPORT_SHORT:
+		return OI_REPORT_SHORT_SIZE;
+	case OI_REPORT_LONG:
+		return OI_REPORT_LONG_SIZE;
+	default:
+		return 0;
+	}
+}
+
+static int
+openinput_send_report(struct ratbag_device *device, struct oi_report_t *report)
+{
+	int ret;
+	uint8_t buffer[OI_REPORT_MAX_SIZE];
+	size_t size = openinput_get_report_size(report->id);
+
+	memcpy(buffer, report, size);
+
+	ret = ratbag_hidraw_output_report(device, buffer, size);
+	if (ret < 0) {
+		log_error(device->ratbag, "openinput: failed to send data to device (%s)\n",
+			  strerror(-ret));
+		return ret;
+	}
+
+	ret = ratbag_hidraw_read_input_report(device, buffer, OI_REPORT_MAX_SIZE);
+	if (ret < 0) {
+		log_error(device->ratbag, "openinput: failed to read data from device (%s)\n",
+			  strerror(-ret));
+		return ret;
+	}
+
+	memcpy(report, buffer, openinput_get_report_size(buffer[0]));
+
+	// TODO: check for error
+
+	return 0;
+}
+
 static void
 openinput_read_profile(struct ratbag_profile *profile)
 {
@@ -42,10 +112,21 @@ openinput_read_profile(struct ratbag_profile *profile)
 }
 
 static int
+openinput_test_hidraw(struct ratbag_device *device)
+{
+	return ratbag_hidraw_has_report(device, OI_REPORT_SHORT);
+}
+
+static int
 openinput_probe(struct ratbag_device *device)
 {
+	int ret;
 	struct openinput_drv_data *drv_data;
 	struct ratbag_profile *profile;
+
+	ret = ratbag_find_hidraw(device, openinput_test_hidraw);
+	if (ret)
+		return ret;
 
 	drv_data = zalloc(sizeof(*drv_data));
 
