@@ -54,6 +54,7 @@ enum driver {
 	STEELSERIES,
 	SINOWEALTH,
 	SINOWEALTH_NUBWO,
+	OPENINPUT,
 };
 
 struct data_hidpp20 {
@@ -272,6 +273,7 @@ static const struct driver_map {
 	{ STEELSERIES, "steelseries", init_data_steelseries },
 	{ SINOWEALTH, "sinowealth", NULL },
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
+	{ OPENINPUT, "openinput", NULL },
 };
 
 const char *

@@ -597,6 +597,7 @@ extern struct ratbag_driver gskill_driver;
 extern struct ratbag_driver steelseries_driver;
 extern struct ratbag_driver sinowealth_driver;
 extern struct ratbag_driver sinowealth_nubwo_driver;
+extern struct ratbag_driver openinput_driver;
 
 struct ratbag_device*
 ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,
