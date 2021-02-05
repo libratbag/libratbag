@@ -33,6 +33,7 @@
 #define OI_REPORT_LONG_SIZE	32
 
 #define OI_REPORT_MAX_SIZE	OI_REPORT_LONG_SIZE
+#define OI_REPORT_DATA_INDEX	3
 
 /* protocol function pages */
 #define OI_PAGE_INFO			0x00
@@ -43,6 +44,11 @@
 /* info page (0x00) functions */
 #define OI_FUNCTION_VERSION 0x00
 #define OI_FUNCTION_FW_INFO 0x01
+
+/* error page (0xFF) */
+#define OI_ERROR_INVALID_VALUE		0x01
+#define OI_ERROR_UNSUPPORTED_FUNCTION	0x02
+#define OI_ERROR_CUSTOM			0xFE
 
 
 static unsigned int report_rates[] = { 125, 250, 500, 750, 1000 };
@@ -63,6 +69,31 @@ struct oi_report_t {
 	uint8_t function;
 	uint8_t data[29];
 } __attribute__((__packed__));
+
+static const char*
+openinput_get_error_string(struct oi_report_t *report)
+{
+	char help_str[OI_REPORT_LONG_SIZE - OI_REPORT_DATA_INDEX + 1] = {0};
+	char *str;
+
+	switch (report->function) {
+	case OI_ERROR_INVALID_VALUE:
+		xasprintf(&str, "Invalid value (in position %u)", report->data[2]);
+		break;
+	case OI_ERROR_CUSTOM:
+		memcpy(help_str, report->data, sizeof(help_str)-1); /* copy error string */
+		xasprintf(&str, "Custom error (%s)", help_str);
+		break;
+	case OI_ERROR_UNSUPPORTED_FUNCTION:
+		xasprintf(&str, "Unsupported function (0x%02x, 0x%02x)", report->data[0], report->data[1]);
+		break;
+	default:
+		xasprintf(&str, "Unkown error (%u)", report->function);
+		break;
+	}
+
+	return str;
+}
 
 static size_t
 openinput_get_report_size(unsigned int report)
@@ -102,7 +133,11 @@ openinput_send_report(struct ratbag_device *device, struct oi_report_t *report)
 
 	memcpy(report, buffer, openinput_get_report_size(buffer[0]));
 
-	// TODO: check for error
+	/* check for error */
+	if (report->function_page == OI_PAGE_ERROR) {
+		log_error(device->ratbag, "openinput: %s\n", openinput_get_error_string(report));
+		return report->function;
+	}
 
 	return 0;
 }
