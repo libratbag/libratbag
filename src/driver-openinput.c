@@ -301,67 +301,104 @@ openinput_info_supported_functions(struct ratbag_device *device,
 	return 0;
 }
 
-static int openinput_read_supported_functions(struct ratbag_device *device)
+static int
+openinput_read_supported_functions(struct ratbag_device *device, uint8_t page)
 {
 	struct ratbag *ratbag = device->ratbag;
-	int ret, pages_left_prev = -1, functions_left_prev = -1;
-	uint8_t i, pages_start_index = 0, pages_count = 0, pages_left = 0;
-	uint8_t j, functions_start_index = 0, functions_count = 0, functions_left = 0;
-	uint8_t pages[OI_REPORT_DATA_MAX_SIZE], functions[OI_REPORT_DATA_MAX_SIZE];
+	int ret;
+	uint8_t i, total, read = 0, count = 0, left = 0;
+	uint8_t buffer[OI_REPORT_DATA_MAX_SIZE];
 
-	log_debug(ratbag, "openinput: starting reading device functions...\n");
-	do { /* get function pages */
-		ret = openinput_info_supported_function_pages(
-			device, pages_start_index, &pages_count, &pages_left, pages, sizeof(pages));
+	ret = openinput_info_supported_functions(device,
+						 page,
+						 read,
+						 &count, &left,
+						 buffer, sizeof(buffer));
+	if (ret)
+		return ret;
+
+	total = count + left;
+	uint8_t functions[total];
+
+	memcpy(functions, buffer, count);
+
+	/* there are still functions left to read! */
+	while (left) {
+		ret = openinput_info_supported_functions(device,
+							 page,
+							 read,
+							 &count, &left,
+							 buffer, sizeof(buffer));
 		if (ret)
 			return ret;
 
-		/* make sure count + left == old_left, to avoid deadlocks */
-		if (pages_left_prev != -1 && pages_left_prev != (pages_count + pages_left))
-		{
-			log_error(ratbag, "openinput: invalid number of function pages left to read (%u)\n", pages_left);
+		/* make sure the new size values make sense, to avoid deadlocks */
+		if (total != (read + count + left)) {
+			log_error(ratbag, "openinput: invalid number of functions left to read (%u)\n", left);
 			return -EINVAL;
 		}
+		log_debug(ratbag, "openinput: read %u functions, %u left\n", count, left);
 
-		pages_left_prev = pages_left;
-		log_debug(ratbag, "openinput: read %u pages, %u left\n", pages_count, pages_left);
+		memcpy(functions + read, buffer, count);
+		read += count;
+	}
 
-		/* iterate over read function pages, and read their functions */
-		for (i = 0; i < pages_count; i++)
-		{
-			log_debug(ratbag, "openinput: found function page %s\n", openinput_function_page_get_name(pages[i]));
-			functions_start_index = 0;
-			functions_left_prev = -1;
-			do { /* get functions */
-				ret = openinput_info_supported_functions(
-					device, pages[i], functions_start_index, &functions_count, &functions_left, functions, sizeof(functions));
-				if (ret)
-					return ret;
+	/* iterate over read functions */
+	for (i = 0; i < total; i++) {
+		log_debug(ratbag, "openinput: found function %s\n", openinput_function_get_name(page, functions[i]));
+		/* TODO: set bits in drv_data->supported when we implement support for certain capabilities */
+	}
 
-				/* make sure count + left == old_left, to avoid deadlocks */
-				if (functions_left_prev != -1 && functions_left_prev != (functions_count + functions_left))
-				{
-					log_error(ratbag,
-						 "openinput: invalid number of function pages left to read (%u)\n",
-						 functions_left);
-					return -EINVAL;
-				}
+	return 0;
+}
 
-				functions_left_prev = functions_left;
-				log_debug(ratbag, "openinput: read %u functions, %u left\n", functions_count, functions_left);
+static int
+openinput_read_supported_function_pages(struct ratbag_device *device)
+{
+	struct ratbag *ratbag = device->ratbag;
+	int ret;
+	uint8_t i, total, read = 0, count = 0, left = 0;
+	uint8_t buffer[OI_REPORT_DATA_MAX_SIZE];
 
-				/* iterate over read functions */
-				for (j = 0; j < functions_count; j++)
-				{
-					log_debug(ratbag, "openinput: found function %s\n", openinput_function_get_name(pages[i], functions[j]));
-					/* TODO: set bits in drv_data->supported when we implement support for certain capabilities */
-				}
-				functions_start_index += functions_count;
-			} while(functions_left);
+	log_debug(ratbag, "openinput: starting reading device functions...\n");
+
+	ret = openinput_info_supported_function_pages(device,
+						      read,
+						      &count, &left,
+						      buffer, sizeof(buffer));
+	if (ret)
+		return ret;
+
+	total = count + left;
+	uint8_t pages[total];
+
+	memcpy(pages, buffer, count);
+
+	/* there are still function pages left to read! */
+	while (left) {
+		ret = openinput_info_supported_function_pages(device,
+							      read,
+							      &count, &left,
+							      buffer, sizeof(buffer));
+		if (ret)
+			return ret;
+
+		/* make sure the new size values make sense, to avoid deadlocks */
+		if (total != (read + count + left)) {
+			log_error(ratbag, "openinput: invalid number of function pages left to read (%u)\n", left);
+			return -EINVAL;
 		}
+		log_debug(ratbag, "openinput: read %u pages, %u left\n", count, left);
 
-		pages_start_index += pages_count;
-	} while (pages_left);
+		memcpy(pages + read, buffer, count);
+		read += count;
+	}
+
+	/* iterate over read function pages, and read their functions */
+	for (i = 0; i < total; i++) {
+		log_debug(ratbag, "openinput: found function page %s\n", openinput_function_page_get_name(pages[i]));
+		openinput_read_supported_functions(device, pages[i]);
+	}
 
 	return 0;
 }
@@ -411,7 +448,7 @@ openinput_probe(struct ratbag_device *device)
 	if (!ret)
 		log_info(device->ratbag, "openinput: device: %s\n", str);
 
-	ret = openinput_read_supported_functions(device);
+	ret = openinput_read_supported_function_pages(device);
 	if (ret)
 		return ret;
 
