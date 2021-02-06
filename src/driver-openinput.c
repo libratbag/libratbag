@@ -168,8 +168,9 @@ openinput_info_version(struct ratbag_device *device)
 	return 0;
 }
 
-#define OI_FUNCTION_FW_INFO_VENDOR	0x00
-#define OI_FUNCTION_FW_INFO_VERSION	0x01
+#define OI_FUNCTION_FW_INFO_VENDOR		0x00
+#define OI_FUNCTION_FW_INFO_VERSION		0x01
+#define OI_FUNCTION_FW_INFO_DEVICE_NAME		0x02
 
 static int
 openinput_info_fw_info(struct ratbag_device *device,
@@ -234,6 +235,10 @@ openinput_probe(struct ratbag_device *device)
 	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_VERSION, str, sizeof(str));
 	if (!ret)
 		log_info(device->ratbag, "openinput: firmware version: %s\n", str);
+
+	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_DEVICE_NAME, str, sizeof(str));
+	if (!ret)
+		log_info(device->ratbag, "openinput: device: %s\n", str);
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
