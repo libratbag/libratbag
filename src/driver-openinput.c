@@ -43,8 +43,10 @@
 #define OI_PAGE_ERROR			0xFF
 
 /* info page (0x00) functions */
-#define OI_FUNCTION_VERSION 0x00
-#define OI_FUNCTION_FW_INFO 0x01
+#define OI_FUNCTION_VERSION			0x00
+#define OI_FUNCTION_FW_INFO			0x01
+#define OI_FUNCTION_SUPPORTED_FUNCTION_PAGES	0x02
+#define OI_FUNCTION_SUPPORTED_FUNCTIONS		0x03
 
 /* error page (0xFF) */
 #define OI_ERROR_INVALID_VALUE		0x01
@@ -62,6 +64,7 @@ struct openinput_drv_data {
 	unsigned int fw_major;
 	unsigned int fw_minor;
 	unsigned int fw_patch;
+	uint64_t supported;
 };
 
 struct oi_report_t {
@@ -70,6 +73,53 @@ struct oi_report_t {
 	uint8_t function;
 	uint8_t data[29];
 } __attribute__((__packed__));
+
+
+#define CASE_RETURN_STRING(a) case a: return #a; break
+static const char*
+openinput_function_page_get_name(uint8_t page)
+{
+	static char numeric[16];
+	char *str;
+
+	switch(page) {
+	CASE_RETURN_STRING(OI_PAGE_INFO);
+	CASE_RETURN_STRING(OI_PAGE_GIMMICKS);
+	CASE_RETURN_STRING(OI_PAGE_DEBUG);
+	CASE_RETURN_STRING(OI_PAGE_ERROR);
+	default:
+		sprintf_safe(numeric, "0x%02x", page);
+		str = numeric;
+		break;
+	}
+
+	return str;
+}
+
+static const char*
+openinput_function_get_name(uint8_t page, uint8_t function)
+{
+	static char numeric[32];
+	char *str = NULL;
+
+	switch(page) {
+	case OI_PAGE_INFO:
+		switch (function) {
+		CASE_RETURN_STRING(OI_FUNCTION_VERSION);
+		CASE_RETURN_STRING(OI_FUNCTION_FW_INFO);
+		CASE_RETURN_STRING(OI_FUNCTION_SUPPORTED_FUNCTION_PAGES);
+		CASE_RETURN_STRING(OI_FUNCTION_SUPPORTED_FUNCTIONS);
+		}
+	}
+
+	if (!str) {
+		sprintf_safe(numeric, "0x%02x 0x%02x", page, function);
+		str = numeric;
+	}
+
+	return str;
+}
+#undef CASE_RETURN_STRING
 
 static const char*
 openinput_get_error_string(struct oi_report_t *report)
@@ -195,6 +245,127 @@ openinput_info_fw_info(struct ratbag_device *device,
 	return 0;
 }
 
+
+static int
+openinput_info_supported_function_pages(struct ratbag_device *device,
+						   uint8_t start_index,
+						   uint8_t *pages_count,
+						   uint8_t *pages_left,
+						   uint8_t *pages,
+						   size_t pages_size)
+{
+	int ret;
+	struct oi_report_t report = {
+		.id = OI_REPORT_SHORT,
+		.function_page = OI_PAGE_INFO,
+		.function = OI_FUNCTION_SUPPORTED_FUNCTION_PAGES,
+		.data = {start_index}
+	};
+
+	ret = openinput_send_report(device, &report);
+	if (ret)
+		return ret;
+
+	*pages_count = report.data[0];
+	*pages_left = report.data[1];
+	memcpy(pages, report.data + 2, min(sizeof(report.data), pages_size));
+
+	return 0;
+}
+
+static int
+openinput_info_supported_functions(struct ratbag_device *device,
+					      uint8_t function_page,
+					      uint8_t start_index,
+					      uint8_t *functions_count,
+					      uint8_t *functions_left,
+					      uint8_t *functions,
+					      size_t functions_size)
+{
+	int ret;
+	struct oi_report_t report = {
+		.id = OI_REPORT_SHORT,
+		.function_page = OI_PAGE_INFO,
+		.function = OI_FUNCTION_SUPPORTED_FUNCTIONS,
+		.data = {function_page, start_index}
+	};
+
+	ret = openinput_send_report(device, &report);
+	if (ret)
+		return ret;
+
+	*functions_count = report.data[0];
+	*functions_left = report.data[1];
+	memcpy(functions, report.data + 2, min(sizeof(report.data), functions_size));
+
+	return 0;
+}
+
+static int openinput_read_supported_functions(struct ratbag_device *device)
+{
+	struct ratbag *ratbag = device->ratbag;
+	int ret, pages_left_prev = -1, functions_left_prev = -1;
+	uint8_t i, pages_start_index = 0, pages_count = 0, pages_left = 0;
+	uint8_t j, functions_start_index = 0, functions_count = 0, functions_left = 0;
+	uint8_t pages[OI_REPORT_DATA_MAX_SIZE], functions[OI_REPORT_DATA_MAX_SIZE];
+
+	log_debug(ratbag, "openinput: starting reading device functions...\n");
+	do { /* get function pages */
+		ret = openinput_info_supported_function_pages(
+			device, pages_start_index, &pages_count, &pages_left, pages, sizeof(pages));
+		if (ret)
+			return ret;
+
+		/* make sure count + left == old_left, to avoid deadlocks */
+		if (pages_left_prev != -1 && pages_left_prev != (pages_count + pages_left))
+		{
+			log_error(ratbag, "openinput: invalid number of function pages left to read (%u)\n", pages_left);
+			return -EINVAL;
+		}
+
+		pages_left_prev = pages_left;
+		log_debug(ratbag, "openinput: read %u pages, %u left\n", pages_count, pages_left);
+
+		/* iterate over read function pages, and read their functions */
+		for (i = 0; i < pages_count; i++)
+		{
+			log_debug(ratbag, "openinput: found function page %s\n", openinput_function_page_get_name(pages[i]));
+			functions_start_index = 0;
+			functions_left_prev = -1;
+			do { /* get functions */
+				ret = openinput_info_supported_functions(
+					device, pages[i], functions_start_index, &functions_count, &functions_left, functions, sizeof(functions));
+				if (ret)
+					return ret;
+
+				/* make sure count + left == old_left, to avoid deadlocks */
+				if (functions_left_prev != -1 && functions_left_prev != (functions_count + functions_left))
+				{
+					log_error(ratbag,
+						 "openinput: invalid number of function pages left to read (%u)\n",
+						 functions_left);
+					return -EINVAL;
+				}
+
+				functions_left_prev = functions_left;
+				log_debug(ratbag, "openinput: read %u functions, %u left\n", functions_count, functions_left);
+
+				/* iterate over read functions */
+				for (j = 0; j < functions_count; j++)
+				{
+					log_debug(ratbag, "openinput: found function %s\n", openinput_function_get_name(pages[i], functions[j]));
+					/* TODO: set bits in drv_data->supported when we implement support for certain capabilities */
+				}
+				functions_start_index += functions_count;
+			} while(functions_left);
+		}
+
+		pages_start_index += pages_count;
+	} while (pages_left);
+
+	return 0;
+}
+
 static void
 openinput_read_profile(struct ratbag_profile *profile)
 {
@@ -239,6 +410,10 @@ openinput_probe(struct ratbag_device *device)
 	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_DEVICE_NAME, str, sizeof(str));
 	if (!ret)
 		log_info(device->ratbag, "openinput: device: %s\n", str);
+
+	ret = openinput_read_supported_functions(device);
+	if (ret)
+		return ret;
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
