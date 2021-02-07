@@ -23,12 +23,14 @@
 
 #include "config.h"
 #include <assert.h>
+#include <bits/stdint-uintn.h>
 #include <errno.h>
 #include <libevdev/libevdev.h>
 #include <linux/input.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "libratbag-enums.h"
 #include "libratbag-private.h"
@@ -74,6 +76,7 @@ struct led_data {
 	struct color color;
 } __attribute__((packed));
 
+// TODO : Change magic number
 struct roccat_settings_report {
 	uint8_t reportID; // 0x06
 	uint8_t twoB;	  // 0x29
@@ -83,7 +86,6 @@ struct roccat_settings_report {
 	uint8_t y_sensitivity; /* 0x06 means 0 */
 	uint8_t dpi_mask;
 	uint8_t xres[5];
-	//uint8_t current_dpi_x;
 	uint8_t yres[5];
 	uint8_t current_dpi; // X and Y are the same
 	uint8_t report_rate;
@@ -98,14 +100,13 @@ struct roccat_settings_report {
 
 struct roccat_macro {
 	uint8_t reportID; // 0x08
-	uint8_t twentytwo; // 0x01 (if report ID is on twobytes)
+	uint8_t twentytwo; // 0x01 or 0x02 for the second bank
 	uint8_t profile;
 	uint8_t button_index;
 	uint8_t repeats; // Number of repetition for this macro
 	char group[40]; // Folder name (40)
 	char name[32]; // 32
-	uint8_t length;
-	uint8_t bankNumber; // ???
+	uint16_t length;
 	struct {
 		uint8_t keycode;
 		uint8_t flag; // Pressed (0x01) or released (0x02)
@@ -444,6 +445,12 @@ roccat_current_profile(struct ratbag_device *device)
 static int
 roccat_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
+
+	log_raw(device->ratbag,
+		"'%s' On met actif le profil %d\n",
+		ratbag_device_get_name(device),
+		index);
+
 	uint8_t buf[] = {ROCCAT_REPORT_ID_PROFILE, 0x03, index};
 	int ret;
 
@@ -520,34 +527,206 @@ roccat_write_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	unsigned int index = profile->index;
-	struct roccat_data *drv_data;
-	int rc;
-	uint8_t *buf;
-	uint16_t *crc;
+	struct ratbag_resolution *resolution;
+	struct ratbag_led *led;
+	struct ratbag_button *button;
+	struct roccat_data *drv_data = ratbag_get_drv_data(device);
+	struct roccat_settings_report* report;
+	struct roccat_buttons* buttons;
+	struct roccat_macro* macro;
+	uint8_t* bankBuf = NULL;
+	int rc = 0;
+	int i = 0, count = 0;
+
 
 	assert(index <= ROCCAT_PROFILE_MAX);
 
-	drv_data = ratbag_get_drv_data(device);
-	buf = (uint8_t*)&drv_data->buttons[index];
-	crc = (uint16_t *)&buf[ROCCAT_REPORT_SIZE_BUTTONS - 2];
-	*crc = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_BUTTONS);
+	// TODO Init magic values !!!
+	//roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
 
-	roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
-	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-					      buf, ROCCAT_REPORT_SIZE_BUTTONS);
+	report = &drv_data->settings[profile->index];
+	// TODO facto, with report_rates
+	switch(profile->hz) {
+		case 150:
+			report->report_rate = 0;
+			break;
+		case 250:
+			report->report_rate = 1;
+			break;
+		case 500:
+			report->report_rate = 2;
+			break;
+		case 1000:
+			report->report_rate = 3;
+			break;
+	}
 
-	if (rc < (int)ROCCAT_REPORT_SIZE_BUTTONS)
+	report->dpi_mask = 0;
+	ratbag_profile_for_each_resolution(profile, resolution) {
+			report->xres[resolution->index] = (resolution->dpi_x - 100) / 100;
+			report->yres[resolution->index] = (resolution->dpi_y - 100) / 100;
+
+			if(resolution->is_default) {
+				report->current_dpi = resolution->index;
+			}
+
+			/*
+			if(resolution->is_active) {
+				report->dpi_mask += pow(2, resolution->index);
+			}
+			*/
+			report->dpi_mask = 0x1f; // five DPI settings enabled
+	}
+	
+	ratbag_profile_for_each_led(profile, led) {
+		report->leds[led->index].predefined = 0x1e; // Always user defined with libratbag (easier)
+		report->leds[led->index].color.r = led->color.red;
+		report->leds[led->index].color.g = led->color.green;
+		report->leds[led->index].color.b = led->color.blue;
+	}
+	report->checksum = roccat_compute_crc((uint8_t*)report, ROCCAT_REPORT_SIZE_SETTINGS);
+
+	// TODO : mode handling, on/off, effects
+
+	buttons = &drv_data->buttons[profile->index];
+	ratbag_profile_for_each_button(profile, button) {
+		buttons->keys[button->index].keycode = roccat_button_action_to_raw(&button->action);
+		if(button->action.type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+			macro = &drv_data->macros[profile->index][button->index];
+			memset(macro, 0, sizeof(struct roccat_macro));
+
+			macro->reportID = 0x08;
+			macro->twentytwo = 0x01;
+			macro->profile = profile->index;
+			macro->button_index = button->index;
+			macro->repeats = 0; // No repeats in libratbag
+
+			// TODO: Use define for string size
+			if(button->action.macro->group) {
+				// Seems no use of this group in libratbag
+				strncpy(macro->group, button->action.macro->group, 40); 
+			} else {
+				strncpy(macro->group, "libratbag macros", 40); 
+			}
+			strncpy(macro->name, button->action.macro->name, 32); 
+
+			for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
+					return -EINVAL; /* should not happen, ever */
+
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_NONE)
+					break;
+
+				/* ignore the first wait */
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_WAIT &&
+					!count)
+					continue;
+
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED ||
+					button->action.macro->events[i].type == RATBAG_MACRO_EVENT_KEY_RELEASED) {
+					macro->keys[count].keycode = ratbag_hidraw_get_keyboard_usage_from_keycode(device, button->action.macro->events[i].event.key);
+				}
+
+				switch (button->action.macro->events[i].type) {
+				case RATBAG_MACRO_EVENT_KEY_PRESSED:
+					macro->keys[count].flag = 0x01;
+					break;
+				case RATBAG_MACRO_EVENT_KEY_RELEASED:
+					macro->keys[count].flag = 0x02;
+					break;
+				case RATBAG_MACRO_EVENT_WAIT:
+					macro->keys[--count].time = button->action.macro->events[i].event.timeout;
+					break;
+				case RATBAG_MACRO_EVENT_INVALID:
+				case RATBAG_MACRO_EVENT_NONE:
+					/* should not happen */
+					log_error(device->ratbag,
+						"something went wrong while writing a macro.\n");
+				}
+				count++;
+			}
+			macro->length = count;
+			
+
+			// Macro has to be send in two packets
+			bankBuf = zalloc(ROCCAT_REPORT_SIZE_MACRO_BANK);
+			memcpy(bankBuf, macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
+
+			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
+					      bankBuf, ROCCAT_REPORT_SIZE_MACRO_BANK);	  
+			if (rc < 0)
+				return rc;
+
+			if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK)
+				return -EIO;
+
+			rc = roccat_wait_ready(device);
+			if (rc)
+				log_error(device->ratbag,
+					"Error while waiting for the device to be ready: %s (%d)\n",
+					strerror(-rc), rc);
+
+			bankBuf[0] = 0x08;
+			bankBuf[1] = 0x02;
+			// The remaining macro structure is not big enough to fill the second bank
+			// Write the remaining, fill the end with 0 
+			unsigned int remainingToWrite = sizeof(struct roccat_macro)-ROCCAT_REPORT_SIZE_MACRO_BANK;
+			memcpy(bankBuf+2, &((uint8_t*)macro)[ROCCAT_REPORT_SIZE_MACRO_BANK], remainingToWrite);
+			memset(bankBuf+2+remainingToWrite, 0, ROCCAT_REPORT_SIZE_MACRO_BANK-(2+remainingToWrite));
+
+			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
+				bankBuf, ROCCAT_REPORT_SIZE_MACRO_BANK);
+			if (rc < 0)
+				return rc;
+
+			if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK)
+				return -EIO;
+
+			rc = roccat_wait_ready(device);
+			if (rc)
+				log_error(device->ratbag,
+					"Error while waiting for the device to be ready: %s (%d)\n",
+					strerror(-rc), rc);
+		}
+	}
+	buttons->checksum = roccat_compute_crc((uint8_t*)buttons, ROCCAT_REPORT_SIZE_BUTTONS);
+
+
+	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_SETTINGS,
+					      (uint8_t*)report, ROCCAT_REPORT_SIZE_SETTINGS);
+
+	if (rc < 0)
+		return rc;
+
+	if (rc != ROCCAT_REPORT_SIZE_SETTINGS)
 		return -EIO;
 
-	log_raw(device->ratbag, "profile: %d written %s:%d\n",
-		buf[2],
-		__FILE__, __LINE__);
-
 	rc = roccat_wait_ready(device);
-	if (rc)
+	if (rc) {
 		log_error(device->ratbag,
 			  "Error while waiting for the device to be ready: %s (%d)\n",
 			  strerror(-rc), rc);
+	}
+
+	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
+					      (uint8_t*)buttons, ROCCAT_REPORT_SIZE_BUTTONS);
+
+	if (rc < 0)
+		return rc;
+
+	if (rc != ROCCAT_REPORT_SIZE_BUTTONS)
+		return -EIO;
+
+	rc = roccat_wait_ready(device);
+	if (rc) {
+		log_error(device->ratbag,
+			  "Error while waiting for the device to be ready: %s (%d)\n",
+			  strerror(-rc), rc);
+	}
+
+	log_raw(device->ratbag, "profile: %d written %s:%d\n",
+		profile->index,
+		__FILE__, __LINE__);
 
 	return rc;
 }
@@ -651,10 +830,12 @@ roccat_read_button(struct ratbag_button *button)
 			"macro on button %d of profile %d is named '%s' (from folder '%s'), and contains %d events:\n",
 			button->index, button->profile->index,
 			name, folder_name, macro->length);
-		for (j = 0; j < macro->length; j++) {
+		// libratbag can't keep track of the whole macro (MAX_MACRO_EVENTS)
+		// In libratbah, each event is implemented as two separate (KEY_PRESS/KEY_RELEASE and WAIT)
+		for (j = 0; j < macro->length && j < MAX_MACRO_EVENTS/2; j++) {
 			unsigned int keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
 							macro->keys[j].keycode);
-			ratbag_button_macro_set_event(m,
+			rc = ratbag_button_macro_set_event(m,
 								j * 2,
 								macro->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
 								keycode);
@@ -690,11 +871,6 @@ roccat_read_led(struct ratbag_led *led)
 	struct roccat_data *drv_data = ratbag_get_drv_data(device);
 
 	struct roccat_settings_report* settings = &drv_data->settings[profile->index];
-
-	log_raw(device->ratbag,
-				"Read LED %d on Profile %d\n",
-				led->index,
-				profile->index);
 
 	led->type = RATBAG_LED_TYPE_SIDE;
 	if(settings->led_status == 0) {
@@ -1056,6 +1232,27 @@ err:
 	return rc;
 }
 
+static int
+roccat_commit(struct ratbag_device *device)
+{
+	struct ratbag_profile *profile;
+	int rc = 0;
+
+	list_for_each(profile, &device->profiles, link) {
+		if (!profile->dirty)
+			continue;
+
+		log_debug(device->ratbag,
+			  "Profile %d changed, rewriting\n", profile->index);
+
+		rc = roccat_write_profile(profile);
+		if (rc)
+			return rc;
+	}
+
+	return 0;
+}
+
 static void
 roccat_remove(struct ratbag_device *device)
 {
@@ -1068,8 +1265,9 @@ struct ratbag_driver roccat_emp_driver = {
 	.id = "roccat-kone-emp",
 	.probe = roccat_probe,
 	.remove = roccat_remove,
-	.write_profile = roccat_write_profile,
+	.commit = roccat_commit,
+	// .write_profile = roccat_write_profile,
 	.set_active_profile = roccat_set_current_profile,
-	.write_button = roccat_write_button,
-	.write_resolution_dpi = roccat_write_resolution_dpi,
+	// .write_button = roccat_write_button,
+	// .write_resolution_dpi = roccat_write_resolution_dpi,
 };
