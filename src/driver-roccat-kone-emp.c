@@ -35,6 +35,7 @@
 #include "libratbag-enums.h"
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "libratbag.h"
 
 #define ROCCAT_PROFILE_MAX			5
 #define ROCCAT_BUTTON_MAX			11 * 2 // (Easy Shift)
@@ -49,7 +50,6 @@
 #define ROCCAT_REPORT_ID_KEY_MAPPING		7
 #define ROCCAT_REPORT_ID_MACRO			8
 
-#define ROCCAT_REPORT_SIZE_MACRO		1034+1034
 #define ROCCAT_REPORT_SIZE_MACRO_BANK		1026
 
 #define ROCCAT_CONFIG_SETTINGS		0x80 // (LED and mouse configuration)
@@ -542,6 +542,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 	assert(index <= ROCCAT_PROFILE_MAX);
 
 	// TODO Init magic values !!!
+	// Is it useful ?
 	//roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
 
 	report = &drv_data->settings[profile->index];
@@ -731,6 +732,50 @@ roccat_write_profile(struct ratbag_profile *profile)
 	return rc;
 }
 
+static void roccat_read_macro(struct roccat_macro* macro, struct ratbag_button* button) {
+	struct ratbag_button_macro *m = NULL;
+	unsigned j, time;
+
+	// Folder name is never used in libratbag
+	char folder_name[41] = { '\0' };
+	strncpy(folder_name, macro->group, 40);
+
+	char name[33] = { '\0' };
+	strncpy(name, macro->name, 32);
+
+	m = ratbag_button_macro_new(name);
+
+	log_raw(button->profile->device->ratbag,
+		"macro on button %d of profile %d is named '%s' (from folder '%s'), and contains %d events:\n",
+		button->index, button->profile->index,
+		name, folder_name, macro->length);
+	// libratbag can't keep track of the whole macro (MAX_MACRO_EVENTS)
+	// In libratbag, each event is implemented as two separate (KEY_PRESS/KEY_RELEASE and WAIT)
+	for (j = 0; j < macro->length && j < MAX_MACRO_EVENTS/2; j++) {
+		unsigned int keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(button->profile->device,
+						macro->keys[j].keycode);
+		ratbag_button_macro_set_event(m,
+							j * 2,
+							macro->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
+							keycode);
+		if (macro->keys[j].time)
+			time = macro->keys[j].time;
+		else
+			time = macro->keys[j].flag & 0x01 ? 10 : 50;
+		ratbag_button_macro_set_event(m,
+							j * 2 + 1,
+							RATBAG_MACRO_EVENT_WAIT,
+							time);
+
+		log_raw(button->profile->device->ratbag,
+			"    - %s %s\n",
+			libevdev_event_code_get_name(EV_KEY, keycode),
+			macro->keys[j].flag == 0x02 ? "released" : "pressed");
+	}
+	ratbag_button_copy_macro(button, m);
+	ratbag_button_macro_unref(m);
+}
+
 static void
 roccat_read_button(struct ratbag_button *button)
 {
@@ -738,9 +783,6 @@ roccat_read_button(struct ratbag_button *button)
 	struct ratbag_device *device;
 	struct roccat_macro *macro;
 	struct roccat_data *drv_data;
-	unsigned j, time;
-	uint8_t* buf1 = NULL;
-	uint8_t* buf2 = NULL;
 	int rc;
 
 	device = button->profile->device;
@@ -760,106 +802,54 @@ roccat_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 	if (action && action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
-		struct ratbag_button_macro *m = NULL;
+		macro = &drv_data->macros[button->profile->index][button->index];
 
-		// Two packets
+		// Macros are available through two packets
+		// We read the second one first, to overwrite some useless data (report id) in the final structure
 		roccat_set_config_profile(device,
 					  button->profile->index,
 					  0);
 		roccat_set_config_profile(device,
-					  button->profile->index + 0x10, // When setting for a specific button, the Profile ID if 0x10 * Profile ID + 1
+					  button->profile->index + 0x20, // When setting for a specific button, the Profile ID is 0x10 (or 0x20 for second bank) * Profile ID + 1
 					  button->index);
 
-		buf1 = zalloc(ROCCAT_REPORT_SIZE_MACRO_BANK);
-		buf1[0] = ROCCAT_REPORT_ID_MACRO;
+		// I know that the second bank will not fit in internal structure, so reducing the data read
 		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						      buf1, ROCCAT_REPORT_SIZE_MACRO_BANK);
-		if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK) {
+						      (uint8_t*)macro + ROCCAT_REPORT_SIZE_MACRO_BANK - 2, sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK + 2));
+		if (rc != sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK + 2)) {
 			log_error(device->ratbag,
-				  "Unable to retrieve the macro for button %d of profile %d: %s (%d)\n",
+				  "Unable to retrieve the second bank for macro for button %d of profile %d: %s (%d)\n",
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
-			goto out_macro;
-		} 
-		
-		if (buf1[0] != ROCCAT_REPORT_ID_MACRO) {
-			log_error(device->ratbag,
-					"Error while reading the macro of button %d of profile %d.\n",
-					button->index,
-					button->profile->index);
 			goto out_macro;
 		}
 
 		roccat_set_config_profile(device,
-					  button->profile->index + 0x20, // When setting for a specific button, the Profile ID if 0x10 * Profile ID + 1
+					  button->profile->index + 0x10, // When setting for a specific button, the Profile ID is 0x10 * Profile ID + 1
 					  button->index);
-		buf2 = zalloc(ROCCAT_REPORT_SIZE_MACRO_BANK);
-		buf2[0] = ROCCAT_REPORT_ID_MACRO;
 		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						      buf2, ROCCAT_REPORT_SIZE_MACRO_BANK);
+						      (uint8_t*)macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
 		if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK) {
 			log_error(device->ratbag,
-				  "Unable to retrieve the macro for button %d of profile %d: %s (%d)\n",
+				  "Unable to retrieve the first bank for macro for button %d of profile %d: %s (%d)\n",
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 			goto out_macro;
 		} 
 		
-		if (buf2[0] != ROCCAT_REPORT_ID_MACRO) {
+		if (macro->reportID != ROCCAT_REPORT_ID_MACRO) {
 			log_error(device->ratbag,
 					"Error while reading the macro of button %d of profile %d.\n",
 					button->index,
 					button->profile->index);
 			goto out_macro;
 		}
+		// No checksum for macros
 
-		macro = &drv_data->macros[button->profile->index][button->index];
-		uint8_t* destBuf = (uint8_t*)macro;
-		memcpy(destBuf, buf1, ROCCAT_REPORT_SIZE_MACRO_BANK);
-		memcpy(&(destBuf[ROCCAT_REPORT_SIZE_MACRO_BANK]), &(buf2[2]), 1032);
+		roccat_read_macro(macro, button);		
 
-		// ROCCAT EMP, pas de checksum ??
-
-		char folder_name[41] = { '\0' };
-		strncpy(folder_name, macro->group, 40);
-
-		char name[33] = { '\0' };
-		strncpy(name, macro->name, 32);
-		m = ratbag_button_macro_new(name);
-		log_raw(device->ratbag,
-			"macro on button %d of profile %d is named '%s' (from folder '%s'), and contains %d events:\n",
-			button->index, button->profile->index,
-			name, folder_name, macro->length);
-		// libratbag can't keep track of the whole macro (MAX_MACRO_EVENTS)
-		// In libratbah, each event is implemented as two separate (KEY_PRESS/KEY_RELEASE and WAIT)
-		for (j = 0; j < macro->length && j < MAX_MACRO_EVENTS/2; j++) {
-			unsigned int keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
-							macro->keys[j].keycode);
-			rc = ratbag_button_macro_set_event(m,
-								j * 2,
-								macro->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
-								keycode);
-			if (macro->keys[j].time)
-				time = macro->keys[j].time;
-			else
-				time = macro->keys[j].flag & 0x01 ? 10 : 50;
-			ratbag_button_macro_set_event(m,
-								j * 2 + 1,
-								RATBAG_MACRO_EVENT_WAIT,
-								time);
-
-			log_raw(device->ratbag,
-				"    - %s %s\n",
-				libevdev_event_code_get_name(EV_KEY, keycode),
-				macro->keys[j].flag == 0x02 ? "released" : "pressed");
-		}
-		ratbag_button_copy_macro(button, m);
-		
 out_macro:
 		msleep(10);
-		mfree(buf1);
-		mfree(buf2);
-		ratbag_button_macro_unref(m);
 	}
 }
 
@@ -905,14 +895,8 @@ roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* 
 }
 
 static void
-roccat_read_led(struct ratbag_led *led)
+roccat_read_led(struct roccat_settings_report* settings, struct ratbag_led *led)
 {
-	struct ratbag_profile *profile = led->profile;
-	struct ratbag_device *device = profile->device;
-	struct roccat_data *drv_data = ratbag_get_drv_data(device);
-
-	struct roccat_settings_report* settings = &drv_data->settings[profile->index];
-
 	led->type = RATBAG_LED_TYPE_SIDE;
 	if(settings->led_status == 0) {
 		led->mode = RATBAG_LED_OFF;
@@ -971,8 +955,6 @@ roccat_read_profile(struct ratbag_profile *profile)
 	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
 					      (uint8_t*)buttons, ROCCAT_REPORT_SIZE_BUTTONS);
 
-	// msleep(10); 
-
 	if (rc < (int)ROCCAT_REPORT_SIZE_BUTTONS) {
 		return;
 	}
@@ -986,7 +968,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	// Feed libratbag with the data
 	roccat_read_dpi(settings, profile);
 	ratbag_profile_for_each_led(profile, led) {
-		roccat_read_led(led);
+		roccat_read_led(settings, led);
 	}
 
 	// Buttons were read from the buffer that was yet un-initialized with the device data.
