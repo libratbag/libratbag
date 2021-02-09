@@ -42,20 +42,29 @@
 #define ROCCAT_NUM_DPI				5
 #define ROCCAT_LED_MAX				4
 
-#define ROCCAT_MAX_RETRY_READY			10
+#define ROCCAT_MAX_RETRY_READY		10
 
 #define ROCCAT_REPORT_ID_CONFIGURE_PROFILE	4
-#define ROCCAT_REPORT_ID_PROFILE		5
-#define ROCCAT_REPORT_ID_SETTINGS		6
+#define ROCCAT_REPORT_ID_PROFILE			5
+#define ROCCAT_REPORT_ID_SETTINGS			6
 #define ROCCAT_REPORT_ID_KEY_MAPPING		7
-#define ROCCAT_REPORT_ID_MACRO			8
+#define ROCCAT_REPORT_ID_MACRO				8
 
+#define ROCCAT_BANK_ID_1	1
+#define ROCCAT_BANK_ID_2	2
 #define ROCCAT_REPORT_SIZE_MACRO_BANK		1026
 
+#define ROCCAT_MACRO_GROUP_NAME_LENGTH	40
+#define ROCCAT_MACRO_NAME_LENGTH		32
+
 #define ROCCAT_CONFIG_SETTINGS		0x80 // (LED and mouse configuration)
-#define ROCCAT_CONFIG_KEY_MAPPING		0x90 // (Buttons configuration)
+#define ROCCAT_CONFIG_KEY_MAPPING	0x90 // (Buttons configuration)
 
 #define ROCCAT_MAX_MACRO_LENGTH		480
+
+#define ROCCAT_MIN_DPI	100
+#define ROCCAT_MAX_DPI	12000
+#define ROCCAT_USER_DEFINED_COLOR	0x1e // The mouse knows some predefined colors. User can also set RGB values
 
 struct color {
 	uint8_t r;
@@ -79,7 +88,7 @@ struct led_data {
 // TODO : Change magic number
 struct roccat_settings_report {
 	uint8_t reportID; // 0x06
-	uint8_t twoB;	  // 0x29
+	uint8_t magic_num;	  // 0x29
 	uint8_t profile;
 	uint8_t x_y_linked; // Not on EMP ?
 	uint8_t x_sensitivity; /* 0x06 means 0 */
@@ -100,12 +109,12 @@ struct roccat_settings_report {
 
 struct roccat_macro {
 	uint8_t reportID; // 0x08
-	uint8_t twentytwo; // 0x01 or 0x02 for the second bank
+	uint8_t bank; // 0x01 or 0x02 for the second bank
 	uint8_t profile;
 	uint8_t button_index;
 	uint8_t repeats; // Number of repetition for this macro
-	char group[40]; // Folder name (40)
-	char name[32]; // 32
+	char group[ROCCAT_MACRO_GROUP_NAME_LENGTH]; // Folder name
+	char name[ROCCAT_MACRO_NAME_LENGTH];
 	uint16_t length;
 	struct {
 		uint8_t keycode;
@@ -122,8 +131,8 @@ struct button {
 } __attribute__((packed));
 
 struct roccat_buttons {
-	uint8_t reportID;
-	uint8_t reportID2;
+	uint8_t reportID;  // 0x07
+	uint8_t magic_num; // 0x47
 	uint8_t profile;
 	struct button keys[ROCCAT_BUTTON_MAX];
 	uint16_t checksum;
@@ -339,6 +348,10 @@ roccat_get_unaligned_u16(uint8_t *buf)
 	return (buf[1] << 8) | buf[0];
 }
 
+/**
+ * Compute the CRC from buf
+ * len should be the length of buf, including the two bytes used for CRC
+ */
 static inline uint16_t
 roccat_compute_crc(uint8_t *buf, unsigned int len)
 {
@@ -355,6 +368,11 @@ roccat_compute_crc(uint8_t *buf, unsigned int len)
 	return crc;
 }
 
+/**
+ * Returns if the CRC in buf is valid.
+ * The CRC is expected to be the last two bytes of buf
+ * len should be the length of buf, including the CRC
+ */
 static inline int
 roccat_crc_is_valid(struct ratbag_device *device, uint8_t *buf, unsigned int len)
 {
@@ -596,20 +614,19 @@ roccat_write_profile(struct ratbag_profile *profile)
 			macro = &drv_data->macros[profile->index][button->index];
 			memset(macro, 0, sizeof(struct roccat_macro));
 
-			macro->reportID = 0x08;
-			macro->twentytwo = 0x01;
+			macro->reportID = ROCCAT_REPORT_ID_MACRO;
+			macro->bank = ROCCAT_BANK_ID_1;
 			macro->profile = profile->index;
 			macro->button_index = button->index;
 			macro->repeats = 0; // No repeats in libratbag
 
-			// TODO: Use define for string size
 			if(button->action.macro->group) {
 				// Seems no use of this group in libratbag
-				strncpy(macro->group, button->action.macro->group, 40); 
+				strncpy(macro->group, button->action.macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH); 
 			} else {
-				strncpy(macro->group, "libratbag macros", 40); 
+				strncpy(macro->group, "libratbag macros", ROCCAT_MACRO_GROUP_NAME_LENGTH); 
 			}
-			strncpy(macro->name, button->action.macro->name, 32); 
+			strncpy(macro->name, button->action.macro->name, ROCCAT_MACRO_NAME_LENGTH); 
 
 			for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
 				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
@@ -667,8 +684,8 @@ roccat_write_profile(struct ratbag_profile *profile)
 					"Error while waiting for the device to be ready: %s (%d)\n",
 					strerror(-rc), rc);
 
-			bankBuf[0] = 0x08;
-			bankBuf[1] = 0x02;
+			bankBuf[0] = ROCCAT_REPORT_ID_MACRO;
+			bankBuf[1] = ROCCAT_BANK_ID_2;
 			// The remaining macro structure is not big enough to fill the second bank
 			// Write the remaining, fill the end with 0 
 			unsigned int remainingToWrite = sizeof(struct roccat_macro)-ROCCAT_REPORT_SIZE_MACRO_BANK;
@@ -737,11 +754,11 @@ static void roccat_read_macro(struct roccat_macro* macro, struct ratbag_button* 
 	unsigned j, time;
 
 	// Folder name is never used in libratbag
-	char folder_name[41] = { '\0' };
-	strncpy(folder_name, macro->group, 40);
+	char folder_name[ROCCAT_MACRO_GROUP_NAME_LENGTH+1] = { '\0' };
+	strncpy(folder_name, macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
 
-	char name[33] = { '\0' };
-	strncpy(name, macro->name, 32);
+	char name[ROCCAT_MACRO_NAME_LENGTH+1] = { '\0' };
+	strncpy(name, macro->name, ROCCAT_MACRO_NAME_LENGTH);
 
 	m = ratbag_button_macro_new(name);
 
@@ -856,7 +873,6 @@ out_macro:
 static void
 roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* profile)
 {
-	//struct roccat_settings_report *settings;
 	struct ratbag_resolution *resolution;
 	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 	int dpi_x = 0, dpi_y = 0;
@@ -890,7 +906,7 @@ roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* 
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 		resolution->is_active = (resolution->index == settings->current_dpi);
 
-		ratbag_resolution_set_dpi_list_from_range(resolution, 100, 12000);
+		ratbag_resolution_set_dpi_list_from_range(resolution, ROCCAT_MIN_DPI, ROCCAT_MAX_DPI);
 	}
 }
 
@@ -905,7 +921,7 @@ roccat_read_led(struct roccat_settings_report* settings, struct ratbag_led *led)
 	}
 
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-	if(settings->leds[led->index].predefined < 0x1e) {
+	if(settings->leds[led->index].predefined < ROCCAT_USER_DEFINED_COLOR) {
 		led->color.red = predefined_led_colors[settings->leds[led->index].predefined].r;
 		led->color.green = predefined_led_colors[settings->leds[led->index].predefined].g;
 		led->color.blue = predefined_led_colors[settings->leds[led->index].predefined].b;
