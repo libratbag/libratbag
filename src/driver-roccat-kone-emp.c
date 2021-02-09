@@ -21,6 +21,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * There is no elevation support
+ * The LED effects is applied to the four LED of the mouse, but libratbag can set a different effect for each LED
+ * The LED effects BLINKING and PULSING are not supported in libratbag
+ * The maximum macro size is 480 in the mouse software. One event keeps the event data and the timing/delay
+    - libratbag does not keep track of that number of events. It limits the mouse to 128 events
+ * The macro group is not saved
+ * The mouse can repeat macro. Not supported in libratbag
+ */
 #include "config.h"
 #include <assert.h>
 #include <bits/stdint-uintn.h>
@@ -65,6 +74,9 @@
 #define ROCCAT_MIN_DPI	100
 #define ROCCAT_MAX_DPI	12000
 #define ROCCAT_USER_DEFINED_COLOR	0x1e // The mouse knows some predefined colors. User can also set RGB values
+#define ROCCAT_LED_BLINKING			0x02
+#define ROCCAT_LED_BREATHING		0x03
+#define ROCCAT_LED_PULSING			0x04
 
 struct color {
 	uint8_t r;
@@ -602,10 +614,28 @@ roccat_write_profile(struct ratbag_profile *profile)
 		report->leds[led->index].color.r = led->color.red;
 		report->leds[led->index].color.g = led->color.green;
 		report->leds[led->index].color.b = led->color.blue;
+	
+		// Last LED sets the profile values
+		switch(led->mode) {
+			case RATBAG_LED_OFF:
+				report->led_status = 0;
+				break;
+			case RATBAG_LED_ON:
+				report->led_status = 1;
+				break;
+			case RATBAG_LED_CYCLE:
+				report->led_status = 1;
+				report->lighting_flow = 1;
+				report->effect_speed = led->ms / 1000;
+				break;
+			case RATBAG_LED_BREATHING:
+				report->led_status = 1;
+				report->lighting_effect = ROCCAT_LED_BREATHING;
+				report->effect_speed = led->ms / 1000;
+		}
 	}
 	report->checksum = roccat_compute_crc((uint8_t*)report, ROCCAT_REPORT_SIZE_SETTINGS);
 
-	// TODO : mode handling, on/off, effects
 
 	buttons = &drv_data->buttons[profile->index];
 	ratbag_profile_for_each_button(profile, button) {
@@ -918,6 +948,14 @@ roccat_read_led(struct roccat_settings_report* settings, struct ratbag_led *led)
 		led->mode = RATBAG_LED_OFF;
 	} else {
 		led->mode = RATBAG_LED_ON;
+	}
+	if(settings->lighting_flow) {
+		led->mode = RATBAG_LED_CYCLE;
+		led->ms = settings->effect_speed * 1000;
+	}
+	if(settings->lighting_effect == ROCCAT_LED_BREATHING) {
+		led->mode = RATBAG_LED_BREATHING;
+		led->ms = settings->effect_speed * 1000;
 	}
 
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
