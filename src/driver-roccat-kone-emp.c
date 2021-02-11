@@ -59,6 +59,9 @@
 #define ROCCAT_REPORT_ID_KEY_MAPPING		7
 #define ROCCAT_REPORT_ID_MACRO				8
 
+#define ROCCAT_MAGIC_NUMBER_SETTINGS		0x29
+#define ROCCAT_MAGIC_NUMBER_KEY_MAPPING		0x47
+
 #define ROCCAT_BANK_ID_1	1
 #define ROCCAT_BANK_ID_2	2
 #define ROCCAT_REPORT_SIZE_MACRO_BANK		1026
@@ -571,11 +574,9 @@ roccat_write_profile(struct ratbag_profile *profile)
 
 	assert(index <= ROCCAT_PROFILE_MAX);
 
-	// TODO Init magic values !!!
-	// Is it useful ?
-	//roccat_set_config_profile(device, index, ROCCAT_CONFIG_KEY_MAPPING);
-
 	report = &drv_data->settings[profile->index];
+	report->reportID = ROCCAT_REPORT_ID_SETTINGS;
+	report->magic_num = ROCCAT_MAGIC_NUMBER_SETTINGS;
 	// TODO facto, with report_rates
 	switch(profile->hz) {
 		case 150:
@@ -638,6 +639,8 @@ roccat_write_profile(struct ratbag_profile *profile)
 
 
 	buttons = &drv_data->buttons[profile->index];
+	buttons->reportID = ROCCAT_REPORT_ID_KEY_MAPPING;
+	buttons->magic_num = ROCCAT_MAGIC_NUMBER_KEY_MAPPING;
 	ratbag_profile_for_each_button(profile, button) {
 		buttons->keys[button->index].keycode = roccat_button_action_to_raw(&button->action);
 		if(button->action.type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
@@ -862,8 +865,8 @@ roccat_read_button(struct ratbag_button *button)
 
 		// I know that the second bank will not fit in internal structure, so reducing the data read
 		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						      (uint8_t*)macro + ROCCAT_REPORT_SIZE_MACRO_BANK - 2, sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK + 2));
-		if (rc != sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK + 2)) {
+						      (uint8_t*)macro + ROCCAT_REPORT_SIZE_MACRO_BANK - 2, sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK - 2));
+		if (rc != sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK - 2)) {
 			log_error(device->ratbag,
 				  "Unable to retrieve the second bank for macro for button %d of profile %d: %s (%d)\n",
 				  button->index, button->profile->index,
