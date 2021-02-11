@@ -29,6 +29,7 @@
     - libratbag does not keep track of that number of events. It limits the mouse to 128 events
  * The macro group is not saved
  * The mouse can repeat macro. Not supported in libratbag
+ * In official soft, we can set a LED color to offset the cycle effect
  */
 #include "config.h"
 #include <assert.h>
@@ -100,7 +101,6 @@ struct led_data {
 	struct color color;
 } __attribute__((packed));
 
-// TODO : Change magic number
 struct roccat_settings_report {
 	uint8_t reportID; // 0x06
 	uint8_t magic_num;	  // 0x29
@@ -113,7 +113,7 @@ struct roccat_settings_report {
 	uint8_t yres[5];
 	uint8_t current_dpi; // X and Y are the same
 	uint8_t report_rate;
-	uint8_t led_status; // 0xfX where X is either f, or 0. 0xff, to light on all the LEDs, 0 to switch off the leds
+	uint8_t led_status; // High bits defined which LEDs color are user defined. Lower part is abotu if the LED is on or off
 	uint8_t lighting_flow;
 	uint8_t lighting_effect;
 	uint8_t effect_speed;
@@ -480,7 +480,7 @@ roccat_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 
 	log_raw(device->ratbag,
-		"'%s' On met actif le profil %d\n",
+		"'%s' Setting profile %d as active\n",
 		ratbag_device_get_name(device),
 		index);
 
@@ -619,18 +619,18 @@ roccat_write_profile(struct ratbag_profile *profile)
 		// Last LED sets the profile values
 		switch(led->mode) {
 			case RATBAG_LED_OFF:
-				report->led_status = 0;
+				report->led_status = 0xf0;
 				break;
 			case RATBAG_LED_ON:
-				report->led_status = 1;
+				report->led_status = 0xff;
 				break;
 			case RATBAG_LED_CYCLE:
-				report->led_status = 1;
+				report->led_status = 0xff;
 				report->lighting_flow = 1;
 				report->effect_speed = led->ms / 1000;
 				break;
 			case RATBAG_LED_BREATHING:
-				report->led_status = 1;
+				report->led_status = 0xff;
 				report->lighting_effect = ROCCAT_LED_BREATHING;
 				report->effect_speed = led->ms / 1000;
 		}
@@ -654,7 +654,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 			macro->repeats = 0; // No repeats in libratbag
 
 			if(button->action.macro->group) {
-				// Seems no use of this group in libratbag
+				// Seems no use of group in libratbag
 				strncpy(macro->group, button->action.macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH); 
 			} else {
 				strncpy(macro->group, "libratbag macros", ROCCAT_MACRO_GROUP_NAME_LENGTH); 
