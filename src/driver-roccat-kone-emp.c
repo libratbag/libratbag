@@ -48,6 +48,7 @@
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 #include "libratbag.h"
+#include "shared-macro.h"
 
 #define ROCCAT_PROFILE_MAX			5
 #define ROCCAT_BUTTON_MAX			11 * 2 // (Easy Shift)
@@ -83,6 +84,8 @@
 #define ROCCAT_LED_BLINKING			0x02
 #define ROCCAT_LED_BREATHING		0x03
 #define ROCCAT_LED_PULSING			0x04
+
+unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 struct color {
 	uint8_t r;
@@ -557,6 +560,15 @@ roccat_button_to_action(struct ratbag_profile *profile,
 	return roccat_raw_to_button_action(data);
 }
 
+static unsigned int roccat_report_rate_to_index(unsigned int rate) {
+	for(unsigned int i = 0 ; i < ARRAY_LENGTH(report_rates) ; i++) {
+		if(report_rates[i] == rate) {
+			return i;
+		}
+	}
+	return 0;
+}
+
 static int
 roccat_write_profile(struct ratbag_profile *profile)
 {
@@ -579,21 +591,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 	report = &drv_data->settings[profile->index];
 	report->reportID = ROCCAT_REPORT_ID_SETTINGS;
 	report->magic_num = ROCCAT_MAGIC_NUMBER_SETTINGS;
-	// TODO facto, with report_rates
-	switch(profile->hz) {
-		case 150:
-			report->report_rate = 0;
-			break;
-		case 250:
-			report->report_rate = 1;
-			break;
-		case 500:
-			report->report_rate = 2;
-			break;
-		case 1000:
-			report->report_rate = 3;
-			break;
-	}
+	report->report_rate = roccat_report_rate_to_index(profile->hz);
 
 	report->dpi_mask = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
@@ -905,7 +903,6 @@ static void
 roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* profile)
 {
 	struct ratbag_resolution *resolution;
-	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 	int dpi_x = 0, dpi_y = 0;
 	unsigned int report_rate = 0;
 
