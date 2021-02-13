@@ -581,7 +581,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 	struct roccat_settings_report* report;
 	struct roccat_buttons* buttons;
 	struct roccat_macro* macro;
-	uint8_t* bankBuf = NULL;
+	uint8_t bankBuf[ROCCAT_REPORT_SIZE_MACRO_BANK] = { 0 };
 	int rc = 0;
 	int i = 0, count = 0;
 
@@ -697,7 +697,6 @@ roccat_write_profile(struct ratbag_profile *profile)
 			
 
 			// Macro has to be send in two packets
-			bankBuf = zalloc(ROCCAT_REPORT_SIZE_MACRO_BANK);
 			memcpy(bankBuf, macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
 
 			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
@@ -826,13 +825,11 @@ static void
 roccat_read_button(struct ratbag_button *button)
 {
 	const struct ratbag_button_action *action;
-	struct ratbag_device *device;
+	struct ratbag_device *device = button->profile->device;
+	struct roccat_data *drv_data = ratbag_get_drv_data(device);
 	struct roccat_macro *macro;
-	struct roccat_data *drv_data;
 	int rc;
 
-	device = button->profile->device;
-	drv_data = ratbag_get_drv_data(device);
 	action = roccat_button_to_action(button->profile, button->index);
 	if (action)
 		ratbag_button_set_action(button, action);
