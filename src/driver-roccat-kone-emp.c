@@ -597,19 +597,16 @@ roccat_write_profile(struct ratbag_profile *profile)
 
 	report->dpi_mask = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
-			report->xres[resolution->index] = (resolution->dpi_x - 100) / 100;
-			report->yres[resolution->index] = (resolution->dpi_y - 100) / 100;
+		report->xres[resolution->index] = (resolution->dpi_x - 100) / 100;
+		report->yres[resolution->index] = (resolution->dpi_y - 100) / 100;
 
-			if(resolution->is_default) {
-				report->current_dpi = resolution->index;
-			}
+		if(resolution->is_active) {
+			report->current_dpi = resolution->index;
+		}
 
-			/*
-			if(resolution->is_active) {
-				report->dpi_mask += pow(2, resolution->index);
-			}
-			*/
-			report->dpi_mask = 0x1f; // five DPI settings enabled
+		if(resolution->dpi_x != 0 && resolution->dpi_y != 0) {
+			report->dpi_mask += (1 << resolution->index);
+		}
 	}
 	
 	ratbag_profile_for_each_led(profile, led) {
@@ -929,8 +926,9 @@ roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		dpi_x = settings->xres[resolution->index] * 100 + 100;
 		dpi_y = settings->yres[resolution->index] * 100 + 100;
+		resolution->is_active = (resolution->index == settings->current_dpi);
 		if (!(settings->dpi_mask & (1 << resolution->index))) {
-			/* the profile is disabled, overwrite it */
+			/* this resolution is disabled, overwrite it */
 			dpi_x = 0;
 			dpi_y = 0;
 		}
@@ -938,7 +936,6 @@ roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* 
 		ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y);
 		ratbag_resolution_set_cap(resolution,
 					  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
-		resolution->is_active = (resolution->index == settings->current_dpi);
 
 		ratbag_resolution_set_dpi_list_from_range(resolution, ROCCAT_MIN_DPI, ROCCAT_MAX_DPI);
 	}
