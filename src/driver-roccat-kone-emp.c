@@ -80,6 +80,7 @@
 
 #define ROCCAT_MIN_DPI	100
 #define ROCCAT_MAX_DPI	12000
+
 #define ROCCAT_USER_DEFINED_COLOR	0x1e // The mouse knows some predefined colors. User can also set RGB values
 #define ROCCAT_LED_BLINKING			0x02
 #define ROCCAT_LED_BREATHING		0x03
@@ -102,43 +103,43 @@ struct color predefined_led_colors[] = { { 179, 0, 0 }, { 255, 0, 0 }, { 255, 71
 										 { 205, 10, 217 }, { 217, 10, 125 } };
 
 struct led_data {
-	uint8_t predefined; // 0x1e for user defined color
+	uint8_t predefined; 			// Index of the predefined color. 0x1e for user defined color.
 	struct color color;
 } __attribute__((packed));
 
 struct roccat_settings_report {
-	uint8_t reportID; // 0x06
-	uint8_t magic_num;	  // 0x29
+	uint8_t reportID; 				// 0x06
+	uint8_t magic_num;	  			// 0x29
 	uint8_t profile;
-	uint8_t x_y_linked; // Not on EMP ?
-	uint8_t x_sensitivity; /* 0x06 means 0 */
-	uint8_t y_sensitivity; /* 0x06 means 0 */
-	uint8_t dpi_mask;
-	uint8_t xres[5];
-	uint8_t yres[5];
-	uint8_t current_dpi; // X and Y are the same
-	uint8_t report_rate;
-	uint8_t led_status; // High bits defined which LEDs color are user defined. Lower part is abotu if the LED is on or off
-	uint8_t lighting_flow;
-	uint8_t lighting_effect;
-	uint8_t effect_speed;
+	uint8_t x_y_linked; 			// Always 0. Not on EMP ?
+	uint8_t x_sensitivity; 			// From -5 (0x01) to 5 (0x0b)
+	uint8_t y_sensitivity; 			// From -5 (0x01) to 5 (0x0b)
+	uint8_t dpi_mask;				// Bitfield to know which DPI setting is enabled
+	uint8_t xres[ROCCAT_NUM_DPI];	// DPI on X axis (from 0x00 to 0x77)
+	uint8_t yres[ROCCAT_NUM_DPI];	// DPI on Y axis (always same values than xres)
+	uint8_t current_dpi; 			// One index, since X and Y DPIs are the same
+	uint8_t report_rate;			// From 0x00 to 0x03
+	uint8_t led_status;				// Two bitfields of 4 bits. First four bits tells if the LED colors is predefined. Latest four bits tells if the LED is on of off
+	uint8_t lighting_flow;  		// 0x01 for color cycle effect. 0x00 to disable it
+	uint8_t lighting_effect; 		// From 0x01 to 0x04 : fixed, blinking, breathing, beating
+	uint8_t effect_speed;			// From 0x01 to 0x03
 	struct led_data leds[ROCCAT_LED_MAX];
 	uint16_t checksum;
 } __attribute__((packed));
 #define ROCCAT_REPORT_SIZE_SETTINGS sizeof(struct roccat_settings_report)
 
 struct roccat_macro {
-	uint8_t reportID; // 0x08
-	uint8_t bank; // 0x01 or 0x02 for the second bank
+	uint8_t reportID; 				// 0x08
+	uint8_t bank; 					// 0x01 or 0x02
 	uint8_t profile;
-	uint8_t button_index;
-	uint8_t repeats; // Number of repetition for this macro
+	uint8_t button_index;			
+	uint8_t repeats; 				// Number of repetition for this macro
 	char group[ROCCAT_MACRO_GROUP_NAME_LENGTH]; // Folder name
 	char name[ROCCAT_MACRO_NAME_LENGTH];
 	uint16_t length;
 	struct {
 		uint8_t keycode;
-		uint8_t flag; // Pressed (0x01) or released (0x02)
+		uint8_t flag; 				// Pressed (0x01) or released (0x02)
 		uint16_t time;
 	} keys[ROCCAT_MAX_MACRO_LENGTH];
 } __attribute__((packed));
@@ -151,8 +152,8 @@ struct button {
 } __attribute__((packed));
 
 struct roccat_buttons {
-	uint8_t reportID;  // 0x07
-	uint8_t magic_num; // 0x47
+	uint8_t reportID;  				// 0x07
+	uint8_t magic_num; 				// 0x47
 	uint8_t profile;
 	struct button keys[ROCCAT_BUTTON_MAX];
 	uint16_t checksum;
@@ -608,7 +609,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 	}
 	
 	ratbag_profile_for_each_led(profile, led) {
-		report->leds[led->index].predefined = 0x1e; // Always user defined with libratbag (easier)
+		report->leds[led->index].predefined = ROCCAT_USER_DEFINED_COLOR; // Always user defined with libratbag (easier)
 		report->leds[led->index].color.r = led->color.red;
 		report->leds[led->index].color.g = led->color.green;
 		report->leds[led->index].color.b = led->color.blue;
