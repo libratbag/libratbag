@@ -29,7 +29,9 @@
     - libratbag does not keep track of that number of events. It limits the mouse to 128 events
  * The macro group is not saved
  * The mouse can repeat macro. Not supported in libratbag
- * In official soft, we can set a LED color to offset the cycle effect
+ * In official soft, we can set a LED color to offset the cycle effect (only with predefined_led_colors). 
+ *   Since predefined colors are not handled, we can't reproduce this effect.
+ *
  */
 #include "config.h"
 #include <assert.h>
@@ -786,19 +788,18 @@ static void roccat_read_macro(struct roccat_macro* macro, struct ratbag_button* 
 	struct ratbag_button_macro *m = NULL;
 	unsigned j, time;
 
-	// Folder name is never used in libratbag
-	char folder_name[ROCCAT_MACRO_GROUP_NAME_LENGTH+1] = { '\0' };
-	strncpy(folder_name, macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
-
 	char name[ROCCAT_MACRO_NAME_LENGTH+1] = { '\0' };
 	strncpy(name, macro->name, ROCCAT_MACRO_NAME_LENGTH);
 
 	m = ratbag_button_macro_new(name);
+	// libratbag does offer API for macro groups
+	m->macro.group = (char*)zalloc(ROCCAT_MACRO_GROUP_NAME_LENGTH+1);
+	strncpy(m->macro.group, macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
 
 	log_raw(button->profile->device->ratbag,
 		"macro on button %d of profile %d is named '%s' (from folder '%s'), and contains %d events:\n",
 		button->index, button->profile->index,
-		name, folder_name, macro->length);
+		name, m->macro.group, macro->length);
 	// libratbag can't keep track of the whole macro (MAX_MACRO_EVENTS)
 	// In libratbag, each event is implemented as two separate (KEY_PRESS/KEY_RELEASE and WAIT)
 	for (j = 0; j < macro->length && j < MAX_MACRO_EVENTS/2; j++) {
