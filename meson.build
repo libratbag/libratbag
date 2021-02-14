@@ -344,6 +344,7 @@ data_files = files(
 	'data/devices/logitech-MX-Anywhere2S.device',
 	'data/devices/logitech-MX-Anywhere-3.device',
 	'data/devices/logitech-MX-Vertical.device',
+	'data/devices/openinput.device',
 	'data/devices/roccat-kone-pure.device',
 	'data/devices/roccat-kone-xtd.device',
 	'data/devices/steelseries-kinzu-v2.device',
