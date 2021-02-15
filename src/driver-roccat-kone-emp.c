@@ -26,12 +26,10 @@
  * The LED effects is applied to the four LED of the mouse, but libratbag can set a different effect for each LED
  * The LED effects BLINKING and PULSING are not supported in libratbag
  * The maximum macro size is 480 in the mouse software. One event keeps the event data and the timing/delay
-    - libratbag does not keep track of that number of events. It limits the mouse to 128 events
- * The macro group is not saved
+	- libratbag does not keep track of that number of events. It limits the mouse to 128 events
  * The mouse can repeat macro. Not supported in libratbag
  * In official soft, we can set a LED color to offset the cycle effect (only with predefined_led_colors). 
  *   Since predefined colors are not handled, we can't reproduce this effect.
- *
  */
 #include "config.h"
 #include <assert.h>
@@ -50,41 +48,41 @@
 #include "libratbag.h"
 #include "shared-macro.h"
 
-#define ROCCAT_PROFILE_MAX			5
-#define ROCCAT_BUTTON_MAX			11 * 2 // (Easy Shift)
-#define ROCCAT_NUM_DPI				5
-#define ROCCAT_LED_MAX				4
+#define ROCCAT_PROFILE_MAX          5
+#define ROCCAT_BUTTON_MAX           11 * 2 // (Easy Shift)
+#define ROCCAT_NUM_DPI              5
+#define ROCCAT_LED_MAX              4
 
-#define ROCCAT_MAX_RETRY_READY		10
+#define ROCCAT_MAX_RETRY_READY      10
 
-#define ROCCAT_REPORT_ID_CONFIGURE_PROFILE	4
-#define ROCCAT_REPORT_ID_PROFILE			5
-#define ROCCAT_REPORT_ID_SETTINGS			6
-#define ROCCAT_REPORT_ID_KEY_MAPPING		7
-#define ROCCAT_REPORT_ID_MACRO				8
+#define ROCCAT_REPORT_ID_CONFIGURE_PROFILE  4
+#define ROCCAT_REPORT_ID_PROFILE            5
+#define ROCCAT_REPORT_ID_SETTINGS           6
+#define ROCCAT_REPORT_ID_KEY_MAPPING        7
+#define ROCCAT_REPORT_ID_MACRO              8
 
-#define ROCCAT_MAGIC_NUMBER_SETTINGS		0x29
-#define ROCCAT_MAGIC_NUMBER_KEY_MAPPING		0x47
+#define ROCCAT_MAGIC_NUMBER_SETTINGS        0x29
+#define ROCCAT_MAGIC_NUMBER_KEY_MAPPING     0x47
 
-#define ROCCAT_BANK_ID_1	1
-#define ROCCAT_BANK_ID_2	2
-#define ROCCAT_REPORT_SIZE_MACRO_BANK		1026
+#define ROCCAT_BANK_ID_1    1
+#define ROCCAT_BANK_ID_2    2
+#define ROCCAT_REPORT_SIZE_MACRO_BANK       1026
 
-#define ROCCAT_MACRO_GROUP_NAME_LENGTH	40
-#define ROCCAT_MACRO_NAME_LENGTH		32
+#define ROCCAT_MACRO_GROUP_NAME_LENGTH  40
+#define ROCCAT_MACRO_NAME_LENGTH        32
 
-#define ROCCAT_CONFIG_SETTINGS		0x80 // (LED and mouse configuration)
-#define ROCCAT_CONFIG_KEY_MAPPING	0x90 // (Buttons configuration)
+#define ROCCAT_CONFIG_SETTINGS      0x80 // (LED and mouse configuration)
+#define ROCCAT_CONFIG_KEY_MAPPING   0x90 // (Buttons configuration)
 
-#define ROCCAT_MAX_MACRO_LENGTH		480
+#define ROCCAT_MAX_MACRO_LENGTH     480
 
-#define ROCCAT_MIN_DPI	100
-#define ROCCAT_MAX_DPI	12000
+#define ROCCAT_MIN_DPI  100
+#define ROCCAT_MAX_DPI  12000
 
-#define ROCCAT_USER_DEFINED_COLOR	0x1e // The mouse knows some predefined colors. User can also set RGB values
-#define ROCCAT_LED_BLINKING			0x02
-#define ROCCAT_LED_BREATHING		0x03
-#define ROCCAT_LED_PULSING			0x04
+#define ROCCAT_USER_DEFINED_COLOR   0x1e // The mouse knows some predefined colors. User can also set RGB values
+#define ROCCAT_LED_BLINKING         0x02
+#define ROCCAT_LED_BREATHING        0x03
+#define ROCCAT_LED_PULSING          0x04
 
 unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
@@ -94,52 +92,52 @@ struct color {
 	uint8_t b;
 } __attribute__((packed));
 struct color predefined_led_colors[] = { { 179, 0, 0 }, { 255, 0, 0 }, { 255, 71, 0}, { 255, 106, 0 },
-                                         { 255, 157, 71 }, { 248, 232, 0 }, { 246, 255, 78 }, { 201, 255, 78 }, 
-                                         { 185, 255, 78 }, { 132, 255, 78 }, { 0, 255, 0 }, { 0, 207, 55 },
-										 { 0, 166, 44 }, { 0, 207, 124 }, { 0,207, 158 }, { 0, 203, 207 }, 
+										 { 255, 157, 71 }, { 248, 232, 0 }, { 246, 255, 78 }, { 201, 255, 78 },
+										 { 185, 255, 78 }, { 132, 255, 78 }, { 0, 255, 0 }, { 0, 207, 55 },
+										 { 0, 166, 44 }, { 0, 207, 124 }, { 0,207, 158 }, { 0, 203, 207 },
 										 { 41, 197, 255 }, { 37, 162, 233 }, { 99, 158, 239 }, { 37, 132, 233 },
-										 { 0, 72, 255 }, { 15, 15, 255 }, { 15, 15, 188 }, { 89, 7, 255 }, 
+										 { 0, 72, 255 }, { 15, 15, 255 }, { 15, 15, 188 }, { 89, 7, 255 },
 										 { 121, 12, 255 }, { 161, 12, 255 }, { 170, 108, 232 }, { 181, 10, 216 },
 										 { 205, 10, 217 }, { 217, 10, 125 } };
 
 struct led_data {
-	uint8_t predefined; 			// Index of the predefined color. 0x1e for user defined color.
+	uint8_t predefined;             // Index of the predefined color. 0x1e for user defined color.
 	struct color color;
 } __attribute__((packed));
 
 struct roccat_settings_report {
-	uint8_t reportID; 				// 0x06
-	uint8_t magic_num;	  			// 0x29
+	uint8_t reportID;               // 0x06
+	uint8_t magic_num;              // 0x29
 	uint8_t profile;
-	uint8_t x_y_linked; 			// Always 0. Not on EMP ?
-	uint8_t x_sensitivity; 			// From -5 (0x01) to 5 (0x0b)
-	uint8_t y_sensitivity; 			// From -5 (0x01) to 5 (0x0b)
-	uint8_t dpi_mask;				// Bitfield to know which DPI setting is enabled
-	uint8_t xres[ROCCAT_NUM_DPI];	// DPI on X axis (from 0x00 to 0x77)
-	uint8_t yres[ROCCAT_NUM_DPI];	// DPI on Y axis (always same values than xres)
-	uint8_t current_dpi; 			// One index, since X and Y DPIs are the same
-	uint8_t report_rate;			// From 0x00 to 0x03
-	uint8_t led_status;				// Two bitfields of 4 bits. First four bits tells if the LED colors is predefined. Latest four bits tells if the LED is on of off
-	uint8_t lighting_flow;  		// 0x01 for color cycle effect. 0x00 to disable it
-	uint8_t lighting_effect; 		// From 0x01 to 0x04 : fixed, blinking, breathing, beating
-	uint8_t effect_speed;			// From 0x01 to 0x03
+	uint8_t x_y_linked;             // Always 0. Not on EMP ?
+	uint8_t x_sensitivity;          // From -5 (0x01) to 5 (0x0b)
+	uint8_t y_sensitivity;          // From -5 (0x01) to 5 (0x0b)
+	uint8_t dpi_mask;               // Bitfield to know which DPI setting is enabled
+	uint8_t xres[ROCCAT_NUM_DPI];   // DPI on X axis (from 0x00 to 0x77)
+	uint8_t yres[ROCCAT_NUM_DPI];   // DPI on Y axis (always same values than xres)
+	uint8_t current_dpi;            // One index, since X and Y DPIs are the same
+	uint8_t report_rate;            // From 0x00 to 0x03
+	uint8_t led_status;             // Two bitfields of 4 bits. First four bits tells if the LED colors is predefined. Latest four bits tells if the LED is on of off
+	uint8_t lighting_flow;          // 0x01 for color cycle effect. 0x00 to disable it
+	uint8_t lighting_effect;        // From 0x01 to 0x04 : fixed, blinking, breathing, beating
+	uint8_t effect_speed;           // From 0x01 to 0x03
 	struct led_data leds[ROCCAT_LED_MAX];
 	uint16_t checksum;
 } __attribute__((packed));
 #define ROCCAT_REPORT_SIZE_SETTINGS sizeof(struct roccat_settings_report)
 
 struct roccat_macro {
-	uint8_t reportID; 				// 0x08
-	uint8_t bank; 					// 0x01 or 0x02
+	uint8_t reportID;               // 0x08
+	uint8_t bank;                   // 0x01 or 0x02
 	uint8_t profile;
-	uint8_t button_index;			
-	uint8_t repeats; 				// Number of repetition for this macro
+	uint8_t button_index;
+	uint8_t repeats;                // Number of repetition for this macro
 	char group[ROCCAT_MACRO_GROUP_NAME_LENGTH]; // Folder name
 	char name[ROCCAT_MACRO_NAME_LENGTH];
 	uint16_t length;
 	struct {
 		uint8_t keycode;
-		uint8_t flag; 				// Pressed (0x01) or released (0x02)
+		uint8_t flag;               // Pressed (0x01) or released (0x02)
 		uint16_t time;
 	} keys[ROCCAT_MAX_MACRO_LENGTH];
 } __attribute__((packed));
@@ -152,8 +150,8 @@ struct button {
 } __attribute__((packed));
 
 struct roccat_buttons {
-	uint8_t reportID;  				// 0x07
-	uint8_t magic_num; 				// 0x47
+	uint8_t reportID;               // 0x07
+	uint8_t magic_num;              // 0x47
 	uint8_t profile;
 	struct button keys[ROCCAT_BUTTON_MAX];
 	uint16_t checksum;
@@ -217,29 +215,29 @@ struct roccat_button_mapping {
 };
 
 static struct roccat_button_mapping roccat_button_mapping[] = {
-    { 0, BUTTON_ACTION_NONE },
+	{ 0, BUTTON_ACTION_NONE },
 	{ 1, BUTTON_ACTION_BUTTON(1) },
 	{ 2, BUTTON_ACTION_BUTTON(2) },
 	{ 3, BUTTON_ACTION_BUTTON(3) },
 	{ 4, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK) },
-/* FIXME:	{ 5, Shortcut (modifier + key) }, */
+/* FIXME:   { 5, Shortcut (modifier + key) }, */
 	{ 7, BUTTON_ACTION_BUTTON(4) }, /* Next page in browser */
 	{ 8, BUTTON_ACTION_BUTTON(5) }, /* Previous page in browser */
 	{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
 	{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
-/* FIXME:	{ 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 -> Open any configurated app */
+/* FIXME:   { 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 -> Open any configurated app */
 	{ 16, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
 	{ 17, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 	{ 18, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN) },
 	{ 20, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) },
 	{ 21, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
 	{ 22, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
-/* FIXME:	{ 23, Toogle sensibility }, */
-/* FIXME:	{ 24, Sensibility UP }, */
-/* FIXME:	{ 25, Sensibility Down }, */
-/* FIXME:	{ 27, open driver/swarm },  -> hidraw report 02 83 01 00 00 00 00 00 */
+/* FIXME:   { 23, Toogle sensibility }, */
+/* FIXME:   { 24, Sensibility UP }, */
+/* FIXME:   { 25, Sensibility Down }, */
+/* FIXME:   { 27, open driver/swarm },  -> hidraw report 02 83 01 00 00 00 00 00 */
 	//{ 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
 	{ 33, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
 	{ 34, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
@@ -249,92 +247,92 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 38, BUTTON_ACTION_KEY(KEY_VOLUMEUP) },
 	{ 39, BUTTON_ACTION_KEY(KEY_VOLUMEDOWN) },
 	{ 48, BUTTON_ACTION_MACRO },
-/* FIXME:	{ 49, Start timer }, */
-/* FIXME:	{ 50, Stop timer}, */
-/* FIXME:	{ 51, EasyAim DPI 400 }, */
-/* FIXME:	{ 52, EasyAim DPI 400 }, */
-/* FIXME:	{ 53, EasyAim DPI 800 }, */
-/* FIXME:	{ 54, EasyAim DPI 1200 }, */
-/* FIXME:	{ 55, EasyAim DPI 1600 }, */
-/* FIXME:	{ 56, EasyAim DPI 3200 }, */
+/* FIXME:   { 49, Start timer }, */
+/* FIXME:   { 50, Stop timer}, */
+/* FIXME:   { 51, EasyAim DPI 400 }, */
+/* FIXME:   { 52, EasyAim DPI 400 }, */
+/* FIXME:   { 53, EasyAim DPI 800 }, */
+/* FIXME:   { 54, EasyAim DPI 1200 }, */
+/* FIXME:   { 55, EasyAim DPI 1600 }, */
+/* FIXME:   { 56, EasyAim DPI 3200 }, */
 	{ 65, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE) },
-/* FIXME:	{ 66, Easywheel sensitivity }, */
-/* FIXME:	{ 67, Easywheel profile }, */
-/* FIXME:	{ 68, Easywheel DPI }, */
-/* FIXME:	{ 69, EasywheelVolume }, */
-/* FIXME:	{ 70, Easywheel Alt-Tab }, */
-/* FIXME:	{ 98, Home }, */
-/* FIXME:	{ 99, End }, */
-/* FIXME:	{ 100, Previous page }, */
-/* FIXME:	{ 100, Next page }, */
-/* FIXME:	{ 101, Maj left }, */
-/* FIXME:	{ 102, Maj right }, */
-/* FIXME:	{ 113, Sensibility -5 }, */
-/* FIXME:	{ 114, Sensibility -4 }, */
-/* FIXME:	{ 115, Sensibility -3 }, */
-/* FIXME:	{ 116, Sensibility -2 }, */
-/* FIXME:	{ 117, Sensibility -1 }, */
-/* FIXME:	{ 118, Sensibility 0 }, */
-/* FIXME:	{ 119, Sensibility 1 }, */
-/* FIXME:	{ 120, Sensibility 2 }, */
-/* FIXME:	{ 121, Sensibility 3 }, */
-/* FIXME:	{ 122, Sensibility 4 }, */
-/* FIXME:	{ 123, Sensibility 5 }, */
-/* FIXME:	{ 124, EasyAim DPI Userset }, - second byte of button_data is the DPI */
-/* FIXME:	{ 128, Browser search }, */
-/* FIXME:	{ 129, Browser home }, */
-/* FIXME:	{ 130, Browser stop }, */
-/* FIXME:	{ 131, Browser refresh }, */
-/* FIXME:	{ 132, Browser new tab (ctrl+T) }, */
-/* FIXME:	{ 133, Browser new window }, */
-/* FIXME:	{ 134, Open "Computer" }, */
-/* FIXME:	{ 135, Open calculator }, */
-/* FIXME:	{ 136, Open email }, */
-/* FIXME:	{ 137, Open file }, */
-/* FIXME:	{ 138, Open folder }, */
-/* FIXME:	{ 139, Open URL }, */
-/* FIXME:	{ 140, Mute mic }, */
-/* FIXME:	{ 141, Open Desktop }, */
-/* FIXME:	{ 142, Open Favorites }, */
-/* FIXME:	{ 143, Open Fonts }, */
-/* FIXME:	{ 144, Open My Documents }, */
-/* FIXME:	{ 145, Open Downloads }, */
-/* FIXME:	{ 146, Open Music }, */
-/* FIXME:	{ 147, Open Pictures }, */
-/* FIXME:	{ 148, Open Network }, */
-/* FIXME:	{ 149, Printers }, */
-/* FIXME:	{ 150, Network }, */
+/* FIXME:   { 66, Easywheel sensitivity }, */
+/* FIXME:   { 67, Easywheel profile }, */
+/* FIXME:   { 68, Easywheel DPI }, */
+/* FIXME:   { 69, EasywheelVolume }, */
+/* FIXME:   { 70, Easywheel Alt-Tab }, */
+/* FIXME:   { 98, Home }, */
+/* FIXME:   { 99, End }, */
+/* FIXME:   { 100, Previous page }, */
+/* FIXME:   { 100, Next page }, */
+/* FIXME:   { 101, Maj left }, */
+/* FIXME:   { 102, Maj right }, */
+/* FIXME:   { 113, Sensibility -5 }, */
+/* FIXME:   { 114, Sensibility -4 }, */
+/* FIXME:   { 115, Sensibility -3 }, */
+/* FIXME:   { 116, Sensibility -2 }, */
+/* FIXME:   { 117, Sensibility -1 }, */
+/* FIXME:   { 118, Sensibility 0 }, */
+/* FIXME:   { 119, Sensibility 1 }, */
+/* FIXME:   { 120, Sensibility 2 }, */
+/* FIXME:   { 121, Sensibility 3 }, */
+/* FIXME:   { 122, Sensibility 4 }, */
+/* FIXME:   { 123, Sensibility 5 }, */
+/* FIXME:   { 124, EasyAim DPI Userset }, - second byte of button_data is the DPI */
+/* FIXME:   { 128, Browser search }, */
+/* FIXME:   { 129, Browser home }, */
+/* FIXME:   { 130, Browser stop }, */
+/* FIXME:   { 131, Browser refresh }, */
+/* FIXME:   { 132, Browser new tab (ctrl+T) }, */
+/* FIXME:   { 133, Browser new window }, */
+/* FIXME:   { 134, Open "Computer" }, */
+/* FIXME:   { 135, Open calculator }, */
+/* FIXME:   { 136, Open email }, */
+/* FIXME:   { 137, Open file }, */
+/* FIXME:   { 138, Open folder }, */
+/* FIXME:   { 139, Open URL }, */
+/* FIXME:   { 140, Mute mic }, */
+/* FIXME:   { 141, Open Desktop }, */
+/* FIXME:   { 142, Open Favorites }, */
+/* FIXME:   { 143, Open Fonts }, */
+/* FIXME:   { 144, Open My Documents }, */
+/* FIXME:   { 145, Open Downloads }, */
+/* FIXME:   { 146, Open Music }, */
+/* FIXME:   { 147, Open Pictures }, */
+/* FIXME:   { 148, Open Network }, */
+/* FIXME:   { 149, Printers }, */
+/* FIXME:   { 150, Network }, */
 
-/* FIXME:	{ 167, System hibernation }, */
-/* FIXME:	{ 168, System reboot }, */
-/* FIXME:	{ 169, System lock }, */
-/* FIXME:	{ 179, Logout }, */
-/* FIXME:	{ 171, Control panel }, */
-/* FIXME:	{ 172, System settings }, */
-/* FIXME:	{ 173, Task Manager }, */
-/* FIXME:	{ 174, Screen settings }, */
-/* FIXME:	{ 175, Screensaver settings }, */
-/* FIXME:	{ 176, Themes }, */
-/* FIXME:	{ 177, Date and Time }, */
-/* FIXME:	{ 178, Network settings }, */
-/* FIXME:	{ 179, Admin settings }, */
-/* FIXME:	{ 180, Firewall }, */
-/* FIXME:	{ 181, Regedit }, */
-/* FIXME:	{ 182, Event monitor }, */
-/* FIXME:	{ 183, Performance monitor }, */
-/* FIXME:	{ 184, Audio settings }, */
-/* FIXME:	{ 185, Internet settings }, */
-/* FIXME:	{ 186, Directx diagnostics }, */
-/* FIXME:	{ 187, Command line }, */
-/* FIXME:	{ 188, System poweroff }, */
-/* FIXME:	{ 189, System sleep }, */
-/* FIXME:	{ 190, System wakeup }, */
+/* FIXME:   { 167, System hibernation }, */
+/* FIXME:   { 168, System reboot }, */
+/* FIXME:   { 169, System lock }, */
+/* FIXME:   { 179, Logout }, */
+/* FIXME:   { 171, Control panel }, */
+/* FIXME:   { 172, System settings }, */
+/* FIXME:   { 173, Task Manager }, */
+/* FIXME:   { 174, Screen settings }, */
+/* FIXME:   { 175, Screensaver settings }, */
+/* FIXME:   { 176, Themes }, */
+/* FIXME:   { 177, Date and Time }, */
+/* FIXME:   { 178, Network settings }, */
+/* FIXME:   { 179, Admin settings }, */
+/* FIXME:   { 180, Firewall }, */
+/* FIXME:   { 181, Regedit }, */
+/* FIXME:   { 182, Event monitor }, */
+/* FIXME:   { 183, Performance monitor }, */
+/* FIXME:   { 184, Audio settings }, */
+/* FIXME:   { 185, Internet settings }, */
+/* FIXME:   { 186, Directx diagnostics }, */
+/* FIXME:   { 187, Command line }, */
+/* FIXME:   { 188, System poweroff }, */
+/* FIXME:   { 189, System sleep }, */
+/* FIXME:   { 190, System wakeup }, */
 
-/* FIXME:	{ 191, Set profile 1 }, */
-/* FIXME:	{ 192, Set profile 2 }, */
-/* FIXME:	{ 193, Set profile 3 }, */
-/* FIXME:	{ 194, Set profile 4 }, */
-/* FIXME:	{ 195, Set profile 5 }, */
+/* FIXME:   { 191, Set profile 1 }, */
+/* FIXME:   { 192, Set profile 2 }, */
+/* FIXME:   { 193, Set profile 3 }, */
+/* FIXME:   { 194, Set profile 4 }, */
+/* FIXME:   { 195, Set profile 5 }, */
 };
 
 static const struct ratbag_button_action*
@@ -424,7 +422,7 @@ roccat_is_ready(struct ratbag_device *device)
 	int rc;
 
 	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_CONFIGURE_PROFILE,
-					      buf, sizeof(buf));
+						  buf, sizeof(buf));
 	if (rc < 0)
 		return rc;
 	if (rc != sizeof(buf))
@@ -471,7 +469,7 @@ roccat_current_profile(struct ratbag_device *device)
 	int ret;
 
 	ret = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_PROFILE, buf,
-					       sizeof(buf));
+						   sizeof(buf));
 	if (ret < 0)
 		return ret;
 
@@ -497,7 +495,7 @@ roccat_set_current_profile(struct ratbag_device *device, unsigned int index)
 		return -EINVAL;
 
 	ret = ratbag_hidraw_set_feature_report(device, buf[0], buf,
-					       sizeof(buf));
+						   sizeof(buf));
 
 	if (ret < 0)
 		return ret;
@@ -533,7 +531,7 @@ roccat_set_config_profile(struct ratbag_device *device, uint8_t profile, uint8_t
 		return -EINVAL;
 */
 	ret = ratbag_hidraw_set_feature_report(device, buf[0], buf,
-					       sizeof(buf));
+						   sizeof(buf));
 	if (ret < 0)
 		return ret;
 
@@ -701,7 +699,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 			memcpy(bankBuf, macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
 
 			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-					      bankBuf, ROCCAT_REPORT_SIZE_MACRO_BANK);	  
+						  bankBuf, ROCCAT_REPORT_SIZE_MACRO_BANK);    
 			if (rc < 0)
 				return rc;
 
@@ -741,7 +739,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_SETTINGS,
-					      (uint8_t*)report, ROCCAT_REPORT_SIZE_SETTINGS);
+						  (uint8_t*)report, ROCCAT_REPORT_SIZE_SETTINGS);
 
 	if (rc < 0)
 		return rc;
@@ -757,7 +755,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 	}
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-					      (uint8_t*)buttons, ROCCAT_REPORT_SIZE_BUTTONS);
+						  (uint8_t*)buttons, ROCCAT_REPORT_SIZE_BUTTONS);
 
 	if (rc < 0)
 		return rc;
@@ -835,10 +833,10 @@ roccat_read_button(struct ratbag_button *button)
 	if (action)
 		ratbag_button_set_action(button, action);
 	button->type = roccat_raw_to_button_type(button->index);
-//	if (action == NULL)
-//		log_error(device->ratbag, "button: %d -> %d %s:%d\n",
-//			button->index, drv_data->profiles[button->profile->index][3 + button->index * 3],
-//			__FILE__, __LINE__);
+//  if (action == NULL)
+//      log_error(device->ratbag, "button: %d -> %d %s:%d\n",
+//          button->index, drv_data->profiles[button->profile->index][3 + button->index * 3],
+//          __FILE__, __LINE__);
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
@@ -859,7 +857,7 @@ roccat_read_button(struct ratbag_button *button)
 
 		// I know that the second bank will not fit in internal structure, so reducing the data read
 		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						      (uint8_t*)macro + ROCCAT_REPORT_SIZE_MACRO_BANK - 2, sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK - 2));
+							  (uint8_t*)macro + ROCCAT_REPORT_SIZE_MACRO_BANK - 2, sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK - 2));
 		if (rc != sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK - 2)) {
 			log_error(device->ratbag,
 				  "Unable to retrieve the second bank for macro for button %d of profile %d: %s (%d)\n",
@@ -872,7 +870,7 @@ roccat_read_button(struct ratbag_button *button)
 					  button->profile->index + 0x10, // When setting for a specific button, the Profile ID is 0x10 * Profile ID + 1
 					  button->index);
 		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						      (uint8_t*)macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
+							  (uint8_t*)macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
 		if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK) {
 			log_error(device->ratbag,
 				  "Unable to retrieve the first bank for macro for button %d of profile %d: %s (%d)\n",
@@ -890,7 +888,7 @@ roccat_read_button(struct ratbag_button *button)
 		}
 		// No checksum for macros
 
-		roccat_read_macro(macro, button);		
+		roccat_read_macro(macro, button);       
 
 out_macro:
 		msleep(10);
@@ -915,7 +913,7 @@ roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* 
 	}
 
 	ratbag_profile_set_report_rate_list(profile, report_rates,
-					    ARRAY_LENGTH(report_rates));
+						ARRAY_LENGTH(report_rates));
 	ratbag_profile_set_report_rate(profile, report_rate);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
@@ -980,7 +978,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	struct ratbag_led *led;
 	struct roccat_settings_report *settings;
 	struct roccat_buttons* buttons;
-	int rc;	
+	int rc; 
 
 	assert(profile->index <= ROCCAT_PROFILE_MAX);
 
@@ -988,7 +986,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	settings = &drv_data->settings[profile->index];
 	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_SETTINGS);
 	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_SETTINGS,
-					      (uint8_t*)settings, ROCCAT_REPORT_SIZE_SETTINGS);
+						  (uint8_t*)settings, ROCCAT_REPORT_SIZE_SETTINGS);
 
 	if (rc < (int)ROCCAT_REPORT_SIZE_SETTINGS) {
 		return;
@@ -1003,7 +1001,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	buttons = &drv_data->buttons[profile->index];
 	roccat_set_config_profile(device, profile->index, ROCCAT_CONFIG_KEY_MAPPING);
 	rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_KEY_MAPPING,
-					      (uint8_t*)buttons, ROCCAT_REPORT_SIZE_BUTTONS);
+						  (uint8_t*)buttons, ROCCAT_REPORT_SIZE_BUTTONS);
 
 	if (rc < (int)ROCCAT_REPORT_SIZE_BUTTONS) {
 		return;
@@ -1052,10 +1050,10 @@ roccat_probe(struct ratbag_device *device)
 	ratbag_set_drv_data(device, drv_data);
 
 	ratbag_device_init_profiles(device,
-				    ROCCAT_PROFILE_MAX,
-				    ROCCAT_NUM_DPI,
-				    ROCCAT_BUTTON_MAX,
-				    ROCCAT_LED_MAX);
+					ROCCAT_PROFILE_MAX,
+					ROCCAT_NUM_DPI,
+					ROCCAT_BUTTON_MAX,
+					ROCCAT_LED_MAX);
 
 	ratbag_device_for_each_profile(device, profile) {
 		roccat_read_profile(profile);
