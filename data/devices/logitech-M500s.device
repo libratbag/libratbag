@@ -1,0 +1,5 @@
+# Logitech M500s
+[Device]
+Name=Logitech M500s
+DeviceMatch=usb:046d:c093
+Driver=hidpp20
