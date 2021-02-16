@@ -1,4 +1,5 @@
 /*
+ * Copyright © 2021 Alexandre Laurent
  * Copyright © 2015 Red Hat, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -31,6 +32,7 @@
  * In official soft, we can set a LED color to offset the cycle effect (only with predefined_led_colors). 
  *   Since predefined colors are not handled, we can't reproduce this effect.
  */
+
 #include "config.h"
 #include <assert.h>
 #include <bits/stdint-uintn.h>
@@ -91,14 +93,17 @@ struct color {
 	uint8_t g;
 	uint8_t b;
 } __attribute__((packed));
-struct color predefined_led_colors[] = { { 179, 0, 0 }, { 255, 0, 0 }, { 255, 71, 0}, { 255, 106, 0 },
-										 { 255, 157, 71 }, { 248, 232, 0 }, { 246, 255, 78 }, { 201, 255, 78 },
-										 { 185, 255, 78 }, { 132, 255, 78 }, { 0, 255, 0 }, { 0, 207, 55 },
-										 { 0, 166, 44 }, { 0, 207, 124 }, { 0,207, 158 }, { 0, 203, 207 },
-										 { 41, 197, 255 }, { 37, 162, 233 }, { 99, 158, 239 }, { 37, 132, 233 },
-										 { 0, 72, 255 }, { 15, 15, 255 }, { 15, 15, 188 }, { 89, 7, 255 },
-										 { 121, 12, 255 }, { 161, 12, 255 }, { 170, 108, 232 }, { 181, 10, 216 },
-										 { 205, 10, 217 }, { 217, 10, 125 } };
+
+struct color predefined_led_colors[] = { 
+	{ 179, 0, 0 }, { 255, 0, 0 }, { 255, 71, 0}, { 255, 106, 0 },
+	{ 255, 157, 71 }, { 248, 232, 0 }, { 246, 255, 78 }, { 201, 255, 78 },
+	{ 185, 255, 78 }, { 132, 255, 78 }, { 0, 255, 0 }, { 0, 207, 55 },
+	{ 0, 166, 44 }, { 0, 207, 124 }, { 0,207, 158 }, { 0, 203, 207 },
+	{ 41, 197, 255 }, { 37, 162, 233 }, { 99, 158, 239 }, { 37, 132, 233 },
+	{ 0, 72, 255 }, { 15, 15, 255 }, { 15, 15, 188 }, { 89, 7, 255 },
+	{ 121, 12, 255 }, { 161, 12, 255 }, { 170, 108, 232 }, { 181, 10, 216 },
+	{ 205, 10, 217 }, { 217, 10, 125 } 
+};
 
 struct led_data {
 	uint8_t predefined;             // Index of the predefined color. 0x1e for user defined color.
@@ -127,17 +132,17 @@ struct roccat_settings_report {
 #define ROCCAT_REPORT_SIZE_SETTINGS sizeof(struct roccat_settings_report)
 
 struct roccat_macro {
-	uint8_t reportID;               // 0x08
-	uint8_t bank;                   // 0x01 or 0x02
+	uint8_t reportID;                           // 0x08
+	uint8_t bank;                               // 0x01 or 0x02
 	uint8_t profile;
 	uint8_t button_index;
-	uint8_t repeats;                // Number of repetition for this macro
+	uint8_t repeats;                            // Number of repetition for this macro
 	char group[ROCCAT_MACRO_GROUP_NAME_LENGTH]; // Folder name
 	char name[ROCCAT_MACRO_NAME_LENGTH];
 	uint16_t length;
 	struct {
 		uint8_t keycode;
-		uint8_t flag;               // Pressed (0x01) or released (0x02)
+		uint8_t flag;                           // Pressed (0x01) or released (0x02)
 		uint16_t time;
 	} keys[ROCCAT_MAX_MACRO_LENGTH];
 } __attribute__((packed));
@@ -173,8 +178,8 @@ static const struct roccat_button_type_mapping roccat_button_type_mapping[] = {
 	{ 0, RATBAG_BUTTON_TYPE_LEFT },
 	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
 	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_THUMB }, // Up
-	{ 4, RATBAG_BUTTON_TYPE_THUMB2 }, // Down
+	{ 3, RATBAG_BUTTON_TYPE_THUMB },                // Up
+	{ 4, RATBAG_BUTTON_TYPE_THUMB2 },               // Down
 	{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
 	{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
 	{ 7, RATBAG_BUTTON_TYPE_WHEEL_UP },
@@ -186,8 +191,8 @@ static const struct roccat_button_type_mapping roccat_button_type_mapping[] = {
 	{ 11, RATBAG_BUTTON_TYPE_LEFT },
 	{ 12, RATBAG_BUTTON_TYPE_RIGHT },
 	{ 13, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 14, RATBAG_BUTTON_TYPE_THUMB }, // Up
-	{ 15, RATBAG_BUTTON_TYPE_THUMB2 }, // Down
+	{ 14, RATBAG_BUTTON_TYPE_THUMB },                // Up
+	{ 15, RATBAG_BUTTON_TYPE_THUMB2 },               // Down
 	{ 16, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
 	{ 17, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
 	{ 18, RATBAG_BUTTON_TYPE_WHEEL_UP },
