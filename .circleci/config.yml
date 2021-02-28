@@ -258,7 +258,7 @@ workflows:
   compile_and_test:
     jobs:
       - ubuntu_20_04
-      - arch
+#      - arch
       - fedora_32
       - doc_build
       - doc_deploy:
