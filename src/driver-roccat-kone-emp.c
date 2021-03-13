@@ -410,7 +410,7 @@ roccat_crc_is_valid(struct ratbag_device *device, uint8_t *buf, unsigned int len
 
 	given_crc = roccat_get_unaligned_u16(&buf[len - 2]);
 
-	log_raw(device->ratbag,
+	log_debug(device->ratbag,
 		"checksum computed: 0x%04x, checksum given: 0x%04x - %s\n",
 		crc,
 		given_crc,
@@ -488,7 +488,7 @@ static int
 roccat_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 
-	log_raw(device->ratbag,
+	log_debug(device->ratbag,
 		"'%s' Setting profile %d as active\n",
 		ratbag_device_get_name(device),
 		index);
@@ -775,7 +775,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 			  strerror(-rc), rc);
 	}
 
-	log_raw(device->ratbag, "profile: %d written %s:%d\n",
+	log_debug(device->ratbag, "profile: %d written %s:%d\n",
 		profile->index,
 		__FILE__, __LINE__);
 
@@ -794,7 +794,7 @@ static void roccat_read_macro(struct roccat_macro* macro, struct ratbag_button* 
 	m->macro.group = (char*)zalloc(ROCCAT_MACRO_GROUP_NAME_LENGTH+1);
 	strncpy(m->macro.group, macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
 
-	log_raw(button->profile->device->ratbag,
+	log_debug(button->profile->device->ratbag,
 		"macro on button %d of profile %d is named '%s' (from folder '%s'), and contains %d events:\n",
 		button->index, button->profile->index,
 		name, m->macro.group, macro->length);
@@ -816,7 +816,7 @@ static void roccat_read_macro(struct roccat_macro* macro, struct ratbag_button* 
 							RATBAG_MACRO_EVENT_WAIT,
 							time);
 
-		log_raw(button->profile->device->ratbag,
+		log_debug(button->profile->device->ratbag,
 			"    - %s %s\n",
 			libevdev_event_code_get_name(EV_KEY, keycode),
 			macro->keys[j].flag == 0x02 ? "released" : "pressed");
@@ -1029,7 +1029,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 		roccat_read_button(button);
 
 	
-	log_raw(device->ratbag, "profile: %d %s:%d\n",
+	log_debug(device->ratbag, "profile: %d %s:%d\n",
 		settings->profile,
 		__FILE__, __LINE__);
 }
@@ -1081,7 +1081,7 @@ roccat_probe(struct ratbag_device *device)
 		}
 	}
 
-	log_raw(device->ratbag,
+	log_debug(device->ratbag,
 		"'%s' is in profile %d\n",
 		ratbag_device_get_name(device),
 		profile->index);
