@@ -437,16 +437,19 @@ openinput_probe(struct ratbag_device *device)
 	openinput_info_version(device);
 
 	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_VENDOR, str, sizeof(str));
-	if (!ret)
-		log_info(device->ratbag, "openinput: firmware vendor: %s\n", str);
+	if (ret)
+		return ret;
+	log_info(device->ratbag, "openinput: firmware vendor: %s\n", str);
 
 	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_VERSION, str, sizeof(str));
-	if (!ret)
-		log_info(device->ratbag, "openinput: firmware version: %s\n", str);
+	if (ret)
+		return ret;
+	log_info(device->ratbag, "openinput: firmware version: %s\n", str);
 
 	ret = openinput_info_fw_info(device, OI_FUNCTION_FW_INFO_DEVICE_NAME, str, sizeof(str));
-	if (!ret)
-		log_info(device->ratbag, "openinput: device: %s\n", str);
+	if (ret)
+		return ret;
+	log_info(device->ratbag, "openinput: device: %s\n", str);
 
 	ret = openinput_read_supported_function_pages(device);
 	if (ret)
