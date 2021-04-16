@@ -175,11 +175,24 @@ openinput_send_report(struct ratbag_device *device, struct oi_report_t *report)
 		return ret;
 	}
 
-	ret = ratbag_hidraw_read_input_report(device, buffer, OI_REPORT_MAX_SIZE);
-	if (ret < 0) {
-		log_error(device->ratbag, "openinput: failed to read data from device (%s)\n",
-			  strerror(-ret));
-		return ret;
+	/* ignore up to 10 non protocol related reports */
+	uint8_t read_attempts = 10;
+
+	do
+	{
+		ret = ratbag_hidraw_read_input_report(device, buffer, OI_REPORT_MAX_SIZE);
+		if (ret < 0) {
+			log_error(device->ratbag, "openinput: failed to read data from device (%s)\n",
+				strerror(-ret));
+			return ret;
+		}
+	}
+	while(!openinput_get_report_size(buffer[0]) && --read_attempts);
+
+	if(!read_attempts)
+	{
+		log_error(device->ratbag, "openinput: failed to read response from device expected report id never came\n");
+		return -1;
 	}
 
 	memcpy(report, buffer, openinput_get_report_size(buffer[0]));
