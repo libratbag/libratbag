@@ -585,7 +585,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 	struct roccat_settings_report* report;
 	struct roccat_buttons* buttons;
 	struct roccat_macro* macro;
-	uint8_t bankBuf[ROCCAT_REPORT_SIZE_MACRO_BANK] = { 0 };
+	uint8_t bank_buf[ROCCAT_REPORT_SIZE_MACRO_BANK] = { 0 };
 	int rc = 0;
 	int i = 0, count = 0;
 
@@ -701,10 +701,10 @@ roccat_write_profile(struct ratbag_profile *profile)
 			
 
 			// Macro has to be send in two packets
-			memcpy(bankBuf, macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
+			memcpy(bank_buf, macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
 
 			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						  bankBuf, ROCCAT_REPORT_SIZE_MACRO_BANK);    
+						  bank_buf, ROCCAT_REPORT_SIZE_MACRO_BANK);    
 			if (rc < 0)
 				return rc;
 
@@ -717,16 +717,16 @@ roccat_write_profile(struct ratbag_profile *profile)
 					"Error while waiting for the device to be ready: %s (%d)\n",
 					strerror(-rc), rc);
 
-			bankBuf[0] = ROCCAT_REPORT_ID_MACRO;
-			bankBuf[1] = ROCCAT_BANK_ID_2;
+			bank_buf[0] = ROCCAT_REPORT_ID_MACRO;
+			bank_buf[1] = ROCCAT_BANK_ID_2;
 			// The remaining macro structure is not big enough to fill the second bank
 			// Write the remaining, fill the end with 0 
-			unsigned int remainingToWrite = sizeof(struct roccat_macro)-ROCCAT_REPORT_SIZE_MACRO_BANK;
-			memcpy(bankBuf+2, &((uint8_t*)macro)[ROCCAT_REPORT_SIZE_MACRO_BANK], remainingToWrite);
-			memset(bankBuf+2+remainingToWrite, 0, ROCCAT_REPORT_SIZE_MACRO_BANK-(2+remainingToWrite));
+			unsigned int remaining_to_write = sizeof(struct roccat_macro)-ROCCAT_REPORT_SIZE_MACRO_BANK;
+			memcpy(bank_buf+2, &((uint8_t*)macro)[ROCCAT_REPORT_SIZE_MACRO_BANK], remaining_to_write);
+			memset(bank_buf+2+remaining_to_write, 0, ROCCAT_REPORT_SIZE_MACRO_BANK-(2+remaining_to_write));
 
 			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-				bankBuf, ROCCAT_REPORT_SIZE_MACRO_BANK);
+				bank_buf, ROCCAT_REPORT_SIZE_MACRO_BANK);
 			if (rc < 0)
 				return rc;
 
