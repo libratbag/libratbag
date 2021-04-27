@@ -198,6 +198,7 @@ init_data_steelseries(struct ratbag *ratbag,
 	_cleanup_(freep) char *str = NULL;
 	int num;
 
+	data->steelseries.alternate_led = 0;
 	data->steelseries.device_version = -1;
 	data->steelseries.button_count = -1;
 	data->steelseries.led_count = -1;
