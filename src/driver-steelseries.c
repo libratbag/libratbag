@@ -612,7 +612,13 @@ steelseries_write_led_v1(struct ratbag_led *led)
 	int ret;
 
 	buf[0] = STEELSERIES_ID_LED_EFFECT_SHORT;
-	buf[1] = led->index + 1;
+	// FIXME: add an option to device settings.
+	if (false) {
+		// This is for Rival 100.
+		buf[1] = 0x00;
+	} else {
+		buf[1] = led->index + 1;
+	}
 
 	switch(led->mode) {
 	case RATBAG_LED_OFF:
@@ -645,8 +651,15 @@ steelseries_write_led_v1(struct ratbag_led *led)
 			buf[2] = (led->brightness / 86) + 2;
 		}
 	} else {
-		buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
-		buf[1] = led->index + 1;
+		// FIXME: add an option to device settings.
+		if (false) {
+			// This is for Rival 100.
+			buf[0] = 0x05;
+			buf[1] = 0x00;
+		} else {
+			buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
+			buf[1] = led->index + 1;
+		}
 		buf[2] = led->color.red;
 		buf[3] = led->color.green;
 		buf[4] = led->color.blue;
