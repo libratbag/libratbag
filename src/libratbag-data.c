@@ -82,6 +82,7 @@ struct data_steelseries {
 	int macro_length;
 	int mono_led;
 	int short_button;
+	int alternate_led;
 };
 
 struct ratbag_device_data {
@@ -204,6 +205,13 @@ init_data_steelseries(struct ratbag *ratbag,
 	data->steelseries.dpi_range = NULL;
 	data->steelseries.mono_led = 0;
 	data->steelseries.short_button = 0;
+
+	error = NULL;
+	num = g_key_file_get_integer(keyfile, group, "AlternateLed", &error);
+	if (num > 0 || !error)
+		data->steelseries.alternate_led = num;
+	if (error)
+		g_error_free(error);
 
 	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
 	if (num != 0 || !error)
@@ -674,4 +682,12 @@ ratbag_device_data_steelseries_get_short_button(const struct ratbag_device_data 
 	assert(data->drivertype == STEELSERIES);
 
 	return data->steelseries.short_button;
+}
+
+int
+ratbag_device_data_steelseries_get_alternate_led(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == STEELSERIES);
+
+	return data->steelseries.alternate_led;
 }

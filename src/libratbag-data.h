@@ -101,6 +101,12 @@ int
 ratbag_device_data_steelseries_get_button_count(const struct ratbag_device_data *data);
 
 /**
+ * @return 1 if alternate LED mode or 0
+ */
+int
+ratbag_device_data_steelseries_get_alternate_led(const struct ratbag_device_data *data);
+
+/**
  * @return The led count or -1 if not set
  */
 int

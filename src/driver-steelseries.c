@@ -611,10 +611,10 @@ steelseries_write_led_v1(struct ratbag_led *led)
 	uint8_t buf[STEELSERIES_REPORT_SIZE_SHORT] = {0};
 	int ret;
 
+	const int alternate_led = ratbag_device_data_steelseries_get_alternate_led(device->data);
+
 	buf[0] = STEELSERIES_ID_LED_EFFECT_SHORT;
-	// FIXME: add an option to device settings.
-	if (false) {
-		// This is for Rival 100.
+	if (alternate_led) {
 		buf[1] = 0x00;
 	} else {
 		buf[1] = led->index + 1;
@@ -651,9 +651,7 @@ steelseries_write_led_v1(struct ratbag_led *led)
 			buf[2] = (led->brightness / 86) + 2;
 		}
 	} else {
-		// FIXME: add an option to device settings.
-		if (false) {
-			// This is for Rival 100.
+		if (alternate_led) {
 			buf[0] = 0x05;
 			buf[1] = 0x00;
 		} else {
