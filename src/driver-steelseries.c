@@ -443,9 +443,29 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
 
 	if (device_version == 1) {
+		char reported_rate;
+		switch (profile->hz) {
+			case 125:
+				reported_rate = 0x04;
+				break;
+			case 250:
+				reported_rate = 0x03;
+				break;
+			case 500:
+				reported_rate = 0x02;
+				break;
+			case 1000:
+				reported_rate = 0x01;
+				break;
+			default:
+				log_info(device->ratbag, "invalid report rate (%d); falling back to 1000 hz.\n", profile->hz);
+				reported_rate = 0x01;
+				break;
+		}
+
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
 		buf[0] = STEELSERIES_ID_REPORT_RATE_SHORT;
-		buf[2] = 1000 / profile->hz;
+		buf[2] = reported_rate;
 	} else if (device_version == 2) {
 		buf_len = STEELSERIES_REPORT_SIZE;
 		buf[0] = STEELSERIES_ID_REPORT_RATE;
