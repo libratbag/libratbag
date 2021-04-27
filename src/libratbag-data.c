@@ -206,13 +206,13 @@ init_data_steelseries(struct ratbag *ratbag,
 	data->steelseries.mono_led = 0;
 	data->steelseries.short_button = 0;
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "AlternateLed", &error);
 	if (num > 0 || !error)
 		data->steelseries.alternate_led = num;
 	if (error)
 		g_error_free(error);
 
+	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
 	if (num != 0 || !error)
 		data->steelseries.button_count = num;
