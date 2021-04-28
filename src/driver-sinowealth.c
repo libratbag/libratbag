@@ -245,6 +245,20 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	unsigned int hz = 1000; /* TODO */
 	int rc;
 
+	/* Print firmware version */
+	uint8_t version[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION};
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, version, sizeof(version));
+	if (rc != sizeof(version)) {
+		log_error(device->ratbag, "Error while sending read firmware version command: %d\n", rc);
+		return -1;
+	}
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, version, sizeof(version));
+	if (rc != sizeof(version)) {
+		log_error(device->ratbag, "Could not read firmware version: %d\n", rc);
+		return -1;
+	}
+	log_debug(device->ratbag, "firmware version: %.4s\n", version + 2);
+
 	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG};
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
