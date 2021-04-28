@@ -25,11 +25,13 @@
 #include "libratbag-hidraw.h"
 
 #define SINOWEALTH_REPORT_ID_CONFIG 0x4
+#define SINOWEALTH_REPORT_ID_CONFIG_LONG 0x6
 #define SINOWEALTH_REPORT_ID_CMD 0x5
 #define SINOWEALTH_CMD_FIRMWARE_VERSION 0x1
 #define SINOWEALTH_CMD_GET_CONFIG 0x11
 #define SINOWEALTH_CONFIG_SIZE 520
-#define SINOWEALTH_CONFIG_SIZE_USED 131
+#define SINOWEALTH_CONFIG_SIZE_USED_MIN 131
+#define SINOWEALTH_CONFIG_SIZE_USED_MAX 167
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
 
@@ -134,13 +136,14 @@ struct sinowealth_config_report {
 	 * 0x2 - 3 mm
 	 */
 	uint8_t lift_off_distance;
-	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED];
+	uint8_t unknown5[36];
+	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED_MAX];
 } __attribute__((packed));
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
 
 struct sinowealth_data {
-	/* this is kinda unnecessary at this time, but all the other drivers do it too ;) */
+	bool is_long;
 	struct sinowealth_config_report config;
 };
 
@@ -270,10 +273,12 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		return -1;
 	}
 
-	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
+	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc != SINOWEALTH_CONFIG_SIZE_USED) {
+	if (rc < SINOWEALTH_CONFIG_SIZE_USED_MIN || rc > SINOWEALTH_CONFIG_SIZE_USED_MAX) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
@@ -399,8 +404,22 @@ sinowealth_init_profile(struct ratbag_device *device)
 static int
 sinowealth_test_hidraw(struct ratbag_device *device)
 {
+	int rc = 0;
+
 	/* Only the keyboard interface has this report */
-	return ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_CONFIG);
+	rc = ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_CONFIG);
+	if (rc)
+		return rc;
+
+	rc = ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_CONFIG_LONG);
+	if (rc) {
+		struct sinowealth_data *drv_data = device->drv_data;
+		drv_data->is_long = true;
+
+		return rc;
+	}
+
+	return 0;
 }
 
 static int
@@ -410,12 +429,12 @@ sinowealth_probe(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = 0;
 	struct ratbag_profile *profile = 0;
 
+	drv_data = zalloc(sizeof(*drv_data));
+	ratbag_set_drv_data(device, drv_data);
+
 	rc = ratbag_find_hidraw(device, sinowealth_test_hidraw);
 	if (rc)
 		goto err;
-
-	drv_data = zalloc(sizeof(*drv_data));
-	ratbag_set_drv_data(device, drv_data);
 
 	sinowealth_init_profile(device);
 
@@ -513,7 +532,9 @@ sinowealth_commit(struct ratbag_device *device)
 
 	config->config_write = 0x7b; /* magic */
 
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
+	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	rc = ratbag_hidraw_set_feature_report(device, config_report_id,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	if (rc != SINOWEALTH_CONFIG_SIZE) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
