@@ -507,8 +507,8 @@ ratbagd_profile_set_report_rate(sd_bus *bus,
 		return r;
 
 	/* basic sanity check */
-	if (rate > 5000)
-		rate = 5000;
+	if (rate > 8000)
+		rate = 8000;
 
 	r = ratbag_profile_set_report_rate(profile->lib_profile, rate);
 	if (r == 0) {
