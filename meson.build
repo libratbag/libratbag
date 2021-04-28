@@ -285,6 +285,7 @@ man_lur_command = configure_file (
 data_files = files(
 	'data/devices/etekcity-scroll-alpha.device',
 	'data/devices/gskill-MX-780.device',
+	'data/devices/gwolves-hati.device',
 	'data/devices/logitech-M325.device',
 	'data/devices/logitech-M500s.device',
 	'data/devices/logitech-M545.device',
