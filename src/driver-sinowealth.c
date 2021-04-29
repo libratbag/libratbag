@@ -78,8 +78,8 @@ struct sinowealth_config_report {
 	uint8_t report_id; /* SINOWEALTH_REPORT_ID_CONFIG */
 	uint8_t command_id;
 	uint8_t unknown1;
-	/* always 0 when config is read from device,
-	 * has to be 0x7b when writing config to device
+	/* 0x0 - read.
+	 * CONFIG_SIZE_USED-8 - write.
 	 */
 	uint8_t config_write;
 	uint8_t unknown2[6];
@@ -144,6 +144,7 @@ _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE
 
 struct sinowealth_data {
 	bool is_long;
+	unsigned int config_size;
 	struct sinowealth_config_report config;
 };
 
@@ -282,6 +283,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
+	drv_data->config_size = rc;
 
 	/* Report rate */
 	const uint8_t reported_rate = config->config & 0b111U;
@@ -530,7 +532,7 @@ sinowealth_commit(struct ratbag_device *device)
 	}
 	ratbag_led_unref(led);
 
-	config->config_write = 0x7b; /* magic */
+	config->config_write = drv_data->config_size - 8;
 
 	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
