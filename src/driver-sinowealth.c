@@ -74,8 +74,9 @@ struct sinowealth_config_report {
 	uint8_t report_id; /* SINOWEALTH_REPORT_ID_CONFIG */
 	uint8_t command_id;
 	uint8_t unknown1;
-	/* always 0 when config is read from device,
-	 * has to be 0x7b when writing config to device
+	/* 0x0 - read
+	 * 0x7b - write
+	 * 0x9f - long: write (0x7b works as well)
 	 */
 	uint8_t config_write;
 	uint8_t unknown2[6];
