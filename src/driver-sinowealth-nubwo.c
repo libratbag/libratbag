@@ -21,6 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "config.h"
 #include "libratbag-enums.h"
 #include "libratbag-hidraw.h"
 #include "libratbag-private.h"
