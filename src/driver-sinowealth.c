@@ -443,6 +443,24 @@ sinowealth_commit(struct ratbag_device *device)
 	int rc;
 	uint8_t dpi_enabled = 0;
 
+	/* Update report rate. */
+	uint8_t reported_rate = 0;
+	if (profile->hz >= 1000) {
+		profile->hz = 1000;
+		reported_rate = 0x04;
+	} else if (profile->hz >= 375) {
+		profile->hz = 500;
+		reported_rate = 0x03;
+	} else if (profile->hz <= 125) {
+		profile->hz = 125;
+		reported_rate = 0x01;
+	} else {
+		profile->hz = 250;
+		reported_rate = 0x02;
+	}
+	config->config &= ~0b111U;
+	config->config |= reported_rate;
+
 	/* Check if any resolution requires independent XY DPIs */
 	config->config &= ~SINOWEALTH_XY_INDEPENDENT;
 	ratbag_profile_for_each_resolution(profile, resolution) {
