@@ -325,6 +325,20 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		resolution->is_default = resolution->is_active;
 	}
 
+	/* Print unknown1 */
+	uint8_t unknown1[6] = {SINOWEALTH_REPORT_ID_CMD, 0x2};
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, unknown1, sizeof(unknown1));
+	if (rc != sizeof(unknown1)) {
+		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+		return -1;
+	}
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, (uint8_t*) unknown1, sizeof(unknown1));
+	if (rc != sizeof(unknown1)) {
+		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+		return -1;
+	}
+	log_info(device->ratbag, "unknown1: %u\n", unknown1[2]);
+
 	/* Body lighting */
 	led = ratbag_profile_get_led(profile, 0);
 	switch (config->rgb_effect) {
