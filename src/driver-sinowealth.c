@@ -77,7 +77,10 @@ struct sinowealth_config_report {
 	 */
 	uint8_t config_write;
 	uint8_t unknown2[6];
-	/* 0x80 - SINOWEALTH_XY_INDEPENDENT */
+	/*
+	 * 0x1/2/3/4 - report rate (125, 250, 500, 1000 hz).
+	 * 0x80 - SINOWEALTH_XY_INDEPENDENT.
+	 */
 	uint8_t config;
 	uint8_t dpi_count:4;
 	uint8_t active_dpi:4;
@@ -242,7 +245,6 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	struct sinowealth_config_report *config = &drv_data->config;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	unsigned int hz = 1000; /* TODO */
 	int rc;
 
 	/* Print firmware version */
@@ -274,8 +276,27 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		return -1;
 	}
 
-	/* TODO */
-	ratbag_profile_set_report_rate_list(profile, &hz, 1);
+	/* Report rate */
+	const uint8_t reported_rate = config->config & 0b111U;
+	unsigned int hz = 0;
+	switch (reported_rate) {
+		case 0x01:
+			hz = 125;
+			break;
+		case 0x02:
+			hz = 250;
+			break;
+		case 0x03:
+			hz = 500;
+			break;
+		case 0x04:
+			hz = 1000;
+			break;
+		default:
+			hz = 0;
+			log_error(device->ratbag, "read incorrect report rate (%u)\n", reported_rate);
+			break;
+	}
 	ratbag_profile_set_report_rate(profile, hz);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
@@ -355,6 +376,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 		ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
 		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 	}
+
+	/* Set up available report rates. */
+	unsigned int report_rates[] = { 125, 250, 500, 1000 };
+	ratbag_profile_set_report_rate_list(profile, report_rates, ARRAY_LENGTH(report_rates));
 
 	/* Set up LED capabilities */
 	led = ratbag_profile_get_led(profile, 0);
