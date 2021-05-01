@@ -118,14 +118,8 @@ ratbag_device_data_steelseries_get_dpi_range(const struct ratbag_device_data *da
 int
 ratbag_device_data_steelseries_get_macro_length(const struct ratbag_device_data *data);
 
-int
-ratbag_device_data_steelseries_get_mono_led(const struct ratbag_device_data *data);
-
 /**
  * @return Quirk
  */
 enum steelseries_quirk
 ratbag_device_data_steelseries_get_quirk(const struct ratbag_device_data *data);
-
-int
-ratbag_device_data_steelseries_get_short_button(const struct ratbag_device_data *data);

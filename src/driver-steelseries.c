@@ -277,7 +277,7 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
-	int rc, button_count, led_count, device_version, mono_led, short_button;
+	int rc, button_count, led_count, device_version, quirk;
 	struct dpi_list *dpilist = NULL;
 	struct dpi_range *dpirange = NULL;
 
@@ -298,8 +298,7 @@ steelseries_probe(struct ratbag_device *device)
 	led_count = ratbag_device_data_steelseries_get_led_count(device->data);
 	dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
 	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
-	mono_led = ratbag_device_data_steelseries_get_mono_led(device->data);
-	short_button = ratbag_device_data_steelseries_get_short_button(device->data);
+	quirk = ratbag_device_data_steelseries_get_quirk(device->data);
 
 	ratbag_device_init_profiles(device,
 				    STEELSERIES_NUM_PROFILES,
@@ -343,7 +342,7 @@ steelseries_probe(struct ratbag_device *device)
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
-			if (short_button == 0) {
+			if (quirk != STEELSERIES_QUIRK_SENSEIRAW) {
 				ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 			}
 
@@ -353,7 +352,7 @@ steelseries_probe(struct ratbag_device *device)
 		ratbag_profile_for_each_led(profile, led) {
 			led->type = led->index == 0 ? RATBAG_LED_TYPE_LOGO : RATBAG_LED_TYPE_WHEEL;
 			led->mode = RATBAG_LED_ON;
-			if (mono_led) {
+			if (quirk == STEELSERIES_QUIRK_SENSEIRAW) {
 				led->colordepth = RATBAG_LED_COLORDEPTH_MONOCHROME;
 				led->brightness = 255;
 			} else {
@@ -499,10 +498,10 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 	if (ratbag_device_data_steelseries_get_macro_length(device->data) == 0)
 		return 0;
 
-	int short_button = ratbag_device_data_steelseries_get_short_button(device->data);
-	int button_size = (short_button == 0) ? 5 : 3;
-	int report_size = (short_button == 0) ? STEELSERIES_REPORT_LONG_SIZE : STEELSERIES_REPORT_SIZE_SHORT;
-	int max_modifiers = (short_button == 0) ? 3 : 0;
+	const bool is_senseiraw = ratbag_device_data_steelseries_get_quirk(device->data) == STEELSERIES_QUIRK_SENSEIRAW;
+	const int button_size = is_senseiraw ? 3 : 5;
+	const int report_size = is_senseiraw ? STEELSERIES_REPORT_SIZE_SHORT : STEELSERIES_REPORT_LONG_SIZE;
+	const int max_modifiers = is_senseiraw ? 0 : 3;
 
 	uint8_t buf[report_size];
 	memset(buf, 0, report_size);
@@ -537,7 +536,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 			code = ratbag_hidraw_get_keyboard_usage_from_keycode(
 						device, key);
 			if (code) {
-				if (short_button) {
+				if (is_senseiraw) {
 					buf[idx] = STEELSERIES_BUTTON_KEY;
 				} else {
 					buf[idx] = STEELSERIES_BUTTON_KBD;
@@ -645,9 +644,7 @@ steelseries_write_led_v1(struct ratbag_led *led)
 	if (ret < 0)
 		return ret;
 
-	int mono_led = ratbag_device_data_steelseries_get_mono_led(device->data);
-
-	if (mono_led) {
+	if (quirk == STEELSERIES_QUIRK_SENSEIRAW) {
 		buf[0] = STEELSERIES_ID_LED_INTENSITY_SHORT;
 		buf[1] = led->index + 1;
 		if (led->mode == RATBAG_LED_OFF || led->brightness == 0) {
