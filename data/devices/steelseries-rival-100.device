@@ -1,0 +1,13 @@
+[Device]
+# 100; 100 (Dell China); 100 Dota 2 Edition (retail); 100 Dota 2 Edition (Lenovo); 105.
+DeviceMatch=usb:1038:1702;usb:1038:170a;usb:1038:170b;usb:1038:170c;usb:1038:1814
+Driver=steelseries
+Name=SteelSeries Rival 100/105
+
+[Driver/steelseries]
+# Actually 6.
+Buttons=0
+DeviceVersion=1
+DpiList=250;500;1000;1250;1500;1750;2000;4000
+Leds=1
+Quirk=Rival100
