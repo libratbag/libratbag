@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "driver-steelseries.h"
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 #include "libratbag-data.h"
@@ -53,6 +54,7 @@
 #define STEELSERIES_ID_LED_INTENSITY_SHORT	0x05
 #define STEELSERIES_ID_LED_EFFECT_SHORT		0x07
 #define STEELSERIES_ID_LED_COLOR_SHORT		0x08
+#define STEELSERIES_ID_LED_COLOR_SHORT_RIVAL100	0x05
 #define STEELSERIES_ID_SAVE_SHORT		0x09
 
 #define STEELSERIES_ID_BUTTONS			0x31
@@ -609,11 +611,16 @@ static int
 steelseries_write_led_v1(struct ratbag_led *led)
 {
 	struct ratbag_device *device = led->profile->device;
+	const enum steelseries_quirk quirk = ratbag_device_data_steelseries_get_quirk(device->data);
 	uint8_t buf[STEELSERIES_REPORT_SIZE_SHORT] = {0};
 	int ret;
 
 	buf[0] = STEELSERIES_ID_LED_EFFECT_SHORT;
-	buf[1] = led->index + 1;
+	if (quirk != STEELSERIES_QUIRK_RIVAL100) {
+		buf[1] = led->index + 1;
+	} else {
+		buf[1] = 0x00;
+	}
 
 	switch(led->mode) {
 	case RATBAG_LED_OFF:
@@ -654,8 +661,13 @@ steelseries_write_led_v1(struct ratbag_led *led)
 			buf[2] = (led->brightness / 86) + 2;
 		}
 	} else {
-		buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
-		buf[1] = led->index + 1;
+		if (quirk != STEELSERIES_QUIRK_RIVAL100) {
+			buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
+			buf[1] = led->index + 1;
+		} else {
+			buf[0] = STEELSERIES_ID_LED_COLOR_SHORT_RIVAL100;
+			buf[1] = 0x00;
+		}
 		buf[2] = led->color.red;
 		buf[3] = led->color.green;
 		buf[4] = led->color.blue;
