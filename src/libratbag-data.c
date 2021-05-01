@@ -252,6 +252,8 @@ init_data_steelseries(struct ratbag *ratbag,
 
 	str = g_key_file_get_string(keyfile, group, "Quirk", NULL);
 	if (str) {
+		if (streq(str, "Rival100"))
+			data->steelseries.quirk = STEELSERIES_QUIRK_RIVAL100;
 		if (streq(str, "SenseiRAW"))
 			data->steelseries.quirk = STEELSERIES_QUIRK_SENSEIRAW;
 	}
