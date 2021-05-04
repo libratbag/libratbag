@@ -30,8 +30,8 @@
 #define SINOWEALTH_CMD_FIRMWARE_VERSION 0x1
 #define SINOWEALTH_CMD_GET_CONFIG 0x11
 #define SINOWEALTH_CONFIG_SIZE 520
-#define SINOWEALTH_CONFIG_SIZE_USED 131
-#define SINOWEALTH_CONFIG_SIZE_USED_LONG 167
+#define SINOWEALTH_CONFIG_SIZE_USED_MIN 131
+#define SINOWEALTH_CONFIG_SIZE_USED_MAX 167
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
 
@@ -133,7 +133,7 @@ struct sinowealth_config_report {
 	 */
 	uint8_t lift_off_distance;
 	uint8_t unknown5[36];
-	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED_LONG];
+	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED_MAX];
 } __attribute__((packed));
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
@@ -257,12 +257,11 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	}
 
 	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
-	const unsigned int config_size = drv_data->is_long ? SINOWEALTH_CONFIG_SIZE_USED_LONG : SINOWEALTH_CONFIG_SIZE_USED;
 
 	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc != (int)config_size) {
+	if (rc < SINOWEALTH_CONFIG_SIZE_USED_MIN) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
