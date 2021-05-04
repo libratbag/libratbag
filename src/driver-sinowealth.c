@@ -38,8 +38,12 @@
 #define SINOWEALTH_DPI_MAX 12000
 #define SINOWEALTH_DPI_STEP 100
 
-/* other models might have up to eight */
-#define SINOWEALTH_NUM_DPIS 6
+/* Different software expose different amount of DPI slots:
+ * Glorious - 6;
+ * G-Wolves - 7.
+ * But in fact fact there are eight slots.
+ */
+#define SINOWEALTH_NUM_DPIS 8
 
 #define SINOWEALTH_RGB_BRIGHTNESS_BITS 0xF0
 #define SINOWEALTH_RGB_SPEED_BITS 0x0F
@@ -85,8 +89,6 @@ struct sinowealth_config_report {
 	uint8_t dpi_count:4;
 	uint8_t active_dpi:4;
 	/* bit set: disabled, unset: enabled
-	 * this structure has support for eight DPI slots,
-	 * but the glorious software only exposes six
 	 */
 	uint8_t dpi_enabled;
 	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it
