@@ -139,6 +139,7 @@ _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE
 
 struct sinowealth_data {
 	bool is_long;
+	unsigned int config_size;
 	struct sinowealth_config_report config;
 };
 
@@ -264,6 +265,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
+	drv_data->config_size = rc;
 
 	/* TODO */
 	ratbag_profile_set_report_rate_list(profile, &hz, 1);
