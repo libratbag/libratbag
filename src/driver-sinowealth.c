@@ -260,7 +260,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc < SINOWEALTH_CONFIG_SIZE_USED_MIN) {
+	if (rc < SINOWEALTH_CONFIG_SIZE_USED_MIN || rc > SINOWEALTH_CONFIG_SIZE_USED_MAX) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
