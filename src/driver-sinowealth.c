@@ -485,7 +485,7 @@ sinowealth_commit(struct ratbag_device *device)
 	}
 	ratbag_led_unref(led);
 
-	config->config_write = 0x7b; /* magic */
+	config->config_write = drv_data->config_size - 8;
 
 	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
