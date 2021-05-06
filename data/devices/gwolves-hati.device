@@ -1,0 +1,9 @@
+[Device]
+DeviceMatch=usb:258a:0027
+Driver=sinowealth
+Name=G-Wolves Hati HT-M
+
+[Driver/sinowealth]
+Buttons=6
+DpiRange=100:12000@100
+Leds=0
