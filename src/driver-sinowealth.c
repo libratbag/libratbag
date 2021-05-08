@@ -74,8 +74,8 @@ struct sinowealth_config_report {
 	uint8_t report_id; /* SINOWEALTH_REPORT_ID_CONFIG */
 	uint8_t command_id;
 	uint8_t unknown1;
-	/* 0x0 - read
-	 * CONFIG_SIZE_USED-8 - write
+	/* 0x0 - read.
+	 * CONFIG_SIZE_USED-8 - write.
 	 */
 	uint8_t config_write;
 	/*
