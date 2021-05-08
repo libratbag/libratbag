@@ -25,11 +25,13 @@
 #include "libratbag-hidraw.h"
 
 #define SINOWEALTH_REPORT_ID_CONFIG 0x4
+#define SINOWEALTH_REPORT_ID_CONFIG_LONG 0x6
 #define SINOWEALTH_REPORT_ID_CMD 0x5
 #define SINOWEALTH_CMD_FIRMWARE_VERSION 0x1
 #define SINOWEALTH_CMD_GET_CONFIG 0x11
 #define SINOWEALTH_CONFIG_SIZE 520
-#define SINOWEALTH_CONFIG_SIZE_USED 131
+#define SINOWEALTH_CONFIG_SIZE_USED_MIN 131
+#define SINOWEALTH_CONFIG_SIZE_USED_MAX 167
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
 
@@ -65,17 +67,29 @@ enum rgb_effect {
 	RGB_BREATHING1 = 0xa, /* single color breathing */
 	RGB_TAIL = 0x4,
 	RGB_RAVE = 0x7,
-	RGB_WAVE = 0x9
+	RGB_WAVE = 0x9,
+	/* The value mice with no LEDs have. Unreliable as non-constant.
+	 * TODO: when this is detected, LED capabilities should be disabled.
+	 */
+	RGB_NOT_SUPPORTED = 0xff,
 };
 
 struct sinowealth_config_report {
 	uint8_t report_id; /* SINOWEALTH_REPORT_ID_CONFIG */
 	uint8_t command_id;
 	uint8_t unknown1;
-	/* always 0 when config is read from device,
-	 * has to be 0x7b when writing config to device
+	/* 0x0 - read.
+	 * CONFIG_SIZE_USED-8 - write.
 	 */
 	uint8_t config_write;
+	/*
+	 * ss668:
+	 * For me it's these values: {0, 0, 0, 0, 0x64, 0x6}.
+	 * Wild guess: last two could be DPI step and button count. ~~My mouse has
+	 * no LEDs, so previous values could indicate LED count~~.
+	 * Update: These values are the same on Glorious Model O. Now need to check
+	 * on Dream Machines DM5.
+	 */
 	uint8_t unknown2[6];
 	/* 0x80 - SINOWEALTH_XY_INDEPENDENT */
 	uint8_t config;
@@ -111,6 +125,7 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t tail_mode;
+	/* ss668: the value on offset 85 was initially 0 for me, but now it's 1. */
 	uint8_t unknown3[33];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
@@ -127,15 +142,22 @@ struct sinowealth_config_report {
 	uint8_t unknown4;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
+	 * ss668: these are always 0xff for me. Instead lift off distance is set using a
+	 * separate command. See the issue for G-Wolves Hati (#1158).
+	 * In the configuration data for Glorious Model O found
+	 * [here](https://github.com/crashniels/GloriousModelORGBControl/blob/master/Glorious%20Model%20O%20RGB%20Control/GloriousModelO.cpp)
+	 * it's 0x0. Is this even correct?
 	 */
 	uint8_t lift_off_distance;
-	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED];
+	uint8_t unknown5[36];
+	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED_MAX];
 } __attribute__((packed));
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
 
 struct sinowealth_data {
-	/* this is kinda unnecessary at this time, but all the other drivers do it too ;) */
+	bool is_long;
+	unsigned int config_size;
 	struct sinowealth_config_report config;
 };
 
@@ -252,13 +274,16 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		return -1;
 	}
 
-	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
+	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc != SINOWEALTH_CONFIG_SIZE_USED) {
+	if (rc < SINOWEALTH_CONFIG_SIZE_USED_MIN || rc > SINOWEALTH_CONFIG_SIZE_USED_MAX) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
+	drv_data->config_size = rc;
 
 	/* TODO */
 	ratbag_profile_set_report_rate_list(profile, &hz, 1);
@@ -280,6 +305,20 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		resolution->is_active = resolution->index == config->active_dpi - 1u;
 		resolution->is_default = resolution->is_active;
 	}
+
+	/* Print unknown1 */
+	uint8_t unknown1[6] = {SINOWEALTH_REPORT_ID_CMD, 0x2};
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, unknown1, sizeof(unknown1));
+	if (rc != sizeof(unknown1)) {
+		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+		return -1;
+	}
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, (uint8_t*) unknown1, sizeof(unknown1));
+	if (rc != sizeof(unknown1)) {
+		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+		return -1;
+	}
+	log_info(device->ratbag, "unknown1: %u\n", unknown1[2]);
 
 	/* Body lighting */
 	led = ratbag_profile_get_led(profile, 0);
@@ -358,8 +397,22 @@ sinowealth_init_profile(struct ratbag_device *device)
 static int
 sinowealth_test_hidraw(struct ratbag_device *device)
 {
+	int rc;
+
 	/* Only the keyboard interface has this report */
-	return ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_CONFIG);
+	rc = ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_CONFIG);
+	if (rc)
+		return rc;
+
+	rc = ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_CONFIG_LONG);
+	if (rc) {
+		struct sinowealth_data *drv_data = device->drv_data;
+		drv_data->is_long = true;
+
+		return rc;
+	}
+
+	return 0;
 }
 
 static int
@@ -369,12 +422,12 @@ sinowealth_probe(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = 0;
 	struct ratbag_profile *profile = 0;
 
+	drv_data = zalloc(sizeof(*drv_data));
+	ratbag_set_drv_data(device, drv_data);
+
 	rc = ratbag_find_hidraw(device, sinowealth_test_hidraw);
 	if (rc)
 		goto err;
-
-	drv_data = zalloc(sizeof(*drv_data));
-	ratbag_set_drv_data(device, drv_data);
 
 	sinowealth_init_profile(device);
 
@@ -450,9 +503,11 @@ sinowealth_commit(struct ratbag_device *device)
 	}
 	ratbag_led_unref(led);
 
-	config->config_write = 0x7b; /* magic */
+	config->config_write = drv_data->config_size - 8;
 
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
+	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	rc = ratbag_hidraw_set_feature_report(device, config_report_id,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
 	if (rc != SINOWEALTH_CONFIG_SIZE) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
