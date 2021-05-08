@@ -125,6 +125,7 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t tail_mode;
+	/* ss668: the value on offset 85 was initially 0 for me, but now it's 1. */
 	uint8_t unknown3[33];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
