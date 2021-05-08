@@ -81,8 +81,10 @@ struct sinowealth_config_report {
 	/*
 	 * ss668:
 	 * For me it's these values: {0, 0, 0, 0, 0x64, 0x6}.
-	 * Wild guess: last two could be DPI step and button count. My mouse has
-	 * no LEDs, so previous values could indicate LED count.
+	 * Wild guess: last two could be DPI step and button count. ~~My mouse has
+	 * no LEDs, so previous values could indicate LED count~~.
+	 * Update: These values are the same on Glorious Model O. Now need to check
+	 * on Dream Machines DM5.
 	 */
 	uint8_t unknown2[6];
 	/* 0x80 - SINOWEALTH_XY_INDEPENDENT */
