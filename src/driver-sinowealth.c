@@ -68,7 +68,7 @@ enum rgb_effect {
 	RGB_TAIL = 0x4,
 	RGB_RAVE = 0x7,
 	RGB_WAVE = 0x9,
-	/* The value mice with no LEDs have.
+	/* The value mice with no LEDs have. Unreliable as non-constant.
 	 * TODO: when this is detected, LED capabilities should be disabled.
 	 */
 	RGB_NOT_SUPPORTED = 0xff,
