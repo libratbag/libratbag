@@ -144,6 +144,9 @@ struct sinowealth_config_report {
 	 * 0x2 - 3 mm
 	 * ss668: these are always 0xff for me. Instead lift off distance is set using a
 	 * separate command. See the issue for G-Wolves Hati (#1158).
+	 * In the configuration data for Glorious Model O found
+	 * [here](https://github.com/crashniels/GloriousModelORGBControl/blob/master/Glorious%20Model%20O%20RGB%20Control/GloriousModelO.cpp)
+	 * it's 0x0. Is this even correct?
 	 */
 	uint8_t lift_off_distance;
 	uint8_t unknown5[36];
