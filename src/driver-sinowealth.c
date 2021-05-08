@@ -71,7 +71,11 @@ enum rgb_effect {
 	RGB_BREATHING1 = 0xa, /* single color breathing */
 	RGB_TAIL = 0x4,
 	RGB_RAVE = 0x7,
-	RGB_WAVE = 0x9
+	RGB_WAVE = 0x9,
+	/* The value mice with no LEDs have. Unreliable as non-constant.
+	 * TODO: when this is detected, LED capabilities should be disabled.
+	 */
+	RGB_NOT_SUPPORTED = 0xff,
 };
 
 struct sinowealth_config_report {
@@ -82,6 +86,14 @@ struct sinowealth_config_report {
 	 * CONFIG_SIZE_USED-8 - write.
 	 */
 	uint8_t config_write;
+	/*
+	 * ss668:
+	 * For me it's these values: {0, 0, 0, 0, 0x64, 0x6}.
+	 * Wild guess: last two could be DPI step and button count. ~~My mouse has
+	 * no LEDs, so previous values could indicate LED count~~.
+	 * Update: These values are the same on Glorious Model O. Now need to check
+	 * on Dream Machines DM5.
+	 */
 	uint8_t unknown2[6];
 	/*
 	 * 0x1/2/3/4 - report rate (125, 250, 500, 1000 hz).
@@ -118,6 +130,7 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t tail_mode;
+	/* ss668: the value on offset 85 was initially 0 for me, but now it's 1. */
 	uint8_t unknown3[33];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
@@ -132,8 +145,9 @@ struct sinowealth_config_report {
 	uint8_t breathing1_mode;
 	struct sinowealth_rbg8 breathing1_color;
 	uint8_t unknown4;
-	/* 0x1 - 2 mm
-	 * 0x2 - 3 mm
+	/* 0x1 - 2 mm.
+	 * 0x2 - 3 mm.
+	 * 0xff - indicates that it is changed with a dedicated command. Do not overwrite this.
 	 */
 	uint8_t lift_off_distance;
 	uint8_t unknown5[36];
