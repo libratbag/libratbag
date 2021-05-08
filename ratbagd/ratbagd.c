@@ -614,7 +614,7 @@ static void remove_ratbagd_devel_dbus_policy(void)
 int main(int argc, char *argv[])
 {
 	struct ratbagd *ctx = NULL;
-	int r;
+	int r = 0;
 
 #if DISABLE_COREDUMP
 	const struct rlimit corelimit = { 0, 0 };
