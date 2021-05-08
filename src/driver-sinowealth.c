@@ -67,7 +67,11 @@ enum rgb_effect {
 	RGB_BREATHING1 = 0xa, /* single color breathing */
 	RGB_TAIL = 0x4,
 	RGB_RAVE = 0x7,
-	RGB_WAVE = 0x9
+	RGB_WAVE = 0x9,
+	/* The value mice with no LEDs have.
+	 * TODO: when this is detected, LED capabilities should be disabled.
+	 */
+	RGB_NOT_SUPPORTED = 0xff,
 };
 
 struct sinowealth_config_report {
