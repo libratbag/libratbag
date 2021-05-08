@@ -210,21 +210,21 @@ struct hidpp20_led_sw_ctrl_led_state {
 	uint8_t index;
 	uint16_t mode;
 	union {
-		struct {
+		struct hidpp20_led_breathing {
 			uint16_t brightness;
 			uint16_t period;
 			uint16_t timeout;
 		} breathing;
-		struct {
+		struct hidpp20_led_traveling {
 			uint16_t unused;
 			uint16_t delay;
 		} traveling;
-		struct {
+		struct hidpp20_led_blink {
 			uint16_t index;
 			uint16_t on_time;
 			uint16_t off_time;
 		} blink;
-		struct {
+		struct hidpp20_led_on {
 			/* Logical information to display on the LED
 			 * Meaning and value range depend on the LED
 			 */
