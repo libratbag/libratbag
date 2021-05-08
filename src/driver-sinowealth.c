@@ -78,6 +78,12 @@ struct sinowealth_config_report {
 	 * CONFIG_SIZE_USED-8 - write
 	 */
 	uint8_t config_write;
+	/*
+	 * ss668:
+	 * For me it's these values: {0, 0, 0, 0, 0x64, 0x6}.
+	 * Wild guess: last two could be DPI step and button count. My mouse has
+	 * no LEDs, so previous values could indicate LED count.
+	 */
 	uint8_t unknown2[6];
 	/* 0x80 - SINOWEALTH_XY_INDEPENDENT */
 	uint8_t config;
@@ -129,6 +135,8 @@ struct sinowealth_config_report {
 	uint8_t unknown4;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
+	 * ss668: these are always 0xff for me. Instead lift off distance is set using a
+	 * separate command. See the issue for G-Wolves Hati (#1158).
 	 */
 	uint8_t lift_off_distance;
 	uint8_t unknown5[36];
