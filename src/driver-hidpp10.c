@@ -548,7 +548,7 @@ hidpp10_log(void *userdata, enum hidpp_log_priority priority, const char *format
 {
 	struct ratbag_device *device = userdata;
 
-	log_msg_va(device->ratbag, priority, format, args);
+	log_msg_va(device->ratbag, (enum ratbag_log_priority)priority, format, args);
 }
 
 static int
