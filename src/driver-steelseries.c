@@ -38,6 +38,7 @@
 
 #define STEELSERIES_NUM_PROFILES	1
 #define STEELSERIES_NUM_DPI		2
+#define STEELSERIES_NUM_DPI_PROTOCOL4	5
 #define STEELSERIES_INPUT_ENDPOINT	0
 #define STEELSERIES_INPUT_HIDRAW	1
 
@@ -73,6 +74,8 @@
 #define STEELSERIES_ID_SAVE_PROTOCOL3		0x09
 #define STEELSERIES_ID_FIRMWARE_PROTOCOL3	0x10
 #define STEELSERIES_ID_SETTTINGS_PROTOCOL3	0x16
+
+#define STEELSERIES_ID_DPI_PROTOCOL4		0x55
 
 #define STEELSERIES_BUTTON_OFF			0x00
 #define STEELSERIES_BUTTON_RES_CYCLE		0x30
@@ -218,6 +221,7 @@ steelseries_get_firmware_version(struct ratbag_device *device)
 		msg_len = STEELSERIES_REPORT_SIZE_SHORT;
 		break;
 	case 2:
+	case 4:
 		msg.msg.parameters[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL2;
 		msg_len = STEELSERIES_REPORT_SIZE;
 		break;
@@ -225,6 +229,7 @@ steelseries_get_firmware_version(struct ratbag_device *device)
 		msg.msg.parameters[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL3;
 		msg_len = STEELSERIES_REPORT_SIZE;
 		break;
+
 	default:
 		return -ENOTSUP;
 	}
@@ -251,6 +256,7 @@ steelseries_read_settings(struct ratbag_device *device)
 	struct ratbag_profile *profile = NULL;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
+	struct dpi_range *dpirange;
 
 	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
 	int ret;
@@ -263,6 +269,7 @@ steelseries_read_settings(struct ratbag_device *device)
 
 	switch (device_version) {
 	case 2:
+	case 4:
 		msg.msg.parameters[0] = STEELSERIES_ID_SETTTINGS;
 		break;
 	case 3:
@@ -282,20 +289,32 @@ steelseries_read_settings(struct ratbag_device *device)
 	if (ret < 0)
 		return ret;
 
-	if (device_version == 2) {
+	dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
+
+	if (device_version == 2 || device_version == 4) {
 		active_resolution = buf[1] - 1;
 		ratbag_device_for_each_profile(device, profile) {
 			ratbag_profile_for_each_resolution(profile, resolution) {
 				resolution->is_active = resolution->index == active_resolution;
 
-				resolution->dpi_x = 100 * (1 +  buf[2 + resolution->index*2]);
+				if (device_version == 4) {
+					resolution->dpi_x = dpirange->step * get_unaligned_be_u16(&buf[2 + 2 * resolution->index]);
+				} else {
+					resolution->dpi_x = 100 * (1 +  buf[2 + resolution->index*2]);
+				}
 				resolution->dpi_y = resolution->dpi_x;
 			}
 
 			ratbag_profile_for_each_led(profile, led) {
-				led->color.red = buf[6 + led->index * 3];
-				led->color.green = buf[7 + led->index * 3];
-				led->color.blue = buf[8 + led->index * 3];
+				if (device_version == 4) {
+					led->color.red = buf[12 + led->index * 3];
+					led->color.green = buf[13 + led->index * 3];
+					led->color.blue = buf[14 + led->index * 3];
+				} else {
+					led->color.red = buf[6 + led->index * 3];
+					led->color.green = buf[7 + led->index * 3];
+					led->color.blue = buf[8 + led->index * 3];
+				}
 
 				if (!led->color.red && !led->color.green && !led->color.blue)
 					led->mode = RATBAG_LED_OFF;
@@ -346,7 +365,9 @@ steelseries_probe(struct ratbag_device *device)
 
 	ratbag_device_init_profiles(device,
 				    STEELSERIES_NUM_PROFILES,
-				    STEELSERIES_NUM_DPI,
+				    device_version == 4
+				    ? STEELSERIES_NUM_DPI_PROTOCOL4
+				    : STEELSERIES_NUM_DPI,
 				    button_count,
 				    led_count);
 
@@ -465,6 +486,7 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 		msg.msg.parameters[2] = i;
 		break;
 	case 2:
+	case 4:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI;
 		msg.msg.parameters[2] = resolution->index + 1;
@@ -525,6 +547,7 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 		msg.msg.parameters[2] = reported_rate;
 		break;
 	case 2:
+	case 4:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE;
 		msg.msg.parameters[2] = 1000 / profile->hz;
@@ -949,7 +972,7 @@ steelseries_write_led(struct ratbag_led *led)
 
 	if (device_version == 1)
 		return steelseries_write_led_v1(led);
-	else if (device_version == 2)
+	else if (device_version == 2 || device_version == 4)
 		return steelseries_write_led_v2(led);
 	else if (device_version == 3)
 		return steelseries_write_led_v3(led);
@@ -972,7 +995,7 @@ steelseries_write_save(struct ratbag_device *device)
 	if (device_version == 1) {
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
 		msg.msg.parameters[0] = STEELSERIES_ID_SAVE_SHORT;
-	} else if (device_version == 2) {
+	} else if (device_version == 2 || device_version == 4) {
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_SAVE;
 	} else if (device_version == 3) {
@@ -991,6 +1014,34 @@ steelseries_write_save(struct ratbag_device *device)
 }
 
 static int
+steelseries_write_resolutions_v4(struct ratbag_profile *profile)
+{
+	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
+	struct ratbag_resolution *resolution;
+	struct dpi_range *dpirange;
+
+	dpirange = ratbag_device_data_steelseries_get_dpi_range(profile->device->data);
+
+	buf[0] = STEELSERIES_ID_DPI_PROTOCOL4;
+
+	int index = 0;
+	ratbag_profile_for_each_resolution(profile, resolution) {
+
+		buf[2] |= 1 << index;
+
+		if (resolution->is_active)
+			buf[3] = index + 1;
+
+		set_unaligned_le_u16(
+			&buf[index * 2 + 4],
+			resolution->dpi_x / dpirange->step
+		);
+	}
+
+	return ratbag_hidraw_output_report(profile->device, buf, sizeof(buf));
+}
+
+static int
 steelseries_write_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_resolution *resolution;
@@ -1005,18 +1056,32 @@ steelseries_write_profile(struct ratbag_profile *profile)
 			return rc;
 	}
 
-	ratbag_profile_for_each_resolution(profile, resolution) {
-		if (!resolution->dirty)
-			continue;
+	int device_version = ratbag_device_data_steelseries_get_device_version(profile->device->data);
+	if (device_version == 4) {
+		bool resolutions_dirty = true;
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			if (resolution->dirty)
+				resolutions_dirty = true;
+		}
 
-		rc = steelseries_write_dpi(resolution);
-		if (rc != 0)
-			return rc;
+		if (resolutions_dirty) {
+			rc = steelseries_write_resolutions_v4(profile);
+			if (rc != 0)
+				return rc;
+		}
+	} else {
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			if (!resolution->dirty)
+				continue;
 
-		/* The same hz is used for all resolutions. Only write once. */
-		if (resolution->index > 0)
-			continue;
+			rc = steelseries_write_dpi(resolution);
+			if (rc != 0)
+				return rc;
 
+			/* The same hz is used for all resolutions. Only write once. */
+			if (resolution->index > 0)
+				continue;
+		}
 	}
 
 	ratbag_profile_for_each_button(profile, button) {

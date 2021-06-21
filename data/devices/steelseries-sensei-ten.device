@@ -1,0 +1,11 @@
+[Device]
+Name=SteelSeries Sensei Ten
+DeviceMatch=usb:1038:1832
+Driver=steelseries
+
+[Driver/steelseries]
+DeviceVersion=4
+Buttons=8
+Leds=2
+DpiRange=50:18000@50
+MacroLength=250
