@@ -697,5 +697,5 @@ void ratbagd_schedule_task(struct ratbagd *ctx,
 	cb->callback = callback;
 	cb->userdata = userdata;
 
-	sd_event_add_post(ctx->event, &source, ratbagd_callback_handler, cb);
+	sd_event_add_defer(ctx->event, &source, ratbagd_callback_handler, cb);
 }
