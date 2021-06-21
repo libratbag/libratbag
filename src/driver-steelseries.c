@@ -296,6 +296,9 @@ steelseries_read_settings(struct ratbag_device *device)
 				led->color.red = buf[6 + led->index * 3];
 				led->color.green = buf[7 + led->index * 3];
 				led->color.blue = buf[8 + led->index * 3];
+
+				if (!led->color.red && !led->color.green && !led->color.blue)
+					led->mode = RATBAG_LED_OFF;
 			}
 		}
 	} else if (device_version == 3) {
