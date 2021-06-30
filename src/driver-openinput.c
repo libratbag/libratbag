@@ -139,7 +139,7 @@ openinput_get_error_string(struct oi_report_t *report)
 		xasprintf(&str, "Unsupported function (0x%02x, 0x%02x)", report->data[0], report->data[1]);
 		break;
 	default:
-		xasprintf(&str, "Unkown error (%u)", report->function);
+		xasprintf(&str, "Unknown error (%u)", report->function);
 		break;
 	}
 
