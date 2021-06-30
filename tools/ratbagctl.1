@@ -2,7 +2,13 @@
 .SH NAME
 ratbagctl \- inspect and modify configurable mice
 .SH SYNOPSIS
-.B ratbagctl [OPTIONS] {COMMAND} ... device
+.B ratbagctl
+.RI [< options >]
+.B list
+.br
+.B ratbagctl
+.RI [< options >]
+.RI < device "> <" command "> ..."
 .SH DESCRIPTION
 .PP
 The
@@ -21,8 +27,8 @@ Print debugging output. Multiple -v options increase the verbosity. For example,
 will show the protocol output.
 .TP 8
 .B \-\-nocommit
-Do not immediately write the settings to the mouse. This allows to set
-multiple parameters in a script, and the last call to
+Do not immediately write the settings to the mouse. This allows
+multiple parameters to be set in a script, and the last call to
 .B ratbagctl
 will write them all.
 .TP 8
