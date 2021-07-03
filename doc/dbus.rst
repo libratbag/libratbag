@@ -151,6 +151,20 @@ known to ratbagd.
         Vendor or product IDs of 0 are valid IDs (e.g. used used by test
         devices).
 
+.. attribute:: FirmwareMajor
+
+        :type: i
+        :flags: read-only, constant
+
+        The device's firmware major version.
+
+.. attribute:: FirmwareMinor
+
+        :type: i
+        :flags: read-only, constant
+
+        The device's firmware minor version.
+
 .. attribute:: Name
 
         :type: s

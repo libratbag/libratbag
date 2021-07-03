@@ -220,9 +220,45 @@ ratbag_device_get_model(sd_bus *bus,
 	return sd_bus_message_append(reply, "s", model);
 }
 
+static int
+ratbag_device_get_firmware_major(sd_bus *bus,
+					  const char *path,
+					  const char *interface,
+					  const char *property,
+					  sd_bus_message *reply,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	int version = ratbag_device_get_firmware_major_version(device->lib_device);
+
+	CHECK_CALL(sd_bus_message_append(reply, "i", version));
+
+	return 0;
+}
+
+static int
+ratbag_device_get_firmware_minor(sd_bus *bus,
+					  const char *path,
+					  const char *interface,
+					  const char *property,
+					  sd_bus_message *reply,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	int version = ratbag_device_get_firmware_minor_version(device->lib_device);
+
+	CHECK_CALL(sd_bus_message_append(reply, "i", version));
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Model", "s", ratbag_device_get_model, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("FirmwareMajor", "i", ratbag_device_get_firmware_major, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("FirmwareMinor", "i", ratbag_device_get_firmware_minor, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),

@@ -425,6 +425,24 @@ ratbag_device_get_user_data(const struct ratbag_device *device);
  * @ingroup device
  *
  * @param device A previously initialized ratbag device
+ * @return The firmware major version of the device.
+ */
+int32_t
+ratbag_device_get_firmware_major_version(const struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * @param device A previously initialized ratbag device
+ * @return The firmware minor version of the device.
+ */
+int32_t
+ratbag_device_get_firmware_minor_version(const struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * @param device A previously initialized ratbag device
  * @return The name of the device associated with the given ratbag.
  */
 const char *

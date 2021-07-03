@@ -147,6 +147,9 @@ struct ratbag_device {
 	unsigned num_buttons;
 	unsigned num_leds;
 
+	int firmware_major;
+	int firmware_minor;
+
 	void *drv_data;
 
 	struct list link;

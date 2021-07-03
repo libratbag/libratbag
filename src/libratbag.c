@@ -545,6 +545,18 @@ ratbag_device_get_product_id(const struct ratbag_device *device)
 	return device->ids.product;
 }
 
+LIBRATBAG_EXPORT int32_t
+ratbag_device_get_firmware_major_version(const struct ratbag_device *device)
+{
+	return device->firmware_major;
+}
+
+LIBRATBAG_EXPORT int32_t
+ratbag_device_get_firmware_minor_version(const struct ratbag_device *device)
+{
+	return device->firmware_minor;
+}
+
 LIBRATBAG_EXPORT uint32_t
 ratbag_device_get_product_version(const struct ratbag_device *device)
 {

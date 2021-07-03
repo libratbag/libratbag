@@ -212,6 +212,8 @@ def print_device(d, level):
 
     print(" " * level + "{} - {}".format(d.id, d.name))
     print(" " * level + "             Model: {}".format(d.model))
+    if d.firmware_major > 0 or d.firmware_minor > 0:
+        print(" " * level + "  Firmware version: {}.{}".format(d.firmware_major, d.firmware_minor))
     print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))
     print(" " * level + "    Number of Leds: {}".format(len(p.leds)))
     print(" " * level + "Number of Profiles: {}".format(len(d.profiles)))
