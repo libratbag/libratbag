@@ -957,7 +957,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 
 	if (drv_data->capabilities & HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060) {
 		rc = hidpp20drv_read_report_rate_8060(device);
-		if (rc < 0)
+		if (rc < 0 && drv_data->report_rates[0] == 0)
 			return rc;
 
 		ratbag_profile_set_report_rate_list(profile,
@@ -1641,6 +1641,8 @@ hidpp20drv_init_device(struct ratbag_device *device,
 	num = ratbag_device_data_hidpp20_get_led_count(device->data);
 	if (num >= 0)
 		drv_data->num_leds = num;
+
+	drv_data->report_rates[0] = ratbag_device_data_hidpp20_get_report_rate(device->data);;
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,
