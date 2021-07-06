@@ -1,0 +1,5 @@
+[Device]
+Name=Logitech G413
+DeviceMatch=usb:046d:c33a
+LedTypes=switches
+Driver=hidpp20
