@@ -1048,12 +1048,7 @@ LIBRATBAG_EXPORT bool
 ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 				 enum ratbag_resolution_capability cap)
 {
-	switch (cap) {
-	case RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION:
-		break;
-	default:
-		return 0;
-	}
+	assert(cap <= RATBAG_RESOLUTION_CAP_DISABLE);
 
 	return !!(resolution->capabilities & (1 << cap));
 }
@@ -1076,7 +1071,10 @@ ratbag_resolution_set_dpi(struct ratbag_resolution *resolution,
 {
 	struct ratbag_profile *profile = resolution->profile;
 
-	if (!resolution_has_dpi(resolution, dpi))
+	if (resolution->is_disabled) {
+		if (!ratbag_resolution_has_capability(resolution, RATBAG_RESOLUTION_CAP_DISABLE))
+			return RATBAG_ERROR_CAPABILITY;
+	} else if (!resolution_has_dpi(resolution, dpi))
 		return RATBAG_ERROR_VALUE;
 
 	if (resolution->dpi_x != dpi || resolution->dpi_y != dpi) {
@@ -1102,7 +1100,10 @@ ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
 	if ((x == 0 && y != 0) || (x != 0 && y == 0))
 		return RATBAG_ERROR_VALUE;
 
-	if (!resolution_has_dpi(resolution, x) || !resolution_has_dpi(resolution, y))
+	if (resolution->is_disabled) {
+		if (!ratbag_resolution_has_capability(resolution, RATBAG_RESOLUTION_CAP_DISABLE))
+			return RATBAG_ERROR_CAPABILITY;
+	} else if (!resolution_has_dpi(resolution, x) || !resolution_has_dpi(resolution, y))
 		return RATBAG_ERROR_VALUE;
 
 	if (resolution->dpi_x != x || resolution->dpi_y != y) {
@@ -1200,6 +1201,11 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_resolution *res;
 
+	if (resolution->is_disabled) {
+		log_error(profile->device->ratbag, "%s: setting the active resolution to a disabled resolution is not allowed\n", profile->device->name);
+		return -EINVAL;
+	}
+
 	ratbag_profile_for_each_resolution(profile, res)
 		res->is_active = false;
 
@@ -1208,7 +1214,6 @@ ratbag_resolution_set_active(struct ratbag_resolution *resolution)
 	profile->dirty = true;
 	return RATBAG_SUCCESS;
 }
-
 
 LIBRATBAG_EXPORT bool
 ratbag_resolution_is_default(const struct ratbag_resolution *resolution)
@@ -1221,6 +1226,11 @@ ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_resolution *other;
+
+	if (resolution->is_disabled) {
+		log_error(profile->device->ratbag, "%s: setting the default resolution to a disabled resolution is not allowed\n", profile->device->name);
+		return -EINVAL;
+	}
 
 	/* Unset the default on the other resolutions */
 	ratbag_profile_for_each_resolution(profile, other) {
@@ -1238,6 +1248,38 @@ ratbag_resolution_set_default(struct ratbag_resolution *resolution)
 		profile->dirty = true;
 	}
 
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT bool
+ratbag_resolution_is_disabled(const struct ratbag_resolution *resolution)
+{
+	return !!resolution->is_disabled;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_resolution_set_disabled(struct ratbag_resolution *resolution, bool disable)
+{
+	struct ratbag_profile *profile = resolution->profile;
+
+	if (!ratbag_resolution_has_capability(resolution, RATBAG_RESOLUTION_CAP_DISABLE))
+		return RATBAG_ERROR_CAPABILITY;
+
+	if (disable) {
+		if (resolution->is_active) {
+			log_error(profile->device->ratbag, "%s: disabling the active resolution is not allowed\n", profile->device->name);
+			return -EINVAL;
+		} else if (resolution->is_default) {
+			log_error(profile->device->ratbag, "%s: disabling the default resolution is not allowed\n", profile->device->name);
+			return -EINVAL;
+		}
+		resolution->is_disabled = true;
+	} else {
+		resolution->is_disabled = false;
+	}
+
+	resolution->dirty = true;
+	profile->dirty = true;
 	return RATBAG_SUCCESS;
 }
 

@@ -180,18 +180,20 @@ def print_resolution(d, p, r, level):
     else:
         dpi = "{}".format(r.resolution[0])
 
-    print(" " * level + "{}: {}dpi{}{}".format(r.index,
-                                               dpi,
-                                               " (active)" if r.is_active else "",
-                                               " (default)" if r.is_default else "",
-                                               ))
+    print(" " * level + "{}: {}dpi{}{}{}".format(r.index,
+                                                 dpi,
+                                                 " (active)" if r.is_active else "",
+                                                 " (default)" if r.is_default else "",
+                                                 " (disabled)" if r.is_disabled else "",
+                                                 ))
 
 
 def print_profile(d, p, level):
     print(" " * (level - 2) + "Profile {}:{}{}".format(p.index,
-                                                       " (disabled)" if not p.enabled else "",
+                                                       " (disabled)" if p.disabled else "",
                                                        " (active)" if p.is_active else ""))
-    if p.enabled:
+
+    if not p.disabled:
         print(" " * level + "Name: {}".format(p.name or 'n/a'))
         if p.report_rate:
             print(" " * level + "Report Rate: {}Hz".format(p.report_rate))
@@ -445,6 +447,28 @@ def func_default_resolution_set(r, args):
     commit(d, args)
 
 
+def func_resolution_disabled_get(r, args):
+    r, p, d = find_resolution(r, args)
+    print(r.is_disabled)
+
+
+def func_resolution_enabled_get(r, args):
+    r, p, d = find_resolution(r, args)
+    print(not r.is_disabled)
+
+
+def func_resolution_disabled_set(r, args):
+    r, p, d = find_resolution(r, args)
+    r.set_disabled(True)
+    commit(d, args)
+
+
+def func_resolution_enabled_set(r, args):
+    r, p, d = find_resolution(r, args)
+    r.set_disabled(False)
+    commit(d, args)
+
+
 def func_profile_get(r, args):
     p, d = find_profile(r, args)
     print_profile(d, p, 0)
@@ -480,13 +504,13 @@ def func_profile_active_set(r, args):
 
 def func_profile_enable(r, args):
     p, d = find_profile(r, args)
-    p.enabled = True
+    p.disabled = False
     commit(d, args)
 
 
 def func_profile_disable(r, args):
     p, d = find_profile(r, args)
-    p.enabled = False
+    p.disabled = True
     commit(d, args)
 
 
@@ -804,6 +828,44 @@ active profile if none is given.""",
                     name: 'get',
                     help_str: 'Show selected resolution',
                     func: func_resolution_get,
+                },
+                {
+                    of_type: switch,
+                    name: 'disabled',
+                    help_str: 'access disabled resolution information',
+                    switch: [
+                        {
+                            of_type: command,
+                            name: 'get',
+                            help_str: 'Show if resolution is disabled',
+                            func: func_resolution_disabled_get,
+                        },
+                        {
+                            of_type: command,
+                            name: 'set',
+                            help_str: 'Set resolution as disabled',
+                            func: func_resolution_disabled_set,
+                        },
+                    ]
+                },
+                {
+                    of_type: switch,
+                    name: 'enabled',
+                    help_str: 'access enabled resolution information',
+                    switch: [
+                        {
+                            of_type: command,
+                            name: 'get',
+                            help_str: 'Show if resolution is enabled',
+                            func: func_resolution_enabled_get,
+                        },
+                        {
+                            of_type: command,
+                            name: 'set',
+                            help_str: 'Set resolution as disabled',
+                            func: func_resolution_enabled_set,
+                        },
+                    ]
                 },
                 {
                     of_type: link,

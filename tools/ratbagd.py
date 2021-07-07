@@ -456,16 +456,16 @@ class RatbagdProfile(_RatbagdDBus):
         return self._dirty
 
     @GObject.Property
-    def enabled(self):
-        """tells if the profile is enabled."""
-        return self._get_dbus_property("Enabled")
+    def disabled(self):
+        """tells if the profile is disabled."""
+        return self._get_dbus_property("Disabled")
 
-    @enabled.setter
-    def enabled(self, enabled):
+    @disabled.setter
+    def disabled(self, disabled):
         """Enable/Disable this profile.
 
-        @param enabled The new state, as boolean"""
-        self._set_dbus_property("Enabled", "b", enabled)
+        @param disabled The new state, as boolean"""
+        self._set_dbus_property("Disabled", "b", disabled)
 
     @GObject.Property
     def report_rate(self):
@@ -533,10 +533,14 @@ class RatbagdProfile(_RatbagdDBus):
 class RatbagdResolution(_RatbagdDBus):
     """Represents a ratbagd resolution."""
 
+    CAP_SEPARATE_XY_RESOLUTION = 1
+    CAP_DISABLE = 2
+
     def __init__(self, object_path):
         super().__init__("Resolution", object_path)
         self._active = self._get_dbus_property("IsActive")
         self._default = self._get_dbus_property("IsDefault")
+        self._disabled = self._get_dbus_property("IsDisabled")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
         if "IsActive" in changed_props.keys():
@@ -549,6 +553,21 @@ class RatbagdResolution(_RatbagdDBus):
             if default != self._default:
                 self._default = default
                 self.notify("is-default")
+        elif "IsDisabled" in changed_props.keys():
+            disabled = changed_props["IsDisabled"]
+            if disabled != self._disabled:
+                self._disabled = disabled
+                self.notify("is-disabled")
+
+    @GObject.Property
+    def capabilities(self):
+        """The capabilities of this resolution as an array. Capabilities not
+        present on the resolution are not in the list. Thus use e.g.
+
+        if resolution.CAP_DISABLE in resolution.capabilities:
+            do something
+        """
+        return self._get_dbus_property("Capabilities") or []
 
     @GObject.Property
     def index(self):
@@ -597,17 +616,26 @@ class RatbagdResolution(_RatbagdDBus):
         otherwise"""
         return self._default
 
-    def set_default(self):
-        """Set this resolution to be the default."""
-        ret = self._dbus_call("SetDefault", "")
-        self._set_dbus_property("IsDefault", "b", True, readwrite=False)
-        return ret
+    @GObject.Property
+    def is_disabled(self):
+        """True if this is currently disabled, False otherwise"""
+        return self._disabled
 
     def set_active(self):
         """Set this resolution to be the active one."""
         ret = self._dbus_call("SetActive", "")
         self._set_dbus_property("IsActive", "b", True, readwrite=False)
         return ret
+
+    def set_default(self):
+        """Set this resolution to be the default."""
+        ret = self._dbus_call("SetDefault", "")
+        self._set_dbus_property("IsDefault", "b", True, readwrite=False)
+        return ret
+
+    def set_disabled(self, disable):
+        """Set this resolution to be disabled."""
+        return self._set_dbus_property("IsDisabled", "b", disable)
 
 
 class RatbagdButton(_RatbagdDBus):

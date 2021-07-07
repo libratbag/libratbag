@@ -1000,6 +1000,14 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 	int i;
 	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
 
+	if (resolution->is_disabled) {
+		if (ratbag_resolution_has_capability(resolution, RATBAG_RESOLUTION_CAP_DISABLE)) {
+			dpi = dpi_x = dpi_y = 0;
+		} else {
+			return -ENOTSUP;
+		}
+	}
+
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
 		return hidpp20drv_update_resolution_dpi_8100(resolution, dpi_x, dpi_y);
 
@@ -1013,21 +1021,23 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 	sensor = &drv_data->sensors[0];
 
 	/* validate that the sensor accepts the given DPI */
-	if (dpi < sensor->dpi_min || dpi > sensor->dpi_max)
-		return -EINVAL;
-	if (sensor->dpi_steps) {
-		for (i = sensor->dpi_min; i < dpi; i += sensor->dpi_steps) {
-		}
-		if (i != dpi)
+	if (!resolution->is_disabled) {
+		if (dpi < sensor->dpi_min || dpi > sensor->dpi_max)
 			return -EINVAL;
-	} else {
-		i = 0;
-		while (sensor->dpi_list[i]) {
-			if (sensor->dpi_list[i] == dpi)
-				break;
+		if (sensor->dpi_steps) {
+			for (i = sensor->dpi_min; i < dpi; i += sensor->dpi_steps) {
+			}
+			if (i != dpi)
+				return -EINVAL;
+		} else {
+			i = 0;
+			while (sensor->dpi_list[i]) {
+				if (sensor->dpi_list[i] == dpi)
+					break;
+			}
+			if (sensor->dpi_list[i] != dpi)
+				return -EINVAL;
 		}
-		if (sensor->dpi_list[i] != dpi)
-			return -EINVAL;
 	}
 
 	return hidpp20_adjustable_dpi_set_sensor_dpi(drv_data->dev, sensor, dpi);
@@ -1205,6 +1215,7 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 	struct ratbag_resolution *res;
 	struct hidpp20_profile *p;
 	int dpi_index = 0xff;
+	int dpi;
 
 	profile->is_enabled = drv_data->profiles->profiles[profile->index].enabled;
 
@@ -1227,9 +1238,15 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 		 * sensors is too niche to care about right now */
 		sensor = &drv_data->sensors[0];
 
-		ratbag_resolution_set_resolution(res,
-						 p->dpi[res->index],
-						 p->dpi[res->index]);
+		dpi = p->dpi[res->index];
+
+		/* If the resolution is zero dpi it is disabled,
+		 * but internally we set the minimum value */
+		if (dpi == 0) {
+			res->is_disabled = true;
+			dpi = sensor->dpi_min;
+		}
+		ratbag_resolution_set_resolution(res, dpi, dpi);
 
 		if (profile->is_active &&
 		    res->index == (unsigned int)dpi_index)
@@ -1310,12 +1327,17 @@ hidpp20drv_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
 	struct ratbag_button *button;
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 		hidpp20drv_read_profile_8100(profile);
 		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_DISABLE);
+
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
+		}
 	} else {
 		hidpp20drv_read_resolution_dpi(profile);
 		hidpp20drv_read_special_key_mouse(device);

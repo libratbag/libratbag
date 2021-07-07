@@ -1036,6 +1036,34 @@ bool
 ratbag_resolution_is_default(const struct ratbag_resolution *resolution);
 
 /**
+ * @ingroup resolution
+ *
+ * Set disabled state of the given resolution mode if supported by the device.
+ *
+ * The mode must not be active or default, otherwise nothing
+ * will be changed and an error is returned.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ * @param disable If true disable resolution, else enable
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_resolution_set_disabled(struct ratbag_resolution *resolution, bool disable);
+
+/**
+ * @ingroup resolution
+ *
+ * Check if the resolution mode is currently disabled.
+ *
+ * @param resolution A previously initialized ratbag resolution
+ *
+ * @return Non-zero if the resolution mode is disabled, zero otherwise.
+ */
+bool
+ratbag_resolution_is_disabled(const struct ratbag_resolution *resolution);
+
+/**
  * @ingroup profile
  *
  * Return a reference to the button given by the index. The order of the

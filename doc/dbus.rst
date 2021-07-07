@@ -206,12 +206,12 @@ org.freedesktop.ratbag1.Profile
         The name of this profile. If the name is the empty string, the
         profile name cannot be changed.
 
-.. attribute:: Enabled
+.. attribute:: Disabled
 
         :type: b
         :flags: read-write, mutable
 
-        True if this is the profile is enabled, false otherwise.
+        True if this is the profile is disabled, false otherwise.
 
         Note that a disabled profile might not have correct bindings, so it's
         a good thing to rebind everything before calling
@@ -291,6 +291,14 @@ org.freedesktop.ratbag1.Resolution
 
         Index of the resolution
 
+.. attribute:: Capabilities
+
+        :type: au
+        :flags: read-only, constant
+
+        Array of uints from the :cpp:enum:`ratbag_resolution_capability`
+        from libratbag.h.
+
 .. attribute:: IsActive
 
         :type: b
@@ -318,6 +326,19 @@ org.freedesktop.ratbag1.Resolution
         times. This property is read-only, use the
         :func:`SetDefault` method to set a resolution as
         the default resolution.
+
+.. attribute:: IsDisabled
+
+        :type: b
+        :flags: read-only, mutable
+
+        True if this resolution is disabled, false otherwise.
+        If the device does not have the disabled resolution
+        capability, this property is always false.
+
+        This property is read-only, use the :func:`SetDisabled`
+        or :func:`SetEnabled` method to set a resolution as
+        disabled or enabled .
 
 .. attribute:: Resolution
 
@@ -350,13 +371,21 @@ org.freedesktop.ratbag1.Resolution
         This list may be empty if the device does not support reading and/or
         writing to resolutions.
 
+.. function:: SetActive() → ()
+
+        Set this resolution to be the active one
+
 .. function:: SetDefault() → ()
 
         Set this resolution to be the default
 
-.. function:: SetActive() → ()
+.. function:: SetDisabled() → ()
 
-        Set this resolution to be the active one
+        Set this resolution to be disabled
+
+.. function:: SetEnabled() → ()
+
+        Set this resolution to be enabled
 
 .. _button:
 
