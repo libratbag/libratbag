@@ -2,3 +2,4 @@
 Name=Logitech Marathon M705
 DeviceMatch=usb:046d:406d
 Driver=hidpp20
+DeviceType=mouse

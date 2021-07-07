@@ -2,6 +2,7 @@
 Name=Logitech G500s
 DeviceMatch=usb:046d:c24e
 Driver=hidpp10
+DeviceType=mouse
 
 [Driver/hidpp10]
 DpiRange=0:8200@50

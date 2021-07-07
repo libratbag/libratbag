@@ -2,6 +2,7 @@
 Name=Logitech Gaming Mouse G305
 DeviceMatch=usb:046d:4074
 Driver=hidpp20
+DeviceType=mouse
 
 [Driver/hidpp20]
 Leds=0

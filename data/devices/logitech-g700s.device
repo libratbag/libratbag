@@ -4,6 +4,7 @@
 Name=Logitech G700s
 DeviceMatch=usb:046d:c07c
 Driver=hidpp10
+DeviceType=mouse
 
 [Driver/hidpp10]
 DpiRange=0:8200@50

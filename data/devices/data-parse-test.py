@@ -55,6 +55,10 @@ def check_match_str(string):
         pid = parts[2]
         assert(pid == '{:04x}'.format(int(pid, 16)))
 
+def check_devicetype_str(string):
+    permitted_types = ['mouse', 'keyboard', 'other']
+    assertIn(string, permitted_types)
+
 
 def check_ledtypes_str(string):
     permitted_types = ['logo', 'side', 'battery', 'dpi', 'switches']
@@ -68,7 +72,7 @@ def check_ledtypes_str(string):
 
 
 def check_section_device(section):
-    required_keys = ['Name', 'Driver', 'DeviceMatch']
+    required_keys = ['Name', 'Driver', 'DeviceMatch', 'DeviceType']
     permitted_keys = required_keys + ['LedTypes']
 
     for key in section.keys():
@@ -76,6 +80,8 @@ def check_section_device(section):
 
     for r in required_keys:
         assertIn(r, section)
+
+    check_devicetype_str(section['DeviceType'])
 
     try:
         check_ledtypes_str(section['LedTypes'])

@@ -3,3 +3,4 @@ Name=Logitech G513
 DeviceMatch=usb:046d:c33c
 LedTypes=switches
 Driver=hidpp20
+DeviceType=mouse

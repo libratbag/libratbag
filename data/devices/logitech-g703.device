@@ -2,4 +2,4 @@
 Name=Logitech G703
 DeviceMatch=usb:046d:c087;usb:046d:4070
 Driver=hidpp20
-
+DeviceType=mouse

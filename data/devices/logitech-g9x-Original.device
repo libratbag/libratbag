@@ -4,6 +4,7 @@
 Name=G9x [Original]
 DeviceMatch=usb:046d:c066
 Driver=hidpp10
+DeviceType=mouse
 LedTypes=dpi
 
 [Driver/hidpp10]

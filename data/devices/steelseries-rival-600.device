@@ -2,6 +2,7 @@
 Name=SteelSeries Rival 600
 DeviceMatch=usb:1038:1724
 Driver=steelseries
+DeviceType=mouse
 
 [Driver/steelseries]
 DeviceVersion=3

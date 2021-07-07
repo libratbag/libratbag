@@ -3,3 +3,4 @@
 Name=Logitech M325
 DeviceMatch=usb:046d:400a
 Driver=hidpp20
+DeviceType=mouse

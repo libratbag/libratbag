@@ -2,6 +2,7 @@
 Name=SteelSeries Rival
 DeviceMatch=usb:1038:1384
 Driver=steelseries
+DeviceType=mouse
 
 [Driver/steelseries]
 DeviceVersion=1

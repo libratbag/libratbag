@@ -2,3 +2,4 @@
 Name=MX518
 DeviceMatch=usb:046d:c08e
 Driver=hidpp20
+DeviceType=mouse

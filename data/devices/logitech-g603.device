@@ -3,3 +3,4 @@
 Name=Logitech G603
 DeviceMatch=usb:046d:406c;bluetooth:046d:b01c
 Driver=hidpp20
+DeviceType=mouse

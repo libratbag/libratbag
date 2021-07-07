@@ -90,6 +90,7 @@ struct ratbag_device_data {
 	char *driver;
 
 	enum driver drivertype;
+	enum ratbag_device_type devicetype;
 
 	union {
 		struct data_hidpp20 hidpp20;
@@ -288,6 +289,13 @@ ratbag_device_data_get_name(const struct ratbag_device_data *data)
 	return data->name;
 }
 
+enum ratbag_device_type
+ratbag_device_data_get_device_type(const struct ratbag_device_data *data)
+{
+	return data->devicetype;
+}
+
+
 enum ratbag_led_type
 ratbag_device_data_get_led_type(const struct ratbag_device_data *data,
 				unsigned int index)
@@ -410,6 +418,7 @@ file_data_matches(struct ratbag *ratbag,
 	_cleanup_(g_strfreevp) char **ledtypes_strv = NULL;
 	_cleanup_(ratbag_device_data_unrefp) struct ratbag_device_data *data = NULL;
 	int rc;
+	char *devicetype;
 
 	keyfile = g_key_file_new();
 	rc = g_key_file_load_from_file(keyfile, path, G_KEY_FILE_NONE, &error);
@@ -457,6 +466,28 @@ file_data_matches(struct ratbag *ratbag,
 			return false;
 		}
 	}
+
+	devicetype = g_key_file_get_string(keyfile, GROUP_DEVICE, "DeviceType", NULL);
+	log_debug(ratbag, "Device Type: '%s'\n", devicetype == NULL ? "no type found" : devicetype);
+
+	if (devicetype == NULL) {
+		log_error(ratbag, "No DeviceType found in '%s'\n",  basename(path));
+		data->devicetype = TYPE_UNSPECIFIED;
+		return false;
+	}
+
+	if (streq(devicetype, "keyboard")) {
+		data->devicetype = TYPE_KEYBOARD;
+	} else if (streq(devicetype, "mouse")) {
+		data->devicetype = TYPE_MOUSE;
+	} else if (streq(devicetype, "other")) {
+		data->devicetype = TYPE_OTHER;
+	} else {
+		log_error(ratbag, "Invalid DeviceType '%s' in '%s'\n", devicetype, basename(path));
+		data->devicetype = TYPE_UNSPECIFIED;
+		return false;
+	}
+
 
 	ledtypes_strv = g_key_file_get_string_list(keyfile, GROUP_DEVICE, "LedTypes", NULL, NULL);
 	if (parse_ledtypes(ledtypes_strv, data->led_types, ARRAY_LENGTH(data->led_types)) < 0) {

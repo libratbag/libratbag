@@ -2,3 +2,4 @@
 Name=Roccat Kone XTD
 DeviceMatch=usb:1e7d:2e22
 Driver=roccat
+DeviceType=mouse

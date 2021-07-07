@@ -3,3 +3,4 @@ Name=Logitech G935
 DeviceMatch=usb:046d:0a87
 LedTypes=logo;side
 Driver=hidpp20
+DeviceType=other

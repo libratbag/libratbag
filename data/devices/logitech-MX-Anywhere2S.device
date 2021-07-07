@@ -2,3 +2,4 @@
 Name=Logitech MX Anywhere 2S
 DeviceMatch=bluetooth:046d:b01a;usb:046d:406a
 Driver=hidpp20
+DeviceType=mouse
