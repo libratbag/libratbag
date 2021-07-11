@@ -600,7 +600,17 @@ steelseries_write_led_v1(struct ratbag_led *led)
 		buf[2] = 0x01;
 		break;
 	case RATBAG_LED_BREATHING:
-		buf[2] = 0x03; /* 0x02: slow, 0x03: medium, 0x04: fast */
+		/* 0x2/3/4 - speed (by eye it's 3, 5 and 7 seconds) */
+		if (led->ms <= 3000) {
+			led->ms = 3000;
+			buf[2] = 0x04;
+		} else if (led->ms <= 5000) {
+			led->ms = 5000;
+			buf[2] = 0x03;
+		} else {
+			led->ms = 7000;
+			buf[2] = 0x02;
+		}
 		break;
 	case RATBAG_LED_CYCLE:
 		/* Cycle mode is not supported on this version */
