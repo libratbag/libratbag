@@ -431,6 +431,8 @@ sinowealth_commit(struct ratbag_device *device)
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (!resolution->dpi_x || !resolution->dpi_y)
 			continue;
+		if (resolution->is_active)
+			config->active_dpi = resolution->index + 1U;
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
 			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(resolution->dpi_x);
 			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(resolution->dpi_y);
