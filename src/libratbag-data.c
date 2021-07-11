@@ -30,6 +30,7 @@
 #include <glib.h>
 #include <limits.h>
 
+#include "driver-steelseries.h"
 #include "libratbag.h"
 #include "libratbag-private.h"
 #include "libratbag-data.h"
@@ -80,8 +81,7 @@ struct data_steelseries {
 	struct dpi_list *dpi_list;
 	struct dpi_range *dpi_range;
 	int macro_length;
-	int mono_led;
-	int short_button;
+	enum steelseries_quirk quirk;
 };
 
 struct ratbag_device_data {
@@ -202,8 +202,7 @@ init_data_steelseries(struct ratbag *ratbag,
 	data->steelseries.led_count = -1;
 	data->steelseries.dpi_list = NULL;
 	data->steelseries.dpi_range = NULL;
-	data->steelseries.mono_led = 0;
-	data->steelseries.short_button = 0;
+	data->steelseries.quirk = STEELSERIES_QURIK_NONE;
 
 	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
 	if (num != 0 || !error)
@@ -241,19 +240,13 @@ init_data_steelseries(struct ratbag *ratbag,
 	if (error)
 		g_error_free(error);
 
-	error = NULL;
-	num = g_key_file_get_integer(keyfile, group, "MonoLed", &error);
-	if (num > 0 || !error)
-		data->steelseries.mono_led = num;
-	if (error)
-		g_error_free(error);
-
-	error = NULL;
-	num = g_key_file_get_integer(keyfile, group, "ShortButton", &error);
-	if (num > 0 || !error)
-		data->steelseries.short_button = num;
-	if (error)
-		g_error_free(error);
+	str = g_key_file_get_string(keyfile, group, "Quirk", NULL);
+	if (str) {
+		if (streq(str, "Rival100"))
+			data->steelseries.quirk = STEELSERIES_QUIRK_RIVAL100;
+		if (streq(str, "SenseiRAW"))
+			data->steelseries.quirk = STEELSERIES_QUIRK_SENSEIRAW;
+	}
 }
 
 static const struct driver_map {
@@ -660,18 +653,10 @@ ratbag_device_data_steelseries_get_macro_length(const struct ratbag_device_data 
 	return data->steelseries.macro_length;
 }
 
-int
-ratbag_device_data_steelseries_get_mono_led(const struct ratbag_device_data *data)
+enum steelseries_quirk
+ratbag_device_data_steelseries_get_quirk(const struct ratbag_device_data *data)
 {
 	assert(data->drivertype == STEELSERIES);
 
-	return data->steelseries.mono_led;
-}
-
-int
-ratbag_device_data_steelseries_get_short_button(const struct ratbag_device_data *data)
-{
-	assert(data->drivertype == STEELSERIES);
-
-	return data->steelseries.short_button;
+	return data->steelseries.quirk;
 }
