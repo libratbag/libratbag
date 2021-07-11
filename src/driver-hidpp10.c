@@ -448,7 +448,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 		free(profile->name);
 		profile->name = NULL;
 	}
-	if (p.name && p.name[0] != '\0')
+	if (*p.name && p.name[0] != '\0')
 		profile->name = strdup_safe((char*)p.name);
 
 	rc = hidpp10_get_current_profile(hidpp10, &idx);
@@ -548,7 +548,7 @@ hidpp10_log(void *userdata, enum hidpp_log_priority priority, const char *format
 {
 	struct ratbag_device *device = userdata;
 
-	log_msg_va(device->ratbag, priority, format, args);
+	log_msg_va(device->ratbag, (enum ratbag_log_priority)priority, format, args);
 }
 
 static int
