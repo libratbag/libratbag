@@ -183,6 +183,33 @@ int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, 
  */
 int ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno);
 
+/**
+ * Read an input report from the device util a specified filter function is successfull
+ *
+ * @param device the ratbag device
+ * @param[out] buf resulting raw data
+ * @param len length of buf
+ * @param filter filter function
+ *
+ * @return count of data transfered, or a negative errno on error
+ */
+int ratbag_hidraw_read_input_report_filter(
+	struct ratbag_device *device, uint8_t *buf, size_t len, int *(*filter)(uint8_t *buf, size_t len));
+
+/**
+ * Read an input report from the device from a specific hidraw index util a specified filter function is successfull
+ *
+ * @param device the ratbag device
+ * @param[out] buf resulting raw data
+ * @param len length of buf
+ * @param interal index of hidraw array
+ * @param filter filter function
+ *
+ * @return count of data transfered, or a negative errno on error
+ */
+int ratbag_hidraw_read_input_report_index_filter(
+	struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno, int *(*filter)(uint8_t *buf, size_t len));
+
 
 /**
  * Tells if a given device has the specified report ID.

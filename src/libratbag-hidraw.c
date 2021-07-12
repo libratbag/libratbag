@@ -1660,3 +1660,49 @@ ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf
 
 	return rc >= 0 ? rc : -errno;
 }
+
+int
+ratbag_hidraw_read_input_report_filter(struct ratbag_device *device, uint8_t *buf, size_t len, int *(*filter)(uint8_t *buf, size_t len))
+{
+	return ratbag_hidraw_read_input_report_index_filter(device, buf, len, 0, filter);
+}
+
+int
+ratbag_hidraw_read_input_report_index_filter(
+	struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno, int *(*filter)(uint8_t *buf, size_t len))
+{
+	int rc;
+	struct pollfd fds;
+
+	assert(hidrawno >= 0 && hidrawno < MAX_HIDRAW);
+
+	if (len < 1 || !buf || device->hidraw[hidrawno].fd < 0)
+		return -EINVAL;
+
+	fds.fd = device->hidraw[hidrawno].fd;
+	fds.events = POLLIN;
+
+	/* wait for valid messages for 1000 iterations (~1s) */
+	for (unsigned int i = 0; i < 1000; i++) {
+		rc = poll(&fds, 1, 1);  /* poll for 1msec */
+
+		if (rc == -1)
+			return -errno;
+
+		if (rc > 0) {
+			rc = read(device->hidraw[hidrawno].fd, buf, len);
+
+			if (rc >= 0) {
+				if (filter(buf, rc)) {
+					log_buf_raw(device->ratbag, "input report:  ", buf, rc);
+					return rc;
+				}
+				continue;
+			}
+
+			return -errno;
+		}
+	}
+
+	return -ETIMEDOUT;
+}
