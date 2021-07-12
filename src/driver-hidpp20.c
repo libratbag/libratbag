@@ -109,6 +109,7 @@ hidpp20drv_read_button_1b04(struct ratbag_button *button)
 	if (action)
 		ratbag_button_set_action(button, action);
 
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
@@ -213,6 +214,9 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 	switch (profile->buttons[button->index].any.type) {
 	case HIDPP20_BUTTON_HID_TYPE:
 		switch (profile->buttons[button->index].subany.subtype) {
+		case HIDPP20_BUTTON_HID_TYPE_NOOP:
+			button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+			break;
 		case HIDPP20_BUTTON_HID_TYPE_MOUSE:
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 			button->action.action.button = profile->buttons[button->index].button.buttons;
@@ -258,6 +262,7 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 		}
 	}
 
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
@@ -611,6 +616,9 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 			return -EINVAL;
 		profile->buttons[button->index].special.type = HIDPP20_BUTTON_SPECIAL;
 		profile->buttons[button->index].special.special = code;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_NONE:
+		profile->buttons[button->index].disabled.type = HIDPP20_BUTTON_HID_TYPE_NOOP;
 		break;
 	default:
 		return -ENOTSUP;

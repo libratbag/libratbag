@@ -63,6 +63,9 @@ test_read_button(struct ratbag_button *button)
 	button->type = d->profiles[0].buttons[button->index].button_type;
 
 	switch (b->action_type) {
+	case RATBAG_BUTTON_ACTION_TYPE_NONE:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+		break;
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
 		button->action.action.button = p->buttons[button->index].button;
@@ -92,6 +95,7 @@ test_read_button(struct ratbag_button *button)
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 	}
 
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
