@@ -23,20 +23,18 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "libratbag-data.h"
 
 #define SINOWEALTH_REPORT_ID_CONFIG 0x4
 #define SINOWEALTH_REPORT_ID_CMD 0x5
 #define SINOWEALTH_CMD_FIRMWARE_VERSION 0x1
 #define SINOWEALTH_CMD_GET_CONFIG 0x11
+#define SINOWEALTH_CMD_GET_BUTTONS 0x12
 #define SINOWEALTH_CONFIG_SIZE 520
 #define SINOWEALTH_CONFIG_SIZE_USED 131
+#define SINOWEALTH_BUTTON_SIZE 88
 
 #define SINOWEALTH_XY_INDEPENDENT 0x80
-
-/* The PC software only goes down to 400, but the PMW3360 doesn't care */
-#define SINOWEALTH_DPI_MIN 100
-#define SINOWEALTH_DPI_MAX 12000
-#define SINOWEALTH_DPI_STEP 100
 
 /* other models might have up to eight */
 #define SINOWEALTH_NUM_DPIS 6
@@ -44,17 +42,17 @@
 #define SINOWEALTH_RGB_BRIGHTNESS_BITS 0xF0
 #define SINOWEALTH_RGB_SPEED_BITS 0x0F
 
-struct sinowealth_rgb8 {
-	uint8_t r, g, b;
+#define SINOWEALTH_BUTTON_TYPE_BUTTON 0x11
+#define SINOWEALTH_BUTTON_TYPE_KEY 0x21
+#define SINOWEALTH_BUTTON_TYPE_REPEATED 0x31
+#define SINOWEALTH_BUTTON_TYPE_SWITCH_DPI 0x41
+#define SINOWEALTH_BUTTON_TYPE_DISABLED 0x50
+
+struct sinowealth_color {
+	uint8_t data[3];
 } __attribute__((packed));
 
-_Static_assert(sizeof(struct sinowealth_rgb8) == 3, "Invalid size");
-
-struct sinowealth_rbg8 {
-	uint8_t r, b, g;
-} __attribute__((packed));
-
-_Static_assert(sizeof(struct sinowealth_rbg8) == 3, "Invalid size");
+_Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 
 enum rgb_effect {
 	RGB_OFF = 0,
@@ -88,11 +86,13 @@ struct sinowealth_config_report {
 	uint8_t dpi_enabled;
 	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it
 	 * value = (DPI - 100) / 100
+	 * or the way the PMW3389 sensor accepts it
+	 * value = DPI / 100
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
 	 * while in XY independent mode each entry takes two chars for X and Y.
 	 */
 	uint8_t dpi[16];
-	struct sinowealth_rgb8 dpi_color[8];
+	struct sinowealth_color dpi_color[8];
 	uint8_t rgb_effect; /* see enum rgb_effect */
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
@@ -100,13 +100,13 @@ struct sinowealth_config_report {
 	uint8_t glorious_mode;
 	uint8_t glorious_direction;
 	uint8_t single_mode;
-	struct sinowealth_rbg8 single_color;
+	struct sinowealth_color single_color;
 	/* 0x40 - brightness (constant)
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing7_mode;
 	uint8_t breathing7_colorcount; /* 7, constant */
-	struct sinowealth_rbg8 breathing7_colors[7];
+	struct sinowealth_color breathing7_colors[7];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
@@ -116,14 +116,14 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t rave_mode;
-	struct sinowealth_rbg8 rave_colors[2];
+	struct sinowealth_color rave_colors[2];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t wave_mode;
 	/* 0x1/2/3 - speed */
 	uint8_t breathing1_mode;
-	struct sinowealth_rbg8 breathing1_color;
+	struct sinowealth_color breathing1_color;
 	uint8_t unknown4;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
@@ -134,46 +134,96 @@ struct sinowealth_config_report {
 
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
 
+struct sinowealth_button_data {
+	uint8_t type;
+	uint8_t data[3];
+} __attribute__((packed));
+
+struct sinowealth_button_report {
+	uint8_t report_id;
+	uint8_t command_id;
+	uint8_t unknown1[6];
+	struct sinowealth_button_data buttons[20];
+	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_BUTTON_SIZE];
+} __attribute__((packed));
+
+_Static_assert(sizeof(struct sinowealth_button_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
+
+enum sinowealth_sensor {
+	PWM3360,
+	PWM3389,
+};
+
+enum sinowealth_led_format {
+	LED_RGB,
+	LED_RBG,
+};
+
 struct sinowealth_data {
 	/* this is kinda unnecessary at this time, but all the other drivers do it too ;) */
 	struct sinowealth_config_report config;
+	/* holds button data so we can send back unchanged values for the buttons we do not parse yet */
+	struct sinowealth_button_report buttons;
+	/* Specifies sensor used in the device  */
+	enum sinowealth_sensor sensor;
+	/* whether the devices stores the main LED in RGB or RBG format */
+	enum sinowealth_led_format led_type;
 };
 
 static int
-sinowealth_raw_to_dpi(int raw)
+sinowealth_raw_to_dpi(struct ratbag_device *device, int raw)
 {
-	return (raw + 1) * 100;
+	struct sinowealth_data *drv_data = device->drv_data;
+	int dpi;
+
+	if (drv_data->sensor == PWM3360)
+		dpi = (raw + 1) * 100;
+	else
+		dpi = raw * 100;
+
+	return dpi;
 }
 
 static int
-sinowealth_dpi_to_raw(int dpi)
+sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 {
-	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= SINOWEALTH_DPI_MAX);
-	return dpi / 100 - 1;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct dpi_range *dpirange = NULL;
+	int raw;
+
+	dpirange = ratbag_device_data_sinowealth_get_dpi_range(device->data);
+	assert(dpi >= dpirange->min && dpi <= dpirange->max);
+
+	if (drv_data->sensor == PWM3360)
+		raw = dpi / 100 - 1;
+	else
+		raw = dpi / 100;
+
+	return raw;
 }
 
 static struct ratbag_color
-sinowealth_raw_to_color(struct sinowealth_rgb8 raw)
+sinowealth_raw_to_color(struct sinowealth_color raw)
 {
-	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
+	return (struct ratbag_color) {.red = raw.data[0], .green = raw.data[1], .blue = raw.data[2]};
 }
 
-static struct sinowealth_rgb8
+static struct sinowealth_color
 sinowealth_color_to_raw(struct ratbag_color color)
 {
-	return (struct sinowealth_rgb8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct sinowealth_color) {.data[0] = color.red, .data[1] = color.green, .data[2] = color.blue};
 }
 
 static struct ratbag_color
-sinowealth_rbg_to_color(struct sinowealth_rbg8 raw)
+sinowealth_rbg_to_color(struct sinowealth_color raw)
 {
-	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
+	return (struct ratbag_color) {.red = raw.data[0], .green = raw.data[2], .blue = raw.data[1]};
 }
 
-static struct sinowealth_rbg8
+static struct sinowealth_color
 sinowealth_color_to_rbg(struct ratbag_color color)
 {
-	return (struct sinowealth_rbg8) {.r = color.red, .g = color.green, .b = color.blue};
+	return (struct sinowealth_color) {.data[0] = color.red, .data[2] = color.green, .data[1] = color.blue};
 }
 
 static int
@@ -280,10 +330,10 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
-			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2]);
-			resolution->dpi_y = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2 + 1]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2]);
+			resolution->dpi_y = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2 + 1]);
 		} else {
-			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index]);
 			resolution->dpi_y = resolution->dpi_x;
 		}
 		if (config->dpi_enabled & (1<<resolution->index)) {
@@ -303,7 +353,10 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		break;
 	case RGB_SINGLE:
 		led->mode = RATBAG_LED_ON;
-		led->color = sinowealth_rbg_to_color(config->single_color);
+		if (drv_data->led_type == LED_RGB)
+			led->color = sinowealth_raw_to_color(config->single_color);
+		else
+			led->color = sinowealth_rbg_to_color(config->single_color);
 		led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
 		break;
 	case RGB_GLORIOUS:
@@ -328,43 +381,243 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	return 0;
 }
 
+struct sinowealth_button_mapping {
+	uint8_t raw;
+	struct ratbag_button_action action;
+};
+static struct sinowealth_button_mapping sinowealth_button_mapping[] = {
+	{ 0x01, BUTTON_ACTION_BUTTON(1) },
+	{ 0x02, BUTTON_ACTION_BUTTON(2) },
+	{ 0x04, BUTTON_ACTION_BUTTON(3) },
+	{ 0x08, BUTTON_ACTION_BUTTON(5) },
+	{ 0x10, BUTTON_ACTION_BUTTON(4) },
+};
+
+static const struct ratbag_button_action*
+sinowealth_raw_to_button_action(uint8_t data)
+{
+	struct sinowealth_button_mapping *mapping;
+
+	ARRAY_FOR_EACH(sinowealth_button_mapping, mapping) {
+		if (mapping->raw == data)
+			return &mapping->action;
+	}
+
+	return NULL;
+}
+
+static uint8_t
+sinowealth_button_action_to_raw(const struct ratbag_button_action *action)
+{
+	struct sinowealth_button_mapping *mapping;
+
+	ARRAY_FOR_EACH(sinowealth_button_mapping, mapping) {
+		if (ratbag_button_action_match(&mapping->action, action))
+			return mapping->raw;
+	}
+
+	return 0x00;
+}
+
+
+static int
+sinowealth_read_buttons(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_button_report *buf = &drv_data->buttons;
+	struct ratbag_button *button;
+	struct sinowealth_button_data button_data;
+	enum ratbag_button_type button_types[8] = {RATBAG_BUTTON_TYPE_UNKNOWN};
+	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_BUTTONS};
+	int rc;
+
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
+	if (rc != sizeof(cmd)) {
+		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+		return -1;
+	}
+
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG, (uint8_t*) buf, SINOWEALTH_CONFIG_SIZE);
+	if (rc != SINOWEALTH_BUTTON_SIZE) {
+		log_error(device->ratbag, "Could not read device button configuration: %d\n", rc);
+		return -1;
+	}
+
+	button_types[0] = RATBAG_BUTTON_TYPE_LEFT;
+	button_types[1] = RATBAG_BUTTON_TYPE_RIGHT;
+	button_types[2] = RATBAG_BUTTON_TYPE_MIDDLE;
+	button_types[3] = RATBAG_BUTTON_TYPE_THUMB;
+	button_types[4] = RATBAG_BUTTON_TYPE_THUMB2;
+	button_types[5] = RATBAG_BUTTON_TYPE_RESOLUTION_UP;
+	button_types[6] = RATBAG_BUTTON_TYPE_RESOLUTION_DOWN;
+	button_types[7] = RATBAG_BUTTON_TYPE_THUMB3;
+
+	ratbag_profile_for_each_button(profile, button) {
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+
+		button->type = button_types[button->index];
+
+		button_data = buf->buttons[button->index];
+
+		if (button_data.type == SINOWEALTH_BUTTON_TYPE_BUTTON) {
+			const struct ratbag_button_action *action;
+			action = sinowealth_raw_to_button_action(button_data.data[0]);
+			if (action)
+				ratbag_button_set_action(button, action);
+		} else if (button_data.type == SINOWEALTH_BUTTON_TYPE_KEY) {
+			unsigned int key, modifiers;
+			int rc;
+
+			key = ratbag_hidraw_get_keycode_from_keyboard_usage(device, button_data.data[1]);
+
+			modifiers = 0;
+			if (button_data.data[0] & 0x01)
+				modifiers |= MODIFIER_LEFTCTRL;
+			if (button_data.data[0] & 0x02)
+				modifiers |= MODIFIER_LEFTSHIFT;
+			if (button_data.data[0] & 0x04)
+				modifiers |= MODIFIER_LEFTALT;
+			if (button_data.data[0] & 0x08)
+				modifiers |= MODIFIER_LEFTMETA;
+
+			rc = ratbag_button_macro_new_from_keycode(button, key, modifiers);
+			if (rc < 0) {
+				log_error(device->ratbag,
+					"Error while reading button %d\n",
+					button->index);
+				button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int
+sinowealth_write_buttons(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_button_report *buf = &drv_data->buttons;
+	struct ratbag_button *button;
+	int rc;
+
+	buf->report_id = 0x04;
+	buf->command_id = 0x12;
+	buf->unknown1[1] = 0x50;
+
+	ratbag_profile_for_each_button(profile, button) {
+		struct sinowealth_button_data *button_data;
+		struct ratbag_button_action *action = &button->action;
+
+		button_data = &buf->buttons[button->index];
+
+		if (action->type == RATBAG_BUTTON_ACTION_TYPE_BUTTON) {
+			button_data->type = SINOWEALTH_BUTTON_TYPE_BUTTON;
+			button_data->data[0] = sinowealth_button_action_to_raw(action);
+		} else if (action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+			unsigned int key, modifiers;
+
+			rc = ratbag_action_keycode_from_macro(action,
+												  &key,
+												  &modifiers);
+			if (rc < 0) {
+				log_error(device->ratbag,
+					  "Error while writing macro for button %d\n",
+					  button->index);
+			}
+
+			button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
+			button_data->data[0] = modifiers;
+			button_data->data[1] = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+		}
+	}
+
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CONFIG,
+					      (uint8_t*) buf, SINOWEALTH_CONFIG_SIZE);
+	if (rc != SINOWEALTH_CONFIG_SIZE) {
+		log_error(device->ratbag, "Error while writing buttons: %d\n", rc);
+		return -1;
+	}
+
+	return 0;
+}
+
 static void
 sinowealth_init_profile(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
-	 * to signal a disabled DPI step.
-	 */
-	int num_dpis = (SINOWEALTH_DPI_MAX - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
-	unsigned int dpis[num_dpis];
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct dpi_range *dpirange = NULL;
+	int button_count, led_count;
+	const char *led_type;
 
-	/* TODO: Button remapping */
-	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, 1);
+	dpirange = ratbag_device_data_sinowealth_get_dpi_range(device->data);
+	button_count = ratbag_device_data_sinowealth_get_button_count(device->data);
+	led_count = ratbag_device_data_sinowealth_get_led_count(device->data);
+	led_type = ratbag_device_data_sinowealth_get_led_type(device->data);
+
+	if (!dpirange)
+	{
+		log_error(device->ratbag, "DpiRange must be defined in .device file\n");
+	}
+
+	if (button_count < 0)
+	{
+		log_error(device->ratbag, "Button count must be defined in .device file\n");
+		button_count = 0;
+	}
+
+	if (led_count < 0)
+	{
+		log_error(device->ratbag, "Led count must be defined in .device file\n");
+		led_count = 0;
+	}
+
+	if (!led_type)
+		log_error(device->ratbag, "Led type must be defined in .device file. Defaulting to RGB.\n");
+
+	if (dpirange->max == 12000)
+		drv_data->sensor = PWM3360;
+	else
+		drv_data->sensor = PWM3389;
+
+	if (led_type && streq(led_type, "RBG"))
+		drv_data->led_type = LED_RBG;
+	else
+		drv_data->led_type = LED_RGB;
+
+	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, button_count, led_count);
 
 	profile = ratbag_device_get_profile(device, 0);
 
-	/* Generate DPI list */
-	dpis[0] = 0; /* 0 DPI = disabled */
-	for (int i = 1; i < num_dpis; i++) {
-		dpis[i] = SINOWEALTH_DPI_MIN + (i - 1) * SINOWEALTH_DPI_STEP;
-	}
-
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
+		ratbag_resolution_set_dpi_list_from_range(resolution,
+												  dpirange->min,
+												  dpirange->max);
 		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 	}
 
 	/* Set up LED capabilities */
-	led = ratbag_profile_get_led(profile, 0);
-	led->type = RATBAG_LED_TYPE_SIDE;
-	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-	ratbag_led_unref(led);
+	ratbag_profile_for_each_led(profile, led) {
+		if (led->index == 0) {
+			led->type = RATBAG_LED_TYPE_SIDE;
+			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+		} else {
+			led->type = RATBAG_LED_TYPE_DPI;
+			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+		}
+	}
 
 	ratbag_profile_unref(profile);
 }
@@ -394,6 +647,12 @@ sinowealth_probe(struct ratbag_device *device)
 
 	profile = ratbag_device_get_profile(device, 0);
 	rc = sinowealth_read_profile(profile);
+	if (rc) {
+		rc = -ENODEV;
+		goto err;
+	}
+
+	rc = sinowealth_read_buttons(profile);
 	if (rc) {
 		rc = -ENODEV;
 		goto err;
@@ -432,10 +691,10 @@ sinowealth_commit(struct ratbag_device *device)
 		if (!resolution->dpi_x || !resolution->dpi_y)
 			continue;
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
-			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(resolution->dpi_x);
-			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(resolution->dpi_y);
+			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
+			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(device, resolution->dpi_y);
 		} else {
-			config->dpi[resolution->index] = sinowealth_dpi_to_raw(resolution->dpi_x);
+			config->dpi[resolution->index] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 		}
 		dpi_enabled |= 1<<resolution->index;
 		config->dpi_count++;
@@ -450,14 +709,17 @@ sinowealth_commit(struct ratbag_device *device)
 		break;
 	case RATBAG_LED_ON:
 		config->rgb_effect = RGB_SINGLE;
-		config->single_color = sinowealth_color_to_rbg(led->color);
+		if (drv_data->led_type == LED_RGB)
+			config->single_color = sinowealth_color_to_raw(led->color);
+		else
+			config->single_color = sinowealth_color_to_rbg(led->color);
 		break;
 	case RATBAG_LED_CYCLE:
 		config->rgb_effect = RGB_GLORIOUS;
 		config->glorious_mode = sinowealth_led_to_rgb_mode(led);
 		break;
 	case RATBAG_LED_BREATHING:
-		config->rgb_effect = RGB_BREATHING1;
+		config->rgb_effect = RGB_BREATHING7;
 		config->breathing1_color = sinowealth_color_to_rbg(led->color);
 		config->breathing1_mode = sinowealth_led_to_rgb_mode(led);
 		break;
@@ -474,8 +736,10 @@ sinowealth_commit(struct ratbag_device *device)
 		return -1;
 	}
 
+	rc = sinowealth_write_buttons(profile);
+
 	ratbag_profile_unref(profile);
-	return 0;
+	return rc;
 }
 
 static void
