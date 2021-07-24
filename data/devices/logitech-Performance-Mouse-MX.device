@@ -1,5 +1,0 @@
-# Logitech Performance Mouse MX
-[Device]
-Name=Logitech Performance Mouse MX
-DeviceMatch=usb:046d:c52b
-Driver=hidpp10
