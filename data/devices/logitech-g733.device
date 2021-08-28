@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G733 Gaming Headset
+DeviceMatch=usb:046d:0ab5
+Driver=hidpp20
