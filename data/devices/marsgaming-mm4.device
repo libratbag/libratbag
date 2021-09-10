@@ -1,0 +1,5 @@
+[Device]
+Name=Mars Gaming MM4
+DeviceMatch=usb:04d9:fa58
+DeviceType=mouse
+Driver=marsgaming

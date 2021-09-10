@@ -164,7 +164,7 @@ lur_mapfile = 'src/liblur.sym'
 lur_version_flag = '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), lur_mapfile)
 lib_liblur = shared_library('lur',
 	src_liblur,
-	include_directories : include_directories('.'),
+	include_directories : include_directories('src'),
 	dependencies : deps_liblur,
 	version : liblur_so_version,
 	link_args : lur_version_flag,
@@ -205,6 +205,13 @@ src_libratbag = [
 	'src/driver-sinowealth.c',
 	'src/driver-sinowealth.h',
 	'src/driver-sinowealth-nubwo.c',
+	'src/driver-marsgaming/driver-marsgaming.c',
+	'src/driver-marsgaming/marsgaming-buttons.c',
+	'src/driver-marsgaming/marsgaming-command.c',
+	'src/driver-marsgaming/marsgaming-commit.c',
+	'src/driver-marsgaming/marsgaming-leds.c',
+	'src/driver-marsgaming/marsgaming-probe.c',
+	'src/driver-marsgaming/marsgaming-query.c',
 	'src/driver-test.c',
 	'src/libratbag.c',
 	'src/libratbag.h',
@@ -230,7 +237,7 @@ deps_libratbag = [
 
 lib_libratbag = static_library('ratbag',
 	src_libratbag,
-	include_directories : include_directories('.'),
+	include_directories : include_directories('src'),
 	dependencies : deps_libratbag,
 )
 

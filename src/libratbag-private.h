@@ -299,6 +299,8 @@ struct ratbag_profile {
 
 #define BUTTON_ACTION_NONE \
  { .type = RATBAG_BUTTON_ACTION_TYPE_NONE }
+#define BUTTON_ACTION_UNKNOWN \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN }
 #define BUTTON_ACTION_BUTTON(num_) \
  { .type = RATBAG_BUTTON_ACTION_TYPE_BUTTON, \
 	.action.button = num_ }
@@ -589,6 +591,7 @@ extern struct ratbag_driver hidpp20_driver;
 extern struct ratbag_driver hidpp10_driver;
 extern struct ratbag_driver logitech_g300_driver;
 extern struct ratbag_driver logitech_g600_driver;
+extern struct ratbag_driver marsgaming_driver;
 extern struct ratbag_driver roccat_driver;
 extern struct ratbag_driver roccat_kone_pure_driver;
 extern struct ratbag_driver roccat_emp_driver;
