@@ -356,6 +356,7 @@ data_files = files(
 	'data/devices/steelseries-rival-310.device',
 	'data/devices/steelseries-rival-600.device',
 	'data/devices/steelseries-rival.device',
+	'data/devices/steelseries-rival-300.device',
 	'data/devices/steelseries-sensei-310.device',
 	'data/devices/steelseries-sensei-raw.device',
 	'data/devices/glorious-model-d.device',
