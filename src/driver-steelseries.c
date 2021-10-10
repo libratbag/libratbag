@@ -42,6 +42,7 @@
 #define STEELSERIES_INPUT_HIDRAW	1
 
 /* not sure these two are used for */
+#define STEELSERIES_REPORT_ID			0x00 // steelseries doesn't use numbered reports
 #define STEELSERIES_REPORT_ID_1			0x01
 #define STEELSERIES_REPORT_ID_2			0x02
 
@@ -56,13 +57,14 @@
 #define STEELSERIES_ID_LED_COLOR_SHORT		0x08
 #define STEELSERIES_ID_LED_COLOR_SHORT_RIVAL100	0x05
 #define STEELSERIES_ID_SAVE_SHORT		0x09
+#define STEELSERIES_ID_FIRMWARE_PROTOCOL1	0x10
 
 #define STEELSERIES_ID_BUTTONS			0x31
 #define STEELSERIES_ID_DPI			0x53
 #define STEELSERIES_ID_REPORT_RATE		0x54
 #define STEELSERIES_ID_LED			0x5b
 #define STEELSERIES_ID_SAVE			0x59
-#define STEELSERIES_ID_FIRMWARE			0x90
+#define STEELSERIES_ID_FIRMWARE_PROTOCOL2	0x90
 #define STEELSERIES_ID_SETTTINGS		0x92
 
 #define STEELSERIES_ID_DPI_PROTOCOL3		0x03
@@ -112,6 +114,16 @@ struct steelseries_led_cycle_spec {
 	int repeat_idx;		/* index of the repeat field */
 	int trigger_idx;	/* index of the trigger mask field */
 	int point_count_idx;	/* index of the point counter field */
+};
+
+struct _steelseries_message {
+	uint8_t report_id;
+	uint8_t parameters[STEELSERIES_REPORT_SIZE - 1];
+} __attribute__((packed));
+
+union steelseries_message {
+	struct _steelseries_message msg;
+	uint8_t data[STEELSERIES_REPORT_SIZE];
 };
 
 static int
@@ -188,23 +200,38 @@ steelseries_get_firmware_version(struct ratbag_device *device)
 {
 	struct steelseries_data *drv_data = device->drv_data;
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
-	size_t buf_len = STEELSERIES_REPORT_SIZE;
-	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
+	size_t msg_len;
+	uint8_t buf[2] = {0};
 	int ret;
 
-	if (device_version == 2)
-		buf[0] = STEELSERIES_ID_FIRMWARE;
-	else if (device_version == 3)
-		buf[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL3;
-	else
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
+
+	switch (device_version) {
+	case 1:
+		msg.msg.parameters[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL1;
+		msg_len = STEELSERIES_REPORT_SIZE_SHORT;
+		break;
+	case 2:
+		msg.msg.parameters[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL2;
+		msg_len = STEELSERIES_REPORT_SIZE;
+		break;
+	case 3:
+		msg.msg.parameters[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL3;
+		msg_len = STEELSERIES_REPORT_SIZE;
+		break;
+	default:
 		return -ENOTSUP;
+	}
 
 	msleep(10);
-	ret = ratbag_hidraw_output_report(device, buf, buf_len);
+	ret = ratbag_hidraw_output_report(device, msg.data, msg_len);
 	if (ret < 0)
 		return ret;
 
-	ret = ratbag_hidraw_read_input_report_index(device, buf, buf_len, STEELSERIES_INPUT_HIDRAW);
+	ret = ratbag_hidraw_read_input_report_index(device, buf, sizeof(buf), STEELSERIES_INPUT_HIDRAW);
 	if (ret < 0)
 		return ret;
 
@@ -222,24 +249,33 @@ steelseries_read_settings(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
 
-	size_t buf_len = STEELSERIES_REPORT_SIZE;
 	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
 	int ret;
 	unsigned int active_resolution;
 
-	if (device_version == 2)
-		buf[0] = STEELSERIES_ID_SETTTINGS;
-	else if (device_version == 3)
-		buf[0] = STEELSERIES_ID_SETTTINGS_PROTOCOL3;
-	else
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
+
+	switch (device_version) {
+	case 2:
+		msg.msg.parameters[0] = STEELSERIES_ID_SETTTINGS;
+		break;
+	case 3:
+		msg.msg.parameters[0] = STEELSERIES_ID_SETTTINGS_PROTOCOL3;
+		break;
+	case 1:
+	default:
 		return -ENOTSUP;
+	}
 
 	msleep(10);
-	ret = ratbag_hidraw_output_report(device, buf, buf_len);
+	ret = ratbag_hidraw_output_report(device, msg.data, STEELSERIES_REPORT_SIZE);
 	if (ret < 0)
 		return ret;
 
-	ret = ratbag_hidraw_read_input_report_index(device, buf, buf_len, STEELSERIES_INPUT_HIDRAW);
+	ret = ratbag_hidraw_read_input_report_index(device, buf, STEELSERIES_REPORT_SIZE, STEELSERIES_INPUT_HIDRAW);
 	if (ret < 0)
 		return ret;
 
@@ -394,12 +430,17 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 	struct dpi_range *dpirange = NULL;
 	int ret;
 	size_t buf_len;
-	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
+
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
 
 	dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
 	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
 
-	if (device_version == 1) {
+	switch (device_version) {
+	case 1:
 		int i = 0;
 
 		/* when using lists the entries are enumerated in reverse */
@@ -414,27 +455,30 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 		}
 
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
-		buf[0] = STEELSERIES_ID_DPI_SHORT;
-		buf[1] = resolution->index + 1;
-		buf[2] = i;
-	} else if (device_version == 2) {
+		msg.msg.parameters[0] = STEELSERIES_ID_DPI_SHORT;
+		msg.msg.parameters[1] = resolution->index + 1;
+		msg.msg.parameters[2] = i;
+		break;
+	case 2:
 		buf_len = STEELSERIES_REPORT_SIZE;
-		buf[0] = STEELSERIES_ID_DPI;
-		buf[2] = resolution->index + 1;
-		buf[3] = resolution->dpi_x / dpirange->step - 1;
-		buf[6] = 0x42; /* not sure if needed */
-	} else if (device_version == 3) {
+		msg.msg.parameters[0] = STEELSERIES_ID_DPI;
+		msg.msg.parameters[2] = resolution->index + 1;
+		msg.msg.parameters[3] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[6] = 0x42; /* not sure if needed */
+		break;
+	case 3:
 		buf_len = STEELSERIES_REPORT_SIZE;
-		buf[0] = STEELSERIES_ID_DPI_PROTOCOL3;
-		buf[2] = resolution->index + 1;
-		buf[3] = resolution->dpi_x / dpirange->step - 1;
-		buf[5] = 0x42; /* not sure if needed */
-	} else {
+		msg.msg.parameters[0] = STEELSERIES_ID_DPI_PROTOCOL3;
+		msg.msg.parameters[2] = resolution->index + 1;
+		msg.msg.parameters[3] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[5] = 0x42; /* not sure if needed */
+		break;
+	default:
 		return -ENOTSUP;
 	}
 
 	msleep(10);
-	ret = ratbag_hidraw_output_report(device, buf, buf_len);
+	ret = ratbag_hidraw_output_report(device, msg.data, buf_len);
 	if (ret < 0)
 		return ret;
 
@@ -448,9 +492,14 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	int ret;
 	size_t buf_len;
-	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
 
-	if (device_version == 1) {
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
+
+	switch (device_version) {
+	case 1:
 		uint8_t reported_rate = 0;
 		if (profile->hz >= 1000) {
 			profile->hz = 1000;
@@ -467,22 +516,25 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 		}
 
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
-		buf[0] = STEELSERIES_ID_REPORT_RATE_SHORT;
-		buf[2] = reported_rate;
-	} else if (device_version == 2) {
+		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE_SHORT;
+		msg.msg.parameters[2] = reported_rate;
+		break;
+	case 2:
 		buf_len = STEELSERIES_REPORT_SIZE;
-		buf[0] = STEELSERIES_ID_REPORT_RATE;
-		buf[2] = 1000 / profile->hz;
-	} else if (device_version == 3) {
+		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE;
+		msg.msg.parameters[2] = 1000 / profile->hz;
+		break;
+        case 3:
 		buf_len = STEELSERIES_REPORT_SIZE;
-		buf[0] = STEELSERIES_ID_REPORT_RATE_PROTOCOL3;
-		buf[2] = 1000 / profile->hz;
-	} else {
+		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE_PROTOCOL3;
+		msg.msg.parameters[2] = 1000 / profile->hz;
+		break;
+	default:
 		return -ENOTSUP;
 	}
 
 	msleep(10);
-	ret = ratbag_hidraw_output_report(device, buf, buf_len);
+	ret = ratbag_hidraw_output_report(device, msg.data, buf_len);
 	if (ret < 0)
 		return ret;
 
@@ -505,10 +557,12 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 	const int report_size = is_senseiraw ? STEELSERIES_REPORT_SIZE_SHORT : STEELSERIES_REPORT_LONG_SIZE;
 	const int max_modifiers = is_senseiraw ? 0 : 3;
 
-	uint8_t buf[report_size];
-	memset(buf, 0, report_size);
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
 
-	buf[0] = STEELSERIES_ID_BUTTONS;
+	msg.msg.parameters[0] = STEELSERIES_ID_BUTTONS;
 
 	ratbag_profile_for_each_button(profile, button) {
 		struct ratbag_button_action *action = &button->action;
@@ -521,7 +575,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 
 		switch (action->type) {
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-			buf[idx] = action->action.button;
+			msg.msg.parameters[idx] = action->action.button;
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_MACRO:
@@ -539,47 +593,47 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 						device, key);
 			if (code) {
 				if (is_senseiraw) {
-					buf[idx] = STEELSERIES_BUTTON_KEY;
+					msg.msg.parameters[idx] = STEELSERIES_BUTTON_KEY;
 				} else {
-					buf[idx] = STEELSERIES_BUTTON_KBD;
+					msg.msg.parameters[idx] = STEELSERIES_BUTTON_KBD;
 
 					if (modifiers & MODIFIER_LEFTCTRL)
-						buf[++idx] = 0xE0;
+						msg.msg.parameters[++idx] = 0xE0;
 					if (modifiers & MODIFIER_LEFTSHIFT)
-						buf[++idx] = 0xE1;
+						msg.msg.parameters[++idx] = 0xE1;
 					if (modifiers & MODIFIER_LEFTALT)
-						buf[++idx] = 0xE2;
+						msg.msg.parameters[++idx] = 0xE2;
 					if (modifiers & MODIFIER_LEFTMETA)
-						buf[++idx] = 0xE3;
+						msg.msg.parameters[++idx] = 0xE3;
 					if (modifiers & MODIFIER_RIGHTCTRL)
-						buf[++idx] = 0xE4;
+						msg.msg.parameters[++idx] = 0xE4;
 					if (modifiers & MODIFIER_RIGHTSHIFT)
-						buf[++idx] = 0xE5;
+						msg.msg.parameters[++idx] = 0xE5;
 					if (modifiers & MODIFIER_RIGHTALT)
-						buf[++idx] = 0xE6;
+						msg.msg.parameters[++idx] = 0xE6;
 					if (modifiers & MODIFIER_RIGHTMETA)
-						buf[++idx] = 0xE7;
+						msg.msg.parameters[++idx] = 0xE7;
 				}
 
-				buf[idx + 1] = code;
+				msg.msg.parameters[idx + 1] = code;
 			} else {
 				code = ratbag_hidraw_get_consumer_usage_from_keycode(
 						device, action->action.key.key);
-				buf[idx] = STEELSERIES_BUTTON_CONSUMER;
-				buf[idx + 1] = code;
+				msg.msg.parameters[idx] = STEELSERIES_BUTTON_CONSUMER;
+				msg.msg.parameters[idx + 1] = code;
 			}
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 			switch (action->action.special) {
 			case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP:
-				buf[idx] = STEELSERIES_BUTTON_RES_CYCLE;
+				msg.msg.parameters[idx] = STEELSERIES_BUTTON_RES_CYCLE;
 				break;
 			case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:
-				buf[idx] = STEELSERIES_BUTTON_WHEEL_UP;
+				msg.msg.parameters[idx] = STEELSERIES_BUTTON_WHEEL_UP;
 				break;
 			case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:
-				buf[idx] = STEELSERIES_BUTTON_WHEEL_DOWN;
+				msg.msg.parameters[idx] = STEELSERIES_BUTTON_WHEEL_DOWN;
 				break;
 			default:
 				break;
@@ -589,7 +643,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		case RATBAG_BUTTON_ACTION_TYPE_NONE:
 		default:
-			buf[idx] = STEELSERIES_BUTTON_OFF;
+			msg.msg.parameters[idx] = STEELSERIES_BUTTON_OFF;
 			break;
 		}
 	}
@@ -597,9 +651,10 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 	msleep(10);
 	if (device_version == 3)
 		ret = ratbag_hidraw_raw_request(device, STEELSERIES_ID_BUTTONS,
-			buf,sizeof(buf),HID_FEATURE_REPORT,HID_REQ_SET_REPORT);
+						msg.msg.parameters, report_size - 1,
+						HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 	else
-		ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+		ret = ratbag_hidraw_output_report(device, msg.data, report_size);
 
 	if (ret < 0)
 		return ret;
@@ -612,32 +667,32 @@ steelseries_write_led_v1(struct ratbag_led *led)
 {
 	struct ratbag_device *device = led->profile->device;
 	const enum steelseries_quirk quirk = ratbag_device_data_steelseries_get_quirk(device->data);
-	uint8_t buf[STEELSERIES_REPORT_SIZE_SHORT] = {0};
 	int ret;
 
-	buf[0] = STEELSERIES_ID_LED_EFFECT_SHORT;
-	if (quirk != STEELSERIES_QUIRK_RIVAL100) {
-		buf[1] = led->index + 1;
-	} else {
-		buf[1] = 0x00;
-	}
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
+
+	msg.msg.parameters[0] = STEELSERIES_ID_LED_EFFECT_SHORT;
+	msg.msg.parameters[1] = quirk == STEELSERIES_QUIRK_RIVAL100 ? 0x00 : led->index + 1;
 
 	switch(led->mode) {
 	case RATBAG_LED_OFF:
 	case RATBAG_LED_ON:
-		buf[2] = 0x01;
+		msg.msg.parameters[2] = 0x01;
 		break;
 	case RATBAG_LED_BREATHING:
 		/* 0x2/3/4 - speed (by eye it's 3, 5 and 7 seconds) */
 		if (led->ms <= 3000) {
 			led->ms = 3000;
-			buf[2] = 0x04;
+			msg.msg.parameters[2] = 0x04;
 		} else if (led->ms <= 5000) {
 			led->ms = 5000;
-			buf[2] = 0x03;
+			msg.msg.parameters[2] = 0x03;
 		} else {
 			led->ms = 7000;
-			buf[2] = 0x02;
+			msg.msg.parameters[2] = 0x02;
 		}
 		break;
 	case RATBAG_LED_CYCLE:
@@ -647,34 +702,36 @@ steelseries_write_led_v1(struct ratbag_led *led)
 	}
 
 	msleep(10);
-	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+	ret = ratbag_hidraw_output_report(device, msg.data, STEELSERIES_REPORT_SIZE_SHORT);
 	if (ret < 0)
 		return ret;
 
+	memset(msg.data, 0, STEELSERIES_REPORT_SIZE); // reset the msg buffer before reusing
+
 	if (quirk == STEELSERIES_QUIRK_SENSEIRAW) {
-		buf[0] = STEELSERIES_ID_LED_INTENSITY_SHORT;
-		buf[1] = led->index + 1;
+		msg.msg.parameters[0] = STEELSERIES_ID_LED_INTENSITY_SHORT;
+		msg.msg.parameters[1] = led->index + 1;
 		if (led->mode == RATBAG_LED_OFF || led->brightness == 0) {
-			buf[2] = 1;
+			msg.msg.parameters[2] = 1;
 		} else {
 			//split the brightness into roughly 3 equal intensities
-			buf[2] = (led->brightness / 86) + 2;
+			msg.msg.parameters[2] = (led->brightness / 86) + 2;
 		}
 	} else {
 		if (quirk != STEELSERIES_QUIRK_RIVAL100) {
-			buf[0] = STEELSERIES_ID_LED_COLOR_SHORT;
-			buf[1] = led->index + 1;
+			msg.msg.parameters[0] = STEELSERIES_ID_LED_COLOR_SHORT;
+			msg.msg.parameters[1] = led->index + 1;
 		} else {
-			buf[0] = STEELSERIES_ID_LED_COLOR_SHORT_RIVAL100;
-			buf[1] = 0x00;
+			msg.msg.parameters[0] = STEELSERIES_ID_LED_COLOR_SHORT_RIVAL100;
+			msg.msg.parameters[1] = 0x00;
 		}
-		buf[2] = led->color.red;
-		buf[3] = led->color.green;
-		buf[4] = led->color.blue;
+		msg.msg.parameters[2] = led->color.red;
+		msg.msg.parameters[3] = led->color.green;
+		msg.msg.parameters[4] = led->color.blue;
 	}
 
 	msleep(10);
-	ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+	ret = ratbag_hidraw_output_report(device, msg.data, STEELSERIES_REPORT_SIZE_SHORT);
 	if (ret < 0)
 		return ret;
 
@@ -750,9 +807,13 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 			    struct steelseries_led_cycle_spec *cycle_spec)
 {
 	struct ratbag_device *device = led->profile->device;
-	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	int ret;
+
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
 
 	struct steelseries_led_cycle cycle;
 	struct steelseries_point point[4];
@@ -822,14 +883,15 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 		return -EINVAL;
 	}
 
-	construct_cycle_buffer(&cycle, cycle_spec, buf, sizeof(buf));
+	construct_cycle_buffer(&cycle, cycle_spec, msg.msg.parameters, sizeof(msg.msg.parameters));
 
 	msleep(10);
 	if (device_version == 3)
-		ret = ratbag_hidraw_raw_request(device, cycle_spec->cmd_val, buf,
-				sizeof(buf), cycle_spec->hid_report_type, HID_REQ_SET_REPORT);
+		ret = ratbag_hidraw_raw_request(device, cycle_spec->cmd_val, msg.msg.parameters,
+						sizeof(msg.msg.parameters), cycle_spec->hid_report_type,
+						HID_REQ_SET_REPORT);
 	else
-		ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
+		ret = ratbag_hidraw_output_report(device, msg.data, sizeof(STEELSERIES_REPORT_SIZE));
 
 	if (ret < 0)
 		return ret;
@@ -896,23 +958,27 @@ steelseries_write_save(struct ratbag_device *device)
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	int ret;
 	size_t buf_len;
-	uint8_t buf[STEELSERIES_REPORT_SIZE] = {0};
+
+	union steelseries_message msg = {
+		.msg.report_id = STEELSERIES_REPORT_ID,
+		.msg.parameters = {0},
+	};
 
 	if (device_version == 1) {
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
-		buf[0] = STEELSERIES_ID_SAVE_SHORT;
+		msg.msg.parameters[0] = STEELSERIES_ID_SAVE_SHORT;
 	} else if (device_version == 2) {
 		buf_len = STEELSERIES_REPORT_SIZE;
-		buf[0] = STEELSERIES_ID_SAVE;
+		msg.msg.parameters[0] = STEELSERIES_ID_SAVE;
 	} else if (device_version == 3) {
 		buf_len = STEELSERIES_REPORT_SIZE;
-		buf[0] = STEELSERIES_ID_SAVE_PROTOCOL3;
+		msg.msg.parameters[0] = STEELSERIES_ID_SAVE_PROTOCOL3;
 	} else {
 		return -ENOTSUP;
 	}
 
 	msleep(20);
-	ret = ratbag_hidraw_output_report(device, buf, buf_len);
+	ret = ratbag_hidraw_output_report(device, msg.data, buf_len);
 	if (ret < 0)
 		return ret;
 
