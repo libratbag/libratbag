@@ -1520,6 +1520,21 @@ ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id)
 	return report->usage;
 }
 
+unsigned int
+ratbag_hidraw_has_vendor_page(struct ratbag_device *device)
+{
+	unsigned i;
+
+	if (ratbag_hidraw_get_usage_page(device, 0) >= 0xff00)
+		return 1;
+
+	for (i = 0; i < device->hidraw[0].num_reports; i++) {
+		if (ratbag_hidraw_get_usage_page(device, device->hidraw[0].reports[i].report_id) >= 0xff00)
+			return 1;
+	}
+	return 0;
+}
+
 void
 ratbag_close_hidraw(struct ratbag_device *device)
 {

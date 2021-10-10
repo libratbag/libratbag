@@ -220,6 +220,16 @@ unsigned int
 ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id);
 
 /**
+ * Tells if a given device has a vendor usage page
+ *
+ * @param device the ratbag device which hidraw node is opened
+ *
+ * @return 1 if the device has a vendor usage page, 0 otherwise
+ */
+unsigned int
+ratbag_hidraw_has_vendor_page(struct ratbag_device *device);
+
+/**
  * Gives the input key code associated to the keyboard HID usage.
  *
  * @return the key code of the HID usage or 0.
