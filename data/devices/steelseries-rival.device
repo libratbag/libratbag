@@ -1,6 +1,6 @@
 [Device]
 Name=SteelSeries Rival
-DeviceMatch=usb:1038:1384
+DeviceMatch=usb:1038:1384;usb:1038:1392;usb:1038:1710;usb:1038:1712;usb:1038:171c;usb:1038:1394;usb:1038:171a;usb:1038:1716;usb:1038:1714;usb:1038:1718
 Driver=steelseries
 
 [Driver/steelseries]
