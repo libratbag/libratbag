@@ -429,6 +429,7 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 	struct dpi_list *dpilist = NULL;
 	struct dpi_range *dpirange = NULL;
 	int ret;
+	int i = 0;
 	size_t buf_len;
 
 	union steelseries_message msg = {
@@ -441,8 +442,6 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 
 	switch (device_version) {
 	case 1:
-		int i = 0;
-
 		/* when using lists the entries are enumerated in reverse */
 		if (dpilist) {
 			for (i = 0; i < (int)resolution->ndpis; i++) {
@@ -492,6 +491,7 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	int ret;
 	size_t buf_len;
+	uint8_t reported_rate = 0;
 
 	union steelseries_message msg = {
 		.msg.report_id = STEELSERIES_REPORT_ID,
@@ -500,7 +500,6 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 
 	switch (device_version) {
 	case 1:
-		uint8_t reported_rate = 0;
 		if (profile->hz >= 1000) {
 			profile->hz = 1000;
 			reported_rate = 0x01;
