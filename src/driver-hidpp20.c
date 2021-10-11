@@ -1642,6 +1642,10 @@ hidpp20drv_init_device(struct ratbag_device *device,
 	if (num >= 0)
 		drv_data->num_leds = num;
 
+	num = ratbag_device_data_hidpp20_get_button_count(device->data);
+	if (num >= 0)
+		drv_data->num_buttons = num;
+
 	drv_data->report_rates[0] = ratbag_device_data_hidpp20_get_report_rate(device->data);;
 
 	ratbag_device_init_profiles(device,
