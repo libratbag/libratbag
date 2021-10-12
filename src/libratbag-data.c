@@ -174,6 +174,7 @@ init_data_hidpp20(struct ratbag *ratbag,
 	if (error)
 		g_error_free(error);
 
+	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "DeviceIndex", &error);
 	if (num != 0 || !error)
 		data->hidpp20.index = num;
