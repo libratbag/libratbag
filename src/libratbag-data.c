@@ -65,6 +65,7 @@ struct data_hidpp20 {
 	enum hidpp20_quirk quirk;
 	int led_count;
 	int report_rate;
+	int button_count;
 };
 
 struct data_hidpp10 {
@@ -167,6 +168,13 @@ init_data_hidpp20(struct ratbag *ratbag,
 	data->hidpp20.index = -1;
 	data->hidpp20.led_count = -1;
 
+	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
+	if (num > 0 || !error)
+		data->hidpp20.button_count = num;
+	if (error)
+		g_error_free(error);
+
+	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "DeviceIndex", &error);
 	if (num != 0 || !error)
 		data->hidpp20.index = num;
@@ -597,6 +605,14 @@ ratbag_device_data_hidpp20_get_index(const struct ratbag_device_data *data)
 	assert(data->drivertype == HIDPP20);
 
 	return data->hidpp20.index;
+}
+
+int
+ratbag_device_data_hidpp20_get_button_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == HIDPP20);
+
+	return data->hidpp20.button_count;
 }
 
 int

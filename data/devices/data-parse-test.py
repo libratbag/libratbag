@@ -168,7 +168,7 @@ def check_section_hidpp10(section):
 
 
 def check_section_hidpp20(section):
-    permitted = ['DeviceIndex', 'Leds', 'ReportRate', 'Quirk']
+    permitted = ['Buttons', 'DeviceIndex', 'Leds', 'ReportRate', 'Quirk']
     for key in section.keys():
         assertIn(key, permitted)
 
