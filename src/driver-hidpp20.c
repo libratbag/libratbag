@@ -1096,6 +1096,7 @@ hidpp20drv_read_special_key_mouse(struct ratbag_device *device)
 	drv_data->controls = NULL;
 	drv_data->num_controls = 0;
 	rc = hidpp20_special_key_mouse_get_controls(drv_data->dev, &drv_data->controls);
+	log_raw(device->ratbag, "num_control %d\n", rc);
 	if (rc > 0) {
 		drv_data->num_controls = rc;
 		rc = 0;
@@ -1646,7 +1647,9 @@ hidpp20drv_init_device(struct ratbag_device *device,
 	if (num >= 0)
 		drv_data->num_buttons = num;
 
-	drv_data->report_rates[0] = ratbag_device_data_hidpp20_get_report_rate(device->data);;
+	num = ratbag_device_data_hidpp20_get_report_rate(device->data);
+	if (num >= 0)
+		drv_data->report_rates[0] = num;
 
 	ratbag_device_init_profiles(device,
 				    drv_data->num_profiles,

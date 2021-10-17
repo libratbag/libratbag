@@ -165,8 +165,10 @@ init_data_hidpp20(struct ratbag *ratbag,
 	int num;
 	char *str;
 
+	data->hidpp20.button_count = -1;
 	data->hidpp20.index = -1;
 	data->hidpp20.led_count = -1;
+	data->hidpp20.report_rate = -1;
 
 	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
 	if (num > 0 || !error)
