@@ -126,6 +126,9 @@ union steelseries_message {
 	uint8_t data[STEELSERIES_REPORT_SIZE];
 };
 
+_Static_assert(sizeof(union steelseries_message) == STEELSERIES_REPORT_SIZE,
+	       "Size of union steelseries_message is wrong");
+
 static int
 steelseries_test_hidraw(struct ratbag_device *device)
 {
