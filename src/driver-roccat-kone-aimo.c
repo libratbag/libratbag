@@ -36,26 +36,29 @@
 #define ROCCAT_PROFILE_MAX			5
 #define ROCCAT_BUTTON_MAX			24
 #define ROCCAT_NUM_DPI				5
-#define ROCCAT_LED_MAX				0 // 5 or 11 depending on how you count it.
+#define ROCCAT_LED_MAX				0 // 5 or 11 depending on how you count the gradient supporting LED sequences.
 #define ROCCAT_MIN_DPI				100
 #define ROCCAT_MAX_DPI				16000
 
 #define ROCCAT_MAX_RETRY_READY			10
 
 #define ROCCAT_REPORT_ID_CONFIGURE_PROFILE	4
-#define ROCCAT_REPORT_ID_PROFILE		5
-#define ROCCAT_REPORT_ID_SETTINGS		6
+#define ROCCAT_REPORT_ID_PROFILE			5
+#define ROCCAT_REPORT_ID_SETTINGS			6
 #define ROCCAT_REPORT_ID_KEY_MAPPING		7
-#define ROCCAT_REPORT_ID_MACRO			8
+#define ROCCAT_REPORT_ID_MACRO				8
 
 #define ROCCAT_REPORT_SIZE_PROFILE		75
 #define ROCCAT_REPORT_SIZE_SETTINGS		126
-#define ROCCAT_REPORT_SIZE_MACRO		2082
+#define ROCCAT_REPORT_SIZE_MACRO		1026
 
 #define ROCCAT_CONFIG_SETTINGS			0x80
 #define ROCCAT_CONFIG_KEY_MAPPING		0x90
 
-#define ROCCAT_MAX_MACRO_LENGTH			500
+#define ROCCAT_MAX_MACRO_LENGTH				480
+#define ROCCAT_MAX_MACRO_PAGE1_LENGTH		237
+#define ROCCAT_MAX_MACRO_PAGE2_LENGTH		243
+#define ROCCAT_MAX_MACRO_PAGE2_TERMINATOR	0x4A
 
 struct roccat_color {
 	uint8_t intensity;
@@ -105,22 +108,54 @@ struct roccat_settings_report {
 
 struct roccat_macro {
 	uint8_t reportID;
-	uint8_t twentytwo;
-	uint8_t height;
+	uint8_t page;
 	uint8_t profile;
 	uint8_t button_index;
-	uint8_t active;
-	uint8_t padding[24];
-	char group[24];
-	char name[24];
-	uint16_t length;
-	struct {
-		uint8_t keycode;
-		uint8_t flag;
-		uint16_t time;
-	} keys[ROCCAT_MAX_MACRO_LENGTH];
+	uint8_t repeat;
+	char group[40];
+	char name[32];
+	uint16_t length; // OR'd with On Press = 0x00, While Press = 0x10, Macro toggle = 0x20
+	struct roccat_macro_keys keys[ROCCAT_MAX_MACRO_LENGTH];
 	uint16_t checksum;
+};
+
+struct roccat_macro_page1 {
+	uint8_t reportID;
+	uint8_t page;
+	uint8_t profile;
+	uint8_t button_index;
+	uint8_t repeat;
+	char group[40];
+	char name[32];
+	uint16_t length; // OR'd with On Press = 0x00, While Press = 0x10, Macro toggle = 0x20
+	struct roccat_macro_keys keys[ROCCAT_MAX_MACRO_PAGE1_LENGTH];
 } __attribute__((packed));
+
+struct roccat_macro_page2 {
+	uint8_t reportID;
+	uint8_t page;
+	uint8_t profile;
+	struct roccat_macro_keys keys[ROCCAT_MAX_MACRO_PAGE2_LENGTH];
+	uint16_t checksum;
+	uint8_t terminator; // always 0x4A
+} __attribute__((packed));
+
+struct roccat_macro_keys{
+	uint8_t keycode;
+	uint8_t flag;
+	uint16_t time;
+} __attribute__((packed));
+
+struct roccat_macro_combined {
+	struct roccat_macro_page1 *page1;
+	struct roccat_macro_page2 *page2;
+} __attribute__((packed));
+
+enum roccat_macro_action_type {
+	ON_PRESS = 0x0000,
+	WHILE_PRESS = 0x0010,
+	MACRO_TOGGLE = 0x0020
+};
 
 struct roccat_data {
 	uint8_t profiles[(ROCCAT_PROFILE_MAX)][ROCCAT_REPORT_SIZE_PROFILE];
@@ -557,7 +592,12 @@ roccat_write_macro(struct ratbag_button *button,
 {
 	struct ratbag_device *device;
 	struct roccat_macro *macro;
+	struct roccat_macro_page1 *macroP1;
+	struct roccat_macro_page2 *macroP2;
+	struct roccat_macro_combined *macroC;
 	struct roccat_data *drv_data;
+	uint8_t *buf1;
+	uint8_t *buf2;
 	uint8_t *buf;
 	unsigned i, count = 0;
 	int rc;
@@ -568,9 +608,15 @@ roccat_write_macro(struct ratbag_button *button,
 	device = button->profile->device;
 	drv_data = ratbag_get_drv_data(device);
 	macro = &drv_data->macros[button->profile->index][button->index];
-	buf = (uint8_t*)macro;
+	macroC->page1 = macroP1;
+	macroC->page2 = macroP2;
+	buf1 = (uint8_t*)macroP1;
+	buf2 = (uint8_t*)macroP2;
+	buf = (uint8_t*)macroC;
 
-	memset(buf, 0, ROCCAT_REPORT_SIZE_MACRO);
+	memset(buf1, 0, ROCCAT_REPORT_SIZE_MACRO);
+	memset(buf2, 0, ROCCAT_REPORT_SIZE_MACRO);
+	memset(buf, 0, ROCCAT_REPORT_SIZE_MACRO*2);
 
 	for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
 		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
@@ -608,19 +654,33 @@ roccat_write_macro(struct ratbag_button *button,
 		count++;
 	}
 
-	macro->reportID = ROCCAT_REPORT_ID_MACRO;
-	macro->twentytwo = 0x22;
-	macro->height = 0x08;
-	macro->profile = button->profile->index;
-	macro->button_index = button->index;
-	macro->active = 0x01;
-	strcpy(macro->group, "g0");
-	strncpy(macro->name, action->macro->name, 23);
-	macro->length = count;
-	macro->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_MACRO);
+	for(int i = 0; i < count; i++) {
+		if (i < ROCCAT_MAX_MACRO_PAGE1_LENGTH) {
+			macroP1->keys[i] = macro->keys[i];
+		} else {
+			macroP2->keys[i-ROCCAT_MAX_MACRO_PAGE1_LENGTH] = macro->keys[i];
+		}
+	}
+
+	macroP1->reportID = ROCCAT_REPORT_ID_MACRO;
+	
+	macroP1->page = 0x01;
+	macroP1->profile = button->profile->index;
+	macroP1->button_index = button->index;
+	macroP1->repeat = 0x01;
+	strcpy(macroP1->group, "Ratbag"); // Max 40 characters
+	strncpy(macroP1->name, action->macro->name, 31); // Max 32 characters
+	macroP1->length = count | ON_PRESS;
+
+	macroP2->reportID = ROCCAT_REPORT_ID_MACRO;
+	macroP2->profile = button->profile->index;
+	macroP2->page = 0x02;
+	
+	macroP2->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_MACRO*2);
+	macroP2->terminator = 0x4A;
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-				buf, ROCCAT_REPORT_SIZE_MACRO);
+				buf1, ROCCAT_REPORT_SIZE_MACRO);
 	if (rc < 0)
 		return rc;
 
@@ -628,10 +688,28 @@ roccat_write_macro(struct ratbag_button *button,
 		return -EIO;
 
 	rc = roccat_wait_ready(device);
-	if (rc)
+	if (rc) {
 		log_error(device->ratbag,
 			"Error while waiting for the device to be ready: %s (%d)\n",
 			strerror(-rc), rc);
+		return rc;
+	}
+
+	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
+				buf2, ROCCAT_REPORT_SIZE_MACRO);
+	if (rc < 0)
+		return rc;
+
+	if (rc != ROCCAT_REPORT_SIZE_MACRO)
+		return -EIO;
+
+	rc = roccat_wait_ready(device);
+	if (rc) {
+		log_error(device->ratbag,
+			"Error while waiting for the device to be ready: %s (%d)\n",
+			strerror(-rc), rc);
+		return rc;
+	}
 
 	return rc;
 }
