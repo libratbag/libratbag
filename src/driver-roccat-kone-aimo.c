@@ -106,6 +106,11 @@ struct roccat_settings_report {
 	uint16_t checksum;
 } __attribute__((packed));
 
+typedef struct {
+	uint8_t keycode;
+	uint8_t flag;
+	uint16_t time;
+} roccat_macro_keys;
 struct roccat_macro {
 	uint8_t reportID;
 	uint8_t page;
@@ -115,7 +120,7 @@ struct roccat_macro {
 	char group[40];
 	char name[32];
 	uint16_t length; // OR'd with On Press = 0x00, While Press = 0x10, Macro toggle = 0x20
-	struct roccat_macro_keys keys[ROCCAT_MAX_MACRO_LENGTH];
+	roccat_macro_keys keys[ROCCAT_MAX_MACRO_LENGTH];
 	uint16_t checksum;
 };
 
@@ -128,22 +133,16 @@ struct roccat_macro_page1 {
 	char group[40];
 	char name[32];
 	uint16_t length; // OR'd with On Press = 0x00, While Press = 0x10, Macro toggle = 0x20
-	struct roccat_macro_keys keys[ROCCAT_MAX_MACRO_PAGE1_LENGTH];
+	roccat_macro_keys keys[ROCCAT_MAX_MACRO_PAGE1_LENGTH];
 } __attribute__((packed));
 
 struct roccat_macro_page2 {
 	uint8_t reportID;
 	uint8_t page;
 	uint8_t profile;
-	struct roccat_macro_keys keys[ROCCAT_MAX_MACRO_PAGE2_LENGTH];
+	roccat_macro_keys keys[ROCCAT_MAX_MACRO_PAGE2_LENGTH];
 	uint16_t checksum;
 	uint8_t terminator; // always 0x4A
-} __attribute__((packed));
-
-struct roccat_macro_keys{
-	uint8_t keycode;
-	uint8_t flag;
-	uint16_t time;
 } __attribute__((packed));
 
 struct roccat_macro_combined {
@@ -592,14 +591,14 @@ roccat_write_macro(struct ratbag_button *button,
 {
 	struct ratbag_device *device;
 	struct roccat_macro *macro;
-	struct roccat_macro_page1 *macroP1;
-	struct roccat_macro_page2 *macroP2;
-	struct roccat_macro_combined *macroC;
+	struct roccat_macro_page1 *macroP1 = malloc(sizeof(struct roccat_macro_page1));
+	struct roccat_macro_page2 *macroP2 = malloc(sizeof(struct roccat_macro_page2));
+	struct roccat_macro_combined *macroC = malloc(sizeof(struct roccat_macro_combined));
 	struct roccat_data *drv_data;
 	uint8_t *buf1;
 	uint8_t *buf2;
 	uint8_t *buf;
-	unsigned i, count = 0;
+	unsigned count = 0;
 	int rc;
 
 	if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
@@ -618,7 +617,7 @@ roccat_write_macro(struct ratbag_button *button,
 	memset(buf2, 0, ROCCAT_REPORT_SIZE_MACRO);
 	memset(buf, 0, ROCCAT_REPORT_SIZE_MACRO*2);
 
-	for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
+	for (unsigned i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
 		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
 			return -EINVAL; /* should not happen, ever */
 
@@ -654,7 +653,7 @@ roccat_write_macro(struct ratbag_button *button,
 		count++;
 	}
 
-	for(int i = 0; i < count; i++) {
+	for(unsigned i = 0; i < count; i++) {
 		if (i < ROCCAT_MAX_MACRO_PAGE1_LENGTH) {
 			macroP1->keys[i] = macro->keys[i];
 		} else {
@@ -681,36 +680,61 @@ roccat_write_macro(struct ratbag_button *button,
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
 				buf1, ROCCAT_REPORT_SIZE_MACRO);
-	if (rc < 0)
+	if (rc < 0) {
+		free(macroP1);
+		free(macroP2);
+		free(macroC);
 		return rc;
+	}
 
-	if (rc != ROCCAT_REPORT_SIZE_MACRO)
+	if (rc != ROCCAT_REPORT_SIZE_MACRO) {
+		free(macroP1);
+		free(macroP2);
+		free(macroC);
 		return -EIO;
+	}
 
 	rc = roccat_wait_ready(device);
 	if (rc) {
 		log_error(device->ratbag,
 			"Error while waiting for the device to be ready: %s (%d)\n",
 			strerror(-rc), rc);
+		free(macroP1);
+		free(macroP2);
+		free(macroC);
 		return rc;
 	}
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
 				buf2, ROCCAT_REPORT_SIZE_MACRO);
-	if (rc < 0)
+	if (rc < 0) {
+		free(macroP1);
+		free(macroP2);
+		free(macroC);
 		return rc;
+	}
 
-	if (rc != ROCCAT_REPORT_SIZE_MACRO)
+	if (rc != ROCCAT_REPORT_SIZE_MACRO) {
+		free(macroP1);
+		free(macroP2);
+		free(macroC);
 		return -EIO;
+	}
 
 	rc = roccat_wait_ready(device);
 	if (rc) {
 		log_error(device->ratbag,
 			"Error while waiting for the device to be ready: %s (%d)\n",
 			strerror(-rc), rc);
+		free(macroP1);
+		free(macroP2);
+		free(macroC);
 		return rc;
 	}
 
+	free(macroP1);
+	free(macroP2);
+	free(macroC);
 	return rc;
 }
 
