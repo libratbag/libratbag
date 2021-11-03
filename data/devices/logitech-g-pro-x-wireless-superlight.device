@@ -1,5 +1,5 @@
 [Device]
 Name=Logitech G Pro X Wireless Superlight
-DeviceMatch=usb:046d:4093;usb:046d:c094
+DeviceMatch=usb:046d:4093;usb:046d:c094;usb:046d:c547
 LedTypes=logo;battery;dpi;
 Driver=hidpp20
