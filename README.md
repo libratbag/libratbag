@@ -45,6 +45,10 @@ And to build or re-build after code-changes, run:
 
     ninja -C builddir
     sudo ninja -C builddir install
+    
+To remove/uninstal simply run:
+
+    sudo ninja -C builddir uninstall
 
 Note: `builddir` is the build output directory and can be changed to any
 other directory name. To set configure-time options, use e.g.
