@@ -3,3 +3,6 @@ Name=Logitech G635
 DeviceMatch=usb:046d:0a89
 LedTypes=logo;side
 Driver=hidpp20
+
+[Driver/hidpp20]
+Buttons=0
