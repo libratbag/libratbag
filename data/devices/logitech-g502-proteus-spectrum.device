@@ -1,4 +1,4 @@
 [Device]
 Name=Logitech G502 Proteus Spectrum
-DeviceMatch=usb:046d:c332
+DeviceMatch=usb:046d:c333
 Driver=hidpp20
