@@ -234,7 +234,7 @@ steelseries_get_firmware_version(struct ratbag_device *device)
 	if (ret < 0)
 		return ret;
 
-	ret = ratbag_hidraw_read_input_report_index(device, buf, sizeof(buf), STEELSERIES_INPUT_HIDRAW);
+	ret = ratbag_hidraw_read_input_report_index(device, buf, sizeof(buf), STEELSERIES_INPUT_HIDRAW, NULL);
 	if (ret < 0)
 		return ret;
 
@@ -278,7 +278,7 @@ steelseries_read_settings(struct ratbag_device *device)
 	if (ret < 0)
 		return ret;
 
-	ret = ratbag_hidraw_read_input_report_index(device, buf, STEELSERIES_REPORT_SIZE, STEELSERIES_INPUT_HIDRAW);
+	ret = ratbag_hidraw_read_input_report_index(device, buf, STEELSERIES_REPORT_SIZE, STEELSERIES_INPUT_HIDRAW, NULL);
 	if (ret < 0)
 		return ret;
 

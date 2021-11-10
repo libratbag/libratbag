@@ -1642,16 +1642,19 @@ ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t l
 }
 
 int
-ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len)
+ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len,
+				 ratbagd_hidraw_filter_t filter)
 {
-	return ratbag_hidraw_read_input_report_index(device, buf, len, 0);
+	return ratbag_hidraw_read_input_report_index(device, buf, len, 0, filter);
 }
 
 int
-ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno)
+ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno,
+				 ratbagd_hidraw_filter_t filter)
 {
-	int rc;
+	int rc, nfds;
 	struct pollfd fds;
+	int ts, ts_end;
 
 	assert(hidrawno >= 0 && hidrawno < MAX_HIDRAW);
 
@@ -1661,17 +1664,32 @@ ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf
 	fds.fd = device->hidraw[hidrawno].fd;
 	fds.events = POLLIN;
 
-	rc = poll(&fds, 1, 1000);
-	if (rc == -1)
-		return -errno;
+	/* convert to ms */
+	ts = now(CLOCK_MONOTONIC_RAW) / 1000 / 1000;
+	ts_end = ts + 1000; /* end in now + 1000ms */
 
-	if (rc == 0)
-		return -ETIMEDOUT;
+	while (ts < ts_end) {
+		nfds = poll(&fds, 1, ts_end - ts); /* poll for the remainder of timeout */
 
-	rc = read(device->hidraw[hidrawno].fd, buf, len);
+		if (nfds < 0)
+			return -errno;
 
-	if (rc > 0)
-		log_buf_raw(device->ratbag, "input report:  ", buf, rc);
+		if (nfds > 0) {
+			rc = read(device->hidraw[hidrawno].fd, buf, len);
 
-	return rc >= 0 ? rc : -errno;
+			if (rc < 0)
+  				return -errno;
+
+			if (rc > 0) {
+				if(!filter || (filter && filter(buf, rc))) {
+					log_buf_raw(device->ratbag, "input report:  ", buf, rc);
+					return rc;
+				}
+			}
+		}
+
+		ts = now(CLOCK_MONOTONIC_RAW) / 1000 / 1000;
+	}
+
+	return -ETIMEDOUT;
 }

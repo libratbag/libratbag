@@ -47,6 +47,8 @@ struct ratbag_hidraw {
 	char *sysname;
 };
 
+typedef bool (*ratbagd_hidraw_filter_t)(uint8_t *buf, size_t len);
+
 /**
  * Open the hidraw device associated with the device.
  *
@@ -162,27 +164,32 @@ int ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size
 
 /**
  * Read an input report from the device
+ * Optional filter function can be provided, when the filter returns false the packet is ignored
  *
  * @param device the ratbag device
  * @param[out] buf resulting raw data
  * @param len length of buf
+ * @param filter filter function
  *
  * @return count of data transfered, or a negative errno on error
  */
-int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len);
+int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len,
+				 ratbagd_hidraw_filter_t filter);
 
 /**
  * Read an input report from the device from a specific hidraw index
+ * Optional filter function can be provided, when the filter returns false the packet is ignored
  *
  * @param device the ratbag device
  * @param[out] buf resulting raw data
  * @param len length of buf
- * @param interal index of hidraw array
+ * @param hidrawno index of hidraw array
+ * @param filter filter function
  *
  * @return count of data transfered, or a negative errno on error
  */
-int ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno);
-
+int ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno,
+				 ratbagd_hidraw_filter_t filter);
 
 /**
  * Tells if a given device has the specified report ID.
