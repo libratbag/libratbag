@@ -159,6 +159,22 @@ openinput_get_report_size(unsigned int report)
 	}
 }
 
+static bool
+openinput_report_filter(uint8_t *buf, size_t len)
+{
+	if (len < 1)
+		return false;
+
+	switch(buf[0]) {
+	case OI_REPORT_SHORT:
+		return len == OI_REPORT_SHORT_SIZE;
+	case OI_REPORT_LONG:
+		return len == OI_REPORT_LONG_SIZE;
+	default:
+		return false;
+	}
+}
+
 static int
 openinput_send_report(struct ratbag_device *device, struct oi_report_t *report)
 {
@@ -175,7 +191,7 @@ openinput_send_report(struct ratbag_device *device, struct oi_report_t *report)
 		return ret;
 	}
 
-	ret = ratbag_hidraw_read_input_report(device, buffer, OI_REPORT_MAX_SIZE);
+	ret = ratbag_hidraw_read_input_report(device, buffer, OI_REPORT_MAX_SIZE, openinput_report_filter);
 	if (ret < 0) {
 		log_error(device->ratbag, "openinput: failed to read data from device (%s)\n",
 			  strerror(-ret));
