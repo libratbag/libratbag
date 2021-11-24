@@ -318,6 +318,7 @@ data_files = files(
 	'data/devices/logitech-g500s.device',
 	'data/devices/logitech-g502-hero-wireless.device',
 	'data/devices/logitech-g502-hero.device',
+	'data/devices/logitech-g502-lightspeed.device',
 	'data/devices/logitech-g502-proteus-core.device',
 	'data/devices/logitech-g502-proteus-spectrum.device',
 	'data/devices/logitech-g513.device',
