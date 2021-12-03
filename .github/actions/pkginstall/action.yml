@@ -1,0 +1,17 @@
+name: "Install packages"
+description: "Install a set of packages from sources"
+inputs:
+  apt:
+    description: "The package list to install with apt"
+  pip:
+    description: "The package list to install with pip"
+  pip_precmd:
+    description: "Set to the string 'sudo' to run through sudo"
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - run: sudo ${{ github.action_path }}/install-apt.sh ${{ inputs.apt }}
+      shell: bash
+    - run: ${{inputs.pip_precmd}} ${{ github.action_path }}/install-pip.sh ${{ inputs.pip }}
+      shell: bash

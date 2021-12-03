@@ -1,0 +1,41 @@
+# A Github Action to build a repository with meson
+name: "Setup and run meson"
+description: "Setup and run meson"
+inputs:
+  builddir:
+    description: "The build directory"
+    default: "builddir"
+  srcdir:
+    description: "The source directory"
+    default: "."
+  meson_args:
+    description: "Arguments passed to meson setup"
+    default: ""
+  meson_skip_test:
+    description: "Set to a nonempty string to skip meson test"
+    default: ""
+  meson_test_args:
+    description: "Arguments passed to meson test"
+    default: ""
+  meson_precmd:
+    description: "Set to 'sudo' to run with sudo"
+    default: ""
+  ninja_args:
+    description: "Arguments passed to ninja"
+    default: ""
+  ninja_precmd:
+    description: "Set to 'sudo' to run with sudo"
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        pushd ${{inputs.srcdir}}
+        ${{inputs.meson_precmd}} meson setup ${{inputs.builddir}} ${{inputs.meson_args}}
+        ${{inputs.meson_precmd}} meson configure ${{inputs.builddir}}
+        ${{inputs.ninja_precmd}} ninja -C ${{inputs.builddir}} ${{inputs.ninja_args}}
+        if [[ -z "${{inputs.meson_skip_test}}" ]]; then
+          ${{inputs.meson_precmd}} meson test -C ${{inputs.builddir}} --print-errorlogs ${{inputs.meson_test_args}};
+        fi
+        popd
+      shell: bash
