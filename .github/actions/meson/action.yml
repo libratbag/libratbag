@@ -30,12 +30,10 @@ runs:
   using: "composite"
   steps:
     - run: |
-        pushd ${{inputs.srcdir}}
-        ${{inputs.meson_precmd}} meson setup ${{inputs.builddir}} ${{inputs.meson_args}}
+        ${{inputs.meson_precmd}} meson setup ${{inputs.builddir}} ${{inputs.srcdir}} ${{inputs.meson_args}}
         ${{inputs.meson_precmd}} meson configure ${{inputs.builddir}}
         ${{inputs.ninja_precmd}} ninja -C ${{inputs.builddir}} ${{inputs.ninja_args}}
         if [[ -z "${{inputs.meson_skip_test}}" ]]; then
           ${{inputs.meson_precmd}} meson test -C ${{inputs.builddir}} --print-errorlogs ${{inputs.meson_test_args}};
         fi
-        popd
       shell: bash
