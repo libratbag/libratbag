@@ -26,6 +26,7 @@
 
 import argparse
 import configparser
+import pathlib
 import re
 
 
@@ -220,8 +221,8 @@ def parse_data_file(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Device data-file checker")
-    parser.add_argument('file', nargs='+')
+    parser.add_argument("directory")
     args = parser.parse_args()
-    for path in args.file:
+    for path in pathlib.Path(args.directory).glob("*.device"):
         validate_data_file_name(path)
         parse_data_file(path)
