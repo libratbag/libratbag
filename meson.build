@@ -371,13 +371,13 @@ install_data(data_files,
 	     install_dir : join_paths(get_option('datadir'), 'libratbag'))
 
 data_parse_test = find_program(join_paths(meson.source_root(), 'data/devices/data-parse-test.py'))
-test('data-parse-test', data_parse_test, args:  data_files)
+test('data-parse-test', data_parse_test, args: 'data/devices')
 
 duplicate_test = find_program(join_paths(meson.source_root(), 'data/devices/duplicate-check.py'))
-test('duplicate-test', duplicate_test, args : data_files)
+test('duplicate-test', duplicate_test, args : 'data/devices')
 
 reciever_id_test = find_program(join_paths(meson.source_root(), 'data/devices/receiver-check.py'))
-test('receiver-id-test', reciever_id_test, args : data_files)
+test('receiver-id-test', reciever_id_test, args : 'data/devices')
 
 #### tests ####
 enable_tests = get_option('tests')

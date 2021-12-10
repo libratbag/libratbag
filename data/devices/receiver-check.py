@@ -24,6 +24,7 @@
 
 import argparse
 import os
+import pathlib
 import sys
 import configparser
 
@@ -61,10 +62,10 @@ def parse_data_file(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Checks that no unifying receiver ID is in the device files')
-    parser.add_argument('file', nargs='+')
+    parser.add_argument("directory")
     args = parser.parse_args()
     receiver_found = False
-    for path in args.file:
+    for path in pathlib.Path(args.directory).glob("*.device"):
         matches = parse_data_file(path)
         fname = os.path.basename(path)
         for m in matches:
