@@ -281,102 +281,18 @@ man_lur_command = configure_file (
 )
 
 #### data files ####
-# list ordered by git ls-files data/devices/*.device
-data_files = files(
-	'data/devices/etekcity-scroll-alpha.device',
-	'data/devices/gskill-MX-780.device',
-	'data/devices/logitech-M325.device',
-	'data/devices/logitech-M500s.device',
-	'data/devices/logitech-M545.device',
-	'data/devices/logitech-M570.device',
-	'data/devices/logitech-M585-M590.device',
-	'data/devices/logitech-M705.device',
-	'data/devices/logitech-M720.device',
-	'data/devices/logitech-MX-Ergo.device',
-	'data/devices/logitech-MX-Master.device',
-	'data/devices/logitech-MX-Master-2S.device',
-	'data/devices/logitech-MX-Master-3.device',
-	'data/devices/logitech-MX518.device',
-	'data/devices/logitech-T650.device',
-	'data/devices/logitech-Wireless-Touchpad.device',
-	'data/devices/logitech-g-powerplay.device',
-	'data/devices/logitech-g-pro-wireless.device',
-	'data/devices/logitech-g-pro-x-wireless-superlight.device',
-	'data/devices/logitech-g-pro.device',
-	'data/devices/logitech-g102-g203.device',
-	'data/devices/logitech-g300.device',
-	'data/devices/logitech-g302.device',
-	'data/devices/logitech-g303.device',
-	'data/devices/logitech-g305.device',
-	'data/devices/logitech-g402.device',
-	'data/devices/logitech-g403-hero.device',
-	'data/devices/logitech-g403-wireless.device',
-	'data/devices/logitech-g403.device',
-	'data/devices/logitech-g5-2007.device',
-	'data/devices/logitech-g5.device',
-	'data/devices/logitech-g500.device',
-	'data/devices/logitech-g500s.device',
-	'data/devices/logitech-g502-hero-wireless.device',
-	'data/devices/logitech-g502-hero.device',
-	'data/devices/logitech-g502-proteus-core.device',
-	'data/devices/logitech-g502-proteus-spectrum.device',
-	'data/devices/logitech-g513.device',
-	'data/devices/logitech-g600.device',
-	'data/devices/logitech-g602.device',
-	'data/devices/logitech-g603.device',
-	'data/devices/logitech-g604.device',
-	'data/devices/logitech-g635.device',
-	'data/devices/logitech-g7.device',
-	'data/devices/logitech-g700-wireless.device',
-	'data/devices/logitech-g700.device',
-	'data/devices/logitech-g700s.device',
-	'data/devices/logitech-g703-hero.device',
-	'data/devices/logitech-g703.device',
-	'data/devices/logitech-g733.device',
-	'data/devices/logitech-g9.device',
-	'data/devices/logitech-g900.device',
-	'data/devices/logitech-g903-hero.device',
-	'data/devices/logitech-g903.device',
-	'data/devices/logitech-g815.device',
-	'data/devices/logitech-g910.device',
-	'data/devices/logitech-g915.device',
-	'data/devices/logitech-g915-tkl.device',
-	'data/devices/logitech-g935.device',
-	'data/devices/logitech-g9x-Call-of-Duty-MW3-Edition.device',
-	'data/devices/logitech-g9x-Original.device',
-	'data/devices/logitech-Marathon-M705.device',
-	'data/devices/logitech-MX-Anywhere2.device',
-	'data/devices/logitech-MX-Anywhere2S.device',
-	'data/devices/logitech-MX-Anywhere-3.device',
-	'data/devices/logitech-MX-Vertical.device',
-	'data/devices/openinput.device',
-	'data/devices/roccat-kone-emp.device',
-	'data/devices/roccat-kone-pure.device',
-	'data/devices/roccat-kone-xtd.device',
-	'data/devices/steelseries-kinzu-v2.device',
-	'data/devices/steelseries-kinzu-v2-pro.device',
-	'data/devices/steelseries-kinzu-v3.device',
-	'data/devices/steelseries-rival-100.device',
-	'data/devices/steelseries-rival-310.device',
-	'data/devices/steelseries-rival-600.device',
-	'data/devices/steelseries-rival.device',
-	'data/devices/steelseries-sensei-310.device',
-	'data/devices/steelseries-sensei-raw.device',
-	'data/devices/glorious-model-d.device',
-	'data/devices/glorious-model-o.device',
-	'data/devices/nubwo-x7-spectrum.device',
-)
+install_subdir('data/devices',
+	       strip_directory : true,
+	       exclude_files : ['device.example', 'README.md'],
+	       install_dir : join_paths(get_option('datadir'), 'libratbag'))
 
-install_data(data_files,
-	     install_dir : join_paths(get_option('datadir'), 'libratbag'))
-
-data_parse_test = find_program(join_paths(meson.source_root(), 'data/devices/data-parse-test.py'))
+data_parse_test = find_program(join_paths(meson.source_root(), 'test/data-parse-test.py'))
 test('data-parse-test', data_parse_test, args: 'data/devices')
 
-duplicate_test = find_program(join_paths(meson.source_root(), 'data/devices/duplicate-check.py'))
+duplicate_test = find_program(join_paths(meson.source_root(), 'test/duplicate-check.py'))
 test('duplicate-test', duplicate_test, args : 'data/devices')
 
-reciever_id_test = find_program(join_paths(meson.source_root(), 'data/devices/receiver-check.py'))
+reciever_id_test = find_program(join_paths(meson.source_root(), 'test/receiver-check.py'))
 test('receiver-id-test', reciever_id_test, args : 'data/devices')
 
 #### tests ####
