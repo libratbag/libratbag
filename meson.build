@@ -2,7 +2,7 @@ project('libratbag', 'c',
 	version : '0.16',
 	license : 'MIT/Expat',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
-	meson_version : '>= 0.40.0')
+	meson_version : '>= 0.50.0')
 
 # The DBus API version. Increase this every time the DBus API changes.
 # No backwards/forwards guarantee, clients are expected to understand
@@ -470,10 +470,9 @@ install_man('ratbagd/ratbagd.8')
 # (org.freedesktop.ratbag_devel1). This server is used by ratbagdctl.devel.
 #
 
-config_ratbagd_devel = configuration_data()
 dbus_devel_policy = configure_file(input : 'dbus/org.freedesktop.ratbag_devel1.conf.in',
 				   output : 'org.freedesktop.ratbag_devel1.conf',
-				   configuration : config_ratbagd_devel)
+				   copy: true)
 
 # This is a hack. We always install the devel policy file into
 # /etc/dbus-1/system.d, independent of any prefixes we use otherwise.
@@ -561,18 +560,12 @@ configure_file(input : 'dbus/org.freedesktop.ratbag1.conf.in',
 # This is a special idiomatic construct in meson to get a fast dependency that
 # doesn't exist and isn't logged as "not found".
 dep_python3 = dependency('', required : false)
-if meson.version().version_compare('<0.48.0')
-  python = import('python3')
-  py3 = python.find_python()
-  py_version = python.language_version()
-else
-  pymod = import('python')
-  py3 = pymod.find_installation()
-  if meson.version().version_compare('>= 0.53.0')
-    dep_python3 = py3.dependency(embed : true)
-  endif
-  py_version = py3.language_version()
+pymod = import('python')
+py3 = pymod.find_installation()
+if meson.version().version_compare('>= 0.53.0')
+  dep_python3 = py3.dependency(embed : true)
 endif
+py_version = py3.language_version()
 
 # From python 3.8 we neeed python3-embed
 embed = py_version.version_compare('>= 3.8') ? '-embed' : ''
