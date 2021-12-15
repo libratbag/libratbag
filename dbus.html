@@ -1,0 +1,1133 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>DBus API &mdash; libratbag  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="The libratbag DBus API" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> libratbag
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">  The DBus Interfaces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#notes-on-the-dbus-api">Notes on the DBus API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#types">Types</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flags">Flags</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#org-freedesktop-ratbag1-manager">org.freedesktop.ratbag1.Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#org-freedesktop-ratbag1-device">org.freedesktop.ratbag1.Device</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#org-freedesktop-ratbag1-profile">org.freedesktop.ratbag1.Profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#org-freedesktop-ratbag1-resolution">org.freedesktop.ratbag1.Resolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#org-freedesktop-ratbag1-button">org.freedesktop.ratbag1.Button</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#org-freedesktop-ratbag1-led">org.freedesktop.ratbag1.Led</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#special-button-functions">Special button functions</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">libratbag</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>DBus API</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/dbus.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="dbus-api">
+<h1>DBus API<a class="headerlink" href="#dbus-api" title="Permalink to this headline">¶</a></h1>
+<p>Note: <strong>the DBus interface is subject to change</strong></p>
+<p>Interfaces:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#manager"><span class="std std-ref">org.freedesktop.ratbag1.Manager</span></a></li>
+<li><a class="reference internal" href="#device"><span class="std std-ref">org.freedesktop.ratbag1.Device</span></a></li>
+<li><a class="reference internal" href="#profile"><span class="std std-ref">org.freedesktop.ratbag1.Profile</span></a></li>
+<li><a class="reference internal" href="#resolution"><span class="std std-ref">org.freedesktop.ratbag1.Resolution</span></a></li>
+<li><a class="reference internal" href="#button"><span class="std std-ref">org.freedesktop.ratbag1.Button</span></a></li>
+<li><a class="reference internal" href="#led"><span class="std std-ref">org.freedesktop.ratbag1.Led</span></a></li>
+</ul>
+<p>Changing settings on a device is a three-step process:</p>
+<ol class="arabic simple">
+<li>Change the various properties to the desired value</li>
+<li>Invoke <a class="reference internal" href="#Commit" title="Commit"><code class="xref py py-func docutils literal notranslate"><span class="pre">org.freedesktop.ratbag1.Device.Commit()</span></code></a></li>
+<li>Optional: if an error occured writing the new data to the device,
+a <a class="reference internal" href="#Resync" title="Resync"><code class="xref py py-func docutils literal notranslate"><span class="pre">org.freedesktop.ratbag1.Resync</span></code></a> signal is emitted on the device and
+all properties are updated accordingly.</li>
+</ol>
+<p>The time it takes to write settings to a device varies greatly, any caller
+must be prepared to receive a <a class="reference internal" href="#Resync" title="Resync"><code class="xref py py-func docutils literal notranslate"><span class="pre">org.freedesktop.ratbag1.Device.Resync</span></code></a> signal several seconds after
+<a class="reference internal" href="#Commit" title="Commit"><code class="xref py py-func docutils literal notranslate"><span class="pre">org.freedesktop.ratbag1.Device.Commit()</span></code></a>.</p>
+<div class="section" id="notes-on-the-dbus-api">
+<h2>Notes on the DBus API<a class="headerlink" href="#notes-on-the-dbus-api" title="Permalink to this headline">¶</a></h2>
+<p>For easier debugging, objects paths are constructed from the device. e.g.
+<code class="docutils literal notranslate"><span class="pre">/org/freedesktop/ratbag/button/event5/p0/b10</span></code> is the button interface for
+button 10 on profile 0 on event5. The naming is subject to change. Do not
+rely on a constructed object path in your application.</p>
+<div class="section" id="types">
+<h3>Types<a class="headerlink" href="#types" title="Permalink to this headline">¶</a></h3>
+<p>Types used by these interfaces:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="78%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">b</span></code></td>
+<td>Bool</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">o</span></code></td>
+<td>Object path</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">s</span></code></td>
+<td>String</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">u</span></code></td>
+<td>Unsigned 32-bit integer</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">(uuu)</span></code></td>
+<td>A triplet of 32-bit integers</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">ao</span></code></td>
+<td>Array of object paths</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">as</span></code></td>
+<td>Array of strings</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">au</span></code></td>
+<td>Array of 32-bit integers</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">a(uu)</span></code></td>
+<td>Array of 2 32-bit integer tuples</td>
+</tr>
+</tbody>
+</table>
+<p>For details on each type, see the <a class="reference external" href="https://dbus.freedesktop.org/doc/dbus-specification.html">DBus Specification</a>.</p>
+</div>
+<div class="section" id="flags">
+<h3>Flags<a class="headerlink" href="#flags" title="Permalink to this headline">¶</a></h3>
+<p>Properties marked as <strong>constant</strong> do not change for the lifetime of the
+object. Properties marked as <strong>mutable</strong> may change, and a
+<code class="docutils literal notranslate"><span class="pre">org.freedesktop.DBus.Properties.PropertyChanged</span></code> signal is sent for those
+unless otherwise specified.</p>
+</div>
+</div>
+<div class="section" id="org-freedesktop-ratbag1-manager">
+<span id="manager"></span><h2>org.freedesktop.ratbag1.Manager<a class="headerlink" href="#org-freedesktop-ratbag1-manager" title="Permalink to this headline">¶</a></h2>
+<p>The <strong>org.freedesktop.ratbag1.Manager</strong> interface is the entry point to
+interact with ratbagd.</p>
+<dl class="attribute">
+<dt id="APIVersion">
+<code class="descname">APIVersion</code><a class="headerlink" href="#APIVersion" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">i</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only,constant</td>
+</tr>
+</tbody>
+</table>
+<p>The DBus API version. This is a stopgap feature while the DBus API
+is still in flux. The version has no backwards or
+forward-compatibilty guarantees - your client must understand
+<strong>exactly</strong> the same version, it is not enough to support an older
+or a newer version.</p>
+<p>This API will be removed once the DBus API is declared stable.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Devices">
+<code class="descname">Devices</code><a class="headerlink" href="#Devices" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ao</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>An array of read-only object paths referencing the available
+devices. The devices implement the <a class="reference internal" href="#device"><span class="std std-ref">org.freedesktop.ratbag1.Device</span></a> interface.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="org-freedesktop-ratbag1-device">
+<span id="device"></span><h2>org.freedesktop.ratbag1.Device<a class="headerlink" href="#org-freedesktop-ratbag1-device" title="Permalink to this headline">¶</a></h2>
+<p>The <strong>org.freedesktop.ratbag1.Device</strong> interface describes a single device
+known to ratbagd.</p>
+<dl class="attribute">
+<dt id="Model">
+<code class="descname">Model</code><a class="headerlink" href="#Model" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">s</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>An ID identifying the physical device model. This string is
+guaranteed to be unique for a specific model and always identical
+for devices of that model.</p>
+<p>This is a string of one of the following formats:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">usb:1234:abcd:0</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">bluetooth:5678:ef01:0</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">unknown</span></code></li>
+</ul>
+<p>In the future, other formats may get added. Clients must ignore
+unknown string formats.</p>
+<p>For a string starting with <code class="docutils literal notranslate"><span class="pre">usb:</span></code>, the format is the bus type (USB)
+followed by a 4-digit lowercase hex USB vendor ID, followed by a
+4-digit lowercase hex USB product ID, followed by an decimal version
+number of unspecified length. These four elements are separated by a
+colon (<code class="docutils literal notranslate"><span class="pre">:</span></code>).</p>
+<p>For a string starting with <code class="docutils literal notranslate"><span class="pre">bluetooth:</span></code>, the format is the bus type
+(Bluetooth) followed by a 4-digit lowercase hex Bluetooth vendor ID,
+followed by a 4-digit lowercase hex Bluetooth product ID, followed
+by an decimal version number of unspecified length. These four
+elements are separated by a colon (<code class="docutils literal notranslate"><span class="pre">:</span></code>).</p>
+<p>For the string <code class="docutils literal notranslate"><span class="pre">unknown</span></code>, the model of the device cannot be
+determined. This is usually a bug in libratbag.</p>
+<p>For a <code class="docutils literal notranslate"><span class="pre">Model</span></code> of type <code class="docutils literal notranslate"><span class="pre">usb</span></code> and <code class="docutils literal notranslate"><span class="pre">bluetooth</span></code>, the version
+number is reserved for use by libratbag. Device with identical
+vendor and product IDs but different versions must be considered
+different devices. For example, the version may increase when a
+manufacturer re-uses USB Ids.</p>
+<p>Vendor or product IDs of 0 are valid IDs (e.g. used used by test
+devices).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Name">
+<code class="descname">Name</code><a class="headerlink" href="#Name" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">s</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>The device’s name, suitable for presentation to the user.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Profiles">
+<code class="descname">Profiles</code><a class="headerlink" href="#Profiles" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ao</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>This property is mutable if the device supports adding and removing
+profiles.</p>
+<p>Provides the list of profile paths for all profiles on this device, see
+<a class="reference internal" href="#profile"><span class="std std-ref">org.freedesktop.ratbag1.Profile</span></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Commit">
+<code class="descname">Commit</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span><a class="headerlink" href="#Commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commits the changes to the device. This call always succeeds,
+the data is written to the device asynchronously. Where an error
+occurs, the <a class="reference internal" href="#Resync" title="Resync"><code class="xref py py-func docutils literal notranslate"><span class="pre">Resync()</span></code></a> signal is emitted and all properties are
+updated to the current state.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Resync">
+<code class="descname">Resync</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Resync" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">Signal</td>
+</tr>
+</tbody>
+</table>
+<p>Emitted when an internal error occurs, usually on writing values to
+the device after <a class="reference internal" href="#Commit" title="Commit"><code class="xref py py-func docutils literal notranslate"><span class="pre">Commit()</span></code></a>. Upon receiving this
+signal, clients are expected to resync their property values with
+ratbagd.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="org-freedesktop-ratbag1-profile">
+<span id="profile"></span><h2>org.freedesktop.ratbag1.Profile<a class="headerlink" href="#org-freedesktop-ratbag1-profile" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt id="Index">
+<code class="descname">Index</code><a class="headerlink" href="#Index" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>The zero-based index of this profile</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">Name</code></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">s</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>The name of this profile. If the name is the empty string, the
+profile name cannot be changed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Enabled">
+<code class="descname">Enabled</code><a class="headerlink" href="#Enabled" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">b</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>True if this is the profile is enabled, false otherwise.</p>
+<p>Note that a disabled profile might not have correct bindings, so it’s
+a good thing to rebind everything before calling
+<a class="reference internal" href="#Commit" title="Commit"><code class="xref py py-func docutils literal notranslate"><span class="pre">Commit()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="IsActive">
+<code class="descname">IsActive</code><a class="headerlink" href="#IsActive" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">b</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>True if this is the currently active profile, false otherwise.</p>
+<p>Profiles can only be set to active, but never to not active - at least one
+profile must be active at all times. This property is read-only, use the
+<a class="reference internal" href="#SetActive" title="SetActive"><code class="xref py py-func docutils literal notranslate"><span class="pre">SetActive()</span></code></a> method to activate a profile.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Resolutions">
+<code class="descname">Resolutions</code><a class="headerlink" href="#Resolutions" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ao</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>This property is mutable if the device supports adding and removing
+resolutions.</p>
+<p>Provides the object paths of all resolutions in this profile, see
+<a class="reference internal" href="#resolution"><span class="std std-ref">org.freedesktop.ratbag1.Resolution</span></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Buttons">
+<code class="descname">Buttons</code><a class="headerlink" href="#Buttons" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ao</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>Provides the object paths of all buttons in this profile, see
+<a class="reference internal" href="#button"><span class="std std-ref">org.freedesktop.ratbag1.Button</span></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Leds">
+<code class="descname">Leds</code><a class="headerlink" href="#Leds" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ao</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>Provides the object paths of all LEDs in this profile, see
+<a class="reference internal" href="#led"><span class="std std-ref">org.freedesktop.ratbag1.Led</span></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ReportRate">
+<code class="descname">ReportRate</code><a class="headerlink" href="#ReportRate" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>uint for the report rate in Hz assigned to this profile. This rate
+must be one of those listed in <a class="reference internal" href="#ReportRates" title="ReportRates"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ReportRates</span></code></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ReportRates">
+<code class="descname">ReportRates</code><a class="headerlink" href="#ReportRates" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">au</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, constant</td>
+</tr>
+</tbody>
+</table>
+<p>A list of permitted report rates. Values in this list may be used
+in the <a class="reference internal" href="#ReportRate" title="ReportRate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ReportRate</span></code></a> property. This list is always sorted
+ascending, the lowest report rate is the first item in the list.</p>
+<p>This list may be empty if the device does not support reading and/or
+writing to resolutions.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="SetActive">
+<code class="descname">SetActive</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span><a class="headerlink" href="#SetActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set this profile to be the active profile</p>
+</dd></dl>
+
+</div>
+<div class="section" id="org-freedesktop-ratbag1-resolution">
+<span id="resolution"></span><h2>org.freedesktop.ratbag1.Resolution<a class="headerlink" href="#org-freedesktop-ratbag1-resolution" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt>
+<code class="descname">Index</code></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>Index of the resolution</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">IsActive</code></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">b</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>True if this is the currently active resolution, false otherwise.</p>
+<p>Resolutions can only be set to active, but never to not
+active - at least one resoultion must be active at all
+times. This property is read-only, use the
+<a class="reference internal" href="#SetActive" title="SetActive"><code class="xref py py-func docutils literal notranslate"><span class="pre">SetActive()</span></code></a> method to set a resolution as the
+active resolution.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="IsDefault">
+<code class="descname">IsDefault</code><a class="headerlink" href="#IsDefault" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">b</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>True if this is the currently default resolution, false
+otherwise. If the device does not have the default
+resolution capability, this property is always false.</p>
+<p>Resolutions can only be set to default, but never to not
+default - at least one resolution must be default at all
+times. This property is read-only, use the
+<a class="reference internal" href="#SetDefault" title="SetDefault"><code class="xref py py-func docutils literal notranslate"><span class="pre">SetDefault()</span></code></a> method to set a resolution as
+the default resolution.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Resolution">
+<code class="descname">Resolution</code><a class="headerlink" href="#Resolution" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">v</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>The resolution for this entry in dpi.</p>
+<p>If the variant is a single unsigned integer (<code class="docutils literal notranslate"><span class="pre">u</span></code>), the value is
+the resolution for both the x- and the y- axis.</p>
+<p>If the variant is a unsigned integer tuple (<code class="docutils literal notranslate"><span class="pre">(uu)</span></code>), the value is
+the resolution for the x- and y- axis separately.</p>
+<p>A client must leave the type intact, assigning a single <code class="docutils literal notranslate"><span class="pre">u</span></code> to a
+resolution object previously exporting <code class="docutils literal notranslate"><span class="pre">(uu)</span></code> is invalid.</p>
+<p>The value for the resolution must be equal to one of the values in
+<a class="reference internal" href="#Resolutions" title="Resolutions"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Resolutions</span></code></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">Resolutions</code></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">au</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>A list of permitted resolutions. Values in this list may be used in
+the <a class="reference internal" href="#Resolution" title="Resolution"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Resolution</span></code></a> property. This list is always sorted
+ascending, the lowest resolution is the first item in the list.</p>
+<p>This list may be empty if the device does not support reading and/or
+writing to resolutions.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="SetDefault">
+<code class="descname">SetDefault</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span><a class="headerlink" href="#SetDefault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set this resolution to be the default</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descname">SetActive</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span></dt>
+<dd><p>Set this resolution to be the active one</p>
+</dd></dl>
+
+</div>
+<div class="section" id="org-freedesktop-ratbag1-button">
+<span id="button"></span><h2>org.freedesktop.ratbag1.Button<a class="headerlink" href="#org-freedesktop-ratbag1-button" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt>
+<code class="descname">Index</code></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>Index of the button</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Mapping">
+<code class="descname">Mapping</code><a class="headerlink" href="#Mapping" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(uv)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>The current button mapping. The first element is the <code class="docutils literal notranslate"><span class="pre">ActionType</span></code>
+for this button and must be one of those in <a class="reference internal" href="#ActionTypes" title="ActionTypes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ActionTypes</span></code></a>.</p>
+<p>If the ActionType is <em>Button</em>, the variant is an unsigned integer
+(<code class="docutils literal notranslate"><span class="pre">u</span></code>) denoting the button number to map to.</p>
+<p>If the ActionType is <em>Special</em>, the variant is an unsigned integer
+(<code class="docutils literal notranslate"><span class="pre">u</span></code>) denoting the special value to map to.</p>
+<p>If the ActionType is <em>Macro</em>, the variant is an array of integer
+tuples (<code class="docutils literal notranslate"><span class="pre">a(uu)</span></code>) where each tuple is <code class="docutils literal notranslate"><span class="pre">(type,</span> <span class="pre">keycode)</span></code> and the
+type is one of the following:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0</td>
+<td>Key release event</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>Key press event</td>
+</tr>
+</tbody>
+</table>
+<p>If the ActionType is <em>Unknown</em>, the variant is an unsigned integer
+(<code class="docutils literal notranslate"><span class="pre">u</span></code>) of value 0.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ActionTypes">
+<code class="descname">ActionTypes</code><a class="headerlink" href="#ActionTypes" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">au</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="16%" />
+<col width="68%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Value</th>
+<th class="head">Name</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0</td>
+<td>None</td>
+<td>No mapping configured</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>Button</td>
+<td>Mapping to a logical button number</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>Special</td>
+<td>Mapping to a special function</td>
+</tr>
+<tr class="row-odd"><td>3</td>
+<td>Macro</td>
+<td>Mapping to a macro key sequence</td>
+</tr>
+<tr class="row-even"><td>1000</td>
+<td>Unknown</td>
+<td>An unknown or unreadable mapping type</td>
+</tr>
+</tbody>
+</table>
+<p>See <a class="reference internal" href="#button-special"><span class="std std-ref">Special button functions</span></a> for a list of supported special
+functions.</p>
+<p>Clients must ignore <a class="reference internal" href="#ActionTypes" title="ActionTypes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ActionTypes</span></code></a> unknown to them.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Disable">
+<code class="descname">Disable</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span><a class="headerlink" href="#Disable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable this button</p>
+</dd></dl>
+
+</div>
+<div class="section" id="org-freedesktop-ratbag1-led">
+<span id="led"></span><h2>org.freedesktop.ratbag1.Led<a class="headerlink" href="#org-freedesktop-ratbag1-led" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt>
+<code class="descname">Index</code></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>Index of the LED</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Mode">
+<code class="descname">Mode</code><a class="headerlink" href="#Mode" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>Enum describing the current mode, see <a class="reference internal" href="#Modes" title="Modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Modes</span></code></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Modes">
+<code class="descname">Modes</code><a class="headerlink" href="#Modes" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">au</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>A list of modes supported by this LED.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Value</th>
+<th class="head">Definition</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0</td>
+<td>LED is off</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>LED is on with constant brightness</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>LED cycles through a set of colors.
+This mode ignores the <a class="reference internal" href="#Color" title="Color"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Color</span></code></a>
+values.</td>
+</tr>
+<tr class="row-odd"><td>3</td>
+<td>LED uses a breathing-style animation</td>
+</tr>
+</tbody>
+</table>
+<p>In the future, extra values may get added. Clients must ignore
+unknown Modes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Color">
+<code class="descname">Color</code><a class="headerlink" href="#Color" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(uuu)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>32-bit unsigned int triplet (RGB) of the LED’s color. Only the least
+significant bits are valid, the <a class="reference internal" href="#ColorDepth" title="ColorDepth"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ColorDepth</span></code></a> property defines
+the number of bits for each color. When writing to this property,
+all bits outside the color depth must be 0.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ColorDepth">
+<code class="descname">ColorDepth</code><a class="headerlink" href="#ColorDepth" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>An enum specifying the color depth of this LED. Permitted values are:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="82%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Value</th>
+<th class="head">Definition</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0</td>
+<td>0 bits per color (monochrome)</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>8 bits per color</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>1 bit per color</td>
+</tr>
+</tbody>
+</table>
+<p>In the future, extra values may get added. Clients must ignore
+unknown <code class="docutils literal notranslate"><span class="pre">ColorDepths</span></code> and not manipulate the LED color where
+the <code class="docutils literal notranslate"><span class="pre">ColorDepth</span></code> is unknown.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EffectDuration">
+<code class="descname">EffectDuration</code><a class="headerlink" href="#EffectDuration" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>The effect duration in ms, possible values are in the range 0 - 10000</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Brightness">
+<code class="descname">Brightness</code><a class="headerlink" href="#Brightness" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">u</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>The brightness of the LED, normalized to the range 0-255, inclusive.
+Where the LED supports less than 8-bit of brightness, libratbag maps
+the value to a device-supported value in an implementation-defined
+manner.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="special-button-functions">
+<span id="button-special"></span><h2>Special button functions<a class="headerlink" href="#special-button-functions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>All special button function values are based on the value
+<code class="docutils literal notranslate"><span class="pre">0x40000000</span></code> (<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">&lt;&lt;</span> <span class="pre">30</span></code>).</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="16%" />
+<col width="68%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Offset</th>
+<th class="head">Value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0</td>
+<td>0x40000000</td>
+<td>Unknown</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>0x40000001</td>
+<td>Doublelick</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>0x40000002</td>
+<td>Wheel left</td>
+</tr>
+<tr class="row-odd"><td>3</td>
+<td>0x40000003</td>
+<td>Wheel right</td>
+</tr>
+<tr class="row-even"><td>4</td>
+<td>0x40000004</td>
+<td>Wheel up</td>
+</tr>
+<tr class="row-odd"><td>5</td>
+<td>0x40000005</td>
+<td>Wheel down</td>
+</tr>
+<tr class="row-even"><td>6</td>
+<td>0x40000006</td>
+<td>Ratchet mode switch</td>
+</tr>
+<tr class="row-odd"><td>7</td>
+<td>0x40000007</td>
+<td>Resolution cycle up</td>
+</tr>
+<tr class="row-even"><td>8</td>
+<td>0x40000008</td>
+<td>Resolution cycle down</td>
+</tr>
+<tr class="row-odd"><td>9</td>
+<td>0x40000009</td>
+<td>Resolution up</td>
+</tr>
+<tr class="row-even"><td>10</td>
+<td>0x4000000a</td>
+<td>Resolution down</td>
+</tr>
+<tr class="row-odd"><td>11</td>
+<td>0x4000000b</td>
+<td>Resolution alternate</td>
+</tr>
+<tr class="row-even"><td>12</td>
+<td>0x4000000c</td>
+<td>Resolution default</td>
+</tr>
+<tr class="row-odd"><td>13</td>
+<td>0x4000000d</td>
+<td>Profile cycle up</td>
+</tr>
+<tr class="row-even"><td>14</td>
+<td>0x4000000e</td>
+<td>Profile cycle down</td>
+</tr>
+<tr class="row-odd"><td>15</td>
+<td>0x4000000f</td>
+<td>Profile up</td>
+</tr>
+<tr class="row-even"><td>16</td>
+<td>0x40000010</td>
+<td>Profile down</td>
+</tr>
+<tr class="row-odd"><td>17</td>
+<td>0x40000011</td>
+<td>Second mode</td>
+</tr>
+<tr class="row-even"><td>18</td>
+<td>0x40000012</td>
+<td>Battery level</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="The libratbag DBus API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, The ratbaggers
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
