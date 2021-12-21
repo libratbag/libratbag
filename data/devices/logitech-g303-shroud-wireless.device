@@ -1,0 +1,8 @@
+[Device]
+Name=Logitech G303 Shroud Wireless
+DeviceMatch=usb:046d:c547;usb:046d:c097
+LedTypes=battery;
+Driver=hidpp20
+
+[Driver/hidpp20]
+DeviceIndex=1
