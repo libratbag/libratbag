@@ -808,7 +808,10 @@ class RatbagdLed(metaclass=MetaRatbag):
 
         @param color An RGB color, as an integer triplet with values 0-255.
         """
-        libratbag.ratbag_led_set_color(self._led, libratbag.ratbag_color(*color))
+        # libratbag.ratbag_led_set_color(self._led, libratbag.ratbag_color(*color))
+        rc = libratbag.ratbag_color()
+        rc.red, rc.green, rc.blue = color
+        libratbag.ratbag_led_set_color(self._led, rc)
 
     @property
     def colordepth(self):
