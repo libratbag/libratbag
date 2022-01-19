@@ -57,7 +57,7 @@
 
 struct roccat_settings_report {
 	uint8_t reportID;
-	uint8_t twoB;
+	uint8_t report_length;
 	uint8_t profileID;
 	uint8_t x_y_linked;
 	uint8_t x_sensitivity; /* 0x06 means 0 */
@@ -78,8 +78,7 @@ struct roccat_settings_report {
 
 struct roccat_macro {
 	uint8_t reportID;
-	uint8_t twentytwo;
-	uint8_t height;
+	uint16_t report_length;
 	uint8_t profile;
 	uint8_t button_index;
 	uint8_t active;
@@ -581,8 +580,7 @@ roccat_write_macro(struct ratbag_button *button,
 	}
 
 	macro->reportID = ROCCAT_REPORT_ID_MACRO;
-	macro->twentytwo = 0x22;
-	macro->height = 0x08;
+	macro->report_length = 0x0822;
 	macro->profile = button->profile->index;
 	macro->button_index = button->index;
 	macro->active = 0x01;
