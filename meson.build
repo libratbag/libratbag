@@ -292,8 +292,8 @@ test('data-parse-test', data_parse_test, args: 'data/devices')
 duplicate_test = find_program(join_paths(meson.source_root(), 'test/duplicate-check.py'))
 test('duplicate-test', duplicate_test, args : 'data/devices')
 
-reciever_id_test = find_program(join_paths(meson.source_root(), 'test/receiver-check.py'))
-test('receiver-id-test', reciever_id_test, args : 'data/devices')
+receiver_id_test = find_program(join_paths(meson.source_root(), 'test/receiver-check.py'))
+test('receiver-id-test', receiver_id_test, args : 'data/devices')
 
 #### tests ####
 enable_tests = get_option('tests')
