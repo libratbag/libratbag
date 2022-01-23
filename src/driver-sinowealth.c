@@ -309,7 +309,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	struct ratbag_led *led;
 
 	/* Report rate */
-	const uint8_t reported_rate = config->config & 0b111U;
+	const uint8_t reported_rate = config->config & 0b1111U;
 	unsigned int hz = 0;
 	switch (reported_rate) {
 		case 0x01:
@@ -540,7 +540,7 @@ sinowealth_commit(struct ratbag_device *device)
 		profile->hz = 250;
 		reported_rate = 0x02;
 	}
-	config->config &= ~0b111U;
+	config->config &= ~0b1111U;
 	config->config |= reported_rate;
 
 	/* Check if any resolution requires independent XY DPIs */
