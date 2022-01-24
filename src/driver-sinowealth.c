@@ -33,7 +33,7 @@
 #define SINOWEALTH_CONFIG_SIZE_USED_MIN 131
 #define SINOWEALTH_CONFIG_SIZE_USED_MAX 167
 
-#define SINOWEALTH_XY_INDEPENDENT 0x80
+#define SINOWEALTH_XY_INDEPENDENT 0b1000
 
 /* The PC software only goes down to 400, but the PMW3360 doesn't care */
 #define SINOWEALTH_DPI_MIN 100
@@ -89,11 +89,14 @@ struct sinowealth_config_report {
 	 */
 	uint8_t config_write;
 	uint8_t unknown2[6];
-	/*
-	 * 0x1/2/3/4 - report rate (125, 250, 500, 1000 hz).
-	 * 0x80 - SINOWEALTH_XY_INDEPENDENT.
+	/* 0x1 - 125 hz.
+	 * 0x2 - 250 hz.
+	 * 0x3 - 500 hz.
+	 * 0x4 - 1000 hz.
 	 */
-	uint8_t config;
+	uint8_t report_rate:4;
+	/* 0b1000 - make DPI axes independent. */
+	uint8_t config:4;
 	uint8_t dpi_count:4;
 	uint8_t active_dpi:4;
 	/* bit set: disabled, unset: enabled
@@ -309,7 +312,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	struct ratbag_led *led;
 
 	/* Report rate */
-	const uint8_t reported_rate = config->config & 0b1111U;
+	const uint8_t reported_rate = config->report_rate;
 	unsigned int hz = 0;
 	switch (reported_rate) {
 		case 0x01:
@@ -540,8 +543,7 @@ sinowealth_commit(struct ratbag_device *device)
 		profile->hz = 250;
 		reported_rate = 0x02;
 	}
-	config->config &= ~0b1111U;
-	config->config |= reported_rate;
+	config->report_rate = reported_rate;
 
 	/* Check if any resolution requires independent XY DPIs */
 	config->config &= ~SINOWEALTH_XY_INDEPENDENT;
