@@ -358,7 +358,7 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	return 0;
 }
 
-static void
+static int
 sinowealth_init_profile(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
@@ -401,6 +401,8 @@ sinowealth_init_profile(struct ratbag_device *device)
 	ratbag_led_unref(led);
 
 	ratbag_profile_unref(profile);
+
+	return 0;
 }
 
 static int
@@ -438,7 +440,11 @@ sinowealth_probe(struct ratbag_device *device)
 	if (rc)
 		goto err;
 
-	sinowealth_init_profile(device);
+	rc = sinowealth_init_profile(device);
+	if (rc) {
+		rc = -ENODEV;
+		goto err;
+	}
 
 	profile = ratbag_device_get_profile(device, 0);
 	rc = sinowealth_read_profile(profile);
