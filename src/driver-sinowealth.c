@@ -533,15 +533,15 @@ sinowealth_commit(struct ratbag_device *device)
 	if (profile->hz >= 1000) {
 		profile->hz = 1000;
 		reported_rate = 0x04;
-	} else if (profile->hz >= 375) {
+	} else if (profile->hz >= 500) {
 		profile->hz = 500;
 		reported_rate = 0x03;
-	} else if (profile->hz <= 125) {
-		profile->hz = 125;
-		reported_rate = 0x01;
-	} else {
+	} else if (profile->hz >= 250) {
 		profile->hz = 250;
 		reported_rate = 0x02;
+	} else {
+		profile->hz = 125;
+		reported_rate = 0x01;
 	}
 	config->report_rate = reported_rate;
 
