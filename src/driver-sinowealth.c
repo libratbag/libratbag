@@ -387,6 +387,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc)
 		return rc;
 
+	rc = sinowealth_read_raw_data(device);
+	if (rc)
+		return rc;
+
 	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
 	 */
@@ -464,12 +468,6 @@ sinowealth_probe(struct ratbag_device *device)
 		goto err;
 
 	rc = sinowealth_init_profile(device);
-	if (rc) {
-		rc = -ENODEV;
-		goto err;
-	}
-
-	rc = sinowealth_read_raw_data(device);
 	if (rc) {
 		rc = -ENODEV;
 		goto err;
