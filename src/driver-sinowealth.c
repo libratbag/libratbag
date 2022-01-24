@@ -71,7 +71,13 @@ enum rgb_effect {
 	RGB_BREATHING1 = 0xa, /* single color breathing */
 	RGB_TAIL = 0x4,
 	RGB_RAVE = 0x7,
-	RGB_WAVE = 0x9
+	RGB_WAVE = 0x9,
+
+	/* The value mice with no LEDs have.
+	* Unreliable as non-constant.
+	* Do **not** overwrite it.
+	 */
+	RGB_NOT_SUPPORTED = 0xff,
 };
 
 struct sinowealth_config_report {
@@ -145,6 +151,7 @@ _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE
 struct sinowealth_data {
 	bool is_long;
 	unsigned int config_size;
+	unsigned int led_count;
 	struct sinowealth_config_report config;
 };
 
@@ -383,6 +390,9 @@ sinowealth_init_profile(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
 
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_config_report *config = &drv_data->config;
+
 	rc = sinowealth_print_fw_version(device);
 	if (rc)
 		return rc;
@@ -390,6 +400,15 @@ sinowealth_init_profile(struct ratbag_device *device)
 	rc = sinowealth_read_raw_data(device);
 	if (rc)
 		return rc;
+
+	/* LED count. */
+	drv_data->led_count = 0;
+	if (config->rgb_effect != RGB_NOT_SUPPORTED) {
+		drv_data->led_count += 1;
+	}
+	/* We may want to account for the DPI LEDs in the future.
+	 * We don't support them yet, so it's not a priority now.
+	 */
 
 	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
