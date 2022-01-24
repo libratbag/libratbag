@@ -103,9 +103,8 @@ struct sinowealth_config_report {
 	uint8_t config:4;
 	uint8_t dpi_count:4;
 	uint8_t active_dpi:4;
-	/* bit set: disabled, unset: enabled
-	 */
-	uint8_t dpi_enabled;
+	/* bit set: disabled, unset: enabled */
+	uint8_t disabled_dpi_slots;
 	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it
 	 * value = (DPI - 100) / 100
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
@@ -365,7 +364,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index]);
 			resolution->dpi_y = resolution->dpi_x;
 		}
-		if (config->dpi_enabled & (1<<resolution->index)) {
+		if (config->disabled_dpi_slots & (1 << resolution->index)) {
 			/* DPI step is disabled, fake it by setting DPI to 0 */
 			resolution->dpi_x = 0;
 			resolution->dpi_y = 0;
@@ -586,7 +585,7 @@ sinowealth_commit(struct ratbag_device *device)
 		dpi_enabled |= 1<<resolution->index;
 		config->dpi_count++;
 	}
-	config->dpi_enabled = ~dpi_enabled; /* config->dpi_enabled is inverted */
+	config->disabled_dpi_slots = ~dpi_enabled;
 
 	/* Body lighting */
 	if (drv_data->led_count > 0) {
