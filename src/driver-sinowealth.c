@@ -244,14 +244,8 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 }
 
 static int
-sinowealth_read_profile(struct ratbag_profile *profile)
-{
-	struct ratbag_device *device = profile->device;
-	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config = &drv_data->config;
-	struct ratbag_resolution *resolution;
-	struct ratbag_led *led;
-	int rc;
+sinowealth_print_fw_version(struct ratbag_device *device) {
+	int rc = 0;
 
 	/* Print firmware version */
 	uint8_t version[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION};
@@ -267,6 +261,18 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 	}
 	log_debug(device->ratbag, "firmware version: %.4s\n", version + 2);
 
+	return 0;
+}
+
+static int
+sinowealth_read_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_config_report *config = &drv_data->config;
+	struct ratbag_resolution *resolution;
+	struct ratbag_led *led;
+	int rc;
 	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG};
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
@@ -361,9 +367,15 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 static int
 sinowealth_init_profile(struct ratbag_device *device)
 {
+	int rc;
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
+
+	rc = sinowealth_print_fw_version(device);
+	if (rc)
+		return rc;
+
 	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
 	 */
