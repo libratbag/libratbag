@@ -350,32 +350,34 @@ sinowealth_update_profile(struct ratbag_profile *profile)
 	}
 
 	/* Body lighting */
-	led = ratbag_profile_get_led(profile, 0);
-	switch (config->rgb_effect) {
-	case RGB_OFF:
-		led->mode = RATBAG_LED_OFF;
-		break;
-	case RGB_SINGLE:
-		led->mode = RATBAG_LED_ON;
-		led->color = sinowealth_rbg_to_color(config->single_color);
-		led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
-		break;
-	case RGB_GLORIOUS:
-	case RGB_BREATHING:
-	case RGB_BREATHING7:
-	case RGB_TAIL:
-	case RGB_RAVE:
-	case RGB_WAVE:
-		led->mode = RATBAG_LED_CYCLE;
-		sinowealth_set_led_from_rgb_mode(led, config->glorious_mode);
-		break;
-	case RGB_BREATHING1:
-		led->mode = RATBAG_LED_BREATHING;
-		led->color = sinowealth_rbg_to_color(config->breathing1_color);
-		sinowealth_set_led_from_rgb_mode(led, config->breathing1_mode);
-		break;
+	if (drv_data->led_count > 0) {
+		led = ratbag_profile_get_led(profile, 0);
+		switch (config->rgb_effect) {
+		case RGB_OFF:
+			led->mode = RATBAG_LED_OFF;
+			break;
+		case RGB_SINGLE:
+			led->mode = RATBAG_LED_ON;
+			led->color = sinowealth_rbg_to_color(config->single_color);
+			led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
+			break;
+		case RGB_GLORIOUS:
+		case RGB_BREATHING:
+		case RGB_BREATHING7:
+		case RGB_TAIL:
+		case RGB_RAVE:
+		case RGB_WAVE:
+			led->mode = RATBAG_LED_CYCLE;
+			sinowealth_set_led_from_rgb_mode(led, config->glorious_mode);
+			break;
+		case RGB_BREATHING1:
+			led->mode = RATBAG_LED_BREATHING;
+			led->color = sinowealth_rbg_to_color(config->breathing1_color);
+			sinowealth_set_led_from_rgb_mode(led, config->breathing1_mode);
+			break;
+		}
+		ratbag_led_unref(led);
 	}
-	ratbag_led_unref(led);
 
 	profile->is_active = true;
 
@@ -417,7 +419,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	unsigned int dpis[num_dpis];
 
 	/* TODO: Button remapping */
-	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, 1);
+	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, drv_data->led_count);
 
 	profile = ratbag_device_get_profile(device, 0);
 
@@ -437,14 +439,16 @@ sinowealth_init_profile(struct ratbag_device *device)
 	ratbag_profile_set_report_rate_list(profile, report_rates, ARRAY_LENGTH(report_rates));
 
 	/* Set up LED capabilities */
-	led = ratbag_profile_get_led(profile, 0);
-	led->type = RATBAG_LED_TYPE_SIDE;
-	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
-	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-	ratbag_led_unref(led);
+	if (drv_data->led_count > 0) {
+		led = ratbag_profile_get_led(profile, 0);
+		led->type = RATBAG_LED_TYPE_SIDE;
+		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+		ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+		ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+		ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+		ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+		ratbag_led_unref(led);
+	}
 
 	ratbag_profile_unref(profile);
 
@@ -563,26 +567,28 @@ sinowealth_commit(struct ratbag_device *device)
 	config->dpi_enabled = ~dpi_enabled; /* config->dpi_enabled is inverted */
 
 	/* Body lighting */
-	led = ratbag_profile_get_led(profile, 0);
-	switch(led->mode) {
-	case RATBAG_LED_OFF:
-		config->rgb_effect = RGB_OFF;
-		break;
-	case RATBAG_LED_ON:
-		config->rgb_effect = RGB_SINGLE;
-		config->single_color = sinowealth_color_to_rbg(led->color);
-		break;
-	case RATBAG_LED_CYCLE:
-		config->rgb_effect = RGB_GLORIOUS;
-		config->glorious_mode = sinowealth_led_to_rgb_mode(led);
-		break;
-	case RATBAG_LED_BREATHING:
-		config->rgb_effect = RGB_BREATHING1;
-		config->breathing1_color = sinowealth_color_to_rbg(led->color);
-		config->breathing1_mode = sinowealth_led_to_rgb_mode(led);
-		break;
+	if (drv_data->led_count > 0) {
+		led = ratbag_profile_get_led(profile, 0);
+		switch(led->mode) {
+		case RATBAG_LED_OFF:
+			config->rgb_effect = RGB_OFF;
+			break;
+		case RATBAG_LED_ON:
+			config->rgb_effect = RGB_SINGLE;
+			config->single_color = sinowealth_color_to_rbg(led->color);
+			break;
+		case RATBAG_LED_CYCLE:
+			config->rgb_effect = RGB_GLORIOUS;
+			config->glorious_mode = sinowealth_led_to_rgb_mode(led);
+			break;
+		case RATBAG_LED_BREATHING:
+			config->rgb_effect = RGB_BREATHING1;
+			config->breathing1_color = sinowealth_color_to_rbg(led->color);
+			config->breathing1_mode = sinowealth_led_to_rgb_mode(led);
+			break;
+		}
+		ratbag_led_unref(led);
 	}
-	ratbag_led_unref(led);
 
 	config->config_write = drv_data->config_size - 8;
 
