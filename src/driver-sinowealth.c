@@ -265,14 +265,12 @@ sinowealth_print_fw_version(struct ratbag_device *device) {
 }
 
 static int
-sinowealth_read_profile(struct ratbag_profile *profile)
-{
-	struct ratbag_device *device = profile->device;
+sinowealth_read_raw_data(struct ratbag_device* device) {
+	int rc = 0;
+
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
-	struct ratbag_resolution *resolution;
-	struct ratbag_led *led;
-	int rc;
+
 	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG};
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
@@ -290,6 +288,19 @@ sinowealth_read_profile(struct ratbag_profile *profile)
 		return -1;
 	}
 	drv_data->config_size = rc;
+
+	return 0;
+}
+
+/* Update profile with values from raw configuration data. */
+static int
+sinowealth_update_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_config_report *config = &drv_data->config;
+	struct ratbag_resolution *resolution;
+	struct ratbag_led *led;
 
 	/* Report rate */
 	const uint8_t reported_rate = config->config & 0b111U;
@@ -458,8 +469,14 @@ sinowealth_probe(struct ratbag_device *device)
 		goto err;
 	}
 
+	rc = sinowealth_read_raw_data(device);
+	if (rc) {
+		rc = -ENODEV;
+		goto err;
+	}
+
 	profile = ratbag_device_get_profile(device, 0);
-	rc = sinowealth_read_profile(profile);
+	rc = sinowealth_update_profile(profile);
 	if (rc) {
 		rc = -ENODEV;
 		goto err;
