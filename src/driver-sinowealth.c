@@ -504,8 +504,8 @@ static int
 sinowealth_probe(struct ratbag_device *device)
 {
 	int rc;
-	struct sinowealth_data *drv_data = 0;
-	struct ratbag_profile *profile = 0;
+	struct sinowealth_data *drv_data = NULL;
+	struct ratbag_profile *profile = NULL;
 
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
@@ -535,7 +535,7 @@ err:
 	ratbag_profile_unref(profile);
 
 	free(drv_data);
-	ratbag_set_drv_data(device, 0);
+	ratbag_set_drv_data(device, NULL);
 	return rc;
 }
 
