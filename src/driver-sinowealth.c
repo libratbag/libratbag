@@ -272,7 +272,7 @@ sinowealth_print_fw_version(struct ratbag_device *device) {
 }
 
 static int
-sinowealth_read_raw_data(struct ratbag_device* device) {
+sinowealth_read_raw_config(struct ratbag_device* device) {
 	int rc = 0;
 
 	struct sinowealth_data *drv_data = device->drv_data;
@@ -301,7 +301,7 @@ sinowealth_read_raw_data(struct ratbag_device* device) {
 
 /* Update profile with values from raw configuration data. */
 static int
-sinowealth_update_profile(struct ratbag_profile *profile)
+sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
@@ -399,7 +399,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc)
 		return rc;
 
-	rc = sinowealth_read_raw_data(device);
+	rc = sinowealth_read_raw_config(device);
 	if (rc)
 		return rc;
 
@@ -497,7 +497,7 @@ sinowealth_probe(struct ratbag_device *device)
 	}
 
 	profile = ratbag_device_get_profile(device, 0);
-	rc = sinowealth_update_profile(profile);
+	rc = sinowealth_update_profile_from_config(profile);
 	if (rc) {
 		rc = -ENODEV;
 		goto err;
