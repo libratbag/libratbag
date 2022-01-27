@@ -503,9 +503,13 @@ sinowealth_probe(struct ratbag_device *device)
 		goto err;
 	}
 
+	ratbag_profile_unref(profile);
+
 	return 0;
 
 err:
+	ratbag_profile_unref(profile);
+
 	free(drv_data);
 	ratbag_set_drv_data(device, 0);
 	return rc;
