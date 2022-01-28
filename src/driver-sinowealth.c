@@ -339,6 +339,8 @@ sinowealth_read_raw_config(struct ratbag_device* device) {
 	}
 	drv_data->config_size = rc;
 
+	log_debug(device->ratbag, "Configuration size is %d bytes\n", drv_data->config_size);
+
 	return 0;
 }
 
