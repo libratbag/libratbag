@@ -69,6 +69,12 @@ struct sinowealth_rbg8 {
 
 _Static_assert(sizeof(struct sinowealth_rbg8) == 3, "Invalid size");
 
+enum sinowealth_sensor {
+	PWM3327,
+	PWM3360,
+	PWM3389,
+};
+
 enum rgb_effect {
 	RGB_OFF = 0,
 	RGB_GLORIOUS = 0x1,   /* unicorn mode */
@@ -125,8 +131,13 @@ struct sinowealth_config_report {
 	uint8_t disabled_dpi_slots;
 	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it
 	 * value = (DPI - 100) / 100
+	 * or the way the PMW3389 sensor accepts it
+	 * value = DPI / 100
+	 * TODO: what about PWM3327?
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
 	 * while in XY independent mode each entry takes two chars for X and Y.
+	 * @ref sinowealth_raw_to_dpi
+	 * @ref sinowealth_dpi_to_raw
 	 */
 	uint8_t dpi[16];
 	struct sinowealth_rgb8 dpi_color[8];
@@ -162,6 +173,7 @@ _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE
 
 struct sinowealth_data {
 	bool is_long;
+	enum sinowealth_sensor sensor;
 	unsigned int config_size;
 	unsigned int led_count;
 	struct sinowealth_config_report config;
@@ -202,16 +214,44 @@ sinowealth_raw_to_report_rate(uint8_t raw)
 }
 
 static unsigned int
-sinowealth_raw_to_dpi(unsigned int raw)
+get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 {
-	return (raw + 1) * 100;
+	switch (sensor) {
+	case PWM3327: return 10200;
+	default:
+	case PWM3360: return 12000;
+	case PWM3389: return 16000;
+	}
 }
 
 static unsigned int
-sinowealth_dpi_to_raw(unsigned int dpi)
+sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 {
-	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= SINOWEALTH_DPI_MAX);
-	return dpi / 100 - 1;
+	struct sinowealth_data *drv_data = device->drv_data;
+	enum sinowealth_sensor sensor = drv_data->sensor;
+
+	if (sensor == PWM3360)
+		raw += 1;
+
+	unsigned int dpi = raw * 100;
+
+	return dpi;
+}
+
+static unsigned int
+sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
+{
+	struct sinowealth_data *drv_data = device->drv_data;
+	enum sinowealth_sensor sensor = drv_data->sensor;
+
+	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= get_max_dpi_for_sensor(sensor));
+
+	unsigned int raw = dpi / 100;
+
+	if (sensor == PWM3360)
+		raw -= 1;
+
+	return raw;
 }
 
 static struct ratbag_color
@@ -361,10 +401,10 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
-			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2]);
-			resolution->dpi_y = sinowealth_raw_to_dpi(config->dpi[resolution->index * 2 + 1]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2]);
+			resolution->dpi_y = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2 + 1]);
 		} else {
-			resolution->dpi_x = sinowealth_raw_to_dpi(config->dpi[resolution->index]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index]);
 			resolution->dpi_y = resolution->dpi_x;
 		}
 		if (config->disabled_dpi_slots & (1 << resolution->index)) {
@@ -448,19 +488,33 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	if (strncmp(fw_version, "V102", 4) == 0) {
 		log_info(device->ratbag, "Found a Glorious Model O (old firmware) or a Glorious Model D\n");
+
+		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "V103", 4) == 0) {
 		log_info(device->ratbag, "Found a Glorious Model O/O- (updated firmware)\n");
+
+		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "V161", 4) == 0) {
 		/* This matches both Classic and Ace versions. */
 		log_info(device->ratbag, "Found a G-Wolves Hati HT-M Wired\n");
+
+		/* Can also be PWM3389. */
+		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "3105", 4) == 0) {
 		/* This matches both Classic and Ace versions. */
 		/* This mouse has no device file yet. */
 		log_info(device->ratbag, "Found a G-Wolves Hati HT-S Wired\n");
+
+		/* Can also be PWM3389. */
+		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "3106", 4) == 0) {
 		log_info(device->ratbag, "Found a DreamMachines DM5 Blink\n");
+
+		drv_data->sensor = PWM3389;
 	} else if (strncmp(fw_version, "3110", 4) == 0) {
 		log_info(device->ratbag, "Found a Genesis Xenon 770\n");
+
+		drv_data->sensor = PWM3327;
 	} else {
 		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
 	}
@@ -468,7 +522,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
 	 */
-	int num_dpis = (SINOWEALTH_DPI_MAX - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
+	unsigned int num_dpis = (get_max_dpi_for_sensor(drv_data->sensor) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
 	unsigned int dpis[num_dpis];
 
 	/* TODO: Button remapping */
@@ -478,7 +532,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	/* Generate DPI list */
 	dpis[0] = 0; /* 0 DPI = disabled */
-	for (int i = 1; i < num_dpis; i++) {
+	for (unsigned int i = 1; i < num_dpis; i++) {
 		dpis[i] = SINOWEALTH_DPI_MIN + (i - 1) * SINOWEALTH_DPI_STEP;
 	}
 
@@ -606,10 +660,10 @@ sinowealth_commit(struct ratbag_device *device)
 		if (resolution->is_active)
 			config->active_dpi = resolution->index + 1U;
 		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
-			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(resolution->dpi_x);
-			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(resolution->dpi_y);
+			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
+			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(device, resolution->dpi_y);
 		} else {
-			config->dpi[resolution->index] = sinowealth_dpi_to_raw(resolution->dpi_x);
+			config->dpi[resolution->index] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 		}
 		dpi_enabled |= 1<<resolution->index;
 		config->dpi_count++;
