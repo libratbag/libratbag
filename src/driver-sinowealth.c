@@ -335,10 +335,11 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 }
 
 static int
-sinowealth_get_fw_version(struct ratbag_device *device, char buf[4]) {
+sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
+{
 	int rc = 0;
 
-	uint8_t version[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION};
+	uint8_t version[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, version, sizeof(version));
 	if (rc != sizeof(version)) {
 		log_error(device->ratbag, "Error while sending read firmware version command: %d\n", rc);
@@ -356,13 +357,14 @@ sinowealth_get_fw_version(struct ratbag_device *device, char buf[4]) {
 }
 
 static int
-sinowealth_read_raw_config(struct ratbag_device* device) {
+sinowealth_read_raw_config(struct ratbag_device *device)
+{
 	int rc = 0;
 
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
 
-	uint8_t cmd[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG};
+	uint8_t cmd[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
 		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
@@ -665,7 +667,7 @@ sinowealth_commit(struct ratbag_device *device)
 		} else {
 			config->dpi[resolution->index] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 		}
-		dpi_enabled |= 1<<resolution->index;
+		dpi_enabled |= 1 << resolution->index;
 		config->dpi_count++;
 	}
 	config->disabled_dpi_slots = ~dpi_enabled;
@@ -673,7 +675,7 @@ sinowealth_commit(struct ratbag_device *device)
 	/* Body lighting */
 	if (drv_data->led_count > 0) {
 		led = ratbag_profile_get_led(profile, 0);
-		switch(led->mode) {
+		switch (led->mode) {
 		case RATBAG_LED_OFF:
 			config->rgb_effect = RGB_OFF;
 			break;
