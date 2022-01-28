@@ -34,6 +34,7 @@ _Static_assert(sizeof(enum sinowealth_report_id) == sizeof(uint8_t), "Invalid si
 
 enum sinowealth_command_id {
 	SINOWEALTH_CMD_FIRMWARE_VERSION = 0x1,
+	SINOWEALTH_CMD_PROFILE = 0x2,
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
 } __attribute__((packed));
 
@@ -370,6 +371,27 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 	mode.brightness = sinowealth_brightness_to_rgb_mode(led->brightness);
 	mode.speed = sinowealth_duration_to_rgb_mode(led->ms);
 	return mode;
+}
+
+/* @return Active profile index or a negative error. */
+static int
+sinowealth_get_active_profile(struct ratbag_device *device)
+{
+	int rc = 0;
+
+	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Couldn't send profile index read command: %d\n", rc);
+		return -1;
+	}
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, (uint8_t*) buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Couldn't read profile index: %d\n", rc);
+		return -1;
+	}
+
+	return buf[2] - 1;
 }
 
 static int
