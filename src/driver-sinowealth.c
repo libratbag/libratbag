@@ -72,12 +72,12 @@ enum rgb_effect {
 	RGB_OFF = 0,
 	RGB_GLORIOUS = 0x1,   /* unicorn mode */
 	RGB_SINGLE = 0x2,     /* single constant color */
-	RGB_BREATHING = 0x5,  /* Full RGB breathing */
 	RGB_BREATHING7 = 0x3, /* breathing with seven user-defined colors */
-	RGB_BREATHING1 = 0xa, /* single color breathing */
 	RGB_TAIL = 0x4,
+	RGB_BREATHING = 0x5,  /* Full RGB breathing. */
 	RGB_RAVE = 0x7,
 	RGB_WAVE = 0x9,
+	RGB_BREATHING1 = 0xa, /* Single color breathing. */
 
 	/* The value mice with no LEDs have.
 	* Unreliable as non-constant.
