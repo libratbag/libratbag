@@ -129,7 +129,8 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t tail_mode;
-	uint8_t unknown3[33];
+	uint8_t breathing_mode;
+	uint8_t unknown3[32];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
