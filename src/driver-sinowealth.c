@@ -742,6 +742,9 @@ sinowealth_probe(struct ratbag_device *device)
 	if (rc >= 0)
 		log_info(device->ratbag, "Debounce time: %d ms\n", rc);
 
+	if (drv_data->is_long)
+		sinowealth_print_long_lod_and_anglesnapping(device);
+
 	ratbag_profile_unref(profile);
 
 	return 0;
