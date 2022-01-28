@@ -740,6 +740,12 @@ sinowealth_probe(struct ratbag_device *device)
 	if (rc)
 		goto err;
 
+	rc = sinowealth_set_active_profile(device, 0);
+	if (rc) {
+		rc = -ENODEV;
+		goto err;
+	}
+
 	rc = sinowealth_init_profile(device);
 	if (rc) {
 		rc = -ENODEV;
