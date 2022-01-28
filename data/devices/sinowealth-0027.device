@@ -1,0 +1,10 @@
+[Device]
+# Several mice match this ID:
+# - Dream Machines DM5 Blink
+# - G-Wolves Hati HT-M Wired Ace
+# - G-Wolves Hati HT-M Wired Classic
+# - Genesys Xenon 770
+# - Glorious Model O (old firmware)
+DeviceMatch=usb:258a:0027
+Driver=sinowealth
+Name=SinoWealth Generic Mouse (0027)
