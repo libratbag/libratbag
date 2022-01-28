@@ -266,7 +266,7 @@ sinowealth_print_fw_version(struct ratbag_device *device) {
 		log_error(device->ratbag, "Could not read firmware version: %d\n", rc);
 		return -1;
 	}
-	log_debug(device->ratbag, "firmware version: %.4s\n", version + 2);
+	log_info(device->ratbag, "firmware version: %.4s\n", version + 2);
 
 	return 0;
 }
