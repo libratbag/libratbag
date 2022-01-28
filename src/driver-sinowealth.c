@@ -446,6 +446,25 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 * We don't support them yet, so it's not a priority now.
 	 */
 
+	if (strncmp(fw_version, "V102", 4) == 0) {
+		log_info(device->ratbag, "Found a Glorious Model O (old firmware) or a Glorious Model D\n");
+	} else if (strncmp(fw_version, "V103", 4) == 0) {
+		log_info(device->ratbag, "Found a Glorious Model O/O- (updated firmware)\n");
+	} else if (strncmp(fw_version, "V161", 4) == 0) {
+		/* This matches both Classic and Ace versions. */
+		log_info(device->ratbag, "Found a G-Wolves Hati HT-M Wired\n");
+	} else if (strncmp(fw_version, "3105", 4) == 0) {
+		/* This matches both Classic and Ace versions. */
+		/* This mouse has no device file yet. */
+		log_info(device->ratbag, "Found a G-Wolves Hati HT-S Wired\n");
+	} else if (strncmp(fw_version, "3106", 4) == 0) {
+		log_info(device->ratbag, "Found a DreamMachines DM5 Blink\n");
+	} else if (strncmp(fw_version, "3110", 4) == 0) {
+		log_info(device->ratbag, "Found a Genesis Xenon 770\n");
+	} else {
+		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
+	}
+
 	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
 	 */
