@@ -238,6 +238,7 @@ struct sinowealth_data {
 	bool is_long;
 	enum sinowealth_led_format led_type;
 	enum sinowealth_sensor sensor;
+	unsigned int button_count;
 	unsigned int config_size;
 	/* Cached profile index. This might be incorrect if profile index was changed by another program while we are running. */
 	unsigned int current_profile_index;
@@ -809,17 +810,20 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (strncmp(fw_version, "V102", 4) == 0) {
 		log_info(device->ratbag, "Found a Glorious Model O (old firmware) or a Glorious Model D\n");
 
+		drv_data->button_count = 6;
 		drv_data->led_type = LED_RBG;
 		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "V103", 4) == 0) {
 		log_info(device->ratbag, "Found a Glorious Model O/O- (updated firmware)\n");
 
+		drv_data->button_count = 6;
 		drv_data->led_type = LED_RBG;
 		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "V161", 4) == 0) {
 		/* This matches both Classic and Ace versions. */
 		log_info(device->ratbag, "Found a G-Wolves Hati HT-M Wired\n");
 
+		drv_data->button_count = 6;
 		drv_data->led_type = LED_NONE;
 		/* Can also be PWM3389. */
 		drv_data->sensor = PWM3360;
@@ -828,23 +832,30 @@ sinowealth_init_profile(struct ratbag_device *device)
 		/* This mouse has no device file yet. */
 		log_info(device->ratbag, "Found a G-Wolves Hati HT-S Wired\n");
 
+		drv_data->button_count = 6;
 		drv_data->led_type = LED_NONE;
 		/* Can also be PWM3389. */
 		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "3106", 4) == 0) {
 		log_info(device->ratbag, "Found a DreamMachines DM5 Blink\n");
 
+		drv_data->button_count = 8;
 		drv_data->led_type = LED_RGB;
 		drv_data->sensor = PWM3389;
 	} else if (strncmp(fw_version, "3110", 4) == 0) {
 		log_info(device->ratbag, "Found a Genesis Xenon 770\n");
 
+		/* Side buttons are detachable.
+		 * There can be either 3 or 9 buttons on the side.
+		 */
+		drv_data->button_count = 5 + 9;
 		drv_data->led_type = LED_RGB;
 		drv_data->sensor = PWM3327;
 	} else {
 		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
 
 		/* These seem to be the most widely used values. */
+		drv_data->button_count = 6;
 		drv_data->led_type = LED_RBG;
 		drv_data->sensor = PWM3360;
 	}
@@ -863,8 +874,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 */
 	unsigned int num_dpis = (get_max_dpi_for_sensor(drv_data->sensor) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
 
-	/* TODO: Button remapping */
-	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, 0, drv_data->led_count);
+	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
 
 	/* Generate DPI list */
 	unsigned int dpis[num_dpis];
