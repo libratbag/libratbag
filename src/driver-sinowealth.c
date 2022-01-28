@@ -195,14 +195,14 @@ sinowealth_raw_to_report_rate(uint8_t raw)
 	return 0;
 }
 
-static int
-sinowealth_raw_to_dpi(int raw)
+static unsigned int
+sinowealth_raw_to_dpi(unsigned int raw)
 {
 	return (raw + 1) * 100;
 }
 
-static int
-sinowealth_dpi_to_raw(int dpi)
+static unsigned int
+sinowealth_dpi_to_raw(unsigned int dpi)
 {
 	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= SINOWEALTH_DPI_MAX);
 	return dpi / 100 - 1;
@@ -241,7 +241,7 @@ sinowealth_rgb_mode_to_brightness(struct rgb_mode mode)
 
 /* Convert 0-255 to 0-4. */
 static uint8_t
-sinowealth_brightness_to_rgb_mode(int brightness)
+sinowealth_brightness_to_rgb_mode(unsigned int brightness)
 {
 	return (brightness + 1) / 64;
 }
@@ -259,7 +259,7 @@ sinowealth_rgb_mode_to_duration(struct rgb_mode mode)
 }
 
 static uint8_t
-sinowealth_duration_to_rgb_mode(int duration_ms)
+sinowealth_duration_to_rgb_mode(unsigned int duration_ms)
 {
 	uint8_t mode = 0;
 	if (duration_ms <= 500) {
