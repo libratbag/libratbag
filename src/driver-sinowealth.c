@@ -651,6 +651,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 		drv_data->sensor = PWM3327;
 	} else {
 		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
+
+		/* These seem to be the most widely used values. */
+		drv_data->led_type = LED_RBG;
+		drv_data->sensor = PWM3360;
 	}
 
 	/* LED count. */
