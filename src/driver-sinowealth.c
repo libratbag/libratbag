@@ -75,7 +75,9 @@ enum rgb_effect {
 	RGB_BREATHING7 = 0x3, /* breathing with seven user-defined colors */
 	RGB_TAIL = 0x4,
 	RGB_BREATHING = 0x5,  /* Full RGB breathing. */
+	RGB_CONSTANT = 0x6,   /* Each LED gets its own static color. Not available in Glorious software. */
 	RGB_RAVE = 0x7,
+	RGB_RANDOM = 0x8,     /* Randomly change colors. Not available in Glorious software. */
 	RGB_WAVE = 0x9,
 	RGB_BREATHING1 = 0xa, /* Single color breathing. */
 
@@ -130,7 +132,9 @@ struct sinowealth_config_report {
 	 */
 	uint8_t tail_mode;
 	uint8_t breathing_mode;
-	uint8_t unknown3[32];
+	uint8_t constant_color_mode;
+	struct sinowealth_rbg8 constant_color_colors[6];
+	uint8_t unknown3[13];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
 	 */
