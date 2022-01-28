@@ -57,17 +57,22 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  */
 #define SINOWEALTH_NUM_DPIS 8
 
-struct sinowealth_rgb8 {
-	uint8_t r, g, b;
+/* Color data the way mouse stores it.
+ *
+ * @ref sinowealth_raw_to_color.
+ *
+ * @ref sinowealth_color_to_raw.
+ *
+ * @ref sinowealth_led_format.
+ */
+struct sinowealth_color {
+	/* May be in either RGB or RBG format depending on the device.
+	 * See the comment above this struct.
+	 */
+	uint8_t data[3];
 } __attribute__((packed));
 
-_Static_assert(sizeof(struct sinowealth_rgb8) == 3, "Invalid size");
-
-struct sinowealth_rbg8 {
-	uint8_t r, b, g;
-} __attribute__((packed));
-
-_Static_assert(sizeof(struct sinowealth_rbg8) == 3, "Invalid size");
+_Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 
 enum sinowealth_sensor {
 	PWM3327,
@@ -112,6 +117,12 @@ struct rgb_mode {
 
 _Static_assert(sizeof(struct rgb_mode) == sizeof(uint8_t), "Invalid size");
 
+enum sinowealth_led_format {
+	LED_NONE,
+	LED_RBG,
+	LED_RGB,
+};
+
 struct sinowealth_config_report {
 	enum sinowealth_report_id report_id;
 	enum sinowealth_command_id command_id;
@@ -140,25 +151,25 @@ struct sinowealth_config_report {
 	 * @ref sinowealth_dpi_to_raw
 	 */
 	uint8_t dpi[16];
-	struct sinowealth_rgb8 dpi_color[8];
+	struct sinowealth_color dpi_color[8];
 	enum rgb_effect rgb_effect;
 	struct rgb_mode glorious_mode;
 	uint8_t glorious_direction;
 	struct rgb_mode single_mode;
-	struct sinowealth_rbg8 single_color;
+	struct sinowealth_color single_color;
 	struct rgb_mode breathing7_mode;
 	uint8_t breathing7_colorcount;
-	struct sinowealth_rbg8 breathing7_colors[7];
+	struct sinowealth_color breathing7_colors[7];
 	struct rgb_mode tail_mode;
 	struct rgb_mode breathing_mode;
 	struct rgb_mode constant_color_mode;
-	struct sinowealth_rbg8 constant_color_colors[6];
+	struct sinowealth_color constant_color_colors[6];
 	uint8_t unknown3[13];
 	struct rgb_mode rave_mode;
-	struct sinowealth_rbg8 rave_colors[2];
+	struct sinowealth_color rave_colors[2];
 	struct rgb_mode wave_mode;
 	struct rgb_mode breathing1_mode;
-	struct sinowealth_rbg8 breathing1_color;
+	struct sinowealth_color breathing1_color;
 	uint8_t unknown4;
 	/* 0x1 - 2 mm
 	 * 0x2 - 3 mm
@@ -173,6 +184,7 @@ _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE
 
 struct sinowealth_data {
 	bool is_long;
+	enum sinowealth_led_format led_type;
 	enum sinowealth_sensor sensor;
 	unsigned int config_size;
 	unsigned int led_count;
@@ -255,27 +267,53 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 }
 
 static struct ratbag_color
-sinowealth_raw_to_color(struct sinowealth_rgb8 raw)
+sinowealth_raw_to_color(struct ratbag_device *device, struct sinowealth_color raw_color)
 {
-	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
+	struct sinowealth_data *drv_data = device->drv_data;
+
+	struct ratbag_color color;
+
+	switch (drv_data->led_type) {
+	/* Fall back to RBG if the LED type is incorrect. */
+	default:
+	case LED_RBG:
+		color.red = raw_color.data[0];
+		color.green = raw_color.data[2];
+		color.blue = raw_color.data[1];
+		break;
+	case LED_RGB:
+		color.red = raw_color.data[0];
+		color.green = raw_color.data[1];
+		color.blue = raw_color.data[2];
+		break;
+	}
+
+	return color;
 }
 
-static struct sinowealth_rgb8
-sinowealth_color_to_raw(struct ratbag_color color)
+static struct sinowealth_color
+sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 {
-	return (struct sinowealth_rgb8) {.r = color.red, .g = color.green, .b = color.blue};
-}
+	struct sinowealth_data *drv_data = device->drv_data;
 
-static struct ratbag_color
-sinowealth_rbg_to_color(struct sinowealth_rbg8 raw)
-{
-	return (struct ratbag_color) {.red = raw.r, .green = raw.g, .blue = raw.b};
-}
+	struct sinowealth_color raw_color;
 
-static struct sinowealth_rbg8
-sinowealth_color_to_rbg(struct ratbag_color color)
-{
-	return (struct sinowealth_rbg8) {.r = color.red, .g = color.green, .b = color.blue};
+	switch (drv_data->led_type) {
+	/* Fall back to RBG if the LED type is incorrect. */
+	default:
+	case LED_RBG:
+		raw_color.data[0] = color.red;
+		raw_color.data[1] = color.blue;
+		raw_color.data[2] = color.green;
+		break;
+	case LED_RGB:
+		raw_color.data[0] = color.red;
+		raw_color.data[1] = color.green;
+		raw_color.data[2] = color.blue;
+		break;
+	}
+
+	return raw_color;
 }
 
 /* Convert 0-4 to 0-255. */
@@ -427,7 +465,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			break;
 		case RGB_SINGLE:
 			led->mode = RATBAG_LED_ON;
-			led->color = sinowealth_rbg_to_color(config->single_color);
+			led->color = sinowealth_raw_to_color(device, config->single_color);
 			led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
 			break;
 		case RGB_GLORIOUS:
@@ -443,7 +481,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			break;
 		case RGB_BREATHING1:
 			led->mode = RATBAG_LED_BREATHING;
-			led->color = sinowealth_rbg_to_color(config->breathing1_color);
+			led->color = sinowealth_raw_to_color(device, config->breathing1_color);
 			sinowealth_set_led_from_rgb_mode(led, config->breathing1_mode);
 			break;
 		default:
@@ -491,15 +529,18 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (strncmp(fw_version, "V102", 4) == 0) {
 		log_info(device->ratbag, "Found a Glorious Model O (old firmware) or a Glorious Model D\n");
 
+		drv_data->led_type = LED_RBG;
 		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "V103", 4) == 0) {
 		log_info(device->ratbag, "Found a Glorious Model O/O- (updated firmware)\n");
 
+		drv_data->led_type = LED_RBG;
 		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "V161", 4) == 0) {
 		/* This matches both Classic and Ace versions. */
 		log_info(device->ratbag, "Found a G-Wolves Hati HT-M Wired\n");
 
+		drv_data->led_type = LED_NONE;
 		/* Can also be PWM3389. */
 		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "3105", 4) == 0) {
@@ -507,15 +548,18 @@ sinowealth_init_profile(struct ratbag_device *device)
 		/* This mouse has no device file yet. */
 		log_info(device->ratbag, "Found a G-Wolves Hati HT-S Wired\n");
 
+		drv_data->led_type = LED_NONE;
 		/* Can also be PWM3389. */
 		drv_data->sensor = PWM3360;
 	} else if (strncmp(fw_version, "3106", 4) == 0) {
 		log_info(device->ratbag, "Found a DreamMachines DM5 Blink\n");
 
+		drv_data->led_type = LED_RGB;
 		drv_data->sensor = PWM3389;
 	} else if (strncmp(fw_version, "3110", 4) == 0) {
 		log_info(device->ratbag, "Found a Genesis Xenon 770\n");
 
+		drv_data->led_type = LED_RGB; /* TODO: test this */
 		drv_data->sensor = PWM3327;
 	} else {
 		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
@@ -681,7 +725,7 @@ sinowealth_commit(struct ratbag_device *device)
 			break;
 		case RATBAG_LED_ON:
 			config->rgb_effect = RGB_SINGLE;
-			config->single_color = sinowealth_color_to_rbg(led->color);
+			config->single_color = sinowealth_color_to_raw(device, led->color);
 			break;
 		case RATBAG_LED_CYCLE:
 			config->rgb_effect = RGB_GLORIOUS;
@@ -689,7 +733,7 @@ sinowealth_commit(struct ratbag_device *device)
 			break;
 		case RATBAG_LED_BREATHING:
 			config->rgb_effect = RGB_BREATHING1;
-			config->breathing1_color = sinowealth_color_to_rbg(led->color);
+			config->breathing1_color = sinowealth_color_to_raw(device, led->color);
 			config->breathing1_mode = sinowealth_led_to_rgb_mode(led);
 			break;
 		}
