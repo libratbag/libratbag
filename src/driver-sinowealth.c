@@ -614,15 +614,6 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc)
 		return rc;
 
-	/* LED count. */
-	drv_data->led_count = 0;
-	if (config->rgb_effect != RGB_NOT_SUPPORTED) {
-		drv_data->led_count += 1;
-	}
-	/* We may want to account for the DPI LEDs in the future.
-	 * We don't support them yet, so it's not a priority now.
-	 */
-
 	if (strncmp(fw_version, "V102", 4) == 0) {
 		log_info(device->ratbag, "Found a Glorious Model O (old firmware) or a Glorious Model D\n");
 
@@ -661,6 +652,15 @@ sinowealth_init_profile(struct ratbag_device *device)
 	} else {
 		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
 	}
+
+	/* LED count. */
+	drv_data->led_count = 0;
+	if (config->rgb_effect != RGB_NOT_SUPPORTED && drv_data->led_type != LED_NONE) {
+		drv_data->led_count += 1;
+	}
+	/* We may want to account for the DPI LEDs in the future.
+	 * We don't support them yet, so it's not a priority now.
+	 */
 
 	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
