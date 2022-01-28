@@ -295,7 +295,7 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 }
 
 static int
-sinowealth_print_fw_version(struct ratbag_device *device) {
+sinowealth_get_fw_version(struct ratbag_device *device, char buf[4]) {
 	int rc = 0;
 
 	uint8_t version[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION};
@@ -309,7 +309,8 @@ sinowealth_print_fw_version(struct ratbag_device *device) {
 		log_error(device->ratbag, "Could not read firmware version: %d\n", rc);
 		return -1;
 	}
-	log_info(device->ratbag, "firmware version: %.4s\n", version + 2);
+
+	memcpy(buf, version + 2, 4);
 
 	return 0;
 }
@@ -426,9 +427,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
 
-	rc = sinowealth_print_fw_version(device);
+	char fw_version[4];
+	rc = sinowealth_get_fw_version(device, fw_version);
 	if (rc)
 		return rc;
+	log_info(device->ratbag, "firmware version: %.4s\n", fw_version);
 
 	rc = sinowealth_read_raw_config(device);
 	if (rc)
