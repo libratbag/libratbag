@@ -123,7 +123,7 @@ struct sinowealth_config_report {
 	 * 0x1/2/3 - speed
 	 */
 	uint8_t breathing7_mode;
-	uint8_t breathing7_colorcount; /* 7, constant */
+	uint8_t breathing7_colorcount;
 	struct sinowealth_rbg8 breathing7_colors[7];
 	/* 0x10/20/30/40 - brightness
 	 * 0x1/2/3 - speed
