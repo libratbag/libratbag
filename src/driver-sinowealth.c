@@ -856,6 +856,9 @@ sinowealth_commit(struct ratbag_device *device)
 			break;
 		}
 		ratbag_led_unref(led);
+	} else {
+		/* Reset the value in case we accidentally managed to set it when we were not supposed to. */
+		config->rgb_effect = RGB_NOT_SUPPORTED;
 	}
 
 	config->config_write = drv_data->config_size - 8;
