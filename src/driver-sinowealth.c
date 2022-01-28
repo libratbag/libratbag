@@ -38,6 +38,8 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
 	SINOWEALTH_CMD_DEBOUNCE = 0x1a,
 	SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD = 0x1b,
+	SINOWEALTH_CMD_GET_CONFIG2 = 0x21,
+	SINOWEALTH_CMD_GET_BUTTONS2 = 0x22,
 } __attribute__((packed));
 
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
