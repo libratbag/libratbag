@@ -390,6 +390,8 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 		case RGB_GLORIOUS:
 		case RGB_BREATHING:
 		case RGB_BREATHING7:
+		case RGB_CONSTANT:
+		case RGB_RANDOM:
 		case RGB_TAIL:
 		case RGB_RAVE:
 		case RGB_WAVE:
@@ -400,6 +402,9 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			led->mode = RATBAG_LED_BREATHING;
 			led->color = sinowealth_rbg_to_color(config->breathing1_color);
 			sinowealth_set_led_from_rgb_mode(led, config->breathing1_mode);
+			break;
+		default:
+			log_error(device->ratbag, "Got unknown RGB effect: %d\n", config->rgb_effect);
 			break;
 		}
 		ratbag_led_unref(led);
