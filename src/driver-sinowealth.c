@@ -28,12 +28,16 @@ enum sinowealth_report_id {
 	SINOWEALTH_REPORT_ID_CONFIG = 0x4,
 	SINOWEALTH_REPORT_ID_CMD = 0x5,
 	SINOWEALTH_REPORT_ID_CONFIG_LONG = 0x6,
-};
+} __attribute__((packed));
+
+_Static_assert(sizeof(enum sinowealth_report_id) == sizeof(uint8_t), "Invalid size");
 
 enum sinowealth_command_id {
 	SINOWEALTH_CMD_FIRMWARE_VERSION = 0x1,
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
-};
+} __attribute__((packed));
+
+_Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
 #define SINOWEALTH_CONFIG_SIZE 520
 #define SINOWEALTH_CONFIG_SIZE_USED_MIN 131
@@ -83,7 +87,9 @@ enum rgb_effect {
 	* Do **not** overwrite it.
 	 */
 	RGB_NOT_SUPPORTED = 0xff,
-};
+} __attribute__((packed));
+
+_Static_assert(sizeof(enum rgb_effect) == sizeof(uint8_t), "Invalid size");
 
 struct rgb_mode {
 	/* 0x1/2/3.
@@ -101,8 +107,8 @@ struct rgb_mode {
 _Static_assert(sizeof(struct rgb_mode) == sizeof(uint8_t), "Invalid size");
 
 struct sinowealth_config_report {
-	uint8_t report_id; /* SINOWEALTH_REPORT_ID_CONFIG */
-	uint8_t command_id;
+	enum sinowealth_report_id report_id;
+	enum sinowealth_command_id command_id;
 	uint8_t unknown1;
 	/* 0x0 - read.
 	 * CONFIG_SIZE_USED-8 - write.
@@ -124,7 +130,7 @@ struct sinowealth_config_report {
 	 */
 	uint8_t dpi[16];
 	struct sinowealth_rgb8 dpi_color[8];
-	uint8_t rgb_effect; /* see enum rgb_effect */
+	enum rgb_effect rgb_effect;
 	struct rgb_mode glorious_mode;
 	uint8_t glorious_direction;
 	struct rgb_mode single_mode;
