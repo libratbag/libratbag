@@ -399,6 +399,23 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 }
 
 static int
+sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
+{
+	assert(index <= 1);
+
+	int rc = 0;
+
+	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, index + 1 };
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Error while selecting profile: %d\n", rc);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
 sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
 {
 	int rc = 0;
