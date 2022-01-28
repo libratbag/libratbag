@@ -254,7 +254,6 @@ static int
 sinowealth_print_fw_version(struct ratbag_device *device) {
 	int rc = 0;
 
-	/* Print firmware version */
 	uint8_t version[6] = {SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION};
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, version, sizeof(version));
 	if (rc != sizeof(version)) {
