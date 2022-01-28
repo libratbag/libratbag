@@ -36,6 +36,7 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_FIRMWARE_VERSION = 0x1,
 	SINOWEALTH_CMD_PROFILE = 0x2,
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
+	SINOWEALTH_CMD_DEBOUNCE = 0x1a,
 } __attribute__((packed));
 
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
@@ -414,6 +415,30 @@ sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
 	memcpy(buf, version + 2, 4);
 
 	return 0;
+}
+
+/* @return Time in milliseconds or a negative error. */
+static int
+sinowealth_get_debounce_time(struct ratbag_device *device)
+{
+	int rc = 0;
+
+	/* TODO: implement debounce time changing once we have an API for that.
+	 * To implement it here just set the third index to the desired debounce time / 2.
+	 */
+	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Couldn't send debounce time read command: %d\n", rc);
+		return -1;
+	}
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Couldn't read debounce time: %d\n", rc);
+		return -1;
+	}
+
+	return buf[2] * 2;
 }
 
 static int
