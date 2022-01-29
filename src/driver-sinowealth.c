@@ -44,9 +44,9 @@ enum sinowealth_command_id {
 
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
-#define SINOWEALTH_CONFIG_SIZE 520
-#define SINOWEALTH_CONFIG_SIZE_USED_MIN 131
-#define SINOWEALTH_CONFIG_SIZE_USED_MAX 167
+#define SINOWEALTH_CONFIG_REPORT_SIZE 520
+#define SINOWEALTH_CONFIG_SIZE_MAX 167
+#define SINOWEALTH_CONFIG_SIZE_MIN 131
 
 #define SINOWEALTH_XY_INDEPENDENT 0b1000
 
@@ -138,7 +138,7 @@ struct sinowealth_config_report {
 	enum sinowealth_command_id command_id;
 	uint8_t unknown1;
 	/* 0x0 - read.
-	 * CONFIG_SIZE_USED-8 - write.
+	 * CONFIG_SIZE-8 - write.
 	 */
 	uint8_t config_write;
 	uint8_t unknown2[6];
@@ -187,10 +187,10 @@ struct sinowealth_config_report {
 	 */
 	uint8_t lift_off_distance;
 	uint8_t unknown5[36];
-	uint8_t padding[SINOWEALTH_CONFIG_SIZE - SINOWEALTH_CONFIG_SIZE_USED_MAX];
+	uint8_t padding[SINOWEALTH_CONFIG_REPORT_SIZE - SINOWEALTH_CONFIG_SIZE_MAX];
 } __attribute__((packed));
 
-_Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_SIZE, "Invalid size");
+_Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
 
 struct sinowealth_data {
 	bool is_long;
@@ -525,9 +525,9 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 	}
 
 	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
-					      (uint8_t*) config1, SINOWEALTH_CONFIG_SIZE);
+					      (uint8_t*) config1, SINOWEALTH_CONFIG_REPORT_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc < SINOWEALTH_CONFIG_SIZE_USED_MIN || rc > SINOWEALTH_CONFIG_SIZE_USED_MAX) {
+	if (rc < SINOWEALTH_CONFIG_SIZE_MIN || rc > SINOWEALTH_CONFIG_SIZE_MAX) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
@@ -762,8 +762,8 @@ sinowealth_write_config(struct ratbag_device *device)
 	config1->command_id = SINOWEALTH_CMD_GET_CONFIG;
 	config1->config_write = drv_data->config_size - 8;
 
-	rc = ratbag_hidraw_set_feature_report(device, config_report_id, (uint8_t*) config1, SINOWEALTH_CONFIG_SIZE);
-	if (rc != SINOWEALTH_CONFIG_SIZE) {
+	rc = ratbag_hidraw_set_feature_report(device, config_report_id, (uint8_t*)config1, SINOWEALTH_CONFIG_REPORT_SIZE);
+	if (rc != SINOWEALTH_CONFIG_REPORT_SIZE) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
 		return -1;
 	}
