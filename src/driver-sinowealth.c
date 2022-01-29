@@ -62,6 +62,11 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  */
 #define SINOWEALTH_NUM_DPIS 8
 
+/* Technically SinoWealth mice suport second profile, but there isn't
+ * a single configuration software that exposes it.
+ */
+#define SINOWEALTH_NUM_PROFILES 1
+
 /* Color data the way mouse stores it.
  *
  * @ref sinowealth_raw_to_color.
@@ -401,7 +406,7 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 static int
 sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 {
-	assert(index <= 1);
+	assert(index <= SINOWEALTH_NUM_PROFILES - 1);
 
 	int rc = 0;
 
@@ -672,7 +677,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	unsigned int num_dpis = (get_max_dpi_for_sensor(drv_data->sensor) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
 
 	/* TODO: Button remapping */
-	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, drv_data->led_count);
+	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, 0, drv_data->led_count);
 
 	/* Generate DPI list */
 	unsigned int dpis[num_dpis];
