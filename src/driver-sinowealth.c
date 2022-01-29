@@ -54,7 +54,6 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 
 /* The PC software only goes down to 400, but the PMW3360 doesn't care */
 #define SINOWEALTH_DPI_MIN 100
-#define SINOWEALTH_DPI_MAX 12000
 #define SINOWEALTH_DPI_STEP 100
 
 /* Different software expose different amount of DPI slots:
