@@ -194,7 +194,11 @@ struct sinowealth_config_report {
 	 * 0xff - indicates that lift off distance is changed with a dedicated command. Not constant, so do **NOT** overwrite it.
 	 */
 	uint8_t lift_off_distance;
-	uint8_t unknown5[36];
+
+	/* From here onward goes the data only available in long mice. */
+
+	uint8_t unknown5[SINOWEALTH_CONFIG_SIZE_MAX - SINOWEALTH_CONFIG_SIZE_MIN];
+
 	uint8_t padding[SINOWEALTH_CONFIG_REPORT_SIZE - SINOWEALTH_CONFIG_SIZE_MAX];
 } __attribute__((packed));
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
