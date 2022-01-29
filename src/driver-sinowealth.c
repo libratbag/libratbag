@@ -529,8 +529,8 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
-	struct ratbag_resolution *resolution;
-	struct ratbag_led *led;
+	struct ratbag_led *led = NULL;
+	struct ratbag_resolution *resolution = NULL;
 
 	/* Report rate */
 	const unsigned int hz = sinowealth_raw_to_report_rate(config->report_rate);
@@ -596,10 +596,10 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 static int
 sinowealth_init_profile(struct ratbag_device *device)
 {
-	int rc;
-	struct ratbag_profile *profile;
-	struct ratbag_resolution *resolution;
-	struct ratbag_led *led;
+	int rc = 0;
+	struct ratbag_led *led = NULL;
+	struct ratbag_profile *profile = NULL;
+	struct ratbag_resolution *resolution = NULL;
 
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
@@ -754,9 +754,9 @@ sinowealth_write_config(struct ratbag_device *device)
 static int
 sinowealth_probe(struct ratbag_device *device)
 {
-	int rc;
-	struct sinowealth_data *drv_data = NULL;
+	int rc = 0;
 	struct ratbag_profile *profile = NULL;
+	struct sinowealth_data *drv_data = NULL;
 
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
@@ -812,8 +812,8 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
-	struct ratbag_resolution *resolution;
-	struct ratbag_led *led;
+	struct ratbag_led *led = NULL;
+	struct ratbag_resolution *resolution = NULL;
 	uint8_t dpi_enabled = 0;
 
 	/* Update report rate. */
