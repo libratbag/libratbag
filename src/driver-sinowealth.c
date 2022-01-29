@@ -197,6 +197,7 @@ struct sinowealth_data {
 	enum sinowealth_led_format led_type;
 	enum sinowealth_sensor sensor;
 	unsigned int config_size;
+	unsigned int current_profile_index;
 	unsigned int led_count;
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
 };
@@ -388,6 +389,8 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 {
 	int rc = 0;
 
+	struct sinowealth_data *drv_data = device->drv_data;
+
 	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
 	if (rc != sizeof(buf)) {
@@ -400,7 +403,11 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 		return -1;
 	}
 
-	return buf[2] - 1;
+	unsigned int index = buf[2] - 1;
+
+	drv_data->current_profile_index = index;
+
+	return (int)index;
 }
 
 static int
@@ -410,12 +417,16 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 
 	int rc = 0;
 
+	struct sinowealth_data *drv_data = device->drv_data;
+
 	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, index + 1 };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
 	if (rc != sizeof(buf)) {
 		log_error(device->ratbag, "Error while selecting profile: %d\n", rc);
 		return -1;
 	}
+
+	drv_data->current_profile_index = index;
 
 	return 0;
 }
