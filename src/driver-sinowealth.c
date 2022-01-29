@@ -499,14 +499,14 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
 
+	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
 	uint8_t cmd[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
 		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
 		return -1;
 	}
-
-	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
 	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
 					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
@@ -738,7 +738,7 @@ sinowealth_write_config(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
 
-	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
 	config->config_write = drv_data->config_size - 8;
 
