@@ -50,8 +50,6 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 #define SINOWEALTH_CONFIG_SIZE_MAX 167
 #define SINOWEALTH_CONFIG_SIZE_MIN 131
 
-#define SINOWEALTH_XY_INDEPENDENT 0b1000
-
 /* The PC software only goes down to 400, but the PMW3360 doesn't care */
 #define SINOWEALTH_DPI_MIN 100
 #define SINOWEALTH_DPI_STEP 100
@@ -67,6 +65,14 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  * a single configuration software that exposes it.
  */
 #define SINOWEALTH_NUM_PROFILES 1
+
+/* Bit mask for @ref sinowealth_config_report.config.
+ *
+ * This naming may be incorrect as it's not actually known waht the other bits do.
+ */
+enum sinowealth_config_data_mask {
+	SINOWEALTH_XY_INDEPENDENT = 0b1000,
+};
 
 /* Color data the way mouse stores it.
  *
