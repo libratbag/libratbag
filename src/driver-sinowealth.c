@@ -539,7 +539,7 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 }
 
 /* Update profile with values from raw configuration data. */
-static int
+static void
 sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
@@ -605,8 +605,6 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	}
 
 	profile->is_active = profile->index == drv_data->current_profile_index;
-
-	return 0;
 }
 
 static int
@@ -798,11 +796,7 @@ sinowealth_probe(struct ratbag_device *device)
 	}
 
 	ratbag_device_for_each_profile(device, profile) {
-		rc = sinowealth_update_profile_from_config(profile);
-		if (rc) {
-			rc = -ENODEV;
-			goto err;
-		}
+		sinowealth_update_profile_from_config(profile);
 	}
 
 	rc = sinowealth_get_active_profile(device);
