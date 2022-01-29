@@ -431,6 +431,12 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 		return -1;
 	}
 
+	/* Check if we got a response for correct command. */
+	if (buf[1] != SINOWEALTH_CMD_PROFILE) {
+		log_error(device->ratbag, "Couldn't read profile index, got result of command %#x instead\n", buf[1]);
+		return -1;
+	}
+
 	unsigned int index = buf[2] - 1;
 
 	drv_data->current_profile_index = index;
@@ -484,6 +490,12 @@ sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
 		return -1;
 	}
 
+	/* Check if we got a response for correct command. */
+	if (version[1] != SINOWEALTH_CMD_FIRMWARE_VERSION) {
+		log_error(device->ratbag, "Couldn't read firmware version, got result of command %#x instead\n", version[1]);
+		return -1;
+	}
+
 	memcpy(buf, version + 2, 4);
 
 	return 0;
@@ -507,6 +519,12 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
 	if (rc != sizeof(buf)) {
 		log_error(device->ratbag, "Couldn't read debounce time: %d\n", rc);
+		return -1;
+	}
+
+	/* Check if we got a response for correct command. */
+	if (buf[1] != SINOWEALTH_CMD_DEBOUNCE) {
+		log_error(device->ratbag, "Couldn't read debounce time, got result of command %#x instead\n", buf[1]);
 		return -1;
 	}
 
@@ -538,6 +556,13 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 		log_error(device->ratbag, "Couldn't read LOD and angle snapping: %d\n", rc);
 		return -1;
 	}
+
+	/* Check if we got a response for correct command. */
+	if (buf[1] != SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD) {
+		log_error(device->ratbag, "Couldn't read LOD and angle snapping, got result of command %#x instead\n", buf[1]);
+		return -1;
+	}
+
 	log_info(device->ratbag, "LOD is high: %u\n", buf[2] - 1);
 	log_info(device->ratbag, "Angle snapping enabled: %u\n", buf[3]);
 
