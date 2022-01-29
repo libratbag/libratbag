@@ -37,6 +37,7 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_PROFILE = 0x2,
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
 	SINOWEALTH_CMD_DEBOUNCE = 0x1a,
+	SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD = 0x1b,
 } __attribute__((packed));
 
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
@@ -439,6 +440,36 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 	}
 
 	return buf[2] * 2;
+}
+
+/* Print angle snapping (Cal line) and lift-off distance (LOD) modes.
+ * This is only confirmed to work on G-Wolves Hati where the way with
+ * config report doesn't work. This does not work on Glorious Model O.
+ */
+static int
+sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
+{
+	int rc = 0;
+
+	/* TODO: implement angle snapping and lift-off distance changing once we have an API for that.
+	 * To implement LOD changing here: set the third index to <whether you want LOD high or low> + 1.
+	 * To implement angle snapping toggling here: set the fourth index to 1 or 0 to enable or disable accordingly.
+	 */
+	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Couldn't send LOD and angle snapping read command: %d\n", rc);
+		return -1;
+	}
+	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
+	if (rc != sizeof(buf)) {
+		log_error(device->ratbag, "Couldn't read LOD and angle snapping: %d\n", rc);
+		return -1;
+	}
+	log_info(device->ratbag, "LOD is high: %u\n", buf[2] - 1);
+	log_info(device->ratbag, "Angle snapping enabled: %u\n", buf[3]);
+
+	return 0;
 }
 
 static int
