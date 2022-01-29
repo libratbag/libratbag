@@ -198,7 +198,7 @@ struct sinowealth_data {
 	enum sinowealth_sensor sensor;
 	unsigned int config_size;
 	unsigned int led_count;
-	struct sinowealth_config_report config;
+	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
 };
 
 struct sinowealth_report_rate_mapping {
@@ -502,7 +502,7 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 	int rc = 0;
 
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config = &drv_data->config;
+	struct sinowealth_config_report *config1 = &drv_data->configs[0];
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
@@ -514,7 +514,7 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 	}
 
 	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
-					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
+					      (uint8_t*) config1, SINOWEALTH_CONFIG_SIZE);
 	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
 	if (rc < SINOWEALTH_CONFIG_SIZE_USED_MIN || rc > SINOWEALTH_CONFIG_SIZE_USED_MAX) {
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
@@ -533,7 +533,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config = &drv_data->config;
+	struct sinowealth_config_report *config = &drv_data->configs[profile->index];
 	struct ratbag_led *led = NULL;
 	struct ratbag_resolution *resolution = NULL;
 
@@ -607,7 +607,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 	struct ratbag_resolution *resolution = NULL;
 
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config = &drv_data->config;
+	/* We only use this to detect whether RGB effects are available,
+	 * so it doesn't matter which one we use. Technically they might
+	 * have different values in the checked slot.
+	 */
+	struct sinowealth_config_report *config = &drv_data->configs[0];
 
 	char fw_version[4];
 	rc = sinowealth_get_fw_version(device, fw_version);
@@ -739,15 +743,15 @@ sinowealth_write_config(struct ratbag_device *device)
 	int rc = 0;
 
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config = &drv_data->config;
+	struct sinowealth_config_report *config1 = &drv_data->configs[0];
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
-	config->report_id = config_report_id;
-	config->command_id = SINOWEALTH_CMD_GET_CONFIG;
-	config->config_write = drv_data->config_size - 8;
+	config1->report_id = config_report_id;
+	config1->command_id = SINOWEALTH_CMD_GET_CONFIG;
+	config1->config_write = drv_data->config_size - 8;
 
-	rc = ratbag_hidraw_set_feature_report(device, config_report_id, (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
+	rc = ratbag_hidraw_set_feature_report(device, config_report_id, (uint8_t*) config1, SINOWEALTH_CONFIG_SIZE);
 	if (rc != SINOWEALTH_CONFIG_SIZE) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
 		return -1;
@@ -816,7 +820,7 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config = &drv_data->config;
+	struct sinowealth_config_report *config = &drv_data->configs[profile->index];
 	struct ratbag_led *led = NULL;
 	struct ratbag_resolution *resolution = NULL;
 	uint8_t dpi_enabled = 0;
