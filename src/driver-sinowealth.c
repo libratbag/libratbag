@@ -29,7 +29,6 @@ enum sinowealth_report_id {
 	SINOWEALTH_REPORT_ID_CMD = 0x5,
 	SINOWEALTH_REPORT_ID_CONFIG_LONG = 0x6,
 } __attribute__((packed));
-
 _Static_assert(sizeof(enum sinowealth_report_id) == sizeof(uint8_t), "Invalid size");
 
 enum sinowealth_command_id {
@@ -41,7 +40,6 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_GET_CONFIG2 = 0x21,
 	SINOWEALTH_CMD_GET_BUTTONS2 = 0x22,
 } __attribute__((packed));
-
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
 #define SINOWEALTH_CONFIG_REPORT_SIZE 520
@@ -81,7 +79,6 @@ struct sinowealth_color {
 	 */
 	uint8_t data[3];
 } __attribute__((packed));
-
 _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 
 enum sinowealth_sensor {
@@ -109,7 +106,6 @@ enum rgb_effect {
 	 */
 	RGB_NOT_SUPPORTED = 0xff,
 } __attribute__((packed));
-
 _Static_assert(sizeof(enum rgb_effect) == sizeof(uint8_t), "Invalid size");
 
 struct rgb_mode {
@@ -124,7 +120,6 @@ struct rgb_mode {
 	 */
 	uint8_t brightness:4;
 };
-
 _Static_assert(sizeof(struct rgb_mode) == sizeof(uint8_t), "Invalid size");
 
 enum sinowealth_led_format {
@@ -189,7 +184,6 @@ struct sinowealth_config_report {
 	uint8_t unknown5[36];
 	uint8_t padding[SINOWEALTH_CONFIG_REPORT_SIZE - SINOWEALTH_CONFIG_SIZE_MAX];
 } __attribute__((packed));
-
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
 
 struct sinowealth_data {
