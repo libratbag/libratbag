@@ -678,6 +678,10 @@ sinowealth_probe(struct ratbag_device *device)
 		goto err;
 	}
 
+	rc = sinowealth_get_active_profile(device);
+	if (rc >= 0)
+		log_debug(device->ratbag, "Current profile index: %d\n", rc);
+
 	ratbag_profile_unref(profile);
 
 	return 0;
