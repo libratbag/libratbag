@@ -731,6 +731,27 @@ sinowealth_test_hidraw(struct ratbag_device *device)
 }
 
 static int
+sinowealth_write_config(struct ratbag_device *device)
+{
+	int rc = 0;
+
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_config_report *config = &drv_data->config;
+
+	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	config->config_write = drv_data->config_size - 8;
+
+	rc = ratbag_hidraw_set_feature_report(device, config_report_id, (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
+	if (rc != SINOWEALTH_CONFIG_SIZE) {
+		log_error(device->ratbag, "Error while writing config: %d\n", rc);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
 sinowealth_probe(struct ratbag_device *device)
 {
 	int rc;
@@ -786,15 +807,14 @@ err:
 	return rc;
 }
 
-static int
-sinowealth_commit(struct ratbag_device *device)
+static void
+sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 {
-	struct ratbag_profile *profile = ratbag_device_get_profile(device, 0);
+	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
 	struct sinowealth_config_report *config = &drv_data->config;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	int rc;
 	uint8_t dpi_enabled = 0;
 
 	/* Update report rate. */
@@ -860,20 +880,22 @@ sinowealth_commit(struct ratbag_device *device)
 		/* Reset the value in case we accidentally managed to set it when we were not supposed to. */
 		config->rgb_effect = RGB_NOT_SUPPORTED;
 	}
+}
 
-	config->config_write = drv_data->config_size - 8;
+static int
+sinowealth_commit(struct ratbag_device *device)
+{
+	int rc = 0;
+	struct ratbag_profile *profile = NULL;
 
-	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
-
-	rc = ratbag_hidraw_set_feature_report(device, config_report_id,
-					      (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
-	if (rc != SINOWEALTH_CONFIG_SIZE) {
-		log_error(device->ratbag, "Error while writing config: %d\n", rc);
-		ratbag_profile_unref(profile);
-		return -1;
+	ratbag_device_for_each_profile(device, profile) {
+		sinowealth_update_config_from_profile(profile);
 	}
 
-	ratbag_profile_unref(profile);
+	rc = sinowealth_write_config(device);
+	if (rc)
+		return rc;
+
 	return 0;
 }
 
