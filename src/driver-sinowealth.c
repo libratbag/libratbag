@@ -604,7 +604,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 		ratbag_led_unref(led);
 	}
 
-	profile->is_active = true;
+	profile->is_active = profile->index == drv_data->current_profile_index;
 
 	return 0;
 }
