@@ -882,5 +882,6 @@ struct ratbag_driver sinowealth_driver = {
 	.id = "sinowealth",
 	.probe = sinowealth_probe,
 	.remove = sinowealth_remove,
-	.commit = sinowealth_commit
+	.commit = sinowealth_commit,
+	.set_active_profile = sinowealth_set_active_profile,
 };
