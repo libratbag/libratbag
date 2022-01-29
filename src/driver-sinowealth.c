@@ -188,12 +188,12 @@ struct sinowealth_config_report {
 	struct sinowealth_rgb_mode wave_mode;
 	struct sinowealth_rgb_mode breathing1_mode;
 	struct sinowealth_color breathing1_color;
-	uint8_t unknown4;
 	/* 0x1 - 2 mm.
 	 * 0x2 - 3 mm.
 	 * 0xff - indicates that lift off distance is changed with a dedicated command. Not constant, so do **NOT** overwrite it.
 	 */
 	uint8_t lift_off_distance;
+	uint8_t unknown4;
 
 	/* From here onward goes the data only available in long mice. */
 
