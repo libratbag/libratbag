@@ -96,7 +96,7 @@ enum sinowealth_sensor {
 	PWM3389,
 };
 
-enum rgb_effect {
+enum sinowealth_rgb_effect {
 	RGB_OFF = 0,
 	RGB_GLORIOUS = 0x1,   /* unicorn mode */
 	RGB_SINGLE = 0x2,     /* single constant color */
@@ -115,9 +115,9 @@ enum rgb_effect {
 	 */
 	RGB_NOT_SUPPORTED = 0xff,
 } __attribute__((packed));
-_Static_assert(sizeof(enum rgb_effect) == sizeof(uint8_t), "Invalid size");
+_Static_assert(sizeof(enum sinowealth_rgb_effect) == sizeof(uint8_t), "Invalid size");
 
-struct rgb_mode {
+struct sinowealth_rgb_mode {
 	/* 0x1/2/3.
 	 * @ref sinowealth_duration_to_rgb_mode.
 	 * @ref sinowealth_rgb_mode_to_duration.
@@ -129,7 +129,7 @@ struct rgb_mode {
 	 */
 	uint8_t brightness:4;
 };
-_Static_assert(sizeof(struct rgb_mode) == sizeof(uint8_t), "Invalid size");
+_Static_assert(sizeof(struct sinowealth_rgb_mode) == sizeof(uint8_t), "Invalid size");
 
 enum sinowealth_led_format {
 	LED_NONE,
@@ -170,23 +170,23 @@ struct sinowealth_config_report {
 	 */
 	uint8_t dpi[16];
 	struct sinowealth_color dpi_color[8];
-	enum rgb_effect rgb_effect;
-	struct rgb_mode glorious_mode;
+	enum sinowealth_rgb_effect rgb_effect;
+	struct sinowealth_rgb_mode glorious_mode;
 	uint8_t glorious_direction;
-	struct rgb_mode single_mode;
+	struct sinowealth_rgb_mode single_mode;
 	struct sinowealth_color single_color;
-	struct rgb_mode breathing7_mode;
+	struct sinowealth_rgb_mode breathing7_mode;
 	uint8_t breathing7_colorcount;
 	struct sinowealth_color breathing7_colors[7];
-	struct rgb_mode tail_mode;
-	struct rgb_mode breathing_mode;
-	struct rgb_mode constant_color_mode;
+	struct sinowealth_rgb_mode tail_mode;
+	struct sinowealth_rgb_mode breathing_mode;
+	struct sinowealth_rgb_mode constant_color_mode;
 	struct sinowealth_color constant_color_colors[6];
 	uint8_t unknown3[13];
-	struct rgb_mode rave_mode;
+	struct sinowealth_rgb_mode rave_mode;
 	struct sinowealth_color rave_colors[2];
-	struct rgb_mode wave_mode;
-	struct rgb_mode breathing1_mode;
+	struct sinowealth_rgb_mode wave_mode;
+	struct sinowealth_rgb_mode breathing1_mode;
 	struct sinowealth_color breathing1_color;
 	uint8_t unknown4;
 	/* 0x1 - 2 mm.
@@ -348,7 +348,7 @@ sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 
 /* Get brightness to use with ratbag's API from RGB mode `mode`. */
 static int
-sinowealth_rgb_mode_to_brightness(struct rgb_mode mode)
+sinowealth_rgb_mode_to_brightness(struct sinowealth_rgb_mode mode)
 {
 	/* Convert 0-4 to 0-255. */
 	return min(mode.brightness * 64, 255);
@@ -364,7 +364,7 @@ sinowealth_brightness_to_rgb_mode(uint8_t brightness)
 
 /* @return Effect duration or `0` on error. */
 static int
-sinowealth_rgb_mode_to_duration(struct rgb_mode mode)
+sinowealth_rgb_mode_to_duration(struct sinowealth_rgb_mode mode)
 {
 	switch (mode.speed) {
 	case 0: return 10000; /* static: does not translate to duration */
@@ -395,17 +395,17 @@ sinowealth_duration_to_rgb_mode(unsigned int duration)
 
 /* Fill LED `led` with values from mode `mode`. */
 static void
-sinowealth_set_led_from_rgb_mode(struct ratbag_led *led, struct rgb_mode mode)
+sinowealth_set_led_from_rgb_mode(struct ratbag_led *led, struct sinowealth_rgb_mode mode)
 {
 	led->brightness = sinowealth_rgb_mode_to_brightness(mode);
 	led->ms = sinowealth_rgb_mode_to_duration(mode);
 }
 
 /* Convert data in LED `led` to RGB mode. */
-static struct rgb_mode
+static struct sinowealth_rgb_mode
 sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 {
-	struct rgb_mode mode;
+	struct sinowealth_rgb_mode mode;
 	mode.brightness = sinowealth_brightness_to_rgb_mode(led->brightness);
 	mode.speed = sinowealth_duration_to_rgb_mode(led->ms);
 	return mode;
