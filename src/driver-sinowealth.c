@@ -89,11 +89,7 @@ struct sinowealth_config_report {
 	 */
 	uint8_t config_write;
 	uint8_t unknown2[6];
-	/* 0x1 - 125 hz.
-	 * 0x2 - 250 hz.
-	 * 0x3 - 500 hz.
-	 * 0x4 - 1000 hz.
-	 */
+	/* @ref sinowealth_report_rate_map. */
 	uint8_t report_rate:4;
 	/* 0b1000 - make DPI axes independent. */
 	uint8_t config:4;
@@ -157,6 +153,40 @@ struct sinowealth_data {
 	unsigned int led_count;
 	struct sinowealth_config_report config;
 };
+
+struct sinowealth_report_rate_mapping {
+	uint8_t raw;
+	unsigned int report_rate;
+};
+
+static const struct sinowealth_report_rate_mapping sinowealth_report_rate_map[] = {
+	{ 0x1, 125 },
+	{ 0x2, 250 },
+	{ 0x3, 500 },
+	{ 0x4, 1000 },
+};
+
+/* @return Internal report rate representation or 0 on error. */
+static uint8_t
+sinowealth_report_rate_to_raw(unsigned int report_rate)
+{
+	const struct sinowealth_report_rate_mapping *mapping = NULL;
+	ARRAY_FOR_EACH(sinowealth_report_rate_map, mapping)
+		if (mapping->report_rate == report_rate)
+			return mapping->raw;
+	return 0;
+}
+
+/* @return Report rate in hz or 0 on error. */
+static unsigned int
+sinowealth_raw_to_report_rate(uint8_t raw)
+{
+	const struct sinowealth_report_rate_mapping *mapping = NULL;
+	ARRAY_FOR_EACH(sinowealth_report_rate_map, mapping)
+		if (mapping->raw == raw)
+			return mapping->report_rate;
+	return 0;
+}
 
 static int
 sinowealth_raw_to_dpi(int raw)
@@ -312,26 +342,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	struct ratbag_led *led;
 
 	/* Report rate */
-	const uint8_t reported_rate = config->report_rate;
-	unsigned int hz = 0;
-	switch (reported_rate) {
-		case 0x01:
-			hz = 125;
-			break;
-		case 0x02:
-			hz = 250;
-			break;
-		case 0x03:
-			hz = 500;
-			break;
-		case 0x04:
-			hz = 1000;
-			break;
-		default:
-			hz = 0;
-			log_error(device->ratbag, "read incorrect report rate (%u)\n", reported_rate);
-			break;
-	}
+	const unsigned int hz = sinowealth_raw_to_report_rate(config->report_rate);
 	ratbag_profile_set_report_rate(profile, hz);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
@@ -529,19 +540,13 @@ sinowealth_commit(struct ratbag_device *device)
 	uint8_t dpi_enabled = 0;
 
 	/* Update report rate. */
-	uint8_t reported_rate = 0;
-	if (profile->hz >= 1000) {
-		profile->hz = 1000;
-		reported_rate = 0x04;
-	} else if (profile->hz >= 500) {
-		profile->hz = 500;
-		reported_rate = 0x03;
-	} else if (profile->hz >= 250) {
-		profile->hz = 250;
-		reported_rate = 0x02;
-	} else {
+	uint8_t reported_rate = sinowealth_report_rate_to_raw(profile->hz);
+	if (reported_rate == 0) {
+		log_error(device->ratbag, "Incorrect report rate %u was requested\n", profile->hz);
+
+		/* Fall back to 125hz. */
+		reported_rate = sinowealth_report_rate_to_raw(125);
 		profile->hz = 125;
-		reported_rate = 0x01;
 	}
 	config->report_rate = reported_rate;
 
