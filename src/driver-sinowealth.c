@@ -740,6 +740,8 @@ sinowealth_write_config(struct ratbag_device *device)
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
+	config->report_id = config_report_id;
+	config->command_id = SINOWEALTH_CMD_GET_CONFIG;
 	config->config_write = drv_data->config_size - 8;
 
 	rc = ratbag_hidraw_set_feature_report(device, config_report_id, (uint8_t*) config, SINOWEALTH_CONFIG_SIZE);
