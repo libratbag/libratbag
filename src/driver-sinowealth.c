@@ -230,14 +230,15 @@ sinowealth_raw_to_report_rate(uint8_t raw)
 	return 0;
 }
 
+/* @return Maximum DPI for sensor `sensor` or 0 on error. */
 static unsigned int
 get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 {
 	switch (sensor) {
 	case PWM3327: return 10200;
-	default:
 	case PWM3360: return 12000;
 	case PWM3389: return 16000;
+	default: return 0;
 	}
 }
 
