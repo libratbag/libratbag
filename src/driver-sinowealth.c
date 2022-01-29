@@ -675,36 +675,34 @@ sinowealth_init_profile(struct ratbag_device *device)
 	/* TODO: Button remapping */
 	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, drv_data->led_count);
 
-	profile = ratbag_device_get_profile(device, 0);
-
 	/* Generate DPI list */
 	dpis[0] = 0; /* 0 DPI = disabled */
 	for (unsigned int i = 1; i < num_dpis; i++) {
 		dpis[i] = SINOWEALTH_DPI_MIN + (i - 1) * SINOWEALTH_DPI_STEP;
 	}
 
-	ratbag_profile_for_each_resolution(profile, resolution) {
-		ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
-		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+	ratbag_device_for_each_profile(device, profile) {
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
+			ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+		}
+
+		/* Set up available report rates. */
+		unsigned int report_rates[] = { 125, 250, 500, 1000 };
+		ratbag_profile_set_report_rate_list(profile, report_rates, ARRAY_LENGTH(report_rates));
+
+		/* Set up LED capabilities */
+		if (drv_data->led_count > 0) {
+			led = ratbag_profile_get_led(profile, 0);
+			led->type = RATBAG_LED_TYPE_SIDE;
+			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+			ratbag_led_unref(led);
+		}
 	}
-
-	/* Set up available report rates. */
-	unsigned int report_rates[] = { 125, 250, 500, 1000 };
-	ratbag_profile_set_report_rate_list(profile, report_rates, ARRAY_LENGTH(report_rates));
-
-	/* Set up LED capabilities */
-	if (drv_data->led_count > 0) {
-		led = ratbag_profile_get_led(profile, 0);
-		led->type = RATBAG_LED_TYPE_SIDE;
-		led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-		ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
-		ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-		ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
-		ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-		ratbag_led_unref(led);
-	}
-
-	ratbag_profile_unref(profile);
 
 	return 0;
 }
@@ -779,11 +777,12 @@ sinowealth_probe(struct ratbag_device *device)
 		goto err;
 	}
 
-	profile = ratbag_device_get_profile(device, 0);
-	rc = sinowealth_update_profile_from_config(profile);
-	if (rc) {
-		rc = -ENODEV;
-		goto err;
+	ratbag_device_for_each_profile(device, profile) {
+		rc = sinowealth_update_profile_from_config(profile);
+		if (rc) {
+			rc = -ENODEV;
+			goto err;
+		}
 	}
 
 	rc = sinowealth_get_active_profile(device);
@@ -796,8 +795,6 @@ sinowealth_probe(struct ratbag_device *device)
 
 	if (drv_data->is_long)
 		sinowealth_print_long_lod_and_anglesnapping(device);
-
-	ratbag_profile_unref(profile);
 
 	return 0;
 
