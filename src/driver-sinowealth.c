@@ -36,12 +36,16 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_PROFILE = 0x2,
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
 	SINOWEALTH_CMD_DEBOUNCE = 0x1a,
+	/* Only works on devices that use CONFIG_LONG report ID. */
 	SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD = 0x1b,
+	/* Same as GET_CONFIG but for the second profile. */
 	SINOWEALTH_CMD_GET_CONFIG2 = 0x21,
+	/* Same as GET_CONFIG but for the second profile. */
 	SINOWEALTH_CMD_GET_BUTTONS2 = 0x22,
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
+/* Report length commands that get configuration data should use. */
 #define SINOWEALTH_CONFIG_REPORT_SIZE 520
 #define SINOWEALTH_CONFIG_SIZE_MAX 167
 #define SINOWEALTH_CONFIG_SIZE_MIN 131
@@ -128,6 +132,10 @@ enum sinowealth_led_format {
 	LED_RGB,
 };
 
+/* Configuration data the way it's stored in mouse memory.
+ * When we want to change a setting, we basically copy the entire mouse
+ * configuration, modify it and send it back.
+ */
 struct sinowealth_config_report {
 	enum sinowealth_report_id report_id;
 	enum sinowealth_command_id command_id;
@@ -145,10 +153,10 @@ struct sinowealth_config_report {
 	uint8_t active_dpi:4;
 	/* bit set: disabled, unset: enabled */
 	uint8_t disabled_dpi_slots;
-	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it
-	 * value = (DPI - 100) / 100
-	 * or the way the PMW3389 sensor accepts it
-	 * value = DPI / 100
+	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it:
+	 * value = (DPI - 100) / 100;
+	 * or the way the PMW3389 sensor accepts it:
+	 * value = DPI / 100;
 	 * TODO: what about PWM3327?
 	 * If XY are identical, dpi[0-6] contain the sensitivities,
 	 * while in XY independent mode each entry takes two chars for X and Y.
@@ -176,8 +184,8 @@ struct sinowealth_config_report {
 	struct rgb_mode breathing1_mode;
 	struct sinowealth_color breathing1_color;
 	uint8_t unknown4;
-	/* 0x1 - 2 mm
-	 * 0x2 - 3 mm
+	/* 0x1 - 2 mm.
+	 * 0x2 - 3 mm.
 	 * 0xff - indicates that lift off distance is changed with a dedicated command. Not constant, so do **NOT** overwrite it.
 	 */
 	uint8_t lift_off_distance;
@@ -186,11 +194,14 @@ struct sinowealth_config_report {
 } __attribute__((packed));
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
 
+/* Data related to mouse we store for ourselves. */
 struct sinowealth_data {
+	/* Whether the device uses REPORT_ID_CONFIG or REPORT_ID_CONFIG_LONG. */
 	bool is_long;
 	enum sinowealth_led_format led_type;
 	enum sinowealth_sensor sensor;
 	unsigned int config_size;
+	/* Cached profile index. This might be incorrect if profile index was changed by another program while we are running. */
 	unsigned int current_profile_index;
 	unsigned int led_count;
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
@@ -242,6 +253,7 @@ get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 	}
 }
 
+/* Convert internal sensor resolution `raw` to DPI. */
 static unsigned int
 sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 {
@@ -256,6 +268,7 @@ sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 	return dpi;
 }
 
+/* Convert DPI `dpi` to internal sensor resolution. */
 static unsigned int
 sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 {
@@ -272,6 +285,9 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 	return raw;
 }
 
+/* Convert internal mouse color `raw` to color.
+ * If LED type defined in the device data is incorrect, RBG color order is used.
+ */
 static struct ratbag_color
 sinowealth_raw_to_color(struct ratbag_device *device, struct sinowealth_color raw_color)
 {
@@ -297,6 +313,9 @@ sinowealth_raw_to_color(struct ratbag_device *device, struct sinowealth_color ra
 	return color;
 }
 
+/* Convert color `color` to internal representation of color of the mouse.
+ * If LED type defined in the device data is incorrect, RBG color order is used.
+ */
 static struct sinowealth_color
 sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 {
@@ -322,20 +341,23 @@ sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 	return raw_color;
 }
 
-/* Convert 0-4 to 0-255. */
+/* Get brightness to use with ratbag's API from RGB mode `mode`. */
 static int
 sinowealth_rgb_mode_to_brightness(struct rgb_mode mode)
 {
+	/* Convert 0-4 to 0-255. */
 	return min(mode.brightness * 64, 255);
 }
 
-/* Convert 0-255 to 0-4. */
+/* Convert 8 bit brightness value to internal representation of brightness of the mouse. */
 static uint8_t
-sinowealth_brightness_to_rgb_mode(unsigned int brightness)
+sinowealth_brightness_to_rgb_mode(uint8_t brightness)
 {
+	/* Convert 0-255 to 0-4. */
 	return (brightness + 1) / 64;
 }
 
+/* @return Effect duration or `0` on error. */
 static int
 sinowealth_rgb_mode_to_duration(struct rgb_mode mode)
 {
@@ -348,13 +370,17 @@ sinowealth_rgb_mode_to_duration(struct rgb_mode mode)
 	}
 }
 
+/* Convert duration value `duration` to representation of brightness of the mouse.
+ *
+ * @param duration Duration in milliseconds.
+ */
 static uint8_t
-sinowealth_duration_to_rgb_mode(unsigned int duration_ms)
+sinowealth_duration_to_rgb_mode(unsigned int duration)
 {
 	uint8_t mode = 0;
-	if (duration_ms <= 500) {
+	if (duration <= 500) {
 		mode |= 3;
-	} else if (duration_ms <= 1000) {
+	} else if (duration <= 1000) {
 		mode |= 2;
 	} else {
 		mode |= 1;
@@ -362,6 +388,7 @@ sinowealth_duration_to_rgb_mode(unsigned int duration_ms)
 	return mode;
 }
 
+/* Fill LED `led` with values from mode `mode`. */
 static void
 sinowealth_set_led_from_rgb_mode(struct ratbag_led *led, struct rgb_mode mode)
 {
@@ -369,6 +396,7 @@ sinowealth_set_led_from_rgb_mode(struct ratbag_led *led, struct rgb_mode mode)
 	led->ms = sinowealth_rgb_mode_to_duration(mode);
 }
 
+/* Convert data in LED `led` to RGB mode. */
 static struct rgb_mode
 sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 {
@@ -378,7 +406,7 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 	return mode;
 }
 
-/* @return Active profile index or a negative error. */
+/* @return Active profile index or a negative error code. */
 static int
 sinowealth_get_active_profile(struct ratbag_device *device)
 {
@@ -405,6 +433,10 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 	return (int)index;
 }
 
+/* Make the profile at index `index` the active one.
+ *
+ * @return 0 on success or an error code.
+ */
 static int
 sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 {
@@ -426,6 +458,10 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 	return 0;
 }
 
+/* Fill buffer `buf` with firmware version.
+ *
+ * @return 0 on success or an error code.
+ */
 static int
 sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
 {
@@ -448,7 +484,7 @@ sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
 	return 0;
 }
 
-/* @return Time in milliseconds or a negative error. */
+/* @return Time in milliseconds or a negative error code. */
 static int
 sinowealth_get_debounce_time(struct ratbag_device *device)
 {
@@ -473,6 +509,7 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 }
 
 /* Print angle snapping (Cal line) and lift-off distance (LOD) modes.
+ *
  * This is only confirmed to work on G-Wolves Hati where the way with
  * config report doesn't work. This does not work on Glorious Model O.
  */
@@ -502,6 +539,10 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	return 0;
 }
 
+/* Read configuration data from the mouse and save it in drv_data.
+ *
+ * @return 0 on success or an error code.
+ */
 static int
 sinowealth_read_raw_config(struct ratbag_device *device)
 {
@@ -602,6 +643,10 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	profile->is_active = profile->index == drv_data->current_profile_index;
 }
 
+/* Initialize profiles for device `device`.
+ *
+ * @return 0 on success or an error code.
+ */
 static int
 sinowealth_init_profile(struct ratbag_device *device)
 {
@@ -679,7 +724,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 * We don't support them yet, so it's not a priority now.
 	 */
 
-	/* number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
+	/* Number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
 	 */
 	unsigned int num_dpis = (get_max_dpi_for_sensor(drv_data->sensor) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
@@ -741,6 +786,10 @@ sinowealth_test_hidraw(struct ratbag_device *device)
 	return 0;
 }
 
+/* Write raw configuration data in drv_data to the mouse.
+ *
+ * @return 0 on success or an error code.
+ */
 static int
 sinowealth_write_config(struct ratbag_device *device)
 {
@@ -815,6 +864,7 @@ err:
 	return rc;
 }
 
+/* Update saved raw configuration data of the mouse with values from profile `profile`. */
 static void
 sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 {
