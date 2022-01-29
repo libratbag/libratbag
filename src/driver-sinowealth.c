@@ -707,6 +707,10 @@ sinowealth_probe(struct ratbag_device *device)
 	if (rc >= 0)
 		log_debug(device->ratbag, "Current profile index: %d\n", rc);
 
+	rc = sinowealth_get_debounce_time(device);
+	if (rc >= 0)
+		log_info(device->ratbag, "Debounce time: %d ms\n", rc);
+
 	ratbag_profile_unref(profile);
 
 	return 0;
