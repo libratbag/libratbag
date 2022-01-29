@@ -670,12 +670,12 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 * to signal a disabled DPI step.
 	 */
 	unsigned int num_dpis = (get_max_dpi_for_sensor(drv_data->sensor) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
-	unsigned int dpis[num_dpis];
 
 	/* TODO: Button remapping */
 	ratbag_device_init_profiles(device, 1, SINOWEALTH_NUM_DPIS, 0, drv_data->led_count);
 
 	/* Generate DPI list */
+	unsigned int dpis[num_dpis];
 	dpis[0] = 0; /* 0 DPI = disabled */
 	for (unsigned int i = 1; i < num_dpis; i++) {
 		dpis[i] = SINOWEALTH_DPI_MIN + (i - 1) * SINOWEALTH_DPI_STEP;
