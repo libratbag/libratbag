@@ -45,6 +45,8 @@ enum sinowealth_command_id {
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
+#define SINOWEALTH_CMD_SIZE 6
+
 /* Report length commands that get configuration data should use. */
 #define SINOWEALTH_CONFIG_REPORT_SIZE 520
 #define SINOWEALTH_CONFIG_SIZE_MAX 167
@@ -423,7 +425,7 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
+	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
 	if (rc != sizeof(buf)) {
 		log_error(device->ratbag, "Couldn't send profile index read command: %d\n", rc);
@@ -461,7 +463,7 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, index + 1 };
+	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, index + 1 };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
 	if (rc != sizeof(buf)) {
 		log_error(device->ratbag, "Error while selecting profile: %d\n", rc);
@@ -482,7 +484,7 @@ sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
 {
 	int rc = 0;
 
-	uint8_t version[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
+	uint8_t version[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, version, sizeof(version));
 	if (rc != sizeof(version)) {
 		log_error(device->ratbag, "Error while sending read firmware version command: %d\n", rc);
@@ -514,7 +516,7 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 	/* TODO: implement debounce time changing once we have an API for that.
 	 * To implement it here just set the third index to the desired debounce time / 2.
 	 */
-	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
+	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
 	if (rc != sizeof(buf)) {
 		log_error(device->ratbag, "Couldn't send debounce time read command: %d\n", rc);
@@ -549,7 +551,7 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	 * To implement LOD changing here: set the third index to <whether you want LOD high or low> + 1.
 	 * To implement angle snapping toggling here: set the fourth index to 1 or 0 to enable or disable accordingly.
 	 */
-	uint8_t buf[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
+	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
 	if (rc != sizeof(buf)) {
 		log_error(device->ratbag, "Couldn't send LOD and angle snapping read command: %d\n", rc);
@@ -587,7 +589,7 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
-	uint8_t cmd[6] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG };
+	uint8_t cmd[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG };
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
 		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
