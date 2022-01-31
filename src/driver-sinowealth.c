@@ -157,6 +157,7 @@ struct sinowealth_config_report {
 	/* 0b1000 - make DPI axes independent. */
 	uint8_t config_flags:4;
 	uint8_t dpi_count:4;
+	/* Starting from 1 counting only active slots. */
 	uint8_t active_dpi:4;
 	/* bit set: disabled, unset: enabled */
 	uint8_t disabled_dpi_slots;
