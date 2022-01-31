@@ -155,7 +155,7 @@ struct sinowealth_config_report {
 	/* @ref sinowealth_report_rate_map. */
 	uint8_t report_rate:4;
 	/* 0b1000 - make DPI axes independent. */
-	uint8_t config:4;
+	uint8_t config_flags:4;
 	uint8_t dpi_count:4;
 	uint8_t active_dpi:4;
 	/* bit set: disabled, unset: enabled */
@@ -625,7 +625,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	ratbag_profile_set_report_rate(profile, hz);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
+		if (config->config_flags & SINOWEALTH_XY_INDEPENDENT) {
 			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2]);
 			resolution->dpi_y = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2 + 1]);
 		} else {
@@ -923,10 +923,10 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 	config->report_rate = reported_rate;
 
 	/* Check if any resolution requires independent XY DPIs */
-	config->config &= ~SINOWEALTH_XY_INDEPENDENT;
+	config->config_flags &= ~SINOWEALTH_XY_INDEPENDENT;
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (resolution->dpi_x != resolution->dpi_y && resolution->dpi_x && resolution->dpi_y) {
-			config->config |= SINOWEALTH_XY_INDEPENDENT;
+			config->config_flags |= SINOWEALTH_XY_INDEPENDENT;
 			break;
 		}
 	}
@@ -937,7 +937,7 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 			continue;
 		if (resolution->is_active)
 			config->active_dpi = resolution->index + 1U;
-		if (config->config & SINOWEALTH_XY_INDEPENDENT) {
+		if (config->config_flags & SINOWEALTH_XY_INDEPENDENT) {
 			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(device, resolution->dpi_y);
 		} else {
