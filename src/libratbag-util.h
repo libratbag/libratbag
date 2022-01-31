@@ -282,7 +282,6 @@ dpi_list_from_string(const char *str)
 
 	if (!str || str[0] == '\0')
 		return NULL;
-	printf("%s: ", str);
 
 	/* first, count how many elements do we have in the table */
 	count = 1;
