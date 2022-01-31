@@ -30,14 +30,6 @@
 #include "libratbag-test.h"
 
 static int
-test_write_profile(struct ratbag_profile *profile)
-{
-	/* check if the device is still valid */
-	assert(ratbag_get_drv_data(profile->device) != NULL);
-	return 0;
-}
-
-static int
 test_set_active_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct ratbag_test_device *d = ratbag_get_drv_data(device);
@@ -134,26 +126,6 @@ test_read_led(struct ratbag_led *led)
 	 * devices easier by always getting the first profile's LED type.
 	 */
 	led->type = d->profiles[0].leds[led->index].type;
-}
-
-static int
-test_write_button(struct ratbag_button *button,
-		  const struct ratbag_button_action *action)
-{
-	/* check if the device is still valid */
-	assert(ratbag_get_drv_data(button->profile->device) != NULL);
-	return 0;
-}
-
-static int
-test_write_led(struct ratbag_led *led,
-	       enum ratbag_led_mode mode,
-	       struct ratbag_color color, unsigned int ms,
-	       unsigned int brightness)
-{
-	/* check if the device is still valid */
-	assert(ratbag_get_drv_data(led->profile->device) != NULL);
-	return 0;
 }
 
 static int
@@ -285,15 +257,21 @@ test_remove(struct ratbag_device *device)
 	free(d);
 }
 
+static int
+test_commit(struct ratbag_device *device)
+{
+	/* check if the device is still valid */
+	assert(ratbag_get_drv_data(device) != NULL);
+
+	return 0;
+}
+
 struct ratbag_driver test_driver = {
 	.name = "Test driver",
 	.id = "test_driver",
 	.probe = test_fake_probe,
 	.test_probe = test_probe,
 	.remove = test_remove,
-	.write_profile = test_write_profile,
+	.commit = test_commit,
 	.set_active_profile = test_set_active_profile,
-	.write_button = test_write_button,
-	.write_resolution_dpi = NULL,
-	.write_led = test_write_led,
 };
