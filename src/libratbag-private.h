@@ -471,6 +471,7 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		return match->action.special == action->action.special;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+		/* TODO: check if events match. */
 		return 1;
 	default:
 		break;
