@@ -863,75 +863,6 @@ ratbag_device_get_num_leds(struct ratbag_device *device)
 	return device->num_leds;
 }
 
-static inline enum ratbag_error_code
-write_led_helper(struct ratbag_device *device, struct ratbag_led *led)
-{
-	return device->driver->write_led(led, led->mode, led->color, led->ms, led->brightness);
-}
-
-/* FIXME: This is a temporary fix for all of the drivers that have yet to be
- * converted to the new profile-oriented API. Once all of the drivers have been
- * converted, this code should be removed.
- */
-static enum ratbag_error_code
-ratbag_old_write_profile(struct ratbag_device *device)
-{
-	struct ratbag_profile *profile;
-	struct ratbag_button *button;
-	struct ratbag_led *led;
-	struct ratbag_resolution *resolution;
-	int rc;
-
-	assert(device->driver->write_profile);
-
-	list_for_each(profile, &device->profiles, link) {
-		if (!profile->dirty)
-			continue;
-
-		rc = device->driver->write_profile(profile);
-		if (rc)
-			return RATBAG_ERROR_DEVICE;
-
-		if (device->driver->write_resolution_dpi) {
-			ratbag_profile_for_each_resolution(profile, resolution) {
-				rc = device->driver->write_resolution_dpi(
-				    resolution, resolution->dpi_x,
-				    resolution->dpi_y);
-				if (rc)
-					return RATBAG_ERROR_DEVICE;
-			}
-		}
-
-		if (device->driver->write_button) {
-			list_for_each(button, &profile->buttons, link) {
-				struct ratbag_button_action action =
-					button->action;
-
-				if (!button->dirty)
-					continue;
-
-				rc = device->driver->write_button(button,
-								  &action);
-				if (rc)
-					return RATBAG_ERROR_DEVICE;
-			}
-		}
-
-		if (device->driver->write_led) {
-			list_for_each(led, &profile->leds, link) {
-				if (!led->dirty)
-					continue;
-
-				rc = write_led_helper(device, led);
-				if (rc)
-					return RATBAG_ERROR_DEVICE;
-			}
-		}
-	}
-
-	return RATBAG_SUCCESS;
-}
-
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_device_commit(struct ratbag_device *device)
 {
@@ -941,15 +872,9 @@ ratbag_device_commit(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	int rc;
 
-	if (!device->driver->commit) {
-		rc = ratbag_old_write_profile(device);
-		if (rc != RATBAG_SUCCESS)
-			return rc;
-	} else {
-		rc = device->driver->commit(device);
-		if (rc)
-			return RATBAG_ERROR_DEVICE;
-	}
+	rc = device->driver->commit(device);
+	if (rc)
+		return RATBAG_ERROR_DEVICE;
 
 	list_for_each(profile, &device->profiles, link) {
 		profile->dirty = false;
