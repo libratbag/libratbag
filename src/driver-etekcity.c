@@ -496,9 +496,9 @@ etekcity_read_profile(struct ratbag_profile *profile)
 }
 
 static int
-etekcity_write_macro(struct ratbag_button *button,
-		     const struct ratbag_button_action *action)
+etekcity_write_macro(struct ratbag_button *button)
 {
+	const struct ratbag_button_action *action = &button->action;
 	struct ratbag_device *device;
 	struct etekcity_macro *macro;
 	struct etekcity_data *drv_data;
@@ -572,15 +572,7 @@ etekcity_write_button(struct ratbag_button *button)
 
 	*data = rc;
 
-	rc = etekcity_write_profile(button->profile);
-	if (rc) {
-		log_error(device->ratbag,
-			  "unable to write the profile to the device: '%s' (%d)\n",
-			  strerror(-rc), rc);
-		return rc;
-	}
-
-	rc = etekcity_write_macro(button, action);
+	rc = etekcity_write_macro(button);
 	if (rc) {
 		log_error(device->ratbag,
 			  "unable to write the macro to the device: '%s' (%d)\n",
@@ -719,10 +711,6 @@ etekcity_commit(struct ratbag_device *device)
 		if (!profile->dirty)
 			continue;
 
-		rc = etekcity_write_profile(profile);
-		if (rc)
-			return rc;
-
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (!resolution->dirty)
 				continue;
@@ -740,6 +728,10 @@ etekcity_commit(struct ratbag_device *device)
 			if (rc)
 				return rc;
 		}
+
+		rc = etekcity_write_profile(profile);
+		if (rc)
+			return rc;
 	}
 
 	return 0;
