@@ -555,9 +555,9 @@ etekcity_write_macro(struct ratbag_button *button,
 }
 
 static int
-etekcity_write_button(struct ratbag_button *button,
-		      const struct ratbag_button_action *action)
+etekcity_write_button(struct ratbag_button *button)
 {
+	const struct ratbag_button_action *action = &button->action;
 	struct ratbag_profile *profile = button->profile;
 	struct ratbag_device *device = profile->device;
 	struct etekcity_data *drv_data = ratbag_get_drv_data(device);
@@ -592,8 +592,7 @@ etekcity_write_button(struct ratbag_button *button,
 }
 
 static int
-etekcity_write_resolution_dpi(struct ratbag_resolution *resolution,
-			      int dpi_x, int dpi_y)
+etekcity_write_resolution(struct ratbag_resolution *resolution)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
@@ -601,6 +600,9 @@ etekcity_write_resolution_dpi(struct ratbag_resolution *resolution,
 	struct etekcity_settings_report *settings_report;
 	uint8_t *buf;
 	int rc;
+
+	const unsigned int dpi_x = resolution->dpi_x;
+	const unsigned int dpi_y = resolution->dpi_y;
 
 	if (dpi_x < 50 || dpi_x > 8200 || dpi_x % 50)
 		return -EINVAL;
@@ -705,13 +707,49 @@ etekcity_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
+static int
+etekcity_commit(struct ratbag_device *device)
+{
+	int rc = 0;
+	struct ratbag_button *button = NULL;
+	struct ratbag_profile *profile = NULL;
+	struct ratbag_resolution *resolution = NULL;
+
+	ratbag_device_for_each_profile(device, profile) {
+		if (!profile->dirty)
+			continue;
+
+		rc = etekcity_write_profile(profile);
+		if (rc)
+			return rc;
+
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			if (!resolution->dirty)
+				continue;
+
+			rc = etekcity_write_resolution(resolution);
+			if (rc)
+				return rc;
+		}
+
+		ratbag_profile_for_each_button(profile, button) {
+			if (!button->dirty)
+				continue;
+
+			rc = etekcity_write_button(button);
+			if (rc)
+				return rc;
+		}
+	}
+
+	return 0;
+}
+
 struct ratbag_driver etekcity_driver = {
 	.name = "EtekCity",
 	.id = "etekcity",
 	.probe = etekcity_probe,
 	.remove = etekcity_remove,
-	.write_profile = etekcity_write_profile,
+	.commit = etekcity_commit,
 	.set_active_profile = etekcity_set_current_profile,
-	.write_button = etekcity_write_button,
-	.write_resolution_dpi = etekcity_write_resolution_dpi,
 };
