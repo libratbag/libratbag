@@ -214,7 +214,8 @@ init_data_steelseries(struct ratbag *ratbag,
 {
 	const char *group = "Driver/steelseries";
 	GError *error = NULL;
-	_cleanup_(freep) char *str = NULL;
+	_cleanup_(freep) char *dpi_range = NULL;
+	_cleanup_(freep) char *quirk = NULL;
 	int num;
 
 	data->steelseries.device_version = -1;
@@ -244,13 +245,13 @@ init_data_steelseries(struct ratbag *ratbag,
 	if (error)
 		g_error_free(error);
 
-	str = g_key_file_get_string(keyfile, group, "DpiRange", NULL);
-	if (str) {
-		data->steelseries.dpi_range = dpi_range_from_string(str);
+	dpi_range = g_key_file_get_string(keyfile, group, "DpiRange", NULL);
+	if (dpi_range) {
+		data->steelseries.dpi_range = dpi_range_from_string(dpi_range);
 	} else {
-		str = g_key_file_get_string(keyfile, group, "DpiList", NULL);
-		if (str)
-			data->steelseries.dpi_list = dpi_list_from_string(str);
+		dpi_range = g_key_file_get_string(keyfile, group, "DpiList", NULL);
+		if (dpi_range)
+			data->steelseries.dpi_list = dpi_list_from_string(dpi_range);
 	}
 
 	error = NULL;
@@ -260,11 +261,11 @@ init_data_steelseries(struct ratbag *ratbag,
 	if (error)
 		g_error_free(error);
 
-	str = g_key_file_get_string(keyfile, group, "Quirk", NULL);
-	if (str) {
-		if (streq(str, "Rival100"))
+	quirk = g_key_file_get_string(keyfile, group, "Quirk", NULL);
+	if (quirk) {
+		if (streq(quirk, "Rival100"))
 			data->steelseries.quirk = STEELSERIES_QUIRK_RIVAL100;
-		if (streq(str, "SenseiRAW"))
+		if (streq(quirk, "SenseiRAW"))
 			data->steelseries.quirk = STEELSERIES_QUIRK_SENSEIRAW;
 	}
 }
