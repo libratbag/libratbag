@@ -607,9 +607,9 @@ roccat_write_macro(struct ratbag_button *button,
 }
 
 static int
-roccat_write_button(struct ratbag_button *button,
-		      const struct ratbag_button_action *action)
+roccat_write_button(struct ratbag_button *button)
 {
+	const struct ratbag_button_action *action = &button->action;
 	struct ratbag_profile *profile = button->profile;
 	struct ratbag_device *device = profile->device;
 	struct roccat_data *drv_data = ratbag_get_drv_data(device);
@@ -643,8 +643,7 @@ roccat_write_button(struct ratbag_button *button,
 }
 
 static int
-roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
-			      int dpi_x, int dpi_y)
+roccat_write_resolution(struct ratbag_resolution *resolution)
 {
 	struct ratbag_profile *profile = resolution->profile;
 	struct ratbag_device *device = profile->device;
@@ -652,6 +651,9 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	struct roccat_settings_report *settings_report;
 	uint8_t *buf;
 	int rc;
+
+	const unsigned int dpi_x = resolution->dpi_x;
+	const unsigned int dpi_y = resolution->dpi_y;
 
 	if (dpi_x < 200 || dpi_x > 8200 || dpi_x % 50)
 		return -EINVAL;
@@ -833,13 +835,50 @@ roccat_remove(struct ratbag_device *device)
 	free(ratbag_get_drv_data(device));
 }
 
+static int
+roccat_commit(struct ratbag_device *device)
+{
+
+	int rc = 0;
+	struct ratbag_button *button = NULL;
+	struct ratbag_profile *profile = NULL;
+	struct ratbag_resolution *resolution = NULL;
+
+	ratbag_device_for_each_profile(device, profile) {
+		if (!profile->dirty)
+			continue;
+
+		rc = roccat_write_profile(profile);
+		if (rc)
+			return rc;
+
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			if (!resolution->dirty)
+				continue;
+
+			rc = roccat_write_resolution(resolution);
+			if (rc)
+				return rc;
+		}
+
+		ratbag_profile_for_each_button(profile, button) {
+			if (!button->dirty)
+				continue;
+
+			rc = roccat_write_button(button);
+			if (rc)
+				return rc;
+		}
+	}
+
+	return 0;
+}
+
 struct ratbag_driver roccat_driver = {
 	.name = "Roccat Kone XTD",
 	.id = "roccat",
 	.probe = roccat_probe,
 	.remove = roccat_remove,
-	.write_profile = roccat_write_profile,
+	.commit = roccat_commit,
 	.set_active_profile = roccat_set_current_profile,
-	.write_button = roccat_write_button,
-	.write_resolution_dpi = roccat_write_resolution_dpi,
 };
