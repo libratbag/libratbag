@@ -1127,11 +1127,10 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpis.dpis[resolution->index]);
 			resolution->dpi_y = resolution->dpi_x;
 		}
-		if (config->disabled_dpi_slots & (1 << resolution->index)) {
-			/* DPI step is disabled, fake it by setting DPI to 0 */
-			resolution->dpi_x = 0;
-			resolution->dpi_y = 0;
-		} else {
+
+		resolution->is_disabled = config->disabled_dpi_slots & (1 << resolution->index);
+
+		if (!resolution->is_disabled) {
 			/* NOTE: we mark this `1` unsigned explicitly as otherwise
 			 * the right-hand side will become a signed integer and the
 			 * comparison will be between expressions of different
@@ -1553,18 +1552,15 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 * We don't support them yet, so it's not a priority now.
 	 */
 
-	/* Number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
-	 * to signal a disabled DPI step.
-	 */
-	unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
+	/* Number of DPIs = all DPIs from min to max (inclusive). */
+	const unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1;
 
 	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
 
 	/* Generate DPI list */
 	unsigned int dpis[num_dpis];
-	dpis[0] = 0; /* 0 DPI = disabled */
-	for (unsigned int i = 1; i < num_dpis; i++) {
-		dpis[i] = SINOWEALTH_DPI_MIN + (i - 1) * SINOWEALTH_DPI_STEP;
+	for (unsigned int i = 0; i < num_dpis; i++) {
+		dpis[i] = SINOWEALTH_DPI_MIN + i * SINOWEALTH_DPI_STEP;
 	}
 
 	ratbag_device_for_each_profile(device, profile) {
@@ -1579,6 +1575,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
 			ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+			ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
 		}
 
 		/* Set up available report rates. */
@@ -1810,7 +1807,7 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 
 	config->dpi_count = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		if (!resolution->dpi_x || !resolution->dpi_y)
+		if (resolution->is_disabled)
 			continue;
 
 		/* Limit the resolution if it somehow got higher than allowed. */
