@@ -417,6 +417,78 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 	return mode;
 }
 
+/* Do a read query.
+ *
+ * After an error assume `buffer` now has garbage data.
+ *
+ * @return 0 on success or an error code.
+ */
+static int
+sinowealth_query_read(struct ratbag_device *device, uint8_t buffer[], unsigned int buffer_length)
+{
+	/*
+	 * TODO: make this work with sinowealth_read_raw_config. Currently it
+	 * doesn't because that function has some custom behavior.
+	 */
+
+	int rc = 0;
+
+	/* Buffer's first byte is always the report ID. */
+	const uint8_t report_id = buffer[0];
+	/* Buffer's second byte in case of SinoWealth is always the command ID. */
+	const uint8_t query_command = buffer[1];
+
+	/* The way we retrieve data from SinoWealth is as follows:
+	 *
+	 * - Set a feature report with first two bytes corresponding to the
+	 * wanted command.
+	 *
+	 * - Get a feature report with the same report ID and buffer length.
+	 * The buffer can be reused from the previous step for more efficiency.
+	 * We also do this to reduce the amount of arguments in the function.
+	 */
+
+	rc = ratbag_hidraw_set_feature_report(device, report_id, buffer, buffer_length);
+	if (rc != (int)buffer_length) {
+		log_error(device->ratbag, "Could not set feature report in a read query: %d\n", rc);
+		return -1;
+	}
+	rc = ratbag_hidraw_get_feature_report(device, report_id, buffer, buffer_length);
+	if (rc != (int)buffer_length) {
+		log_error(device->ratbag, "Could not get feature report in a read query: %d\n", rc);
+		return -1;
+	}
+
+	/* Check if the response we got is for the correct command. */
+	if (buffer[1] != query_command) {
+		log_error(device->ratbag, "Could not read command %#x, got command %#x instead\n", query_command, buffer[1]);
+		return -1;
+	}
+
+	return 0;
+}
+
+/* Do a write query.
+ *
+ * @return 0 on success or an error code.
+ */
+static int
+sinowealth_query_write(struct ratbag_device *device, uint8_t buffer[], unsigned int buffer_length)
+{
+	int rc = 0;
+
+	/* Buffer's first byte is always the report ID. */
+	const uint8_t report_id = buffer[0];
+
+	rc = ratbag_hidraw_set_feature_report(device, report_id, buffer, buffer_length);
+	if (rc != (int)buffer_length) {
+		log_error(device->ratbag, "Could not set feature report in a write query: %d\n", rc);
+		return -1;
+	}
+
+	return 0;
+}
+
 /* @return Active profile index or a negative error code. */
 static int
 sinowealth_get_active_profile(struct ratbag_device *device)
@@ -426,20 +498,10 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = device->drv_data;
 
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
-		log_error(device->ratbag, "Couldn't send profile index read command: %d\n", rc);
-		return -1;
-	}
-	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, (uint8_t*) buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
-		log_error(device->ratbag, "Couldn't read profile index: %d\n", rc);
-		return -1;
-	}
 
-	/* Check if we got a response for correct command. */
-	if (buf[1] != SINOWEALTH_CMD_PROFILE) {
-		log_error(device->ratbag, "Couldn't read profile index, got result of command %#x instead\n", buf[1]);
+	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	if (rc != 0) {
+		log_error(device->ratbag, "Could not get device's active profile\n");
 		return -1;
 	}
 
@@ -464,8 +526,9 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 	struct sinowealth_data *drv_data = device->drv_data;
 
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, index + 1 };
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
+
+	rc = sinowealth_query_write(device, buf, sizeof(buf));
+	if (rc != 0) {
 		log_error(device->ratbag, "Error while selecting profile: %d\n", rc);
 		return -1;
 	}
@@ -475,34 +538,26 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 	return 0;
 }
 
-/* Fill buffer `buf` with firmware version.
+/* Fill buffer `out` with firmware version.
+ *
+ * @param out The buffer output will be written to.
  *
  * @return 0 on success or an error code.
  */
 static int
-sinowealth_get_fw_version(struct ratbag_device *device, char buf[4])
+sinowealth_get_fw_version(struct ratbag_device *device, char out[4])
 {
 	int rc = 0;
 
-	uint8_t version[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, version, sizeof(version));
-	if (rc != sizeof(version)) {
-		log_error(device->ratbag, "Error while sending read firmware version command: %d\n", rc);
-		return -1;
-	}
-	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, version, sizeof(version));
-	if (rc != sizeof(version)) {
-		log_error(device->ratbag, "Could not read firmware version: %d\n", rc);
+	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
+
+	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	if (rc != 0) {
+		log_error(device->ratbag, "Couldn't read firmware version: %d\n", rc);
 		return -1;
 	}
 
-	/* Check if we got a response for correct command. */
-	if (version[1] != SINOWEALTH_CMD_FIRMWARE_VERSION) {
-		log_error(device->ratbag, "Couldn't read firmware version, got result of command %#x instead\n", version[1]);
-		return -1;
-	}
-
-	memcpy(buf, version + 2, 4);
+	memcpy(out, buf + 2, 4);
 
 	return 0;
 }
@@ -517,20 +572,10 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 	 * To implement it here just set the third index to the desired debounce time / 2.
 	 */
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
-		log_error(device->ratbag, "Couldn't send debounce time read command: %d\n", rc);
-		return -1;
-	}
-	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
-		log_error(device->ratbag, "Couldn't read debounce time: %d\n", rc);
-		return -1;
-	}
 
-	/* Check if we got a response for correct command. */
-	if (buf[1] != SINOWEALTH_CMD_DEBOUNCE) {
-		log_error(device->ratbag, "Couldn't read debounce time, got result of command %#x instead\n", buf[1]);
+	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	if (rc != 0) {
+		log_error(device->ratbag, "Could not read debounce time: %d\n", rc);
 		return -1;
 	}
 
@@ -552,20 +597,10 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	 * To implement angle snapping toggling here: set the fourth index to 1 or 0 to enable or disable accordingly.
 	 */
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
-		log_error(device->ratbag, "Couldn't send LOD and angle snapping read command: %d\n", rc);
-		return -1;
-	}
-	rc = ratbag_hidraw_get_feature_report(device, SINOWEALTH_REPORT_ID_CMD, buf, sizeof(buf));
-	if (rc != sizeof(buf)) {
-		log_error(device->ratbag, "Couldn't read LOD and angle snapping: %d\n", rc);
-		return -1;
-	}
 
-	/* Check if we got a response for correct command. */
-	if (buf[1] != SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD) {
-		log_error(device->ratbag, "Couldn't read LOD and angle snapping, got result of command %#x instead\n", buf[1]);
+	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	if (rc != 0) {
+		log_error(device->ratbag, "Could not read LOD and angle snapping values: %d\n", rc);
 		return -1;
 	}
 
@@ -590,6 +625,9 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
 	uint8_t cmd[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG };
+
+	/* TODO: adapt @ref sinowealth_query_read to work here and use it. */
+
 	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
 	if (rc != sizeof(cmd)) {
 		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
@@ -840,8 +878,8 @@ sinowealth_write_config(struct ratbag_device *device)
 	config1->command_id = SINOWEALTH_CMD_GET_CONFIG;
 	config1->config_write = drv_data->config_size - 8;
 
-	rc = ratbag_hidraw_set_feature_report(device, config_report_id, (uint8_t*)config1, SINOWEALTH_CONFIG_REPORT_SIZE);
-	if (rc != SINOWEALTH_CONFIG_REPORT_SIZE) {
+	rc = sinowealth_query_write(device, (uint8_t*)config1, sizeof(*config1));
+	if (rc != 0) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
 		return -1;
 	}
