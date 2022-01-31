@@ -197,13 +197,6 @@ struct ratbag_driver {
 	 */
 	int (*commit)(struct ratbag_device *device);
 
-	/*
-	 * FIXME: This function is deprecated and should be removed. Once
-	 * we've updated all the device drivers to stop using it we'll remove
-	 * it. Look at commit() instead.
-	 */
-	int (*write_profile)(struct ratbag_profile *profile);
-
 	/**
 	 * Called to mark a previously writen profile as active.
 	 *
@@ -211,31 +204,6 @@ struct ratbag_driver {
 	 * .write_profile() call is issued before calling this.
 	 */
 	int (*set_active_profile)(struct ratbag_device *device, unsigned int index);
-
-	/*
-	 * FIXME: This function is deprecated and should be removed. Once
-	 * we've updated all the device drivers to stop using it we'll remove
-	 * it. Look at commit() instead.
-	 */
-	int (*write_button)(struct ratbag_button *button,
-			    const struct ratbag_button_action *action);
-
-	/*
-	 * FIXME: This function is deprecated and should be removed. Once
-	 * we've updated all the device drivers to stop using it we'll remove
-	 * it. Look at commit() instead.
-	 */
-	int (*write_resolution_dpi)(struct ratbag_resolution *resolution,
-				    int dpi_x, int dpi_y);
-
-	/*
-	 * FIXME: This function is deprecated and should be removed. Once
-	 * we've updated all the device drivers to stop using it we'll remove
-	 * it. Look at commit() instead.
-	 */
-	int (*write_led)(struct ratbag_led *led, enum ratbag_led_mode mode,
-			 struct ratbag_color color, unsigned int ms,
-			 unsigned int brightness);
 
 	/* private */
 	int (*test_probe)(struct ratbag_device *device, const void *data);
