@@ -63,14 +63,14 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  */
 #define SINOWEALTH_NUM_DPIS 8
 
-/* Technically SinoWealth mice suport second profile, but there isn't
+/* Technically SinoWealth mice support second profile, but there isn't
  * a single configuration software that exposes it.
  */
 #define SINOWEALTH_NUM_PROFILES 1
 
 /* Bit mask for @ref sinowealth_config_report.config.
  *
- * This naming may be incorrect as it's not actually known waht the other bits do.
+ * This naming may be incorrect as it's not actually known what the other bits do.
  */
 enum sinowealth_config_data_mask {
 	SINOWEALTH_XY_INDEPENDENT = 0b1000,
