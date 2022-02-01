@@ -49,6 +49,8 @@ enum sinowealth_command_id {
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
+#define SINOWEALTH_BUTTON_SIZE 88
+
 #define SINOWEALTH_CMD_SIZE 6
 
 /* Report length commands that get configuration data should use. */
@@ -232,6 +234,100 @@ struct sinowealth_config_report {
 } __attribute__((packed));
 _Static_assert(sizeof(struct sinowealth_config_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
 
+enum sinowealth_button_type {
+	SINOWEALTH_BUTTON_TYPE_NONE = 0, /* This value might appear on broken configurations. */
+	SINOWEALTH_BUTTON_TYPE_BUTTON = 0x11,
+	SINOWEALTH_BUTTON_TYPE_WHEEL = 0x12,
+	SINOWEALTH_BUTTON_TYPE_KEY = 0x21,
+	SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY = 0x22,
+	SINOWEALTH_BUTTON_TYPE_REPEATED = 0x31,
+	SINOWEALTH_BUTTON_TYPE_SWITCH_DPI = 0x41,
+	SINOWEALTH_BUTTON_TYPE_DPI_LOCK = 0x42,
+	SINOWEALTH_BUTTON_TYPE_SPECIAL = 0x50,
+	SINOWEALTH_BUTTON_TYPE_MACRO = 0x70,
+} __attribute__((packed));
+_Static_assert(sizeof(enum sinowealth_button_type) == sizeof(uint8_t), "Invalid size");
+
+/* Bit masks. */
+enum sinowealth_button_key_modifiers {
+	SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTCTRL = 0x01,
+	SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTSHIFT = 0x02,
+	SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTALT = 0x04,
+	SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTMETA = 0x08,
+} __attribute__((packed));
+_Static_assert(sizeof(enum sinowealth_button_key_modifiers) == sizeof(uint8_t), "Invalid size");
+
+enum sinowealth_button_macro_mode {
+	/* Repeat <option> times. */
+	SINOWEALTH_BUTTON_MACRO_MODE_REPEAT = 0x1,
+	/* Repeat until any button is pressed. */
+	SINOWEALTH_BUTTON_MACRO_MODE_REPEAT_UNTIL_PRESSED = 0x2,
+	/* Repeat until released. */
+	SINOWEALTH_BUTTON_MACRO_MODE_REPEAT_UNTIL_RELEASED = 0x4,
+	/* Anything above freezes up the mouse. */
+} __attribute__((packed));
+_Static_assert(sizeof(enum sinowealth_button_macro_mode) == sizeof(uint8_t), "Invalid size");
+
+struct sinowealth_button_data {
+	enum sinowealth_button_type type;
+	union {
+		/* In some button types, byte are bit masks of enabled buttons.
+		 * If several bits are enabled at the same time, their corresponding buttons
+		 * will be activated at the same time.
+		 */
+		uint8_t data[3];
+		struct {
+			/* DPI divided by 100. */
+			uint8_t dpi;
+			uint8_t padding[2];
+		} dpi_lock;
+		struct {
+			enum sinowealth_button_key_modifiers modifiers;
+			uint8_t key;
+			uint8_t padding;
+		} key;
+		struct {
+			/* Macro index starting with 1.
+			 *
+			 * For consistency we do it like this: `button_index + (profile_index * button_count)`.
+			 * This may clash with macros set by official software.
+			 */
+			uint8_t index;
+			enum sinowealth_button_macro_mode mode;
+			/* Mode-specific option.
+			 *
+			 * For 0x1:
+			 * Value is repeat count.
+			 *
+			 * Other modes don't have any options.
+			 */
+			uint8_t option;
+		} macro;
+		struct {
+			/* Button index. */
+			uint8_t index;
+			uint8_t delay;
+			/* If zero, then repeat for as long as the button is held. */
+			uint8_t count;
+		} repeated_button;
+	};
+} __attribute__((packed));
+_Static_assert(sizeof(struct sinowealth_button_data) == sizeof(uint32_t), "Invalid size");
+
+struct sinowealth_button_report {
+	uint8_t report_id;
+	uint8_t command_id;
+	uint8_t unknown1;
+	/* 0x0 --- read.
+	 * <size of configuration> - 8 --- write.
+	 */
+	uint8_t config_write;
+	uint8_t unknown2[4];
+	struct sinowealth_button_data buttons[20];
+	uint8_t padding[SINOWEALTH_CONFIG_REPORT_SIZE - SINOWEALTH_BUTTON_SIZE];
+} __attribute__((packed));
+_Static_assert(sizeof(struct sinowealth_button_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
+
 /* Data related to mouse we store for ourselves. */
 struct sinowealth_data {
 	/* Whether the device uses REPORT_ID_CONFIG or REPORT_ID_CONFIG_LONG. */
@@ -245,6 +341,133 @@ struct sinowealth_data {
 	unsigned int led_count;
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
 };
+
+struct sinowealth_button_mapping {
+	struct sinowealth_button_data data;
+	struct ratbag_button_action action;
+};
+
+static const struct sinowealth_button_mapping sinowealth_button_map[] = {
+	{ { SINOWEALTH_BUTTON_TYPE_BUTTON, { { 0x01 } } }, BUTTON_ACTION_BUTTON(1) },
+	{ { SINOWEALTH_BUTTON_TYPE_BUTTON, { { 0x02 } } }, BUTTON_ACTION_BUTTON(2) },
+	{ { SINOWEALTH_BUTTON_TYPE_BUTTON, { { 0x04 } } }, BUTTON_ACTION_BUTTON(3) },
+	{ { SINOWEALTH_BUTTON_TYPE_BUTTON, { { 0x08 } } }, BUTTON_ACTION_BUTTON(5) },
+	{ { SINOWEALTH_BUTTON_TYPE_BUTTON, { { 0x10 } } }, BUTTON_ACTION_BUTTON(4) },
+
+	/* None of the other bits do anything. */
+
+	/* First data byte is a 0-255 range. */
+	{ { SINOWEALTH_BUTTON_TYPE_WHEEL, { { 0x1 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
+	{ { SINOWEALTH_BUTTON_TYPE_WHEEL, { { 0xff } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
+	/* None of the other bits do anything. */
+
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x01 } } }, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x02 } } }, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x04 } } }, BUTTON_ACTION_KEY(KEY_STOPCD) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x08 } } }, BUTTON_ACTION_KEY(KEY_PLAYPAUSE) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x10 } } }, BUTTON_ACTION_KEY(KEY_MUTE) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x20 } } }, BUTTON_ACTION_KEY(KEY_UNKNOWN) }, /* Hidden. */
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x40 } } }, BUTTON_ACTION_KEY(KEY_VOLUMEUP) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x80 } } }, BUTTON_ACTION_KEY(KEY_VOLUMEDOWN) },
+
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x01 } } }, BUTTON_ACTION_KEY(KEY_CONFIG) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x02 } } }, BUTTON_ACTION_KEY(KEY_FILE) },
+	/* 0x04 makes mouse send something, but it's not processed by Linux. Hidden. */
+	/* 0x08 makes mouse send something, but it's not processed by Linux. Hidden. */
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x10 } } }, BUTTON_ACTION_KEY(KEY_MAIL) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x20 } } }, BUTTON_ACTION_KEY(KEY_CALC) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x40 } } }, BUTTON_ACTION_KEY(KEY_UNKNOWN) }, /* Hidden. */
+	/* 0x80 makes mouse send something, but it's not processed by Linux. Hidden. */
+
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x0, 0x2 } } }, BUTTON_ACTION_KEY(KEY_HOMEPAGE) },
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x0, 0x4 } } }, BUTTON_ACTION_KEY(KEY_BACK) },	 /* Hidden. */
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x0, 0x8 } } }, BUTTON_ACTION_KEY(KEY_FORWARD) },	 /* Hidden. */
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x0, 0x10 } } }, BUTTON_ACTION_KEY(KEY_STOP) },	 /* Hidden. */
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x0, 0x20 } } }, BUTTON_ACTION_KEY(KEY_REFRESH) },	 /* Hidden. */
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x0, 0x40 } } }, BUTTON_ACTION_KEY(KEY_BOOKMARKS) }, /* Hidden. */
+	{ { SINOWEALTH_BUTTON_TYPE_MULTIMEDIA_KEY, { { 0x0, 0x0, 0x80 } } }, BUTTON_ACTION_KEY(KEY_UNKNOWN) },	 /* Hidden. */
+
+	{ { SINOWEALTH_BUTTON_TYPE_SWITCH_DPI, { { 0x0 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) },
+	{ { SINOWEALTH_BUTTON_TYPE_SWITCH_DPI, { { 0x1 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
+	{ { SINOWEALTH_BUTTON_TYPE_SWITCH_DPI, { { 0x2 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
+	/* None of the other bits do anything. */
+
+	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x1 } } }, BUTTON_ACTION_NONE },
+	/* Disabled as we don't support second profile officially.
+	 * Not only that, by default default second profile has no button
+	 * mapping and by using this the user is just going to be left with
+	 * a practically non-working mouse. To fix this we would have to
+	 * populate the empty profile with some default mappings.
+	 */
+	/* Hidden. */
+	/* { { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) }, */
+
+	/* This must defined after `SPECIAL` type so that correct raw data
+	 * for action type `NONE` is used. */
+	{ { SINOWEALTH_BUTTON_TYPE_NONE, {} }, BUTTON_ACTION_NONE },
+};
+
+/* Check if two given button data structs are equal.
+ *
+ * @return 1 if structs are equal or 0 otherwise.
+ */
+static int
+sinowealth_button_data_is_equal(const struct sinowealth_button_data *lhs, const struct sinowealth_button_data *rhs)
+{
+	if (lhs->type != rhs->type)
+		return 0;
+
+	for (unsigned int i = 0; i < sizeof(lhs->data); ++i) {
+		if (lhs->data[i] != rhs->data[i]) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+/* Convert a button action to raw data using the `sinowealth_button_map`.
+ * NOTE: It does not contain all of the button types, as some of them are
+ * better made programatically. See @ref sinowealth_update_buttons_from_profile.
+ *
+ * @param data Struct to write to.
+ *
+ * @return 0 on success or 1 if such action is not in the map.
+ */
+static int
+sinowealth_button_action_to_raw(const struct ratbag_button_action *action, struct sinowealth_button_data *data)
+{
+	const struct sinowealth_button_mapping *mapping = NULL;
+
+	ARRAY_FOR_EACH(sinowealth_button_map, mapping) {
+		if (ratbag_button_action_match(&mapping->action, action)) {
+			memcpy(data, &mapping->data, sizeof(struct sinowealth_button_data));
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+/* Convert raw button data to a button action using the `sinowealth_button_map`.
+ * NOTE: It does not contain all of the button types, as some of them are
+ * better made programatically. See @ref sinowealth_update_profile_from_buttons.
+ *
+ * @return Button action or NULL if such action is not in the map. */
+static const struct ratbag_button_action *
+sinowealth_raw_to_button_action(const struct sinowealth_button_data *data)
+{
+	const struct sinowealth_button_mapping *mapping = NULL;
+
+	ARRAY_FOR_EACH(sinowealth_button_map, mapping) {
+		if (sinowealth_button_data_is_equal(data, &mapping->data) == 0)
+			continue;
+
+		return &mapping->action;
+	}
+
+	return NULL;
+}
 
 struct sinowealth_report_rate_mapping {
 	uint8_t raw;
