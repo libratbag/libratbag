@@ -524,7 +524,10 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 static int
 sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 {
-	assert(index <= SINOWEALTH_NUM_PROFILES - 1);
+	if (index >= SINOWEALTH_NUM_PROFILES) {
+		log_error(device->ratbag, "Profile index %u is out of range", index);
+		return -EINVAL;
+	}
 
 	int rc = 0;
 
