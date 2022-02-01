@@ -670,6 +670,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	const unsigned int hz = sinowealth_raw_to_report_rate(config->report_rate);
 	ratbag_profile_set_report_rate(profile, hz);
 
+	unsigned int enabled_dpi_count = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (config->config_flags & SINOWEALTH_XY_INDEPENDENT) {
 			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2]);
@@ -682,9 +683,17 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			/* DPI step is disabled, fake it by setting DPI to 0 */
 			resolution->dpi_x = 0;
 			resolution->dpi_y = 0;
+		} else {
+			/* NOTE: we mark this `1` unsigned explicitly as otherwise
+			 * the right-hand side will become a signed integer and the
+			 * comparison will be between expressions of different
+			 * signedness.
+			 */
+			resolution->is_active = enabled_dpi_count == config->active_dpi - 1U;
+			resolution->is_default = resolution->is_active;
+
+			++enabled_dpi_count;
 		}
-		resolution->is_active = resolution->index == config->active_dpi - 1u;
-		resolution->is_default = resolution->is_active;
 	}
 
 	/* Body lighting */
@@ -979,8 +988,6 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (!resolution->dpi_x || !resolution->dpi_y)
 			continue;
-		if (resolution->is_active)
-			config->active_dpi = resolution->index + 1U;
 		if (config->config_flags & SINOWEALTH_XY_INDEPENDENT) {
 			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(device, resolution->dpi_y);
@@ -989,6 +996,8 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 		}
 		dpi_enabled |= 1 << resolution->index;
 		config->dpi_count++;
+		if (resolution->is_active)
+			config->active_dpi = config->dpi_count;
 	}
 	config->disabled_dpi_slots = ~dpi_enabled;
 
