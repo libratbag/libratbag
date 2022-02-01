@@ -35,6 +35,7 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_FIRMWARE_VERSION = 0x1,
 	SINOWEALTH_CMD_PROFILE = 0x2,
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
+	SINOWEALTH_CMD_GET_BUTTONS = 0x12,
 	SINOWEALTH_CMD_DEBOUNCE = 0x1a,
 	/* Only works on devices that use CONFIG_LONG report ID. */
 	SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD = 0x1b,
@@ -339,6 +340,7 @@ struct sinowealth_data {
 	/* Cached profile index. This might be incorrect if profile index was changed by another program while we are running. */
 	unsigned int current_profile_index;
 	unsigned int led_count;
+	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES];
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
 };
 
@@ -870,6 +872,38 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	return 0;
 }
 
+/* Read button configuration data from the mouse and save it in drv_data.
+ *
+ * @return 0 on success or an error code.
+ */
+static int
+sinowealth_read_raw_buttons(struct ratbag_device *device)
+{
+	/* TODO: analogous to @ref sinowealth_read_raw_config. */
+
+	int rc = 0;
+
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_button_report *buttons1 = &drv_data->buttons[0];
+
+	const unsigned char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	uint8_t cmd1[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_BUTTONS };
+	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd1, sizeof(cmd1));
+	if (rc != sizeof(cmd1)) {
+		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+		return -1;
+	}
+
+	rc = ratbag_hidraw_get_feature_report(device, config_report_id, (uint8_t*)buttons1, SINOWEALTH_CONFIG_REPORT_SIZE);
+	if (rc != SINOWEALTH_BUTTON_SIZE) {
+		log_error(device->ratbag, "Could not read device button configuration: %d\n", rc);
+		return -1;
+	}
+
+	return 0;
+}
+
 /* Read configuration data from the mouse and save it in drv_data.
  *
  * @return 0 on success or an error code.
@@ -1001,6 +1035,96 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	profile->is_active = profile->index == drv_data->current_profile_index;
 }
 
+static void
+sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_button_report *buf = &drv_data->buttons[profile->index];
+	struct ratbag_button *button = NULL;
+	struct sinowealth_button_data button_data;
+	int rc = 0;
+
+	ratbag_profile_for_each_button(profile, button) {
+		button_data = buf->buttons[button->index];
+
+		const struct ratbag_button_action *action = sinowealth_raw_to_button_action(&button_data);
+		/* Match was found in the map, continue. */
+		if (action != NULL) {
+			button->action.action = action->action;
+			button->action.type = action->type;
+			continue;
+		}
+
+		/* Explicitly fall back to type `UNKNOWN` as `NONE` is the default. */
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
+
+		switch (button_data.type) {
+		case SINOWEALTH_BUTTON_TYPE_KEY: {
+			unsigned int modifiers = 0;
+			if (button_data.key.modifiers & SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTCTRL)
+				modifiers |= MODIFIER_LEFTCTRL;
+			if (button_data.key.modifiers & SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTSHIFT)
+				modifiers |= MODIFIER_LEFTSHIFT;
+			if (button_data.key.modifiers & SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTALT)
+				modifiers |= MODIFIER_LEFTALT;
+			if (button_data.key.modifiers & SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTMETA)
+				modifiers |= MODIFIER_LEFTMETA;
+
+			const unsigned int key = ratbag_hidraw_get_keycode_from_keyboard_usage(device, button_data.key.key);
+
+			rc = ratbag_button_macro_new_from_keycode(button, key, modifiers);
+			if (rc < 0) {
+				log_error(device->ratbag, "Error while reading button %d\n", button->index);
+				button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
+			}
+			break;
+		}
+		case SINOWEALTH_BUTTON_TYPE_REPEATED: {
+			/* NOTE: We do not support such button actions yet. */
+
+			const uint8_t button_index = button_data.repeated_button.index;
+			const uint8_t repeat_delay = button_data.repeated_button.delay;
+			const uint8_t repeat_count = button_data.repeated_button.count;
+
+			log_debug(device->ratbag, "Read repeating button %u: %#x %#x %#x\n", button->index, button_index, repeat_delay, repeat_count);
+			break;
+		}
+		case SINOWEALTH_BUTTON_TYPE_DPI_LOCK: {
+			/* NOTE: We do not support such button actions yet. */
+
+			const unsigned int dpi = button_data.dpi_lock.dpi * 100;
+
+			log_debug(device->ratbag, "Read button %u locks DPI on %u\n", button->index, dpi);
+			break;
+		}
+		case SINOWEALTH_BUTTON_TYPE_MACRO: {
+			const uint8_t macro_index = button_data.macro.index;
+			const uint8_t mode = button_data.macro.mode;
+			const uint8_t option = button_data.macro.option;
+
+			log_debug(device->ratbag, "Read button %u activates macro %u: %#x %#x\n", button->index, macro_index, mode, option);
+
+			/* There is no known way to read a macro blob, so create a dummy
+			 * macro event, so that the button action displays as a macro.
+			 */
+
+			const int key = 0; /* Dummy. */
+			const int modifiers = 0; /* Dummy. */
+			rc = ratbag_button_macro_new_from_keycode(button, key, modifiers);
+			if (rc < 0) {
+				log_error(device->ratbag, "Could not make a dummy macro: %d\n", rc);
+				button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
+			}
+
+			break;
+		}
+		default:
+			log_debug(device->ratbag, "Read button %u can't be determined: %#x %#x %#x %#x\n", button->index, button_data.type, button_data.data[0], button_data.data[1], button_data.data[2]);
+			break;
+		}
+	}
+}
 /* Initialize profiles for device `device`.
  *
  * @return 0 on success or an error code.
@@ -1027,6 +1151,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 	log_info(device->ratbag, "firmware version: %.4s\n", fw_version);
 
 	rc = sinowealth_read_raw_config(device);
+	if (rc)
+		return rc;
+
+	rc = sinowealth_read_raw_buttons(device);
 	if (rc)
 		return rc;
 
@@ -1208,6 +1336,7 @@ sinowealth_probe(struct ratbag_device *device)
 
 	ratbag_device_for_each_profile(device, profile) {
 		sinowealth_update_profile_from_config(profile);
+		sinowealth_update_profile_from_buttons(profile);
 	}
 
 	rc = sinowealth_get_active_profile(device);
