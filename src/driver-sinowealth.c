@@ -42,6 +42,10 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_GET_CONFIG2 = 0x21,
 	/* Same as GET_CONFIG but for the second profile. */
 	SINOWEALTH_CMD_GET_BUTTONS2 = 0x22,
+	/* Puts the device into DFU mode.
+	 * To reset re-plug the mouse or do a clean reboot.
+	 */
+	SINOWEALTH_CMD_DFU = 0x75,
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
