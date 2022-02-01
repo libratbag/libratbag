@@ -43,6 +43,7 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_GET_CONFIG2 = 0x21,
 	/* Same as GET_CONFIG but for the second profile. */
 	SINOWEALTH_CMD_GET_BUTTONS2 = 0x22,
+	SINOWEALTH_CMD_MACRO = 0x30,
 	/* Puts the device into DFU mode.
 	 * To reset re-plug the mouse or do a clean reboot.
 	 */
@@ -59,6 +60,8 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 #define SINOWEALTH_CONFIG_SIZE_MAX 167
 #define SINOWEALTH_CONFIG_SIZE_MIN 131
 
+#define SINOWEALTH_MACRO_SIZE 515
+
 /* The PC software only goes down to 400, but the PMW3360 doesn't care */
 #define SINOWEALTH_DPI_MIN 100
 #define SINOWEALTH_DPI_STEP 100
@@ -74,6 +77,9 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  * a single configuration software that exposes it.
  */
 #define SINOWEALTH_NUM_PROFILES 1
+
+/* Maximum amount of real events in a macro. */
+#define SINOWEALTH_MACRO_LENGTH_MAX 168
 
 /* Bit mask for @ref sinowealth_config_report.config.
  *
@@ -328,6 +334,65 @@ struct sinowealth_button_report {
 	uint8_t padding[SINOWEALTH_CONFIG_REPORT_SIZE - SINOWEALTH_BUTTON_SIZE];
 } __attribute__((packed));
 _Static_assert(sizeof(struct sinowealth_button_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
+
+enum sinowealth_macro_command {
+	SINOWEALTH_MACRO_COMMAND_BUTTON_PRESS = 0x10,
+	SINOWEALTH_MACRO_COMMAND_BUTTON_RELEASE = 0x90,
+
+	SINOWEALTH_MACRO_COMMAND_KEY_PRESS = 0x50,
+	SINOWEALTH_MACRO_COMMAND_KEY_RELEASE = 0xd0,
+} __attribute__((packed));
+_Static_assert(sizeof(enum sinowealth_macro_command) == sizeof(uint8_t), "Invalid size");
+
+struct sinowealth_macro_event {
+	enum sinowealth_macro_command command;
+	/* Use `1` for no delay.
+	 * In case this is set to `0`, the event will ignored.
+	 */
+	uint8_t delay;
+	union {
+		/* HID button usage.
+		 *
+		 * 0x1 - button 1;
+		 * 0x2 - button 2;
+		 * 0x4 - button 3;
+		 * and so forth.
+		 */
+		uint8_t button;
+
+		/* HID keyboard usage.
+		 *
+		 * @ref ratbag_hidraw_get_keyboard_usage_from_keycode.
+		 */
+		uint8_t key;
+	};
+};
+_Static_assert(sizeof(struct sinowealth_macro_event) == sizeof(uint8_t[3]), "Invalid size");
+
+struct sinowealth_macro_report {
+	uint8_t report_id;
+	uint8_t command_id;
+	uint8_t unknown1; // 0x2 when writing
+	uint8_t _empty1[5];
+	/* The index of this macro.
+	 *
+	 * In original software it may differ from index of the button where it's used.
+	 * It's hard to keep track of, so we just set it like this:
+	 * `button->index + (profile->index * BUTTON_COUNT)`.
+	 * Because we do it like this, we may overwrite some already existing macro,
+	 * which is not really good, but this can't be improved until we find a way
+	 * to read macros from the mouse.
+	 */
+	uint8_t index;
+	uint8_t _empty2;
+	/* The amount of events going next that will get processed by mouse.
+	 * If there are more events than this number, they will just get ignored.
+	 */
+	uint8_t event_count;
+	struct sinowealth_macro_event events[SINOWEALTH_MACRO_LENGTH_MAX];
+	uint8_t padding[SINOWEALTH_CONFIG_REPORT_SIZE - SINOWEALTH_MACRO_SIZE];
+};
+_Static_assert(sizeof(struct sinowealth_macro_report) == SINOWEALTH_CONFIG_REPORT_SIZE, "Invalid size");
 
 /* Data related to mouse we store for ourselves. */
 struct sinowealth_data {
@@ -1186,6 +1251,18 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 			sinowealth_button_set_key_action_from_macro(device, button, button_data);
 			break;
+		case RATBAG_BUTTON_ACTION_TYPE_MACRO: {
+			/* Make the button activate a macro.
+			 * The macro itself will be written later by @ref sinowealth_write_macros.
+			 */
+
+			button_data->type = SINOWEALTH_BUTTON_TYPE_MACRO;
+			button_data->macro.index = button->index + (profile->index * drv_data->button_count);
+			button_data->macro.mode = SINOWEALTH_BUTTON_MACRO_MODE_REPEAT;
+			button_data->macro.option = 1;
+
+			break;
+		}
 		default:
 			log_debug(device->ratbag, "Can't set unsupported action type %#x to button %u\n", action->action.special, button->index);
 			break;
@@ -1193,6 +1270,88 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 	}
 
 	return 0;
+}
+
+/* Update macro report `macro` with macro button action in button `button`. */
+static void
+sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratbag_button *button, struct sinowealth_macro_report *macro)
+{
+	struct ratbag_button_action *action = &button->action;
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+
+	if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		return;
+
+	macro->index = button->index + (profile->index * drv_data->button_count);
+
+	/* Reset the `events` field. Even if we don't do this, the mouse will ignore unneeded data. */
+	memset(&macro->events, 0, sizeof(macro->events));
+
+	unsigned int raw_event_count = 0;
+	for (unsigned int i = 0; i < MAX_MACRO_EVENTS && raw_event_count < SINOWEALTH_MACRO_LENGTH_MAX; ++i) {
+		struct ratbag_macro_event *event = &action->macro->events[i];
+
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
+			break;
+		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_NONE)
+			break;
+
+		/* Fall back to delay of 1 ms as it's required. */
+		macro->events[raw_event_count].delay = 1;
+
+		switch (event->type) {
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+		case RATBAG_MACRO_EVENT_KEY_RELEASED: {
+			int raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, event->event.key);
+			if (raw_key == 0) {
+				log_error(device->ratbag, "Could not set unsupported key %#x in macro for button %u", event->event.key, button->index);
+				/* Ignore the error to not mess up event order. */
+			}
+
+			/* NOTE: Ugly, but better than duplicating the code. */
+			if (event->type == RATBAG_MACRO_EVENT_KEY_PRESSED)
+				macro->events[raw_event_count].command = SINOWEALTH_MACRO_COMMAND_KEY_PRESS;
+			else
+				macro->events[raw_event_count].command = SINOWEALTH_MACRO_COMMAND_KEY_RELEASE;
+
+			macro->events[raw_event_count].key = raw_key;
+
+			++raw_event_count;
+			break;
+		}
+		case RATBAG_MACRO_EVENT_WAIT:
+			/* Delay is a part of every macro event in SinoWealth mice,
+			 * in other words it does not occupy a separate event slot.
+			 */
+
+			/* Ignore if it's the first event.
+			 * This is impossible to do on SinoWealth mice.
+			 */
+			if (raw_event_count == 0)
+				break;
+
+			/* Limit timeout to 255 ms.
+			 * Obviously we can't put more in 8 bytes.
+			 * Glorious software allows you to set up to 4096,
+			 * but it's actually a bug and the sent number overflows.
+			 */
+			if (event->event.timeout > 0xff)
+				event->event.timeout = 0xff;
+
+			/* Set delay of the previous event. */
+			macro->events[raw_event_count - 1].delay = event->event.timeout;
+			break;
+		/* Should not be reachable but let's ignore it just in case. */
+		default:
+		case RATBAG_MACRO_EVENT_INVALID:
+		case RATBAG_MACRO_EVENT_NONE:
+			break;
+		}
+	}
+
+	/* Update the event counter in the macro. */
+	macro->event_count = raw_event_count;
 }
 
 /* Initialize profiles for device `device`.
@@ -1310,6 +1469,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 		}
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
@@ -1408,6 +1568,49 @@ sinowealth_write_config(struct ratbag_device *device)
 	if (rc != 0) {
 		log_error(device->ratbag, "Error while writing config: %d\n", rc);
 		return -1;
+	}
+
+	return 0;
+}
+
+static int
+sinowealth_write_macros(struct ratbag_device *device)
+{
+	int rc = 0;
+	struct ratbag_button *button = NULL;
+	struct ratbag_profile *profile = NULL;
+
+	struct sinowealth_data *drv_data = device->drv_data;
+
+	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	/* NOTE: We will reuse the same buffer for all commands and reset it's `events` field for every button. */
+	struct sinowealth_macro_report macro = {};
+	macro.report_id = config_report_id;
+	macro.command_id = SINOWEALTH_CMD_MACRO;
+	macro.unknown1 = 0x2;
+
+	ratbag_device_for_each_profile(device, profile) {
+		ratbag_profile_for_each_button(profile, button) {
+			if (!button->dirty)
+				continue;
+
+			struct ratbag_button_action *action = &button->action;
+
+			/* Ignore non macro actions.
+			 * They were already handled by @ref sinowealth_update_profile_from_buttons.
+			 */
+			if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+				continue;
+
+			sinowealth_update_macro_from_action(profile, button, &macro);
+
+			rc = sinowealth_query_write(device, (uint8_t*)&macro, sizeof(macro));
+			if (rc != 0) {
+				log_error(device->ratbag, "Error while writing macro %u: %d\n", macro.index, rc);
+				return -1;
+			}
+		}
 	}
 
 	return 0;
@@ -1556,6 +1759,10 @@ sinowealth_commit(struct ratbag_device *device)
 		return rc;
 
 	rc = sinowealth_write_buttons(device);
+	if (rc)
+		return rc;
+
+	rc = sinowealth_write_macros(device);
 	if (rc)
 		return rc;
 
