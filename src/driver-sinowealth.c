@@ -838,7 +838,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	} else if (strncmp(fw_version, "3110", 4) == 0) {
 		log_info(device->ratbag, "Found a Genesis Xenon 770\n");
 
-		drv_data->led_type = LED_RGB; /* TODO: test this */
+		drv_data->led_type = LED_RGB;
 		drv_data->sensor = PWM3327;
 	} else {
 		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
