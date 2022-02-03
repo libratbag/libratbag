@@ -113,7 +113,12 @@ enum sinowealth_rgb_effect {
 	RGB_RAVE = 0x7,
 	RGB_RANDOM = 0x8,     /* Randomly change colors. Not available in Glorious software. */
 	RGB_WAVE = 0x9,
-	RGB_BREATHING1 = 0xa, /* Single color breathing. */
+	/* Single color breathing.
+	 * Not available on some mice, for example Genesis Xenon 770 and
+	 * DreamMachines DM5 (both are 0027 mice). On them RGB_BREATHING7
+	 * with one color should be used instead.
+	 */
+	RGB_BREATHING1 = 0xa,
 
 	/* The value mice with no LEDs have.
 	* Unreliable as non-constant.
@@ -1032,9 +1037,10 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 			config->glorious_mode = sinowealth_led_to_rgb_mode(led);
 			break;
 		case RATBAG_LED_BREATHING:
-			config->rgb_effect = RGB_BREATHING1;
-			config->breathing1_color = sinowealth_color_to_raw(device, led->color);
-			config->breathing1_mode = sinowealth_led_to_rgb_mode(led);
+			config->rgb_effect = RGB_BREATHING7;
+			config->breathing7_mode = sinowealth_led_to_rgb_mode(led);
+			config->breathing7_colorcount = 1;
+			config->breathing7_colors[0] = sinowealth_color_to_raw(device, led->color);
 			break;
 		}
 		ratbag_led_unref(led);
