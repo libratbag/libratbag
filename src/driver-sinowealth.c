@@ -290,14 +290,17 @@ get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 	}
 }
 
-/* Convert internal sensor resolution `raw` to DPI. */
+/* Convert sensor-encoded resolution `raw` to DPI.
+ *
+ * @ref sinowealth_dpis.
+ */
 static unsigned int
 sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 {
 	struct sinowealth_data *drv_data = device->drv_data;
 	enum sinowealth_sensor sensor = drv_data->sensor;
 
-	if (sensor == PWM3360)
+	if (sensor == PWM3327 || sensor == PWM3360)
 		raw += 1;
 
 	unsigned int dpi = raw * 100;
@@ -305,7 +308,10 @@ sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 	return dpi;
 }
 
-/* Convert DPI `dpi` to internal sensor resolution. */
+/* Convert DPI `dpi` to sensor-encoded resolution.
+ *
+ * @ref sinowealth_dpis.
+ */
 static unsigned int
 sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 {
@@ -316,7 +322,7 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 
 	unsigned int raw = dpi / 100;
 
-	if (sensor == PWM3360)
+	if (sensor == PWM3327 || sensor == PWM3360)
 		raw -= 1;
 
 	return raw;
