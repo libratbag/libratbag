@@ -996,9 +996,11 @@ steelseries_write_profile(struct ratbag_profile *profile)
 	int rc;
 	bool buttons_dirty = false;
 
-	rc = steelseries_write_report_rate(profile);
-	if (rc != 0)
-		return rc;
+	if (profile->rate_dirty) {
+		rc = steelseries_write_report_rate(profile);
+		if (rc != 0)
+			return rc;
+	}
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (!resolution->dirty)
