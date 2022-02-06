@@ -893,7 +893,7 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 						sizeof(msg.msg.parameters), cycle_spec->hid_report_type,
 						HID_REQ_SET_REPORT);
 	else
-		ret = ratbag_hidraw_output_report(device, msg.data, sizeof(STEELSERIES_REPORT_SIZE));
+		ret = ratbag_hidraw_output_report(device, msg.data, sizeof(msg.data));
 
 	if (ret < 0)
 		return ret;
