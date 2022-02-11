@@ -1125,6 +1125,39 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 		}
 	}
 }
+
+static int
+sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	struct sinowealth_button_report *buttons = &drv_data->buttons[profile->index];
+	struct ratbag_button *button = NULL;
+	int rc = 0;
+
+	ratbag_profile_for_each_button(profile, button) {
+		if (!button->dirty)
+			continue;
+
+		struct ratbag_button_action *action = &button->action;
+		struct sinowealth_button_data *button_data = &buttons->buttons[button->index];
+
+		rc = sinowealth_button_action_to_raw(action, button_data);
+		/* Match was found in the map, continue. */
+		if (rc == 0) {
+			continue;
+		}
+
+		switch (action->type) {
+		default:
+			log_debug(device->ratbag, "Can't set unsupported action type %#x to button %u\n", action->action.special, button->index);
+			break;
+		}
+	}
+
+	return 0;
+}
+
 /* Initialize profiles for device `device`.
  *
  * @return 0 on success or an error code.
@@ -1133,6 +1166,7 @@ static int
 sinowealth_init_profile(struct ratbag_device *device)
 {
 	int rc = 0;
+	struct ratbag_button *button = NULL;
 	struct ratbag_led *led = NULL;
 	struct ratbag_profile *profile = NULL;
 	struct ratbag_resolution *resolution = NULL;
@@ -1235,6 +1269,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 	}
 
 	ratbag_device_for_each_profile(device, profile) {
+		ratbag_profile_for_each_button(profile, button) {
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+		}
+
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
 			ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
@@ -1276,6 +1315,34 @@ sinowealth_test_hidraw(struct ratbag_device *device)
 		drv_data->is_long = true;
 
 		return rc;
+	}
+
+	return 0;
+}
+
+/* Write raw button configuration data in drv_data to the mouse.
+ *
+ * @return 0 on success or an error code.
+ */
+static int
+sinowealth_write_buttons(struct ratbag_device *device)
+{
+	int rc = 0;
+
+	struct sinowealth_data *drv_data = device->drv_data;
+
+	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+	struct sinowealth_button_report *buttons1 = &drv_data->buttons[0];
+
+	buttons1->report_id = config_report_id;
+	buttons1->command_id = SINOWEALTH_CMD_GET_BUTTONS;
+	buttons1->config_write = SINOWEALTH_BUTTON_SIZE - 8;
+
+	rc = sinowealth_query_write(device, (uint8_t*)buttons1, sizeof(*buttons1));
+	if (rc != 0) {
+		log_error(device->ratbag, "Error while writing buttons: %d\n", rc);
+		return -1;
 	}
 
 	return 0;
@@ -1443,9 +1510,14 @@ sinowealth_commit(struct ratbag_device *device)
 
 	ratbag_device_for_each_profile(device, profile) {
 		sinowealth_update_config_from_profile(profile);
+		sinowealth_update_buttons_from_profile(profile);
 	}
 
 	rc = sinowealth_write_config(device);
+	if (rc)
+		return rc;
+
+	rc = sinowealth_write_buttons(device);
 	if (rc)
 		return rc;
 
