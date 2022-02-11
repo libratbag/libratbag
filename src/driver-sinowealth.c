@@ -936,8 +936,6 @@ sinowealth_probe(struct ratbag_device *device)
 	return 0;
 
 err:
-	ratbag_profile_unref(profile);
-
 	free(drv_data);
 	ratbag_set_drv_data(device, NULL);
 	return rc;
