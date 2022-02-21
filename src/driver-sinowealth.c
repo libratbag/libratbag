@@ -142,6 +142,32 @@ struct sinowealth_rgb_mode {
 };
 _Static_assert(sizeof(struct sinowealth_rgb_mode) == sizeof(uint8_t), "Invalid size");
 
+struct sinowealth_xy_independent_dpi {
+	uint8_t x;
+	uint8_t y;
+};
+_Static_assert(sizeof(struct sinowealth_xy_independent_dpi) == sizeof(uint8_t[2]), "Invalid size");
+
+/* DPI/CPI is encoded in the way the PMW3360 and PWM3327 sensors
+ * accept it:
+ * value = (DPI - 100) / 100;
+ * or the way the PMW3389 sensor accepts it:
+ * value = DPI / 100;
+ *
+ * @ref sinowealth_raw_to_dpi
+ * @ref sinowealth_dpi_to_raw
+ */
+union sinowealth_dpis {
+	/* You MUST use this field if no resolutions have separate X and Y.
+	 */
+	uint8_t dpis[8];
+	/* You MUST use this field if at least one resolution has separate
+	 * X and Y.
+	 */
+	struct sinowealth_xy_independent_dpi independent[8];
+};
+_Static_assert(sizeof(union sinowealth_dpis) == sizeof(uint8_t[16]), "Invalid size");
+
 enum sinowealth_led_format {
 	LED_NONE,
 	LED_RBG,
@@ -170,17 +196,7 @@ struct sinowealth_config_report {
 	uint8_t active_dpi:4;
 	/* bit set: disabled, unset: enabled */
 	uint8_t disabled_dpi_slots;
-	/* DPI/CPI is encoded in the way the PMW3360 sensor accepts it:
-	 * value = (DPI - 100) / 100;
-	 * or the way the PMW3389 sensor accepts it:
-	 * value = DPI / 100;
-	 * TODO: what about PWM3327?
-	 * If XY are identical, dpi[0-6] contain the sensitivities,
-	 * while in XY independent mode each entry takes two chars for X and Y.
-	 * @ref sinowealth_raw_to_dpi
-	 * @ref sinowealth_dpi_to_raw
-	 */
-	uint8_t dpi[16];
+	union sinowealth_dpis dpis;
 	struct sinowealth_color dpi_color[8];
 	enum sinowealth_rgb_effect rgb_effect;
 	struct sinowealth_rgb_mode glorious_mode;
@@ -678,10 +694,10 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 	unsigned int enabled_dpi_count = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (config->config_flags & SINOWEALTH_XY_INDEPENDENT) {
-			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2]);
-			resolution->dpi_y = sinowealth_raw_to_dpi(device, config->dpi[resolution->index * 2 + 1]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpis.independent[resolution->index].x);
+			resolution->dpi_y = sinowealth_raw_to_dpi(device, config->dpis.independent[resolution->index].y);
 		} else {
-			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpi[resolution->index]);
+			resolution->dpi_x = sinowealth_raw_to_dpi(device, config->dpis.dpis[resolution->index]);
 			resolution->dpi_y = resolution->dpi_x;
 		}
 		if (config->disabled_dpi_slots & (1 << resolution->index)) {
@@ -1009,10 +1025,10 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 		if (!resolution->dpi_x || !resolution->dpi_y)
 			continue;
 		if (config->config_flags & SINOWEALTH_XY_INDEPENDENT) {
-			config->dpi[resolution->index * 2] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
-			config->dpi[resolution->index * 2 + 1] = sinowealth_dpi_to_raw(device, resolution->dpi_y);
+			config->dpis.independent[resolution->index].x = sinowealth_dpi_to_raw(device, resolution->dpi_x);
+			config->dpis.independent[resolution->index].y = sinowealth_dpi_to_raw(device, resolution->dpi_y);
 		} else {
-			config->dpi[resolution->index] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
+			config->dpis.dpis[resolution->index] = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 		}
 		dpi_enabled |= 1 << resolution->index;
 		config->dpi_count++;
