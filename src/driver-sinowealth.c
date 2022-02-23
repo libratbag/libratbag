@@ -210,9 +210,10 @@ struct sinowealth_config_report {
 	struct sinowealth_rgb_mode breathing_mode;
 	struct sinowealth_rgb_mode constant_color_mode;
 	struct sinowealth_color constant_color_colors[6];
-	uint8_t unknown3[13];
+	uint8_t unknown3[12];
 	struct sinowealth_rgb_mode rave_mode;
 	struct sinowealth_color rave_colors[2];
+	struct sinowealth_rgb_mode random_mode;
 	struct sinowealth_rgb_mode wave_mode;
 	struct sinowealth_rgb_mode breathing1_mode;
 	struct sinowealth_color breathing1_color;
