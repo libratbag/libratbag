@@ -708,9 +708,24 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			led->color = sinowealth_raw_to_color(device, config->single_color);
 			led->brightness = sinowealth_rgb_mode_to_brightness(config->single_mode);
 			break;
+		case RGB_BREATHING7:
+			/* NOTE: I don't know how mice would react to this, but this
+			 * can happen if configuration data gets broken.
+			 */
+			if (config->breathing7_colorcount < 1) {
+				log_error(device->ratbag, "LED mode is multi-colored breathing, but there are no colors configured\n");
+				led->mode = RATBAG_LED_OFF;
+				break;
+			}
+			if (config->breathing7_colorcount > 1) {
+				log_debug(device->ratbag, "LED mode is multi-colored breathing, but we can only use one color. Using the first one...\n");
+			}
+			led->mode = RATBAG_LED_BREATHING;
+			led->color = sinowealth_raw_to_color(device, config->breathing7_colors[0]);
+			sinowealth_set_led_from_rgb_mode(led, config->breathing7_mode);
+			break;
 		case RGB_GLORIOUS:
 		case RGB_BREATHING:
-		case RGB_BREATHING7:
 		case RGB_CONSTANT:
 		case RGB_RANDOM:
 		case RGB_TAIL:
