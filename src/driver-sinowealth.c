@@ -1090,6 +1090,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 			led->color = sinowealth_raw_to_color(device, config->breathing1_color);
 			sinowealth_set_led_from_rgb_mode(led, config->breathing1_mode);
 			break;
+		case RGB_NOT_SUPPORTED:
 		default:
 			log_error(device->ratbag, "Got unknown RGB effect: %d\n", config->rgb_effect);
 			break;
