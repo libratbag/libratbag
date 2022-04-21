@@ -604,7 +604,7 @@ sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
  *
  * @ref sinowealth_dpis.
  */
-static unsigned int
+static uint8_t
 sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 {
 	struct sinowealth_data *drv_data = device->drv_data;
@@ -612,7 +612,7 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 
 	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= sinowealth_get_max_dpi_for_sensor(sensor));
 
-	unsigned int raw = dpi / 100;
+	uint8_t raw = dpi / 100;
 
 	if (sensor == PWM3327 || sensor == PWM3360)
 		raw -= 1;
