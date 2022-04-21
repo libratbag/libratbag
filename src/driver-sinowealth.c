@@ -105,11 +105,14 @@ struct sinowealth_color {
 } __attribute__((packed));
 _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 
+/* Sensor IDs used in SinoWealth firmware and software. */
 enum sinowealth_sensor {
-	PWM3327,
-	PWM3360,
-	PWM3389,
-};
+	SINOWEALTH_SENSOR_NONE,
+	PWM3360 = 0x06,
+	PWM3327 = 0x0e,
+	PWM3389 = 0x0f,
+} __attribute__((packed));
+_Static_assert(sizeof(enum sinowealth_sensor) == sizeof(uint8_t), "Invalid sensor enum size");
 
 enum sinowealth_rgb_effect {
 	RGB_OFF = 0,
