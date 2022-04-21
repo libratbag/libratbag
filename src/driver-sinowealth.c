@@ -58,7 +58,7 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 /* Report length commands that get configuration data should use. */
 #define SINOWEALTH_CONFIG_REPORT_SIZE 520
 #define SINOWEALTH_CONFIG_SIZE_MAX 167
-#define SINOWEALTH_CONFIG_SIZE_MIN 131
+#define SINOWEALTH_CONFIG_SIZE_MIN 123
 
 #define SINOWEALTH_MACRO_SIZE 515
 
@@ -222,6 +222,12 @@ struct sinowealth_config_report {
 	uint8_t unknown3[12];
 	struct sinowealth_rgb_mode rave_mode;
 	struct sinowealth_color rave_colors[2];
+
+	/* From here onward goes the data not available in short mice.
+	 * .. judging by the size of this struct. The data in them may
+	 * actually be different, we didn't test this yet.
+	 */
+
 	struct sinowealth_rgb_mode random_mode;
 	struct sinowealth_rgb_mode wave_mode;
 	struct sinowealth_rgb_mode breathing1_mode;
@@ -235,7 +241,7 @@ struct sinowealth_config_report {
 
 	/* From here onward goes the data only available in long mice. */
 
-	uint8_t unknown5[SINOWEALTH_CONFIG_SIZE_MAX - SINOWEALTH_CONFIG_SIZE_MIN];
+	uint8_t unknown5[36];
 
 	uint8_t padding[SINOWEALTH_CONFIG_REPORT_SIZE - SINOWEALTH_CONFIG_SIZE_MAX];
 } __attribute__((packed));
