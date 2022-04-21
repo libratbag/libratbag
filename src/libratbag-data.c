@@ -325,7 +325,17 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 {
 	switch (data->drivertype) {
 	case HIDPP10:
+		free(data->hidpp10.dpi_list->entries);
+
+		free(data->hidpp10.dpi_list);
+		free(data->hidpp10.dpi_range);
 		free(data->hidpp10.profile_type);
+		break;
+	case STEELSERIES:
+		free(data->steelseries.dpi_list->entries);
+
+		free(data->steelseries.dpi_list);
+		free(data->steelseries.dpi_range);
 		break;
 	default:
 		break;
