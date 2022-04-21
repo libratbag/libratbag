@@ -1795,6 +1795,14 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (!resolution->dpi_x || !resolution->dpi_y)
 			continue;
+
+		/* Limit the resolution if it somehow got higher than allowed. */
+		{
+			const unsigned int max_dpi = sinowealth_get_max_dpi_for_sensor(config->sensor_type);
+			resolution->dpi_x = min(resolution->dpi_x, max_dpi);
+			resolution->dpi_y = min(resolution->dpi_y, max_dpi);
+		}
+
 		if (config->config_flags & SINOWEALTH_XY_INDEPENDENT) {
 			config->dpis.independent[resolution->index].x = sinowealth_dpi_to_raw(device, resolution->dpi_x);
 			config->dpis.independent[resolution->index].y = sinowealth_dpi_to_raw(device, resolution->dpi_y);
