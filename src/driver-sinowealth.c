@@ -495,7 +495,7 @@ sinowealth_button_data_is_equal(const struct sinowealth_button_data *lhs, const 
 
 /* Convert a button action to raw data using the `sinowealth_button_map`.
  * NOTE: It does not contain all of the button types, as some of them are
- * better made programatically. See @ref sinowealth_update_buttons_from_profile.
+ * better made programmatically. See @ref sinowealth_update_buttons_from_profile.
  *
  * @param data Struct to write to.
  *
@@ -518,7 +518,7 @@ sinowealth_button_action_to_raw(const struct ratbag_button_action *action, struc
 
 /* Convert raw button data to a button action using the `sinowealth_button_map`.
  * NOTE: It does not contain all of the button types, as some of them are
- * better made programatically. See @ref sinowealth_update_profile_from_buttons.
+ * better made programmatically. See @ref sinowealth_update_profile_from_buttons.
  *
  * @return Button action or NULL if such action is not in the map. */
 static const struct ratbag_button_action *
