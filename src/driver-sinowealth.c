@@ -66,6 +66,10 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 /* The PC software only goes down to 400, but the PMW3360 doesn't care */
 #define SINOWEALTH_DPI_MIN 100
 #define SINOWEALTH_DPI_STEP 100
+/* Arbitrary, but I think every sensor supports this DPI, and this is
+ * about as high as most people would ever like to go anyway.
+ */
+#define SINOWEALTH_DPI_FALLBACK 2000
 
 /* Different software expose different amount of DPI slots:
  * Glorious - 6;
@@ -589,7 +593,7 @@ sinowealth_get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 	case SINOWEALTH_SENSOR_PMW3327: return 10200;
 	case SINOWEALTH_SENSOR_PMW3360: return 12000;
 	case SINOWEALTH_SENSOR_PMW3389: return 16000;
-	default: return 0;
+	default: return SINOWEALTH_DPI_FALLBACK;
 	}
 }
 
