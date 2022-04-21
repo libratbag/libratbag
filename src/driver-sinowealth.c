@@ -37,6 +37,7 @@ enum sinowealth_command_id {
 	SINOWEALTH_CMD_PROFILE = 0x2,
 	SINOWEALTH_CMD_GET_CONFIG = 0x11,
 	SINOWEALTH_CMD_GET_BUTTONS = 0x12,
+	/* Doesn't work on devices with shorter configuration data (123 instead of 137). */
 	SINOWEALTH_CMD_DEBOUNCE = 0x1a,
 	/* Only works on devices that use CONFIG_LONG report ID. */
 	SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD = 0x1b,
