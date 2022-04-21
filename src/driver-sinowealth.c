@@ -23,6 +23,7 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "shared-macro.h"
 
 enum sinowealth_report_id {
 	SINOWEALTH_REPORT_ID_CONFIG = 0x4,
@@ -108,9 +109,9 @@ _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 /* Sensor IDs used in SinoWealth firmware and software. */
 enum sinowealth_sensor {
 	SINOWEALTH_SENSOR_NONE,
-	PWM3360 = 0x06,
-	PWM3327 = 0x0e,
-	PWM3389 = 0x0f,
+	SINOWEALTH_SENSOR_PMW3360 = 0x06,
+	SINOWEALTH_SENSOR_PMW3327 = 0x0e,
+	SINOWEALTH_SENSOR_PMW3389 = 0x0f,
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_sensor) == sizeof(uint8_t), "Invalid sensor enum size");
 
@@ -586,9 +587,9 @@ static unsigned int
 sinowealth_get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 {
 	switch (sensor) {
-	case PWM3327: return 10200;
-	case PWM3360: return 12000;
-	case PWM3389: return 16000;
+	case SINOWEALTH_SENSOR_PMW3327: return 10200;
+	case SINOWEALTH_SENSOR_PMW3360: return 12000;
+	case SINOWEALTH_SENSOR_PMW3389: return 16000;
 	default: return 0;
 	}
 }
@@ -603,7 +604,7 @@ sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 	struct sinowealth_data *drv_data = device->drv_data;
 	enum sinowealth_sensor sensor = drv_data->sensor;
 
-	if (sensor == PWM3327 || sensor == PWM3360)
+	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360)
 		raw += 1;
 
 	unsigned int dpi = raw * 100;
@@ -625,7 +626,7 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 
 	uint8_t raw = dpi / 100;
 
-	if (sensor == PWM3327 || sensor == PWM3360)
+	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360)
 		raw -= 1;
 
 	return raw;
@@ -1366,6 +1367,130 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 	macro->event_count = raw_event_count;
 }
 
+struct sinowealth_device_data {
+	const char fw_version[4];
+	const char *device_name;
+	enum sinowealth_led_format led_type;
+	/* Not necessarily the sensor used on the mouse, some mice may have
+	 * different sensers per the same model.
+	 * We may fall back to this value in the future if we ever find mice
+	 * with broken sensor type field.
+	 */
+	enum sinowealth_sensor sensor_type;
+	uint16_t pid;
+	uint16_t vid;
+	unsigned int button_count;
+};
+
+static const struct sinowealth_device_data sinowealth_supported_devices[] = {
+	/* 258a:0027 devices. */
+	{
+		.fw_version = "V102",
+		.device_name = "Glorious Model O (old firmware)",
+		.led_type = LED_RBG,
+		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
+		.vid = 0x258a,
+		.pid = 0x27,
+		.button_count = 6,
+	},
+	{
+		.fw_version = "V161",
+		.device_name = "G-Wolves Hati HT-M Wired",
+		.led_type = LED_NONE,
+		/* Can also be PWM3389. */
+		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
+		.vid = 0x258a,
+		.pid = 0x27,
+		.button_count = 6,
+	},
+	{
+		.fw_version = "3106",
+		.device_name = "DreamMachines DM5 Blink",
+		.led_type = LED_RGB,
+		.sensor_type = SINOWEALTH_SENSOR_PMW3389,
+		.vid = 0x258a,
+		.pid = 0x27,
+		.button_count = 8,
+	},
+	{
+		.fw_version = "3110",
+		.device_name = "Genesis Xenon 770",
+		.led_type = LED_RGB,
+		.sensor_type = SINOWEALTH_SENSOR_PMW3327,
+		.vid = 0x258a,
+		.pid = 0x27,
+		/* Side buttons are detachable.
+		 * There can be either 3 or 9 buttons on the side.
+		 */
+		.button_count = 5 + 9,
+	},
+
+	/* 258a:0033 devices. */
+	{
+		.fw_version = "V102",
+		.device_name = "Glorious Model D",
+		.led_type = LED_RBG,
+		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
+		.vid = 0x258a,
+		.pid = 0x33,
+		.button_count = 6,
+	},
+
+	/* 258a:0036 devices. */
+	{
+		.fw_version = "V103",
+		.device_name = "Glorious Model O/O- (updated firmware)",
+		.led_type = LED_RBG,
+		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
+		.vid = 0x258a,
+		.pid = 0x36,
+		.button_count = 6,
+	},
+
+	/* 258a:003E devices. */
+	{
+		/* Untested. */
+		/* This matches both Classic and Ace versions. */
+		.fw_version = "3105",
+		.device_name = "G-Wolves Hati HT-S Wired",
+		.led_type = LED_NONE,
+		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
+		.vid = 0x258a,
+		.pid = 0x3e,
+		.button_count = 6,
+	},
+
+	/* Dummy device. Make sure it's the last entry. */
+	{
+		.fw_version = "0000",
+		.device_name = "Generic SinoWealth Mouse",
+		.led_type = LED_RBG,
+		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
+		.vid = 0xffff,
+		.pid = 0xffff,
+		.button_count = 6,
+	},
+};
+
+static const struct sinowealth_device_data *
+sinowealth_find_device_data(struct input_id ids, const char *fw_version)
+{
+	const struct sinowealth_device_data *device_data = NULL;
+
+	ARRAY_FOR_EACH(sinowealth_supported_devices, device_data) {
+		if (device_data->vid != ids.vendor || device_data->pid != ids.product)
+			continue;
+
+		if (strneq(fw_version, device_data->fw_version, sizeof(device_data->fw_version)))
+			continue;
+
+		return device_data;
+	}
+
+	/* Return the last entry in `sinowealth_device_data` - a dummy. */
+	return device_data;
+}
+
 /* Initialize profiles for device `device`.
  *
  * @return 0 on success or an error code.
@@ -1400,58 +1525,13 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc)
 		return rc;
 
-	if (strncmp(fw_version, "V102", 4) == 0) {
-		log_info(device->ratbag, "Found a Glorious Model O (old firmware) or a Glorious Model D\n");
+	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device->ids, fw_version);
 
-		drv_data->button_count = 6;
-		drv_data->led_type = LED_RBG;
-		drv_data->sensor = PWM3360;
-	} else if (strncmp(fw_version, "V103", 4) == 0) {
-		log_info(device->ratbag, "Found a Glorious Model O/O- (updated firmware)\n");
+	drv_data->button_count = device_data->button_count;
+	drv_data->led_type = device_data->led_type;
+	drv_data->sensor = device_data->sensor_type;
 
-		drv_data->button_count = 6;
-		drv_data->led_type = LED_RBG;
-		drv_data->sensor = PWM3360;
-	} else if (strncmp(fw_version, "V161", 4) == 0) {
-		/* This matches both Classic and Ace versions. */
-		log_info(device->ratbag, "Found a G-Wolves Hati HT-M Wired\n");
-
-		drv_data->button_count = 6;
-		drv_data->led_type = LED_NONE;
-		/* Can also be PWM3389. */
-		drv_data->sensor = PWM3360;
-	} else if (strncmp(fw_version, "3105", 4) == 0) {
-		/* This matches both Classic and Ace versions. */
-		/* This mouse has no device file yet. */
-		log_info(device->ratbag, "Found a G-Wolves Hati HT-S Wired\n");
-
-		drv_data->button_count = 6;
-		drv_data->led_type = LED_NONE;
-		/* Can also be PWM3389. */
-		drv_data->sensor = PWM3360;
-	} else if (strncmp(fw_version, "3106", 4) == 0) {
-		log_info(device->ratbag, "Found a DreamMachines DM5 Blink\n");
-
-		drv_data->button_count = 8;
-		drv_data->led_type = LED_RGB;
-		drv_data->sensor = PWM3389;
-	} else if (strncmp(fw_version, "3110", 4) == 0) {
-		log_info(device->ratbag, "Found a Genesis Xenon 770\n");
-
-		/* Side buttons are detachable.
-		 * There can be either 3 or 9 buttons on the side.
-		 */
-		drv_data->button_count = 5 + 9;
-		drv_data->led_type = LED_RGB;
-		drv_data->sensor = PWM3327;
-	} else {
-		log_info(device->ratbag, "Found an unknown SinoWealth mouse\n");
-
-		/* These seem to be the most widely used values. */
-		drv_data->button_count = 6;
-		drv_data->led_type = LED_RBG;
-		drv_data->sensor = PWM3360;
-	}
+	log_info(device->ratbag, "Found device: %s\n", device_data->device_name);
 
 	/* LED count. */
 	drv_data->led_count = 0;
