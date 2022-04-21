@@ -411,7 +411,6 @@ struct sinowealth_data {
 	/* Whether the device uses REPORT_ID_CONFIG or REPORT_ID_CONFIG_LONG. */
 	bool is_long;
 	enum sinowealth_led_format led_type;
-	enum sinowealth_sensor sensor;
 	unsigned int button_count;
 	unsigned int config_size;
 	/* Cached profile index. This might be incorrect if profile index was changed by another program while we are running. */
@@ -602,7 +601,7 @@ static unsigned int
 sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 {
 	struct sinowealth_data *drv_data = device->drv_data;
-	enum sinowealth_sensor sensor = drv_data->sensor;
+	enum sinowealth_sensor sensor = drv_data->configs[0].sensor_type;
 
 	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360)
 		raw += 1;
@@ -620,7 +619,7 @@ static uint8_t
 sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 {
 	struct sinowealth_data *drv_data = device->drv_data;
-	enum sinowealth_sensor sensor = drv_data->sensor;
+	enum sinowealth_sensor sensor = drv_data->configs[0].sensor_type;
 
 	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= sinowealth_get_max_dpi_for_sensor(sensor));
 
@@ -1397,7 +1396,7 @@ static const struct sinowealth_device_data sinowealth_supported_devices[] = {
 		.fw_version = "V161",
 		.device_name = "G-Wolves Hati HT-M Wired",
 		.led_type = LED_NONE,
-		/* Can also be PWM3389. */
+		/* Can also be PMW3389. */
 		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
 		.vid = 0x258a,
 		.pid = 0x27,
@@ -1505,9 +1504,9 @@ sinowealth_init_profile(struct ratbag_device *device)
 	struct ratbag_resolution *resolution = NULL;
 
 	struct sinowealth_data *drv_data = device->drv_data;
-	/* We only use this to detect whether RGB effects are available,
-	 * so it doesn't matter which one we use. Technically they might
-	 * have different values in the checked slot.
+	/* We only use this to detect whether RGB effects are available and
+	 * what sensor is used so it doesn't matter which one we use.
+	 * Technically they might have different values in the checked slot.
 	 */
 	struct sinowealth_config_report *config = &drv_data->configs[0];
 
@@ -1529,7 +1528,6 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	drv_data->button_count = device_data->button_count;
 	drv_data->led_type = device_data->led_type;
-	drv_data->sensor = device_data->sensor_type;
 
 	log_info(device->ratbag, "Found device: %s\n", device_data->device_name);
 
@@ -1545,7 +1543,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	/* Number of DPIs = all DPIs from min to max (inclusive) and "0 DPI" as a special value
 	 * to signal a disabled DPI step.
 	 */
-	unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(drv_data->sensor) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
+	unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 2;
 
 	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
 
