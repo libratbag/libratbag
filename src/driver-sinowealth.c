@@ -1464,6 +1464,18 @@ static const struct sinowealth_device_data sinowealth_supported_devices[] = {
 		.button_count = 6,
 	},
 
+	/* 2581:1007 devices. */
+	{
+		.fw_version = "9677",
+		.device_name = "Marvo Scorpion G961",
+		.led_type = LED_RGB,
+		/* Official software allows up to 12000 DPI instead of 10200. */
+		.sensor_type = SINOWEALTH_SENSOR_PMW3327,
+		.vid = 0x258a,
+		.pid = 0x1007,
+		.button_count = 6,
+	},
+
 	/* Dummy device. Make sure it's the last entry. */
 	{
 		.fw_version = "0000",
