@@ -59,6 +59,12 @@ Run `meson configure builddir` to list the options.
 
 Running ratbagd as DBus-activated systemd service
 -------------------------------------------------
+Gentoo and OpenRC users only:
+
+If using a non root user, this user must be added to the games group.
+No further configuration appears to be required if the desktop profile is used and the dbus flag enabled globally.
+Make sure that dbus is set on run level default or started.
+https://wiki.gentoo.org/wiki/D-Bus
 
 To run ratbagd, simply run it as root `sudo ratbagd`. However,
 ratbagd is intended to run as dbus-activated systemd service and installs
@@ -85,8 +91,6 @@ And finally, to enable the service:
 This places the required symlink into the systemd directory so that dbus
 activation is possible.
 
-Gentoo and OpenRC users only:
-If using a non root user, this user must be added to the games group.
 
 The DBus Interface
 -------------------
