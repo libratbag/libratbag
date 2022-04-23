@@ -85,6 +85,9 @@ And finally, to enable the service:
 This places the required symlink into the systemd directory so that dbus
 activation is possible.
 
+Gentoo and OpenRC users only:
+If using a non root user, this user must be added to the games group.
+
 The DBus Interface
 -------------------
 
