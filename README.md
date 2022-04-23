@@ -63,8 +63,9 @@ Gentoo and OpenRC users only:
 
 If using a non root user, this user must be added to the games group.
 No further configuration appears to be required if the desktop profile is used and the dbus flag enabled globally.
-Make sure that dbus is set on run level default or started.
+Make sure that dbus is set on run level default or that the service is started.
 https://wiki.gentoo.org/wiki/D-Bus
+
 
 To run ratbagd, simply run it as root `sudo ratbagd`. However,
 ratbagd is intended to run as dbus-activated systemd service and installs
