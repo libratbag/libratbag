@@ -2244,8 +2244,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 {
 	struct hidpp20_onboard_profiles_info info = { 0 };
 	struct hidpp20_profiles *profiles;
-	int onboard_mode;
-	int rc;
+	int onboard_mode, active_profile_index, rc;
 
 	rc = hidpp20_onboard_profiles_get_profiles_desc(device, &info);
 	if (rc)
@@ -2269,6 +2268,12 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 			return rc;
 	}
 
+	rc = hidpp20_onboard_profiles_get_current_profile(device);
+	if (rc < 0)
+		return rc;
+
+	active_profile_index = rc;
+
 	profiles = zalloc(sizeof(struct hidpp20_profiles));
 	profiles->profiles = zalloc(info.profile_count * sizeof(struct hidpp20_profile));
 	profiles->sector_size = info.sector_size;
@@ -2280,6 +2285,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	profiles->num_leds = HIDPP20_LED_COUNT;
 	profiles->has_g_shift = (info.mechanical_layout & 0x03) == 0x02;
 	profiles->has_dpi_shift = ((info.mechanical_layout & 0x0c) >> 2) == 0x02;
+	profiles->active_profile_index = active_profile_index;
 	switch(info.various_info & 0x07) {
 	case 1:
 		profiles->corded = 1;
