@@ -2083,7 +2083,7 @@ hidpp20_onboard_profiles_set_onboard_mode(struct hidpp20_device *device,
 		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_SET_ONBOARD_MODE,
-		.msg.parameters[1] = onboard_mode,
+		.msg.parameters[0] = onboard_mode,
 	};
 
 	feature_index = hidpp_root_get_feature_idx(device,
