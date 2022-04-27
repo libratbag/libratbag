@@ -915,6 +915,7 @@ struct hidpp20_profiles {
 	uint8_t wireless;
 	uint8_t sector_count;
 	uint16_t sector_size;
+	uint8_t active_profile_index;
 	struct hidpp20_profile *profiles;
 };
 

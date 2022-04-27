@@ -1209,9 +1209,7 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 
 	profile->is_enabled = drv_data->profiles->profiles[profile->index].enabled;
 
-	profile->is_active = false;
-	if ((int)profile->index == hidpp20drv_current_profile(device))
-		profile->is_active = true;
+	profile->is_active = (profile->index == drv_data->profiles->active_profile_index);
 
 	if (profile->is_active)
 		dpi_index = hidpp20_onboard_profiles_get_current_dpi_index(drv_data->dev);
