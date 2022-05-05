@@ -329,16 +329,18 @@ if enable_tests
 	test('test-util', test_util)
 	test('test-iconv-helper', test_iconv_helper)
 
-	valgrind = find_program('valgrind')
-	valgrind_suppressions_file = join_paths(meson.source_root(), 'test', 'valgrind.suppressions')
-	add_test_setup('valgrind',
-		       exe_wrapper : [
-			       valgrind,
-			       '--leak-check=full',
-			       '--quiet',
-			       '--error-exitcode=3',
-			       '--suppressions=' + valgrind_suppressions_file ],
-		       timeout_multiplier: 5)
+	valgrind = find_program('valgrind', required : false)
+	if valgrind.found()
+		valgrind_suppressions_file = join_paths(meson.source_root(), 'test', 'valgrind.suppressions')
+		add_test_setup('valgrind',
+			       exe_wrapper : [
+				       valgrind,
+				       '--leak-check=full',
+				       '--quiet',
+				       '--error-exitcode=3',
+				       '--suppressions=' + valgrind_suppressions_file ],
+			       timeout_multiplier: 5)
+	endif
 endif
 
 #### ratbagd ####
