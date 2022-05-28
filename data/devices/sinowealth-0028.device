@@ -1,0 +1,5 @@
+[Device]
+# Titanwolf LAW
+Name=SINOWEALTH Game Mouse
+DeviceMatch=usb:258a:0028
+Driver=sinowealth
