@@ -1,0 +1,4 @@
+# Logitech MX Anywhere 3B
+[Device]
+Name=Logitech MX Anywhere 3B
+DeviceMatch=bluetooth:046d:b02d;usb:046d:c548
