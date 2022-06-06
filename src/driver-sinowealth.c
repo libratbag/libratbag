@@ -1497,7 +1497,7 @@ sinowealth_find_device_data(struct input_id ids, const char *fw_version)
 		if (device_data->vid != ids.vendor || device_data->pid != ids.product)
 			continue;
 
-		if (strneq(fw_version, device_data->fw_version, sizeof(device_data->fw_version)))
+		if (!strneq(fw_version, device_data->fw_version, sizeof(device_data->fw_version)))
 			continue;
 
 		return device_data;
