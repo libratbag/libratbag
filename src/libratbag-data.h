@@ -92,6 +92,16 @@ ratbag_device_data_hidpp20_get_report_rate(const struct ratbag_device_data *data
 enum hidpp20_quirk
 ratbag_device_data_hidpp20_get_quirk(const struct ratbag_device_data *data);
 
+/* SinoWealth */
+
+/*
+ * NOTE: Don't forget to check for NULL in fields of each device data entry.
+ *
+ * @return List of data for supported devices.
+ */
+const struct list *
+ratbag_device_data_sinowealth_get_supported_devices(const struct ratbag_device_data *data);
+
 /* SteelSeries */
 
 /**

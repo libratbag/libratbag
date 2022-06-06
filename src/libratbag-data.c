@@ -30,11 +30,13 @@
 #include <glib.h>
 #include <limits.h>
 
+#include "driver-sinowealth.h"
 #include "driver-steelseries.h"
 #include "libratbag.h"
 #include "libratbag-private.h"
 #include "libratbag-data.h"
 #include "hidpp20.h"
+#include "shared-macro.h"
 #include "usb-ids.h"
 
 #define GROUP_DEVICE "Device"
@@ -78,6 +80,10 @@ struct data_hidpp10 {
 	int led_count;
 };
 
+struct data_sinowealth {
+	struct list supported_devices;
+};
+
 struct data_steelseries {
 	int device_version;
 	int button_count;
@@ -98,6 +104,7 @@ struct ratbag_device_data {
 	union {
 		struct data_hidpp20 hidpp20;
 		struct data_hidpp10 hidpp10;
+		struct data_sinowealth sinowealth;
 		struct data_steelseries steelseries;
 	};
 
@@ -208,6 +215,56 @@ init_data_hidpp20(struct ratbag *ratbag,
 }
 
 static void
+init_data_sinowealth(struct ratbag *ratbag,
+		  GKeyFile *keyfile,
+		  struct ratbag_device_data *data)
+{
+	const char *devices_group = "Driver/sinowealth/devices/";
+
+	GError *error = NULL;
+
+	size_t group_count = 0;
+	_cleanup_(g_strfreevp) char **groups = g_key_file_get_groups(keyfile, &group_count);
+
+	list_init(&data->sinowealth.supported_devices);
+
+	for (size_t i = 0; i < group_count; ++i) {
+		const char *device_group = groups[i];
+		if (startswith(device_group, devices_group) == NULL)
+			continue;
+
+		struct sinowealth_device_data *device = zalloc(sizeof(struct sinowealth_device_data));
+
+		device->button_count = g_key_file_get_integer(keyfile, device_group, "ButtonCount", &error);
+		g_clear_error(&error);
+
+		device->device_name = g_key_file_get_string(keyfile, device_group, "DeviceName", &error);
+		g_clear_error(&error);
+
+		device->fw_version = g_key_file_get_string(keyfile, device_group, "FwVersion", &error);
+		g_clear_error(&error);
+
+		_cleanup_free_ char *led_type_str = g_key_file_get_string(keyfile, device_group, "LedType", &error);
+		if (led_type_str) {
+			if (streq(led_type_str, "RGB")) {
+				device->led_type = SINOWEALTH_LED_TYPE_RGB;
+			} else if (streq(led_type_str, "RBG")) {
+				device->led_type = SINOWEALTH_LED_TYPE_RBG;
+			} else if (streq(led_type_str, "None")) {
+				device->led_type = SINOWEALTH_LED_TYPE_NONE;
+			} else {
+				log_error(ratbag, "Unknown LED type '%s' in group '%s'\n", led_type_str, device_group);
+
+				device->led_type = SINOWEALTH_LED_TYPE_NONE;
+			}
+		}
+		g_clear_error(&error);
+
+		list_insert(&data->sinowealth.supported_devices, &device->link);
+	}
+}
+
+static void
 init_data_steelseries(struct ratbag *ratbag,
 		  GKeyFile *keyfile,
 		  struct ratbag_device_data *data)
@@ -287,7 +344,7 @@ static const struct driver_map {
 	{ LOGITECH_G300, "logitech_g300", NULL},
 	{ LOGITECH_G600, "logitech_g600", NULL},
 	{ STEELSERIES, "steelseries", init_data_steelseries },
-	{ SINOWEALTH, "sinowealth", NULL },
+	{ SINOWEALTH, "sinowealth", init_data_sinowealth },
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
 };
@@ -333,6 +390,18 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 		free(data->hidpp10.dpi_range);
 		free(data->hidpp10.profile_type);
 		break;
+	case SINOWEALTH: {
+		struct sinowealth_device_data *device_data = NULL;
+		struct sinowealth_device_data *device_data_next = NULL;
+
+		list_for_each_safe(device_data, device_data_next, &data->sinowealth.supported_devices, link) {
+			free(device_data->device_name);
+			free(device_data->fw_version);
+			free(device_data);
+		}
+
+		break;
+	}
 	case STEELSERIES:
 		if (data->steelseries.dpi_list) {
 			free(data->steelseries.dpi_list->entries);
@@ -654,6 +723,16 @@ ratbag_device_data_hidpp20_get_quirk(const struct ratbag_device_data *data)
 	assert(data->drivertype == HIDPP20);
 
 	return data->hidpp20.quirk;
+}
+
+/* SinoWealth */
+
+const struct list *
+ratbag_device_data_sinowealth_get_supported_devices(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == SINOWEALTH);
+
+	return &data->sinowealth.supported_devices;
 }
 
 /* SteelSeries */

@@ -1,0 +1,20 @@
+[Device]
+DeviceMatch=usb:258a:1007
+Driver=sinowealth
+Name=SinoWealth Generic Mouse (1007)
+
+# This does NOT work. See libratbag/libratbag#1296.
+# For future: ID of A3050 sensor is 0x2, and maximum DPI is 4000.
+#[Driver/sinowealth/devices/AntEsportsGM500]
+#ButtonCount=7
+#DeviceName=Ant Esports GM500
+#FwVersion=0910
+#LedType=RBG
+#SensorType=A3050
+
+[Driver/sinowealth/devices/MarvoScorpionG961]
+ButtonCount=6
+DeviceName=Marvo Scorpion G961
+FwVersion=9677
+LedType=RGB
+SensorType=PMW3327

@@ -21,6 +21,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "driver-sinowealth.h"
+
+#include "libratbag-data.h"
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 #include "shared-macro.h"
@@ -187,12 +190,6 @@ union sinowealth_dpis {
 	struct sinowealth_xy_independent_dpi independent[8];
 };
 _Static_assert(sizeof(union sinowealth_dpis) == sizeof(uint8_t[16]), "Invalid size");
-
-enum sinowealth_led_format {
-	LED_NONE,
-	LED_RBG,
-	LED_RGB,
-};
 
 /* Configuration data the way it's stored in mouse memory.
  * When we want to change a setting, we basically copy the entire mouse
@@ -651,12 +648,12 @@ sinowealth_raw_to_color(struct ratbag_device *device, struct sinowealth_color ra
 	switch (drv_data->led_type) {
 	/* Fall back to RBG if the LED type is incorrect. */
 	default:
-	case LED_RBG:
+	case SINOWEALTH_LED_TYPE_RBG:
 		color.red = raw_color.data[0];
 		color.green = raw_color.data[2];
 		color.blue = raw_color.data[1];
 		break;
-	case LED_RGB:
+	case SINOWEALTH_LED_TYPE_RGB:
 		color.red = raw_color.data[0];
 		color.green = raw_color.data[1];
 		color.blue = raw_color.data[2];
@@ -679,12 +676,12 @@ sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 	switch (drv_data->led_type) {
 	/* Fall back to RBG if the LED type is incorrect. */
 	default:
-	case LED_RBG:
+	case SINOWEALTH_LED_TYPE_RBG:
 		raw_color.data[0] = color.red;
 		raw_color.data[1] = color.blue;
 		raw_color.data[2] = color.green;
 		break;
-	case LED_RGB:
+	case SINOWEALTH_LED_TYPE_RGB:
 		raw_color.data[0] = color.red;
 		raw_color.data[1] = color.green;
 		raw_color.data[2] = color.blue;
@@ -1373,140 +1370,31 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 	macro->event_count = raw_event_count;
 }
 
-struct sinowealth_device_data {
-	const char fw_version[4];
-	const char *device_name;
-	enum sinowealth_led_format led_type;
-	/* Not necessarily the sensor used on the mouse, some mice may have
-	 * different sensers per the same model.
-	 * We may fall back to this value in the future if we ever find mice
-	 * with broken sensor type field.
-	 */
-	enum sinowealth_sensor sensor_type;
-	uint16_t pid;
-	uint16_t vid;
-	unsigned int button_count;
-};
 
-static const struct sinowealth_device_data sinowealth_supported_devices[] = {
-	/* 258a:0027 devices. */
-	{
-		.fw_version = "V102",
-		.device_name = "Glorious Model O (old firmware)",
-		.led_type = LED_RBG,
-		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
-		.vid = 0x258a,
-		.pid = 0x27,
-		.button_count = 6,
-	},
-	{
-		.fw_version = "V161",
-		.device_name = "G-Wolves Hati HT-M Wired",
-		.led_type = LED_NONE,
-		/* Can also be PMW3389. */
-		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
-		.vid = 0x258a,
-		.pid = 0x27,
-		.button_count = 6,
-	},
-	{
-		.fw_version = "3106",
-		.device_name = "DreamMachines DM5 Blink",
-		.led_type = LED_RGB,
-		.sensor_type = SINOWEALTH_SENSOR_PMW3389,
-		.vid = 0x258a,
-		.pid = 0x27,
-		.button_count = 8,
-	},
-	{
-		.fw_version = "3110",
-		.device_name = "Genesis Xenon 770",
-		.led_type = LED_RGB,
-		.sensor_type = SINOWEALTH_SENSOR_PMW3327,
-		.vid = 0x258a,
-		.pid = 0x27,
-		/* Side buttons are detachable.
-		 * There can be either 3 or 9 buttons on the side.
-		 */
-		.button_count = 5 + 9,
-	},
-
-	/* 258a:0033 devices. */
-	{
-		.fw_version = "V102",
-		.device_name = "Glorious Model D",
-		.led_type = LED_RBG,
-		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
-		.vid = 0x258a,
-		.pid = 0x33,
-		.button_count = 6,
-	},
-
-	/* 258a:0036 devices. */
-	{
-		.fw_version = "V103",
-		.device_name = "Glorious Model O/O- (updated firmware)",
-		.led_type = LED_RBG,
-		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
-		.vid = 0x258a,
-		.pid = 0x36,
-		.button_count = 6,
-	},
-
-	/* 258a:003E devices. */
-	{
-		/* Untested. */
-		/* This matches both Classic and Ace versions. */
-		.fw_version = "3105",
-		.device_name = "G-Wolves Hati HT-S Wired",
-		.led_type = LED_NONE,
-		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
-		.vid = 0x258a,
-		.pid = 0x3e,
-		.button_count = 6,
-	},
-
-	/* 2581:1007 devices. */
-	{
-		.fw_version = "9677",
-		.device_name = "Marvo Scorpion G961",
-		.led_type = LED_RGB,
-		/* Official software allows up to 12000 DPI instead of 10200. */
-		.sensor_type = SINOWEALTH_SENSOR_PMW3327,
-		.vid = 0x258a,
-		.pid = 0x1007,
-		.button_count = 6,
-	},
-
-	/* Dummy device. Make sure it's the last entry. */
-	{
-		.fw_version = "0000",
-		.device_name = "Generic SinoWealth Mouse",
-		.led_type = LED_RBG,
-		.sensor_type = SINOWEALTH_SENSOR_PMW3360,
-		.vid = 0xffff,
-		.pid = 0xffff,
-		.button_count = 6,
-	},
-};
-
+/*
+ * @return Supported device data for the device or `NULL`.
+ */
 static const struct sinowealth_device_data *
-sinowealth_find_device_data(struct input_id ids, const char *fw_version)
+sinowealth_find_device_data(struct ratbag_device *device, const char *fw_version)
 {
-	const struct sinowealth_device_data *device_data = NULL;
+	const struct ratbag_device_data *data = device->data;
 
-	ARRAY_FOR_EACH(sinowealth_supported_devices, device_data) {
-		if (device_data->vid != ids.vendor || device_data->pid != ids.product)
+	const struct list *supported_devices = ratbag_device_data_sinowealth_get_supported_devices(data);
+
+	struct sinowealth_device_data *device_data = NULL;
+	list_for_each(device_data, supported_devices, link) {
+		if (device_data->fw_version == NULL || device_data->device_name == NULL) {
+			log_error(device->ratbag, "Skipping invalid device data\n");
 			continue;
+		}
 
-		if (!strneq(fw_version, device_data->fw_version, sizeof(device_data->fw_version)))
+		if (!strneq(fw_version, device_data->fw_version, SINOWEALTH_FW_VERSION_LEN))
 			continue;
 
 		return device_data;
 	}
 
-	/* Return the last entry in `sinowealth_device_data` - a dummy. */
-	return device_data;
+	return NULL;
 }
 
 /* Initialize profiles for device `device`.
@@ -1543,7 +1431,12 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc)
 		return rc;
 
-	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device->ids, fw_version);
+	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device, fw_version);
+
+	if (device_data == NULL) {
+		log_error(device->ratbag, "Device with firmware version %s is not supported\n", fw_version);
+		return -1;
+	}
 
 	drv_data->button_count = device_data->button_count;
 	drv_data->led_type = device_data->led_type;
@@ -1552,7 +1445,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	/* LED count. */
 	drv_data->led_count = 0;
-	if (config->rgb_effect != RGB_NOT_SUPPORTED && drv_data->led_type != LED_NONE) {
+	if (config->rgb_effect != RGB_NOT_SUPPORTED && drv_data->led_type != SINOWEALTH_LED_TYPE_NONE) {
 		drv_data->led_count += 1;
 	}
 	/* We may want to account for the DPI LEDs in the future.

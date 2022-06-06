@@ -179,6 +179,7 @@ src_libratbag = [
 	'src/driver-steelseries.c',
 	'src/driver-steelseries.h',
 	'src/driver-sinowealth.c',
+	'src/driver-sinowealth.h',
 	'src/driver-sinowealth-nubwo.c',
 	'src/driver-test.c',
 	'src/libratbag.c',

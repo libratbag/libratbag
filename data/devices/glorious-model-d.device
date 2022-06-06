@@ -3,3 +3,9 @@ Name=Glorious Model D
 DeviceMatch=usb:258a:0033
 Driver=sinowealth
 
+[Driver/sinowealth/devices/GloriousModelD]
+ButtonCount=6
+DeviceName=Glorious Model D
+FwVersion=V102
+LedType=RBG
+SensorType=PMW3360
