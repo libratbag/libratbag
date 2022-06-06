@@ -31,6 +31,7 @@ import configparser
 # see the IDs from
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-ids.h#L772
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-logitech-dj.c#L1826
+# https://pwr-solaar.github.io/Solaar/devices.html
 logitech_receivers = [
     0xc50c,  # USB_DEVICE_ID_S510_RECEIVER
     0xc517,  # USB_DEVICE_ID_S510_RECEIVER_2
@@ -46,6 +47,7 @@ logitech_receivers = [
     0xc53a,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_POWERPLAY
     0xc545,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_2
     0xc547,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_3
+    0xc548,  # Bolt receiver
 ]
 RECEIVERS = ['usb:046d:{}'.format(r) for r in logitech_receivers]
 
