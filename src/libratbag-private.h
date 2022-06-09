@@ -51,7 +51,7 @@ void
 log_buffer(struct ratbag *ratbag,
 	enum ratbag_log_priority priority,
 	const char *header,
-	uint8_t *buf, size_t len);
+	const uint8_t *buf, size_t len);
 
 #define log_raw(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_RAW, __VA_ARGS__)
 #define log_debug(li_, ...) log_msg((li_), RATBAG_LOG_PRIORITY_DEBUG, __VA_ARGS__)

@@ -123,7 +123,7 @@ void
 log_buffer(struct ratbag *ratbag,
 	enum ratbag_log_priority priority,
 	const char *header,
-	uint8_t *buf, size_t len)
+	const uint8_t *buf, size_t len)
 {
 	_cleanup_free_ char *output_buf = NULL;
 	char *sep = "";
@@ -1942,7 +1942,6 @@ int
 ratbag_action_macro_num_keys(const struct ratbag_button_action *action)
 {
 	const struct ratbag_macro *macro = action->macro;
-
 	int count = 0;
 	for (int i = 0; i < MAX_MACRO_EVENTS; i++) {
 		struct ratbag_macro_event event = macro->events[i];
@@ -1965,7 +1964,7 @@ ratbag_action_keycode_from_macro(const struct ratbag_button_action *action,
 				 unsigned int *key_out,
 				 unsigned int *modifiers_out)
 {
-	struct ratbag_macro *macro = action->macro;
+	const struct ratbag_macro *macro = action->macro;
 	unsigned int key = KEY_RESERVED;
 	unsigned int modifiers = 0;
 	unsigned int i;
