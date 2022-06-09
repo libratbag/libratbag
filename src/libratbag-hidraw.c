@@ -1180,14 +1180,14 @@ static const unsigned int hid_consumer_mapping[] = {
 };
 
 unsigned int
-ratbag_hidraw_get_keycode_from_keyboard_usage(struct ratbag_device *device,
+ratbag_hidraw_get_keycode_from_keyboard_usage(const struct ratbag_device *device,
 					      uint8_t hid_code)
 {
 	return hid_keyboard_mapping[hid_code];
 }
 
 uint8_t
-ratbag_hidraw_get_keyboard_usage_from_keycode(struct ratbag_device *device, unsigned keycode)
+ratbag_hidraw_get_keyboard_usage_from_keycode(const struct ratbag_device *device, unsigned keycode)
 {
 	unsigned int j;
 
@@ -1200,14 +1200,14 @@ ratbag_hidraw_get_keyboard_usage_from_keycode(struct ratbag_device *device, unsi
 }
 
 unsigned int
-ratbag_hidraw_get_keycode_from_consumer_usage(struct ratbag_device *device,
+ratbag_hidraw_get_keycode_from_consumer_usage(const struct ratbag_device *device,
 					      uint16_t hid_code)
 {
 	return hid_consumer_mapping[hid_code];
 }
 
 uint16_t
-ratbag_hidraw_get_consumer_usage_from_keycode(struct ratbag_device *device, unsigned keycode)
+ratbag_hidraw_get_consumer_usage_from_keycode(const struct ratbag_device *device, unsigned keycode)
 {
 	unsigned int j;
 
@@ -1468,7 +1468,7 @@ ratbag_open_hidraw_index(struct ratbag_device *device, int endpoint_index, int h
 }
 
 static struct ratbag_hid_report *
-ratbag_hidraw_get_report(struct ratbag_device *device, unsigned int report_id)
+ratbag_hidraw_get_report(const struct ratbag_device *device, unsigned int report_id)
 {
 	unsigned i;
 
@@ -1489,13 +1489,13 @@ ratbag_hidraw_get_report(struct ratbag_device *device, unsigned int report_id)
 
 
 int
-ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id)
+ratbag_hidraw_has_report(const struct ratbag_device *device, unsigned int report_id)
 {
 	return ratbag_hidraw_get_report(device, report_id) != NULL;
 }
 
 unsigned int
-ratbag_hidraw_get_usage_page(struct ratbag_device *device, unsigned int report_id)
+ratbag_hidraw_get_usage_page(const struct ratbag_device *device, unsigned int report_id)
 {
 	struct ratbag_hid_report *report;
 
@@ -1508,7 +1508,7 @@ ratbag_hidraw_get_usage_page(struct ratbag_device *device, unsigned int report_i
 }
 
 unsigned int
-ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id)
+ratbag_hidraw_get_usage(const struct ratbag_device *device, unsigned int report_id)
 {
 	struct ratbag_hid_report *report;
 
@@ -1521,7 +1521,7 @@ ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id)
 }
 
 unsigned int
-ratbag_hidraw_has_vendor_page(struct ratbag_device *device)
+ratbag_hidraw_has_vendor_page(const struct ratbag_device *device)
 {
 	unsigned i;
 
@@ -1642,14 +1642,14 @@ ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t l
 }
 
 int
-ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len,
+ratbag_hidraw_read_input_report(const struct ratbag_device *device, uint8_t *buf, size_t len,
 				 ratbagd_hidraw_filter_t filter)
 {
 	return ratbag_hidraw_read_input_report_index(device, buf, len, 0, filter);
 }
 
 int
-ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno,
+ratbag_hidraw_read_input_report_index(const struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno,
 				 ratbagd_hidraw_filter_t filter)
 {
 	int rc, nfds;

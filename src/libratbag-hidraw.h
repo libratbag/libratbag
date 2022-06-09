@@ -173,7 +173,7 @@ int ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size
  *
  * @return count of data transferred, or a negative errno on error
  */
-int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len,
+int ratbag_hidraw_read_input_report(const struct ratbag_device *device, uint8_t *buf, size_t len,
 				 ratbagd_hidraw_filter_t filter);
 
 /**
@@ -188,7 +188,7 @@ int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, 
  *
  * @return count of data transferred, or a negative errno on error
  */
-int ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno,
+int ratbag_hidraw_read_input_report_index(const struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno,
 				 ratbagd_hidraw_filter_t filter);
 
 /**
@@ -200,7 +200,7 @@ int ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t 
  * @return 1 if the device has the given report id, 0 otherwise
  */
 int
-ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id);
+ratbag_hidraw_has_report(const struct ratbag_device *device, unsigned int report_id);
 
 /**
  * Gives the usage page of a report with the specified report ID.
@@ -212,7 +212,7 @@ ratbag_hidraw_has_report(struct ratbag_device *device, unsigned int report_id);
  * 0 otherwise
  */
 unsigned int
-ratbag_hidraw_get_usage_page(struct ratbag_device *device, unsigned int report_id);
+ratbag_hidraw_get_usage_page(const struct ratbag_device *device, unsigned int report_id);
 
 /**
  * Gives the usage of a report with the specified report ID.
@@ -224,7 +224,7 @@ ratbag_hidraw_get_usage_page(struct ratbag_device *device, unsigned int report_i
  * 0 otherwise
  */
 unsigned int
-ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id);
+ratbag_hidraw_get_usage(const struct ratbag_device *device, unsigned int report_id);
 
 /**
  * Tells if a given device has a vendor usage page
@@ -234,7 +234,7 @@ ratbag_hidraw_get_usage(struct ratbag_device *device, unsigned int report_id);
  * @return 1 if the device has a vendor usage page, 0 otherwise
  */
 unsigned int
-ratbag_hidraw_has_vendor_page(struct ratbag_device *device);
+ratbag_hidraw_has_vendor_page(const struct ratbag_device *device);
 
 /**
  * Gives the input key code associated to the keyboard HID usage.
@@ -242,7 +242,7 @@ ratbag_hidraw_has_vendor_page(struct ratbag_device *device);
  * @return the key code of the HID usage or 0.
  */
 unsigned int
-ratbag_hidraw_get_keycode_from_keyboard_usage(struct ratbag_device *device,
+ratbag_hidraw_get_keycode_from_keyboard_usage(const struct ratbag_device *device,
 					      uint8_t hid_code);
 
 /**
@@ -251,7 +251,7 @@ ratbag_hidraw_get_keycode_from_keyboard_usage(struct ratbag_device *device,
  * @return the HID keyboard usage or 0.
  */
 uint8_t
-ratbag_hidraw_get_keyboard_usage_from_keycode(struct ratbag_device *device,
+ratbag_hidraw_get_keyboard_usage_from_keycode(const struct ratbag_device *device,
 					      unsigned keycode);
 
 /**
@@ -260,7 +260,7 @@ ratbag_hidraw_get_keyboard_usage_from_keycode(struct ratbag_device *device,
  * @return the key code of the HID usage or 0.
  */
 unsigned int
-ratbag_hidraw_get_keycode_from_consumer_usage(struct ratbag_device *device,
+ratbag_hidraw_get_keycode_from_consumer_usage(const struct ratbag_device *device,
 					      uint16_t hid_code);
 
 /**
@@ -269,5 +269,5 @@ ratbag_hidraw_get_keycode_from_consumer_usage(struct ratbag_device *device,
  * @return the HID Consumer Control usage or 0.
  */
 uint16_t
-ratbag_hidraw_get_consumer_usage_from_keycode(struct ratbag_device *device,
+ratbag_hidraw_get_consumer_usage_from_keycode(const struct ratbag_device *device,
 					      unsigned keycode);
