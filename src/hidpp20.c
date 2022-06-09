@@ -1875,7 +1875,7 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 {
 	uint16_t offset;
 	uint8_t feature_index;
-	int rc, count;
+	int rc = 0;
 	union hidpp20_message buf;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_LONG,
@@ -1893,8 +1893,6 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 	msg.msg.sub_id = feature_index;
 	set_unaligned_be_u16(&msg.msg.parameters[0], sector);
 
-	count = sector_size;
-
 	for (offset = 0; offset < sector_size; offset += 16) {
 		/*
 		 * the firmware replies with an ERR_INVALID_ARGUMENT error
@@ -1910,13 +1908,6 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 
 		/* msg.msg.parameters is guaranteed to have a size >= 16 */
 		memcpy(data + offset, buf.msg.parameters, 16);
-
-		/*
-		 * no need to check for count >= 0:
-		 * if count is negative, then offset will be greater than
-		 * sector_size, thus stopping the loop.
-		 */
-		count -= 16;
 	}
 
 	return 0;
