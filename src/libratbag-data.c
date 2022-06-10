@@ -645,7 +645,8 @@ filter_device_files(const struct dirent *entry)
 {
 	const char *SUFFIX = ".device";
 	const char *name = entry->d_name;
-	int len, slen;
+	size_t len = 0;
+	size_t slen = 0;
 
 	if (!name || name[0] == '.')
 		return 0;
