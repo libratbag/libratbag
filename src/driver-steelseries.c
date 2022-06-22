@@ -335,6 +335,11 @@ steelseries_probe(struct ratbag_device *device)
 		return rc;
 
 	device_version = ratbag_device_data_steelseries_get_device_version(device->data);
+	if (device_version == -1) {
+		log_error(device->ratbag, "Device version not set\n");
+		return -EINVAL;
+	}
+
 	button_count = ratbag_device_data_steelseries_get_button_count(device->data);
 	if (button_count == -1)
 		button_count = 0;
