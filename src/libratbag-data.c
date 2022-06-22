@@ -124,22 +124,17 @@ init_data_hidpp10(struct ratbag *ratbag,
 	num = g_key_file_get_integer(keyfile, group, "DeviceIndex", &error);
 	if (num != 0 || !error)
 		data->hidpp10.index = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "Profiles", &error);
 	if (num > 0 || !error)
 		data->hidpp10.profile_count = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "Leds", &error);
 	if (num > 0 || !error)
 		data->hidpp10.led_count = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
 	profile_type = g_key_file_get_string(keyfile, group, "ProfileType", NULL);
 	if (profile_type)
@@ -173,29 +168,22 @@ init_data_hidpp20(struct ratbag *ratbag,
 	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
 	if (num > 0 || !error)
 		data->hidpp20.button_count = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "DeviceIndex", &error);
 	if (num != 0 || !error)
 		data->hidpp20.index = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "Leds", &error);
 	if (!error)
 		data->hidpp20.led_count = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "ReportRate", &error);
 	if (num > 0 || !error)
 		data->hidpp20.report_rate = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
 	str = g_key_file_get_string(keyfile, group, "Quirk", NULL);
 	data->hidpp20.quirk = HIDPP20_QUIRK_NONE;
@@ -228,22 +216,17 @@ init_data_steelseries(struct ratbag *ratbag,
 	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
 	if (num != 0 || !error)
 		data->steelseries.button_count = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "Leds", &error);
 	if (num > 0 || !error)
 		data->steelseries.led_count = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "DeviceVersion", &error);
 	if (num > 0 || !error)
 		data->steelseries.device_version = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
 	dpi_range = g_key_file_get_string(keyfile, group, "DpiRange", NULL);
 	if (dpi_range) {
@@ -254,12 +237,10 @@ init_data_steelseries(struct ratbag *ratbag,
 			data->steelseries.dpi_list = dpi_list_from_string(dpi_range);
 	}
 
-	error = NULL;
 	num = g_key_file_get_integer(keyfile, group, "MacroLength", &error);
 	if (num > 0 || !error)
 		data->steelseries.macro_length = num;
-	if (error)
-		g_error_free(error);
+	g_error_freep(&error);
 
 	quirk = g_key_file_get_string(keyfile, group, "Quirk", NULL);
 	if (quirk) {
