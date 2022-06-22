@@ -128,8 +128,10 @@ static inline void reset_errno(int *saved_errno)
 #define DEFINE_TRIVIAL_CLEANUP_FUNC(_type, _func)		\
 	static inline void _func##p(_type *_p)			\
 	{							\
-		if (*_p)					\
+		if (*_p) {					\
 			_func(*_p);				\
+			*_p = NULL;				\
+		}						\
 	}							\
 	struct __useless_struct_to_allow_trailing_semicolon__
 
