@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "libratbag-private.h"
+
 struct ratbag_device_data;
 
 struct ratbag_device_data *
