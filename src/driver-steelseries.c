@@ -141,8 +141,11 @@ steelseries_test_hidraw(struct ratbag_device *device)
 	 * and only the HID vendor device can be used to configure the
 	 * device.
 	 */
-	if (!ratbag_hidraw_has_vendor_page(device))
+	/*
+	if (!ratbag_hidraw_has_vendor_page(device)) {
 		return false;
+	}
+	*/
 
 	if (device_version > 1)
 		return ratbag_hidraw_has_report(device, STEELSERIES_REPORT_ID_1);
