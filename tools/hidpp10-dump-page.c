@@ -23,7 +23,6 @@
 
 #include <config.h>
 #include <errno.h>
-#include <error.h>
 #include <fcntl.h>
 
 #include <hidpp10.h>
@@ -94,8 +93,10 @@ main(int argc, char **argv)
 
 	path = argv[argc - 1];
 	fd = open(path, O_RDWR);
-	if (fd < 0)
-		error(1, errno, "Failed to open path %s", path);
+	if (fd < 0) {
+		fprintf(stderr, "Failed to open path '%s': %s", path, strerror(errno));
+		exit(3);
+	}
 
 	hidpp_device_init(&base, fd);
 	rc = hidpp10_device_new(&base, HIDPP_WIRED_DEVICE_IDX, HIDPP10_PROFILE_UNKNOWN, 5, &dev);

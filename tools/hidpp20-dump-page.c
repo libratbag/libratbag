@@ -23,7 +23,6 @@
 
 #include <config.h>
 #include <errno.h>
-#include <error.h>
 #include <fcntl.h>
 
 #include <hidpp20.h>
@@ -111,13 +110,17 @@ main(int argc, char **argv)
 
 	path = argv[argc - 1];
 	fd = open(path, O_RDWR);
-	if (fd < 0)
-		error(1, errno, "Failed to open path %s", path);
+	if (fd < 0) {
+		fprintf(stderr, "Failed to open path '%s': %s", path, strerror(errno));
+		exit(3);
+	}
 
 	hidpp_device_init(&base, fd);
 	dev = hidpp20_device_new(&base, 0xff, NULL, 0);
-	if (!dev)
-		error(1, 0, "Failed to open %s as a HID++ 2.0 device", path);
+	if (!dev) {
+		fprintf(stderr, "Failed to open %s as a HID++ 2.0 device", path);
+		exit(3);
+	}
 
 	hidpp20_onboard_profiles_get_profiles_desc(dev, &info);
 
