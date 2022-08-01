@@ -87,6 +87,8 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 /* Maximum amount of real events in a macro. */
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
 
+#define SINOWEALTH_FW_VERSION_LEN 4
+
 /* Bit mask for @ref sinowealth_config_report.config.
  *
  * This naming may be incorrect as it's not actually known what the other bits do.
@@ -1527,7 +1529,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 */
 	struct sinowealth_config_report *config = &drv_data->configs[0];
 
-	char fw_version[4];
+	char fw_version[SINOWEALTH_FW_VERSION_LEN] = { 0 };
 	rc = sinowealth_get_fw_version(device, fw_version);
 	if (rc)
 		return rc;
