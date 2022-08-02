@@ -1529,11 +1529,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 */
 	struct sinowealth_config_report *config = &drv_data->configs[0];
 
-	char fw_version[SINOWEALTH_FW_VERSION_LEN] = { 0 };
+	char fw_version[SINOWEALTH_FW_VERSION_LEN + 1] = { 0 };
 	rc = sinowealth_get_fw_version(device, fw_version);
 	if (rc)
 		return rc;
-	log_info(device->ratbag, "firmware version: %.4s\n", fw_version);
+	log_info(device->ratbag, "firmware version: %s\n", fw_version);
 
 	rc = sinowealth_read_raw_config(device);
 	if (rc)
