@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G502 X Wireless
+DeviceMatch=usb:046d:c098
+Driver=hidpp20
