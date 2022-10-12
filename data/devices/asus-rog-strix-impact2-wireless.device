@@ -1,0 +1,12 @@
+[Device]
+Name=ASUS ROG Strix Impact II Wireless
+DeviceMatch=usb:0b05:1947;usb:0b05:1949
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=8
+Leds=3
+Dpis=4
+Wireless=1
+DpiRange=100:16000@100

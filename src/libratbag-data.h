@@ -138,3 +138,53 @@ ratbag_device_data_steelseries_get_macro_length(const struct ratbag_device_data 
  */
 enum steelseries_quirk
 ratbag_device_data_steelseries_get_quirk(const struct ratbag_device_data *data);
+
+/* ASUS */
+
+/**
+ * @return Number of profiles
+ */
+int
+ratbag_device_data_asus_get_profile_count(const struct ratbag_device_data *data);
+
+/**
+ * @return Number of buttons
+ */
+int
+ratbag_device_data_asus_get_button_count(const struct ratbag_device_data *data);
+
+/**
+ * @return Array of button indices, which are used for reading and writing button actions
+ */
+const int8_t *
+ratbag_device_data_asus_get_button_mapping(const struct ratbag_device_data *data);
+
+/**
+ * @return Number of LEDs
+ */
+int
+ratbag_device_data_asus_get_led_count(const struct ratbag_device_data *data);
+
+/**
+ * @return Number of DPI presets
+ */
+int
+ratbag_device_data_asus_get_dpi_count(const struct ratbag_device_data *data);
+
+/**
+ * @return NULL if not set
+ */
+struct dpi_range *
+ratbag_device_data_asus_get_dpi_range(const struct ratbag_device_data *data);
+
+/**
+ * @return 1 if wireless, 0 otherwise
+ */
+int
+ratbag_device_data_asus_is_wireless(const struct ratbag_device_data *data);
+
+/**
+ * @return Quirks bitmask
+ */
+uint32_t
+ratbag_device_data_asus_get_quirks(const struct ratbag_device_data *data);

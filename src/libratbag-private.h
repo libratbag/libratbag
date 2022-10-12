@@ -568,6 +568,7 @@ extern struct ratbag_driver roccat_kone_pure_driver;
 extern struct ratbag_driver roccat_emp_driver;
 extern struct ratbag_driver gskill_driver;
 extern struct ratbag_driver steelseries_driver;
+extern struct ratbag_driver asus_driver;
 extern struct ratbag_driver sinowealth_driver;
 extern struct ratbag_driver sinowealth_nubwo_driver;
 extern struct ratbag_driver openinput_driver;

@@ -121,6 +121,18 @@ lib_libhidpp = static_library('hidpp',
 	dependencies : deps_libhidpp)
 dep_libhidpp = declare_dependency(link_with: lib_libhidpp)
 
+### libasus.a ####
+src_libasus = [
+	'src/asus.c',
+]
+
+deps_libasus = [ ]
+
+lib_libasus = static_library('asus',
+	src_libasus,
+	dependencies : deps_libasus)
+dep_libasus = declare_dependency(link_with: lib_libasus)
+
 ### liblur ####
 #
 # liblur is the library to handle logitech unifying receivers.
@@ -135,6 +147,7 @@ src_liblur = [
 deps_liblur = [
 	dep_libutil,
 	dep_libhidpp,
+	dep_libasus,
 ]
 
 lur_mapfile = 'src/liblur.sym'
@@ -166,6 +179,7 @@ pkgconfig.generate (
 src_libratbag = [
 	'src/libratbag-enums.h',
 	'src/libratbag.h',
+	'src/driver-asus.c',
 	'src/driver-etekcity.c',
 	'src/driver-hidpp20.c',
 	'src/driver-hidpp10.c',
@@ -201,6 +215,7 @@ deps_libratbag = [
 	dep_json_glib,
 	dep_libutil,
 	dep_libhidpp,
+	dep_libasus,
 ]
 
 lib_libratbag = static_library('ratbag',

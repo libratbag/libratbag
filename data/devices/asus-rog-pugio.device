@@ -1,0 +1,14 @@
+[Device]
+Name=ASUS ROG Pugio
+DeviceMatch=usb:0b05:1846
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=10
+Leds=3
+Dpis=2
+DpiRange=100:7200@100
+
+# Mappings the same as the Gladius II but with an extra 2 buttons
+ButtonMapping=0;1;2;7;8;5;3;4;9;10

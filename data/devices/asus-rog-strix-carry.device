@@ -1,0 +1,13 @@
+[Device]
+Name=ASUS ROG Strix Carry
+DeviceMatch=usb:0b05:18b4
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=8
+Leds=0
+Dpis=2
+Wireless=1
+DpiRange=100:7200@100
+Quirks=STRIX_PROFILE

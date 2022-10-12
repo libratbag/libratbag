@@ -52,3 +52,29 @@ Leds=1
 # The HID++ 2.0 device index
 # Should be unset unless required
 # DeviceIndex=1
+
+
+[Driver/asus]
+# Number of profiles
+Profiles=3
+
+# Number of buttons
+Buttons=8
+
+# Number of LEDs
+Leds=3
+
+# Number of DPI presets
+Dpis=2
+
+# Set if device is wireless
+# Wireless=1
+
+# DPI range in format min:max@step
+DpiRange=100:16000@100
+
+# Button index mapping
+# ButtonMapping=0;1;2;6;7;5;3;4
+
+# Device quirks
+# Quirk=DOUBLE_DPI;STRIX_PROFILE

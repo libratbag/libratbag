@@ -30,6 +30,7 @@
 #include <glib.h>
 #include <limits.h>
 
+#include "asus.h"
 #include "driver-sinowealth.h"
 #include "driver-steelseries.h"
 #include "libratbag.h"
@@ -57,6 +58,7 @@ enum driver {
 	LOGITECH_G300,
 	LOGITECH_G600,
 	STEELSERIES,
+	ASUS,
 	SINOWEALTH,
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
@@ -94,6 +96,17 @@ struct data_steelseries {
 	enum steelseries_quirk quirk;
 };
 
+struct data_asus {
+	int profile_count;
+	int button_count;
+	int8_t button_mapping[ASUS_MAX_NUM_BUTTON];
+	int led_count;
+	int dpi_count;
+	int is_wireless;
+	struct dpi_range *dpi_range;
+	uint32_t quirks;
+};
+
 struct ratbag_device_data {
 	int refcount;
 	char *name;
@@ -106,6 +119,7 @@ struct ratbag_device_data {
 		struct data_hidpp10 hidpp10;
 		struct data_sinowealth sinowealth;
 		struct data_steelseries steelseries;
+		struct data_asus asus;
 	};
 
 	enum ratbag_led_type led_types[20];
@@ -327,6 +341,79 @@ init_data_steelseries(struct ratbag *ratbag,
 	}
 }
 
+static void
+init_data_asus(struct ratbag *ratbag,
+		GKeyFile *keyfile,
+		struct ratbag_device_data *data)
+{
+	const char *group = "Driver/asus";
+	GError *error = NULL;
+
+	data->asus.profile_count = -1;
+	data->asus.button_count = -1;
+	data->asus.led_count = -1;
+	data->asus.dpi_count = -1;
+	data->asus.dpi_range = NULL;
+	data->asus.is_wireless = -1;
+	data->asus.quirks = 0;
+	for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON; i++)
+		data->asus.button_mapping[i] = -1;
+
+	int profiles = g_key_file_get_integer(keyfile, group, "Profiles", &error);
+	if (!error && profiles >= 0)
+		data->asus.profile_count = profiles;
+	g_clear_error(&error);
+
+	int buttons = g_key_file_get_integer(keyfile, group, "Buttons", &error);
+	if (!error && buttons >= 0 && buttons <= ASUS_MAX_NUM_BUTTON)
+		data->asus.button_count = buttons;
+	g_clear_error(&error);
+
+	gsize button_mapping_count = 0;
+	_cleanup_(g_strfreevp) char **button_mapping = g_key_file_get_string_list(keyfile, group, "ButtonMapping", &button_mapping_count, &error);
+	if (!error && button_mapping) {
+		for (unsigned int i = 0; i < button_mapping_count; i++) {
+			data->asus.button_mapping[i] = (int8_t) strtoul(button_mapping[i], NULL, 10);
+		}
+	}
+	g_clear_error(&error);
+
+        int leds = g_key_file_get_integer(keyfile, group, "Leds", &error);
+	if (!error && leds >= 0 && leds <= ASUS_MAX_NUM_LED)
+		data->asus.led_count = leds;
+	g_clear_error(&error);
+
+        int dpis = g_key_file_get_integer(keyfile, group, "Dpis", &error);
+	if (!error && dpis >= 2 && dpis <= ASUS_MAX_NUM_DPI)
+		data->asus.dpi_count = dpis;
+	g_clear_error(&error);
+
+	_cleanup_(freep) char *dpi_range = g_key_file_get_string(keyfile, group, "DpiRange", &error);
+	if (!error && dpi_range)
+		data->asus.dpi_range = dpi_range_from_string(dpi_range);
+	g_clear_error(&error);
+
+        int wireless = g_key_file_get_integer(keyfile, group, "Wireless", &error);
+	if (!error && (wireless == 0 || wireless == 1))
+		data->asus.is_wireless = wireless;
+	g_clear_error(&error);
+
+        gsize quirks_count = 0;
+	_cleanup_(g_strfreevp) char **quirks = g_key_file_get_string_list(keyfile, group, "Quirks", &quirks_count, &error);
+	if (!error && quirks) {
+		for (unsigned int i = 0; i < quirks_count; i++) {
+			if (streq(quirks[i], "DOUBLE_DPI")) {
+				data->asus.quirks |= ASUS_QUIRK_DOUBLE_DPI;
+			} else if (streq(quirks[i], "STRIX_PROFILE")) {
+				data->asus.quirks |= ASUS_QUIRK_STRIX_PROFILE;
+			} else {
+				log_debug(ratbag, "%s is invalid quirk. Ignoring...\n", quirks[i]);
+			}
+		}
+	}
+	g_clear_error(&error);
+}
+
 static const struct driver_map {
 	enum driver map;
 	const char *driver;
@@ -344,6 +431,7 @@ static const struct driver_map {
 	{ LOGITECH_G300, "logitech_g300", NULL},
 	{ LOGITECH_G600, "logitech_g600", NULL},
 	{ STEELSERIES, "steelseries", init_data_steelseries },
+	{ ASUS, "asus", init_data_asus },
 	{ SINOWEALTH, "sinowealth", init_data_sinowealth },
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
@@ -791,4 +879,62 @@ ratbag_device_data_steelseries_get_quirk(const struct ratbag_device_data *data)
 	assert(data->drivertype == STEELSERIES);
 
 	return data->steelseries.quirk;
+}
+
+/* ASUS */
+
+int
+ratbag_device_data_asus_get_profile_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.profile_count;
+}
+
+int
+ratbag_device_data_asus_get_button_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.button_count;
+}
+
+const int8_t *
+ratbag_device_data_asus_get_button_mapping(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.button_mapping;
+}
+
+int
+ratbag_device_data_asus_get_led_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.led_count;
+}
+
+int
+ratbag_device_data_asus_get_dpi_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.dpi_count;
+}
+
+struct dpi_range *
+ratbag_device_data_asus_get_dpi_range(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.dpi_range;
+}
+
+int
+ratbag_device_data_asus_is_wireless(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.is_wireless;
+}
+
+uint32_t
+ratbag_device_data_asus_get_quirks(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.quirks;
 }

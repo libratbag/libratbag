@@ -1,0 +1,11 @@
+[Device]
+Name=ASUS ROG GX860 Buzzard Mouse
+DeviceMatch=usb:0b05:1816
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=10
+Leds=0
+Dpis=2
+DpiRange=100:8200@100

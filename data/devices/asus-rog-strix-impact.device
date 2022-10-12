@@ -1,0 +1,11 @@
+[Device]
+Name=ASUS ROG Strix Impact
+DeviceMatch=usb:0b05:1847
+Driver=asus
+
+[Driver/asus]
+Profiles=0
+Buttons=6
+Leds=1
+Dpis=2
+DpiRange=100:5000@100
