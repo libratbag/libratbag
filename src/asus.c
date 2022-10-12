@@ -21,13 +21,14 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-
 #include "config.h"
-#include "libratbag-private.h"
-#include "libratbag-data.h"
 
 #include "asus.h"
+
+#include <assert.h>
+
+#include "libratbag-data.h"
+#include "libratbag-private.h"
 
 /* ASUS commands */
 #define ASUS_CMD_GET_LED_DATA		0x0312  /* get all LEDs */
