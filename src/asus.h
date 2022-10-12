@@ -139,24 +139,24 @@ asus_find_button_by_action(struct ratbag_button_action action);
 struct asus_button *
 asus_find_button_by_code(uint8_t asus_code);
 
-extern int
+int
 asus_find_key_code(unsigned int linux_code);
 
-extern int
+int
 asus_get_linux_key_code(uint8_t asus_code);
 
 /* initializers of ratbag data */
 
-extern void
+void
 asus_setup_profile(struct ratbag_device *device, struct ratbag_profile *profile);
 
-extern void
+void
 asus_setup_button(struct ratbag_device *device, struct ratbag_button *button);
 
-extern void
+void
 asus_setup_resolution(struct ratbag_device *device, struct ratbag_resolution *resolution);
 
-extern void
+void
 asus_setup_led(struct ratbag_device *device, struct ratbag_led *led);
 
 /* generic i/o */
