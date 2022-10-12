@@ -13,7 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/pkginstall
         with:
           apt: $UBUNTU_DEP_BUILD

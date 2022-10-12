@@ -21,7 +21,7 @@ jobs:
           - '-Dbuildtype=release'
           - '-Ddocumentation=true'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/pkginstall
         with:
           apt: $UBUNTU_DEP_BUILD $UBUNTU_DEP_TEST
@@ -41,7 +41,7 @@ jobs:
       - name: check if any files are left after uninstall
         run: (test -d _instdir && tree _instdir && exit 1) || exit 0
       # Capture all the meson logs, even if we failed
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ always() }}  # even if we fail
         with:
           name: meson test logs
