@@ -1294,8 +1294,18 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 	memset(&macro->events, 0, sizeof(macro->events));
 
 	unsigned int raw_event_count = 0;
-	for (unsigned int i = 0; i < MAX_MACRO_EVENTS && raw_event_count < SINOWEALTH_MACRO_LENGTH_MAX; ++i) {
+	for (unsigned int i = 0; i < MAX_MACRO_EVENTS; ++i) {
 		struct ratbag_macro_event *event = &action->macro->events[i];
+
+		if (raw_event_count >= SINOWEALTH_MACRO_LENGTH_MAX) {
+			log_error(device->ratbag, "There are more events in the macro than the mouse supports\n");
+
+			/* Update the type of this event so that libratbag ignores
+			 * unused events.
+			 */
+			event->type = RATBAG_MACRO_EVENT_NONE;
+			break;
+		};
 
 		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
 			break;
