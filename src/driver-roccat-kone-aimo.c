@@ -43,10 +43,10 @@
 #define ROCCAT_MAX_RETRY_READY			10
 
 #define ROCCAT_REPORT_ID_CONFIGURE_PROFILE	4
-#define ROCCAT_REPORT_ID_PROFILE			5
-#define ROCCAT_REPORT_ID_SETTINGS			6
+#define ROCCAT_REPORT_ID_PROFILE		5
+#define ROCCAT_REPORT_ID_SETTINGS		6
 #define ROCCAT_REPORT_ID_KEY_MAPPING		7
-#define ROCCAT_REPORT_ID_MACRO				8
+#define ROCCAT_REPORT_ID_MACRO			8
 
 #define ROCCAT_REPORT_SIZE_PROFILE		75
 #define ROCCAT_REPORT_SIZE_SETTINGS		126
@@ -55,7 +55,7 @@
 #define ROCCAT_CONFIG_SETTINGS			0x80
 #define ROCCAT_CONFIG_KEY_MAPPING		0x90
 
-#define ROCCAT_MAX_MACRO_LENGTH				480
+#define ROCCAT_MAX_MACRO_LENGTH			480
 #define ROCCAT_MAX_MACRO_PAGE1_LENGTH		237
 #define ROCCAT_MAX_MACRO_PAGE2_LENGTH		243
 #define ROCCAT_MAX_MACRO_PAGE2_TERMINATOR	0x4A
@@ -662,7 +662,7 @@ roccat_write_macro(struct ratbag_button *button,
 	}
 
 	macroP1->reportID = ROCCAT_REPORT_ID_MACRO;
-	
+
 	macroP1->page = 0x01;
 	macroP1->profile = button->profile->index;
 	macroP1->button_index = button->index;
@@ -674,7 +674,7 @@ roccat_write_macro(struct ratbag_button *button,
 	macroP2->reportID = ROCCAT_REPORT_ID_MACRO;
 	macroP2->profile = button->profile->index;
 	macroP2->page = 0x02;
-	
+
 	macroP2->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_MACRO*2);
 	macroP2->terminator = 0x4A;
 
