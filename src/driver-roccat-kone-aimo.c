@@ -706,11 +706,11 @@ roccat_write_macro(struct ratbag_button *button,
 	macro.msg.page2.msg.profile = button->profile->index;
 	macro.msg.page2.msg.page = 0x02;
 
-	macro.msg.page2.msg.checksum = roccat_compute_crc(&macro.data, sizeof(macro.data));
+	macro.msg.page2.msg.checksum = roccat_compute_crc(macro.data, sizeof(macro.data));
 	macro.msg.page2.msg.terminator = 0x4A;
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-				&macro.msg.page1.data, ROCCAT_REPORT_SIZE_MACRO);
+				macro.msg.page1.data, ROCCAT_REPORT_SIZE_MACRO);
 	if (rc < 0) {
 		return rc;
 	}
@@ -728,7 +728,7 @@ roccat_write_macro(struct ratbag_button *button,
 	}
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-				&macro.msg.page2.data, ROCCAT_REPORT_SIZE_MACRO);
+				macro.msg.page2.data, ROCCAT_REPORT_SIZE_MACRO);
 	if (rc < 0) {
 		return rc;
 	}
