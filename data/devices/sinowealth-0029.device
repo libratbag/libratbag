@@ -1,0 +1,12 @@
+[Device]
+DeviceMatch=usb:258a:0029
+Driver=sinowealth
+Name=SinoWealth Generic Mouse (0029)
+
+# Configuration data size is 131 bytes.
+[Driver/sinowealth/devices/MachenikeM620]
+ButtonCount=6
+DeviceName=Machenike M620
+FwVersion=V127
+LedType=RGB
+SensorType=PMW3389
