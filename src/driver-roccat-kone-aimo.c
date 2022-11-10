@@ -64,6 +64,8 @@
 
 #define ROCCAT_SETTINGS_DATA_LENGTH         126
 #define ROCCAT_KEY_MAPPING_DATA_LENGTH      75
+#define ROCCAT_REPORT_SIZE_BUTTONS          75
+#define ROCCAT_REPORT_SIZE_SETTINGS	    126
 
 #define ROCCAT_BANK_ID_1    1
 #define ROCCAT_BANK_ID_2    2
@@ -140,8 +142,7 @@ struct roccat_settings_report {
 	uint8_t padding[6];
 	uint16_t checksum;
 } __attribute__((packed));
-#define ROCCAT_REPORT_SIZE_SETTINGS sizeof(struct roccat_settings_report)
-_Static_assert(sizeof(struct roccat_settings_report) == ROCCAT_SETTINGS_DATA_LENGTH, "Size of roccat_buttons is wrong");
+_Static_assert(sizeof(struct roccat_settings_report) == ROCCAT_REPORT_SIZE_SETTINGS, "Size of roccat_buttons is wrong");
 
 struct roccat_macro {
 	uint8_t report_id;                           // 0x08
@@ -157,8 +158,12 @@ struct roccat_macro {
 		uint8_t flag;                       // Pressed (0x01) or released (0x02)
 		uint16_t time;		            // Fixed delay in milliseconds
 	} keys[ROCCAT_MAX_MACRO_LENGTH];
+	uint16_t checksum;  // This is the checksum of both pages of keys.
+	uint8_t terminator; // always 0x4A
+	uint8_t padding_end[48]; // We don't use the entire 1026 byte buffer.
 } __attribute__((packed));
-_Static_assert(sizeof(struct roccat_macro) == ROCCAT_REPORT_SIZE_MACRO_BANK+971+2, "Size of roccat_macro is wrong");
+_Static_assert(sizeof(struct roccat_macro) == ROCCAT_REPORT_SIZE_MACRO_BANK*2-2, "Size of roccat_macro is wrong");
+// -2 is for the missing button_index and repeats bytes on the second bank.
 
 struct button {
 	uint8_t keycode;
@@ -171,8 +176,7 @@ struct roccat_buttons {
 	uint8_t profile;
 	struct button keys[ROCCAT_BUTTON_MAX];
 } __attribute__((packed));
-#define ROCCAT_REPORT_SIZE_BUTTONS sizeof(struct roccat_buttons)
-_Static_assert(sizeof(struct roccat_buttons) == ROCCAT_KEY_MAPPING_DATA_LENGTH, "Size of roccat_buttons is wrong");
+_Static_assert(sizeof(struct roccat_buttons) == ROCCAT_REPORT_SIZE_BUTTONS, "Size of roccat_buttons is wrong");
 
 struct roccat_data {
 	struct roccat_buttons buttons[(ROCCAT_PROFILE_MAX)];
@@ -189,27 +193,29 @@ static const struct roccat_button_type_mapping roccat_button_type_mapping[] = {
 	{ 0, RATBAG_BUTTON_TYPE_LEFT },
 	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
 	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_THUMB },                // Up
-	{ 4, RATBAG_BUTTON_TYPE_THUMB2 },               // Down
-	{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 7, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 8, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 9, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 10, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+	{ 3, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+	{ 4, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+	{ 5, RATBAG_BUTTON_TYPE_WHEEL_UP },
+	{ 6, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+	{ 7, RATBAG_BUTTON_TYPE_EXTRA },
+	{ 8, RATBAG_BUTTON_TYPE_SIDE },
+	{ 9, RATBAG_BUTTON_TYPE_THUMB },
+	{ 10, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+	{ 11, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
 
-	// Easy shift+, these buttons are not physical
-	{ 11, RATBAG_BUTTON_TYPE_LEFT },
-	{ 12, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 13, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 14, RATBAG_BUTTON_TYPE_THUMB },                // Up
-	{ 15, RATBAG_BUTTON_TYPE_THUMB2 },               // Down
-	{ 16, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 17, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 18, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 19, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 20, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 21, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+	// Easy Shift+, these buttons are not physical
+	{ 12, RATBAG_BUTTON_TYPE_LEFT },
+	{ 13, RATBAG_BUTTON_TYPE_RIGHT },
+	{ 14, RATBAG_BUTTON_TYPE_MIDDLE },
+	{ 15, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+	{ 16, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+	{ 17, RATBAG_BUTTON_TYPE_WHEEL_UP },
+	{ 18, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+	{ 19, RATBAG_BUTTON_TYPE_EXTRA },
+	{ 20, RATBAG_BUTTON_TYPE_SIDE },
+	{ 21, RATBAG_BUTTON_TYPE_THUMB },
+	{ 22, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+ 	{ 23, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
 };
 
 static enum ratbag_button_type
@@ -949,7 +955,8 @@ roccat_read_button(struct ratbag_button *button)
 					button->profile->index);
 			goto out_macro;
 		}
-		// No checksum for macros
+
+		//roccat_crc_is_valid(device, (uint8_t*)macro, sizeof(struct roccat_macro), &macro->crc);
 
 		roccat_read_macro(macro, button);
 
