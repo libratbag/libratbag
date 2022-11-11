@@ -1,0 +1,52 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ 'master' ]
+  pull_request:
+    branches: [ 'master' ]
+  schedule:
+    - cron: '39 18 * * 0'
+
+env:
+  UBUNTU_DEP_BUILD: |
+    gcc g++ pkg-config systemd libevdev-dev libglib2.0-dev
+    libjson-glib-dev libsystemd-dev libudev-dev libunistring-dev
+    python3-dev python3-evdev swig python3-sphinx
+  UBUNTU_DEP_TEST: python3-gi python3-lxml
+  PIP_PACKAGES: meson ninja libevdev pyudev sphinx_rtd_theme
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-20.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - uses: ./.github/actions/pkginstall
+      with:
+        apt: $UBUNTU_DEP_BUILD $UBUNTU_DEP_TEST
+        pip: $PIP_PACKAGES
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp, python
+
+        queries: +security-and-quality
+
+    - name: Build
+      uses: ./.github/actions/meson
+      with:
+        meson_args: --prefix=$PWD/_instdir -Ddocumentation=true -Dtests=false
+        meson_skip_test: true
+        ninja_args: all
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
