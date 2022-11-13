@@ -500,6 +500,7 @@ class RatbagdButton(metaclass=MetaRatbag):
         NONE = libratbag.RATBAG_BUTTON_ACTION_TYPE_NONE
         BUTTON = libratbag.RATBAG_BUTTON_ACTION_TYPE_BUTTON
         SPECIAL = libratbag.RATBAG_BUTTON_ACTION_TYPE_SPECIAL
+        KEY = libratbag.RATBAG_BUTTON_ACTION_TYPE_KEY
         MACRO = libratbag.RATBAG_BUTTON_ACTION_TYPE_MACRO
 
     class ActionSpecial(IntEnum):
@@ -626,6 +627,14 @@ class RatbagdButton(metaclass=MetaRatbag):
         @param special The special entry, as one of RatbagdButton.ActionSpecial
         """
         libratbag.ratbag_button_set_special(self._button, special)
+
+    @property
+    def key(self):
+        return libratbag.ratbag_button_get_key(self._button, None, None)
+
+    @key.setter
+    def key(self, key):
+        libratbag.ratbag_button_set_key(self._button, key, None, 0)
 
     @property
     def action_type(self):

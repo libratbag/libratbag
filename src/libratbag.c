@@ -1294,7 +1294,8 @@ ratbag_button_get_key(struct ratbag_button *button,
 		return 0;
 
 	/* FIXME: modifiers */
-	*sz = 0;
+	if (sz != NULL)
+		*sz = 0;
 	return button->action.action.key.key;
 }
 

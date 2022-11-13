@@ -163,6 +163,8 @@ def print_button(d, p, b, level):
         print("{}'button {}'".format(header, b.mapping))
     elif b.action_type == RatbagdButton.ActionType.SPECIAL:
         print("{}'{}'".format(header, button_specials_strmap[b.special]))
+    elif b.action_type == RatbagdButton.ActionType.KEY:
+        print("{}key '{}'".format(header, str(b.key)))
     elif b.action_type == RatbagdButton.ActionType.MACRO:
         print("{}macro '{}'".format(header, str(b.macro)))
     elif b.action_type == RatbagdButton.ActionType.NONE:
@@ -322,6 +324,17 @@ def func_button_action_set_special(r, args):
         pass
     else:
         b.special = button_specials_strmap[special]
+    commit(d, args)
+
+
+def func_button_action_set_key(r, args):
+    b, p, d = find_button(r, args)
+    try:
+        key = args.target_key
+    except AttributeError:
+        pass
+    else:
+        b.key = key
     commit(d, args)
 
 
@@ -963,6 +976,20 @@ active profile if none is given.""",
                                         },
                                     ],
                                     func: func_button_action_set_special,
+                                },
+                                {
+                                    of_type: command,
+                                    name: 'key',
+                                    help_str: 'Set the button action to key',
+                                    pos_args: [
+                                        {
+                                            of_type: argument,
+                                            name: 'target_key',
+                                            metavar: 'S',
+                                            help_str: 'The new key value to assign',
+                                        },
+                                    ],
+                                    func: func_button_action_set_key,
                                 },
                                 {
                                     of_type: command,
