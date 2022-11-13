@@ -37,16 +37,16 @@
 
 #include "asus.h"
 
-/* ButtonMapping configuration property defaults, stores indices for ASUS_BUTTON_MAPPING */
-static int8_t ASUS_BUTTON_MAPPING_INDEX[] = {
-	0,  /* left */
-	1,  /* right (button 3 in xev) */
-	2,  /* middle (button 2 in xev) */
-	6,  /* wheel up */
-	7,  /* wheel down */
-	5,  /* DPI */
-	3,  /* backward */
-	4,  /* forward */
+/* ButtonMapping configuration property defaults */
+static int8_t ASUS_CONFIG_BUTTON_MAPPING[] = {
+	0xf0,  /* left */
+	0xf1,  /* right (button 3 in xev) */
+	0xf2,  /* middle (button 2 in xev) */
+	0xe4,  /* backward */
+	0xe5,  /* forward */
+	0xe6,  /* DPI */
+	0xe8,  /* wheel up */
+	0xe9,  /* wheel down */
 	-1,  /* placeholder */
 	-1,  /* placeholder */
 	-1,  /* placeholder */
@@ -69,13 +69,14 @@ static unsigned int ASUS_LED_MODE[] = {
 
 struct asus_data {
 	uint8_t is_ready;
+	int8_t button_mapping[ASUS_MAX_NUM_BUTTON];
+	int button_indices[ASUS_MAX_NUM_BUTTON];
 };
 
 static int
 asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *profile)
 {
 	int rc;
-	const int8_t *bmi = ratbag_device_data_asus_get_button_mapping(device->data);
 	struct _asus_binding *asus_binding;
 	struct _asus_led *asus_led;
 	struct asus_button *asus_button;
@@ -86,6 +87,7 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 	union asus_led_data led_data;
 	union asus_resolution_data resolution_data;
 	unsigned int dpi_count = ratbag_device_get_profile(device, 0)->num_resolutions;
+	struct asus_data *drv_data = ratbag_get_drv_data(device);
 
 	/* get buttons */
 
@@ -95,7 +97,7 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 		return rc;
 
 	ratbag_profile_for_each_button(profile, button) {
-		int asus_index = bmi[button->index] != -1 ? bmi[button->index] : ASUS_BUTTON_MAPPING_INDEX[button->index];
+		int asus_index = drv_data->button_indices[button->index];
 		if (asus_index == -1) {
 			log_debug(device->ratbag, "No mapping for button %d\n", button->index);
 			continue;
@@ -189,50 +191,51 @@ static int
 asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *profile)
 {
 	int rc = 0;
-	const int8_t *bmi = ratbag_device_data_asus_get_button_mapping(device->data);
-	struct asus_button *asus_button;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
+	struct asus_data *drv_data = ratbag_get_drv_data(device);
 
 	/* set buttons */
 	ratbag_profile_for_each_button(profile, button) {
 		if (!button->dirty)
 			continue;
 
-		int asus_index = bmi[button->index] != -1 ? bmi[button->index] : ASUS_BUTTON_MAPPING_INDEX[button->index];
-		int asus_code;
+		int asus_index = drv_data->button_indices[button->index];
 		if (asus_index == -1) {
 			log_debug(device->ratbag, "No mapping for button %d\n", button->index);
 			continue;
 		}
 
-		log_debug(device->ratbag, "Button %d (%d) changed\n", button->index, asus_index);
+		int button_asus_code = drv_data->button_mapping[asus_index];
+		log_debug(device->ratbag, "Button %d (%02x) changed\n",
+			  button->index, (uint8_t) button_asus_code);
 
 		switch (button->action.type) {
 		case RATBAG_BUTTON_ACTION_TYPE_NONE:
 			rc = asus_set_button_action(
-				device, asus_index,
+				device, button_asus_code,
 				ASUS_BUTTON_CODE_DISABLED,
 				ASUS_BUTTON_ACTION_TYPE_BUTTON);
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 			/* Linux code to ASUS code */
-			asus_code = asus_find_key_code(button->action.action.key.key);
+			int asus_code = asus_find_key_code(button->action.action.key.key);
 			if (asus_code >= 0)
 				rc = asus_set_button_action(
-					device, asus_index,
+					device, button_asus_code,
 					asus_code,
 					ASUS_BUTTON_ACTION_TYPE_KEY);
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
-			asus_button = asus_find_button_by_action(button->action);
+			/* ratbag action to ASUS code */
+			struct asus_button *asus_button = asus_find_button_by_action(button->action);
 			if (asus_button != NULL)  /* found button to bind to */
 				rc = asus_set_button_action(
-					device, asus_index,
+					device, button_asus_code,
 					asus_button->asus_code,
 					ASUS_BUTTON_ACTION_TYPE_BUTTON);
 			break;
@@ -423,6 +426,31 @@ asus_driver_probe(struct ratbag_device *device)
 	dpi_count = ratbag_device_data_asus_get_dpi_count(device->data);
 	button_count = ratbag_device_data_asus_get_button_count(device->data);
 	led_count = ratbag_device_data_asus_get_led_count(device->data);
+	const int8_t *bm = ratbag_device_data_asus_get_button_mapping(device->data);
+
+	/* merge ButtonMapping configuration property with defaults */
+	for (unsigned int i = 0; i < button_count; i++) {
+		drv_data->button_mapping[i] = bm[i] != -1 ? bm[i] : ASUS_CONFIG_BUTTON_MAPPING[i];
+		drv_data->button_indices[i] = -1;
+	}
+
+	/* setup a lookup table for all defined buttons */
+	unsigned int button_index = 0;
+	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_BUTTON_MAPPING); i++) {
+		struct asus_button *asus_button = &ASUS_BUTTON_MAPPING[i];
+
+		/* search for this button in the ButtonMapping by it's ASUS code */
+		for (unsigned int j = 0; j < button_count; j++) {
+			if (drv_data->button_mapping[j] == (int8_t) asus_button->asus_code) {
+				/* add button to indices array */
+				drv_data->button_indices[button_index] = (int)j;
+				log_debug(device->ratbag, "Button %d is mapped to 0x%02x\n",
+					  button_index, (uint8_t) drv_data->button_mapping[j]);
+				button_index++;
+				break;
+			}
+		}
+	}
 
 	/* init profiles */
 	ratbag_device_init_profiles(

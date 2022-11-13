@@ -373,7 +373,7 @@ init_data_asus(struct ratbag *ratbag,
 	_cleanup_(g_strfreevp) char **button_mapping = g_key_file_get_string_list(keyfile, group, "ButtonMapping", &button_mapping_count, &error);
 	if (!error && button_mapping) {
 		for (unsigned int i = 0; i < button_mapping_count; i++) {
-			data->asus.button_mapping[i] = (int8_t) strtoul(button_mapping[i], NULL, 10);
+			data->asus.button_mapping[i] = (int8_t) strtoul(button_mapping[i], NULL, 16);
 		}
 	}
 	g_clear_error(&error);

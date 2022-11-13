@@ -5,8 +5,8 @@ Driver=asus
 
 [Driver/asus]
 Profiles=3
-Buttons=8
+Buttons=9
 Leds=3
 Dpis=2
 DpiRange=100:12000@100
-ButtonMapping=0;1;2;7;8;5;3;4
+ButtonMapping=f0;f1;f2;e4;e5;e6;e7;e8;e9

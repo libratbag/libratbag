@@ -8,6 +8,7 @@
 
 #define ASUS_QUIRK_DOUBLE_DPI 1 << 0
 #define ASUS_QUIRK_STRIX_PROFILE 1 << 1
+#define ASUS_QUIRK_BATTERY_V2 1 << 2
 
 #define ASUS_PACKET_SIZE 64
 #define ASUS_BUTTON_ACTION_TYPE_KEY 0  /* keyboard key */
@@ -133,6 +134,26 @@ struct asus_button {
 	enum ratbag_button_action_special special;  /* special action, optional */
 };
 
+/* ASUS code, button type, button number, special button action */
+static struct asus_button ASUS_BUTTON_MAPPING[] = {
+	{ 0xf0, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 1, 0 },  /* left */
+	{ 0xf1, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 2, 0 },  /* right (button 3 in xev) */
+	{ 0xf2, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 3, 0 },  /* middle (button 2 in xev) */
+	{ 0xe8, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP },
+	{ 0xe9, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN },
+	{ 0xe6, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP },
+	{ 0xe4, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 4, 0 },  /* backward, left side */
+	{ 0xe5, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 5, 0 },  /* forward, left side */
+	{ 0xe1, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 4, 0 },  /* backward, right side */
+	{ 0xe2, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 5, 0 },  /* forward, right side */
+	{ 0xe7, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE },  /* DPI target */
+	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
+	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
+	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
+	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
+	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
+};
+
 struct asus_button *
 asus_find_button_by_action(struct ratbag_button_action action);
 
@@ -183,7 +204,7 @@ int
 asus_get_binding_data(struct ratbag_device *device, union asus_binding_data *data);
 
 int
-asus_set_button_action(struct ratbag_device *device, unsigned int index,
+asus_set_button_action(struct ratbag_device *device, uint8_t button_asus_code,
 		uint8_t asus_code, uint8_t asus_type);
 
 /* resolution settings */

@@ -46,26 +46,6 @@
 #define ASUS_FIELD_RESPONSE	1
 #define ASUS_FIELD_SNAPPING	2
 
-/* order is mandatory because index is mapped from ButtonMapping configuration property */
-static struct asus_button ASUS_BUTTON_MAPPING[] = {
-	{ 0xf0, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 1, 0 },  /* left */
-	{ 0xf1, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 2, 0 },  /* right (button 3 in xev) */
-	{ 0xf2, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 3, 0 },  /* middle (button 2 in xev) */
-	{ 0xe4, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 4, 0 },  /* backward (on left side) */
-	{ 0xe5, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 5, 0 },  /* forward (on left side) */
-	{ 0xe6, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP },
-	{ 0xe8, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP },
-	{ 0xe9, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN },
-	{ 0xe1, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 4, 0 },  /* backward on right side */
-	{ 0xe2, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 5, 0 },  /* forward on right side */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-};
-
 /* key mapping, the index is actual ASUS code */
 static unsigned char ASUS_KEY_MAPPING[] = {
 /* 00 */	0,		0,		0,		0,
@@ -268,7 +248,7 @@ asus_set_profile(struct ratbag_device *device, unsigned int index)
 	return 0;
 }
 
-/* read button bindings using ButtonMapping configuration property */
+/* read button bindings */
 int
 asus_get_binding_data(struct ratbag_device *device, union asus_binding_data *data)
 {
@@ -288,7 +268,7 @@ asus_get_binding_data(struct ratbag_device *device, union asus_binding_data *dat
 
 /* set button binding using ASUS code of the button */
 int
-asus_set_button_action(struct ratbag_device *device, unsigned int asus_index, uint8_t asus_code, uint8_t asus_type)
+asus_set_button_action(struct ratbag_device *device, uint8_t button_asus_code, uint8_t asus_code, uint8_t asus_type)
 {
 	int rc;
 	union asus_response response;
@@ -297,7 +277,7 @@ asus_set_button_action(struct ratbag_device *device, unsigned int asus_index, ui
 	};
 
 	/* source (physical mouse button) */
-	request.data.params[2] = ASUS_BUTTON_MAPPING[asus_index].asus_code;
+	request.data.params[2] = button_asus_code;
 	request.data.params[3] = ASUS_BUTTON_ACTION_TYPE_BUTTON;
 
 	/* destination (mouse button or keyboard key action) */

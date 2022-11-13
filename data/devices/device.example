@@ -73,8 +73,8 @@ Dpis=2
 # DPI range in format min:max@step
 DpiRange=100:16000@100
 
-# Button index mapping
-# ButtonMapping=0;1;2;6;7;5;3;4
+# Button mapping
+# ButtonMapping=f0;f1;f2;e4;e5;e6;e8;e9
 
 # Device quirks
 # Quirk=DOUBLE_DPI;STRIX_PROFILE

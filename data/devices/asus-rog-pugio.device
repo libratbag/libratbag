@@ -9,6 +9,4 @@ Buttons=10
 Leds=3
 Dpis=2
 DpiRange=100:7200@100
-
-# Mappings the same as the Gladius II but with an extra 2 buttons
-ButtonMapping=0;1;2;7;8;5;3;4;9;10
+ButtonMapping=f0;f1;f2;e4;e5;e6;e8;e9;e1;e2

@@ -9,5 +9,4 @@ Buttons=8
 Leds=3
 Dpis=2
 DpiRange=100:12000@100
-ButtonMapping=0;1;2;7;8;5;3;4
 Quirks=DOUBLE_DPI

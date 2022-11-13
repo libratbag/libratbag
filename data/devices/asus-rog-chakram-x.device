@@ -1,0 +1,13 @@
+[Device]
+Name=ASUS ROG Chakram X
+DeviceMatch=usb:0b05:1a1a
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=5
+Leds=3
+Dpis=4
+Wireless=1
+DpiRange=100:36000@100
+Quirks=DOUBLE_DPI;STRIX_PROFILE
