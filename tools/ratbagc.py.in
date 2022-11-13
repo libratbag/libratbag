@@ -634,7 +634,7 @@ class RatbagdButton(metaclass=MetaRatbag):
 
     @key.setter
     def key(self, key):
-        libratbag.ratbag_button_set_key(self._button, key, None, 0)
+        libratbag.ratbag_button_set_key(self._button, int(key), None, 0)
 
     @property
     def action_type(self):
