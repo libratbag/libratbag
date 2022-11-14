@@ -1523,7 +1523,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	rc = sinowealth_get_fw_version(device, fw_version);
 	if (rc)
 		return rc;
-	log_info(device->ratbag, "firmware version: %s\n", fw_version);
+	ratbag_device_set_firmware_version(device, fw_version);
 
 	rc = sinowealth_read_raw_configs(device);
 	if (rc)
