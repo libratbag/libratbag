@@ -1211,10 +1211,7 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 static int
 sinowealth_button_set_key_action_from_macro(struct ratbag_device *device, struct ratbag_button *button, struct sinowealth_button_data *button_data)
 {
-	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO) {
-		log_debug(device->ratbag, "Internal bug: non-macro action is passed to macro to key action converter");
-		return -1;
-	}
+	assert(button->action.type == RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 	struct ratbag_button_action *action = &button->action;
 
