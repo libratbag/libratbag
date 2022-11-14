@@ -1209,37 +1209,6 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 
 /* @return 0 on success or an error code. */
 static int
-sinowealth_button_set_key_action_from_macro(struct ratbag_device *device, struct ratbag_button *button, struct sinowealth_button_data *button_data)
-{
-	assert(button->action.type == RATBAG_BUTTON_ACTION_TYPE_MACRO);
-
-	struct ratbag_button_action *action = &button->action;
-
-	int rc = 0;
-	unsigned int key = 0;
-	unsigned int modifiers = 0;
-
-	rc = ratbag_action_keycode_from_macro(action, &key, &modifiers);
-	if (rc < 0) {
-		log_error(device->ratbag, "Could not make a keycode from macro for button %d\n", button->index);
-		return rc;
-	}
-
-	uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
-	if (raw_key == 0) {
-		log_debug(device->ratbag, "Could not set unsupported key %#x to button %u\n", key, button->index);
-		return -1;
-	}
-
-	button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
-	button_data->key.modifiers = modifiers;
-	button_data->key.key = raw_key;
-
-	return 0;
-}
-
-/* @return 0 on success or an error code. */
-static int
 sinowealth_button_set_key_action(struct ratbag_device *device, const struct ratbag_button *button, struct sinowealth_button_data *button_data)
 {
 	assert(button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY);
