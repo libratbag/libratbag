@@ -82,11 +82,6 @@
 #define STEELSERIES_BUTTON_KBD			0x51
 #define STEELSERIES_BUTTON_CONSUMER		0x61
 
-struct steelseries_data {
-	int firmware_major;
-	int firmware_minor;
-};
-
 struct steelseries_point {
 	struct list link;
 
@@ -199,9 +194,8 @@ button_defaults_for_layout(struct ratbag_button *button, int button_count)
 }
 
 static int
-steelseries_get_firmware_version(struct ratbag_device *device)
+steelseries_get_firmware_version(struct ratbag_device *device, int *major_out, int *minor_out)
 {
-	struct steelseries_data *drv_data = device->drv_data;
 	int device_version = ratbag_device_data_steelseries_get_device_version(device->data);
 	size_t msg_len;
 	uint8_t buf[2] = {0};
@@ -238,8 +232,11 @@ steelseries_get_firmware_version(struct ratbag_device *device)
 	if (ret < 0)
 		return ret;
 
-	drv_data->firmware_major = buf[1];
-	drv_data->firmware_minor = buf[0];
+	// TODO: check if these are in correct order.
+	// Rivalcfg - another configuration utility for SteelSeries mice -
+	// was updated to invert their order on 2022-08-26.
+	*minor_out = buf[0];
+	*major_out = buf[1];
 
 	return 0;
 }
@@ -313,7 +310,6 @@ steelseries_read_settings(struct ratbag_device *device)
 static int
 steelseries_probe(struct ratbag_device *device)
 {
-	struct steelseries_data *drv_data = NULL;
 	struct ratbag_profile *profile = NULL;
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
@@ -421,14 +417,15 @@ steelseries_probe(struct ratbag_device *device)
 		}
 	}
 
-	drv_data = zalloc(sizeof(*drv_data));
-	ratbag_set_drv_data(device, drv_data);
-
-	rc = steelseries_get_firmware_version(device);
-	if(rc == 0)
-		log_debug(device->ratbag, "SteelSeries firmware version %d.%d\n",
-			drv_data->firmware_major,
-			drv_data->firmware_minor);
+	{
+		int firmware_minor = 0;
+		int firmware_major = 0;
+		rc = steelseries_get_firmware_version(device, &firmware_major, &firmware_minor);
+		if (rc == 0) {
+			_cleanup_free_ char *fw = asprintf_safe("%d.%d", firmware_major, firmware_minor);
+			ratbag_device_set_firmware_version(device, fw);
+		}
+	}
 
 	steelseries_read_settings(device);
 
@@ -1082,7 +1079,6 @@ steelseries_remove(struct ratbag_device *device)
 {
 	ratbag_close_hidraw_index(device, 0);
 	ratbag_close_hidraw_index(device, 1);
-	free(ratbag_get_drv_data(device));
 }
 
 struct ratbag_driver steelseries_driver = {
