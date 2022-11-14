@@ -348,6 +348,11 @@ class RatbagdDevice(_RatbagdDBus):
         return self._get_dbus_property("Name")
 
     @GObject.Property
+    def firmware_version(self):
+        """The firmware version of the device."""
+        return self._get_dbus_property("FirmwareVersion")
+
+    @GObject.Property
     def profiles(self):
         """A list of RatbagdProfile objects provided by this device."""
         return self._profiles

@@ -228,6 +228,7 @@ ratbag_device_destroy(struct ratbag_device *device)
 	ratbag_unref(device->ratbag);
 	ratbag_device_data_unref(device->data);
 	free(device->name);
+	free(device->firmware_version);
 	free(device);
 }
 
@@ -1620,6 +1621,19 @@ LIBRATBAG_EXPORT void*
 ratbag_device_get_user_data(const struct ratbag_device *ratbag_device)
 {
 	return ratbag_device->userdata;
+}
+
+LIBRATBAG_EXPORT const char*
+ratbag_device_get_firmware_version(const struct ratbag_device *ratbag_device)
+{
+	return ratbag_device->firmware_version;
+}
+
+LIBRATBAG_EXPORT void
+ratbag_device_set_firmware_version(struct ratbag_device *device, const char* fw)
+{
+	free(device->firmware_version);
+	device->firmware_version = strdup_safe(fw);
 }
 
 LIBRATBAG_EXPORT void*

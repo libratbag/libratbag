@@ -424,6 +424,26 @@ ratbag_device_get_user_data(const struct ratbag_device *device);
 /**
  * @ingroup device
  *
+ * Set the firmware version of the device.
+ *
+ * @param device A previously initialized ratbag device
+ * @param fw The firmware version of the device.
+ */
+void
+ratbag_device_set_firmware_version(struct ratbag_device *device, const char* fw);
+
+/**
+ * @ingroup device
+ *
+ * @param device A previously initialized ratbag device
+ * @return The firmware version of the device.
+ */
+const char*
+ratbag_device_get_firmware_version(const struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
  * @param device A previously initialized ratbag device
  * @return The name of the device associated with the given ratbag.
  */

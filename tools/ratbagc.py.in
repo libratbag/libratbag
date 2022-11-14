@@ -263,6 +263,11 @@ class RatbagdDevice(metaclass=MetaRatbag):
         return libratbag.ratbag_device_get_name(self._device)
 
     @property
+    def firmware_version(self):
+        """The firmware version of the device."""
+        return libratbag.ratbag_device_get_firmware_version(self._device)
+
+    @property
     def profiles(self):
         """A list of RatbagdProfile objects provided by this device."""
         return self._profiles

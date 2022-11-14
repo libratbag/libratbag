@@ -220,10 +220,27 @@ ratbag_device_get_model(sd_bus *bus,
 	return sd_bus_message_append(reply, "s", model);
 }
 
+static int
+ratbagd_device_get_firmware_version(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *reply,
+				    void *userdata,
+				    sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+	struct ratbag_device *lib_device = device->lib_device;
+	const char* version = ratbag_device_get_firmware_version(lib_device);
+
+	return sd_bus_message_append(reply, "s", version);
+}
+
 const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Model", "s", ratbag_device_get_model, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Name", "s", ratbagd_device_get_device_name, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("FirmwareVersion", "s", ratbagd_device_get_firmware_version, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_SIGNAL("Resync", "", 0),
