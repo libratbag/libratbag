@@ -634,7 +634,7 @@ class RatbagdButton(metaclass=MetaRatbag):
 
     @key.setter
     def key(self, key):
-        libratbag.ratbag_button_set_key(self._button, int(key), None, 0)
+        libratbag.ratbag_button_set_key(self._button, key, None, 0)
 
     @property
     def action_type(self):
@@ -648,7 +648,7 @@ class RatbagdButton(metaclass=MetaRatbag):
     @property
     def action_types(self):
         """An array of possible values for ActionType."""
-        return [t for t in (RatbagdButton.ActionType.BUTTON, RatbagdButton.ActionType.SPECIAL, RatbagdButton.ActionType.MACRO)
+        return [t for t in (RatbagdButton.ActionType.BUTTON, RatbagdButton.ActionType.SPECIAL, RatbagdButton.ActionType.KEY, RatbagdButton.ActionType.MACRO)
                 if libratbag.ratbag_button_has_action_type(self._button, t)]
 
     def disable(self):

@@ -42,6 +42,14 @@ button_specials_strmap = {
 }
 
 
+def convert_str_to_evcode(s: str) -> int:
+    if not s.startswith("KEY_") and not s.startswith("BTN_"):
+        msg = "Don't know how to convert {}".format(s)
+        raise argparse.ArgumentTypeError(msg)
+
+    return evdev.ecodes.ecodes[s]
+
+
 def list_devices(r, args):
     if not r.devices:
         print("No devices available.")
@@ -164,7 +172,8 @@ def print_button(d, p, b, level):
     elif b.action_type == RatbagdButton.ActionType.SPECIAL:
         print("{}'{}'".format(header, button_specials_strmap[b.special]))
     elif b.action_type == RatbagdButton.ActionType.KEY:
-        print("{}key '{}'".format(header, str(b.key)))
+        key_name = evdev.ecodes.KEY[b.key][RatbagdMacro._PREFIX_LEN:]
+        print("{}key '{}'".format(header, key_name))
     elif b.action_type == RatbagdButton.ActionType.MACRO:
         print("{}macro '{}'".format(header, str(b.macro)))
     elif b.action_type == RatbagdButton.ActionType.NONE:
@@ -329,12 +338,15 @@ def func_button_action_set_special(r, args):
 
 def func_button_action_set_key(r, args):
     b, p, d = find_button(r, args)
+    if not b.ActionType.KEY in b.action_types:
+        raise RatbagErrorCapability("assigning a key is not supported on this device")
+
     try:
         key = args.target_key
     except AttributeError:
         pass
     else:
-        b.key = key
+        b.key = convert_str_to_evcode(key)
     commit(d, args)
 
 
@@ -366,11 +378,7 @@ def func_button_action_set_macro(r, args):
             t = int(s[1:])
             macro.append(RatbagdButton.Macro.WAIT, t)
         else:
-            if not s.startswith("KEY_") and not s.startswith("BTN_"):
-                msg = "Don't know how to convert {}".format(s)
-                raise argparse.ArgumentTypeError(msg)
-
-            code = evdev.ecodes.ecodes[s]
+            code = convert_str_to_evcode(key)
             if is_press:
                 macro.append(RatbagdButton.Macro.KEY_PRESS, code)
             if is_release:
