@@ -378,7 +378,7 @@ def func_button_action_set_macro(r, args):
             t = int(s[1:])
             macro.append(RatbagdButton.Macro.WAIT, t)
         else:
-            code = convert_str_to_evcode(key)
+            code = convert_str_to_evcode(s)
             if is_press:
                 macro.append(RatbagdButton.Macro.KEY_PRESS, code)
             if is_release:
