@@ -47,7 +47,11 @@ def convert_str_to_evcode(s: str) -> int:
         msg = "Don't know how to convert {}".format(s)
         raise argparse.ArgumentTypeError(msg)
 
-    return evdev.ecodes.ecodes[s]
+    try:
+        return evdev.ecodes.ecodes[s]
+    except KeyError:
+        msg = "No such button or key `{}`".format(s)
+        raise argparse.ArgumentTypeError(msg)
 
 
 def list_devices(r, args):
