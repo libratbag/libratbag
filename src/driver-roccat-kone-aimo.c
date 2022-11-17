@@ -69,7 +69,11 @@
 
 #define ROCCAT_BANK_ID_1    1
 #define ROCCAT_BANK_ID_2    2
-#define ROCCAT_REPORT_SIZE_MACRO_BANK       1026
+#define ROCCAT_REPORT_SIZE_MACRO_BANK1       1026
+#define ROCCAT_REPORT_SIZE_MACRO_BANK2       977
+#define ROCCAT_MACRO_BANK1_KEYS_LENGTH      237
+#define ROCCAT_MACRO_BANK2_KEYS_LENGTH      243
+#define ROCCAT_MACRO_BANK2_TERMINATOR       0x4A
 
 #define ROCCAT_MACRO_GROUP_NAME_LENGTH  40
 #define ROCCAT_MACRO_NAME_LENGTH        32
@@ -144,26 +148,63 @@ struct roccat_settings_report {
 } __attribute__((packed));
 _Static_assert(sizeof(struct roccat_settings_report) == ROCCAT_REPORT_SIZE_SETTINGS, "Size of roccat_buttons is wrong");
 
-struct roccat_macro {
-	uint8_t report_id;                           // 0x08
-	uint8_t bank;                               // 0x01 or 0x02
+struct roccat_macro_keys {
+	uint8_t keycode;
+	uint8_t flag;  // 0x01 = press, 0x02 = release
+	uint16_t time; // Fixed Delay in milliseconds
+} __attribute__((packed));
+
+struct last_macro_key {
+	uint8_t keycode;
+	uint8_t flag; // 0x01 = press, 0x02 = release
+	uint8_t first_half_time; // For the last key, the time is split between the pages
+} __attribute__((packed));
+
+struct _roccat_macro_bank1 {
+	uint8_t report_id;
+	uint8_t bank;
 	uint8_t profile;
 	uint8_t button_index;
-	uint8_t repeats;                            // Number of repetition for this macro
-	char group[ROCCAT_MACRO_GROUP_NAME_LENGTH]; // Folder name
-	char name[ROCCAT_MACRO_NAME_LENGTH];
-	uint16_t length;
-	struct {
-		uint8_t keycode;
-		uint8_t flag;                       // Pressed (0x01) or released (0x02)
-		uint16_t time;		            // Fixed delay in milliseconds
-	} keys[ROCCAT_MAX_MACRO_LENGTH];
-	uint16_t checksum;  // This is the checksum of both pages of keys.
-	uint8_t terminator; // always 0x4A
-	uint8_t padding_end[48]; // We don't use the entire 1026 byte buffer.
+	uint8_t repeat; // number of times to repeat the macro sequence
+	char group[40]; // Max 40 characters for the group/folder name
+	char name[32];  // Max 32 characters for the macro name
+	uint16_t length; // OR'd with On Press = 0x0000, While Press = 0x0010, Macro toggle = 0x0020
+	struct roccat_macro_keys keys[ROCCAT_MACRO_BANK1_KEYS_LENGTH-1];
+	struct last_macro_key last_key;
 } __attribute__((packed));
-_Static_assert(sizeof(struct roccat_macro) == ROCCAT_REPORT_SIZE_MACRO_BANK*2-2, "Size of roccat_macro is wrong");
-// -2 is for the missing button_index and repeats bytes on the second bank.
+
+union roccat_macro_bank1 {
+	struct _roccat_macro_bank1 msg;
+	uint8_t data[ROCCAT_REPORT_SIZE_MACRO_BANK1];
+};
+_Static_assert(sizeof(struct _roccat_macro_bank1) == ROCCAT_REPORT_SIZE_MACRO_BANK1, "Size of roccat_macro_bank1 is wrong");
+
+struct _roccat_macro_bank2 {
+	uint8_t report_id;
+	uint8_t bank;
+	uint8_t second_half_time; // For the last key, the time is split between the pages
+	struct roccat_macro_keys keys[ROCCAT_MACRO_BANK2_KEYS_LENGTH];
+	uint16_t checksum;  // This is the checksum of both pages of keys.
+} __attribute__((packed));
+
+union roccat_macro_bank2 {
+	struct _roccat_macro_bank2 msg;
+	uint8_t data[ROCCAT_REPORT_SIZE_MACRO_BANK2];
+};
+
+_Static_assert(sizeof(struct _roccat_macro_bank2) == ROCCAT_REPORT_SIZE_MACRO_BANK2, "Size of roccat_macro_bank2 is wrong");
+
+struct _roccat_macro_combined {
+	union roccat_macro_bank1 bank1;
+	union roccat_macro_bank2 bank2;
+} __attribute__((packed));
+
+union roccat_macro_combined {
+	struct _roccat_macro_combined msg;
+	uint8_t data[ROCCAT_REPORT_SIZE_MACRO_BANK1 + ROCCAT_REPORT_SIZE_MACRO_BANK2];
+} __attribute__((packed));
+
+_Static_assert(sizeof(struct _roccat_macro_combined) == ROCCAT_REPORT_SIZE_MACRO_BANK1+ROCCAT_REPORT_SIZE_MACRO_BANK2, "Size of roccat_macro_combined is wrong");
 
 struct button {
 	uint8_t keycode;
@@ -181,7 +222,7 @@ _Static_assert(sizeof(struct roccat_buttons) == ROCCAT_REPORT_SIZE_BUTTONS, "Siz
 struct roccat_data {
 	struct roccat_buttons buttons[(ROCCAT_PROFILE_MAX)];
 	struct roccat_settings_report settings[(ROCCAT_PROFILE_MAX)];
-	struct roccat_macro macros[(ROCCAT_PROFILE_MAX)][(ROCCAT_BUTTON_MAX + 1)];
+	union roccat_macro_combined macros[(ROCCAT_PROFILE_MAX)][(ROCCAT_BUTTON_MAX + 1)];
 };
 
 struct roccat_button_type_mapping {
@@ -624,8 +665,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 	struct roccat_data *drv_data = ratbag_get_drv_data(device);
 	struct roccat_settings_report* report;
 	struct roccat_buttons* buttons;
-	struct roccat_macro* macro;
-	uint8_t bank_buf[ROCCAT_REPORT_SIZE_MACRO_BANK] = { 0 };
+	union roccat_macro_combined* macro;
 	int rc = 0;
 	int i = 0, count = 0;
 
@@ -713,23 +753,26 @@ roccat_write_profile(struct ratbag_profile *profile)
 		buttons->keys[button->index].keycode = roccat_button_action_to_raw(&button->action);
 		if(button->action.type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
 			macro = &drv_data->macros[profile->index][button->index];
-			memset(macro, 0, sizeof(struct roccat_macro));
+			memset(macro, 0, sizeof(union roccat_macro_combined));
 
-			macro->report_id = ROCCAT_REPORT_ID_MACRO;
-			macro->bank = ROCCAT_BANK_ID_1;
-			macro->profile = profile->index;
-			macro->button_index = button->index;
-			macro->repeats = 0; // No repeats in libratbag
+			struct _roccat_macro_bank1* bank1 = &macro->msg.bank1.msg;
+			struct _roccat_macro_bank2* bank2 = &macro->msg.bank2.msg;
+
+			bank1->report_id = ROCCAT_REPORT_ID_MACRO;
+			bank1->bank = ROCCAT_BANK_ID_1;
+			bank1->profile = profile->index;
+			bank1->button_index = button->index;
+			bank1->repeat = 0; // No repeats in libratbag
 
 			if(button->action.macro->group) {
 				// Seems no use of group in libratbag
-				strncpy(macro->group, button->action.macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
+				strncpy(bank1->group, button->action.macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
 			} else {
-				strncpy(macro->group, "libratbag macros", ROCCAT_MACRO_GROUP_NAME_LENGTH);
+				strncpy(bank1->group, "libratbag macros", ROCCAT_MACRO_GROUP_NAME_LENGTH);
 			}
-			strncpy(macro->name, button->action.macro->name, ROCCAT_MACRO_NAME_LENGTH);
+			strncpy(bank1->name, button->action.macro->name, ROCCAT_MACRO_NAME_LENGTH);
 
-			for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
+			for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MACRO_BANK1_KEYS_LENGTH; i++) {
 				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
 					return -EINVAL; /* should not happen, ever */
 
@@ -743,18 +786,18 @@ roccat_write_profile(struct ratbag_profile *profile)
 
 				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED ||
 					button->action.macro->events[i].type == RATBAG_MACRO_EVENT_KEY_RELEASED) {
-					macro->keys[count].keycode = ratbag_hidraw_get_keyboard_usage_from_keycode(device, button->action.macro->events[i].event.key);
+					bank1->keys[count].keycode = ratbag_hidraw_get_keyboard_usage_from_keycode(device, button->action.macro->events[i].event.key);
 				}
 
 				switch (button->action.macro->events[i].type) {
 				case RATBAG_MACRO_EVENT_KEY_PRESSED:
-					macro->keys[count].flag = 0x01;
+					bank1->keys[count].flag = 0x01;
 					break;
 				case RATBAG_MACRO_EVENT_KEY_RELEASED:
-					macro->keys[count].flag = 0x02;
+					bank1->keys[count].flag = 0x02;
 					break;
 				case RATBAG_MACRO_EVENT_WAIT:
-					macro->keys[--count].time = button->action.macro->events[i].event.timeout;
+					bank1->keys[--count].time = button->action.macro->events[i].event.timeout;
 					break;
 				case RATBAG_MACRO_EVENT_INVALID:
 				case RATBAG_MACRO_EVENT_NONE:
@@ -764,18 +807,51 @@ roccat_write_profile(struct ratbag_profile *profile)
 				}
 				count++;
 			}
-			macro->length = count;
+			for (i = 0; i < MAX_MACRO_EVENTS-count && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
+					return -EINVAL; /* should not happen, ever */
+
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_NONE)
+					break;
+
+				/* ignore the first wait */
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_WAIT &&
+					!count)
+					continue;
+
+				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED ||
+					button->action.macro->events[i].type == RATBAG_MACRO_EVENT_KEY_RELEASED) {
+					bank2->keys[count].keycode = ratbag_hidraw_get_keyboard_usage_from_keycode(device, button->action.macro->events[i].event.key);
+				}
+
+				switch (button->action.macro->events[i].type) {
+				case RATBAG_MACRO_EVENT_KEY_PRESSED:
+					bank2->keys[count].flag = 0x01;
+					break;
+				case RATBAG_MACRO_EVENT_KEY_RELEASED:
+					bank2->keys[count].flag = 0x02;
+					break;
+				case RATBAG_MACRO_EVENT_WAIT:
+					bank2->keys[--count].time = button->action.macro->events[i].event.timeout;
+					break;
+				case RATBAG_MACRO_EVENT_INVALID:
+				case RATBAG_MACRO_EVENT_NONE:
+					/* should not happen */
+					log_error(device->ratbag,
+						"something went wrong while writing a macro.\n");
+				}
+				count++;
+			}
+			bank1->length = count;
 
 
 			// Macro has to be send in two packets
-			memcpy(bank_buf, macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
-
 			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						  bank_buf, ROCCAT_REPORT_SIZE_MACRO_BANK);
+						  macro->msg.bank1.data, ROCCAT_REPORT_SIZE_MACRO_BANK1);
 			if (rc < 0)
 				return rc;
 
-			if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK)
+			if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK1)
 				return -EIO;
 
 			rc = roccat_wait_ready(device);
@@ -784,20 +860,20 @@ roccat_write_profile(struct ratbag_profile *profile)
 					"Error while waiting for the device to be ready: %s (%d)\n",
 					strerror(-rc), rc);
 
-			bank_buf[0] = ROCCAT_REPORT_ID_MACRO;
-			bank_buf[1] = ROCCAT_BANK_ID_2;
-			// The remaining macro structure is not big enough to fill the second bank
-			// Write the remaining, fill the end with 0
-			unsigned int remaining_to_write = sizeof(struct roccat_macro)-ROCCAT_REPORT_SIZE_MACRO_BANK;
-			memcpy(bank_buf+2, &((uint8_t*)macro)[ROCCAT_REPORT_SIZE_MACRO_BANK], remaining_to_write);
-			memset(bank_buf+2+remaining_to_write, 0, ROCCAT_REPORT_SIZE_MACRO_BANK-(2+remaining_to_write));
+			bank2->report_id = ROCCAT_REPORT_ID_MACRO;
+			bank2->bank = ROCCAT_BANK_ID_2;
+			bank2->checksum = roccat_compute_crc(macro->data, ROCCAT_REPORT_SIZE_MACRO_BANK1 + ROCCAT_REPORT_SIZE_MACRO_BANK2);
+
+			uint8_t *data = (uint8_t*)zalloc(ROCCAT_REPORT_SIZE_MACRO_BANK2+1);
+			memcpy(data, macro->msg.bank2.data, ROCCAT_REPORT_SIZE_MACRO_BANK2);
+			data[ROCCAT_REPORT_SIZE_MACRO_BANK2] = ROCCAT_MACRO_BANK2_TERMINATOR;
 
 			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-				bank_buf, ROCCAT_REPORT_SIZE_MACRO_BANK);
+				data, ROCCAT_REPORT_SIZE_MACRO_BANK2);
 			if (rc < 0)
 				return rc;
 
-			if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK)
+			if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK2)
 				return -EIO;
 
 			rc = roccat_wait_ready(device);
@@ -850,35 +926,38 @@ roccat_write_profile(struct ratbag_profile *profile)
 	return rc;
 }
 
-static void roccat_read_macro(struct roccat_macro* macro, struct ratbag_button* button) {
+static void roccat_read_macro(union roccat_macro_combined* macro, struct ratbag_button* button) {
 	struct ratbag_button_macro *m = NULL;
 	unsigned j, time;
 
+	struct _roccat_macro_bank1* bank1 = &macro->msg.bank1.msg;
+	struct _roccat_macro_bank2* bank2 = &macro->msg.bank2.msg;
+
 	char name[ROCCAT_MACRO_NAME_LENGTH+1] = { '\0' };
-	strncpy(name, macro->name, ROCCAT_MACRO_NAME_LENGTH);
+	strncpy(name, bank1->name, ROCCAT_MACRO_NAME_LENGTH);
 
 	m = ratbag_button_macro_new(name);
 	// libratbag does offer API for macro groups
 	m->macro.group = (char*)zalloc(ROCCAT_MACRO_GROUP_NAME_LENGTH+1);
-	strncpy(m->macro.group, macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
+	strncpy(m->macro.group, bank1->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
 
 	log_debug(button->profile->device->ratbag,
 		"macro on button %d of profile %d is named '%s' (from folder '%s'), and contains %d events:\n",
 		button->index, button->profile->index,
-		name, m->macro.group, macro->length);
+		name, m->macro.group, bank1->length);
 	// libratbag can't keep track of the whole macro (MAX_MACRO_EVENTS)
 	// In libratbag, each event is implemented as two separate (KEY_PRESS/KEY_RELEASE and WAIT)
-	for (j = 0; j < macro->length && j < MAX_MACRO_EVENTS/2; j++) {
+	for (j = 0; j < bank1->length && j < MAX_MACRO_EVENTS/2; j++) {
 		unsigned int keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(button->profile->device,
-						macro->keys[j].keycode);
+						bank1->keys[j].keycode);
 		ratbag_button_macro_set_event(m,
 							j * 2,
-							macro->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
+							bank1->keys[j].flag & 0x01 ? RATBAG_MACRO_EVENT_KEY_PRESSED : RATBAG_MACRO_EVENT_KEY_RELEASED,
 							keycode);
-		if (macro->keys[j].time)
-			time = macro->keys[j].time;
+		if (bank1->keys[j].time)
+			time = bank1->keys[j].time;
 		else
-			time = macro->keys[j].flag & 0x01 ? 10 : 50;
+			time = bank1->keys[j].flag & 0x01 ? 10 : 50;
 		ratbag_button_macro_set_event(m,
 							j * 2 + 1,
 							RATBAG_MACRO_EVENT_WAIT,
@@ -887,7 +966,7 @@ static void roccat_read_macro(struct roccat_macro* macro, struct ratbag_button* 
 		log_debug(button->profile->device->ratbag,
 			"    - %s %s\n",
 			libevdev_event_code_get_name(EV_KEY, keycode),
-			macro->keys[j].flag == 0x02 ? "released" : "pressed");
+			bank1->keys[j].flag == 0x02 ? "released" : "pressed");
 	}
 	ratbag_button_copy_macro(button, m);
 	ratbag_button_macro_unref(m);
@@ -899,7 +978,7 @@ roccat_read_button(struct ratbag_button *button)
 	const struct ratbag_button_action *action;
 	struct ratbag_device *device = button->profile->device;
 	struct roccat_data *drv_data = ratbag_get_drv_data(device);
-	struct roccat_macro *macro;
+	union roccat_macro_combined *macro;
 	int rc;
 
 	action = roccat_button_to_action(button->profile, button->index);
@@ -912,6 +991,7 @@ roccat_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
+	log_debug(device->ratbag, "reading button %d key %d on action button %d, with special %d\n", button->index, button->action.action.key.key, button->action.action.button, button->action.action.special);
 	if (action && action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO) {
 		macro = &drv_data->macros[button->profile->index][button->index];
 
@@ -926,8 +1006,8 @@ roccat_read_button(struct ratbag_button *button)
 
 		// I know that the second bank will not fit in internal structure, so reducing the data read
 		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-							  (uint8_t*)macro + ROCCAT_REPORT_SIZE_MACRO_BANK - 2, sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK - 2));
-		if (rc != sizeof(struct roccat_macro) - (ROCCAT_REPORT_SIZE_MACRO_BANK - 2)) {
+							  (uint8_t*)macro->msg.bank2.data, ROCCAT_REPORT_SIZE_MACRO_BANK1);
+		if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK1) {
 			log_error(device->ratbag,
 				  "Unable to retrieve the second bank for macro for button %d of profile %d: %s (%d)\n",
 				  button->index, button->profile->index,
@@ -939,8 +1019,8 @@ roccat_read_button(struct ratbag_button *button)
 					  button->profile->index + 0x10, // When setting for a specific button, the Profile ID is 0x10 * Profile ID + 1
 					  button->index);
 		rc = ratbag_hidraw_get_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-							  (uint8_t*)macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
-		if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK) {
+							  (uint8_t*)macro->msg.bank1.data, ROCCAT_REPORT_SIZE_MACRO_BANK1);
+		if (rc != ROCCAT_REPORT_SIZE_MACRO_BANK1) {
 			log_error(device->ratbag,
 				  "Unable to retrieve the first bank for macro for button %d of profile %d: %s (%d)\n",
 				  button->index, button->profile->index,
@@ -948,7 +1028,7 @@ roccat_read_button(struct ratbag_button *button)
 			goto out_macro;
 		}
 
-		if (macro->report_id != ROCCAT_REPORT_ID_MACRO) {
+		if (macro->msg.bank1.msg.report_id != ROCCAT_REPORT_ID_MACRO) {
 			log_error(device->ratbag,
 					"Error while reading the macro of button %d of profile %d.\n",
 					button->index,
@@ -956,7 +1036,7 @@ roccat_read_button(struct ratbag_button *button)
 			goto out_macro;
 		}
 
-		//roccat_crc_is_valid(device, (uint8_t*)macro, sizeof(struct roccat_macro), &macro->crc);
+		roccat_crc_is_valid(device, (uint8_t*)macro, ROCCAT_REPORT_SIZE_MACRO_BANK1 + ROCCAT_REPORT_SIZE_MACRO_BANK2);
 
 		roccat_read_macro(macro, button);
 
