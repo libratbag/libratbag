@@ -158,11 +158,10 @@ static int ratbagd_button_get_key(sd_bus *bus,
 				      sd_bus_error *error)
 {
 	struct ratbagd_button *button = userdata;
-	unsigned int key;
 
 	unsigned int *modifiers = NULL;
 	size_t *sz = 0;
-        key = ratbag_button_get_key(button->lib_button, modifiers, sz);
+	const unsigned int key = ratbag_button_get_key(button->lib_button, modifiers, sz);
 
 	verify_unsigned_int(key);
 
