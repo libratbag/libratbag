@@ -1,0 +1,4 @@
+[Device]
+Name=Logitech G303 Shroud Edition
+DeviceMatch=usb:046d:c097
+Driver=hidpp20
