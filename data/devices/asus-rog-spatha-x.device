@@ -1,7 +1,8 @@
 [Device]
 Name=ASUS ROG Spatha X
-DeviceMatch=usb:0b05:1979
+DeviceMatch=usb:0b05:1979;usb:0b05:1977
 Driver=asus
+LedTypes=logo;wheel;side
 
 [Driver/asus]
 Profiles=5
@@ -10,5 +11,4 @@ Leds=3
 Dpis=4
 Wireless=1
 DpiRange=100:19000@50
-Quirks=DOUBLE_DPI
 ButtonMapping=f0;f1;f2;e4;e5;e6;e8;e9;ea;eb;ec;ed;ee;ef
