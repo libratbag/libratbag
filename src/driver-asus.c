@@ -207,36 +207,35 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 			continue;
 		}
 
-		int button_asus_code = drv_data->button_mapping[asus_index];
+		int asus_code_src = drv_data->button_mapping[asus_index];
+		int asus_code_dst;
+		struct asus_button *asus_button;
 		log_debug(device->ratbag, "Button %d (%02x) changed\n",
-			  button->index, (uint8_t) button_asus_code);
+			  button->index, (uint8_t) asus_code_src);
 
 		switch (button->action.type) {
 		case RATBAG_BUTTON_ACTION_TYPE_NONE:
 			rc = asus_set_button_action(
-				device, button_asus_code,
-				ASUS_BUTTON_CODE_DISABLED,
+				device, asus_code_src, ASUS_BUTTON_CODE_DISABLED,
 				ASUS_BUTTON_ACTION_TYPE_BUTTON);
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 			/* Linux code to ASUS code */
-			int asus_code = asus_find_key_code(button->action.action.key.key);
-			if (asus_code >= 0)
+			asus_code_dst = asus_find_key_code(button->action.action.key.key);
+			if (asus_code_dst >= 0)
 				rc = asus_set_button_action(
-					device, button_asus_code,
-					asus_code,
+					device, asus_code_src, asus_code_dst,
 					ASUS_BUTTON_ACTION_TYPE_KEY);
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 			/* ratbag action to ASUS code */
-			struct asus_button *asus_button = asus_find_button_by_action(button->action);
+			asus_button = asus_find_button_by_action(button->action);
 			if (asus_button != NULL)  /* found button to bind to */
 				rc = asus_set_button_action(
-					device, button_asus_code,
-					asus_button->asus_code,
+					device, asus_code_src, asus_button->asus_code,
 					ASUS_BUTTON_ACTION_TYPE_BUTTON);
 			break;
 
