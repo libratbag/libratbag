@@ -55,6 +55,7 @@ static int8_t ASUS_CONFIG_BUTTON_MAPPING[] = {
 	-1,  /* placeholder */
 	-1,  /* placeholder */
 	-1,  /* placeholder */
+	-1,  /* placeholder */
 };
 
 static unsigned int ASUS_LED_MODE[] = {

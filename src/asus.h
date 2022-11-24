@@ -17,7 +17,7 @@
 #define ASUS_STATUS_ERROR 0xffaa  /* invalid state/request, disconnected or sleeping */
 
 /* maximum number of buttons across all ASUS devices */
-#define ASUS_MAX_NUM_BUTTON 16
+#define ASUS_MAX_NUM_BUTTON 17
 
 /* maximum number of DPI presets across all ASUS devices */
 /* for 4 DPI devices: 0 - red, 1 - purple, 2 - blue (default), 3 - green */
@@ -147,11 +147,12 @@ static struct asus_button ASUS_BUTTON_MAPPING[] = {
 	{ 0xe1, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 4, 0 },  /* backward, right side */
 	{ 0xe2, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 5, 0 },  /* forward, right side */
 	{ 0xe7, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE },  /* DPI target */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
-	{ 0xff, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* placeholder */
+	{ 0xea, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button A */
+	{ 0xeb, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button B */
+	{ 0xec, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button C */
+	{ 0xed, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button D */
+	{ 0xee, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button E */
+	{ 0xef, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button F */
 };
 
 struct asus_button *
