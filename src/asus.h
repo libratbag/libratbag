@@ -205,8 +205,8 @@ int
 asus_get_binding_data(struct ratbag_device *device, union asus_binding_data *data);
 
 int
-asus_set_button_action(struct ratbag_device *device, uint8_t button_asus_code,
-		uint8_t asus_code, uint8_t asus_type);
+asus_set_button_action(struct ratbag_device *device, uint8_t asus_code_src,
+		       uint8_t asus_code_dst, uint8_t asus_type);
 
 /* resolution settings */
 

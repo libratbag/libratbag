@@ -268,7 +268,8 @@ asus_get_binding_data(struct ratbag_device *device, union asus_binding_data *dat
 
 /* set button binding using ASUS code of the button */
 int
-asus_set_button_action(struct ratbag_device *device, uint8_t button_asus_code, uint8_t asus_code, uint8_t asus_type)
+asus_set_button_action(struct ratbag_device *device, uint8_t asus_code_src,
+		       uint8_t asus_code_dst, uint8_t asus_type)
 {
 	int rc;
 	union asus_response response;
@@ -277,11 +278,11 @@ asus_set_button_action(struct ratbag_device *device, uint8_t button_asus_code, u
 	};
 
 	/* source (physical mouse button) */
-	request.data.params[2] = button_asus_code;
+	request.data.params[2] = asus_code_src;
 	request.data.params[3] = ASUS_BUTTON_ACTION_TYPE_BUTTON;
 
 	/* destination (mouse button or keyboard key action) */
-	request.data.params[4] = asus_code;
+	request.data.params[4] = asus_code_dst;
 	request.data.params[5] = asus_type;
 
 	rc = asus_query(device, &request, &response);
