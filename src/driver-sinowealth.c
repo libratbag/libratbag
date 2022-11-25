@@ -627,7 +627,7 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 
 	assert(dpi >= SINOWEALTH_DPI_MIN && dpi <= sinowealth_get_max_dpi_for_sensor(sensor));
 
-	uint8_t raw = dpi / 100;
+	uint8_t raw = (uint8_t)(dpi / 100);
 
 	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360)
 		raw -= 1;
@@ -677,14 +677,14 @@ sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 	/* Fall back to RBG if the LED type is incorrect. */
 	default:
 	case SINOWEALTH_LED_TYPE_RBG:
-		raw_color.data[0] = color.red;
-		raw_color.data[1] = color.blue;
-		raw_color.data[2] = color.green;
+		raw_color.data[0] = (uint8_t)color.red;
+		raw_color.data[1] = (uint8_t)color.blue;
+		raw_color.data[2] = (uint8_t)color.green;
 		break;
 	case SINOWEALTH_LED_TYPE_RGB:
-		raw_color.data[0] = color.red;
-		raw_color.data[1] = color.green;
-		raw_color.data[2] = color.blue;
+		raw_color.data[0] = (uint8_t)color.red;
+		raw_color.data[1] = (uint8_t)color.green;
+		raw_color.data[2] = (uint8_t)color.blue;
 		break;
 	}
 
@@ -751,7 +751,7 @@ static struct sinowealth_rgb_mode
 sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 {
 	struct sinowealth_rgb_mode mode;
-	mode.brightness = sinowealth_brightness_to_rgb_mode(led->brightness);
+	mode.brightness = sinowealth_brightness_to_rgb_mode((uint8_t)led->brightness);
 	mode.speed = sinowealth_duration_to_rgb_mode(led->ms);
 	return mode;
 }
@@ -867,7 +867,7 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, index + 1 };
+	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, (uint8_t)index + 1u };
 
 	rc = sinowealth_query_write(device, buf, sizeof(buf));
 	if (rc != 0) {
@@ -1015,7 +1015,7 @@ sinowealth_read_raw_config(struct ratbag_device *device)
 		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
 		return -1;
 	}
-	drv_data->config_size = rc;
+	drv_data->config_size = (unsigned int)rc;
 
 	log_debug(device->ratbag, "Configuration size is %d bytes\n", drv_data->config_size);
 
@@ -1262,7 +1262,7 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 			 */
 
 			button_data->type = SINOWEALTH_BUTTON_TYPE_MACRO;
-			button_data->macro.index = button->index + (profile->index * drv_data->button_count);
+			button_data->macro.index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
 			button_data->macro.mode = SINOWEALTH_BUTTON_MACRO_MODE_REPEAT;
 			button_data->macro.option = 1;
 
@@ -1288,7 +1288,7 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 	if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
 		return;
 
-	macro->index = button->index + (profile->index * drv_data->button_count);
+	macro->index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
 
 	/* Reset the `events` field. Even if we don't do this, the mouse will ignore unneeded data. */
 	memset(&macro->events, 0, sizeof(macro->events));
@@ -1355,7 +1355,7 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 				event->event.timeout = 0xff;
 
 			/* Set delay of the previous event. */
-			macro->events[raw_event_count - 1].delay = event->event.timeout;
+			macro->events[raw_event_count - 1].delay = (uint8_t)event->event.timeout;
 			break;
 		/* Should not be reachable but let's ignore it just in case. */
 		default:
@@ -1563,7 +1563,7 @@ sinowealth_write_config(struct ratbag_device *device)
 
 	config1->report_id = config_report_id;
 	config1->command_id = SINOWEALTH_CMD_GET_CONFIG;
-	config1->config_write = drv_data->config_size - 8;
+	config1->config_write = (uint8_t)drv_data->config_size - 8;
 
 	rc = sinowealth_query_write(device, (uint8_t*)config1, sizeof(*config1));
 	if (rc != 0) {
