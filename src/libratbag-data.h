@@ -156,7 +156,7 @@ ratbag_device_data_asus_get_button_count(const struct ratbag_device_data *data);
 /**
  * @return Array of button indices, which are used for reading and writing button actions
  */
-const int8_t *
+const int *
 ratbag_device_data_asus_get_button_mapping(const struct ratbag_device_data *data);
 
 /**

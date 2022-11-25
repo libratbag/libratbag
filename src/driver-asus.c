@@ -38,7 +38,7 @@
 #include "asus.h"
 
 /* ButtonMapping configuration property defaults */
-static int8_t ASUS_CONFIG_BUTTON_MAPPING[] = {
+static int ASUS_CONFIG_BUTTON_MAPPING[] = {
 	0xf0,  /* left */
 	0xf1,  /* right (button 3 in xev) */
 	0xf2,  /* middle (button 2 in xev) */
@@ -70,7 +70,7 @@ static unsigned int ASUS_LED_MODE[] = {
 
 struct asus_data {
 	uint8_t is_ready;
-	int8_t button_mapping[ASUS_MAX_NUM_BUTTON];
+	int button_mapping[ASUS_MAX_NUM_BUTTON];
 	int button_indices[ASUS_MAX_NUM_BUTTON];
 };
 
@@ -436,7 +436,7 @@ asus_driver_probe(struct ratbag_device *device)
 	dpi_count = ratbag_device_data_asus_get_dpi_count(device->data);
 	button_count = ratbag_device_data_asus_get_button_count(device->data);
 	led_count = ratbag_device_data_asus_get_led_count(device->data);
-	const int8_t *bm = ratbag_device_data_asus_get_button_mapping(device->data);
+	const int *bm = ratbag_device_data_asus_get_button_mapping(device->data);
 
 	/* merge ButtonMapping configuration property with defaults */
 	for (unsigned int i = 0; i < button_count; i++) {
@@ -451,7 +451,7 @@ asus_driver_probe(struct ratbag_device *device)
 
 		/* search for this button in the ButtonMapping by it's ASUS code */
 		for (unsigned int j = 0; j < button_count; j++) {
-			if (drv_data->button_mapping[j] == (int8_t) asus_button->asus_code) {
+			if (drv_data->button_mapping[j] == (int)asus_button->asus_code) {
 				/* add button to indices array */
 				drv_data->button_indices[button_index] = (int)j;
 				log_debug(device->ratbag, "Button %d is mapped to 0x%02x\n",

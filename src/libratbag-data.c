@@ -99,7 +99,7 @@ struct data_steelseries {
 struct data_asus {
 	int profile_count;
 	int button_count;
-	int8_t button_mapping[ASUS_MAX_NUM_BUTTON];
+	int button_mapping[ASUS_MAX_NUM_BUTTON];
 	int led_count;
 	int dpi_count;
 	int is_wireless;
@@ -373,7 +373,7 @@ init_data_asus(struct ratbag *ratbag,
 	_cleanup_(g_strfreevp) char **button_mapping = g_key_file_get_string_list(keyfile, group, "ButtonMapping", &button_mapping_count, &error);
 	if (!error && button_mapping) {
 		for (unsigned int i = 0; i < button_mapping_count; i++) {
-			data->asus.button_mapping[i] = (int8_t) strtoul(button_mapping[i], NULL, 16);
+			data->asus.button_mapping[i] = strtoul(button_mapping[i], NULL, 16);
 		}
 	}
 	g_clear_error(&error);
@@ -897,7 +897,7 @@ ratbag_device_data_asus_get_button_count(const struct ratbag_device_data *data)
 	return data->asus.button_count;
 }
 
-const int8_t *
+const int *
 ratbag_device_data_asus_get_button_mapping(const struct ratbag_device_data *data)
 {
 	assert(data->drivertype == ASUS);
