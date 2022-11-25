@@ -208,11 +208,19 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 			continue;
 		}
 
-		int asus_code_src = drv_data->button_mapping[asus_index];
-		int asus_code_dst;
+		uint8_t asus_code_src;
+		uint8_t asus_code_dst;
 		struct asus_button *asus_button;
+
+		rc = drv_data->button_mapping[asus_index];
+		if (rc == -1) {
+			log_debug(device->ratbag, "No mapping for button %d\n", button->index);
+			continue;
+		}
+
+		asus_code_src = (uint8_t)rc;
 		log_debug(device->ratbag, "Button %d (%02x) changed\n",
-			  button->index, (uint8_t) asus_code_src);
+			  button->index, asus_code_src);
 
 		switch (button->action.type) {
 		case RATBAG_BUTTON_ACTION_TYPE_NONE:
@@ -223,11 +231,13 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 			/* Linux code to ASUS code */
-			asus_code_dst = asus_find_key_code(button->action.action.key.key);
-			if (asus_code_dst >= 0)
+			rc = asus_find_key_code(button->action.action.key.key);
+			if (rc != -1) {
+				asus_code_dst = (uint8_t)rc;
 				rc = asus_set_button_action(
 					device, asus_code_src, asus_code_dst,
 					ASUS_BUTTON_ACTION_TYPE_KEY);
+			}
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
