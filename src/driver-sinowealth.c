@@ -486,7 +486,7 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 
 	/* This must defined after `SPECIAL` type so that correct raw data
 	 * for action type `NONE` is used. */
-	{ { SINOWEALTH_BUTTON_TYPE_NONE, {} }, BUTTON_ACTION_NONE },
+	{ { SINOWEALTH_BUTTON_TYPE_NONE, { { 0 } } }, BUTTON_ACTION_NONE },
 };
 
 /* Check if two given button data structs are equal.
@@ -1586,7 +1586,7 @@ sinowealth_write_macros(struct ratbag_device *device)
 	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
 	/* NOTE: We will reuse the same buffer for all commands and reset it's `events` field for every button. */
-	struct sinowealth_macro_report macro = {};
+	struct sinowealth_macro_report macro = { 0 };
 	macro.report_id = config_report_id;
 	macro.command_id = SINOWEALTH_CMD_MACRO;
 	macro.unknown1 = 0x2;
