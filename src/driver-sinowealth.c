@@ -692,7 +692,7 @@ sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 }
 
 /* Get brightness to use with ratbag's API from RGB mode `mode`. */
-static int
+static unsigned int
 sinowealth_rgb_mode_to_brightness(struct sinowealth_rgb_mode mode)
 {
 	/* Convert 0-4 to 0-255. */
@@ -708,7 +708,7 @@ sinowealth_brightness_to_rgb_mode(uint8_t brightness)
 }
 
 /* @return Effect duration or `0` on error. */
-static int
+static unsigned int
 sinowealth_rgb_mode_to_duration(struct sinowealth_rgb_mode mode)
 {
 	switch (mode.speed) {
@@ -1293,7 +1293,7 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 	/* Reset the `events` field. Even if we don't do this, the mouse will ignore unneeded data. */
 	memset(&macro->events, 0, sizeof(macro->events));
 
-	unsigned int raw_event_count = 0;
+	uint8_t raw_event_count = 0;
 	for (unsigned int i = 0; i < MAX_MACRO_EVENTS; ++i) {
 		struct ratbag_macro_event *event = &action->macro->events[i];
 
@@ -1318,7 +1318,7 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 		switch (event->type) {
 		case RATBAG_MACRO_EVENT_KEY_PRESSED:
 		case RATBAG_MACRO_EVENT_KEY_RELEASED: {
-			int raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, event->event.key);
+			uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, event->event.key);
 			if (raw_key == 0) {
 				log_error(device->ratbag, "Could not set unsupported key %#x in macro for button %u", event->event.key, button->index);
 				/* Ignore the error to not mess up event order. */
@@ -1530,7 +1530,7 @@ sinowealth_write_buttons(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
 	struct sinowealth_button_report *buttons1 = &drv_data->buttons[0];
 
@@ -1583,7 +1583,7 @@ sinowealth_write_macros(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	const char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
 	/* NOTE: We will reuse the same buffer for all commands and reset it's `events` field for every button. */
 	struct sinowealth_macro_report macro = { 0 };
