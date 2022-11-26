@@ -1283,8 +1283,7 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
-		return;
+	assert(action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 	macro->index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
 
