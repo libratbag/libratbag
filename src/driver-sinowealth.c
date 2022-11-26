@@ -86,6 +86,7 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  * a single configuration software that exposes it.
  */
 #define SINOWEALTH_NUM_PROFILES 1
+_Static_assert(SINOWEALTH_NUM_PROFILES <= 2, "Too many profiles enabled");
 
 /* Maximum amount of real events in a macro. */
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
@@ -754,6 +755,46 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 	return mode;
 }
 
+static uint8_t
+sinowealth_get_buttons_command(size_t profile_index)
+{
+	uint8_t config_command = 0;
+
+	switch (profile_index) {
+	case 0:
+		config_command = SINOWEALTH_CMD_GET_BUTTONS;
+		break;
+	case 1:
+		config_command = SINOWEALTH_CMD_GET_BUTTONS2;
+		break;
+	default:
+		abort();
+		break;
+	}
+
+	return config_command;
+}
+
+static uint8_t
+sinowealth_get_config_command(size_t profile_index)
+{
+	uint8_t config_command = 0;
+
+	switch (profile_index) {
+	case 0:
+		config_command = SINOWEALTH_CMD_GET_CONFIG;
+		break;
+	case 1:
+		config_command = SINOWEALTH_CMD_GET_CONFIG2;
+		break;
+	default:
+		abort();
+		break;
+	}
+
+	return config_command;
+}
+
 /* Do a read query.
  *
  * After an error assume `buffer` now has garbage data.
@@ -992,13 +1033,17 @@ sinowealth_read_raw_button_configs(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	struct sinowealth_button_report *buttons = &drv_data->buttons[0];
+	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+		const uint8_t config_command = sinowealth_get_buttons_command(profile_index);
 
-	rc = sinowealth_query_read_config(device, SINOWEALTH_CMD_GET_BUTTONS, (uint8_t*)buttons, SINOWEALTH_BUTTON_SIZE, SINOWEALTH_BUTTON_SIZE);
-	if (rc < 0) {
-		log_error(device->ratbag, "Could not read button configuration data: %d\n", rc);
-		return -1;
-	}
+		struct sinowealth_button_report *buttons = &drv_data->buttons[profile_index];
+
+		rc = sinowealth_query_read_config(device, config_command, (uint8_t*)buttons, SINOWEALTH_BUTTON_SIZE, SINOWEALTH_BUTTON_SIZE);
+		if (rc < 0) {
+			log_error(device->ratbag, "Could not read button configuration data: %d\n", rc);
+			return -1;
+		}
+	};
 
 	return 0;
 }
@@ -1014,14 +1059,22 @@ sinowealth_read_raw_configs(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	struct sinowealth_config_report *config = &drv_data->configs[0];
+	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+		const uint8_t config_command = sinowealth_get_config_command(profile_index);
 
-	rc = sinowealth_query_read_config(device, SINOWEALTH_CMD_GET_CONFIG, (uint8_t*)config, SINOWEALTH_CONFIG_SIZE_MIN, SINOWEALTH_CONFIG_SIZE_MAX);
-	if (rc < 0) {
-		log_error(device->ratbag, "Could not read device configuration data: %d\n", rc);
-		return -1;
-	}
+		struct sinowealth_config_report *config = &drv_data->configs[profile_index];
 
+		rc = sinowealth_query_read_config(device, config_command, (uint8_t*)config, SINOWEALTH_CONFIG_SIZE_MIN, SINOWEALTH_CONFIG_SIZE_MAX);
+		if (rc < 0) {
+			log_error(device->ratbag, "Could not read device configuration data: %d\n", rc);
+			return -1;
+		}
+	};
+
+	/* In theory both of query calls are going to return the same amount
+	 * of bytes. We'll use the output of the last one just because it's
+	 * simpler.
+	 */
 	drv_data->config_size = (unsigned int)rc;
 
 	log_debug(device->ratbag, "Configuration size is %d bytes\n", drv_data->config_size);
