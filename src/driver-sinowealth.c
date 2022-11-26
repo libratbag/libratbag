@@ -763,11 +763,6 @@ sinowealth_led_to_rgb_mode(const struct ratbag_led *led)
 static int
 sinowealth_query_read(struct ratbag_device *device, uint8_t buffer[], unsigned int buffer_length)
 {
-	/*
-	 * TODO: make this work with sinowealth_read_raw_config. Currently it
-	 * doesn't because that function has some custom behavior.
-	 */
-
 	int rc = 0;
 
 	/* Buffer's first byte is always the report ID. */
@@ -950,32 +945,58 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	return 0;
 }
 
+/* Read configuration data.
+ *
+ * This is the raw interaction with the mouse used by @ref sinowealth_read_raw_config
+ * and @ref sinowealth_read_raw_buttons.
+ *
+ * @return Count of bytes transferred or a negative error.
+ */
+static int
+sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, uint8_t *buffer, unsigned int reply_len_min, unsigned int reply_len_max)
+{
+	int rc = 0;
+
+	struct sinowealth_data *drv_data = device->drv_data;
+
+	{
+		uint8_t cmd[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, config_cmd };
+		rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
+		if (rc != sizeof(cmd)) {
+			log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+			return -1;
+		}
+	}
+
+	{
+		const unsigned char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+
+		rc = ratbag_hidraw_get_feature_report(device, config_report_id, buffer, SINOWEALTH_CONFIG_REPORT_SIZE);
+		if (rc < (int)reply_len_min || rc > (int)reply_len_max) {
+			log_error(device->ratbag, "Could not read device configuration data: %d\n", rc);
+			return -1;
+		}
+	}
+
+	return rc;
+}
+
 /* Read button configuration data from the mouse and save it in drv_data.
  *
  * @return 0 on success or an error code.
  */
 static int
-sinowealth_read_raw_buttons(struct ratbag_device *device)
+sinowealth_read_raw_button_configs(struct ratbag_device *device)
 {
-	/* TODO: analogous to @ref sinowealth_read_raw_config. */
-
-	int rc = 0;
+	int rc;
 
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_button_report *buttons1 = &drv_data->buttons[0];
 
-	const unsigned char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+	struct sinowealth_button_report *buttons = &drv_data->buttons[0];
 
-	uint8_t cmd1[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_BUTTONS };
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd1, sizeof(cmd1));
-	if (rc != sizeof(cmd1)) {
-		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
-		return -1;
-	}
-
-	rc = ratbag_hidraw_get_feature_report(device, config_report_id, (uint8_t*)buttons1, SINOWEALTH_CONFIG_REPORT_SIZE);
-	if (rc != SINOWEALTH_BUTTON_SIZE) {
-		log_error(device->ratbag, "Could not read device button configuration: %d\n", rc);
+	rc = sinowealth_query_read_config(device, SINOWEALTH_CMD_GET_BUTTONS, (uint8_t*)buttons, SINOWEALTH_BUTTON_SIZE, SINOWEALTH_BUTTON_SIZE);
+	if (rc < 0) {
+		log_error(device->ratbag, "Could not read button configuration data: %d\n", rc);
 		return -1;
 	}
 
@@ -987,32 +1008,20 @@ sinowealth_read_raw_buttons(struct ratbag_device *device)
  * @return 0 on success or an error code.
  */
 static int
-sinowealth_read_raw_config(struct ratbag_device *device)
+sinowealth_read_raw_configs(struct ratbag_device *device)
 {
 	int rc = 0;
 
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config1 = &drv_data->configs[0];
 
-	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+	struct sinowealth_config_report *config = &drv_data->configs[0];
 
-	uint8_t cmd[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_GET_CONFIG };
-
-	/* TODO: adapt @ref sinowealth_query_read to work here and use it. */
-
-	rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
-	if (rc != sizeof(cmd)) {
-		log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
+	rc = sinowealth_query_read_config(device, SINOWEALTH_CMD_GET_CONFIG, (uint8_t*)config, SINOWEALTH_CONFIG_SIZE_MIN, SINOWEALTH_CONFIG_SIZE_MAX);
+	if (rc < 0) {
+		log_error(device->ratbag, "Could not read device configuration data: %d\n", rc);
 		return -1;
 	}
 
-	rc = ratbag_hidraw_get_feature_report(device, config_report_id,
-					      (uint8_t*) config1, SINOWEALTH_CONFIG_REPORT_SIZE);
-	/* The GET_FEATURE report length has to be 520, but the actual data returned is less */
-	if (rc < SINOWEALTH_CONFIG_SIZE_MIN || rc > SINOWEALTH_CONFIG_SIZE_MAX) {
-		log_error(device->ratbag, "Could not read device configuration: %d\n", rc);
-		return -1;
-	}
 	drv_data->config_size = (unsigned int)rc;
 
 	log_debug(device->ratbag, "Configuration size is %d bytes\n", drv_data->config_size);
@@ -1419,11 +1428,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 		return rc;
 	log_info(device->ratbag, "firmware version: %s\n", fw_version);
 
-	rc = sinowealth_read_raw_config(device);
+	rc = sinowealth_read_raw_configs(device);
 	if (rc)
 		return rc;
 
-	rc = sinowealth_read_raw_buttons(device);
+	rc = sinowealth_read_raw_button_configs(device);
 	if (rc)
 		return rc;
 
