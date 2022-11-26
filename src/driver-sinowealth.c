@@ -490,22 +490,20 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 };
 
 /* Check if two given button data structs are equal.
- *
- * @return 1 if structs are equal or 0 otherwise.
  */
-static int
+static bool
 sinowealth_button_data_is_equal(const struct sinowealth_button_data *lhs, const struct sinowealth_button_data *rhs)
 {
 	if (lhs->type != rhs->type)
-		return 0;
+		return false;
 
 	for (unsigned int i = 0; i < sizeof(lhs->data); ++i) {
 		if (lhs->data[i] != rhs->data[i]) {
-			return 0;
+			return false;
 		}
 	}
 
-	return 1;
+	return true;
 }
 
 /* Convert a button action to raw data using the `sinowealth_button_map`.
@@ -542,7 +540,7 @@ sinowealth_raw_to_button_action(const struct sinowealth_button_data *data)
 	const struct sinowealth_button_mapping *mapping = NULL;
 
 	ARRAY_FOR_EACH(sinowealth_button_map, mapping) {
-		if (sinowealth_button_data_is_equal(data, &mapping->data) == 0)
+		if (!sinowealth_button_data_is_equal(data, &mapping->data))
 			continue;
 
 		return &mapping->action;
