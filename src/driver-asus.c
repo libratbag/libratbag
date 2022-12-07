@@ -439,7 +439,7 @@ asus_driver_probe(struct ratbag_device *device)
 	const int *bm = ratbag_device_data_asus_get_button_mapping(device->data);
 
 	/* merge ButtonMapping configuration property with defaults */
-	for (unsigned int i = 0; i < button_count; i++) {
+	for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON; i++) {
 		drv_data->button_mapping[i] = bm[i] != -1 ? bm[i] : ASUS_CONFIG_BUTTON_MAPPING[i];
 		drv_data->button_indices[i] = -1;
 	}
@@ -450,7 +450,7 @@ asus_driver_probe(struct ratbag_device *device)
 		struct asus_button *asus_button = &ASUS_BUTTON_MAPPING[i];
 
 		/* search for this button in the ButtonMapping by it's ASUS code */
-		for (unsigned int j = 0; j < button_count; j++) {
+		for (unsigned int j = 0; j < ASUS_MAX_NUM_BUTTON; j++) {
 			if (drv_data->button_mapping[j] == (int)asus_button->asus_code) {
 				/* add button to indices array */
 				drv_data->button_indices[button_index] = (int)j;
