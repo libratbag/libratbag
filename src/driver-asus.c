@@ -416,6 +416,7 @@ asus_driver_probe(struct ratbag_device *device)
 {
 	int rc;
 	unsigned int profile_count, dpi_count, button_count, led_count;
+	const struct asus_button *asus_button;
 	struct asus_data *drv_data;
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
@@ -446,16 +447,14 @@ asus_driver_probe(struct ratbag_device *device)
 
 	/* setup a lookup table for all defined buttons */
 	unsigned int button_index = 0;
-	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_BUTTON_MAPPING); i++) {
-		const struct asus_button *asus_button = &ASUS_BUTTON_MAPPING[i];
-
+	ARRAY_FOR_EACH(ASUS_BUTTON_MAPPING, asus_button) {
 		/* search for this button in the ButtonMapping by it's ASUS code */
-		for (unsigned int j = 0; j < ASUS_MAX_NUM_BUTTON; j++) {
-			if (drv_data->button_mapping[j] == (int)asus_button->asus_code) {
+		for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON; i++) {
+			if (drv_data->button_mapping[i] == (int)asus_button->asus_code) {
 				/* add button to indices array */
-				drv_data->button_indices[button_index] = (int)j;
+				drv_data->button_indices[button_index] = (int)i;
 				log_debug(device->ratbag, "Button %d is mapped to 0x%02x\n",
-					  button_index, (uint8_t) drv_data->button_mapping[j]);
+					  button_index, (uint8_t)drv_data->button_mapping[i]);
 				button_index++;
 				break;
 			}

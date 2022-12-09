@@ -88,8 +88,7 @@ const struct asus_button *
 asus_find_button_by_action(struct ratbag_button_action action)
 {
 	const struct asus_button *asus_button;
-	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_BUTTON_MAPPING); i++) {
-		asus_button = &ASUS_BUTTON_MAPPING[i];
+	ARRAY_FOR_EACH(ASUS_BUTTON_MAPPING, asus_button) {
 		if ((action.type == RATBAG_BUTTON_ACTION_TYPE_BUTTON && asus_button->button == action.action.button) ||
 				(action.type == RATBAG_BUTTON_ACTION_TYPE_SPECIAL && asus_button->special == action.action.special))
 			return asus_button;
