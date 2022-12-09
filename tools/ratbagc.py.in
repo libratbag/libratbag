@@ -438,6 +438,39 @@ class RatbagdProfile(metaclass=MetaRatbag):
         return rates[:n]
 
     @property
+    def angle_snapping(self):
+        """The angle snapping option."""
+        return libratbag.ratbag_profile_get_angle_snapping(self._profile)
+
+    @angle_snapping.setter
+    def angle_snapping(self, value):
+        """Set the angle snapping option.
+
+        @param value The angle snapping option as bool
+        """
+        libratbag.ratbag_profile_set_angle_snapping(self._profile, value)
+
+    @property
+    def debounce(self):
+        """The debounce time in ms."""
+        return libratbag.ratbag_profile_get_debounce(self._profile)
+
+    @debounce.setter
+    def debounce(self, value):
+        """Set the debounce time in ms.
+
+        @param value The new debounce time, as int
+        """
+        libratbag.ratbag_profile_set_debounce(self._profile, value)
+
+    @property
+    def debounces(self):
+        """The list of supported debounce times"""
+        values = [0 for i in range(300)]
+        n = libratbag.ratbag_profile_get_debounce_list(self._profile, values)
+        return values[:n]
+
+    @property
     def resolutions(self):
         """A list of RatbagdResolution objects with this profile's resolutions.
         Note that the list of resolutions differs between profiles but the number

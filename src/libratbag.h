@@ -772,6 +772,90 @@ ratbag_profile_get_report_rate_list(struct ratbag_profile *profile,
 /**
  * @ingroup profile
  *
+ * Set the angle snapping option for the profile.
+ *
+ * A value of 0 disables the mode.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Angle snapping value
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_angle_snapping(struct ratbag_profile *profile,
+				  int value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the angle snapping option for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Angle snapping value
+ */
+int
+ratbag_profile_get_angle_snapping(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Set the debounce time in ms for the profile.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Debounce time in ms
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_debounce(struct ratbag_profile *profile,
+			    int value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the debounce time in ms for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Debounce time for this profile in ms
+ */
+int
+ratbag_profile_get_debounce(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Get the number of debounce times in ms available for this profile.
+ * The list of debounce times is sorted in ascending order but may be filtered
+ * by libratbag and does not necessarily reflect all debounce times supported by
+ * the physical device.
+ *
+ * This function writes at most ndebounces values but returns the number of
+ * debounce times available on this resolution. In other words, if it returns a
+ * number larger than ndebounces, call it again with an array the size of the
+ * return value.
+ *
+ * @param[out] debounces Set to the supported debounce times in ascending order
+ * @param[in] ndebounces The number of elements
+ *
+ * @return The number of valid items in values. If the returned value
+ * is larger than ndebounces, the list was truncated.
+ */
+size_t
+ratbag_profile_get_debounce_list(struct ratbag_profile *profile,
+				 unsigned int *debounces,
+				 size_t ndebounces);
+
+/**
+ * @ingroup profile
+ *
  * Get the number of @ref ratbag_resolution available in this profile. A
  * resolution mode is a tuple of (resolution, report rate), each mode can be
  * fetched with ratbag_profile_get_resolution().
@@ -1684,4 +1768,3 @@ ratbag_led_ref(struct ratbag_led *led);
  */
 struct ratbag_led *
 ratbag_led_unref(struct ratbag_led *led);
-

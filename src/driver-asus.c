@@ -148,6 +148,8 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 	switch (dpi_count) {
 	case 2:  /* 2 DPI presets */
 		ratbag_profile_set_report_rate(profile, resolution_data.data2.rate);
+		ratbag_profile_set_angle_snapping(profile, resolution_data.data2.snapping);
+		ratbag_profile_set_debounce(profile, resolution_data.data2.response);
 		ratbag_profile_for_each_resolution(profile, resolution)
 			ratbag_resolution_set_resolution(
 				resolution,
@@ -157,6 +159,8 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 
 	case 4:  /* 4 DPI presets */
 		ratbag_profile_set_report_rate(profile, resolution_data.data4.rate);
+		ratbag_profile_set_angle_snapping(profile, resolution_data.data4.snapping);
+		ratbag_profile_set_debounce(profile, resolution_data.data4.response);
 		ratbag_profile_for_each_resolution(profile, resolution)
 			ratbag_resolution_set_resolution(
 				resolution,
@@ -262,6 +266,18 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 	if (profile->rate_dirty) {
 		log_debug(device->ratbag, "Polling rate changed to %d Hz\n", profile->hz);
 		rc = asus_set_polling_rate(device, profile->hz);
+		if (rc)
+			return rc;
+	}
+	if (profile->angle_snapping_dirty) {
+		log_debug(device->ratbag, "Angle snapping changed to %d\n", profile->angle_snapping);
+		rc = asus_set_angle_snapping(device, profile->angle_snapping);
+		if (rc)
+			return rc;
+	}
+	if (profile->debounce_dirty) {
+		log_debug(device->ratbag, "Debounce time changed to %d\n", profile->debounce);
+		rc = asus_set_button_response(device, profile->debounce);
 		if (rc)
 			return rc;
 	}

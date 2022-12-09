@@ -76,6 +76,7 @@ static const unsigned char ASUS_KEY_MAPPING[] = {
 };
 
 static unsigned int ASUS_POLLING_RATES[] = { 125, 250, 500, 1000 };
+static unsigned int ASUS_DEBOUNCE_TIMES[] = { 4, 8, 12, 16, 20, 24, 28, 32 };
 
 /* search for ASUS button by ratbag types */
 const struct asus_button *
@@ -147,6 +148,8 @@ asus_setup_profile(struct ratbag_device *device, struct ratbag_profile *profile)
 {
 	ratbag_profile_set_report_rate_list(
 		profile, ASUS_POLLING_RATES, ARRAY_LENGTH(ASUS_POLLING_RATES));
+	ratbag_profile_set_debounce_list(
+		 profile, ASUS_DEBOUNCE_TIMES, ARRAY_LENGTH(ASUS_DEBOUNCE_TIMES));
 }
 
 void
@@ -311,6 +314,7 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 				data->data2.dpi[i] *= 2;
 		}
 		data->data2.rate = ASUS_POLLING_RATES[data->data2.rate];
+		data->data2.response = ASUS_DEBOUNCE_TIMES[data->data2.response];
 		break;
 
 	case 4:  /* 4 DPI presets */
@@ -320,6 +324,7 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 				data->data4.dpi[i] *= 2;
 		}
 		data->data4.rate = ASUS_POLLING_RATES[data->data4.rate];
+		data->data4.response = ASUS_DEBOUNCE_TIMES[data->data4.response];
 		break;
 
 	default:
@@ -392,11 +397,18 @@ asus_set_button_response(struct ratbag_device *device, unsigned int ms)
 	int rc;
 	unsigned int dpi_count = ratbag_device_get_profile(device, 0)->num_resolutions;
 	union asus_response response;
+	unsigned int index = 0;
+	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_DEBOUNCE_TIMES); i++) {
+		if (ASUS_DEBOUNCE_TIMES[i] == ms) {
+			index = i;
+			break;
+		}
+	}
 
 	union asus_request request = {
 		.data.cmd = ASUS_CMD_SET_SETTING,
 		.data.params[0] = dpi_count + ASUS_FIELD_RESPONSE,  /* field index to set */
-		.data.params[2] = ms / 4 - 1,
+		.data.params[2] = index,
 	};
 
 	rc = asus_query(device, &request, &response);

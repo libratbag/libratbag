@@ -52,6 +52,13 @@
 %typemap(freearg) (unsigned int *rates, size_t nrates) = (unsigned int *resolutions, size_t nres);
 /* END OF custom typemap for handling ratbag_resolution_get_report_rate_list */
 
+/* custom typemap for handling lists */
+/* We re-use the ratbag_profile_get_debounce_list typemap */
+%typemap(in) (unsigned int *debounces, size_t ndebounces) = (unsigned int *resolutions, size_t nres);
+%typemap(argout) (unsigned int *debounces, size_t ndebounces) = (unsigned int *resolutions, size_t nres);
+%typemap(freearg) (unsigned int *debounces, size_t ndebounces) = (unsigned int *resolutions, size_t nres);
+/* END OF custom typemap for handling ratbag_resolution_get_report_rate_list */
+
 /* uintXX_t mapping: Python -> C */
 %typemap(in) uint8_t {
     $1 = (uint8_t) PyInt_AsLong($input);

@@ -267,6 +267,14 @@ struct ratbag_profile {
 	size_t nrates;		/**< number of entries in rates */
 	bool rate_dirty;
 
+	int angle_snapping;
+	bool angle_snapping_dirty;
+
+	int debounce;	/**< debounce time in ms */
+	bool debounce_dirty;
+	unsigned int debounces[8];	/**< debounce times available */
+	size_t ndebounces;		/**< number of entries in debounces */
+
 	unsigned int num_resolutions;
 
 	bool is_active;		/**< profile is the currently active one */
@@ -539,6 +547,22 @@ ratbag_profile_set_report_rate_list(struct ratbag_profile *profile,
 }
 
 static inline void
+ratbag_profile_set_debounce_list(struct ratbag_profile *profile,
+				 const unsigned int *values,
+				 size_t nvalues)
+{
+	assert(nvalues <= ARRAY_LENGTH(profile->debounces));
+	_Static_assert(sizeof(*values) == sizeof(*profile->debounces), "Mismatching size");
+
+	for (size_t i = 0; i < nvalues; i++) {
+		profile->debounces[i] = values[i];
+		if (i > 0)
+			assert(values[i] > values[i - 1]);
+	}
+	profile->ndebounces = nvalues;
+}
+
+static inline void
 ratbag_resolution_set_cap(struct ratbag_resolution *res,
 			  enum ratbag_resolution_capability cap)
 {
@@ -594,4 +618,3 @@ ratbag_register_driver(struct ratbag *ratbag, struct ratbag_driver *driver);
 void
 ratbag_button_copy_macro(struct ratbag_button *button,
 			 const struct ratbag_button_macro *macro);
-

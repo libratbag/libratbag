@@ -278,6 +278,10 @@ def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) ->
             print(" " * level + "Resolutions:")
             for resolution in profile.resolutions:
                 print_resolution(device, profile, resolution, level + 2)
+        if profile.angle_snapping != -1:
+            print(" " * level + f"Angle Snapping: {bool(profile.angle_snapping)}")
+        if profile.debounce != -1:
+            print(" " * level + f"Debounce time: {profile.debounce}ms")
         if profile.buttons:
             for button in profile.buttons:
                 print_button(device, profile, button, level)
@@ -514,6 +518,38 @@ def func_report_rate_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None
 def func_report_rate_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.report_rate = args.rate_n
+    commit(device, args)
+
+
+def func_angle_snapping_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.angle_snapping == -1:
+        return None
+    print(bool(profile.angle_snapping))
+
+
+def func_angle_snapping_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.angle_snapping = 1 if args.angle_snapping_n else 0
+    commit(device, args)
+
+
+def func_debounce_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.debounce == -1:
+        return None
+    print(profile.debounce)
+
+
+def func_debounce_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    values = profile.debounces
+    print(" ".join([str(x) for x in values]))
+
+
+def func_debounce_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.debounce = args.debounce_n
     commit(device, args)
 
 
@@ -857,6 +893,14 @@ parser_def: List[RatbagParserSchemaElement] = [
                 },
                 {
                     of_type: link,
+                    dest: "angle_snapping",
+                },
+                {
+                    of_type: link,
+                    dest: "debounce",
+                },
+                {
+                    of_type: link,
                     dest: "button",
                 },
                 {
@@ -1064,6 +1108,76 @@ Rate commands work on the given profile, or on the active profile if none is giv
                     },
                 ],
                 func: func_report_rate_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "angle_snapping",
+        help_str: """Angle snapping information
+
+Angle snapping commands work on the given profile, or on the active profile if none is given.""",
+        tag: "angle_snapping",
+        group: "AngleSnapping",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current angle snapping",
+                func: func_angle_snapping_get,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current angle snapping to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "angle_snapping_n",
+                        metavar: "N",
+                        help_str: "The angle snapping to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_angle_snapping_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "debounce",
+        help_str: """Access debounce time information
+
+Debounce commands work on the given profile, or on the active profile if none is given.""",
+        tag: "debounce",
+        group: "Debounce",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current debounce time",
+                func: func_debounce_get,
+            },
+            {
+                of_type: command,
+                name: "get-all",
+                help_str: "Show all available debounce times",
+                func: func_debounce_get_all,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current debounce time to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "debounce_n",
+                        metavar: "N",
+                        help_str: "The debounce time to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_debounce_set,
             },
         ],
     },

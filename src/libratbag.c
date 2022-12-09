@@ -697,6 +697,8 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->num_resolutions = 0;
 	profile->is_enabled = true;
 	profile->name = NULL;
+	profile->angle_snapping = -1;
+	profile->debounce = -1;
 
 	list_append(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
@@ -863,6 +865,8 @@ ratbag_device_commit(struct ratbag_device *device)
 	list_for_each(profile, &device->profiles, link) {
 		profile->dirty = false;
 
+		profile->angle_snapping_dirty = false;
+		profile->debounce_dirty = false;
 		profile->rate_dirty = false;
 
 		list_for_each(button, &profile->buttons, link)
@@ -1034,6 +1038,32 @@ ratbag_profile_set_report_rate(struct ratbag_profile *profile,
 	return RATBAG_SUCCESS;
 }
 
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_profile_set_angle_snapping(struct ratbag_profile *profile,
+				  int value)
+{
+	if (profile->angle_snapping != value) {
+		profile->angle_snapping = value;
+		profile->dirty = true;
+		profile->angle_snapping_dirty = true;
+	}
+
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_profile_set_debounce(struct ratbag_profile *profile,
+			    int value)
+{
+	if (profile->debounce != value) {
+		profile->debounce = value;
+		profile->dirty = true;
+		profile->debounce_dirty = true;
+	}
+
+	return RATBAG_SUCCESS;
+}
+
 LIBRATBAG_EXPORT int
 ratbag_resolution_get_dpi(struct ratbag_resolution *resolution)
 {
@@ -1074,6 +1104,36 @@ LIBRATBAG_EXPORT int
 ratbag_profile_get_report_rate(struct ratbag_profile *profile)
 {
 	return profile->hz;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_profile_get_angle_snapping(struct ratbag_profile *profile)
+{
+	return profile->angle_snapping;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_profile_get_debounce(struct ratbag_profile *profile)
+{
+	return profile->debounce;
+}
+
+LIBRATBAG_EXPORT size_t
+ratbag_profile_get_debounce_list(struct ratbag_profile *profile,
+				 unsigned int *debounces,
+				 size_t ndebounces)
+{
+	_Static_assert(sizeof(*debounces) == sizeof(*profile->debounces), "type mismatch");
+
+	assert(ndebounces > 0);
+
+	if (profile->ndebounces == 0)
+		return 0;
+
+	memcpy(debounces, profile->debounces,
+	       sizeof(unsigned int) * min(ndebounces, profile->ndebounces));
+
+	return profile->ndebounces;
 }
 
 LIBRATBAG_EXPORT size_t

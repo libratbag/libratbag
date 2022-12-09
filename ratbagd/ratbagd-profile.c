@@ -455,6 +455,40 @@ ratbagd_profile_get_report_rate(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_get_angle_snapping(sd_bus *bus,
+				   const char *path,
+				   const char *interface,
+				   const char *property,
+				   sd_bus_message *reply,
+				   void *userdata,
+				   sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	int value;
+
+	value = ratbag_profile_get_angle_snapping(lib_profile);
+	return sd_bus_message_append(reply, "i", value);
+}
+
+static int
+ratbagd_profile_get_debounce(sd_bus *bus,
+			     const char *path,
+			     const char *interface,
+			     const char *property,
+			     sd_bus_message *reply,
+			     void *userdata,
+			     sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	int value;
+
+	value = ratbag_profile_get_debounce(lib_profile);
+	return sd_bus_message_append(reply, "i", value);
+}
+
+static int
 ratbagd_profile_get_report_rates(sd_bus *bus,
 				 const char *path,
 				 const char *interface,
@@ -487,6 +521,37 @@ ratbagd_profile_get_report_rates(sd_bus *bus,
 	return sd_bus_message_close_container(reply);
 }
 
+static int
+ratbagd_profile_get_debounces(sd_bus *bus,
+			      const char *path,
+			      const char *interface,
+			      const char *property,
+			      sd_bus_message *reply,
+			      void *userdata,
+			      sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	unsigned int debounces[8];
+	unsigned int ndebounces = ARRAY_LENGTH(debounces);
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	ndebounces = ratbag_profile_get_debounce_list(lib_profile, debounces, ndebounces);
+	assert(ndebounces <= ARRAY_LENGTH(debounces));
+
+	for (unsigned int i = 0; i < ndebounces; i++) {
+		verify_unsigned_int(debounces[i]);
+		r = sd_bus_message_append(reply, "u", debounces[i]);
+		if (r < 0)
+			return r;
+	}
+
+	return sd_bus_message_close_container(reply);
+}
 
 static int
 ratbagd_profile_set_report_rate(sd_bus *bus,
@@ -521,6 +586,66 @@ ratbagd_profile_set_report_rate(sd_bus *bus,
 	return 0;
 }
 
+static int
+ratbagd_profile_set_angle_snapping(sd_bus *bus,
+				   const char *path,
+				   const char *interface,
+				   const char *property,
+				   sd_bus_message *m,
+				   void *userdata,
+				   sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	int value;
+	int r;
+
+	r = sd_bus_message_read(m, "i", &value);
+	if (r < 0)
+		return r;
+
+	r = ratbag_profile_set_angle_snapping(profile->lib_profile, value);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "AngleSnapping",
+					       NULL);
+	}
+
+	return 0;
+}
+
+static int
+ratbagd_profile_set_debounce(sd_bus *bus,
+			     const char *path,
+			     const char *interface,
+			     const char *property,
+			     sd_bus_message *m,
+			     void *userdata,
+			     sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	int value;
+	int r;
+
+	r = sd_bus_message_read(m, "i", &value);
+	if (r < 0)
+		return r;
+
+	r = ratbag_profile_set_debounce(profile->lib_profile, value);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "Debounce",
+					       NULL);
+	}
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_WRITABLE_PROPERTY("Name", "s",
@@ -541,7 +666,16 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 				 ratbagd_profile_get_report_rate,
 				 ratbagd_profile_set_report_rate, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("AngleSnapping", "i",
+				 ratbagd_profile_get_angle_snapping,
+				 ratbagd_profile_set_angle_snapping, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("Debounce", "i",
+				 ratbagd_profile_get_debounce,
+				 ratbagd_profile_set_debounce, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ReportRates", "au", ratbagd_profile_get_report_rates, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Debounces", "au", ratbagd_profile_get_debounces, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };
