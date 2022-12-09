@@ -378,12 +378,12 @@ init_data_asus(struct ratbag *ratbag,
 	}
 	g_clear_error(&error);
 
-        int leds = g_key_file_get_integer(keyfile, group, "Leds", &error);
+	int leds = g_key_file_get_integer(keyfile, group, "Leds", &error);
 	if (!error && leds >= 0 && leds <= ASUS_MAX_NUM_LED)
 		data->asus.led_count = leds;
 	g_clear_error(&error);
 
-        int dpis = g_key_file_get_integer(keyfile, group, "Dpis", &error);
+	int dpis = g_key_file_get_integer(keyfile, group, "Dpis", &error);
 	if (!error && dpis >= 2 && dpis <= ASUS_MAX_NUM_DPI)
 		data->asus.dpi_count = dpis;
 	g_clear_error(&error);
@@ -393,12 +393,12 @@ init_data_asus(struct ratbag *ratbag,
 		data->asus.dpi_range = dpi_range_from_string(dpi_range);
 	g_clear_error(&error);
 
-        int wireless = g_key_file_get_integer(keyfile, group, "Wireless", &error);
+	int wireless = g_key_file_get_integer(keyfile, group, "Wireless", &error);
 	if (!error && (wireless == 0 || wireless == 1))
 		data->asus.is_wireless = wireless;
 	g_clear_error(&error);
 
-        gsize quirks_count = 0;
+	gsize quirks_count = 0;
 	_cleanup_(g_strfreevp) char **quirks = g_key_file_get_string_list(keyfile, group, "Quirks", &quirks_count, &error);
 	if (!error && quirks) {
 		for (unsigned int i = 0; i < quirks_count; i++) {
