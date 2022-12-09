@@ -78,9 +78,9 @@ static int
 asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *profile)
 {
 	int rc;
-	struct _asus_binding *asus_binding;
-	struct _asus_led *asus_led;
-	struct asus_button *asus_button;
+	const struct _asus_binding *asus_binding;
+	const struct _asus_led *asus_led;
+	const struct asus_button *asus_button;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
@@ -208,9 +208,9 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 			continue;
 		}
 
+		const struct asus_button *asus_button;
 		uint8_t asus_code_src;
 		uint8_t asus_code_dst;
-		struct asus_button *asus_button;
 
 		rc = drv_data->button_mapping[asus_index];
 		if (rc == -1) {
@@ -447,7 +447,7 @@ asus_driver_probe(struct ratbag_device *device)
 	/* setup a lookup table for all defined buttons */
 	unsigned int button_index = 0;
 	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_BUTTON_MAPPING); i++) {
-		struct asus_button *asus_button = &ASUS_BUTTON_MAPPING[i];
+		const struct asus_button *asus_button = &ASUS_BUTTON_MAPPING[i];
 
 		/* search for this button in the ButtonMapping by it's ASUS code */
 		for (unsigned int j = 0; j < ASUS_MAX_NUM_BUTTON; j++) {

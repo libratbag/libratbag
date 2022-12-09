@@ -47,7 +47,7 @@
 #define ASUS_FIELD_SNAPPING	2
 
 /* key mapping, the index is actual ASUS code */
-static unsigned char ASUS_KEY_MAPPING[] = {
+static const unsigned char ASUS_KEY_MAPPING[] = {
 /* 00 */	0,		0,		0,		0,
 /* 04 */	KEY_A,		KEY_B,		KEY_C,		KEY_D,
 /* 08 */	KEY_E,		KEY_F,		KEY_G,		KEY_H,
@@ -75,7 +75,7 @@ static unsigned char ASUS_KEY_MAPPING[] = {
 /* 5E */	KEY_KP8,	KEY_KP9,	0,
 };
 
-static unsigned int ASUS_LED_TYPE[] = {
+static const unsigned int ASUS_LED_TYPE[] = {
 	RATBAG_LED_TYPE_LOGO,  /* Mouse logo */
 	RATBAG_LED_TYPE_WHEEL,  /* Mouse wheel */
 	RATBAG_LED_TYPE_SIDE,  /* Bottom of the mouse */
@@ -84,10 +84,10 @@ static unsigned int ASUS_LED_TYPE[] = {
 static unsigned int ASUS_POLLING_RATES[] = { 125, 250, 500, 1000 };
 
 /* search for ASUS button by ratbag types */
-struct asus_button *
+const struct asus_button *
 asus_find_button_by_action(struct ratbag_button_action action)
 {
-	struct asus_button *asus_button;
+	const struct asus_button *asus_button;
 	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_BUTTON_MAPPING); i++) {
 		asus_button = &ASUS_BUTTON_MAPPING[i];
 		if ((action.type == RATBAG_BUTTON_ACTION_TYPE_BUTTON && asus_button->button == action.action.button) ||
@@ -98,7 +98,7 @@ asus_find_button_by_action(struct ratbag_button_action action)
 }
 
 /* search for ASUS button by ASUS button code */
-struct asus_button *
+const struct asus_button *
 asus_find_button_by_code(uint8_t asus_code)
 {
 	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_BUTTON_MAPPING); i++) {

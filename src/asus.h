@@ -135,7 +135,7 @@ struct asus_button {
 };
 
 /* ASUS code, button type, button number, special button action */
-static struct asus_button ASUS_BUTTON_MAPPING[] = {
+static const struct asus_button ASUS_BUTTON_MAPPING[] = {
 	{ 0xf0, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 1, 0 },  /* left */
 	{ 0xf1, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 2, 0 },  /* right (button 3 in xev) */
 	{ 0xf2, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 3, 0 },  /* middle (button 2 in xev) */
@@ -155,10 +155,10 @@ static struct asus_button ASUS_BUTTON_MAPPING[] = {
 	{ 0xef, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button F */
 };
 
-struct asus_button *
+const struct asus_button *
 asus_find_button_by_action(struct ratbag_button_action action);
 
-struct asus_button *
+const struct asus_button *
 asus_find_button_by_code(uint8_t asus_code);
 
 int
