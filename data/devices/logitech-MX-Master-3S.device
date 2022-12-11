@@ -1,0 +1,4 @@
+[Device]
+DeviceMatch=bluetooth:046d:b034
+Driver=hidpp20
+Name=Logitech MX Master 3S
