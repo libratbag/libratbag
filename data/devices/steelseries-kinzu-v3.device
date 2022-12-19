@@ -7,5 +7,5 @@ Driver=steelseries
 DeviceVersion=1
 Buttons=3
 Leds=0
-DpiList=400;800;1600;2000
+DpiList=250;500;1000;1250;1500;1750;2000;4000
 MacroLength=0
