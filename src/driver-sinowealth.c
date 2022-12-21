@@ -1400,18 +1400,30 @@ sinowealth_update_macro_events_from_action(
 			 */
 			mouse_macro_event->delay = 1;
 
-			const uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
-			if (raw_key == 0) {
-				log_error(device->ratbag, "Macro for button %u: could not set unsupported key %#x\n", button->index, key);
-				continue;
+			// If a button event, else a key event.
+			if (key == BTN_LEFT || key == BTN_RIGHT || key == BTN_MIDDLE) {
+				const uint8_t raw_button = 1 << (key - BTN_LEFT);
+
+				mouse_macro_event->command =
+					ratbag_macro_event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ?
+						SINOWEALTH_MACRO_COMMAND_BUTTON_PRESS :
+						SINOWEALTH_MACRO_COMMAND_BUTTON_RELEASE;
+
+				mouse_macro_event->button = raw_button;
+			} else {
+				const uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+				if (raw_key == 0) {
+					log_error(device->ratbag, "Macro for button %u: could not set unsupported key %#x\n", button->index, key);
+					continue;
+				}
+
+				mouse_macro_event->command =
+					ratbag_macro_event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ?
+						SINOWEALTH_MACRO_COMMAND_KEY_PRESS :
+						SINOWEALTH_MACRO_COMMAND_KEY_RELEASE;
+
+				mouse_macro_event->key = raw_key;
 			}
-
-			mouse_macro_event->command =
-				ratbag_macro_event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ?
-					SINOWEALTH_MACRO_COMMAND_KEY_PRESS :
-					SINOWEALTH_MACRO_COMMAND_KEY_RELEASE;
-
-			mouse_macro_event->key = raw_key;
 
 			++raw_event_count;
 			break;
