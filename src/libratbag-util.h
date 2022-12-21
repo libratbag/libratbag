@@ -143,7 +143,7 @@ strdup_ascii_only(const char *str_in)
 	snprintf_safe(buf, ARRAY_LENGTH(buf), fmt, __VA_ARGS__)
 
 __attribute__((format(printf, 1, 2)))
-static inline void *
+static inline char *
 asprintf_safe(const char *fmt, ...)
 {
 	va_list args;
