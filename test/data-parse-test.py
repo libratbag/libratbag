@@ -207,7 +207,7 @@ def validate_data_file_name(path: str):
     # Matching any of the characters in the regular expression will throw an
     # error. Currently only tests the square brackets [], parentheses, and curly
     # braces.
-    illegal_characters_regex = '([\[\]\{\}\(\)])'
+    illegal_characters_regex = '([\\[\\]\\{\\}\\(\\)])'
     found_characters = re.findall(illegal_characters_regex, path)
     if found_characters:
         raise AssertionError("data file name '{}' contains illegal characters: '{}'".format(path, ''.join(found_characters)))
