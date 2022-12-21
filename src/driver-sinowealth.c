@@ -1631,16 +1631,18 @@ sinowealth_write_buttons(struct ratbag_device *device)
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
-	struct sinowealth_button_report *buttons1 = &drv_data->buttons[0];
+	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+		struct sinowealth_button_report *buttons = &drv_data->buttons[profile_index];
 
-	buttons1->report_id = config_report_id;
-	buttons1->command_id = SINOWEALTH_CMD_GET_BUTTONS;
-	buttons1->config_write = SINOWEALTH_BUTTON_SIZE - 8;
+		buttons->report_id = config_report_id;
+		buttons->command_id = sinowealth_get_buttons_command(profile_index);
+		buttons->config_write = SINOWEALTH_BUTTON_SIZE - 8;
 
-	rc = sinowealth_query_write(device, (uint8_t*)buttons1, sizeof(*buttons1));
-	if (rc < 0) {
-		log_error(device->ratbag, "Error while writing buttons: %s (%d)\n", strerror(-rc), rc);
-		return rc;
+		rc = sinowealth_query_write(device, (uint8_t*)buttons, sizeof(*buttons));
+		if (rc < 0) {
+			log_error(device->ratbag, "Error while writing buttons: %s (%d)\n", strerror(-rc), rc);
+			return rc;
+		}
 	}
 
 	return 0;
@@ -1651,23 +1653,26 @@ sinowealth_write_buttons(struct ratbag_device *device)
  * @return 0 on success or a negative errno.
  */
 static int
-sinowealth_write_config(struct ratbag_device *device)
+sinowealth_write_configs(struct ratbag_device *device)
 {
 	int rc = 0;
 
 	struct sinowealth_data *drv_data = device->drv_data;
-	struct sinowealth_config_report *config1 = &drv_data->configs[0];
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
-	config1->report_id = config_report_id;
-	config1->command_id = SINOWEALTH_CMD_GET_CONFIG;
-	config1->config_write = (uint8_t)drv_data->config_size - 8;
+	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+		struct sinowealth_config_report *config = &drv_data->configs[profile_index];
 
-	rc = sinowealth_query_write(device, (uint8_t*)config1, sizeof(*config1));
-	if (rc < 0) {
-		log_error(device->ratbag, "Error while writing config: %s (%d)\n", strerror(-rc), rc);
-		return rc;
+		config->report_id = config_report_id;
+		config->command_id = sinowealth_get_config_command(profile_index);
+		config->config_write = (uint8_t)drv_data->config_size - 8;
+
+		rc = sinowealth_query_write(device, (uint8_t*)config, sizeof(*config));
+		if (rc < 0) {
+			log_error(device->ratbag, "Error while writing config %zu: %s (%d)\n", profile_index, strerror(-rc), rc);
+			return rc;
+		}
 	}
 
 	return 0;
@@ -1864,7 +1869,7 @@ sinowealth_commit(struct ratbag_device *device)
 		sinowealth_update_buttons_from_profile(profile);
 	}
 
-	rc = sinowealth_write_config(device);
+	rc = sinowealth_write_configs(device);
 	if (rc)
 		return rc;
 
