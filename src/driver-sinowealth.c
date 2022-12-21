@@ -1379,7 +1379,7 @@ sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratba
 		case RATBAG_MACRO_EVENT_KEY_RELEASED: {
 			uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, event->event.key);
 			if (raw_key == 0) {
-				log_error(device->ratbag, "Could not set unsupported key %#x in macro for button %u", event->event.key, button->index);
+				log_error(device->ratbag, "Could not set unsupported key %#x in macro for button %u\n", event->event.key, button->index);
 				/* Ignore the error to not mess up event order. */
 			}
 
