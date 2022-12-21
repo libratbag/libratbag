@@ -224,5 +224,6 @@ if __name__ == "__main__":
     parser.add_argument("directory")
     args = parser.parse_args()
     for path in pathlib.Path(args.directory).glob("*.device"):
-        validate_data_file_name(path)
-        parse_data_file(path)
+        path_str = str(path)
+        validate_data_file_name(path_str)
+        parse_data_file(path_str)
