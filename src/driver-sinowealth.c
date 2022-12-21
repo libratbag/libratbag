@@ -1339,95 +1339,104 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 
 /* Update macro report `macro` with macro button action in button `button`. */
 static void
-sinowealth_update_macro_from_action(struct ratbag_profile *profile, struct ratbag_button *button, struct sinowealth_macro_report *macro)
+sinowealth_update_macro_events_from_action(
+	struct ratbag_device *device,
+	struct ratbag_button *button,
+	struct sinowealth_macro_report *mouse_macro)
 {
 	struct ratbag_button_action *action = &button->action;
-	struct ratbag_device *device = profile->device;
-	struct sinowealth_data *drv_data = device->drv_data;
 
 	assert(action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
-	macro->index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
-
 	/* Reset the `events` field. Even if we don't do this, the mouse will ignore unneeded data. */
-	memset(&macro->events, 0, sizeof(macro->events));
+	memset(mouse_macro->events, 0, sizeof(mouse_macro->events));
 
 	uint8_t raw_event_count = 0;
 	for (unsigned int i = 0; i < MAX_MACRO_EVENTS; ++i) {
-		struct ratbag_macro_event *event = &action->macro->events[i];
-
+		struct ratbag_macro_event *ratbag_macro_event = &action->macro->events[i];
 		if (raw_event_count >= SINOWEALTH_MACRO_LENGTH_MAX) {
 			log_error(device->ratbag, "There are more events in the macro than the mouse supports\n");
 
 			/* Update the type of this event so that libratbag ignores
 			 * unused events.
 			 */
-			event->type = RATBAG_MACRO_EVENT_NONE;
+			ratbag_macro_event->type = RATBAG_MACRO_EVENT_NONE;
 			break;
 		};
 
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
-			break;
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_NONE)
+		if (ratbag_macro_event->type == RATBAG_MACRO_EVENT_NONE)
 			break;
 
-		/* Fall back to delay of 1 ms as it's required. */
-		macro->events[raw_event_count].delay = 1;
-
-		switch (event->type) {
+		switch (ratbag_macro_event->type) {
 		case RATBAG_MACRO_EVENT_KEY_PRESSED:
 		case RATBAG_MACRO_EVENT_KEY_RELEASED: {
-			uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, event->event.key);
+			const unsigned int key = ratbag_macro_event->event.key;
+
+			struct sinowealth_macro_event *mouse_macro_event = &mouse_macro->events[raw_event_count];
+
+			/* Fall back to delay of 1 ms as the field is required to
+			 * be non-0.
+			 * If a specific timeout value is need, it will be set in
+			 * the next iteration of this loop.
+			 */
+			mouse_macro_event->delay = 1;
+
+			const uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
 			if (raw_key == 0) {
-				log_error(device->ratbag, "Could not set unsupported key %#x in macro for button %u\n", event->event.key, button->index);
-				/* Ignore the error to not mess up event order. */
+				log_error(device->ratbag, "Macro for button %u: could not set unsupported key %#x\n", button->index, key);
+				continue;
 			}
 
-			/* NOTE: Ugly, but better than duplicating the code. */
-			if (event->type == RATBAG_MACRO_EVENT_KEY_PRESSED)
-				macro->events[raw_event_count].command = SINOWEALTH_MACRO_COMMAND_KEY_PRESS;
-			else
-				macro->events[raw_event_count].command = SINOWEALTH_MACRO_COMMAND_KEY_RELEASE;
+			mouse_macro_event->command =
+				ratbag_macro_event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ?
+					SINOWEALTH_MACRO_COMMAND_KEY_PRESS :
+					SINOWEALTH_MACRO_COMMAND_KEY_RELEASE;
 
-			macro->events[raw_event_count].key = raw_key;
+			mouse_macro_event->key = raw_key;
 
 			++raw_event_count;
 			break;
 		}
-		case RATBAG_MACRO_EVENT_WAIT:
+		case RATBAG_MACRO_EVENT_WAIT: {
+			unsigned int *timeout = &ratbag_macro_event->event.timeout;
 			/* Delay is a part of every macro event in SinoWealth mice,
-			 * in other words it does not occupy a separate event slot.
+			 * that is, it does not occupy a separate event slot and is
+			 * set to the previous event.
 			 */
 
-			/* Ignore if it's the first event.
-			 * This is impossible to do on SinoWealth mice.
-			 */
-			if (raw_event_count == 0)
+			if (raw_event_count == 0) {
+				log_error(device->ratbag, "Macro for button %u: can't use timeout as the first event in macro\n", button->index);
 				break;
+			}
+
+			struct sinowealth_macro_event *prev_mouse_macro_event = &mouse_macro->events[raw_event_count - 1];
 
 			/* Limit timeout to 255 ms.
 			 * Obviously we can't put more in 8 bytes.
-			 * Glorious software allows you to set up to 4096,
-			 * but it's actually a bug and the sent number overflows.
+			 *
+			 * NOTE: Glorious Model O Software v1.0.9 allows you to set
+			 * up to 4096 ms, but it's actually a bug and the sent
+			 * number overflows.
 			 */
-			if (event->event.timeout > 0xff)
-				event->event.timeout = 0xff;
+			if (*timeout > 0xff)
+				*timeout = 0xff;
 
-			/* Set delay of the previous event. */
-			macro->events[raw_event_count - 1].delay = (uint8_t)event->event.timeout;
+			prev_mouse_macro_event->delay = (uint8_t)*timeout;
 			break;
-		/* Should not be reachable but let's ignore it just in case. */
-		default:
-		case RATBAG_MACRO_EVENT_INVALID:
+		}
 		case RATBAG_MACRO_EVENT_NONE:
+			/* Handled separately above. */
+			break;
+		case RATBAG_MACRO_EVENT_INVALID:
+		default:
+			abort();
 			break;
 		}
 	}
 
 	/* Update the event counter in the macro. */
-	macro->event_count = raw_event_count;
+	mouse_macro->event_count = raw_event_count;
 }
-
 
 /*
  * @return Supported device data for the device or `NULL`.
@@ -1663,7 +1672,9 @@ sinowealth_write_macros(struct ratbag_device *device)
 			if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
 				continue;
 
-			sinowealth_update_macro_from_action(profile, button, &macro);
+			macro.index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
+
+			sinowealth_update_macro_events_from_action(device, button, &macro);
 
 			rc = sinowealth_query_write(device, (uint8_t*)&macro, sizeof(macro));
 			if (rc != 0) {
