@@ -223,8 +223,12 @@ def parse_data_file(path: str):
     driver_section = 'Driver/{}'.format(driver)
 
     permitted_sections = ['Device', driver_section]
-    for s in data.sections():
-        assertIn(s, permitted_sections)
+    # FIXME: remove this once `sinowealth` driver has a better way of defining data.
+    if driver == "sinowealth":
+        print("Skipping `Driver` section check for a `sinowealth` device")
+    else:
+        for s in data.sections():
+            assertIn(s, permitted_sections)
 
     if data.has_section(driver_section):
         check_section_driver(driver, data[driver_section])
