@@ -28,6 +28,8 @@ import argparse
 import configparser
 import pathlib
 import re
+import sys
+import traceback
 
 from typing import Collection, TypeVar
 
@@ -234,12 +236,22 @@ def parse_data_file(path: str):
     if data.has_section(driver_section):
         check_section_driver(driver, data[driver_section])
 
+def main() -> int:
+    is_error = False
 
-if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Device data-file checker")
     parser.add_argument("directory")
     args = parser.parse_args()
     for path in pathlib.Path(args.directory).glob("*.device"):
         path_str = str(path)
-        validate_data_file_name(path_str)
-        parse_data_file(path_str)
+        try:
+            validate_data_file_name(path_str)
+            parse_data_file(path_str)
+        except AssertionError as e:
+            is_error = True
+            traceback.print_exception(e, file=sys.stdout)
+
+    return int(is_error)
+
+if __name__ == "__main__":
+    sys.exit(main())
