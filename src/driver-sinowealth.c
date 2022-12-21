@@ -1020,15 +1020,9 @@ sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, u
 
 	{
 		uint8_t cmd[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, config_cmd };
-		rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
-		if (rc < 0) {
-			log_error(device->ratbag, "Error while sending read config command: %s (%d)\n", strerror(-rc), rc);
+		rc = sinowealth_query_write(device, cmd, sizeof(cmd));
+		if (rc < 0)
 			return rc;
-		}
-		if (rc != sizeof(cmd)) {
-			log_error(device->ratbag, "Unexpeced amount of transmitted data: %d (instead of %zu)\n", rc, sizeof(cmd));
-			return -EIO;
-		}
 	}
 
 	{
