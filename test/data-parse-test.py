@@ -29,18 +29,22 @@ import configparser
 import pathlib
 import re
 
+from typing import Collection, TypeVar
 
-def assertIn(element, l):
+
+T = TypeVar("T")
+
+def assertIn(element: T, l: Collection[T]):
     if element not in l:
         raise AssertionError('{} must be in {}'.format(element, l))
 
 
-def assertNotIn(element, l):
+def assertNotIn(element: T, l: Collection[T]):
     if element in l:
         raise AssertionError('{} must not be in {}'.format(element, l))
 
 
-def check_match_str(string):
+def check_match_str(string: str):
     bustypes = ['usb', 'bluetooth']
 
     matches = string.split(';')
@@ -57,7 +61,7 @@ def check_match_str(string):
         assert(pid == '{:04x}'.format(int(pid, 16)))
 
 
-def check_ledtypes_str(string):
+def check_ledtypes_str(string: str):
     permitted_types = ['logo', 'side', 'battery', 'dpi', 'switches']
 
     types = string.split(';')
@@ -68,7 +72,7 @@ def check_ledtypes_str(string):
         assertIn(t, permitted_types)
 
 
-def check_section_device(section):
+def check_section_device(section: configparser.SectionProxy):
     required_keys = ['Name', 'Driver', 'DeviceMatch']
     permitted_keys = required_keys + ['LedTypes']
 
@@ -86,7 +90,7 @@ def check_section_device(section):
     check_match_str(section['DeviceMatch'])
 
 
-def check_dpi_range_str(string):
+def check_dpi_range_str(string: str):
     import re
 
     m = re.search('^([0-9]+):([0-9]+)@([0-9.]+)$', string)
@@ -105,7 +109,7 @@ def check_dpi_range_str(string):
     assert(string == '{}:{}@{}'.format(min, max, steps))
 
 
-def check_dpi_list_str(string):
+def check_dpi_list_str(string: str):
     entries = string.split(';')
     # Remove possible empty last entry if trailing with a ;
     if not entries[len(entries) - 1]:
@@ -120,12 +124,12 @@ def check_dpi_list_str(string):
             assert(dpi > prev_dpi)
 
 
-def check_profile_type_str(string):
+def check_profile_type_str(string: str):
     types = ['G9', 'G500', 'G700']
     assertIn(string, types)
 
 
-def check_section_hidpp10(section):
+def check_section_hidpp10(section: configparser.SectionProxy):
     permitted = ['Profiles', 'ProfileType', 'DpiRange', 'DpiList', 'DeviceIndex', 'Leds']
     for key in section.keys():
         assertIn(key, permitted)
@@ -168,7 +172,7 @@ def check_section_hidpp10(section):
         pass
 
 
-def check_section_hidpp20(section):
+def check_section_hidpp20(section: configparser.SectionProxy):
     permitted = ['Buttons', 'DeviceIndex', 'Leds', 'ReportRate', 'Quirk']
     for key in section.keys():
         assertIn(key, permitted)
@@ -180,7 +184,7 @@ def check_section_hidpp20(section):
         pass
 
 
-def check_section_driver(driver, section):
+def check_section_driver(driver: str, section: configparser.SectionProxy):
     if driver == 'hidpp10':
         check_section_hidpp10(section)
     elif driver == 'hidpp20':
@@ -189,7 +193,7 @@ def check_section_driver(driver, section):
         assert('Unsupported driver section {}'.format(driver))
 
 
-def validate_data_file_name(path):
+def validate_data_file_name(path: str):
     # Matching any of the characters in the regular expression will throw an
     # error. Currently only tests the square brackets [], parentheses, and curly
     # braces.
@@ -198,7 +202,7 @@ def validate_data_file_name(path):
     if found_characters:
         raise AssertionError("data file name '{}' contains illegal characters: '{}'".format(path, ''.join(found_characters)))
 
-def parse_data_file(path):
+def parse_data_file(path: str):
     print('Parsing file {}'.format(path))
     data = configparser.ConfigParser(strict=True)
     # Don't convert to lowercase
