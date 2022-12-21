@@ -488,9 +488,11 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 	/* None of the other bits do anything. */
 
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x1 } } }, BUTTON_ACTION_NONE },
+#if SINOWEALTH_NUM_PROFILES > 1
 	/* See the note near @ref SINOWEALTH_NUM_PROFILES. */
 	/* Hidden. */
-	/* { { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) }, */
+	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
+#endif
 
 	/* This must defined after `SPECIAL` type so that correct raw data
 	 * for action type `NONE` is used. */
