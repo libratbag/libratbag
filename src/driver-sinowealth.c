@@ -799,7 +799,7 @@ sinowealth_get_config_command(size_t profile_index)
  *
  * After an error assume `buffer` now has garbage data.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_query_read(struct ratbag_device *device, uint8_t buffer[], unsigned int buffer_length)
@@ -822,20 +822,27 @@ sinowealth_query_read(struct ratbag_device *device, uint8_t buffer[], unsigned i
 	 */
 
 	rc = ratbag_hidraw_set_feature_report(device, report_id, buffer, buffer_length);
-	if (rc != (int)buffer_length) {
-		log_error(device->ratbag, "Could not set feature report in a read query: %d\n", rc);
-		return -1;
+	if (rc < 0) {
+		return rc;
 	}
-	rc = ratbag_hidraw_get_feature_report(device, report_id, buffer, buffer_length);
 	if (rc != (int)buffer_length) {
-		log_error(device->ratbag, "Could not get feature report in a read query: %d\n", rc);
-		return -1;
+		log_error(device->ratbag, "Unexpected amount of transmitted data: %d (instead of %u)\n", rc, buffer_length);
+		return -EIO;
+	}
+
+	rc = ratbag_hidraw_get_feature_report(device, report_id, buffer, buffer_length);
+	if (rc < 0) {
+		return rc;
+	}
+	if (rc != (int)buffer_length) {
+		log_error(device->ratbag, "Unexpected amount of transmitted data: %d (instead of %u)\n", rc, buffer_length);
+		return -EIO;
 	}
 
 	/* Check if the response we got is for the correct command. */
 	if (buffer[1] != query_command) {
-		log_error(device->ratbag, "Could not read command %#x, got command %#x instead\n", query_command, buffer[1]);
-		return -1;
+		log_error(device->ratbag, "Could not do a read query with command %#x, got response for command %#x instead\n", query_command, buffer[1]);
+		return -EIO;
 	}
 
 	return 0;
@@ -843,7 +850,7 @@ sinowealth_query_read(struct ratbag_device *device, uint8_t buffer[], unsigned i
 
 /* Do a write query.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_query_write(struct ratbag_device *device, uint8_t buffer[], unsigned int buffer_length)
@@ -854,15 +861,19 @@ sinowealth_query_write(struct ratbag_device *device, uint8_t buffer[], unsigned 
 	const uint8_t report_id = buffer[0];
 
 	rc = ratbag_hidraw_set_feature_report(device, report_id, buffer, buffer_length);
+	if (rc < 0) {
+		log_error(device->ratbag, "Error while writing data: %s (%d)\n", strerror(-rc), rc);
+		return rc;
+	}
 	if (rc != (int)buffer_length) {
-		log_error(device->ratbag, "Could not set feature report in a write query: %d\n", rc);
-		return -1;
+		log_error(device->ratbag, "Unexpeced amount of written data: %d (instead of %u)\n", rc, buffer_length);
+		return -EIO;
 	}
 
 	return 0;
 }
 
-/* @return Active profile index or a negative error code. */
+/* @return Active profile index or a negative errno. */
 static int
 sinowealth_get_active_profile(struct ratbag_device *device)
 {
@@ -873,9 +884,9 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
 
 	rc = sinowealth_query_read(device, buf, sizeof(buf));
-	if (rc != 0) {
-		log_error(device->ratbag, "Could not get device's active profile\n");
-		return -1;
+	if (rc < 0) {
+		log_error(device->ratbag, "Could not get device's active profile: %s (%d)\n", strerror(-rc), rc);
+		return rc;
 	}
 
 	unsigned int index = buf[2] - 1;
@@ -887,7 +898,7 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 
 /* Make the profile at index `index` the active one.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
@@ -904,9 +915,9 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, (uint8_t)index + 1u };
 
 	rc = sinowealth_query_write(device, buf, sizeof(buf));
-	if (rc != 0) {
-		log_error(device->ratbag, "Error while selecting profile: %d\n", rc);
-		return -1;
+	if (rc < 0) {
+		log_error(device->ratbag, "Error while selecting profile: %s (%d)\n", strerror(-rc), rc);
+		return rc;
 	}
 
 	drv_data->current_profile_index = index;
@@ -918,7 +929,7 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
  *
  * @param out The buffer output will be written to.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_get_fw_version(struct ratbag_device *device, char out[4])
@@ -928,9 +939,9 @@ sinowealth_get_fw_version(struct ratbag_device *device, char out[4])
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
 
 	rc = sinowealth_query_read(device, buf, sizeof(buf));
-	if (rc != 0) {
-		log_error(device->ratbag, "Couldn't read firmware version: %d\n", rc);
-		return -1;
+	if (rc < 0) {
+		log_error(device->ratbag, "Couldn't read firmware version: %s (%d)\n", strerror(-rc), rc);
+		return rc;
 	}
 
 	memcpy(out, buf + 2, 4);
@@ -938,7 +949,7 @@ sinowealth_get_fw_version(struct ratbag_device *device, char out[4])
 	return 0;
 }
 
-/* @return Time in milliseconds or a negative error code. */
+/* @return Time in milliseconds or a negative errno. */
 static int
 sinowealth_get_debounce_time(struct ratbag_device *device)
 {
@@ -950,9 +961,9 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
 
 	rc = sinowealth_query_read(device, buf, sizeof(buf));
-	if (rc != 0) {
-		log_error(device->ratbag, "Could not read debounce time: %d\n", rc);
-		return -1;
+	if (rc < 0) {
+		log_error(device->ratbag, "Could not read debounce time: %s (%d)\n", strerror(-rc), rc);
+		return rc;
 	}
 
 	return buf[2] * 2;
@@ -975,9 +986,9 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
 
 	rc = sinowealth_query_read(device, buf, sizeof(buf));
-	if (rc != 0) {
-		log_error(device->ratbag, "Could not read LOD and angle snapping values: %d\n", rc);
-		return -1;
+	if (rc < 0) {
+		log_error(device->ratbag, "Could not read LOD and angle snapping values: %s (%d)\n", strerror(-rc), rc);
+		return rc;
 	}
 
 	log_info(device->ratbag, "LOD is high: %u\n", buf[2] - 1);
@@ -991,7 +1002,7 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
  * This is the raw interaction with the mouse used by @ref sinowealth_read_raw_config
  * and @ref sinowealth_read_raw_buttons.
  *
- * @return Count of bytes transferred or a negative error.
+ * @return Count of bytes transferred or a negative errno.
  */
 static int
 sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, uint8_t *buffer, unsigned int reply_len_min, unsigned int reply_len_max)
@@ -1003,9 +1014,13 @@ sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, u
 	{
 		uint8_t cmd[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, config_cmd };
 		rc = ratbag_hidraw_set_feature_report(device, SINOWEALTH_REPORT_ID_CMD, cmd, sizeof(cmd));
+		if (rc < 0) {
+			log_error(device->ratbag, "Error while sending read config command: %s (%d)\n", strerror(-rc), rc);
+			return rc;
+		}
 		if (rc != sizeof(cmd)) {
-			log_error(device->ratbag, "Error while sending read config command: %d\n", rc);
-			return -1;
+			log_error(device->ratbag, "Unexpeced amount of transmitted data: %d (instead of %zu)\n", rc, sizeof(cmd));
+			return -EIO;
 		}
 	}
 
@@ -1013,9 +1028,13 @@ sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, u
 		const unsigned char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
 		rc = ratbag_hidraw_get_feature_report(device, config_report_id, buffer, SINOWEALTH_CONFIG_REPORT_SIZE);
+		if (rc < 0) {
+			log_error(device->ratbag, "Could not read device configuration data: %s (%d)\n", strerror(-rc), rc);
+			return rc;
+		}
 		if (rc < (int)reply_len_min || rc > (int)reply_len_max) {
-			log_error(device->ratbag, "Could not read device configuration data: %d\n", rc);
-			return -1;
+			log_error(device->ratbag, "Unexpected amount of transmitted data: %d (should be between %u and %u)\n", rc, reply_len_min, reply_len_max);
+			return -EIO;
 		}
 	}
 
@@ -1024,7 +1043,7 @@ sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, u
 
 /* Read button configuration data from the mouse and save it in drv_data.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_read_raw_button_configs(struct ratbag_device *device)
@@ -1040,8 +1059,8 @@ sinowealth_read_raw_button_configs(struct ratbag_device *device)
 
 		rc = sinowealth_query_read_config(device, config_command, (uint8_t*)buttons, SINOWEALTH_BUTTON_SIZE, SINOWEALTH_BUTTON_SIZE);
 		if (rc < 0) {
-			log_error(device->ratbag, "Could not read button configuration data: %d\n", rc);
-			return -1;
+			log_error(device->ratbag, "Could not read button configuration data: %s (%d)\n", strerror(-rc), rc);
+			return rc;
 		}
 	};
 
@@ -1050,7 +1069,7 @@ sinowealth_read_raw_button_configs(struct ratbag_device *device)
 
 /* Read configuration data from the mouse and save it in drv_data.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_read_raw_configs(struct ratbag_device *device)
@@ -1066,8 +1085,8 @@ sinowealth_read_raw_configs(struct ratbag_device *device)
 
 		rc = sinowealth_query_read_config(device, config_command, (uint8_t*)config, SINOWEALTH_CONFIG_SIZE_MIN, SINOWEALTH_CONFIG_SIZE_MAX);
 		if (rc < 0) {
-			log_error(device->ratbag, "Could not read device configuration data: %d\n", rc);
-			return -1;
+			log_error(device->ratbag, "Could not read device configuration data: %s (%d)\n", strerror(-rc), rc);
+			return rc;
 		}
 	};
 
@@ -1254,7 +1273,7 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 			const int modifiers = 0; /* Dummy. */
 			rc = ratbag_button_macro_new_from_keycode(button, key, modifiers);
 			if (rc < 0) {
-				log_error(device->ratbag, "Could not make a dummy macro: %d\n", rc);
+				log_error(device->ratbag, "Could not make a dummy macro\n");
 				button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 			}
 
@@ -1267,7 +1286,7 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 	}
 }
 
-/* @return 0 on success or an error code. */
+/* @return 0 on success or a negative errno. */
 static int
 sinowealth_button_set_key_action(struct ratbag_device *device, const struct ratbag_button *button, struct sinowealth_button_data *button_data)
 {
@@ -1280,7 +1299,7 @@ sinowealth_button_set_key_action(struct ratbag_device *device, const struct ratb
 	const uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
 	if (raw_key == 0) {
 		log_debug(device->ratbag, "Could not set unsupported key %#x to button %u\n", key, button->index);
-		return -1;
+		return -EINVAL;
 	}
 
 	button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
@@ -1466,7 +1485,7 @@ sinowealth_find_device_data(struct ratbag_device *device, const char *fw_version
 
 /* Initialize profiles for device `device`.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_init_profile(struct ratbag_device *device)
@@ -1502,7 +1521,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	if (device_data == NULL) {
 		log_error(device->ratbag, "Device with firmware version %s is not supported\n", fw_version);
-		return -1;
+		return -EINVAL;
 	}
 
 	drv_data->button_count = device_data->button_count;
@@ -1589,7 +1608,7 @@ sinowealth_test_hidraw(struct ratbag_device *device)
 
 /* Write raw button configuration data in drv_data to the mouse.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_write_buttons(struct ratbag_device *device)
@@ -1607,9 +1626,9 @@ sinowealth_write_buttons(struct ratbag_device *device)
 	buttons1->config_write = SINOWEALTH_BUTTON_SIZE - 8;
 
 	rc = sinowealth_query_write(device, (uint8_t*)buttons1, sizeof(*buttons1));
-	if (rc != 0) {
-		log_error(device->ratbag, "Error while writing buttons: %d\n", rc);
-		return -1;
+	if (rc < 0) {
+		log_error(device->ratbag, "Error while writing buttons: %s (%d)\n", strerror(-rc), rc);
+		return rc;
 	}
 
 	return 0;
@@ -1617,7 +1636,7 @@ sinowealth_write_buttons(struct ratbag_device *device)
 
 /* Write raw configuration data in drv_data to the mouse.
  *
- * @return 0 on success or an error code.
+ * @return 0 on success or a negative errno.
  */
 static int
 sinowealth_write_config(struct ratbag_device *device)
@@ -1634,9 +1653,9 @@ sinowealth_write_config(struct ratbag_device *device)
 	config1->config_write = (uint8_t)drv_data->config_size - 8;
 
 	rc = sinowealth_query_write(device, (uint8_t*)config1, sizeof(*config1));
-	if (rc != 0) {
-		log_error(device->ratbag, "Error while writing config: %d\n", rc);
-		return -1;
+	if (rc < 0) {
+		log_error(device->ratbag, "Error while writing config: %s (%d)\n", strerror(-rc), rc);
+		return rc;
 	}
 
 	return 0;
@@ -1677,9 +1696,9 @@ sinowealth_write_macros(struct ratbag_device *device)
 			sinowealth_update_macro_events_from_action(device, button, &macro);
 
 			rc = sinowealth_query_write(device, (uint8_t*)&macro, sizeof(macro));
-			if (rc != 0) {
-				log_error(device->ratbag, "Error while writing macro %u: %d\n", macro.index, rc);
-				return -1;
+			if (rc < 0) {
+				log_error(device->ratbag, "Error while writing macro %u: %s (%d)\n", macro.index, strerror(-rc), rc);
+				return rc;
 			}
 		}
 	}
