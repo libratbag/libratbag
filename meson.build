@@ -303,13 +303,13 @@ install_subdir('data/devices',
 	       install_dir : join_paths(get_option('datadir'), 'libratbag'))
 
 data_parse_test = find_program(join_paths(meson.source_root(), 'test/data-parse-test.py'))
-test('data-parse-test', data_parse_test, args: 'data/devices')
+test('data-parse-test', data_parse_test, args: libratbag_data_dir_devel)
 
 duplicate_test = find_program(join_paths(meson.source_root(), 'test/duplicate-check.py'))
-test('duplicate-test', duplicate_test, args : 'data/devices')
+test('duplicate-test', duplicate_test, args : libratbag_data_dir_devel)
 
 receiver_id_test = find_program(join_paths(meson.source_root(), 'test/receiver-check.py'))
-test('receiver-id-test', receiver_id_test, args : 'data/devices')
+test('receiver-id-test', receiver_id_test, args : libratbag_data_dir_devel)
 
 #### tests ####
 enable_tests = get_option('tests')
