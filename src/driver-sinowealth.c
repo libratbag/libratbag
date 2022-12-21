@@ -84,6 +84,18 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 
 /* Technically SinoWealth mice support second profile, but there isn't
  * a single configuration software that exposes it.
+ * It's suggested that some may even support 3 profiles, but at least
+ * V103 only supports 2.
+ *
+ * We could enable this, but by default other profiles have no button
+ * mappings, so the user will have their mouse soft-locked if they don't
+ * have another mouse to set some mappings with.
+ *
+ * To fix this we could populate empty profiles with some default
+ * mappings.
+ *
+ * There may also be some other problem we are not aware of, after all,
+ * why would SinoWealth even hide this feature.
  */
 #define SINOWEALTH_NUM_PROFILES 1
 _Static_assert(SINOWEALTH_NUM_PROFILES <= 2, "Too many profiles enabled");
@@ -476,12 +488,7 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 	/* None of the other bits do anything. */
 
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x1 } } }, BUTTON_ACTION_NONE },
-	/* Disabled as we don't support second profile officially.
-	 * Not only that, by default default second profile has no button
-	 * mapping and by using this the user is just going to be left with
-	 * a practically non-working mouse. To fix this we would have to
-	 * populate the empty profile with some default mappings.
-	 */
+	/* See the note near @ref SINOWEALTH_NUM_PROFILES. */
 	/* Hidden. */
 	/* { { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) }, */
 
