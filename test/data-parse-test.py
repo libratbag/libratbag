@@ -34,6 +34,7 @@ from typing import Collection, TypeVar
 
 T = TypeVar("T")
 
+
 def assertIn(element: T, l: Collection[T]):
     if element not in l:
         raise AssertionError('{} must be in {}'.format(element, l))
