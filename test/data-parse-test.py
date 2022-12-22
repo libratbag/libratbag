@@ -139,6 +139,36 @@ def check_profile_type_str(string: str):
     assertIn(string, types)
 
 
+def check_section_asus(section: configparser.SectionProxy):
+    permitted_keys = (
+        'ButtonMapping',
+        'Buttons',
+        'DpiRange',
+        'Dpis',
+        'Leds',
+        'Profiles',
+        'Quirks',
+        'Wireless',
+    )
+    for key in section.keys():
+        assertIn(key, permitted_keys)
+
+    try:
+        check_dpi_range_str(section['DpiRange'])
+    except KeyError:
+        pass
+
+    try:
+        quirks = (
+            'DOUBLE_DPI',
+            'STRIX_PROFILE',
+        )
+        for quirk in section['Quirks'].split(';'):
+            assertIn(quirk, quirks)
+    except KeyError:
+        pass
+
+
 def check_section_hidpp10(section: configparser.SectionProxy):
     permitted = ['Profiles', 'ProfileType', 'DpiRange', 'DpiList', 'DeviceIndex', 'Leds']
     for key in section.keys():
@@ -195,6 +225,10 @@ def check_section_hidpp20(section: configparser.SectionProxy):
 
 
 def check_section_driver(driver: str, section: configparser.SectionProxy):
+    if driver == 'asus':
+        check_section_asus(section)
+        return
+
     if driver == 'hidpp10':
         check_section_hidpp10(section)
         return
