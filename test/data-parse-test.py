@@ -224,6 +224,41 @@ def check_section_hidpp20(section: configparser.SectionProxy):
         pass
 
 
+def check_section_steelseries(section: configparser.SectionProxy):
+    permitted_keys = (
+        'Buttons',
+        'DeviceVersion',
+        'DpiList',
+        'DpiRange',
+        'Leds',
+        'MacroLength',
+        'Quirk',
+    )
+    for key in section.keys():
+        assertIn(key, permitted_keys)
+
+    try:
+        check_dpi_list_str(section['DpiList'])
+        assertNotIn('DpiRange', section.keys())
+    except KeyError:
+        pass
+
+    try:
+        check_dpi_range_str(section['DpiRange'])
+        assertNotIn('DpiList', section.keys())
+    except KeyError:
+        pass
+
+    try:
+        quirks = (
+            'Rival100',
+            'SenseiRAW'
+        )
+        assertIn(section['Quirk'], quirks)
+    except KeyError:
+        pass
+
+
 def check_section_driver(driver: str, section: configparser.SectionProxy):
     if driver == 'asus':
         check_section_asus(section)
@@ -235,6 +270,10 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
 
     if driver == 'hidpp20':
         check_section_hidpp20(section)
+        return
+
+    if driver == 'steelseries':
+        check_section_steelseries(section)
         return
 
     raise AssertionError('Unsupported driver section {}'.format(driver))
