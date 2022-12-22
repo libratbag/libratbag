@@ -197,10 +197,13 @@ def check_section_hidpp20(section: configparser.SectionProxy):
 def check_section_driver(driver: str, section: configparser.SectionProxy):
     if driver == 'hidpp10':
         check_section_hidpp10(section)
-    elif driver == 'hidpp20':
+        return
+
+    if driver == 'hidpp20':
         check_section_hidpp20(section)
-    else:
-        assert('Unsupported driver section {}'.format(driver))
+        return
+
+    raise AssertionError('Unsupported driver section {}'.format(driver))
 
 
 def validate_data_file_name(path: str):
