@@ -551,7 +551,8 @@ class RatbagdResolution(_RatbagdDBus):
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
-        elif "IsDefault" in changed_props.keys():
+
+        if "IsDefault" in changed_props.keys():
             default = changed_props["IsDefault"]
             if default != self._default:
                 self._default = default
