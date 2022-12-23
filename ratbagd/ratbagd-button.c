@@ -342,6 +342,11 @@ static int ratbagd_button_set_none(sd_bus *bus,
 
 	r = ratbag_button_disable(button->lib_button);
 	if (r < 0) {
+		r = ratbagd_device_resync(button->device, bus);
+		if (r < 0)
+			return r;
+	}
+	if (r == 0) {
 		sd_bus_emit_properties_changed(bus,
 					       button->path,
 					       RATBAGD_NAME_ROOT ".Button",
