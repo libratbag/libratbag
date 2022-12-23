@@ -1329,6 +1329,10 @@ ratbag_button_set_key(struct ratbag_button *button,
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_disable(struct ratbag_button *button)
 {
+	if (!ratbag_button_has_action_type(button,
+					   RATBAG_BUTTON_ACTION_TYPE_NONE))
+		return RATBAG_ERROR_CAPABILITY;
+
 	struct ratbag_button_action action = {0};
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
