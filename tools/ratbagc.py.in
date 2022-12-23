@@ -649,6 +649,7 @@ class RatbagdButton(metaclass=MetaRatbag):
     def action_types(self):
         """An array of possible values for ActionType."""
         POSSIBLE_ACTION_TYPES = (
+            RatbagdButton.ActionType.NONE,
             RatbagdButton.ActionType.BUTTON,
             RatbagdButton.ActionType.SPECIAL,
             RatbagdButton.ActionType.KEY,
