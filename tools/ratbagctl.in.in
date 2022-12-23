@@ -325,6 +325,9 @@ def func_button_get(r, args):
 
 def func_button_action_set_none(r, args):
     b, p, d = find_button(r, args)
+    if not b.ActionType.NONE in b.action_types:
+        raise RatbagErrorCapability("disabling buttons is not supported on this device")
+
     b.disable()
     commit(d, args)
 
