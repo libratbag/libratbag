@@ -1569,6 +1569,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	ratbag_device_for_each_profile(device, profile) {
 		ratbag_profile_for_each_button(profile, button) {
+			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
