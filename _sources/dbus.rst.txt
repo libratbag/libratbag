@@ -396,6 +396,9 @@ org.freedesktop.ratbag1.Button
         |   1     | Key press event                      |
         +---------+--------------------------------------+
 
+        If the ActionType is *None*, the variant is an unsigned integer
+        (``u``) of value 0.
+
         If the ActionType is *Unknown*, the variant is an unsigned integer
         (``u``) of value 0.
 
@@ -422,10 +425,6 @@ org.freedesktop.ratbag1.Button
         functions.
 
         Clients must ignore :attr:`ActionTypes` unknown to them.
-
-.. function:: Disable() → ()
-
-        Disable this button
 
 .. _led:
 
