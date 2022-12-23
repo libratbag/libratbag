@@ -391,6 +391,7 @@ class RatbagdProfile(_RatbagdDBus):
         super().__init__("Profile", object_path)
         self._dirty = False
         self._active = self._get_dbus_property("IsActive")
+        self._report_rate = self._get_dbus_property("ReportRate")
 
         # FIXME: if we start adding and removing objects from any of these
         # lists, things will break!
@@ -421,6 +422,12 @@ class RatbagdProfile(_RatbagdDBus):
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
+                self._on_obj_notify(None, None)
+
+        if "ReportRate" in changed_props.keys():
+            report_rate = changed_props["ReportRate"]
+            if report_rate != self._report_rate:
+                self._report_rate = report_rate
                 self._on_obj_notify(None, None)
 
     @GObject.Property
@@ -468,9 +475,9 @@ class RatbagdProfile(_RatbagdDBus):
         self._set_dbus_property("Enabled", "b", enabled)
 
     @GObject.Property
-    def report_rate(self):
+    def report_rate(self) -> int:
         """The report rate in Hz."""
-        return self._get_dbus_property("ReportRate")
+        return self._report_rate
 
     @report_rate.setter
     def report_rate(self, rate):
