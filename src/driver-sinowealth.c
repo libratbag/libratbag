@@ -85,6 +85,14 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 #define SINOWEALTH_DEBOUNCE_MIN 4
 #define SINOWEALTH_DEBOUNCE_MAX 16
 
+/* This is a much as can be fit in 8 bytes.
+ *
+ * NOTE: Glorious Model O Software v1.0.9 allows you to set
+ * up to 4096 ms, but it's actually a bug and the sent
+ * number overflows.
+ */
+#define SINOWEALTH_MACRO_MAX_POSSIBLE_TIMEOUT 0xff
+
 /* Different software expose different amount of DPI slots:
  * Glorious - 6;
  * G-Wolves - 7.
@@ -1653,15 +1661,8 @@ sinowealth_update_macro_events_from_action(
 
 			struct sinowealth_macro_event *prev_mouse_macro_event = &mouse_macro->events[raw_event_count - 1];
 
-			/* Limit timeout to 255 ms.
-			 * Obviously we can't put more in 8 bytes.
-			 *
-			 * NOTE: Glorious Model O Software v1.0.9 allows you to set
-			 * up to 4096 ms, but it's actually a bug and the sent
-			 * number overflows.
-			 */
-			if (*timeout > 0xff)
-				*timeout = 0xff;
+			if (*timeout > SINOWEALTH_MACRO_MAX_POSSIBLE_TIMEOUT)
+				*timeout = SINOWEALTH_MACRO_MAX_POSSIBLE_TIMEOUT;
 
 			prev_mouse_macro_event->delay = (uint8_t)*timeout;
 			break;
