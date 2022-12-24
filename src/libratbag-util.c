@@ -191,7 +191,7 @@ err:
 	return ret;
 }
 
-int mkdir_p(char *dir, mode_t mode)
+int mkdir_p(const char *dir, mode_t mode)
 {
     struct stat sb;
 
