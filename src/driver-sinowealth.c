@@ -251,7 +251,7 @@ struct sinowealth_config_report {
 	enum sinowealth_sensor sensor_type;
 	/* @ref sinowealth_report_rate_map. */
 	uint8_t report_rate:4;
-	/* 0b1000 - make DPI axes independent. */
+	/* @ref sinowealth_config_data_mask */
 	uint8_t config_flags:4;
 	uint8_t dpi_count:4;
 	/* Starting from 1 counting only active slots. */
