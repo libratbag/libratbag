@@ -504,7 +504,9 @@ org.freedesktop.ratbag1.Button
         +---------+---------+--------------------------------------+
         |   2     | Special | Mapping to a special function        |
         +---------+---------+--------------------------------------+
-        |   3     | Macro   | Mapping to a macro key sequence      |
+        |   3     | Key     | Mapping to a simple key action       |
+        +---------+---------+--------------------------------------+
+        |   4     | Macro   | Mapping to a macro key sequence      |
         +---------+---------+--------------------------------------+
         | 1000    | Unknown | An unknown or unreadable mapping type|
         +---------+---------+--------------------------------------+
