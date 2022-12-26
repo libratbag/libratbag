@@ -196,12 +196,12 @@ static int ratbagd_resolution_set_disabled(sd_bus *bus,
 					   sd_bus_error *error)
 {
 	struct ratbagd_resolution *resolution = userdata;
-	bool is_disabled;
+	int is_disabled;
 	int r;
 
 	CHECK_CALL(sd_bus_message_read(m, "b", &is_disabled));
 
-	r = ratbag_resolution_set_disabled(resolution->lib_resolution, is_disabled);
+	r = ratbag_resolution_set_disabled(resolution->lib_resolution, !!is_disabled);
 	if (r == 0) {
 		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
