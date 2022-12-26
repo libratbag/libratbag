@@ -432,8 +432,8 @@ profile name cannot be changed.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Enabled">
-<code class="descname">Enabled</code><a class="headerlink" href="#Enabled" title="Permalink to this definition">¶</a></dt>
+<dt id="Disabled">
+<code class="descname">Disabled</code><a class="headerlink" href="#Disabled" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -444,7 +444,7 @@ profile name cannot be changed.</p>
 </tr>
 </tbody>
 </table>
-<p>True if this is the profile is enabled, false otherwise.</p>
+<p>True if this is the profile is disabled, false otherwise.</p>
 <p>Note that a disabled profile might not have correct bindings, so it’s
 a good thing to rebind everything before calling
 <a class="reference internal" href="#Commit" title="Commit"><code class="xref py py-func docutils literal notranslate"><span class="pre">Commit()</span></code></a>.</p>
@@ -585,6 +585,48 @@ writing to resolutions.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="Capabilities">
+<code class="descname">Capabilities</code><a class="headerlink" href="#Capabilities" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">au</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, constant</td>
+</tr>
+</tbody>
+</table>
+<p>Bit-mask of capabilities.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="88%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Value</th>
+<th class="head">Definition</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>Resolution can be set for x and y axes separately.</td>
+</tr>
+<tr class="row-odd"><td>2</td>
+<td>Resolution can be disabled and enabled.
+Note that this capability only notes the general
+capability. A specific resolution may still fail to
+be disabled, e.g. when it is the active resolution
+on the device.</td>
+</tr>
+</tbody>
+</table>
+<p>(Source: <code class="xref cpp cpp-enum docutils literal notranslate"><span class="pre">ratbag_resolution_capability</span></code> in <cite>libratbag.h</cite>).</p>
+<p>In the future, extra values may get added. Clients must ignore
+unknown Capabilities.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt>
 <code class="descname">IsActive</code></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
@@ -626,6 +668,27 @@ default - at least one resolution must be default at all
 times. This property is read-only, use the
 <a class="reference internal" href="#SetDefault" title="SetDefault"><code class="xref py py-func docutils literal notranslate"><span class="pre">SetDefault()</span></code></a> method to set a resolution as
 the default resolution.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="IsDisabled">
+<code class="descname">IsDisabled</code><a class="headerlink" href="#IsDisabled" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">b</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>True if this resolution is disabled, false otherwise.
+If the device does not have the disabled resolution
+capability, this property is always false.</p>
+<p>This property is read-only, use the <a class="reference internal" href="#SetDisabled" title="SetDisabled"><code class="xref py py-func docutils literal notranslate"><span class="pre">SetDisabled()</span></code></a>
+or <a class="reference internal" href="#SetEnabled" title="SetEnabled"><code class="xref py py-func docutils literal notranslate"><span class="pre">SetEnabled()</span></code></a> method to set a resolution as
+disabled or enabled .</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -673,15 +736,27 @@ writing to resolutions.</p>
 </dd></dl>
 
 <dl class="function">
+<dt>
+<code class="descname">SetActive</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span></dt>
+<dd><p>Set this resolution to be the active one</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="SetDefault">
 <code class="descname">SetDefault</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span><a class="headerlink" href="#SetDefault" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set this resolution to be the default</p>
 </dd></dl>
 
 <dl class="function">
-<dt>
-<code class="descname">SetActive</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span></dt>
-<dd><p>Set this resolution to be the active one</p>
+<dt id="SetDisabled">
+<code class="descname">SetDisabled</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span><a class="headerlink" href="#SetDisabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set this resolution to be disabled</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="SetEnabled">
+<code class="descname">SetEnabled</code><span class="sig-paren">(</span><em>) → (</em><span class="sig-paren">)</span><a class="headerlink" href="#SetEnabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set this resolution to be enabled</p>
 </dd></dl>
 
 </div>
