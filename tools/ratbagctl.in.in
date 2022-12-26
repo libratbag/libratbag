@@ -896,7 +896,7 @@ active profile if none is given.""",
                         {
                             of_type: command,
                             name: 'set',
-                            help_str: 'Set resolution as disabled',
+                            help_str: 'Set resolution as enabled',
                             func: func_resolution_enabled_set,
                         },
                     ]
