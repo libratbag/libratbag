@@ -346,7 +346,7 @@ org.freedesktop.ratbag1.Resolution
 .. attribute:: IsDisabled
 
         :type: b
-        :flags: read-only, mutable
+        :flags: read-write, mutable
 
         True if this resolution is disabled, false otherwise.
         If the device does not have the disabled resolution
@@ -394,14 +394,6 @@ org.freedesktop.ratbag1.Resolution
 .. function:: SetDefault() → ()
 
         Set this resolution to be the default
-
-.. function:: SetDisabled() → ()
-
-        Set this resolution to be disabled
-
-.. function:: SetEnabled() → ()
-
-        Set this resolution to be enabled
 
 .. _button:
 
