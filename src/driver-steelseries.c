@@ -34,7 +34,6 @@
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 #include "libratbag-data.h"
-#include "hidpp-generic.h"
 
 #define STEELSERIES_NUM_PROFILES	1
 #define STEELSERIES_NUM_DPI		2
