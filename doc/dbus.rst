@@ -352,10 +352,6 @@ org.freedesktop.ratbag1.Resolution
         If the device does not have the disabled resolution
         capability, this property is always false.
 
-        This property is read-only, use the :func:`SetDisabled`
-        or :func:`SetEnabled` method to set a resolution as
-        disabled or enabled .
-
 .. attribute:: Resolution
 
         :type: v
