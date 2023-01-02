@@ -46,7 +46,7 @@ And to build or re-build after code-changes, run:
     ninja -C builddir
     sudo ninja -C builddir install
     
-To remove/uninstal simply run:
+To remove/uninstall simply run:
 
     sudo ninja -C builddir uninstall
 
