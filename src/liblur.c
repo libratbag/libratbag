@@ -307,7 +307,7 @@ lur_receiver_unref(struct lur_receiver *lur)
 	if (lur->refcount > 0)
 		return NULL;
 
-	/* when we get here, all the devices have alrady been removed from
+	/* when we get here, all the devices have already been removed from
 	 * the receiver */
 
 	hidpp10_device_destroy(lur->hidppdev);

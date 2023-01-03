@@ -37,7 +37,7 @@ def N_(x):
 class RatbagErrorCode(IntEnum):
     SUCCESS = 0
 
-    """An error occured on the device. Either the device is not a libratbag
+    """An error occurred on the device. Either the device is not a libratbag
     device or communication with the device failed."""
     DEVICE = -1000
 
@@ -49,7 +49,7 @@ class RatbagErrorCode(IntEnum):
     outside of the legal or supported range."""
     VALUE = -1002
 
-    """A low-level system error has occured, e.g. a failure to access files
+    """A low-level system error has occurred, e.g. a failure to access files
     that should be there. This error is usually unrecoverable and libratbag will
     print a log message with details about the error."""
     SYSTEM = -1003

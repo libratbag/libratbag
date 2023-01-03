@@ -1392,7 +1392,7 @@ ratbag_button_set_special(struct ratbag_button *button,
  * @param[in,out] sz Takes the size of the modifiers array and returns the
  * number of modifiers filled in. sz may be 0 if no modifiers are required.
  *
- * @note The caller must ensure that modifiers is large enough to accomodate
+ * @note The caller must ensure that modifiers is large enough to accommodate
  * for the key combination.
  *
  * @return The button number
@@ -1522,7 +1522,7 @@ ratbag_button_macro_get_event_timeout(struct ratbag_button_macro *macro,
  * to ratbag_button_set_macro() are not reflected in the device until a
  * subsequent call to ratbag_button_set_macro().
  *
- * @param button A previously intialized ratbag button
+ * @param button A previously initialized ratbag button
  * @param macro A fully initialized macro
  *
  * @return 0 on success or nonzero otherwise

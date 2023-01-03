@@ -1270,7 +1270,7 @@ hidpp10_onboard_profiles_parse_macro(struct hidpp10_device *device,
 			break;
 		case HIDPP10_MACRO_JUMP_IF_RELEASED_TIMEOUT:
 			m->jump_timeout.timeout = hidpp_be_u16_to_cpu(m->jump_timeout.timeout);
-			hidpp_log_raw(&device->base, "conditional jump to: (0x%02x, 0x%02x) if released whithin %0.03f msecs.\n", m->jump_timeout.page, m->jump_timeout.offset, m->jump_timeout.timeout / 1000.0);
+			hidpp_log_raw(&device->base, "conditional jump to: (0x%02x, 0x%02x) if released within %0.03f msecs.\n", m->jump_timeout.page, m->jump_timeout.offset, m->jump_timeout.timeout / 1000.0);
 			break;
 		case HIDPP10_MACRO_END:
 			break;
@@ -2703,7 +2703,7 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 }
 
 int
-hidpp10_get_firmare_information(struct hidpp10_device *dev,
+hidpp10_get_firmware_information(struct hidpp10_device *dev,
 				uint8_t *major_out,
 				uint8_t *minor_out,
 				uint8_t *build_out)

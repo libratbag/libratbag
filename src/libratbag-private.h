@@ -198,7 +198,7 @@ struct ratbag_driver {
 	int (*commit)(struct ratbag_device *device);
 
 	/**
-	 * Called to mark a previously writen profile as active.
+	 * Called to mark a previously written profile as active.
 	 *
 	 * There should be no need to write the profile here, a
 	 * .write_profile() call is issued before calling this.

@@ -41,7 +41,7 @@ enum ratbag_error_code {
 	RATBAG_SUCCESS = 0,
 
 	/**
-	 * An error occured on the device. Either the device is not a
+	 * An error occurred on the device. Either the device is not a
 	 * libratbag device or communication with the device failed.
 	 */
 	RATBAG_ERROR_DEVICE = -1000,
@@ -59,7 +59,7 @@ enum ratbag_error_code {
 	RATBAG_ERROR_VALUE = -1002,
 
 	/**
-	 * A low-level system error has occured, e.g. a failure to access
+	 * A low-level system error has occurred, e.g. a failure to access
 	 * files that should be there. This error is usually unrecoverable
 	 * and libratbag will print a log message with details about the
 	 * error.

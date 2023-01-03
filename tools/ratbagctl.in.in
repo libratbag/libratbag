@@ -593,7 +593,7 @@ nargs = 'nargs'
 choices = 'choices'
 
 # types
-"""an option to interprete as a command (example 'list', 'info')"""
+"""an option to interpret as a command (example 'list', 'info')"""
 command = 'command'
 """an argument that is required for the given command arguments are leaf nodes
 and can not have children

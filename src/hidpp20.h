@@ -266,7 +266,8 @@ int hidpp20_led_sw_control_read_leds(struct hidpp20_device* device,
 
 /**
  * Get the current sw control value
- * @return 0 if the leds are sofware-controlled 1 if they are firmware controlled
+ * @return 0 if the LEDs are software-controlled, 1 if they are firmware
+ * controlled
  */
 bool hidpp20_led_sw_control_get_sw_ctrl(struct hidpp20_device* device);
 
@@ -300,7 +301,7 @@ int hidpp20_led_sw_control_set_led_state(struct hidpp20_device* device,
 
 #define HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS		0x1b00
 
-enum hidpp2_controL_id_flags {
+enum hidpp2_control_id_flags {
 	HIDPP20_CONTROL_ID_FLAG_NONE = 0,
 	HIDPP20_CONTROL_ID_FLAG_MOUSE_BUTTON = (1 << 0), /**< Is a mouse button */
 	HIDPP20_CONTROL_ID_FLAG_FN_KEY = (1 << 1), /**< Is a fn button */
@@ -794,7 +795,7 @@ struct hidpp20_internal_led {
 		struct hidpp20_led_custom {
 			uint8_t slot;
 			uint16_t init_frame;
-			uint16_t lenght;
+			uint16_t length;
 			uint16_t frame_period;
 			uint8_t intensity;
 		} __attribute__((packed)) custom;

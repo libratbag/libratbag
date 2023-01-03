@@ -667,7 +667,7 @@ gskill_macro_code_from_event(struct ratbag_device *device,
 	uint8_t macro_code;
 
 	/*
-	 * The miscellanious keycodes are ORd with 0x70 to indicate press, 0xF0
+	 * The miscellaneous keycodes are ORd with 0x70 to indicate press, 0xF0
 	 * to indicate release
 	 */
 	if (event->type == RATBAG_MACRO_EVENT_KEY_PRESSED)
@@ -1452,7 +1452,7 @@ gskill_commit(struct ratbag_device *device)
 	 * G.Skill mice only have a concept of how many profiles are enabled,
 	 * not which ones are and aren't enabled. So in order to provide the
 	 * ability to disable individual profiles we need to only write the
-	 * enabled profiles and make sure no holes are left inbetween profiles
+	 * enabled profiles and make sure no holes are left in between profiles
 	 */
 	for (i = 0; i < GSKILL_PROFILE_MAX; i++) {
 		profile = ratbag_device_get_profile(device, i);

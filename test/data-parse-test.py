@@ -76,7 +76,7 @@ def check_ledtypes_str(string: str):
 
     types = string.split(';')
     for t in types:
-        if not t:  # emtpy string if trailing ;
+        if not t:  # empty string if trailing ;
             continue
 
         assertIn(t, permitted_types)

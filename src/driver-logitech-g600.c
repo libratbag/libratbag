@@ -129,7 +129,7 @@ static const struct logitech_g600_button_type_mapping logitech_g600_button_type_
 	{ 23, RATBAG_BUTTON_TYPE_MIDDLE }, // G-shift + middle
 	{ 24, RATBAG_BUTTON_TYPE_WHEEL_LEFT},  // G-shift + scroll left
 	{ 25, RATBAG_BUTTON_TYPE_WHEEL_RIGHT}, // G-shift + scroll right
-	{ 26, RATBAG_BUTTON_TYPE_PINKIE }, // G-shift + Pinky(shift modifer)
+	{ 26, RATBAG_BUTTON_TYPE_PINKIE }, // G-shift + Pinky(shift modifier)
 	{ 27, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP }, // G-shift + 07
 	{ 28, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP }, // G-shift + G08
 	{ 29, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G09

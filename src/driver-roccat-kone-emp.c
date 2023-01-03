@@ -238,7 +238,7 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 20, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) },
 	{ 21, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
 	{ 22, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
-/* FIXME:   { 23, Toogle sensibility }, */
+/* FIXME:   { 23, Toggle sensibility }, */
 /* FIXME:   { 24, Sensibility UP }, */
 /* FIXME:   { 25, Sensibility Down }, */
 /* FIXME:   { 27, open driver/swarm },  -> hidraw report 02 83 01 00 00 00 00 00 */
@@ -520,7 +520,7 @@ roccat_set_current_profile(struct ratbag_device *device, unsigned int index)
  * Sets the profile and which information we want to get from the mouse
  *
  * @param profile is the index of the profile from which you want the info. But, it is also used as a memory bank
- * identifier when quering a macro. In this case, the first bank can be queried by adding 0x10 to the profile index,
+ * identifier when querying a macro. In this case, the first bank can be queried by adding 0x10 to the profile index,
  * and the second bank, by adding 0x20.
  * @param type can be either which information you need (ROCCAT_CONFIG_SETTINGS or ROCCAT_CONFIG_KEY_MAPPING) or
  * it can be used to specify the button from which you want to get the macro.

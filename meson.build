@@ -501,7 +501,7 @@ if meson.version().version_compare('>= 0.53.0')
 endif
 py_version = py3.language_version()
 
-# From python 3.8 we neeed python3-embed
+# From python 3.8 we need python3-embed
 embed = py_version.version_compare('>= 3.8') ? '-embed' : ''
 if not dep_python3.found()
   dep_python3 = dependency('python-@0@@1@'.format(py_version, embed), required : false)

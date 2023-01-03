@@ -996,11 +996,13 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 
 	rc = sinowealth_query_read(device, buf, sizeof(buf));
 	if (rc < 0) {
-		log_error(device->ratbag, "Could not read LOD and angle snapping values: %s (%d)\n", strerror(-rc), rc);
+		log_error(device->ratbag,
+			  "Could not read lift-off distance and angle snapping values: %s (%d)\n",
+			  strerror(-rc), rc);
 		return rc;
 	}
 
-	log_info(device->ratbag, "LOD is high: %u\n", buf[2] - 1);
+	log_info(device->ratbag, "Lift-off distance is high: %u\n", buf[2] - 1);
 	log_info(device->ratbag, "Angle snapping enabled: %u\n", buf[3]);
 
 	return 0;

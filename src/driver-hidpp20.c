@@ -55,7 +55,7 @@
 #define HIDPP_CAP_COLOR_LED_EFFECTS_8070		(1 << 5)
 #define HIDPP_CAP_ONBOARD_PROFILES_8100			(1 << 6)
 #define HIDPP_CAP_LED_SW_CONTROL_1300			(1 << 7)
-#define HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060		(1 << 8)
+#define HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060		(1 << 8)
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 #define HIDPP_CAP_RGB_EFFECTS_8071			(1 << 10)
 
@@ -963,7 +963,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 			ratbag_resolution_set_dpi_list(res, &default_dpi, 1);
 	}
 
-	if (drv_data->capabilities & HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060) {
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060) {
 		rc = hidpp20drv_read_report_rate_8060(device);
 		if (rc < 0 && drv_data->report_rates[0] == 0)
 			return rc;
@@ -1087,7 +1087,7 @@ hidpp20drv_update_report_rate(struct ratbag_profile *profile, int hz)
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
 		return hidpp20drv_update_report_rate_8100(profile, hz);
 
-	if (drv_data->capabilities & HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060) {
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060) {
 		rc = hidpp20drv_update_report_rate_8060(profile, hz);
 
 		/* re-populate the profile with the correct value if we fail */
@@ -1456,11 +1456,11 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		if (rc < 0)
 			return 0; /* this is not a hard failure */
 
-		drv_data->capabilities |= HIDPP_CAP_ADJUSTIBLE_REPORT_RATE_8060;
+		drv_data->capabilities |= HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060;
 		break;
 	}
 	case HIDPP_PAGE_COLOR_LED_EFFECTS: {
-		/* The 8070 feauture implemented in the G602 doesn't follow the spec,
+		/* The 8070 feature implemented in the G602 doesn't follow the spec,
 		 * so we ignore it */
 		if (ratbag_device_data_hidpp20_get_quirk(device->data) == HIDPP20_QUIRK_G602)
 			break;

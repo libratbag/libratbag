@@ -159,9 +159,9 @@ enum hidpp10_hidpp_notifications {
 	 */
 	HIDPP10_NOTIFICATIONS_MOUSE_EXTRA_BUTTONS                   = (1 << 3),
 	/**
-	 * enabled: battery status/milage are reported as HID++ notification
+	 * enabled: battery status/mileage are reported as HID++ notification
 	 * 0x07 or 0x0D (device-dependent)
-	 * disabled: battery status/milage are not reported
+	 * disabled: battery status/mileage are not reported
 	 */
 	HIDPP10_NOTIFICATIONS_BATTERY_STATUS                        = (1 << 4),
 	/**
@@ -714,7 +714,7 @@ hidpp10_get_extended_pairing_information(struct hidpp10_device *dev,
 /* 0xF1: Device Firmware Information                                          */
 /* -------------------------------------------------------------------------- */
 int
-hidpp10_get_firmare_information(struct hidpp10_device *dev,
+hidpp10_get_firmware_information(struct hidpp10_device *dev,
 				uint8_t *major,
 				uint8_t *minor,
 				uint8_t *build_number);

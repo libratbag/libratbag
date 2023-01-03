@@ -64,7 +64,7 @@ int ratbag_open_hidraw(struct ratbag_device *device);
  *
  * @param device the ratbag device
  * @param enumeration index of the endpoint
- * @param interal index of hidraw array
+ * @param internal index of hidraw array
  *
  * @return 0 on success or a negative errno on error
  */
@@ -94,7 +94,7 @@ void ratbag_close_hidraw(struct ratbag_device *device);
  * Close a hidraw device associated with the device by the internal index.
  *
  * @param device the ratbag device
- * @param interal index of hidraw array
+ * @param internal index of hidraw array
  */
 void ratbag_close_hidraw_index(struct ratbag_device *device, int idx);
 
@@ -108,7 +108,7 @@ void ratbag_close_hidraw_index(struct ratbag_device *device, int idx);
  * @param rtype HID report type
  * @param reqtype HID_REQ_GET_REPORT or HID_REQ_SET_REPORT
  *
- * @return count of data transfered, or a negative errno on error
+ * @return count of data transferred, or a negative errno on error
  *
  * Same behavior as hid_hw_request, but with raw buffers instead.
  */
@@ -127,7 +127,7 @@ int ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char report
  * @param buf[out] data returned from device
  * @param len length of buf
  *
- * @return count of data transfered, or a negative errno on error
+ * @return count of data transferred, or a negative errno on error
  *
  * Convenience wrapper around ratbag_hidraw_raw_request()
  */
@@ -145,7 +145,7 @@ int ratbag_hidraw_get_feature_report(struct ratbag_device *device, unsigned char
  * @param buf[in] data returned from device
  * @param len length of buf
  *
- * @return count of data transfered, or a negative errno on error
+ * @return count of data transferred, or a negative errno on error
  *
  * Convenience wrapper around ratbag_hidraw_raw_request()
  */
@@ -158,7 +158,7 @@ int ratbag_hidraw_set_feature_report(struct ratbag_device *device, unsigned char
  * @param buf raw data to transfer
  * @param len length of buf
  *
- * @return count of data transfered, or a negative errno on error
+ * @return count of data transferred, or a negative errno on error
  */
 int ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size_t len);
 
@@ -171,7 +171,7 @@ int ratbag_hidraw_output_report(struct ratbag_device *device, uint8_t *buf, size
  * @param len length of buf
  * @param filter filter function
  *
- * @return count of data transfered, or a negative errno on error
+ * @return count of data transferred, or a negative errno on error
  */
 int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, size_t len,
 				 ratbagd_hidraw_filter_t filter);
@@ -186,7 +186,7 @@ int ratbag_hidraw_read_input_report(struct ratbag_device *device, uint8_t *buf, 
  * @param hidrawno index of hidraw array
  * @param filter filter function
  *
- * @return count of data transfered, or a negative errno on error
+ * @return count of data transferred, or a negative errno on error
  */
 int ratbag_hidraw_read_input_report_index(struct ratbag_device *device, uint8_t *buf, size_t len, int hidrawno,
 				 ratbagd_hidraw_filter_t filter);

@@ -42,7 +42,7 @@ class TestRatbagCtl(unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # it's a lot easier to debug a validataion failure here than
+        # it's a lot easier to debug a validation failure here than
         # with ratbagd failing
         if cls.json is not None:
             import json

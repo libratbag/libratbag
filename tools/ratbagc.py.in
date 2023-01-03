@@ -60,7 +60,7 @@ class MetaRatbag(type):
 class RatbagErrorCode(metaclass=MetaRatbag):
     SUCCESS = libratbag.RATBAG_SUCCESS
 
-    """An error occured on the device. Either the device is not a libratbag
+    """An error occurred on the device. Either the device is not a libratbag
     device or communication with the device failed."""
     DEVICE = libratbag.RATBAG_ERROR_DEVICE
 
@@ -72,7 +72,7 @@ class RatbagErrorCode(metaclass=MetaRatbag):
     outside of the legal or supported range."""
     VALUE = libratbag.RATBAG_ERROR_VALUE
 
-    """A low-level system error has occured, e.g. a failure to access files
+    """A low-level system error has occurred, e.g. a failure to access files
     that should be there. This error is usually unrecoverable and libratbag will
     print a log message with details about the error."""
     SYSTEM = libratbag.RATBAG_ERROR_SYSTEM
@@ -416,7 +416,7 @@ class RatbagdProfile(metaclass=MetaRatbag):
 
     @property
     def is_active(self):
-        """Returns True if the profile is currenly active, false otherwise."""
+        """Returns True if the profile is currently active, false otherwise."""
         return libratbag.ratbag_profile_is_active(self._profile)
 
     def set_active(self):

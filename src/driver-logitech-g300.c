@@ -120,7 +120,7 @@ struct logitech_g300_button_mapping {
 };
 
 static struct logitech_g300_button_mapping logitech_g300_button_mapping[] = {
-	/* 0x00 is either key or unassigned. Must be handled separatly  */
+	/* 0x00 is either key or unassigned. Must be handled separately  */
 	{ 0x01, BUTTON_ACTION_BUTTON(1) },
 	{ 0x02, BUTTON_ACTION_BUTTON(2) },
 	{ 0x03, BUTTON_ACTION_BUTTON(3) },
