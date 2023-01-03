@@ -176,7 +176,7 @@
 <ol class="arabic simple">
 <li>Change the various properties to the desired value</li>
 <li>Invoke <a class="reference internal" href="#Commit" title="Commit"><code class="xref py py-func docutils literal notranslate"><span class="pre">org.freedesktop.ratbag1.Device.Commit()</span></code></a></li>
-<li>Optional: if an error occured writing the new data to the device,
+<li>Optional: if an error occurred writing the new data to the device,
 a <a class="reference internal" href="#Resync" title="Resync"><code class="xref py py-func docutils literal notranslate"><span class="pre">org.freedesktop.ratbag1.Resync</span></code></a> signal is emitted on the device and
 all properties are updated accordingly.</li>
 </ol>
@@ -261,7 +261,7 @@ interact with ratbagd.</p>
 </table>
 <p>The DBus API version. This is a stopgap feature while the DBus API
 is still in flux. The version has no backwards or
-forward-compatibilty guarantees - your client must understand
+forward-compatibility guarantees - your client must understand
 <strong>exactly</strong> the same version, it is not enough to support an older
 or a newer version.</p>
 <p>This API will be removed once the DBus API is declared stable.</p>
@@ -641,7 +641,7 @@ unknown Capabilities.</p>
 </table>
 <p>True if this is the currently active resolution, false otherwise.</p>
 <p>Resolutions can only be set to active, but never to not
-active - at least one resoultion must be active at all
+active - at least one resolution must be active at all
 times. This property is read-only, use the
 <a class="reference internal" href="#SetActive" title="SetActive"><code class="xref py py-func docutils literal notranslate"><span class="pre">SetActive()</span></code></a> method to set a resolution as the
 active resolution.</p>

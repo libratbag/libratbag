@@ -17,7 +17,7 @@ Changing settings on a device is a three-step process:
 
 #. Change the various properties to the desired value
 #. Invoke :func:`org.freedesktop.ratbag1.Device.Commit() <Commit>`
-#. Optional: if an error occured writing the new data to the device,
+#. Optional: if an error occurred writing the new data to the device,
    a :func:`org.freedesktop.ratbag1.Resync <Resync>` signal is emitted on the device and
    all properties are updated accordingly.
 
@@ -87,7 +87,7 @@ interact with ratbagd.
 
         The DBus API version. This is a stopgap feature while the DBus API
         is still in flux. The version has no backwards or
-        forward-compatibilty guarantees - your client must understand
+        forward-compatibility guarantees - your client must understand
         **exactly** the same version, it is not enough to support an older
         or a newer version.
 
@@ -323,7 +323,7 @@ org.freedesktop.ratbag1.Resolution
         True if this is the currently active resolution, false otherwise.
 
         Resolutions can only be set to active, but never to not
-        active - at least one resoultion must be active at all
+        active - at least one resolution must be active at all
         times. This property is read-only, use the
         :func:`SetActive` method to set a resolution as the
         active resolution.
