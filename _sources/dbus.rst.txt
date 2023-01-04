@@ -158,6 +158,15 @@ known to ratbagd.
 
         The device's name, suitable for presentation to the user.
 
+.. attribute:: FirmwareVersion
+
+        :type: s
+        :flags: read-only, constant
+
+        A device-specific string with the firmware version, or the empty
+        string. For devices with a major/minor or purely numeric firmware
+        version, the conversion into a string is implementation-defined.
+
 .. attribute:: Profiles
 
         :type: ao
