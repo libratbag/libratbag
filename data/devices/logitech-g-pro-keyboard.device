@@ -1,0 +1,6 @@
+[Device]
+DeviceMatch=usb:046d:c339
+DeviceType=keyboard
+Driver=hidpp20
+LedTypes=logo;switches
+Name=Logitech G PRO Keyboard
