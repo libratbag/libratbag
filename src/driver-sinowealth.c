@@ -75,6 +75,12 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  */
 #define SINOWEALTH_DPI_FALLBACK 2000
 
+/* Technically it can be set to 2 ms, but Glorious Model O Software
+ * v1.0.9 does not allow doing so, and so don't we.
+ */
+#define SINOWEALTH_DEBOUNCE_MIN 4
+#define SINOWEALTH_DEBOUNCE_MAX 16
+
 /* Different software expose different amount of DPI slots:
  * Glorious - 6;
  * G-Wolves - 7.
@@ -104,6 +110,10 @@ _Static_assert(SINOWEALTH_NUM_PROFILES <= 2, "Too many profiles enabled");
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
 
 #define SINOWEALTH_FW_VERSION_LEN 4
+
+static const unsigned int SINOWEALTH_DEBOUNCE_TIMES[] = {
+	4, 6, 8, 10, 12, 14, 16
+};
 
 /* Bit mask for @ref sinowealth_config_report.config.
  *
@@ -953,9 +963,6 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 {
 	int rc = 0;
 
-	/* TODO: implement debounce time changing once we have an API for that.
-	 * To implement it here just set the third index to the desired debounce time / 2.
-	 */
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
 
 	rc = sinowealth_query_read(device, buf, sizeof(buf));
@@ -965,6 +972,37 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 	}
 
 	return buf[2] * 2;
+}
+
+/* Set debounce time to `debounce_ms` milliseconds.
+ *
+ * @return 0 on success or a negative errno.
+ */
+static int
+sinowealth_set_debounce_time(struct ratbag_device *device, int debounce_time_ms)
+{
+	if (debounce_time_ms < SINOWEALTH_DEBOUNCE_MIN || debounce_time_ms > SINOWEALTH_DEBOUNCE_MAX) {
+		log_error(device->ratbag, "Debounce time %d is out of range %d-%d\n",
+			  debounce_time_ms, SINOWEALTH_DEBOUNCE_MIN, SINOWEALTH_DEBOUNCE_MAX);
+		return -EINVAL;
+	}
+
+	int rc = 0;
+
+	uint8_t buf[SINOWEALTH_CMD_SIZE] = {
+		SINOWEALTH_REPORT_ID_CMD,
+		SINOWEALTH_CMD_DEBOUNCE,
+		debounce_time_ms / 2,
+	};
+
+	rc = sinowealth_query_write(device, buf, sizeof(buf));
+	if (rc < 0) {
+		log_error(device->ratbag, "Could not set debounce time: %s (%d)\n",
+			  strerror(-rc), rc);
+		return rc;
+	}
+
+	return 0;
 }
 
 /* Print angle snapping (Cal line) and lift-off distance (LOD) modes.
@@ -1579,6 +1617,19 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 */
 	if (rc >= 0) {
 		log_debug(device->ratbag, "Debounce time: %d ms\n", rc);
+
+		/* Implementation note: libratbag expects every profile to have
+		 * separate debounce time values, but Sinowealth mice only have
+		 * one global setting that applies to all profiles. To work
+		 * around this, we only enable debounce time setting on the
+		 * first profile.
+		 */
+		ratbag_device_for_each_profile(device, profile) {
+			profile->debounce = rc;
+			ratbag_profile_set_debounce_list(
+				profile, SINOWEALTH_DEBOUNCE_TIMES, ARRAY_LENGTH(SINOWEALTH_DEBOUNCE_TIMES));
+			break;
+		}
 	} else {
 		log_debug(device->ratbag, "Device doesn't support debounce time changing\n");
 	}
@@ -1892,6 +1943,15 @@ sinowealth_commit(struct ratbag_device *device)
 	rc = sinowealth_write_macros(device);
 	if (rc)
 		return rc;
+
+	ratbag_device_for_each_profile(device, profile) {
+		if (profile->debounce_dirty) {
+			rc = sinowealth_set_debounce_time(device, profile->debounce);
+			if (rc)
+				return rc;
+		}
+		break;
+	}
 
 	return 0;
 }
