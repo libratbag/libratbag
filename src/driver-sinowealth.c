@@ -429,7 +429,11 @@ struct sinowealth_data {
 	enum sinowealth_led_format led_type;
 	unsigned int button_count;
 	unsigned int config_size;
-	/* Cached profile index. This might be incorrect if profile index was changed by another program while we are running. */
+	/* Cached profile index.
+	 * This gets incorrect when user switches profiles with button
+	 * bindings. This actually also sends an interrupt, so in the
+	 * future we can start listening for this.
+	 */
 	unsigned int current_profile_index;
 	unsigned int led_count;
 	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES];
