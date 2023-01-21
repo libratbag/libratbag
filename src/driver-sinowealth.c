@@ -1532,6 +1532,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc)
 		return rc;
 
+	rc = sinowealth_get_active_profile(device);
+	if (rc < 0)
+		return rc;
+	log_debug(device->ratbag, "Active profile index: %d\n", rc);
+
 	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device, fw_version);
 
 	if (device_data == NULL) {
@@ -1557,6 +1562,18 @@ sinowealth_init_profile(struct ratbag_device *device)
 	const unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1;
 
 	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
+
+	rc = sinowealth_get_debounce_time(device);
+	/* Seems like some mice don't support debounce time changing.
+	 *
+	 * Examples:
+	 * - ANT Esports GM500 (libratbag/libratbag#1296).
+	 */
+	if (rc >= 0) {
+		log_debug(device->ratbag, "Debounce time: %d ms\n", rc);
+	} else {
+		log_debug(device->ratbag, "Device doesn't support debounce time changing\n");
+	}
 
 	/* Generate DPI list */
 	unsigned int dpis[num_dpis];
@@ -1748,14 +1765,6 @@ sinowealth_probe(struct ratbag_device *device)
 		sinowealth_update_profile_from_config(profile);
 		sinowealth_update_profile_from_buttons(profile);
 	}
-
-	rc = sinowealth_get_active_profile(device);
-	if (rc >= 0)
-		log_debug(device->ratbag, "Current profile index: %d\n", rc);
-
-	rc = sinowealth_get_debounce_time(device);
-	if (rc >= 0)
-		log_info(device->ratbag, "Debounce time: %d ms\n", rc);
 
 	if (drv_data->is_long)
 		sinowealth_print_long_lod_and_anglesnapping(device);
