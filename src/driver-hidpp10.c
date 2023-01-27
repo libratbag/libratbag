@@ -656,7 +656,15 @@ hidpp10drv_probe(struct ratbag_device *device)
 		else if (strcasecmp("G9", typestr) == 0)
 			type = HIDPP10_PROFILE_G9;
 
-		profile_count = ratbag_device_data_hidpp10_get_profile_count(device->data);
+		rc = ratbag_device_data_hidpp10_get_profile_count(device->data);
+		if (rc == -1) {
+			log_error(device->ratbag,
+				  "Device %s has no profile count set, even though profiles are enabled. "
+				  "Please adjust the .device file.\n",
+				  device->name);
+		} else {
+			profile_count = (unsigned int)rc;
+		};
 	}
 
 	device_idx = ratbag_device_data_hidpp10_get_index(device->data);
