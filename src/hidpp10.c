@@ -180,7 +180,8 @@ hidpp10_request_command(struct hidpp10_device *dev, union hidpp10_message *msg)
 		command_size = LONG_MESSAGE_LENGTH;
 		break;
 	default:
-		abort();
+		hidpp_log_error(&dev->base, "Incorrect message report id: %02x\n", msg->msg.report_id);
+		return -EINVAL;
 	}
 
 	/* create the expected header */
@@ -1943,7 +1944,8 @@ hidpp10_set_led_status(struct hidpp10_device *dev,
 			case HIDPP10_LED_STATUS_SLOW_OFF:
 				break;
 			default:
-				abort();
+				hidpp_log_error(&dev->base, "Incorrect LED status: %02x\n", led[i]);
+				return -EINVAL;
 		}
 	}
 
