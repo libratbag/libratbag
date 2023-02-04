@@ -1,0 +1,13 @@
+[Device]
+# Wired mode; 2.4 Ghz wireless mode.
+DeviceMatch=usb:1038:172b;usb:1038:1726
+DeviceType=mouse
+Driver=steelseries
+Name=SteelSeries Rival 650 Wireless
+
+[Driver/steelseries]
+Buttons=0
+DeviceVersion=4
+DpiRange=100:12000@100
+Leds=0
+MacroLength=0

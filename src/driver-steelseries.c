@@ -74,6 +74,9 @@
 #define STEELSERIES_ID_FIRMWARE_PROTOCOL3	0x10
 #define STEELSERIES_ID_SETTINGS_PROTOCOL3	0x16
 
+#define STEELSERIES_ID_DPI_PROTOCOL4		0x15
+#define STEELSERIES_ID_REPORT_RATE_PROTOCOL4	0x17
+
 #define STEELSERIES_BUTTON_OFF			0x00
 #define STEELSERIES_BUTTON_RES_CYCLE		0x30
 #define STEELSERIES_BUTTON_WHEEL_UP		0x31
@@ -219,6 +222,7 @@ steelseries_get_firmware_version(struct ratbag_device *device, int *major_out, i
 		msg.msg.parameters[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL3;
 		msg_len = STEELSERIES_REPORT_SIZE;
 		break;
+	case 4:
 	default:
 		return -ENOTSUP;
 	}
@@ -265,7 +269,6 @@ steelseries_read_settings(struct ratbag_device *device)
 	case 3:
 		msg.msg.parameters[0] = STEELSERIES_ID_SETTINGS_PROTOCOL3;
 		break;
-	case 1:
 	default:
 		return -ENOTSUP;
 	}
@@ -483,6 +486,12 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 		msg.msg.parameters[3] = resolution->dpi_x / dpirange->step - 1;
 		msg.msg.parameters[5] = 0x42; /* not sure if needed */
 		break;
+	case 4:
+		buf_len = STEELSERIES_REPORT_SIZE;
+		msg.msg.parameters[0] = STEELSERIES_ID_DPI_PROTOCOL4;
+		msg.msg.parameters[1] = resolution->index + 1;
+		msg.msg.parameters[2] = resolution->dpi_x / dpirange->step - 1;
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -510,6 +519,7 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 	};
 
 	switch (device_version) {
+	case 4:
 	case 1:
 		if (profile->hz >= 1000) {
 			profile->hz = 1000;
@@ -526,7 +536,7 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 		}
 
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
-		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE_SHORT;
+		msg.msg.parameters[0] = device_version == 1 ? STEELSERIES_ID_REPORT_RATE_SHORT : STEELSERIES_ID_REPORT_RATE_PROTOCOL4;
 		msg.msg.parameters[2] = reported_rate;
 		break;
 	case 2:
@@ -980,7 +990,7 @@ steelseries_write_save(struct ratbag_device *device)
 	} else if (device_version == 2) {
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_SAVE;
-	} else if (device_version == 3) {
+	} else if (device_version == 3 || device_version == 4) {
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_SAVE_PROTOCOL3;
 	} else {
