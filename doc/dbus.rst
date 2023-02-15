@@ -264,6 +264,37 @@ org.freedesktop.ratbag1.Profile
         Provides the object paths of all LEDs in this profile, see
         :ref:`led`.
 
+.. attribute:: AngleSnapping
+
+        :type: i
+        :flags: read-write, mutable
+
+        Sensor angle snapping boolean value as an int (1 or 0), or `-1` to
+        indicate that the device doesn't support reading and/or writing this
+        value.
+
+.. attribute:: Debounce
+
+        :type: i
+        :flags: read-write, mutable
+
+        Int for the button debounce time in milliseconds assigned to this
+        profile. This time must be one of those listed in
+        :attr:`Debounces`, or `-1` to indicate that changing debounce time
+        for this device is not allowed.
+
+.. attribute:: Debounces
+
+        :type: au
+        :flags: read-write, constant
+
+        A list of permitted button debounce times. Values in this list may
+        be used in the :attr:`Debounce` property. This list is always sorted
+        ascending, the lowest debounce time is the first item in the list.
+
+        This list may be empty if the device does not support reading and/or
+        writing the debounce time.
+
 .. attribute:: ReportRate
 
         :type: u
