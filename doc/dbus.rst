@@ -324,7 +324,7 @@ org.freedesktop.ratbag1.Profile
         ascending, the lowest report rate is the first item in the list.
 
         This list may be empty if the device does not support reading and/or
-        writing to resolutions.
+        writing the report rate.
 
 .. function:: SetActive() → ()
 
