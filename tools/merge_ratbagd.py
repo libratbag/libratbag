@@ -22,12 +22,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 import argparse
-import contextlib
 import os
 import stat
+from typing import TextIO
 
 
-def print_ratbagctl(ratbagctl_path, ratbagd_path, version_string):
+def write_ratbagctl(
+    output_file: TextIO, ratbagctl_path: str, ratbagd_path: str, version_string: str
+) -> None:
     with open(ratbagctl_path, 'r', encoding='utf-8') as ratbagctl, open(ratbagd_path, 'r', encoding='utf-8') as ratbagd:
         for line in ratbagctl.readlines():
             if line.startswith("from ratbagd import "):
@@ -36,11 +38,14 @@ def print_ratbagctl(ratbagctl_path, ratbagd_path, version_string):
                     if not r.startswith('#') and r.strip():
                         headers = False
                     if not headers:
-                        print(r.rstrip('\n'))
-            else:
-                if '@version@' in line:
-                    line = line.replace('@version@', version_string)
-                print(line.rstrip('\n'))
+                        output_file.write(r)
+                continue
+
+            if '@version@' in line:
+                output_file.write(line.replace('@version@', version_string))
+                continue
+
+            output_file.write(line)
 
 
 def main() -> None:
@@ -54,8 +59,7 @@ def main() -> None:
         with open(ns.output, 'w', encoding='utf-8') as output_file:
             st = os.stat(ns.output)
             os.chmod(ns.output, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-            with contextlib.redirect_stdout(output_file):
-                print_ratbagctl(ns.ratbagctl, ns.ratbagd, ns.version)
+            write_ratbagctl(output_file, ns.ratbagctl, ns.ratbagd, ns.version)
 
 
 if __name__ == "__main__":
