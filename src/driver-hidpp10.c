@@ -637,7 +637,6 @@ hidpp10drv_probe(struct ratbag_device *device)
 	const char *typestr;
 	int device_idx = HIDPP_WIRED_DEVICE_IDX;
 	unsigned int profile_count = 1;
-	struct ratbag_profile *profile;
 
 	rc = ratbag_find_hidraw(device, hidpp10drv_test_hidraw);
 	if (rc)
@@ -733,8 +732,11 @@ hidpp10drv_probe(struct ratbag_device *device)
 		profile->is_active = true;
 	}
 
-	ratbag_device_for_each_profile(device, profile)
-		hidpp10drv_read_profile(profile);
+	{
+		struct ratbag_profile *profile;
+		ratbag_device_for_each_profile(device, profile)
+			hidpp10drv_read_profile(profile);
+	}
 
 	if (device->num_profiles == 1) {
 		_cleanup_profile_ struct ratbag_profile *profile;
