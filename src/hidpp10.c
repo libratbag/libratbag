@@ -1469,7 +1469,6 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 	int res;
 	struct hidpp10_profile *profile;
 	union _hidpp10_button_binding *buttons;
-	uint8_t page;
 
 	/* Page 0 is RAM
 	 * Page 1 is the profile directory
@@ -1493,21 +1492,19 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 	profile = &dev->profiles[number];
 	if (!profile->page) {
 		unsigned long pages = 0xffff;
-		unsigned int i;
 
 		/* pages 0 and 1 are ROM and directory so they are reserved */
 		long_clear_bit(&pages, 0);
 		long_clear_bit(&pages, 1);
 
-		for (i = 0; i < dev->profile_count; i++) {
+		for (size_t i = 0; i < dev->profile_count; i++) {
 			uint8_t page = dev->profiles[i].page;
 
 			assert(page < sizeof(pages) * 8);
 			long_clear_bit(&pages, page);
 		}
 
-		page = ffsl(pages) - 1;
-		profile->page = page;
+		profile->page = ffsl(pages) - 1;
 	}
 
 	switch (dev->profile_type) {
@@ -1526,7 +1523,7 @@ hidpp10_read_profile(struct hidpp10_device *dev, uint8_t number)
 	}
 
 	if (!profile->initialized) {
-		page = profile->page;
+		uint8_t page = profile->page;
 		res = hidpp10_read_page(dev, page, page_data);
 		if (res == -EILSEQ) {
 			/*
