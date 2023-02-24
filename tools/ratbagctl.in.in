@@ -1259,10 +1259,6 @@ class RatbagParser(object):
         r = self._sub_parse(input_string, ns)
         return r
 
-    def build_cmd_args_name(self):
-        """uniquely tag the arguments of the command in the namespace"""
-        return "{}_args_{}".format(self.name)
-
     def print_help(self, group, prefix=""):
         if self.group is not None:
             print("\n{} Commands:".format(self.group))
