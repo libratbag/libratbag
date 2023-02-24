@@ -428,6 +428,10 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 	case 0: report_id = LOGITECH_G300_REPORT_ID_PROFILE_0; break;
 	case 1: report_id = LOGITECH_G300_REPORT_ID_PROFILE_1; break;
 	case 2: report_id = LOGITECH_G300_REPORT_ID_PROFILE_2; break;
+	default:
+		/* Should've been handled by the assertion above. */
+		abort();
+		break;
 	}
 
 	rc = ratbag_hidraw_raw_request(device, report_id,
