@@ -131,7 +131,6 @@ _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 
 /* Sensor IDs used in SinoWealth firmware and software. */
 enum sinowealth_sensor {
-	SINOWEALTH_SENSOR_NONE,
 	SINOWEALTH_SENSOR_PMW3360 = 0x06,
 	SINOWEALTH_SENSOR_PMW3327 = 0x0e,
 	SINOWEALTH_SENSOR_PMW3389 = 0x0f,
