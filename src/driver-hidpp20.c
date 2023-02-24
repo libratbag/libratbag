@@ -249,8 +249,6 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 	}
 
 	if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
-		int rc;
-
 		rc = ratbag_button_macro_new_from_keycode(button,
 							  button->action.action.key.key,
 							  modifiers);
