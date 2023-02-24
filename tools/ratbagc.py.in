@@ -195,7 +195,7 @@ class Ratbagd(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         for d in self._devices.values():
-            d.__exit__()
+            d.__exit__(None, None, None)
         libratbag.ratbag_unref(self._ratbag)
 
     @property
@@ -252,9 +252,9 @@ class RatbagdDevice(metaclass=MetaRatbag):
 
         self._profiles = [RatbagdProfile(self._device, i) for i in range(libratbag.ratbag_device_get_num_profiles(self._device))]
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         for p in self._profiles:
-            p.__exit__()
+            p.__exit__(None, None, None)
         libratbag.ratbag_device_unref(self._device)
 
     @property
@@ -336,11 +336,11 @@ class RatbagdProfile(metaclass=MetaRatbag):
 
     def __exit__(self):
         for r in self._resolutions:
-            r.__exit__()
+            r.__exit__(None, None, None)
         for b in self._buttons:
-            b.__exit__()
+            b.__exit__(None, None, None)
         for l in self._leds:
-            l.__exit__()
+            l.__exit__(None, None, None)
         libratbag.ratbag_profile_unref(self._profile)
 
     @property
@@ -461,7 +461,7 @@ class RatbagdResolution(metaclass=MetaRatbag):
 
         self._capabilities = get_capabilities("resolution", self._res)
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         libratbag.ratbag_resolution_unref(self._res)
 
     @property
@@ -618,7 +618,7 @@ class RatbagdButton(metaclass=MetaRatbag):
         self._button = libratbag.ratbag_profile_get_button(profile, id)
         self._capabilities = get_capabilities("button", self._button)
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         libratbag.ratbag_button_unref(self._button)
 
     @property
@@ -838,7 +838,7 @@ class RatbagdLed(metaclass=MetaRatbag):
         self._led = libratbag.ratbag_profile_get_led(profile, id)
         self._capabilities = get_capabilities("led", self._led)
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         libratbag.ratbag_led_unref(self._led)
 
     @property
