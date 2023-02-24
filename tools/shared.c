@@ -247,6 +247,10 @@ button_action_macro_to_str(struct ratbag_button *button)
 	offset = snprintf(str, sizeof(str), "macro \"%s\":",
 			  name ? name : "UNKNOWN");
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
+		if (offset < 0 || offset >= (int)sizeof(str) - offset) {
+			break;
+		}
+
 		enum ratbag_macro_event_type type = ratbag_button_macro_get_event_type(macro, i);
 		int key = ratbag_button_macro_get_event_key(macro, i);
 		int timeout = ratbag_button_macro_get_event_timeout(macro, i);
