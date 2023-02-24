@@ -159,8 +159,10 @@ test_read_profile(struct ratbag_profile *profile)
 	p0 = &d->profiles[0];
 	r0 = &p0->resolutions[0];
 
-	for (size_t r = 0; r < ARRAY_LENGTH(p0->report_rates); r++) {
-		if (p0->report_rates[r] > 0)
+	for (size_t report_rate_index = 0;
+	     report_rate_index < ARRAY_LENGTH(p0->report_rates);
+	     report_rate_index++) {
+		if (p0->report_rates[report_rate_index] > 0)
 			nrates++;
 	}
 
