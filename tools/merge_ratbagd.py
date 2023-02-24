@@ -22,6 +22,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import argparse
+import contextlib
 import os
 import stat
 import sys
@@ -51,15 +52,11 @@ def main(argv):
     parser.add_argument("--version", action="store", default="git_master")
     ns = parser.parse_args(sys.argv[1:])
     if ns.output:
-        ns.output_file = open(ns.output, 'w', encoding='utf-8')
-        st = os.stat(ns.output)
-        os.chmod(ns.output, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        sys.stdout = ns.output_file
-    print_ratbagctl(ns.ratbagctl, ns.ratbagd, ns.version)
-    try:
-        ns.output_file.close()
-    except AttributeError:
-        pass
+        with open(ns.output, 'w', encoding='utf-8') as output_file:
+            st = os.stat(ns.output)
+            os.chmod(ns.output, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            with contextlib.redirect_stdout(output_file):
+                print_ratbagctl(ns.ratbagctl, ns.ratbagd, ns.version)
 
 
 if __name__ == "__main__":
