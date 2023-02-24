@@ -1246,7 +1246,7 @@ class RatbagParser(object):
         if self.func is not None:
             parser.set_defaults(func=self.func)
 
-    def _add_to_subparsers(self, parent, input_string, ns):
+    def _add_to_subparsers(self, parent):
         raise ParseError("please implement _add_to_subparsers on {}".format(type(self)))
 
     def add_to_subparsers(self, parent):
