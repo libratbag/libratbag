@@ -102,6 +102,7 @@ def check_section_device(section: configparser.SectionProxy):
     try:
         check_ledtypes_str(section['LedTypes'])
     except KeyError:
+        # No such section - not an error.
         pass
 
     check_match_str(section['DeviceMatch'])
@@ -161,6 +162,7 @@ def check_section_asus(section: configparser.SectionProxy):
     try:
         check_dpi_range_str(section['DpiRange'])
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
@@ -171,6 +173,7 @@ def check_section_asus(section: configparser.SectionProxy):
         for quirk in section['Quirks'].split(';'):
             assertIn(quirk, quirks)
     except KeyError:
+        # No such section - not an error.
         pass
 
 
@@ -184,29 +187,34 @@ def check_section_hidpp10(section: configparser.SectionProxy):
         # 10 is arbitrarily chosen
         assert(nprofiles > 0 and nprofiles < 10)
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
         index = int(section['DeviceIndex'], 16)
         assert(index > 0 and index <= 0xff)
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
         check_dpi_range_str(section['DpiRange'])
         assertNotIn('DpiList', section.keys())
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
         check_dpi_list_str(section['DpiList'])
         assertNotIn('DpiRange', section.keys())
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
         check_profile_type_str(section['ProfileType'])
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
@@ -214,6 +222,7 @@ def check_section_hidpp10(section: configparser.SectionProxy):
         # 10 is arbitrarily chosen
         assert(leds > 0 and leds < 10)
     except KeyError:
+        # No such section - not an error.
         pass
 
 
@@ -226,6 +235,7 @@ def check_section_hidpp20(section: configparser.SectionProxy):
         index = int(section['DeviceIndex'], 16)
         assert(index > 0 and index <= 0xff)
     except KeyError:
+        # No such section - not an error.
         pass
 
 
@@ -246,12 +256,14 @@ def check_section_steelseries(section: configparser.SectionProxy):
         check_dpi_list_str(section['DpiList'])
         assertNotIn('DpiRange', section.keys())
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
         check_dpi_range_str(section['DpiRange'])
         assertNotIn('DpiList', section.keys())
     except KeyError:
+        # No such section - not an error.
         pass
 
     try:
@@ -261,6 +273,7 @@ def check_section_steelseries(section: configparser.SectionProxy):
         )
         assertIn(section['Quirk'], quirks)
     except KeyError:
+        # No such section - not an error.
         pass
 
 
