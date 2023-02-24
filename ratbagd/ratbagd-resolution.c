@@ -203,7 +203,6 @@ static int ratbagd_resolution_set_disabled(sd_bus *bus,
 
 	r = ratbag_resolution_set_disabled(resolution->lib_resolution, !!is_disabled);
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       resolution->path,
 					       RATBAGD_NAME_ROOT ".Resolution",
@@ -299,7 +298,6 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 	}
 
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       resolution->path,
 					       RATBAGD_NAME_ROOT ".Resolution",

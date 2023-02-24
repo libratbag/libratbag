@@ -317,7 +317,6 @@ ratbagd_profile_set_disabled(sd_bus *bus,
 
 	r = ratbag_profile_set_enabled(profile->lib_profile, !disabled);
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       profile->path,
 					       RATBAGD_NAME_ROOT ".Profile",
@@ -512,7 +511,6 @@ ratbagd_profile_set_report_rate(sd_bus *bus,
 
 	r = ratbag_profile_set_report_rate(profile->lib_profile, rate);
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       profile->path,
 					       RATBAGD_NAME_ROOT ".Profile",

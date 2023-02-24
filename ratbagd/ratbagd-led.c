@@ -102,7 +102,6 @@ static int ratbagd_led_set_mode(sd_bus *bus,
 	r = ratbag_led_set_mode(led->lib_led, mode);
 
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       led->path,
 					       RATBAGD_NAME_ROOT ".Led",
@@ -154,7 +153,6 @@ static int ratbagd_led_set_color(sd_bus *bus,
 	r = ratbag_led_set_color(led->lib_led, c);
 
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       led->path,
 					       RATBAGD_NAME_ROOT ".Led",
@@ -205,7 +203,6 @@ static int ratbagd_led_set_effect_duration(sd_bus *bus,
 	r = ratbag_led_set_effect_duration(led->lib_led, rate);
 
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       led->path,
 					       RATBAGD_NAME_ROOT ".Led",
@@ -256,7 +253,6 @@ static int ratbagd_led_set_brightness(sd_bus *bus,
 	r = ratbag_led_set_brightness(led->lib_led, brightness);
 
 	if (r == 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		sd_bus_emit_properties_changed(bus,
 					       led->path,
 					       RATBAGD_NAME_ROOT ".Led",
