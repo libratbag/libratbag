@@ -25,7 +25,6 @@ import argparse
 import contextlib
 import os
 import stat
-import sys
 
 
 def print_ratbagctl(ratbagctl_path, ratbagd_path, version_string):
@@ -44,13 +43,13 @@ def print_ratbagctl(ratbagctl_path, ratbagd_path, version_string):
                 print(line.rstrip('\n'))
 
 
-def main(argv):
+def main() -> None:
     parser = argparse.ArgumentParser(description="merge ratbagd.py into ratbagctl")
     parser.add_argument("ratbagctl", action='store')
     parser.add_argument("ratbagd", action='store')
     parser.add_argument("--output", action="store")
     parser.add_argument("--version", action="store", default="git_master")
-    ns = parser.parse_args(sys.argv[1:])
+    ns = parser.parse_args()
     if ns.output:
         with open(ns.output, 'w', encoding='utf-8') as output_file:
             st = os.stat(ns.output)
@@ -60,4 +59,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
