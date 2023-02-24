@@ -277,6 +277,7 @@ dpi_list_from_string(const char *str)
 	struct dpi_list *list;
 	unsigned int i, count, index;
 	int nread, dpi = 0;
+	int rc = 0;
 	char c;
 	void *tmp;
 
@@ -305,8 +306,8 @@ dpi_list_from_string(const char *str)
 		}
 
 		nread = 0;
-		sscanf(str, "%d%n", &dpi, &nread);
-		if (!nread || dpi < 0)
+		rc = sscanf(str, "%d%n", &dpi, &nread);
+		if (rc != 1 || !nread || dpi < 0)
 			goto err;
 
 		list->entries[index] = dpi;
