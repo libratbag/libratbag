@@ -334,7 +334,7 @@ class RatbagdProfile(metaclass=MetaRatbag):
 
         self._leds = [RatbagdLed(self._profile, i) for i in range(libratbag.ratbag_device_get_num_leds(device))]
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         for r in self._resolutions:
             r.__exit__(None, None, None)
         for b in self._buttons:
