@@ -108,8 +108,6 @@ def check_section_device(section: configparser.SectionProxy):
 
 
 def check_dpi_range_str(string: str):
-    import re
-
     m = re.search('^([0-9]+):([0-9]+)@([0-9.]+)$', string)
     assert(m is not None)
     min = int(m.group(1))
