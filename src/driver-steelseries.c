@@ -392,7 +392,6 @@ steelseries_probe(struct ratbag_device *device)
 		ratbag_profile_for_each_button(profile, button) {
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
-			ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 			if (quirk != STEELSERIES_QUIRK_SENSEIRAW) {
 				ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 			}
@@ -660,7 +659,6 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 			}
 			break;
 
-		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		case RATBAG_BUTTON_ACTION_TYPE_NONE:
 		default:
 			msg.msg.parameters[idx] = STEELSERIES_BUTTON_OFF;
