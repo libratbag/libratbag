@@ -1586,7 +1586,6 @@ sinowealth_init_profile(struct ratbag_device *device)
 		/* Set up LED capabilities */
 		if (drv_data->led_count > 0) {
 			led = ratbag_profile_get_led(profile, 0);
-			led->type = RATBAG_LED_TYPE_SIDE;
 			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
