@@ -154,7 +154,6 @@ sinowealthnubwo_probe(struct ratbag_device *device)
 			led->mode = RATBAG_LED_OFF;
 			led->color.red = led->color.green = led->color.blue = 0xFF;
 			led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-			led->type = RATBAG_LED_TYPE_SIDE;
 			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
