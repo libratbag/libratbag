@@ -168,51 +168,6 @@ struct roccat_data {
 	struct roccat_macro macros[(ROCCAT_PROFILE_MAX)][(ROCCAT_BUTTON_MAX + 1)];
 };
 
-struct roccat_button_type_mapping {
-	uint8_t raw;
-	enum ratbag_button_type type;
-};
-
-static const struct roccat_button_type_mapping roccat_button_type_mapping[] = {
-	{ 0, RATBAG_BUTTON_TYPE_LEFT },
-	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_THUMB },                // Up
-	{ 4, RATBAG_BUTTON_TYPE_THUMB2 },               // Down
-	{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 7, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 8, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 9, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 10, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
-
-	// Easy shift+, these buttons are not physical
-	{ 11, RATBAG_BUTTON_TYPE_LEFT },
-	{ 12, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 13, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 14, RATBAG_BUTTON_TYPE_THUMB },                // Up
-	{ 15, RATBAG_BUTTON_TYPE_THUMB2 },               // Down
-	{ 16, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 17, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 18, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 19, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 20, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 21, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
-};
-
-static enum ratbag_button_type
-roccat_raw_to_button_type(uint8_t data)
-{
-	const struct roccat_button_type_mapping *mapping;
-
-	ARRAY_FOR_EACH(roccat_button_type_mapping, mapping) {
-		if (mapping->raw == data)
-			return mapping->type;
-	}
-
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
-}
-
 struct roccat_button_mapping {
 	uint8_t raw;
 	struct ratbag_button_action action;
@@ -836,7 +791,6 @@ roccat_read_button(struct ratbag_button *button)
 	action = roccat_button_to_action(button->profile, button->index);
 	if (action)
 		ratbag_button_set_action(button, action);
-	button->type = roccat_raw_to_button_type(button->index);
 //  if (action == NULL)
 //      log_error(device->ratbag, "button: %d -> %d %s:%d\n",
 //          button->index, drv_data->profiles[button->profile->index][3 + button->index * 3],
