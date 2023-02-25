@@ -358,7 +358,6 @@ int hidpp20_special_key_mouse_set_control(struct hidpp20_device *device,
 const struct ratbag_button_action *hidpp20_1b04_get_logical_mapping(uint16_t value);
 uint16_t hidpp20_1b04_get_logical_control_id(const struct ratbag_button_action *action);
 const char *hidpp20_1b04_get_logical_mapping_name(uint16_t value);
-enum ratbag_button_type hidpp20_1b04_get_physical_mapping(uint16_t value);
 const char *hidpp20_1b04_get_physical_mapping_name(uint16_t value);
 
 /* -------------------------------------------------------------------------- */

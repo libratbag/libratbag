@@ -121,36 +121,35 @@ static const struct hidpp20_1b04_action_mapping hidpp20_1b04_logical_mapping[] =
 struct hidpp20_1b04_physical_mapping {
 	uint16_t value;
 	const char *name;
-	enum ratbag_button_type type;
 };
 
-#define BUTTON_PHYS_MAPPING(v_, n_, t_) \
- { v_, n_, t_ }
+#define BUTTON_PHYS_MAPPING(v_, n_) \
+ { v_, n_ }
 
 static const struct hidpp20_1b04_physical_mapping hidpp20_1b04_physical_mapping[] =
 {
-	BUTTON_PHYS_MAPPING(0, "None"			, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(1, "Volume Up"		, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(2, "Volume Down"		, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(3, "Mute"			, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(4, "Play/Pause"		, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(5, "Next"			, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(6, "Previous"		, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(7, "Stop"			, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(56, "Left Click"		, RATBAG_BUTTON_TYPE_LEFT),
-	BUTTON_PHYS_MAPPING(57, "Right Click"		, RATBAG_BUTTON_TYPE_RIGHT),
-	BUTTON_PHYS_MAPPING(58, "Middle Click"		, RATBAG_BUTTON_TYPE_MIDDLE),
-	BUTTON_PHYS_MAPPING(59, "Wheel Side Click Left"	, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(60, "Back Click"		, RATBAG_BUTTON_TYPE_SIDE),
-	BUTTON_PHYS_MAPPING(61, "Wheel Side Click Right", RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(62, "Forward Click"		, RATBAG_BUTTON_TYPE_EXTRA),
-	BUTTON_PHYS_MAPPING(63, "Left Scroll"		, RATBAG_BUTTON_TYPE_WHEEL_LEFT),
-	BUTTON_PHYS_MAPPING(64, "Right Scroll"		, RATBAG_BUTTON_TYPE_WHEEL_RIGHT),
-	BUTTON_PHYS_MAPPING(98, "Do Nothing"		, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(156, "Gesture Button"	, RATBAG_BUTTON_TYPE_UNKNOWN),
-	BUTTON_PHYS_MAPPING(157, "SmartShift"		, RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT),
-	BUTTON_PHYS_MAPPING(169, "Gesture Button"	, RATBAG_BUTTON_TYPE_MIDDLE),
-	BUTTON_PHYS_MAPPING(221, "LedToggle"		, RATBAG_BUTTON_TYPE_UNKNOWN),
+	BUTTON_PHYS_MAPPING(0, "None"),
+	BUTTON_PHYS_MAPPING(1, "Volume Up"),
+	BUTTON_PHYS_MAPPING(2, "Volume Down"),
+	BUTTON_PHYS_MAPPING(3, "Mute"),
+	BUTTON_PHYS_MAPPING(4, "Play/Pause"),
+	BUTTON_PHYS_MAPPING(5, "Next"),
+	BUTTON_PHYS_MAPPING(6, "Previous"),
+	BUTTON_PHYS_MAPPING(7, "Stop"),
+	BUTTON_PHYS_MAPPING(56, "Left Click"),
+	BUTTON_PHYS_MAPPING(57, "Right Click"),
+	BUTTON_PHYS_MAPPING(58, "Middle Click"),
+	BUTTON_PHYS_MAPPING(59, "Wheel Side Click Left"),
+	BUTTON_PHYS_MAPPING(60, "Back Click"),
+	BUTTON_PHYS_MAPPING(61, "Wheel Side Click Right"),
+	BUTTON_PHYS_MAPPING(62, "Forward Click"),
+	BUTTON_PHYS_MAPPING(63, "Left Scroll"),
+	BUTTON_PHYS_MAPPING(64, "Right Scroll"),
+	BUTTON_PHYS_MAPPING(98, "Do Nothing"),
+	BUTTON_PHYS_MAPPING(156, "Gesture Button"),
+	BUTTON_PHYS_MAPPING(157, "SmartShift"),
+	BUTTON_PHYS_MAPPING(169, "Gesture Button"),
+	BUTTON_PHYS_MAPPING(221, "LedToggle"),
 };
 
 struct hidpp20_8070_location_mapping {
@@ -205,19 +204,6 @@ hidpp20_1b04_get_logical_mapping_name(uint16_t value)
 	}
 
 	return "UNKNOWN";
-}
-
-enum ratbag_button_type
-hidpp20_1b04_get_physical_mapping(uint16_t value)
-{
-	const struct hidpp20_1b04_physical_mapping *map;
-
-	ARRAY_FOR_EACH(hidpp20_1b04_physical_mapping, map) {
-		if (map->value == value)
-			return map->type;
-	}
-
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
 }
 
 const char *
