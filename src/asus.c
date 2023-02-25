@@ -75,12 +75,6 @@ static const unsigned char ASUS_KEY_MAPPING[] = {
 /* 5E */	KEY_KP8,	KEY_KP9,	0,
 };
 
-static const unsigned int ASUS_LED_TYPE[] = {
-	RATBAG_LED_TYPE_LOGO,  /* Mouse logo */
-	RATBAG_LED_TYPE_WHEEL,  /* Mouse wheel */
-	RATBAG_LED_TYPE_SIDE,  /* Bottom of the mouse */
-};
-
 static unsigned int ASUS_POLLING_RATES[] = { 125, 250, 500, 1000 };
 
 /* search for ASUS button by ratbag types */
@@ -178,7 +172,6 @@ void
 asus_setup_led(struct ratbag_device *device, struct ratbag_led *led)
 {
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-	led->type = ASUS_LED_TYPE[led->index];
 	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
 	ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
 	ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
