@@ -155,16 +155,15 @@ static const struct hidpp20_1b04_physical_mapping hidpp20_1b04_physical_mapping[
 struct hidpp20_8070_location_mapping {
 	uint16_t value;
 	const char *name;
-	enum ratbag_led_type type;
 };
 
-#define LED_LOC_MAPPING(v_, n_, t_) \
- { v_, n_, t_ }
+#define LED_LOC_MAPPING(v_, n_) \
+ { v_, n_ }
 
 static const struct hidpp20_8070_location_mapping hidpp20_8070_location_mapping[] = {
-	LED_LOC_MAPPING(0, "None", RATBAG_LED_TYPE_UNKNOWN),
-	LED_LOC_MAPPING(1, "Logo LED", RATBAG_LED_TYPE_LOGO),
-	LED_LOC_MAPPING(2, "Side LED", RATBAG_LED_TYPE_SIDE),
+	LED_LOC_MAPPING(0, "None"),
+	LED_LOC_MAPPING(1, "Logo LED"),
+	LED_LOC_MAPPING(2, "Side LED"),
 };
 
 const struct ratbag_button_action *
@@ -217,19 +216,6 @@ hidpp20_1b04_get_physical_mapping_name(uint16_t value)
 	}
 
 	return "UNKNOWN";
-}
-
-enum ratbag_led_type
-hidpp20_led_get_location_mapping(uint16_t value)
-{
-	const struct hidpp20_8070_location_mapping *map;
-
-	ARRAY_FOR_EACH(hidpp20_8070_location_mapping, map) {
-		if (map->value == value)
-			return map->type;
-	}
-
-	return RATBAG_LED_TYPE_UNKNOWN;
 }
 
 const char *

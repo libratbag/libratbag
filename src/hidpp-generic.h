@@ -126,9 +126,6 @@ extern const char *hidpp20_errors[0x100];
 const char *
 hidpp20_1b04_get_physical_mapping_name(uint16_t value);
 
-enum ratbag_led_type
-hidpp20_led_get_location_mapping(uint16_t value);
-
 const char *
 hidpp20_led_get_location_mapping_name(uint16_t value);
 
