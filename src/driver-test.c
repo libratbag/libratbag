@@ -122,11 +122,6 @@ test_read_led(struct ratbag_led *led)
 	led->color.blue = t_led.color.blue;
 	led->ms = t_led.ms;
 	led->brightness = t_led.brightness;
-
-	/* The led type has to be the same anyway so make writing test
-	 * devices easier by always getting the first profile's LED type.
-	 */
-	led->type = d->profiles[0].leds[led->index].type;
 }
 
 static int

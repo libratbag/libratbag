@@ -65,8 +65,7 @@ const struct ratbag_test_device sane_device = {
 			{ .xres = 300, .yres = 400 },
 		},
 		.leds = {
-			{ .type = RATBAG_LED_TYPE_SIDE, },
-			{ .type = RATBAG_LED_TYPE_LOGO, },
+			{ 0 },
 		},
 		.active = true,
 		.dflt = false,
