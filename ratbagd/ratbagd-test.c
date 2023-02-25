@@ -88,8 +88,7 @@ static const struct ratbag_test_device default_device_descr = {
 		{
 			.name = NULL,
 			.buttons = {
-				{ .button_type = RATBAG_BUTTON_TYPE_LEFT,
-				  .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+				{ .action_type = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 				  .button = 0 },
 			},
 			.resolutions = {

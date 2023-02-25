@@ -51,9 +51,6 @@ test_read_button(struct ratbag_button *button)
 	struct ratbag_test_macro_event *e;
 	int idx;
 
-	/* Only take the button types from the first profile */
-	button->type = d->profiles[0].buttons[button->index].button_type;
-
 	switch (b->action_type) {
 	case RATBAG_BUTTON_ACTION_TYPE_NONE:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_NONE;
