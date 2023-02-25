@@ -150,7 +150,6 @@ button_defaults_for_layout(struct ratbag_button *button, int button_count)
 {
 	/* The default button mapping vary depending on the number of buttons
 	 * on the device. */
-	enum ratbag_button_type button_types[8] = {RATBAG_BUTTON_TYPE_UNKNOWN};
 	struct ratbag_button_action button_actions[8] = {
 		BUTTON_ACTION_BUTTON(1),
 		BUTTON_ACTION_BUTTON(2),
@@ -176,23 +175,6 @@ button_defaults_for_layout(struct ratbag_button *button, int button_count)
 		button_actions[7].action.special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP;
 	}
 
-	button_types[0] = RATBAG_BUTTON_TYPE_LEFT;
-	button_types[1] = RATBAG_BUTTON_TYPE_RIGHT;
-	button_types[2] = RATBAG_BUTTON_TYPE_MIDDLE;
-	button_types[3] = RATBAG_BUTTON_TYPE_THUMB;
-	button_types[4] = RATBAG_BUTTON_TYPE_THUMB2;
-	if (button_count <= 6) {
-		button_types[5] = RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP;
-	} else if (button_count == 7) {
-		button_types[5] = RATBAG_BUTTON_TYPE_THUMB3;
-		button_types[6] = RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP;
-	} else {
-		button_types[5] = RATBAG_BUTTON_TYPE_PINKIE;
-		button_types[6] = RATBAG_BUTTON_TYPE_PINKIE2;
-		button_types[7] = RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP;
-	}
-
-	button->type = button_types[button->index];
 	ratbag_button_set_action(button, &button_actions[button->index]);
 }
 
