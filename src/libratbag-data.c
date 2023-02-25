@@ -124,7 +124,6 @@ struct ratbag_device_data {
 	};
 
 	enum ratbag_led_type led_types[20];
-	size_t nled_types;
 };
 
 static void
@@ -530,44 +529,6 @@ ratbag_device_data_unref(struct ratbag_device_data *data)
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(struct ratbag_device_data *, ratbag_device_data_unref);
 
-static int
-parse_ledtypes(char **strv, enum ratbag_led_type *types, size_t ntypes)
-{
-	unsigned int i;
-	int count = 0;
-
-	for (i = 0; i < ntypes; i++)
-		types[i] = RATBAG_LED_TYPE_UNKNOWN;
-
-	if (!strv)
-		return count;
-
-	i = 0;
-	while(strv[i]) {
-		const char *s = strv[i];
-
-		if (streq(s, "logo"))
-			types[i] = RATBAG_LED_TYPE_LOGO;
-		else if (streq(s, "side"))
-			types[i] = RATBAG_LED_TYPE_SIDE;
-		else if (streq(s, "dpi"))
-			types[i] = RATBAG_LED_TYPE_SIDE;
-		else if (streq(s, "battery"))
-			types[i] = RATBAG_LED_TYPE_SIDE;
-		else if (streq(s, "wheel"))
-			types[i] = RATBAG_LED_TYPE_WHEEL;
-		else if (streq(s, "switches"))
-			types[i] = RATBAG_LED_TYPE_SWITCHES;
-		else
-			return -1;
-
-		count++;
-		i++;
-	}
-
-	return count;
-}
-
 static bool
 match(const struct input_id *id, char **strv)
 {
@@ -601,7 +562,6 @@ file_data_matches(struct ratbag *ratbag,
 	_cleanup_(g_key_file_freep) GKeyFile *keyfile = NULL;
 	_cleanup_(g_error_freep) GError *error = NULL;
 	_cleanup_(g_strfreevp) char **match_strv = NULL;
-	_cleanup_(g_strfreevp) char **ledtypes_strv = NULL;
 	_cleanup_(ratbag_device_data_unrefp) struct ratbag_device_data *data = NULL;
 	_cleanup_free_ char *devicetype = NULL;
 	int rc;
@@ -668,12 +628,6 @@ file_data_matches(struct ratbag *ratbag,
 	} else {
 		log_error(ratbag, "Invalid DeviceType '%s' in '%s'\n", devicetype, basename(path));
 		data->devicetype = TYPE_UNSPECIFIED;
-		return false;
-	}
-
-	ledtypes_strv = g_key_file_get_string_list(keyfile, GROUP_DEVICE, "LedTypes", NULL, NULL);
-	if (parse_ledtypes(ledtypes_strv, data->led_types, ARRAY_LENGTH(data->led_types)) < 0) {
-		log_error(ratbag, "Invalid LedTypes string in '%s'\n", basename(path));
 		return false;
 	}
 
