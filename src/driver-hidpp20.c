@@ -289,23 +289,6 @@ hidpp20drv_read_led_1300(struct ratbag_led *led, struct hidpp20drv_data* data)
 
 	led->colordepth = RATBAG_LED_COLORDEPTH_MONOCHROME;
 
-	switch (info->type)
-	{
-	case HIDPP20_LED_TYPE_LOGO:
-		led->type = RATBAG_LED_TYPE_LOGO;
-		break;
-	case HIDPP20_LED_TYPE_BATTERY:
-		led->type = RATBAG_LED_TYPE_BATTERY;
-		break;
-	case HIDPP20_LED_TYPE_DPI:
-		led->type = RATBAG_LED_TYPE_DPI;
-		break;
-	case HIDPP20_LED_TYPE_PROFILE:
-	case HIDPP20_LED_TYPE_COSMETIC:
-		led->type = RATBAG_LED_TYPE_SIDE;
-		break;
-	}
-
 	switch (state.mode)
 	{
 	case HIDPP20_LED_MODE_OFF:
