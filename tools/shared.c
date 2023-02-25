@@ -107,45 +107,6 @@ led_mode_to_str(enum ratbag_led_mode mode)
 	return str;
 }
 
-const char*
-button_type_to_str(enum ratbag_button_type type)
-{
-	const char *str = "UNKNOWN";
-
-	switch(type) {
-	case RATBAG_BUTTON_TYPE_UNKNOWN:	str = "unknown"; break;
-	case RATBAG_BUTTON_TYPE_LEFT:		str = "left"; break;
-	case RATBAG_BUTTON_TYPE_MIDDLE:		str = "middle"; break;
-	case RATBAG_BUTTON_TYPE_RIGHT:		str = "right"; break;
-	case RATBAG_BUTTON_TYPE_THUMB:		str = "thumb"; break;
-	case RATBAG_BUTTON_TYPE_THUMB2:		str = "thumb2"; break;
-	case RATBAG_BUTTON_TYPE_THUMB3:		str = "thumb3"; break;
-	case RATBAG_BUTTON_TYPE_THUMB4:		str = "thumb4"; break;
-	case RATBAG_BUTTON_TYPE_WHEEL_LEFT:	str = "wheel left"; break;
-	case RATBAG_BUTTON_TYPE_WHEEL_RIGHT:	str = "wheel right"; break;
-	case RATBAG_BUTTON_TYPE_WHEEL_CLICK:	str = "wheel click"; break;
-	case RATBAG_BUTTON_TYPE_WHEEL_UP:	str = "wheel up"; break;
-	case RATBAG_BUTTON_TYPE_WHEEL_DOWN:	str = "wheel down"; break;
-	case RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT: str = "wheel ratchet mode switch"; break;
-	case RATBAG_BUTTON_TYPE_EXTRA:		str = "extra (forward)"; break;
-	case RATBAG_BUTTON_TYPE_SIDE:		str = "side (backward)"; break;
-	case RATBAG_BUTTON_TYPE_PINKIE:		str = "pinkie"; break;
-	case RATBAG_BUTTON_TYPE_PINKIE2:	str = "pinkie2"; break;
-
-	/* DPI switch */
-	case RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP:	str = "resolution cycle up"; break;
-	case RATBAG_BUTTON_TYPE_RESOLUTION_UP:		str = "resolution up"; break;
-	case RATBAG_BUTTON_TYPE_RESOLUTION_DOWN:	str = "resolution down"; break;
-
-	/* Profile */
-	case RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP:	str = "profile cycle up"; break;
-	case RATBAG_BUTTON_TYPE_PROFILE_UP:		str = "profile up"; break;
-	case RATBAG_BUTTON_TYPE_PROFILE_DOWN:		str = "profile down"; break;
-	}
-
-	return str;
-}
-
 static const struct map {
 	enum ratbag_button_action_special special;
 	const char *str;
