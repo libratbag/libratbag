@@ -362,7 +362,6 @@ logitech_g300_read_led(struct ratbag_led *led)
 	pdata = &drv_data->profile_data[profile->index];
 	profile_report = &pdata->report;
 
-	led->type = RATBAG_LED_TYPE_SIDE;
 	led->mode = RATBAG_LED_ON;
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_111;
 	led->color.red = profile_report->led_red * 255;
