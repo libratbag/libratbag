@@ -53,38 +53,6 @@ udev_device_from_path(struct udev *udev, const char *path)
 	return udev_device;
 }
 
-const char*
-led_type_to_str(enum ratbag_led_type type)
-{
-	const char *str = NULL;
-
-	switch(type) {
-	case RATBAG_LED_TYPE_LOGO:
-		str = "logo";
-		break;
-	case RATBAG_LED_TYPE_SIDE:
-		str = "side";
-		break;
-	case RATBAG_LED_TYPE_BATTERY:
-		str = "battery";
-		break;
-	case RATBAG_LED_TYPE_DPI:
-		str = "dpi";
-		break;
-	case RATBAG_LED_TYPE_WHEEL:
-		str = "wheel";
-		break;
-	case RATBAG_LED_TYPE_SWITCHES:
-		str = "switches";
-		break;
-	default:
-		assert(!"Invalid LED type");
-		break;
-	}
-
-	return str;
-}
-
 const char *
 led_mode_to_str(enum ratbag_led_mode mode)
 {
