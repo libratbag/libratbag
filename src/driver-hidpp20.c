@@ -104,7 +104,6 @@ hidpp20drv_read_button_1b04(struct ratbag_button *button)
 		  mapping,
 		  control->reporting.divert || control->reporting.persist ? "(redirected) " : "",
 		  __FILE__, __LINE__);
-	button->type = hidpp20_1b04_get_physical_mapping(control->task_id);
 	action = hidpp20_1b04_get_logical_mapping(mapping);
 	if (action)
 		ratbag_button_set_action(button, action);
