@@ -280,19 +280,6 @@ struct gskill_macro_report {
 _Static_assert(sizeof(struct gskill_macro_report) == GSKILL_REPORT_SIZE_MACRO,
 	       "Size of gskill_macro_report is wrong");
 
-enum ratbag_button_type gskill_button_type_mapping[] = {
-	RATBAG_BUTTON_TYPE_LEFT,
-	RATBAG_BUTTON_TYPE_RIGHT,
-	RATBAG_BUTTON_TYPE_MIDDLE,
-	RATBAG_BUTTON_TYPE_THUMB,
-	RATBAG_BUTTON_TYPE_THUMB2,
-	RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP,
-	RATBAG_BUTTON_TYPE_THUMB3,
-	RATBAG_BUTTON_TYPE_THUMB4,
-	RATBAG_BUTTON_TYPE_WHEEL_UP,
-	RATBAG_BUTTON_TYPE_WHEEL_DOWN,
-};
-
 struct gskill_button_function_mapping {
 	enum gskill_button_function_type type;
 	struct ratbag_button_action action;
@@ -1161,8 +1148,6 @@ gskill_read_button(struct ratbag_button *button)
 	struct ratbag_button_macro *macro;
 	struct gskill_button_cfg *bcfg = &report->btn_cfgs[button->index];
 	struct ratbag_button_action *act = &button->action;
-
-	button->type = gskill_button_type_mapping[button->index];
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
