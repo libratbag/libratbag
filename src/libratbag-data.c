@@ -122,8 +122,6 @@ struct ratbag_device_data {
 		struct data_steelseries steelseries;
 		struct data_asus asus;
 	};
-
-	enum ratbag_led_type led_types[20];
 };
 
 static void
@@ -453,15 +451,6 @@ enum ratbag_device_type
 ratbag_device_data_get_device_type(const struct ratbag_device_data *data)
 {
 	return data->devicetype;
-}
-
-enum ratbag_led_type
-ratbag_device_data_get_led_type(const struct ratbag_device_data *data,
-				unsigned int index)
-{
-	assert(index < ARRAY_LENGTH(data->led_types));
-
-	return data->led_types[index];
 }
 
 struct ratbag_device_data *

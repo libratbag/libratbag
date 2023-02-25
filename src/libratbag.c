@@ -309,29 +309,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		goto out;
 	}
 
-	/* Require LED to be the same type in each profile */
-	ratbag_device_for_each_profile(device, profile) {
-		_cleanup_profile_ struct ratbag_profile *p0 = ratbag_device_get_profile(device, 0);
-		struct ratbag_led *led;
-
-
-		ratbag_profile_for_each_led(profile, led) {
-			_cleanup_led_ struct ratbag_led *p0_led = ratbag_profile_get_led(p0, led->index);
-
-			assert(led->type != RATBAG_LED_TYPE_UNKNOWN);
-
-			if (p0_led->type != led->type) {
-				log_bug_libratbag(ratbag,
-						  "%s: mismatching LED types (profile %d led %d)\n",
-						  device->name,
-						  profile->index,
-						  led->type);
-				goto out;
-			}
-		}
-
-	}
-
 	rc = true;
 
 out:
@@ -664,7 +641,6 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 static struct ratbag_led *
 ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 {
-	struct ratbag_device *device = profile->device;
 	struct ratbag_led *led;
 
 	led = zalloc(sizeof(*led));
@@ -672,9 +648,6 @@ ratbag_create_led(struct ratbag_profile *profile, unsigned int index)
 	led->profile = profile;
 	led->index = index;
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
-	led->type = RATBAG_LED_TYPE_UNKNOWN;
-	if (device->data)
-		led->type = ratbag_device_data_get_led_type(device->data, led->index);
 
 	list_append(&profile->leds, &led->link);
 

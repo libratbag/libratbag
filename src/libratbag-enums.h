@@ -249,24 +249,6 @@ enum ratbag_led_mode {
 
 /**
  * @ingroup enums
- *
- * LED types, usually based on their physical location
- *
- * This enum is deprecated and should not be used.
- *
- * @deprecated
- */
-enum ratbag_led_type {
-	RATBAG_LED_TYPE_LOGO = 1,
-	RATBAG_LED_TYPE_SIDE,
-	RATBAG_LED_TYPE_BATTERY,
-	RATBAG_LED_TYPE_DPI,
-	RATBAG_LED_TYPE_WHEEL,
-	RATBAG_LED_TYPE_SWITCHES,
-};
-
-/**
- * @ingroup enums
  */
 enum ratbag_led_colordepth {
 	/**

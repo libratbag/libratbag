@@ -37,8 +37,6 @@
 #error "libratbag relies on assert(). Do not define NDEBUG"
 #endif
 
-#define RATBAG_LED_TYPE_UNKNOWN 0
-
 void
 log_msg_va(struct ratbag *ratbag,
 	   enum ratbag_log_priority priority,
@@ -241,7 +239,6 @@ struct ratbag_led {
 	struct list link;
 	struct ratbag_profile *profile;
 	unsigned index;
-	enum ratbag_led_type type;
 	enum ratbag_led_mode mode;
 	uint32_t modes;		      /**< supported modes */
 	struct ratbag_color color;
