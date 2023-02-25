@@ -148,51 +148,6 @@ enum ratbag_resolution_capability {
 /**
  * @ingroup enums
  *
- * Button types describing the physical button.
- *
- * This enum is deprecated and should not be used.
- *
- * @deprecated
- */
-enum ratbag_button_type {
-	RATBAG_BUTTON_TYPE_UNKNOWN = 0,
-
-	/* mouse buttons */
-	RATBAG_BUTTON_TYPE_LEFT,
-	RATBAG_BUTTON_TYPE_MIDDLE,
-	RATBAG_BUTTON_TYPE_RIGHT,
-	RATBAG_BUTTON_TYPE_THUMB,
-	RATBAG_BUTTON_TYPE_THUMB2,
-	RATBAG_BUTTON_TYPE_THUMB3,
-	RATBAG_BUTTON_TYPE_THUMB4,
-	RATBAG_BUTTON_TYPE_WHEEL_LEFT,
-	RATBAG_BUTTON_TYPE_WHEEL_RIGHT,
-	RATBAG_BUTTON_TYPE_WHEEL_CLICK,
-	RATBAG_BUTTON_TYPE_WHEEL_UP,
-	RATBAG_BUTTON_TYPE_WHEEL_DOWN,
-	/**
-	 * A button to toggle the wheel from free-spinning to click-based.
-	 */
-	RATBAG_BUTTON_TYPE_WHEEL_RATCHET_MODE_SHIFT,
-	RATBAG_BUTTON_TYPE_EXTRA,
-	RATBAG_BUTTON_TYPE_SIDE,
-	RATBAG_BUTTON_TYPE_PINKIE,
-	RATBAG_BUTTON_TYPE_PINKIE2,
-
-	/* DPI switch */
-	RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP,
-	RATBAG_BUTTON_TYPE_RESOLUTION_UP,
-	RATBAG_BUTTON_TYPE_RESOLUTION_DOWN,
-
-	/* Profile */
-	RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP,
-	RATBAG_BUTTON_TYPE_PROFILE_UP,
-	RATBAG_BUTTON_TYPE_PROFILE_DOWN,
-};
-
-/**
- * @ingroup enums
- *
  * The type assigned to a button.
  */
 enum ratbag_button_action_type {

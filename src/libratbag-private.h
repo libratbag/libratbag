@@ -353,7 +353,6 @@ struct ratbag_button {
 	struct list link;
 	struct ratbag_profile *profile;
 	unsigned index;
-	enum ratbag_button_type type;
 	struct ratbag_button_action action;
 	uint32_t action_caps;
 	bool dirty; /* changed since last commit to device */

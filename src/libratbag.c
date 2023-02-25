@@ -655,7 +655,6 @@ ratbag_create_button(struct ratbag_profile *profile, unsigned int index)
 	button->refcount = 0;
 	button->profile = profile;
 	button->index = index;
-	button->type = RATBAG_BUTTON_TYPE_UNKNOWN;
 
 	list_append(&profile->buttons, &button->link);
 
