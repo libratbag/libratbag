@@ -97,68 +97,6 @@ struct logitech_g600_data {
 _Static_assert(sizeof(struct logitech_g600_profile_report) == LOGITECH_G600_REPORT_SIZE_PROFILE,
 	       "Size of logitech_g600_profile_report is wrong");
 
-struct logitech_g600_button_type_mapping {
-	uint8_t raw;
-	enum ratbag_button_type type;
-};
-
-static const struct logitech_g600_button_type_mapping logitech_g600_button_type_mapping[] = {
-	{ 0, RATBAG_BUTTON_TYPE_LEFT },
-	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 4, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 5, RATBAG_BUTTON_TYPE_PINKIE },
-	{ 6, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP }, // G07
-	{ 7, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP }, // G08
-	{ 8, RATBAG_BUTTON_TYPE_SIDE },  // G09
-	{ 9, RATBAG_BUTTON_TYPE_SIDE },  // G10
-	{ 10, RATBAG_BUTTON_TYPE_SIDE }, // G11
-	{ 11, RATBAG_BUTTON_TYPE_SIDE }, // G12
-	{ 12, RATBAG_BUTTON_TYPE_SIDE }, // G13
-	{ 13, RATBAG_BUTTON_TYPE_SIDE }, // G14
-	{ 14, RATBAG_BUTTON_TYPE_SIDE }, // G15
-	{ 15, RATBAG_BUTTON_TYPE_SIDE }, // G16
-	{ 16, RATBAG_BUTTON_TYPE_SIDE }, // G17
-	{ 17, RATBAG_BUTTON_TYPE_SIDE }, // G18
-	{ 18, RATBAG_BUTTON_TYPE_SIDE }, // G19
-	{ 19, RATBAG_BUTTON_TYPE_SIDE }, // G20
-	{ 20, RATBAG_BUTTON_TYPE_UNKNOWN }, //HACK is where the G-shift color information is located
-	{ 21, RATBAG_BUTTON_TYPE_LEFT }, // G-shift + left
-	{ 22, RATBAG_BUTTON_TYPE_RIGHT }, // G-shift + right click
-	{ 23, RATBAG_BUTTON_TYPE_MIDDLE }, // G-shift + middle
-	{ 24, RATBAG_BUTTON_TYPE_WHEEL_LEFT},  // G-shift + scroll left
-	{ 25, RATBAG_BUTTON_TYPE_WHEEL_RIGHT}, // G-shift + scroll right
-	{ 26, RATBAG_BUTTON_TYPE_PINKIE }, // G-shift + Pinky(shift modifier)
-	{ 27, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP }, // G-shift + 07
-	{ 28, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP }, // G-shift + G08
-	{ 29, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G09
-	{ 30, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G10
-	{ 31, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G11
-	{ 32, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G12
-	{ 33, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G13
-	{ 34, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G14
-	{ 35, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G15
-	{ 36, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G16
-    { 37, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G17
-    { 38, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G18
-    { 39, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G19
-    { 40, RATBAG_BUTTON_TYPE_SIDE }, // G-shift + G20
-};
-
-static enum ratbag_button_type
-logitech_g600_raw_to_button_type(uint8_t data)
-{
-	const struct logitech_g600_button_type_mapping *mapping;
-
-	ARRAY_FOR_EACH(logitech_g600_button_type_mapping, mapping) {
-		if (mapping->raw == data)
-			return mapping->type;
-	}
-
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
-}
-
 struct logitech_g600_button_mapping {
 	uint8_t raw;
 	struct ratbag_button_action action;
@@ -359,8 +297,6 @@ logitech_g600_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
-
-	button->type = logitech_g600_raw_to_button_type(button->index);
 
 	action = logitech_g600_raw_to_button_action(button_report->code);
 	if (action) {
