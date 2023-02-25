@@ -150,37 +150,6 @@ print_key(uint8_t key)
 	return "UNKNOWN";
 }
 
-struct etekcity_button_type_mapping {
-	uint8_t raw;
-	enum ratbag_button_type type;
-};
-
-static const struct etekcity_button_type_mapping etekcity_button_type_mapping[] = {
-	{ 0, RATBAG_BUTTON_TYPE_LEFT },
-	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_EXTRA },
-	{ 4, RATBAG_BUTTON_TYPE_SIDE },
-	{ 5, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP },
-	{ 6, RATBAG_BUTTON_TYPE_PINKIE },
-	{ 7, RATBAG_BUTTON_TYPE_PINKIE2 },
-	{ 8, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 9, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-};
-
-static enum ratbag_button_type
-etekcity_raw_to_button_type(uint8_t data)
-{
-	const struct etekcity_button_type_mapping *mapping;
-
-	ARRAY_FOR_EACH(etekcity_button_type_mapping, mapping) {
-		if (mapping->raw == data)
-			return mapping->type;
-	}
-
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
-}
-
 struct etekcity_button_mapping {
 	uint8_t raw;
 	struct ratbag_button_action action;
@@ -369,7 +338,6 @@ etekcity_read_button(struct ratbag_button *button)
 	action = etekcity_button_to_action(button->profile, button->index);
 	if (action)
 		ratbag_button_set_action(button, action);
-	button->type = etekcity_raw_to_button_type(button->index);
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
