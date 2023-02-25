@@ -894,7 +894,6 @@ roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* 
 static void
 roccat_read_led(struct roccat_settings_report* settings, struct ratbag_led *led)
 {
-	led->type = RATBAG_LED_TYPE_SIDE;
 	if(settings->led_status == 0) {
 		led->mode = RATBAG_LED_OFF;
 	} else {
