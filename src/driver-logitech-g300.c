@@ -84,36 +84,6 @@ struct logitech_g300_data {
 _Static_assert(sizeof(struct logitech_g300_profile_report) == LOGITECH_G300_REPORT_SIZE_PROFILE,
 	       "Size of logitech_g300_profile_report is wrong");
 
-struct logitech_g300_button_type_mapping {
-	uint8_t raw;
-	enum ratbag_button_type type;
-};
-
-static const struct logitech_g300_button_type_mapping logitech_g300_button_type_mapping[] = {
-	{ 0, RATBAG_BUTTON_TYPE_LEFT },
-	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_THUMB },
-	{ 4, RATBAG_BUTTON_TYPE_THUMB2 },
-	{ 5, RATBAG_BUTTON_TYPE_PINKIE },
-	{ 6, RATBAG_BUTTON_TYPE_PINKIE2 },
-	{ 7, RATBAG_BUTTON_TYPE_PROFILE_CYCLE_UP },
-	{ 8, RATBAG_BUTTON_TYPE_RESOLUTION_CYCLE_UP },
-};
-
-static enum ratbag_button_type
-logitech_g300_raw_to_button_type(uint8_t data)
-{
-	const struct logitech_g300_button_type_mapping *mapping;
-
-	ARRAY_FOR_EACH(logitech_g300_button_type_mapping, mapping) {
-		if (mapping->raw == data)
-			return mapping->type;
-	}
-
-	return RATBAG_BUTTON_TYPE_UNKNOWN;
-}
-
 struct logitech_g300_button_mapping {
 	uint8_t raw;
 	struct ratbag_button_action action;
@@ -356,8 +326,6 @@ logitech_g300_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
-
-	button->type = logitech_g300_raw_to_button_type(button->index);
 
 	action = logitech_g300_raw_to_button_action(button_report->code);
 	if (action) {
