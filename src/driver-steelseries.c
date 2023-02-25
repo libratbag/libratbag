@@ -382,7 +382,6 @@ steelseries_probe(struct ratbag_device *device)
 		}
 
 		ratbag_profile_for_each_led(profile, led) {
-			led->type = led->index == 0 ? RATBAG_LED_TYPE_LOGO : RATBAG_LED_TYPE_WHEEL;
 			led->mode = RATBAG_LED_ON;
 			if (quirk == STEELSERIES_QUIRK_SENSEIRAW) {
 				led->colordepth = RATBAG_LED_COLORDEPTH_MONOCHROME;
