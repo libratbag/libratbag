@@ -69,41 +69,16 @@ def check_devicetype_str(string):
     assertIn(string, permitted_types)
 
 
-def check_ledtypes_str(string: str):
-    permitted_types = [
-        'battery',
-        'dpi',
-        'logo',
-        'side',
-        'switches',
-        'wheel',
-    ]
-
-    types = string.split(';')
-    for t in types:
-        if not t:  # empty string if trailing ;
-            continue
-
-        assertIn(t, permitted_types)
-
-
 def check_section_device(section: configparser.SectionProxy):
     required_keys = ['Name', 'Driver', 'DeviceMatch', 'DeviceType']
-    permitted_keys = required_keys + ['LedTypes']
 
     for key in section.keys():
-        assertIn(key, permitted_keys)
+        assertIn(key, required_keys)
 
     for r in required_keys:
         assertIn(r, section)
 
     check_devicetype_str(section['DeviceType'])
-
-    try:
-        check_ledtypes_str(section['LedTypes'])
-    except KeyError:
-        # No such section - not an error.
-        pass
 
     check_match_str(section['DeviceMatch'])
 
