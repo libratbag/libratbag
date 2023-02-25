@@ -333,7 +333,6 @@ logitech_g600_read_led(struct ratbag_led *led)
 	pdata = &drv_data->profile_data[profile->index];
 	report = &pdata->report;
 
-	led->type = RATBAG_LED_TYPE_SIDE;
 	led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
 	ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 	ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
