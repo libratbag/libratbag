@@ -3,5 +3,4 @@
 Name=Logitech Gaming Mouse G302
 DeviceMatch=usb:046d:c07f
 Driver=hidpp20
-LedTypes=logo;side;
 DeviceType=mouse

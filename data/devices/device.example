@@ -18,11 +18,6 @@ Driver=hidpp10
 # The type of this Device: either 'mouse', 'keyboard' or 'other'
 DeviceType=mouse
 
-# The types of the LEDs, in the indexed order they appear in, separated by a
-# semicolon.
-# Allowed values: logo, side, battery, dpi
-LedTypes=logo;side
-
 # Only one group of driver-specific properties is permitted and it must be
 # [Driver/<drivername>]. It is a bug do have any other [Driver/foo] group in
 # a device file, but this example file lists all.

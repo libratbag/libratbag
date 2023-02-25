@@ -2,5 +2,4 @@
 Name=Logitech G Pro X Wireless Superlight
 DeviceMatch=usb:046d:4093;usb:046d:c094
 DeviceType=mouse
-LedTypes=logo;battery;dpi;
 Driver=hidpp20

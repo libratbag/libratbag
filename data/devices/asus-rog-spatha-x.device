@@ -3,7 +3,6 @@ Name=ASUS ROG Spatha X
 DeviceMatch=usb:0b05:1979;usb:0b05:1977
 DeviceType=mouse
 Driver=asus
-LedTypes=logo;wheel;side
 
 [Driver/asus]
 Profiles=5

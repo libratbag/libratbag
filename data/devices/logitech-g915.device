@@ -1,7 +1,6 @@
 [Device]
 Name=Logitech G915
 DeviceMatch=usb:046d:c33e
-LedTypes=logo;switches
 Driver=hidpp20
 DeviceType=keyboard
 

@@ -3,7 +3,6 @@
 [Device]
 Name=Logitech G9
 DeviceMatch=usb:046d:c048
-LedTypes=dpi
 Driver=hidpp10
 DeviceType=mouse
 

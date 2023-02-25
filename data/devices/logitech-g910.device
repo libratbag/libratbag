@@ -1,7 +1,6 @@
 [Device]
 Name=Logitech G910
 DeviceMatch=usb:046d:c335
-LedTypes=logo;switches
 Driver=hidpp20
 DeviceType=keyboard
 

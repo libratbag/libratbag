@@ -1,7 +1,6 @@
 [Device]
 Name=Logitech G Powerplay
 DeviceMatch=usb:046d:405f
-LedTypes=logo
 Driver=hidpp20
 DeviceType=other
 

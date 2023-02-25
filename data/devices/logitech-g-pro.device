@@ -2,5 +2,4 @@
 Name=Logitech Gaming Mouse G Pro
 DeviceMatch=usb:046d:c085;usb:046d:c08c
 Driver=hidpp20
-LedTypes=logo;side
 DeviceType=mouse
