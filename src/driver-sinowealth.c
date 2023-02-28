@@ -429,12 +429,6 @@ struct sinowealth_data {
 	enum sinowealth_led_format led_type;
 	unsigned int button_count;
 	unsigned int config_size;
-	/* Cached profile index.
-	 * This gets incorrect when user switches profiles with button
-	 * bindings. This actually also sends an interrupt, so in the
-	 * future we can start listening for this.
-	 */
-	unsigned int current_profile_index;
 	unsigned int led_count;
 	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES];
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
@@ -891,8 +885,6 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 {
 	int rc = 0;
 
-	struct sinowealth_data *drv_data = device->drv_data;
-
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
 
 	rc = sinowealth_query_read(device, buf, sizeof(buf));
@@ -902,8 +894,6 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 	}
 
 	unsigned int index = buf[2] - 1;
-
-	drv_data->current_profile_index = index;
 
 	return (int)index;
 }
@@ -922,8 +912,6 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 
 	int rc = 0;
 
-	struct sinowealth_data *drv_data = device->drv_data;
-
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, (uint8_t)index + 1u };
 
 	rc = sinowealth_query_write(device, buf, sizeof(buf));
@@ -931,8 +919,6 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 		log_error(device->ratbag, "Error while selecting profile: %s (%d)\n", strerror(-rc), rc);
 		return rc;
 	}
-
-	drv_data->current_profile_index = index;
 
 	return 0;
 }
@@ -1198,8 +1184,6 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 		}
 		ratbag_led_unref(led);
 	}
-
-	profile->is_active = profile->index == drv_data->current_profile_index;
 }
 
 static void
@@ -1539,6 +1523,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	rc = sinowealth_get_active_profile(device);
 	if (rc < 0)
 		return rc;
+	const unsigned int active_profile_index = (unsigned int)rc;
 	log_debug(device->ratbag, "Active profile index: %d\n", rc);
 
 	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device, fw_version);
@@ -1566,6 +1551,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 	const unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1;
 
 	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
+
+	ratbag_device_for_each_profile(device, profile) {
+		profile->is_active = profile->index == active_profile_index;
+	}
 
 	rc = sinowealth_get_debounce_time(device);
 	/* Seems like some mice don't support debounce time changing.
