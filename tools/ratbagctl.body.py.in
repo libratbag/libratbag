@@ -22,8 +22,10 @@
 # DEALINGS IN THE SOFTWARE.
 
 import evdev
+import subprocess
 import sys
 import argparse
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # This must be on a single line, as we replace it using merge_ratbagd.py while building.
 # fmt: off
@@ -34,7 +36,7 @@ from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, Ratbag
 RATBAGD_API_VERSION = int("@RATBAGD_API_VERSION@")
 
 
-def humanize(string):
+def humanize(string: str) -> str:
     return string.lower().replace("_", "-")
 
 
@@ -61,7 +63,7 @@ def convert_str_to_evcode(s: str) -> int:
         raise argparse.ArgumentTypeError(msg) from e
 
 
-def list_devices(ratbagd, args):
+def list_devices(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     if not ratbagd.devices:
         print("No devices available.")
 
@@ -69,7 +71,7 @@ def list_devices(ratbagd, args):
         print("{:20s} {:32s}".format(device.id + ":", device.name))
 
 
-def find_device(ratbagd, args):
+def find_device(ratbagd: Ratbagd, args: argparse.Namespace) -> RatbagdDevice:
     device = ratbagd[args.device]
     if device is None:
         for device in ratbagd.devices:
@@ -80,7 +82,9 @@ def find_device(ratbagd, args):
     return device
 
 
-def find_profile(ratbagd, args):
+def find_profile(
+    ratbagd: Ratbagd, args: argparse.Namespace
+) -> Tuple[RatbagdProfile, RatbagdDevice]:
     device = find_device(ratbagd, args)
     try:
         profile = device.profiles[args.profile_n]
@@ -95,7 +99,9 @@ def find_profile(ratbagd, args):
     return profile, device
 
 
-def find_resolution(ratbagd, args):
+def find_resolution(
+    ratbagd: Ratbagd, args: argparse.Namespace
+) -> Tuple[RatbagdResolution, RatbagdProfile, RatbagdDevice]:
     profile, device = find_profile(ratbagd, args)
     try:
         resolution = profile.resolutions[args.resolution_n]
@@ -110,7 +116,9 @@ def find_resolution(ratbagd, args):
     return resolution, profile, device
 
 
-def find_button(ratbagd, args):
+def find_button(
+    ratbagd: Ratbagd, args: argparse.Namespace
+) -> Tuple[RatbagdButton, RatbagdProfile, RatbagdDevice]:
     profile, device = find_profile(ratbagd, args)
     try:
         button = profile.buttons[args.button_n]
@@ -120,7 +128,9 @@ def find_button(ratbagd, args):
     return button, profile, device
 
 
-def find_led(ratbagd, args):
+def find_led(
+    ratbagd: Ratbagd, args: argparse.Namespace
+) -> Tuple[RatbagdLed, RatbagdProfile, RatbagdDevice]:
     profile, device = find_profile(ratbagd, args)
     try:
         led = profile.leds[args.led_n]
@@ -130,7 +140,9 @@ def find_led(ratbagd, args):
     return led, profile, device
 
 
-def print_led(_device, _profile, led, level):
+def print_led(
+    _device: RatbagdDevice, _profile: RatbagdProfile, led: RatbagdLed, level: int
+) -> None:
     leds = {
         RatbagdLed.Mode.BREATHING: "breathing",
         RatbagdLed.Mode.CYCLE: "cycle",
@@ -189,7 +201,9 @@ def print_led(_device, _profile, led, level):
         )
 
 
-def print_led_caps(_device, _profile, led, level):
+def print_led_caps(
+    _device: RatbagdDevice, _profile: RatbagdProfile, led: RatbagdLed, level: int
+) -> None:
     leds = {
         RatbagdLed.Mode.BREATHING: "breathing",
         RatbagdLed.Mode.CYCLE: "cycle",
@@ -200,7 +214,9 @@ def print_led_caps(_device, _profile, led, level):
     print(" " * level + "Modes: {}".format(", ".join(supported)))
 
 
-def print_button(_device, _profile, button, level):
+def print_button(
+    _device: RatbagdDevice, _profile: RatbagdProfile, button: RatbagdButton, level: int
+) -> None:
     header = " " * level + f"Button: {button.index} is mapped to "
 
     if button.action_type == RatbagdButton.ActionType.BUTTON:
@@ -218,7 +234,12 @@ def print_button(_device, _profile, button, level):
         print(f"{header}UNKNOWN")
 
 
-def print_resolution(_device, _profile, resolution, level):
+def print_resolution(
+    _device: RatbagdDevice,
+    _profile: RatbagdProfile,
+    resolution: RatbagdResolution,
+    level: int,
+) -> None:
     if resolution.resolution == (0, 0):
         print(" " * level + f"{resolution.index}: <disabled>")
         return
@@ -239,7 +260,7 @@ def print_resolution(_device, _profile, resolution, level):
     )
 
 
-def print_profile(device, profile, level):
+def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) -> None:
     print(
         " " * (level - 2)
         + "Profile {}:{}{}".format(
@@ -265,7 +286,7 @@ def print_profile(device, profile, level):
                 print_led(device, profile, led, level)
 
 
-def print_device(device, level):
+def print_device(device: RatbagdDevice, level: int) -> None:
     profile = device.profiles[0]  # there should be always one
 
     print(" " * level + f"{device.id} - {device.name}")
@@ -280,18 +301,18 @@ def print_device(device, level):
         print_profile(device, profile, level + 2)
 
 
-def show_device(ratbagd, args):
+def show_device(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     device = find_device(ratbagd, args)
     print_device(device, 0)
 
 
-def show_profile(ratbagd, args):
+def show_profile(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     print(f"Profile {args.profile} on {device.id} ({device.name})")
     print_profile(device, profile, 0)
 
 
-def show_resolution(ratbagd, args):
+def show_resolution(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, p, d = find_resolution(ratbagd, args)
     print(
         "Resolution {} on Profile {} on {} ({})".format(
@@ -307,7 +328,7 @@ def show_resolution(ratbagd, args):
     print("  Capabilities: {}".format(", ".join(capabilities)))
 
 
-def show_button(ratbagd, args):
+def show_button(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, profile, device = find_button(ratbagd, args)
     print(
         "Button {} on Profile {} on {} ({})".format(
@@ -317,17 +338,17 @@ def show_button(ratbagd, args):
     print_button(device, profile, button, 0)
 
 
-def func_led_get(ratbagd, args):
+def func_led_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     led, profile, device = find_led(ratbagd, args)
     print_led(device, profile, led, 0)
 
 
-def func_led_caps(ratbagd, args):
+def func_led_caps(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     led, profile, device = find_led(ratbagd, args)
     print_led_caps(device, profile, led, 0)
 
 
-def func_led_set(ratbagd, args):
+def func_led_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     led, _profile, device = find_led(ratbagd, args)
     try:
         mode = args.mode
@@ -362,18 +383,18 @@ def func_led_set(ratbagd, args):
     commit(device, args)
 
 
-def func_led_get_all(ratbagd, args):
+def func_led_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     for led in profile.leds:
         print_led(device, profile, led, 0)
 
 
-def func_button_get(ratbagd, args):
+def func_button_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, profile, _device = find_button(ratbagd, args)
     print_button(button, profile, button, 0)
 
 
-def func_button_action_set_none(ratbagd, args):
+def func_button_action_set_none(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     if button.ActionType.NONE not in button.action_types:
         raise RatbagErrorCapability("disabling buttons is not supported on this device")
@@ -382,13 +403,13 @@ def func_button_action_set_none(ratbagd, args):
     commit(device, args)
 
 
-def func_button_action_set_button(ratbagd, args):
+def func_button_action_set_button(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     button.mapping = args.target_button
     commit(device, args)
 
 
-def func_button_action_set_special(ratbagd, args):
+def func_button_action_set_special(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     try:
         special = args.target_special
@@ -399,7 +420,7 @@ def func_button_action_set_special(ratbagd, args):
     commit(device, args)
 
 
-def func_button_action_set_key(ratbagd, args):
+def func_button_action_set_key(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     if button.ActionType.KEY not in button.action_types:
         raise RatbagErrorCapability("assigning a key is not supported on this device")
@@ -413,7 +434,7 @@ def func_button_action_set_key(ratbagd, args):
     commit(device, args)
 
 
-def func_button_action_set_macro(ratbagd, args):
+def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     if button.ActionType.MACRO not in button.action_types:
         raise RatbagErrorCapability("assigning a macro is not supported on this device")
@@ -451,12 +472,12 @@ def func_button_action_set_macro(ratbagd, args):
     commit(device, args)
 
 
-def func_button_count(ratbagd, args):
+def func_button_count(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     print(len(profile.buttons))
 
 
-def func_dpi_get(ratbagd, args):
+def func_dpi_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     ratbagd, _profile, _device = find_resolution(ratbagd, args)
     if len(ratbagd.resolution) == 2:
         print(f"{ratbagd.resolution[0]}x{ratbagd.resolution[1]}dpi")
@@ -464,13 +485,13 @@ def func_dpi_get(ratbagd, args):
         print(f"{ratbagd.resolution[0]}dpi")
 
 
-def func_dpi_get_all(ratbagd, args):
+def func_dpi_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, _profile, _device = find_resolution(ratbagd, args)
     dpis = resolution.resolutions
     print(" ".join([str(x) for x in dpis]))
 
 
-def func_dpi_set(ratbagd, args):
+def func_dpi_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, _profile, device = find_resolution(ratbagd, args)
     dpi = args.dpi_n
     if len(resolution.resolution) > len(dpi):
@@ -479,40 +500,40 @@ def func_dpi_set(ratbagd, args):
     commit(device, args)
 
 
-def func_report_rate_get(ratbagd, args):
+def func_report_rate_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     print(profile.report_rate)
 
 
-def func_report_rate_get_all(ratbagd, args):
+def func_report_rate_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     rates = profile.report_rates
     print(" ".join([str(x) for x in rates]))
 
 
-def func_report_rate_set(ratbagd, args):
+def func_report_rate_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.report_rate = args.rate_n
     commit(device, args)
 
 
-def func_resolution_get(ratbagd, args):
+def func_resolution_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, profile, device = find_resolution(ratbagd, args)
     print_resolution(device, profile, resolution, 0)
 
 
-def func_resolution_active_get(ratbagd, args):
+def func_resolution_active_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     print(profile.active_resolution.index)
 
 
-def func_resolution_active_set(ratbagd, args):
+def func_resolution_active_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, _profile, device = find_resolution(ratbagd, args)
     resolution.set_active()
     commit(device, args)
 
 
-def func_resolution_default_get(ratbagd, args):
+def func_resolution_default_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     resolution = None
     for resolution in profile.resolutions:
@@ -526,41 +547,41 @@ def func_resolution_default_get(ratbagd, args):
     print(resolution.index)
 
 
-def func_default_resolution_set(ratbagd, args):
+def func_default_resolution_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     # FIXME: capabilities check?
     resolution, _profile, device = find_resolution(ratbagd, args)
     resolution.set_default()
     commit(device, args)
 
 
-def func_resolution_disabled_get(ratbagd, args):
+def func_resolution_disabled_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, _profile, _device = find_resolution(ratbagd, args)
     print(resolution.is_disabled)
 
 
-def func_resolution_enabled_get(ratbagd, args):
+def func_resolution_enabled_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, _profile, _device = find_resolution(ratbagd, args)
     print(not resolution.is_disabled)
 
 
-def func_resolution_disabled_set(ratbagd, args):
+def func_resolution_disabled_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, _profile, device = find_resolution(ratbagd, args)
     resolution.set_disabled(True)
     commit(device, args)
 
 
-def func_resolution_enabled_set(ratbagd, args):
+def func_resolution_enabled_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, _profile, device = find_resolution(ratbagd, args)
     resolution.set_disabled(False)
     commit(device, args)
 
 
-def func_profile_get(ratbagd, args):
+def func_profile_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     print_profile(device, profile, 0)
 
 
-def func_profile_name_get(ratbagd, args):
+def func_profile_name_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     # See https://github.com/libratbag/libratbag/issues/617
     # ratbag converts to ascii, so this has no real effect there, but
@@ -569,7 +590,7 @@ def func_profile_name_get(ratbagd, args):
     print(string.decode("utf-8"))
 
 
-def func_profile_name_set(ratbagd, args):
+def func_profile_name_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     if not profile.name:
         raise RatbagErrorCapability(
@@ -579,7 +600,7 @@ def func_profile_name_set(ratbagd, args):
     commit(device, args)
 
 
-def func_profile_active_get(ratbagd, args):
+def func_profile_active_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     device = find_device(ratbagd, args)
     profile = device.active_profile
     if profile is None:
@@ -588,25 +609,25 @@ def func_profile_active_get(ratbagd, args):
     print(profile.index)
 
 
-def func_profile_active_set(ratbagd, args):
+def func_profile_active_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.set_active()
     commit(device, args)
 
 
-def func_profile_enable(ratbagd, args):
+def func_profile_enable(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.disabled = False
     commit(device, args)
 
 
-def func_profile_disable(ratbagd, args):
+def func_profile_disable(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.disabled = True
     commit(device, args)
 
 
-def func_device_name_get(ratbagd, args):
+def func_device_name_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     device = find_device(ratbagd, args)
     print(device.name)
 
@@ -672,13 +693,13 @@ link = "link"
 ################################################################################
 
 
-def commit(device, args):
+def commit(device: RatbagdDevice, args: argparse.Namespace) -> None:
     if args.nocommit:
         return
     device.commit()
 
 
-def color(string):
+def color(string: str) -> Tuple[int, int, int]:
     try:
         int_value = int(string, 16)
     except ValueError as e:
@@ -690,7 +711,7 @@ def color(string):
     return (r, g, b)
 
 
-def u8(string):
+def u8(string: str) -> int:
     int_value = int(string)
     msg = "%r is not a single byte" % string
     if int_value < 0 or int_value > 255:
@@ -698,7 +719,7 @@ def u8(string):
     return int_value
 
 
-def dpi(string):
+def dpi(string: str) -> Union[Tuple[int, int], Tuple[int,]]:
     try:
         int_value = int(string)
     except ValueError:
@@ -717,8 +738,11 @@ def dpi(string):
         return (int_x, int_y)
 
 
+RatbagParserSchemaElement = Dict[str, Any]
+
+# TODO: make it easier to introspect this.
 # note: 'hidrawX' is assumed before each command
-parser_def = [
+parser_def: List[RatbagParserSchemaElement] = [
     {
         of_type: command,
         name: "info",
@@ -1282,10 +1306,21 @@ class ParseError(Exception):
     pass
 
 
-class RatbagParser:
-    tagged = {}
+RatbagParserFunction = Callable[[Ratbagd, argparse.Namespace], None]
 
-    def __init__(self, type, name, group=None, tag=None, func=None, help=None):
+
+class RatbagParser:
+    tagged: Dict[str, "RatbagParser"] = {}
+
+    def __init__(
+        self,
+        type: str,
+        name: str,
+        group: Optional[str] = None,
+        tag: Optional[str] = None,
+        func: Optional[RatbagParserFunction] = None,
+        help: Optional[str] = None,
+    ) -> None:
         self.type = type
         self.name = name
         self.tag = tag
@@ -1295,54 +1330,58 @@ class RatbagParser:
         self.func = func
         self.help = help
 
-    def repr_args(self):
+    def repr_args(self) -> str:
         return "name='{}', tag='{}', func='{}', help='{}'".format(
             self.name, self.tag, self.func, self.help
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self)}({self.repr_args()})"
 
-    def store_function(self, parser):
+    def store_function(self, parser: argparse.ArgumentParser) -> None:
         if self.func is not None:
             parser.set_defaults(func=self.func)
 
-    def _add_to_subparsers(self, parent):
+    def _add_to_subparsers(self, parent: Any) -> None:
         raise ParseError(f"please implement _add_to_subparsers on {type(self)}")
 
-    def add_to_subparsers(self, parent):
+    def add_to_subparsers(self, parent: Any) -> None:
         self._add_to_subparsers(parent)
 
-    def _sub_parse(self, input_string, ns):
+    def _sub_parse(
+        self, input_string: List[str], ns: argparse.Namespace
+    ) -> argparse.ArgumentParser:
         raise ParseError(f"please implement _sub_parse on {type(self)}")
 
-    def sub_parse(self, input_string, ns):
+    def sub_parse(
+        self, input_string: List[str], ns: argparse.Namespace
+    ) -> argparse.ArgumentParser:
         r = self._sub_parse(input_string, ns)
         return r
 
-    def print_help(self, group, prefix=""):
+    def print_help(self, group: Optional[str], prefix: str = "") -> None:
         if self.group is not None:
             print(f"\n{self.group} Commands:")
         self._print_help(prefix)
 
-    def _print_help(self, prefix):
+    def _print_help(self, prefix: str) -> None:
         raise ParseError(f"please implement _print_help on {type(self)}")
 
 
 class RatbagParserSwitch(RatbagParser):
     def __init__(
         self,
-        type,
-        name,
-        group=None,
-        switch=None,
-        N_access=None,
-        tag=None,
-        func=None,
-        help=None,
-    ):
+        type: str,
+        name: str,
+        group: Optional[str] = None,
+        switch: Optional[List[RatbagParserSchemaElement]] = None,
+        N_access: Optional[RatbagParserSchemaElement] = None,
+        tag: Optional[str] = None,
+        func: Optional[RatbagParserFunction] = None,
+        help: Optional[str] = None,
+    ) -> None:
         super().__init__(type, name, group, tag, func, help)
-        self.switch = (
+        self.switch: List[RatbagParser] = (
             [classes[obj[of_type]](**obj) for obj in switch]
             if switch is not None
             else []
@@ -1352,16 +1391,18 @@ class RatbagParserSwitch(RatbagParser):
         else:
             self.N_access = None
 
-    def repr_args(self):
+    def repr_args(self) -> str:
         return """switch='{}', N_access='{}', {}""".format(
             [repr(o) for o in self.switch], self.N_access, RatbagParser.repr_args(self)
         )
 
-    def _add_to_subparsers(self, parent):
+    def _add_to_subparsers(self, parent: Any) -> None:
         parser = parent.add_parser(self.name, help=self.help)
         parser.set_defaults(subparse=self.sub_parse)
 
-    def _sub_parse(self, input_string, ns):
+    def _sub_parse(
+        self, input_string: List[str], ns: argparse.Namespace
+    ) -> argparse.ArgumentParser:
         if input_string and self.N_access is not None:
             # retrieve first numbered element if any
             try:
@@ -1387,7 +1428,7 @@ class RatbagParserSwitch(RatbagParser):
 
         return parser
 
-    def _print_help(self, prefix):
+    def _print_help(self, prefix: str) -> None:
         if self.help and self.group is not None:
             string = self.help.split("\n")
             string = "\n  ".join(string)
@@ -1397,26 +1438,28 @@ class RatbagParserSwitch(RatbagParser):
         if self.N_access is not None:
             self.N_access.print_help(None, self.name + " ")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"switch({self.repr_args()})"
 
 
 class RatbagParserNAccess(RatbagParserSwitch):
     def __init__(
         self,
-        type,
-        name,
-        group=None,
-        switch=None,
-        metavar=None,
-        tag=None,
-        func=None,
-        help=None,
-    ):
+        type: str,
+        name: str,
+        group: Optional[str] = None,
+        switch: Optional[List[RatbagParserSchemaElement]] = None,
+        metavar: Optional[str] = None,
+        tag: Optional[str] = None,
+        func: Optional[RatbagParserFunction] = None,
+        help: Optional[str] = None,
+    ) -> None:
         super().__init__(type, name, group, switch, None, tag, func, help)
         self.metavar = metavar
 
-    def _sub_parse(self, parent, input_string, ns):
+    def _sub_parse(
+        self, parent: Any, input_string: List[str], ns: argparse.Namespace
+    ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             prog=f"{sys.argv[0]} <device> {parent.name}", add_help=False
         )
@@ -1427,15 +1470,15 @@ class RatbagParserNAccess(RatbagParserSwitch):
             e.add_to_subparsers(subs)
         return parser
 
-    def repr_args(self):
+    def repr_args(self) -> str:
         return """switch='{}', metavar = '{}', {}""".format(
             [repr(o) for o in self.switch], self.metavar, RatbagParser.repr_args(self)
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"N_Access({self.repr_args()})"
 
-    def _print_help(self, prefix):
+    def _print_help(self, prefix: str) -> None:
         for e in self.switch:
             e.print_help(None, f"{prefix}N ")
 
@@ -1443,22 +1486,24 @@ class RatbagParserNAccess(RatbagParserSwitch):
 class RatbagParserSet(RatbagParserSwitch):
     def __init__(
         self,
-        type,
-        name,
-        group=None,
-        switch=None,
-        N_access=None,
-        tag=None,
-        func=None,
-        help=None,
-    ):
+        type: str,
+        name: str,
+        group: Optional[str] = None,
+        switch: Optional[List[RatbagParserSchemaElement]] = None,
+        N_access: Optional[RatbagParserSchemaElement] = None,
+        tag: Optional[str] = None,
+        func: Optional[RatbagParserFunction] = None,
+        help: Optional[str] = None,
+    ) -> None:
         super().__init__(type, name, group, switch, N_access, tag, func, help)
 
-    def _add_to_subparsers(self, parent):
+    def _add_to_subparsers(self, parent: Any) -> None:
         parser = parent.add_parser(self.name, help=self.help)
         parser.set_defaults(subparse=self.sub_parse)
 
-    def _sub_parse(self, input_string, ns):
+    def _sub_parse(
+        self, input_string: List[str], ns: argparse.Namespace
+    ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             prog=f"{sys.argv[0]} <device> {self.name}", add_help=False
         )
@@ -1472,10 +1517,10 @@ class RatbagParserSet(RatbagParserSwitch):
             parser.set_defaults(subparse=self.sub_parse)
         return parser
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"set({self.repr_args()})"
 
-    def _print_help(self, prefix):
+    def _print_help(self, prefix: str) -> None:
         command = prefix + "{COMMAND} ..."
         print("  {:<36}{}".format(command, self.help if self.help else ""))
         for e in self.switch:
@@ -1484,25 +1529,32 @@ class RatbagParserSet(RatbagParserSwitch):
 
 class RatbagParserCommand(RatbagParser):
     def __init__(
-        self, type, name, group=None, pos_args=None, tag=None, func=None, help=None
-    ):
+        self,
+        type: str,
+        name: str,
+        group: Optional[str] = None,
+        pos_args: Optional[List[RatbagParserSchemaElement]] = None,
+        tag: Optional[str] = None,
+        func: Optional[RatbagParserFunction] = None,
+        help: Optional[str] = None,
+    ) -> None:
         super().__init__(type, name, group, tag, func, help)
-        self.pos_args = (
+        self.pos_args: List[RatbagParserArgument] = (
             [classes[obj[of_type]](**obj) for obj in pos_args]
             if pos_args is not None
             else []
         )
 
-    def _add_to_subparsers(self, parent):
+    def _add_to_subparsers(self, parent: Any) -> None:
         parser = parent.add_parser(self.name, help=self.help)
         for a in self.pos_args:
             a.add_to_subparsers(parser)
         self.store_function(parser)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"command({self.repr_args()})"
 
-    def _print_help(self, prefix):
+    def _print_help(self, prefix: str) -> None:
         command = prefix + self.name
         for a in self.pos_args:
             if a.choices is None or len(a.choices) > 5:
@@ -1515,24 +1567,24 @@ class RatbagParserCommand(RatbagParser):
 class RatbagParserArgument(RatbagParser):
     def __init__(
         self,
-        type,
-        name,
-        group=None,
-        arg_type=None,
-        metavar=None,
-        nargs=None,
-        choices=None,
-        tag=None,
-        func=None,
-        help=None,
-    ):
+        type: str,
+        name: str,
+        group: Optional[str] = None,
+        arg_type: Optional[str] = None,
+        metavar: Optional[str] = None,
+        nargs: Optional[int] = None,
+        choices: Optional[List] = None,
+        tag: Optional[str] = None,
+        func: Optional[RatbagParserFunction] = None,
+        help: Optional[str] = None,
+    ) -> None:
         super().__init__(type, name, group, tag, func, help)
         self.arg_type = arg_type
         self.metavar = metavar
         self.nargs = nargs
         self.choices = choices
 
-    def _add_to_subparsers(self, parent):
+    def _add_to_subparsers(self, parent: Any) -> None:
         parent.add_argument(
             self.name,
             metavar=self.metavar,
@@ -1544,22 +1596,30 @@ class RatbagParserArgument(RatbagParser):
 
 
 class RatbagParserLink(RatbagParser):
-    def __init__(self, type, dest=None, group=None, tag=None, func=None, help=None):
+    def __init__(
+        self,
+        type: str,
+        dest: Optional[str] = None,
+        group: Optional[str] = None,
+        tag: Optional[str] = None,
+        func: Optional[RatbagParserFunction] = None,
+        help: Optional[str] = None,
+    ) -> None:
         super().__init__(type, dest, group, tag, func, help)
         self.dest = dest
 
-    def get_dest(self):
+    def get_dest(self) -> RatbagParser:
         try:
             dest = RatbagParser.tagged[self.dest]
         except KeyError as e:
             raise ParseError(f"link '{self.dest}' points to nothing") from e
         return dest
 
-    def _add_to_subparsers(self, parent):
+    def _add_to_subparsers(self, parent: Any) -> None:
         dest = self.get_dest()
         dest.add_to_subparsers(parent)
 
-    def _print_help(self, prefix):
+    def _print_help(self, prefix: str) -> None:
         dest = self.get_dest()
         print(
             "  {:<36}Use {}for '{} Commands'".format(
@@ -1579,13 +1639,13 @@ classes = {
 
 
 class RatbagParserRoot:
-    def __init__(self, commands):
-        self.children = [
+    def __init__(self, commands: List[RatbagParserSchemaElement]) -> None:
+        self.children: List[RatbagParser] = [
             classes[def_parser[of_type]](**def_parser) for def_parser in commands
         ]
         self.want_keepalive = False
 
-    def parse(self, input_string):
+    def parse(self, input_string: List[str]) -> argparse.Namespace:
         self.parser = argparse.ArgumentParser(
             description="Inspect and modify a configurable device", add_help=False
         )
@@ -1647,7 +1707,7 @@ class RatbagParserRoot:
 
         return ns
 
-    def print_help(self):
+    def print_help(self) -> None:
         print(f"usage: {self.parser.prog} [OPTIONS] list")
         print(f"       {self.parser.prog} [OPTIONS] <device> {{COMMAND}} ...\n")
         print(self.parser.description)
@@ -1694,11 +1754,11 @@ Exit codes:
         )
 
 
-def get_parser():
+def get_parser() -> RatbagParserRoot:
     return RatbagParserRoot(parser_def)
 
 
-def on_device_added(ratbagd, device):
+def on_device_added(_ratbagd: Ratbagd, device: RatbagdDevice) -> None:
     device_names = [
         "mara",
         "capybara",
@@ -1773,7 +1833,9 @@ def on_device_added(ratbagd, device):
     device.id = "-".join([attr, name])
 
 
-def open_ratbagd(ratbagd_process=None, verbose=0):
+def open_ratbagd(
+    ratbagd_process: Optional[subprocess.Popen] = None, verbose: int = 0
+) -> Optional[Ratbagd]:
     try:
         ratbagd = Ratbagd(RATBAGD_API_VERSION)
         ratbagd.verbose = verbose
@@ -1799,7 +1861,7 @@ def open_ratbagd(ratbagd_process=None, verbose=0):
     return ratbagd
 
 
-def main(argv):
+def main(argv: List[str]) -> None:
     if not argv:
         argv = ["list"]
 
