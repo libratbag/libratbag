@@ -1429,9 +1429,9 @@ class RatbagParserSwitch(RatbagParser):
 
     def _print_help(self, prefix: str) -> None:
         if self.help and self.group is not None:
-            string = self.help.split("\n")
-            string = "\n  ".join(string)
-            print(" ", string, "\n")
+            help_lines = self.help.split("\n")
+            help_indented = "\n  ".join(help_lines)
+            print(" ", help_indented, "\n")
         for e in self.switch:
             e.print_help(None, f"{prefix}{self.name} ")
         if self.N_access is not None:
