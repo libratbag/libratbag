@@ -146,7 +146,7 @@ class TestRatbagCtl(unittest.TestCase):
 
     @classmethod
     def setProfile(cls, profile):
-        cls.run_ratbagctl("test_device profile active set {}".format(profile))
+        cls.run_ratbagctl(f"test_device profile active set {profile}")
 
 
 class TestRatbagCtlList(TestRatbagCtl):
@@ -467,7 +467,7 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         self.setProfile(0)
         r = self.launch_good_test("test_device dpi get ")
         res = int(r[:-3]) + 50  # drop 'dpi' suffix
-        r = self.launch_good_test("test_device " + command + " {}".format(res))
+        r = self.launch_good_test("test_device " + command + f" {res}")
         self.assertEqual(r, "")
         r = self.launch_good_test("test_device dpi get")
         self.assertEqual(int(r[:-3]), res)  # drop 'dpi' suffix
@@ -549,7 +549,7 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
         command = "rate set"
         r = self.launch_good_test("test_device rate get")
         res = int(r) + 500
-        r = self.launch_good_test("test_device " + command + " {}".format(res))
+        r = self.launch_good_test("test_device " + command + f" {res}")
         self.assertEqual(r, "")
         r = self.launch_good_test("test_device rate get")
         self.assertEqual(int(r), res)

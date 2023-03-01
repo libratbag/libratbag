@@ -169,7 +169,7 @@ class _RatbagdDBus(GObject.GObject):
             object_path = "/" + ratbag1.replace(".", "/")
 
         self._object_path = object_path
-        self._interface = "{}.{}".format(ratbag1, interface)
+        self._interface = f"{ratbag1}.{interface}"
 
         try:
             self._proxy = Gio.DBusProxy.new_sync(
@@ -185,7 +185,7 @@ class _RatbagdDBus(GObject.GObject):
             raise RatbagdUnavailable(e.message)
 
         if self._proxy.get_name_owner() is None:
-            raise RatbagdUnavailable("No one currently owns {}".format(ratbag1))
+            raise RatbagdUnavailable(f"No one currently owns {ratbag1}")
 
         self._proxy.connect("g-properties-changed", self._on_properties_changed)
         self._proxy.connect("g-signal", self._on_signal_received)
@@ -220,7 +220,7 @@ class _RatbagdDBus(GObject.GObject):
         # org.freedesktop.DBus.Properties.Set we need to wrap that again
         # into a (ssv), where v is our value's variant.
         # args to .Set are "interface name", "function name",  value-variant
-        val = GLib.Variant("{}".format(type), value)
+        val = GLib.Variant(f"{type}", value)
         if readwrite:
             pval = GLib.Variant("(ssv)", (self._interface, property, val))
             self._proxy.call_sync(
@@ -243,7 +243,7 @@ class _RatbagdDBus(GObject.GObject):
         # appropriate RatbagError* or RatbagdDBus* exception, or GLib.Error if
         # it is an unexpected exception that probably shouldn't be passed up to
         # the UI.
-        val = GLib.Variant("({})".format(type), value)
+        val = GLib.Variant(f"({type})", value)
         try:
             res = self._proxy.call_sync(
                 method, val, Gio.DBusCallFlags.NO_AUTO_START, 2000, None
@@ -908,7 +908,7 @@ class RatbagdMacro(GObject.Object):
         RatbagdButton.Macro.KEY_RELEASE: lambda key: "↑{}".format(
             ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
         ),
-        RatbagdButton.Macro.WAIT: lambda val: "{}ms".format(val),
+        RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
         _MACRO_KEY: lambda key: "↕{}".format(
             ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
         ),

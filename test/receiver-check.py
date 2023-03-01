@@ -49,7 +49,7 @@ logitech_receivers = [
     0xC547,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_3
     0xC548,  # Bolt receiver
 ]
-RECEIVERS = ["usb:046d:{}".format(r) for r in logitech_receivers]
+RECEIVERS = [f"usb:046d:{r}" for r in logitech_receivers]
 
 
 def parse_data_file(path):
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         fname = os.path.basename(path)
         for m in matches:
             if m in RECEIVERS:
-                print("Receiver ID {} found in file {}".format(m, fname))
+                print(f"Receiver ID {m} found in file {fname}")
                 receiver_found = True
 
     if receiver_found:

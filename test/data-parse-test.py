@@ -39,12 +39,12 @@ T = TypeVar("T")
 
 def assertIn(element: T, l: Collection[T]):
     if element not in l:
-        raise AssertionError("{} must be in {}".format(element, l))
+        raise AssertionError(f"{element} must be in {l}")
 
 
 def assertNotIn(element: T, l: Collection[T]):
     if element in l:
-        raise AssertionError("{} must not be in {}".format(element, l))
+        raise AssertionError(f"{element} must not be in {l}")
 
 
 def check_match_str(string: str):
@@ -59,9 +59,9 @@ def check_match_str(string: str):
         assert len(parts) == 3
         assertIn(parts[0], bustypes)
         vid = parts[1]
-        assert vid == "{:04x}".format(int(vid, 16))
+        assert vid == f"{int(vid, 16):04x}"
         pid = parts[2]
-        assert pid == "{:04x}".format(int(pid, 16))
+        assert pid == f"{int(pid, 16):04x}"
 
 
 def check_devicetype_str(string):
@@ -97,7 +97,7 @@ def check_dpi_range_str(string: str):
     if int(steps) == steps:
         steps = int(steps)
 
-    assert string == "{}:{}@{}".format(min, max, steps)
+    assert string == f"{min}:{max}@{steps}"
 
 
 def check_dpi_list_str(string: str):
@@ -273,7 +273,7 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
         check_section_steelseries(section)
         return
 
-    raise AssertionError("Unsupported driver section {}".format(driver))
+    raise AssertionError(f"Unsupported driver section {driver}")
 
 
 def validate_data_file_name(path: str):
@@ -291,7 +291,7 @@ def validate_data_file_name(path: str):
 
 
 def parse_data_file(path: str):
-    print("Parsing file {}".format(path))
+    print(f"Parsing file {path}")
     data = configparser.ConfigParser(strict=True)
     # Don't convert to lowercase
     data.optionxform = lambda option: option
@@ -301,7 +301,7 @@ def parse_data_file(path: str):
     check_section_device(data["Device"])
 
     driver = data["Device"]["Driver"]
-    driver_section = "Driver/{}".format(driver)
+    driver_section = f"Driver/{driver}"
 
     permitted_sections = ["Device", driver_section]
     # FIXME: remove this once `sinowealth` driver has a better way of defining data.

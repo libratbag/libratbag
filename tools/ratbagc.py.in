@@ -151,7 +151,7 @@ EXCEPTION_TABLE = {
 }
 
 
-class Ratbagd(object):
+class Ratbagd:
     """The ratbagd top-level object. Provides a list of devices available
     through libratbag; actual interaction with the devices is via the
     RatbagdDevice, RatbagdProfile, RatbagdResolution and RatbagdButton objects.
@@ -219,7 +219,7 @@ class Ratbagd(object):
     def __getitem__(self, id):
         """Returns the requested device, or None."""
         if id.startswith("hidraw"):
-            id = "/dev/{}".format(id)
+            id = f"/dev/{id}"
 
         if id not in self._devices.keys():
             try:
@@ -245,9 +245,9 @@ class Ratbagd(object):
 def get_capabilities(type, object):
     capabilities = []
     for k in libratbag.__dict__.keys():
-        if k.startswith("RATBAG_{}_CAP_".format(type.upper())) and "CAP_NONE" not in k:
+        if k.startswith(f"RATBAG_{type.upper()}_CAP_") and "CAP_NONE" not in k:
             cap = getattr(libratbag, k)
-            func = getattr(libratbag, "ratbag_{}_has_capability".format(type.lower()))
+            func = getattr(libratbag, f"ratbag_{type.lower()}_has_capability")
             if func(object, cap):
                 capabilities.append(cap)
     return capabilities
@@ -289,7 +289,7 @@ class RatbagdDevice(metaclass=MetaRatbag):
         vid = libratbag.ratbag_device_get_vendor_id(self._device)
         pid = libratbag.ratbag_device_get_product_id(self._device)
         version = libratbag.ratbag_device_get_product_version(self._device)
-        return "{}:{:04x}:{:04x}:{:d}".format(bus, vid, pid, version)
+        return f"{bus}:{vid:04x}:{pid:04x}:{version:d}"
 
     @property
     def name(self):
@@ -768,7 +768,7 @@ class RatbagdMacro(metaclass=MetaRatbag):
         RatbagdButton.Macro.KEY_RELEASE: lambda key: "↑{}".format(
             ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
         ),
-        RatbagdButton.Macro.WAIT: lambda val: "{}ms".format(val),
+        RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
         _MACRO_KEY: lambda key: "↕{}".format(
             ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
         ),

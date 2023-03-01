@@ -30,8 +30,8 @@ from typing import TextIO
 def write_ratbagctl(
     output_file: TextIO, ratbagctl_path: str, ratbagd_path: str, version_string: str
 ) -> None:
-    with open(ratbagctl_path, "r", encoding="utf-8") as ratbagctl, open(
-        ratbagd_path, "r", encoding="utf-8"
+    with open(ratbagctl_path, encoding="utf-8") as ratbagctl, open(
+        ratbagd_path, encoding="utf-8"
     ) as ratbagd:
         for line in ratbagctl.readlines():
             if line.startswith("from ratbagd import "):

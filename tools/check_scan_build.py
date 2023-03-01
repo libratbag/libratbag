@@ -17,7 +17,7 @@ import re
 import sys
 
 
-class Bug(object):
+class Bug:
     def __init__(self):
         self.line_number = None
         self.cfile = None
@@ -37,7 +37,7 @@ def main(argv):
 
     line_re = re.compile(r"line (\d+), column (\d+)")
 
-    for root, dirs, files in os.walk(scanbuild_path):
+    for root, _dirs, files in os.walk(scanbuild_path):
         for filename in files:
             if not filename.startswith("report"):
                 continue

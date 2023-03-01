@@ -24,7 +24,6 @@
 import evdev
 import sys
 import argparse
-import re
 
 # This must be on a single line, as we replace it using merge_ratbagd.py while building.
 # fmt: off
@@ -52,13 +51,13 @@ button_specials_strmap = {
 
 def convert_str_to_evcode(s: str) -> int:
     if not s.startswith("KEY_") and not s.startswith("BTN_"):
-        msg = "Don't know how to convert {}".format(s)
+        msg = f"Don't know how to convert {s}"
         raise argparse.ArgumentTypeError(msg)
 
     try:
         return evdev.ecodes.ecodes[s]
     except KeyError:
-        msg = "No such button or key `{}`".format(s)
+        msg = f"No such button or key `{s}`"
         raise argparse.ArgumentTypeError(msg)
 
 
@@ -76,7 +75,7 @@ def find_device(r, args):
         for d in r.devices:
             if args.device in d.name:
                 return d
-        print("Unable to find device {}".format(args.device))
+        print(f"Unable to find device {args.device}")
         sys.exit(1)
     return dev
 
@@ -86,7 +85,7 @@ def find_profile(r, args):
     try:
         p = d.profiles[args.profile_n]
     except IndexError:
-        print("Invalid profile index {}".format(args.profile_n))
+        print(f"Invalid profile index {args.profile_n}")
         sys.exit(1)
     except AttributeError:
         p = d.active_profile
@@ -101,7 +100,7 @@ def find_resolution(r, args):
     try:
         r = p.resolutions[args.resolution_n]
     except IndexError:
-        print("Invalid resolution index {}".format(args.resolution_n))
+        print(f"Invalid resolution index {args.resolution_n}")
         sys.exit(1)
     except AttributeError:
         r = p.active_resolution
@@ -116,7 +115,7 @@ def find_button(r, args):
     try:
         b = p.buttons[args.button_n]
     except IndexError:
-        print("Invalid button index {}".format(args.button_n))
+        print(f"Invalid button index {args.button_n}")
         sys.exit(1)
     return b, p, d
 
@@ -126,7 +125,7 @@ def find_led(r, args):
     try:
         l = p.leds[args.led_n]
     except IndexError:
-        print("Invalid LED index {}".format(args.led_n))
+        print(f"Invalid LED index {args.led_n}")
         sys.exit(1)
     return l, p, d
 
@@ -201,31 +200,31 @@ def print_led_caps(d, p, l, level):
 
 
 def print_button(d, p, b, level):
-    header = " " * level + "Button: {} is mapped to ".format(b.index)
+    header = " " * level + f"Button: {b.index} is mapped to "
 
     if b.action_type == RatbagdButton.ActionType.BUTTON:
-        print("{}'button {}'".format(header, b.mapping))
+        print(f"{header}'button {b.mapping}'")
     elif b.action_type == RatbagdButton.ActionType.SPECIAL:
-        print("{}'{}'".format(header, button_specials_strmap[b.special]))
+        print(f"{header}'{button_specials_strmap[b.special]}'")
     elif b.action_type == RatbagdButton.ActionType.KEY:
         key_name = evdev.ecodes.KEY[b.key][RatbagdMacro._PREFIX_LEN :]
-        print("{}key '{}'".format(header, key_name))
+        print(f"{header}key '{key_name}'")
     elif b.action_type == RatbagdButton.ActionType.MACRO:
-        print("{}macro '{}'".format(header, str(b.macro)))
+        print(f"{header}macro '{str(b.macro)}'")
     elif b.action_type == RatbagdButton.ActionType.NONE:
-        print("{}none".format(header))
+        print(f"{header}none")
     else:
-        print("{}UNKNOWN".format(header))
+        print(f"{header}UNKNOWN")
 
 
 def print_resolution(d, p, r, level):
     if r.resolution == (0, 0):
-        print(" " * level + "{}: <disabled>".format(r.index))
+        print(" " * level + f"{r.index}: <disabled>")
         return
     if len(r.resolution) == 2:
-        dpi = "{}x{}".format(r.resolution[0], r.resolution[1])
+        dpi = f"{r.resolution[0]}x{r.resolution[1]}"
     else:
-        dpi = "{}".format(r.resolution[0])
+        dpi = f"{r.resolution[0]}"
 
     print(
         " " * level
@@ -252,7 +251,7 @@ def print_profile(d, p, level):
     if not p.disabled:
         print(" " * level + "Name: {}".format(p.name or "n/a"))
         if p.report_rate:
-            print(" " * level + "Report Rate: {}Hz".format(p.report_rate))
+            print(" " * level + f"Report Rate: {p.report_rate}Hz")
         if p.resolutions:
             print(" " * level + "Resolutions:")
             for r in p.resolutions:
@@ -268,16 +267,14 @@ def print_profile(d, p, level):
 def print_device(d, level):
     p = d.profiles[0]  # there should be always one
 
-    print(" " * level + "{} - {}".format(d.id, d.name))
-    print(" " * level + "             Model: {}".format(d.model))
-    print(
-        " " * level + "       Device Type: {}".format(d.device_type.name.capitalize())
-    )
+    print(" " * level + f"{d.id} - {d.name}")
+    print(" " * level + f"             Model: {d.model}")
+    print(" " * level + f"       Device Type: {d.device_type.name.capitalize()}")
     if d.firmware_version:
-        print(" " * level + "  Firmware version: {}".format(d.firmware_version))
-    print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))
-    print(" " * level + "    Number of Leds: {}".format(len(p.leds)))
-    print(" " * level + "Number of Profiles: {}".format(len(d.profiles)))
+        print(" " * level + f"  Firmware version: {d.firmware_version}")
+    print(" " * level + f" Number of Buttons: {len(p.buttons)}")
+    print(" " * level + f"    Number of Leds: {len(p.leds)}")
+    print(" " * level + f"Number of Profiles: {len(d.profiles)}")
     for p in d.profiles:
         print_profile(d, p, level + 2)
 
@@ -289,7 +286,7 @@ def show_device(r, args):
 
 def show_profile(r, args):
     p, d = find_profile(r, args)
-    print("Profile {} on {} ({})".format(args.profile, d.id, d.name))
+    print(f"Profile {args.profile} on {d.id} ({d.name})")
     print_profile(d, p, 0)
 
 
@@ -377,7 +374,7 @@ def func_button_get(r, args):
 
 def func_button_action_set_none(r, args):
     b, p, d = find_button(r, args)
-    if not b.ActionType.NONE in b.action_types:
+    if b.ActionType.NONE not in b.action_types:
         raise RatbagErrorCapability("disabling buttons is not supported on this device")
 
     b.disable()
@@ -403,7 +400,7 @@ def func_button_action_set_special(r, args):
 
 def func_button_action_set_key(r, args):
     b, p, d = find_button(r, args)
-    if not b.ActionType.KEY in b.action_types:
+    if b.ActionType.KEY not in b.action_types:
         raise RatbagErrorCapability("assigning a key is not supported on this device")
 
     try:
@@ -417,7 +414,7 @@ def func_button_action_set_key(r, args):
 
 def func_button_action_set_macro(r, args):
     b, p, d = find_button(r, args)
-    if not b.ActionType.MACRO in b.action_types:
+    if b.ActionType.MACRO not in b.action_types:
         raise RatbagErrorCapability("assigning a macro is not supported on this device")
 
     macro_keys = args.target_macro
@@ -461,9 +458,9 @@ def func_button_count(r, args):
 def func_dpi_get(r, args):
     r, p, d = find_resolution(r, args)
     if len(r.resolution) == 2:
-        print("{}x{}dpi".format(r.resolution[0], r.resolution[1]))
+        print(f"{r.resolution[0]}x{r.resolution[1]}dpi")
     else:
-        print("{}dpi".format(r.resolution[0]))
+        print(f"{r.resolution[0]}dpi")
 
 
 def func_dpi_get_all(r, args):
@@ -1280,7 +1277,7 @@ class ParseError(Exception):
     pass
 
 
-class RatbagParser(object):
+class RatbagParser:
     tagged = {}
 
     def __init__(self, type, name, group=None, tag=None, func=None, help=None):
@@ -1299,20 +1296,20 @@ class RatbagParser(object):
         )
 
     def __repr__(self):
-        return "{}({})".format(type(self), self.repr_args())
+        return f"{type(self)}({self.repr_args()})"
 
     def store_function(self, parser):
         if self.func is not None:
             parser.set_defaults(func=self.func)
 
     def _add_to_subparsers(self, parent):
-        raise ParseError("please implement _add_to_subparsers on {}".format(type(self)))
+        raise ParseError(f"please implement _add_to_subparsers on {type(self)}")
 
     def add_to_subparsers(self, parent):
         self._add_to_subparsers(parent)
 
     def _sub_parse(self, input_string, ns):
-        raise ParseError("please implement _sub_parse on {}".format(type(self)))
+        raise ParseError(f"please implement _sub_parse on {type(self)}")
 
     def sub_parse(self, input_string, ns):
         r = self._sub_parse(input_string, ns)
@@ -1320,11 +1317,11 @@ class RatbagParser(object):
 
     def print_help(self, group, prefix=""):
         if self.group is not None:
-            print("\n{} Commands:".format(self.group))
+            print(f"\n{self.group} Commands:")
         self._print_help(prefix)
 
     def _print_help(self, prefix):
-        raise ParseError("please implement _print_help on {}".format(type(self)))
+        raise ParseError(f"please implement _print_help on {type(self)}")
 
 
 class RatbagParserSwitch(RatbagParser):
@@ -1369,7 +1366,7 @@ class RatbagParserSwitch(RatbagParser):
                 return self.N_access._sub_parse(self, input_string, ns)
 
         parser = argparse.ArgumentParser(
-            prog="{} <device> {}".format(sys.argv[0], self.name),
+            prog=f"{sys.argv[0]} <device> {self.name}",
             description=self.help,
             add_help=False,
         )
@@ -1387,12 +1384,12 @@ class RatbagParserSwitch(RatbagParser):
             string = "\n  ".join(string)
             print(" ", string, "\n")
         for e in self.switch:
-            e.print_help(None, "{}{} ".format(prefix, self.name))
+            e.print_help(None, f"{prefix}{self.name} ")
         if self.N_access is not None:
             self.N_access.print_help(None, self.name + " ")
 
     def __repr__(self):
-        return "switch({})".format(self.repr_args())
+        return f"switch({self.repr_args()})"
 
 
 class RatbagParserNAccess(RatbagParserSwitch):
@@ -1412,7 +1409,7 @@ class RatbagParserNAccess(RatbagParserSwitch):
 
     def _sub_parse(self, parent, input_string, ns):
         parser = argparse.ArgumentParser(
-            prog="{} <device> {}".format(sys.argv[0], parent.name), add_help=False
+            prog=f"{sys.argv[0]} <device> {parent.name}", add_help=False
         )
         parser.add_argument(self.name, help=self.help, type=int)
         # create a new subparser to handle all commands
@@ -1427,11 +1424,11 @@ class RatbagParserNAccess(RatbagParserSwitch):
         )
 
     def __repr__(self):
-        return "N_Access({})".format(self.repr_args())
+        return f"N_Access({self.repr_args()})"
 
     def _print_help(self, prefix):
         for e in self.switch:
-            e.print_help(None, "{}N ".format(prefix))
+            e.print_help(None, f"{prefix}N ")
 
 
 class RatbagParserSet(RatbagParserSwitch):
@@ -1454,7 +1451,7 @@ class RatbagParserSet(RatbagParserSwitch):
 
     def _sub_parse(self, input_string, ns):
         parser = argparse.ArgumentParser(
-            prog="{} <device> {}".format(sys.argv[0], self.name), add_help=False
+            prog=f"{sys.argv[0]} <device> {self.name}", add_help=False
         )
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
@@ -1467,7 +1464,7 @@ class RatbagParserSet(RatbagParserSwitch):
         return parser
 
     def __repr__(self):
-        return "set({})".format(self.repr_args())
+        return f"set({self.repr_args()})"
 
     def _print_help(self, prefix):
         command = prefix + "{COMMAND} ..."
@@ -1490,13 +1487,13 @@ class RatbagParserCommand(RatbagParser):
         self.store_function(parser)
 
     def __repr__(self):
-        return "command({})".format(self.repr_args())
+        return f"command({self.repr_args()})"
 
     def _print_help(self, prefix):
         command = prefix + self.name
         for a in self.pos_args:
             if a.choices is None or len(a.choices) > 5:
-                command += " {}".format(a.metavar)
+                command += f" {a.metavar}"
             else:
                 command += " [{}]".format("|".join(a.choices))
         print("  {:<36}{}".format(command, self.help if self.help else ""))
@@ -1542,7 +1539,7 @@ class RatbagParserLink(RatbagParser):
         try:
             dest = RatbagParser.tagged[self.dest]
         except KeyError:
-            raise ParseError("link '{}' points to nothing".format(self.dest))
+            raise ParseError(f"link '{self.dest}' points to nothing")
         return dest
 
     def _add_to_subparsers(self, parent):
@@ -1568,7 +1565,7 @@ classes = {
 }
 
 
-class RatbagParserRoot(object):
+class RatbagParserRoot:
     def __init__(self, commands):
         self.children = [
             classes[def_parser[of_type]](**def_parser) for def_parser in commands
@@ -1609,7 +1606,7 @@ class RatbagParserRoot(object):
         # we need a new parser or 'device_or_list' will eat all of our commands
         command_parser = argparse.ArgumentParser(
             description="command parser",
-            prog="{} <device>".format(sys.argv[0]),
+            prog=f"{sys.argv[0]} <device>",
             add_help=False,
         )
 
@@ -1638,8 +1635,8 @@ class RatbagParserRoot(object):
         return ns
 
     def print_help(self):
-        print("usage: {} [OPTIONS] list".format(self.parser.prog))
-        print("       {} [OPTIONS] <device> {{COMMAND}} ...\n".format(self.parser.prog))
+        print(f"usage: {self.parser.prog} [OPTIONS] list")
+        print(f"       {self.parser.prog} [OPTIONS] <device> {{COMMAND}} ...\n")
         print(self.parser.description)
         print(
             """
@@ -1774,7 +1771,7 @@ def open_ratbagd(ratbagd_process=None, verbose=0):
             pass  # the ratbag-command case
 
     except RatbagdUnavailable as e:
-        print("Unable to connect to ratbagd: {}".format(e))
+        print(f"Unable to connect to ratbagd: {e}")
         return None
 
     if ratbagd_process is not None:
@@ -1810,7 +1807,7 @@ def main(argv):
                 try:
                     f(r, cmd)
                 except RatbagErrorCapability as e:
-                    print("Error: {}".format(e), file=sys.stderr)
+                    print(f"Error: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":

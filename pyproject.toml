@@ -18,6 +18,6 @@ select = [
 ]
 ignore = [
 	# Line too long.
-	# We have some places where it's just impossible to make it fit,
+	# We have some places where it's just impossible to make it fit.
 	"E501",
 ]
