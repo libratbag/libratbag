@@ -1412,7 +1412,7 @@ class RatbagParserSwitch(RatbagParser):
             else:
                 # we have a single int as first argument, switch to the
                 # N_access subtree of the command
-                return self.N_access._sub_parse(self, input_string, ns)
+                return self.N_access.parse_parent(self, input_string, ns)
 
         parser = argparse.ArgumentParser(
             prog=f"{sys.argv[0]} <device> {self.name}",
@@ -1456,7 +1456,7 @@ class RatbagParserNAccess(RatbagParserSwitch):
         super().__init__(type, name, group, switch, None, tag, func, help)
         self.metavar = metavar
 
-    def _sub_parse(
+    def parse_parent(
         self, parent: Any, input_string: List[str], ns: argparse.Namespace
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
