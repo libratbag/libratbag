@@ -159,7 +159,7 @@ class _RatbagdDBus(GObject.GObject):
             try:
                 _RatbagdDBus._dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
             except GLib.Error as e:
-                raise RatbagdUnavailable(e.message)
+                raise RatbagdUnavailable(e.message) from e
 
         ratbag1 = "org.freedesktop.ratbag1"
         if os.environ.get("RATBAG_TEST"):
@@ -182,7 +182,7 @@ class _RatbagdDBus(GObject.GObject):
                 None,
             )
         except GLib.Error as e:
-            raise RatbagdUnavailable(e.message)
+            raise RatbagdUnavailable(e.message) from e
 
         if self._proxy.get_name_owner() is None:
             raise RatbagdUnavailable(f"No one currently owns {ratbag1}")
@@ -253,7 +253,7 @@ class _RatbagdDBus(GObject.GObject):
             return res.unpack()[0]  # Result is always a tuple
         except GLib.Error as e:
             if e.code == Gio.IOErrorEnum.TIMED_OUT:
-                raise RatbagdDBusTimeout(e.message)
+                raise RatbagdDBusTimeout(e.message) from e
             else:
                 # Unrecognized error code; print the message to stderr and raise
                 # the GLib.Error.

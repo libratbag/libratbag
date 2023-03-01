@@ -56,9 +56,9 @@ def convert_str_to_evcode(s: str) -> int:
 
     try:
         return evdev.ecodes.ecodes[s]
-    except KeyError:
+    except KeyError as e:
         msg = f"No such button or key `{s}`"
-        raise argparse.ArgumentTypeError(msg)
+        raise argparse.ArgumentTypeError(msg) from e
 
 
 def list_devices(ratbagd, args):
@@ -680,9 +680,9 @@ def commit(device, args):
 def color(string):
     try:
         int_value = int(string, 16)
-    except ValueError:
+    except ValueError as e:
         msg = "%r is not a color in hex format" % string
-        raise argparse.ArgumentTypeError(msg)
+        raise argparse.ArgumentTypeError(msg) from e
     r = (int_value >> 16) & 0xFF
     g = (int_value >> 8) & 0xFF
     b = (int_value >> 0) & 0xFF
@@ -710,8 +710,8 @@ def dpi(string):
     try:
         int_x = int(x)
         int_y = int(y)
-    except ValueError:
-        raise argparse.ArgumentTypeError("%r is not a valid dpi" % string)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("%r is not a valid dpi" % string) from e
     else:
         return (int_x, int_y)
 
@@ -1538,8 +1538,8 @@ class RatbagParserLink(RatbagParser):
     def get_dest(self):
         try:
             dest = RatbagParser.tagged[self.dest]
-        except KeyError:
-            raise ParseError(f"link '{self.dest}' points to nothing")
+        except KeyError as e:
+            raise ParseError(f"link '{self.dest}' points to nothing") from e
         return dest
 
     def _add_to_subparsers(self, parent):
