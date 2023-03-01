@@ -1,3 +1,0 @@
-[flake8]
-ignore = E402,E501
-exclude = .git,__pycache__,build,data,piper/piper.py
