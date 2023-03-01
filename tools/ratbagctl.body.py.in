@@ -175,7 +175,8 @@ def print_led(_device, _profile, led, level):
     elif led.mode == RatbagdLed.Mode.BREATHING:
         print(
             " " * level
-            + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(
+            + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {},"
+            " brightness: {}".format(
                 led.index,
                 depths[led.colordepth],
                 leds[led.mode],
@@ -1105,7 +1106,9 @@ active profile if none is given.""",
                                 {
                                     of_type: command,
                                     name: "special",
-                                    help_str: "Set the button action to special action S",
+                                    help_str: (
+                                        "Set the button action to special action S"
+                                    ),
                                     pos_args: [
                                         {
                                             of_type: argument,
@@ -1231,7 +1234,9 @@ active profile if none is given.""",
                                     of_type: argument,
                                     name: "color",
                                     metavar: "RRGGBB",
-                                    help_str: "The color in hex format to set as current",
+                                    help_str: (
+                                        "The color in hex format to set as current"
+                                    ),
                                     arg_type: color,
                                 },
                             ],
@@ -1656,7 +1661,8 @@ Common options:
         )
         if self.want_keepalive:
             print(
-                "    --keepalive                 do not terminate ratbagd after the processing"
+                "    --keepalive                 do not terminate ratbagd after the"
+                " processing"
             )
         print(
             """
