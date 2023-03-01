@@ -97,6 +97,9 @@ def find_resolution(r, args):
         sys.exit(1)
     except AttributeError:
         r = p.active_resolution
+        if r is None:
+            print("The device has no active resolution")
+            sys.exit(1)
     return r, p, d
 
 
@@ -470,14 +473,18 @@ def func_resolution_active_set(r, args):
     commit(d, args)
 
 
-def func_resolution_default_get(r, args):
-    p, d = find_profile(r, args)
-    for r in p.resolutions:
-        if r.is_default:
+def func_resolution_default_get(ratbagd, args):
+    profile, _device = find_profile(ratbagd, args)
+    resolution = None
+    for resolution in profile.resolutions:
+        if resolution.is_default:
             break
-    else:
-        r = None
-    print(r.index)
+
+    if resolution is None:
+        print("The device has no default resolution")
+        sys.exit(1)
+
+    print(resolution.index)
 
 
 def func_default_resolution_set(r, args):
