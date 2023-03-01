@@ -419,12 +419,12 @@ class RatbagdProfile(metaclass=MetaRatbag):
         """The currently active resolution of this profile. This is a non-DBus
         property computed over the cached list of resolutions. In the unlikely
         case that your device driver is misconfigured and there is no active
-        resolution, this returns the first resolution."""
+        resolution, this returns `None`."""
         for resolution in self._resolutions:
             if resolution.is_active:
                 return resolution
         print("No active resolution. Please report this bug to the libratbag developers", file=sys.stderr)
-        return self._resolutions[0]
+        return None
 
     @property
     def buttons(self):
