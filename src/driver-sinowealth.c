@@ -1523,6 +1523,21 @@ sinowealth_init_profile(struct ratbag_device *device)
 	rc = sinowealth_get_active_profile(device);
 	if (rc < 0)
 		return rc;
+	/* If we are not compiled with support with support for this many profiles. */
+	if (rc >= SINOWEALTH_NUM_PROFILES) {
+		const unsigned int PROFILE_TO_USE = 0;
+		log_error(device->ratbag,
+			  "Active profile index is %d, but our max is %d; "
+			  "Will use profile %d instead; "
+			  "Report this to libratbag developers!\n",
+			  rc,
+			  SINOWEALTH_NUM_PROFILES - 1,
+			  PROFILE_TO_USE);
+		sinowealth_set_active_profile(device, PROFILE_TO_USE);
+		if (rc < 0)
+			return rc;
+		rc = (int)PROFILE_TO_USE;
+	}
 	const unsigned int active_profile_index = (unsigned int)rc;
 	log_debug(device->ratbag, "Active profile index: %d\n", rc);
 
