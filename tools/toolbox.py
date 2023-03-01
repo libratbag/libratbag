@@ -115,7 +115,7 @@ def sync_dbus():
 
 ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
-from ratbagctl import (
+from ratbagctl import (  # noqa: E402
     RatbagError,
     RatbagErrorCapability,
     get_parser,
