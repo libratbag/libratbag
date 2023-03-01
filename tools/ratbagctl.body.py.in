@@ -1598,7 +1598,7 @@ class RatbagParserLink(RatbagParser):
     def __init__(
         self,
         type: str,
-        dest: Optional[str] = None,
+        dest: str,
         group: Optional[str] = None,
         tag: Optional[str] = None,
         func: Optional[RatbagParserFunction] = None,
