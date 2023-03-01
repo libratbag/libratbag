@@ -30,19 +30,21 @@ from typing import TextIO
 def write_ratbagctl(
     output_file: TextIO, ratbagctl_path: str, ratbagd_path: str, version_string: str
 ) -> None:
-    with open(ratbagctl_path, 'r', encoding='utf-8') as ratbagctl, open(ratbagd_path, 'r', encoding='utf-8') as ratbagd:
+    with open(ratbagctl_path, "r", encoding="utf-8") as ratbagctl, open(
+        ratbagd_path, "r", encoding="utf-8"
+    ) as ratbagd:
         for line in ratbagctl.readlines():
             if line.startswith("from ratbagd import "):
                 headers = True
                 for r in ratbagd.readlines():
-                    if not r.startswith('#') and r.strip():
+                    if not r.startswith("#") and r.strip():
                         headers = False
                     if not headers:
                         output_file.write(r)
                 continue
 
-            if '@version@' in line:
-                output_file.write(line.replace('@version@', version_string))
+            if "@version@" in line:
+                output_file.write(line.replace("@version@", version_string))
                 continue
 
             output_file.write(line)
@@ -50,13 +52,13 @@ def write_ratbagctl(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="merge ratbagd.py into ratbagctl")
-    parser.add_argument("ratbagctl", action='store')
-    parser.add_argument("ratbagd", action='store')
+    parser.add_argument("ratbagctl", action="store")
+    parser.add_argument("ratbagd", action="store")
     parser.add_argument("--output", action="store")
     parser.add_argument("--version", action="store", default="git_master")
     ns = parser.parse_args()
     if ns.output:
-        with open(ns.output, 'w', encoding='utf-8') as output_file:
+        with open(ns.output, "w", encoding="utf-8") as output_file:
             st = os.stat(ns.output)
             os.chmod(ns.output, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
             write_ratbagctl(output_file, ns.ratbagctl, ns.ratbagd, ns.version)

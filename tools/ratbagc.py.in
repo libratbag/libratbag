@@ -45,7 +45,7 @@ class MetaRatbag(type):
         else:
             for k in libratbag.__dict__.keys():
                 if k.startswith(prefix) and k.isupper():
-                    key = k[len(prefix):]
+                    key = k[len(prefix) :]
                     dct[key] = getattr(libratbag, k)
         c = type.__new__(cls, name, bases, dct)
         if "__late_init__" in dct:
@@ -101,36 +101,43 @@ class RatbagDeviceType(IntEnum):
 
 class RatbagdUnavailable(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
+
     pass
 
 
 class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
+
     pass
 
 
 class RatbagErrorDevice(RatbagError):
     """An exception corresponding to RatbagErrorCode.DEVICE."""
+
     pass
 
 
 class RatbagErrorCapability(RatbagError):
     """An exception corresponding to RatbagErrorCode.CAPABILITY."""
+
     pass
 
 
 class RatbagErrorValue(RatbagError):
     """An exception corresponding to RatbagErrorCode.VALUE."""
+
     pass
 
 
 class RatbagErrorSystem(RatbagError):
     """An exception corresponding to RatbagErrorCode.SYSTEM."""
+
     pass
 
 
 class RatbagErrorImplementation(RatbagError):
     """An exception corresponding to RatbagErrorCode.IMPLEMENTATION."""
+
     pass
 
 
@@ -140,7 +147,7 @@ EXCEPTION_TABLE = {
     RatbagErrorCode.CAPABILITY: RatbagErrorCapability,
     RatbagErrorCode.VALUE: RatbagErrorValue,
     RatbagErrorCode.SYSTEM: RatbagErrorSystem,
-    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation
+    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation,
 }
 
 
@@ -152,7 +159,7 @@ class Ratbagd(object):
     """
 
     def __init__(self, apiversion):
-        os.environ['LIBRATBAG_DATA_DIR'] = LIBRATBAG_DATA_DIR
+        os.environ["LIBRATBAG_DATA_DIR"] = LIBRATBAG_DATA_DIR
         self._ratbag = libratbag.ratbag_create_context(libratbag.interface, None)
         self._devices = {}
         self._devices_initialized = False
@@ -186,9 +193,13 @@ class Ratbagd(object):
     @verbose.setter
     def verbose(self, verbosity):
         if verbosity > 2:
-            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_RAW)
+            libratbag.ratbag_log_set_priority(
+                self._ratbag, libratbag.RATBAG_LOG_PRIORITY_RAW
+            )
         elif verbosity >= 1:
-            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_DEBUG)
+            libratbag.ratbag_log_set_priority(
+                self._ratbag, libratbag.RATBAG_LOG_PRIORITY_DEBUG
+            )
 
     def __enter__(self):
         return self
@@ -222,9 +233,13 @@ class Ratbagd(object):
 
     def set_verbose(self, verbose):
         if verbose > 2:
-            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_RAW)
+            libratbag.ratbag_log_set_priority(
+                self._ratbag, libratbag.RATBAG_LOG_PRIORITY_RAW
+            )
         elif verbose >= 1:
-            libratbag.ratbag_log_set_priority(self._ratbag, libratbag.RATBAG_LOG_PRIORITY_DEBUG)
+            libratbag.ratbag_log_set_priority(
+                self._ratbag, libratbag.RATBAG_LOG_PRIORITY_DEBUG
+            )
 
 
 def get_capabilities(type, object):
@@ -250,7 +265,10 @@ class RatbagdDevice(metaclass=MetaRatbag):
         if self._device is None:
             raise RatbagErrorDevice("device not compatible")
 
-        self._profiles = [RatbagdProfile(self._device, i) for i in range(libratbag.ratbag_device_get_num_profiles(self._device))]
+        self._profiles = [
+            RatbagdProfile(self._device, i)
+            for i in range(libratbag.ratbag_device_get_num_profiles(self._device))
+        ]
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         for p in self._profiles:
@@ -302,7 +320,10 @@ class RatbagdDevice(metaclass=MetaRatbag):
         for profile in self._profiles:
             if profile.is_active:
                 return profile
-        print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
+        print(
+            "No active profile. Please report this bug to the libratbag developers",
+            file=sys.stderr,
+        )
         return None
 
     def commit(self):
@@ -328,11 +349,20 @@ class RatbagdProfile(metaclass=MetaRatbag):
 
         self._capabilities = get_capabilities("profile", self._profile)
 
-        self._resolutions = [RatbagdResolution(self._profile, i) for i in range(libratbag.ratbag_profile_get_num_resolutions(self._profile))]
+        self._resolutions = [
+            RatbagdResolution(self._profile, i)
+            for i in range(libratbag.ratbag_profile_get_num_resolutions(self._profile))
+        ]
 
-        self._buttons = [RatbagdButton(self._profile, i) for i in range(libratbag.ratbag_device_get_num_buttons(device))]
+        self._buttons = [
+            RatbagdButton(self._profile, i)
+            for i in range(libratbag.ratbag_device_get_num_buttons(device))
+        ]
 
-        self._leds = [RatbagdLed(self._profile, i) for i in range(libratbag.ratbag_device_get_num_leds(device))]
+        self._leds = [
+            RatbagdLed(self._profile, i)
+            for i in range(libratbag.ratbag_device_get_num_leds(device))
+        ]
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         for r in self._resolutions:
@@ -423,7 +453,10 @@ class RatbagdProfile(metaclass=MetaRatbag):
         for resolution in self._resolutions:
             if resolution.is_active:
                 return resolution
-        print("No active resolution. Please report this bug to the libratbag developers", file=sys.stderr)
+        print(
+            "No active resolution. Please report this bug to the libratbag developers",
+            file=sys.stderr,
+        )
         return None
 
     @property
@@ -486,7 +519,7 @@ class RatbagdResolution(metaclass=MetaRatbag):
         if libratbag.RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION in self._capabilities:
             dpi_y = libratbag.ratbag_resolution_get_dpi_y(self._res)
             return (dpi_x, dpi_y)
-        return (dpi_x, )
+        return (dpi_x,)
 
     @resolution.setter
     def resolution(self, res):
@@ -558,10 +591,14 @@ class RatbagdButton(metaclass=MetaRatbag):
         WHEEL_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN
         RATCHET_MODE_SWITCH = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RATCHET_MODE_SWITCH
         RESOLUTION_CYCLE_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP
-        RESOLUTION_CYCLE_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN
+        RESOLUTION_CYCLE_DOWN = (
+            libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_DOWN
+        )
         RESOLUTION_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP
         RESOLUTION_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN
-        RESOLUTION_ALTERNATE = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE
+        RESOLUTION_ALTERNATE = (
+            libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE
+        )
         RESOLUTION_DEFAULT = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DEFAULT
         PROFILE_CYCLE_UP = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP
         PROFILE_CYCLE_DOWN = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_DOWN
@@ -724,16 +761,17 @@ class RatbagdMacro(metaclass=MetaRatbag):
     _MACRO_KEY = 1000
 
     _MACRO_DESCRIPTION = {
-        RatbagdButton.Macro.NONE: lambda key:
-            ".",
-        RatbagdButton.Macro.KEY_PRESS: lambda key:
-            "↓{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
-        RatbagdButton.Macro.KEY_RELEASE: lambda key:
-            "↑{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
-        RatbagdButton.Macro.WAIT: lambda val:
-            "{}ms".format(val),
-        _MACRO_KEY: lambda key:
-            "↕{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+        RatbagdButton.Macro.NONE: lambda key: ".",
+        RatbagdButton.Macro.KEY_PRESS: lambda key: "↓{}".format(
+            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
+        ),
+        RatbagdButton.Macro.KEY_RELEASE: lambda key: "↑{}".format(
+            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
+        ),
+        RatbagdButton.Macro.WAIT: lambda val: "{}ms".format(val),
+        _MACRO_KEY: lambda key: "↕{}".format(
+            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
+        ),
     }
 
     def __init__(self):

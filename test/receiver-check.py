@@ -33,23 +33,23 @@ import configparser
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-logitech-dj.c#L1826
 # https://pwr-solaar.github.io/Solaar/devices.html
 logitech_receivers = [
-    0xc50c,  # USB_DEVICE_ID_S510_RECEIVER
-    0xc517,  # USB_DEVICE_ID_S510_RECEIVER_2
-    0xc512,  # USB_DEVICE_ID_LOGITECH_CORDLESS_DESKTOP_LX500
-    0xc513,  # USB_DEVICE_ID_MX3000_RECEIVER
-    0xc51b,  # USB_DEVICE_ID_LOGITECH_27MHZ_MOUSE_RECEIVER
-    0xc52b,  # USB_DEVICE_ID_LOGITECH_UNIFYING_RECEIVER
-    0xc52f,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER
-    0xc532,  # USB_DEVICE_ID_LOGITECH_UNIFYING_RECEIVER_2
-    0xc534,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_2
-    0xc539,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1
-    0xc53f,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_1
-    0xc53a,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_POWERPLAY
-    0xc545,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_2
-    0xc547,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_3
-    0xc548,  # Bolt receiver
+    0xC50C,  # USB_DEVICE_ID_S510_RECEIVER
+    0xC517,  # USB_DEVICE_ID_S510_RECEIVER_2
+    0xC512,  # USB_DEVICE_ID_LOGITECH_CORDLESS_DESKTOP_LX500
+    0xC513,  # USB_DEVICE_ID_MX3000_RECEIVER
+    0xC51B,  # USB_DEVICE_ID_LOGITECH_27MHZ_MOUSE_RECEIVER
+    0xC52B,  # USB_DEVICE_ID_LOGITECH_UNIFYING_RECEIVER
+    0xC52F,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER
+    0xC532,  # USB_DEVICE_ID_LOGITECH_UNIFYING_RECEIVER_2
+    0xC534,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_2
+    0xC539,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1
+    0xC53F,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_1
+    0xC53A,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_POWERPLAY
+    0xC545,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_2
+    0xC547,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_3
+    0xC548,  # Bolt receiver
 ]
-RECEIVERS = ['usb:046d:{}'.format(r) for r in logitech_receivers]
+RECEIVERS = ["usb:046d:{}".format(r) for r in logitech_receivers]
 
 
 def parse_data_file(path):
@@ -58,12 +58,14 @@ def parse_data_file(path):
     data.optionxform = lambda option: option
     data.read(path)
 
-    matches = data['Device']['DeviceMatch']
-    return matches.split(';')
+    matches = data["Device"]["DeviceMatch"]
+    return matches.split(";")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Checks that no unifying receiver ID is in the device files')
+    parser = argparse.ArgumentParser(
+        description="Checks that no unifying receiver ID is in the device files"
+    )
     parser.add_argument("directory")
     args = parser.parse_args()
     receiver_found = False
@@ -72,7 +74,7 @@ if __name__ == "__main__":
         fname = os.path.basename(path)
         for m in matches:
             if m in RECEIVERS:
-                print('Receiver ID {} found in file {}'.format(m, fname))
+                print("Receiver ID {} found in file {}".format(m, fname))
                 receiver_found = True
 
     if receiver_found:

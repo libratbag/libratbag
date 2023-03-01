@@ -29,10 +29,10 @@ import sys
 from gi.repository import GLib
 
 # various constants
-RATBAGCTL_NAME = 'ratbagctl'
-RATBAGCTL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_NAME)
-RATBAGCTL_DEVEL_NAME = 'ratbagctl.devel'
-RATBAGCTL_DEVEL_PATH = os.path.join('@MESON_BUILD_ROOT@', RATBAGCTL_DEVEL_NAME)
+RATBAGCTL_NAME = "ratbagctl"
+RATBAGCTL_PATH = os.path.join("@MESON_BUILD_ROOT@", RATBAGCTL_NAME)
+RATBAGCTL_DEVEL_NAME = "ratbagctl.devel"
+RATBAGCTL_DEVEL_PATH = os.path.join("@MESON_BUILD_ROOT@", RATBAGCTL_DEVEL_NAME)
 
 
 def import_non_standard_path(name, path):
@@ -45,8 +45,10 @@ def import_non_standard_path(name, path):
     # If any of the following calls raises an exception,
     # there's a problem we can't handle -- let the caller handle it.
 
-    with open(path, 'rb') as fp:
-        module = imp.load_module(name, fp, os.path.basename(path), ('.py', 'rb', imp.PY_SOURCE))
+    with open(path, "rb") as fp:
+        module = imp.load_module(
+            name, fp, os.path.basename(path), (".py", "rb", imp.PY_SOURCE)
+        )
 
     return module
 
@@ -57,34 +59,38 @@ def start_ratbagd(verbosity=0):
 
     # FIXME: kill any running ratbagd.devel
 
-    args = [os.path.join('@MESON_BUILD_ROOT@', "ratbagd.devel")]
+    args = [os.path.join("@MESON_BUILD_ROOT@", "ratbagd.devel")]
 
     if verbosity >= 3:
-        args.append('--verbose')
+        args.append("--verbose")
     elif verbosity >= 2:
-        args.append('--verbose=debug')
+        args.append("--verbose=debug")
     elif verbosity == 0:
-        args.append('--quiet')
+        args.append("--quiet")
 
-    ratbagd_process = subprocess.Popen(args, shell=False, stdout=sys.stdout, stderr=sys.stderr)
+    ratbagd_process = subprocess.Popen(
+        args, shell=False, stdout=sys.stdout, stderr=sys.stderr
+    )
 
     dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
 
     name_owner = None
     start_time = time.perf_counter()
     while name_owner is None and time.perf_counter() - start_time < 30:
-        proxy = Gio.DBusProxy.new_sync(dbus,
-                                       Gio.DBusProxyFlags.NONE,
-                                       None,
-                                       "org.freedesktop.ratbag_devel1",
-                                       "/org/freedesktop/ratbag_devel1",
-                                       "org.freedesktop.ratbag_devel1.Manager",
-                                       None)
+        proxy = Gio.DBusProxy.new_sync(
+            dbus,
+            Gio.DBusProxyFlags.NONE,
+            None,
+            "org.freedesktop.ratbag_devel1",
+            "/org/freedesktop/ratbag_devel1",
+            "org.freedesktop.ratbag_devel1.Manager",
+            None,
+        )
         name_owner = proxy.get_name_owner()
         if name_owner is None:
             time.sleep(0.2)
 
-    os.environ['RATBAG_TEST'] = "1"
+    os.environ["RATBAG_TEST"] = "1"
 
     if name_owner is None or ratbagd_process.poll() is not None:
         return None
@@ -109,7 +115,12 @@ def sync_dbus():
 
 ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
-from ratbagctl import open_ratbagd, get_parser, RatbagError, RatbagErrorCapability  # NOQA
+from ratbagctl import (
+    RatbagError,
+    RatbagErrorCapability,
+    get_parser,
+    open_ratbagd,
+)
 
 __all__ = [
     RATBAGCTL_NAME,

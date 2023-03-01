@@ -34,11 +34,11 @@ from ratbagctl import RatbagErrorCapability  # NOQA
 
 def main(argv, start_ratbagd=True):
     if not os.geteuid() == 0:
-        sys.exit('Script must be run as root')
+        sys.exit("Script must be run as root")
 
-                                       # replaced by meson
-    os.environ['LIBRATBAG_DATA_DIR'] = '@LIBRATBAG_DATA_DIR@'
-    os.environ['RATBAG_TEST'] = "1"
+        # replaced by meson
+    os.environ["LIBRATBAG_DATA_DIR"] = "@LIBRATBAG_DATA_DIR@"
+    os.environ["RATBAG_TEST"] = "1"
 
     if not argv:
         argv = ["list"]
@@ -88,9 +88,16 @@ def main(argv, start_ratbagd=True):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='commandline tool to access the ratbagd.devel debug server')
-    parser.add_argument('--use-existing-ratbagd', dest='use_existing', action='store_true', default=False,
-                        help='Don\'t start up ratbagd.devel, connect to the already running one')
+    parser = argparse.ArgumentParser(
+        description="commandline tool to access the ratbagd.devel debug server"
+    )
+    parser.add_argument(
+        "--use-existing-ratbagd",
+        dest="use_existing",
+        action="store_true",
+        default=False,
+        help="Don't start up ratbagd.devel, connect to the already running one",
+    )
 
     args, remainder = parser.parse_known_args()
     main(remainder, not args.use_existing)

@@ -46,6 +46,7 @@ class TestRatbagCtl(unittest.TestCase):
         # with ratbagd failing
         if cls.json is not None:
             import json
+
             json.loads(cls.json)
 
         if cls.json is not None:
@@ -54,16 +55,20 @@ class TestRatbagCtl(unittest.TestCase):
 
     @classmethod
     def run_ratbagctl_subprocess(cls, params):
-        ratbagctl = subprocess.Popen(" ".join([toolbox.RATBAGCTL_PATH, params]),
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     shell=True,
-                                     env={"RATBAG_TEST": "1"})
+        ratbagctl = subprocess.Popen(
+            " ".join([toolbox.RATBAGCTL_PATH, params]),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            env={"RATBAG_TEST": "1"},
+        )
 
         (stdout, stderr) = ratbagctl.communicate()
-        return (ratbagctl.returncode,
-                stdout.decode('utf-8').rstrip('\n'),
-                stderr.decode('utf-8').rstrip('\n'))
+        return (
+            ratbagctl.returncode,
+            stdout.decode("utf-8").rstrip("\n"),
+            stderr.decode("utf-8").rstrip("\n"),
+        )
 
     @classmethod
     def run_ratbagctl_fast(cls, params):
@@ -88,11 +93,11 @@ class TestRatbagCtl(unittest.TestCase):
         sys.stdout = stdout
         sys.stderr = stderr
         toolbox.sync_dbus()
-        return returncode, output.rstrip('\n'), error.rstrip('\n')
+        return returncode, output.rstrip("\n"), error.rstrip("\n")
 
     @classmethod
     def run_ratbagctl(cls, params):
-        params = params.replace('test_device', cls.test_device)
+        params = params.replace("test_device", cls.test_device)
         if run_ratbagctl_in_subprocess:
             return cls.run_ratbagctl_subprocess(params)
         return cls.run_ratbagctl_fast(params)
@@ -107,16 +112,16 @@ class TestRatbagCtl(unittest.TestCase):
     def load_test_device(cls, json):
         global ratbagd
         rc = ratbagd._dbus_call("LoadTestDevice", "s", json)
-        assert(rc == 0)
+        assert rc == 0
         toolbox.sync_dbus()
 
     @classmethod
     def find_test_device(cls):
-        rc, stdout, stderr = cls.run_ratbagctl_subprocess('list')
+        rc, stdout, stderr = cls.run_ratbagctl_subprocess("list")
         testdevice = None
-        for line in stdout.split('\n'):
-            if 'Test device' in line:
-                testdevice = line.split(':')[0]
+        for line in stdout.split("\n"):
+            if "Test device" in line:
+                testdevice = line.split(":")[0]
                 break
 
         assert testdevice is not None
@@ -126,7 +131,7 @@ class TestRatbagCtl(unittest.TestCase):
         returncode, stdout, stderr = self.run_ratbagctl(params)
         self.assertEqual(returncode, 0, msg=stderr + stdout)
         self.maxDiff = None
-        self.assertEqual(stderr, '')
+        self.assertEqual(stderr, "")
         return stdout
 
     def launch_fail_test(self, params):
@@ -137,7 +142,7 @@ class TestRatbagCtl(unittest.TestCase):
     def launch_fail_with_exception_test(self, params, exception):
         with self.assertRaises(exception):
             returncode, stdout, stderr = self.run_ratbagctl(params)
-        return ''
+        return ""
 
     @classmethod
     def setProfile(cls, profile):
@@ -162,13 +167,13 @@ class TestRatbagCtlInfo(TestRatbagCtl):
 class TestRatbagCtlName(TestRatbagCtl):
     def test_get(self):
         r = self.launch_good_test("test_device name")
-        self.assertEqual(r, 'Test device')
+        self.assertEqual(r, "Test device")
         self.launch_fail_test("test_device name X")
         self.launch_fail_test("name X")
 
 
 class TestRatbagCtlProfile(TestRatbagCtl):
-    json = '''
+    json = """
     {
       "profiles": [
         {
@@ -187,7 +192,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
         }
       ]
     }
-    '''
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -196,22 +201,24 @@ class TestRatbagCtlProfile(TestRatbagCtl):
     def test_profile_name_get(self):
         command = "profile 1 name get"
         r = self.launch_good_test("test_device " + command)
-        self.assertEqual(r, 'test profile x2')
+        self.assertEqual(r, "test profile x2")
         self.launch_fail_test(command)
         self.launch_fail_test("test_device " + command + " X")
         self.launch_fail_test("test_device profile name get")
 
     def test_profile_name_set(self):
         r = self.launch_good_test("test_device profile 1 name get")
-        self.assertEqual(r, 'test profile x2')
+        self.assertEqual(r, "test profile x2")
         self.launch_good_test("test_device profile 1 name set banana")
         r = self.launch_good_test("test_device profile 1 name get")
-        self.assertEqual(r, 'banana')
+        self.assertEqual(r, "banana")
         # profile 0 doesn't have the capability RATBAG_PROFILE_CAP_WRITABLE_NAME
-        self.launch_fail_with_exception_test("test_device profile 0 name set kiwi", toolbox.RatbagErrorCapability)
+        self.launch_fail_with_exception_test(
+            "test_device profile 0 name set kiwi", toolbox.RatbagErrorCapability
+        )
         # better be safe than sorry, checking that the previous actually failed :)
         r = self.launch_good_test("test_device profile 0 name get")
-        self.assertNotEqual(r, 'kiwi')
+        self.assertNotEqual(r, "kiwi")
         self.launch_fail_test("profile 1 name set blah")
         self.launch_fail_test("test_device profile 1 name set blah X")
         self.launch_fail_test("test_device profile name set blah")
@@ -226,7 +233,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
     def test_profile_active_set(self):
         command = "profile active set"
         r = self.launch_good_test("test_device " + command + " 1")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device profile active get")
         self.assertEqual(int(r), 1)
         self.launch_fail_test(command)
@@ -244,12 +251,12 @@ class TestRatbagCtlProfile(TestRatbagCtl):
 
     def test_profile_enable(self):
         r = self.launch_good_test("test_device profile 0 get")
-        self.assertNotIn('Profile 0: (disabled)', r)
+        self.assertNotIn("Profile 0: (disabled)", r)
         r = self.launch_good_test("test_device profile 3 get")
-        self.assertIn('Profile 3: (disabled)', r)
+        self.assertIn("Profile 3: (disabled)", r)
         self.launch_good_test("test_device profile 3 enable")
         r = self.launch_good_test("test_device profile 3 get")
-        self.assertNotIn('Profile 3: (disabled)', r)
+        self.assertNotIn("Profile 3: (disabled)", r)
         self.launch_fail_test("profile enable")
         self.launch_fail_test("test_device profile X enable")
         self.launch_fail_test("test_device profile 1 enable X")
@@ -257,10 +264,10 @@ class TestRatbagCtlProfile(TestRatbagCtl):
 
     def test_profile_disable(self):
         r = self.launch_good_test("test_device profile 2 get")
-        self.assertNotIn('Profile 2: (disabled)', r)
+        self.assertNotIn("Profile 2: (disabled)", r)
         self.launch_good_test("test_device profile 2 disable")
         r = self.launch_good_test("test_device profile 2 get")
-        self.assertEqual('Profile 2: (disabled)', r)
+        self.assertEqual("Profile 2: (disabled)", r)
         self.launch_fail_test("profile disable")
         self.launch_fail_test("test_device profile X disable")
         self.launch_fail_test("test_device profile 1 disable X")
@@ -268,7 +275,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
 
 
 class TestRatbagCtlResolution(TestRatbagCtl):
-    json = '''
+    json = """
     {
       "profiles": [
         {
@@ -304,7 +311,7 @@ class TestRatbagCtlResolution(TestRatbagCtl):
         }
       ]
     }
-    '''
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -333,7 +340,7 @@ class TestRatbagCtlResolution(TestRatbagCtl):
         r = self.launch_good_test("test_device resolution active get")
         self.assertEqual(int(r), 2)
         r = self.launch_good_test("test_device " + command + " 0")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device resolution active get")
         self.assertEqual(int(r), 0)
         self.launch_fail_test(command)
@@ -392,7 +399,7 @@ class TestRatbagCtlResolution(TestRatbagCtl):
 
 
 class TestRatbagCtlDPI(TestRatbagCtl):
-    json = '''
+    json = """
     {
       "profiles": [
         { "is_active": true,
@@ -429,7 +436,8 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         }
       ]
     }
-    '''
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -460,7 +468,7 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         r = self.launch_good_test("test_device dpi get ")
         res = int(r[:-3]) + 50  # drop 'dpi' suffix
         r = self.launch_good_test("test_device " + command + " {}".format(res))
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device dpi get")
         self.assertEqual(int(r[:-3]), res)  # drop 'dpi' suffix
         self.launch_fail_test(command)
@@ -499,7 +507,7 @@ class TestRatbagCtlDPI(TestRatbagCtl):
 
 
 class TestRatbagCtlReportRate(TestRatbagCtl):
-    json = '''
+    json = """
     {
       "profiles": [
         { "is_active": true,
@@ -514,7 +522,8 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
         }
       ]
     }
-    '''
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -541,7 +550,7 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
         r = self.launch_good_test("test_device rate get")
         res = int(r) + 500
         r = self.launch_good_test("test_device " + command + " {}".format(res))
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device rate get")
         self.assertEqual(int(r), res)
         self.launch_fail_test(command)
@@ -557,11 +566,13 @@ class TestRatbagCtlReportRate(TestRatbagCtl):
         self.assertEqual(int(r), 3000)
         self.launch_fail_test("test_device profile 1 profile 1 rate get")
         self.launch_fail_test("test_device profile 1 resolution 0 rate get")
-        self.launch_fail_test("test_device profile 1 resolution 1 resolution 2 rate get")
+        self.launch_fail_test(
+            "test_device profile 1 resolution 1 resolution 2 rate get"
+        )
 
 
 class TestRatbagCtlButton(TestRatbagCtl):
-    json = '''
+    json = """
     {
       "profiles": [
         { "is_active": true,
@@ -589,7 +600,8 @@ class TestRatbagCtlButton(TestRatbagCtl):
         }
       ]
     }
-    '''
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -630,7 +642,7 @@ class TestRatbagCtlButton(TestRatbagCtl):
         r = self.launch_good_test("test_device button 2 action get")
         self.assertEqual(r, "Button: 2 is mapped to 'button 2'")
         r = self.launch_good_test("test_device " + command + " 1")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device button 2 action get")
         self.assertEqual(r, "Button: 2 is mapped to 'button 1'")
         self.launch_fail_test(command)
@@ -643,7 +655,7 @@ class TestRatbagCtlButton(TestRatbagCtl):
         r = self.launch_good_test("test_device button 0 action get")
         self.assertEqual(r, "Button: 0 is mapped to 'profile-cycle-up'")
         r = self.launch_good_test("test_device " + command + " second-mode")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device button 0 action get")
         self.assertEqual(r, "Button: 0 is mapped to 'second-mode'")
         self.launch_fail_test(command)
@@ -652,13 +664,13 @@ class TestRatbagCtlButton(TestRatbagCtl):
 
     def test_button_n_action_set_macro(self):
         command = "button 2 action set macro "
-        self.launch_good_test("test_device " + command + '+KEY_B KEY_A -KEY_B KEY_C')
+        self.launch_good_test("test_device " + command + "+KEY_B KEY_A -KEY_B KEY_C")
         r = self.launch_good_test("test_device button 2 get")
         self.assertEqual(r, "Button: 2 is mapped to macro '↓B ↕A ↑B ↕C'")
-        self.launch_good_test("test_device " + command + 't100 t200')
+        self.launch_good_test("test_device " + command + "t100 t200")
         r = self.launch_good_test("test_device button 2 get")
         self.assertEqual(r, "Button: 2 is mapped to macro '100ms 200ms'")
-        self.launch_good_test("test_device " + command + 'KeY_z')
+        self.launch_good_test("test_device " + command + "KeY_z")
         r = self.launch_good_test("test_device button 2 get")
         self.assertEqual(r, "Button: 2 is mapped to macro '↕Z'")
         self.launch_good_test("test_device " + command)
@@ -675,7 +687,7 @@ class TestRatbagCtlButton(TestRatbagCtl):
 
 
 class TestRatbagCtlLED(TestRatbagCtl):
-    json = '''
+    json = """
     {
       "profiles": [
         { "is_active": true,
@@ -721,7 +733,7 @@ class TestRatbagCtlLED(TestRatbagCtl):
         }
       ]
     }
-    '''
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -734,7 +746,9 @@ class TestRatbagCtlLED(TestRatbagCtl):
         r = self.launch_good_test("test_device led 1 get")
         self.assertEqual(r, "LED: 1, depth: rgb, mode: on, color: ff0000")
         r = self.launch_good_test("test_device led 2 get")
-        self.assertEqual(r, "LED: 2, depth: rgb, mode: cycle, duration: 333, brightness: 40")
+        self.assertEqual(
+            r, "LED: 2, depth: rgb, mode: cycle, duration: 333, brightness: 40"
+        )
         self.launch_fail_test("test_device led 0 get 10")
         self.launch_fail_test("test_device led 10 get")
         self.launch_fail_test("test_device led 0 get X")
@@ -744,9 +758,11 @@ class TestRatbagCtlLED(TestRatbagCtl):
         r = self.launch_good_test("test_device led 0 get")
         self.assertEqual(r, "LED: 0, depth: rgb, mode: off")
         r = self.launch_good_test("test_device led 0 set mode cycle")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device led 0 get")
-        self.assertEqual(r, "LED: 0, depth: rgb, mode: cycle, duration: 1000, brightness: 20")
+        self.assertEqual(
+            r, "LED: 0, depth: rgb, mode: cycle, duration: 1000, brightness: 20"
+        )
         self.launch_fail_test("test_device led 0 set mode bicycle")
         self.launch_fail_test("test_device led 0 set mode")
         self.launch_fail_test("test_device led 0 set mode cycle X")
@@ -756,11 +772,11 @@ class TestRatbagCtlLED(TestRatbagCtl):
         r = self.launch_good_test("test_device led 1 get")
         self.assertEqual(r, "LED: 1, depth: rgb, mode: on, color: ff0000")
         r = self.launch_good_test("test_device led 1 set color 00ff00")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device led 1 get")
         self.assertEqual(r, "LED: 1, depth: rgb, mode: on, color: 00ff00")
         r = self.launch_good_test("test_device led 1 set color 0x0000ff")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device led 1 get")
         self.assertEqual(r, "LED: 1, depth: rgb, mode: on, color: 0000ff")
         self.launch_fail_test("test_device led 1 set color g0ff00")
@@ -770,11 +786,15 @@ class TestRatbagCtlLED(TestRatbagCtl):
     def test_led_n_set_duration(self):
         self.setProfile(0)
         r = self.launch_good_test("test_device led 2 get")
-        self.assertEqual(r, "LED: 2, depth: rgb, mode: cycle, duration: 333, brightness: 40")
+        self.assertEqual(
+            r, "LED: 2, depth: rgb, mode: cycle, duration: 333, brightness: 40"
+        )
         r = self.launch_good_test("test_device led 2 set duration 10")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device led 2 get")
-        self.assertEqual(r, "LED: 2, depth: rgb, mode: cycle, duration: 10, brightness: 40")
+        self.assertEqual(
+            r, "LED: 2, depth: rgb, mode: cycle, duration: 10, brightness: 40"
+        )
         self.launch_fail_test("test_device led 2 set duration this_is_not_an_int")
         self.launch_fail_test("test_device led 2 set duration")
         self.launch_fail_test("test_device led 2 set duration 100 X")
@@ -782,11 +802,15 @@ class TestRatbagCtlLED(TestRatbagCtl):
     def test_led_n_set_brightness(self):
         self.setProfile(2)
         r = self.launch_good_test("test_device led 1 get")
-        self.assertEqual(r, "LED: 1, depth: rgb, mode: cycle, duration: 333, brightness: 40")
+        self.assertEqual(
+            r, "LED: 1, depth: rgb, mode: cycle, duration: 333, brightness: 40"
+        )
         r = self.launch_good_test("test_device led 1 set brightness 100")
-        self.assertEqual(r, '')
+        self.assertEqual(r, "")
         r = self.launch_good_test("test_device led 1 get")
-        self.assertEqual(r, "LED: 1, depth: rgb, mode: cycle, duration: 333, brightness: 100")
+        self.assertEqual(
+            r, "LED: 1, depth: rgb, mode: cycle, duration: 333, brightness: 100"
+        )
         self.launch_fail_test("test_device led 1 set brightness this_is_not_an_int")
         self.launch_fail_test("test_device led 1 set brightness")
         self.launch_fail_test("test_device led 1 set brightness 100 X")
@@ -800,19 +824,33 @@ class TestRatbagCtlLED(TestRatbagCtl):
         self.assertEqual(r, "LED: 0, depth: rgb, mode: on, color: ff0000")
         r = self.launch_good_test("test_device led 0 set mode cycle brightness 100")
         r = self.launch_good_test("test_device led 0 get")
-        self.assertEqual(r, "LED: 0, depth: rgb, mode: cycle, duration: 1000, brightness: 100")
-        r = self.launch_good_test("test_device led 0 set mode cycle duration 100 brightness 255")
+        self.assertEqual(
+            r, "LED: 0, depth: rgb, mode: cycle, duration: 1000, brightness: 100"
+        )
+        r = self.launch_good_test(
+            "test_device led 0 set mode cycle duration 100 brightness 255"
+        )
         r = self.launch_good_test("test_device led 0 get")
-        self.assertEqual(r, "LED: 0, depth: rgb, mode: cycle, duration: 100, brightness: 255")
+        self.assertEqual(
+            r, "LED: 0, depth: rgb, mode: cycle, duration: 100, brightness: 255"
+        )
         r = self.launch_good_test("test_device led 0 set mode on color 00ff00")
         r = self.launch_good_test("test_device led 0 get")
         self.assertEqual(r, "LED: 0, depth: rgb, mode: on, color: 00ff00")
-        r = self.launch_good_test("test_device led 0 set duration 100 brightness 200 mode cycle")
+        r = self.launch_good_test(
+            "test_device led 0 set duration 100 brightness 200 mode cycle"
+        )
         r = self.launch_good_test("test_device led 0 get")
-        self.assertEqual(r, "LED: 0, depth: rgb, mode: cycle, duration: 100, brightness: 200")
-        r = self.launch_good_test("test_device led 0 set duration 100 brightness 200 mode cycle brightness 100")
+        self.assertEqual(
+            r, "LED: 0, depth: rgb, mode: cycle, duration: 100, brightness: 200"
+        )
+        r = self.launch_good_test(
+            "test_device led 0 set duration 100 brightness 200 mode cycle brightness 100"
+        )
         r = self.launch_good_test("test_device led 0 get")
-        self.assertEqual(r, "LED: 0, depth: rgb, mode: cycle, duration: 100, brightness: 100")
+        self.assertEqual(
+            r, "LED: 0, depth: rgb, mode: cycle, duration: 100, brightness: 100"
+        )
         self.launch_fail_test("test_device led 0 set brightness 10 mode bicycle")
 
     def test_prefix_led(self):
@@ -858,25 +896,31 @@ def tearDownModule():
 def parse(input_string):
     global run_ratbagctl_in_subprocess, start_ratbagd
 
-    parser_test = argparse.ArgumentParser(description="Testsuite for ratbagd/ratbagctl", add_help=False)
-    parser_test.add_argument("--subprocess", action='store_true', default=False)
-    parser_test.add_argument("--use-existing-ratbagd", dest='use_existing',
-                             action='store_true', default=False,
-                             help='Don\'t start up ratbagd.devel, connect to the already running one')
+    parser_test = argparse.ArgumentParser(
+        description="Testsuite for ratbagd/ratbagctl", add_help=False
+    )
+    parser_test.add_argument("--subprocess", action="store_true", default=False)
+    parser_test.add_argument(
+        "--use-existing-ratbagd",
+        dest="use_existing",
+        action="store_true",
+        default=False,
+        help="Don't start up ratbagd.devel, connect to the already running one",
+    )
     ns, rest = parser_test.parse_known_args(input_string)
     run_ratbagctl_in_subprocess = ns.subprocess
     start_ratbagd = not ns.use_existing
 
     if start_ratbagd and not os.geteuid() == 0:
-        print('Script must be run as root', file=sys.stderr)
+        print("Script must be run as root", file=sys.stderr)
         sys.exit(77)
 
     return rest
 
 
 def main(argv):
-    os.environ['RATBAG_TEST'] = '1'
-    os.environ['LIBRATBAG_DATA_DIR'] = '@LIBRATBAG_DATA_DIR@'
+    os.environ["RATBAG_TEST"] = "1"
+    os.environ["LIBRATBAG_DATA_DIR"] = "@LIBRATBAG_DATA_DIR@"
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
     args = parse(argv)

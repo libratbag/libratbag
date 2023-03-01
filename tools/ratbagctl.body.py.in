@@ -36,15 +36,17 @@ RATBAGD_API_VERSION = int("@RATBAGD_API_VERSION@")
 
 
 def humanize(string):
-    return string.lower().replace('_', '-')
+    return string.lower().replace("_", "-")
 
 
-button_special_names = [humanize(e.name) for e in RatbagdButton.ActionSpecial if e.name != "INVALID"]
+button_special_names = [
+    humanize(e.name) for e in RatbagdButton.ActionSpecial if e.name != "INVALID"
+]
 led_mode_names = [humanize(e.name) for e in RatbagdLed.Mode]
 
 button_specials_strmap = {
     **{e: e.name.lower().replace("_", "-") for e in RatbagdButton.ActionSpecial},
-    **{e.name.lower().replace("_", "-"): e for e in RatbagdButton.ActionSpecial}
+    **{e.name.lower().replace("_", "-"): e for e in RatbagdButton.ActionSpecial},
 }
 
 
@@ -142,31 +144,49 @@ def print_led(d, p, l, level):
         RatbagdLed.ColorDepth.RGB_111: "rgb111",
     }
     if l.mode == RatbagdLed.Mode.OFF:
-        print(" " * level + "LED: {}, depth: {}, mode: {}".format(l.index,
-                                                                           depths[l.colordepth],
-                                                                           leds[l.mode]))
+        print(
+            " " * level
+            + "LED: {}, depth: {}, mode: {}".format(
+                l.index, depths[l.colordepth], leds[l.mode]
+            )
+        )
     elif l.mode == RatbagdLed.Mode.ON:
-        print(" " * level + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(l.index,
-                                                                                                      depths[l.colordepth],
-                                                                                                      leds[l.mode],
-                                                                                                      l.color[0],
-                                                                                                      l.color[1],
-                                                                                                      l.color[2]))
+        print(
+            " " * level
+            + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(
+                l.index,
+                depths[l.colordepth],
+                leds[l.mode],
+                l.color[0],
+                l.color[1],
+                l.color[2],
+            )
+        )
     elif l.mode == RatbagdLed.Mode.CYCLE:
-        print(" " * level + "LED: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(l.index,
-                                                                                                         depths[l.colordepth],
-                                                                                                         leds[l.mode],
-                                                                                                         l.effect_duration,
-                                                                                                         l.brightness))
+        print(
+            " " * level
+            + "LED: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(
+                l.index,
+                depths[l.colordepth],
+                leds[l.mode],
+                l.effect_duration,
+                l.brightness,
+            )
+        )
     elif l.mode == RatbagdLed.Mode.BREATHING:
-        print(" " * level + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(l.index,
-                                                                                                                                    depths[l.colordepth],
-                                                                                                                                    leds[l.mode],
-                                                                                                                                    l.color[0],
-                                                                                                                                    l.color[1],
-                                                                                                                                    l.color[2],
-                                                                                                                                    l.effect_duration,
-                                                                                                                                    l.brightness))
+        print(
+            " " * level
+            + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(
+                l.index,
+                depths[l.colordepth],
+                leds[l.mode],
+                l.color[0],
+                l.color[1],
+                l.color[2],
+                l.effect_duration,
+                l.brightness,
+            )
+        )
 
 
 def print_led_caps(d, p, l, level):
@@ -188,7 +208,7 @@ def print_button(d, p, b, level):
     elif b.action_type == RatbagdButton.ActionType.SPECIAL:
         print("{}'{}'".format(header, button_specials_strmap[b.special]))
     elif b.action_type == RatbagdButton.ActionType.KEY:
-        key_name = evdev.ecodes.KEY[b.key][RatbagdMacro._PREFIX_LEN:]
+        key_name = evdev.ecodes.KEY[b.key][RatbagdMacro._PREFIX_LEN :]
         print("{}key '{}'".format(header, key_name))
     elif b.action_type == RatbagdButton.ActionType.MACRO:
         print("{}macro '{}'".format(header, str(b.macro)))
@@ -207,21 +227,30 @@ def print_resolution(d, p, r, level):
     else:
         dpi = "{}".format(r.resolution[0])
 
-    print(" " * level + "{}: {}dpi{}{}{}".format(r.index,
-                                                 dpi,
-                                                 " (active)" if r.is_active else "",
-                                                 " (default)" if r.is_default else "",
-                                                 " (disabled)" if r.is_disabled else "",
-                                                 ))
+    print(
+        " " * level
+        + "{}: {}dpi{}{}{}".format(
+            r.index,
+            dpi,
+            " (active)" if r.is_active else "",
+            " (default)" if r.is_default else "",
+            " (disabled)" if r.is_disabled else "",
+        )
+    )
 
 
 def print_profile(d, p, level):
-    print(" " * (level - 2) + "Profile {}:{}{}".format(p.index,
-                                                       " (disabled)" if p.disabled else "",
-                                                       " (active)" if p.is_active else ""))
+    print(
+        " " * (level - 2)
+        + "Profile {}:{}{}".format(
+            p.index,
+            " (disabled)" if p.disabled else "",
+            " (active)" if p.is_active else "",
+        )
+    )
 
     if not p.disabled:
-        print(" " * level + "Name: {}".format(p.name or 'n/a'))
+        print(" " * level + "Name: {}".format(p.name or "n/a"))
         if p.report_rate:
             print(" " * level + "Report Rate: {}Hz".format(p.report_rate))
         if p.resolutions:
@@ -241,7 +270,9 @@ def print_device(d, level):
 
     print(" " * level + "{} - {}".format(d.id, d.name))
     print(" " * level + "             Model: {}".format(d.model))
-    print(" " * level + "       Device Type: {}".format(d.device_type.name.capitalize()))
+    print(
+        " " * level + "       Device Type: {}".format(d.device_type.name.capitalize())
+    )
     if d.firmware_version:
         print(" " * level + "  Firmware version: {}".format(d.firmware_version))
     print(" " * level + " Number of Buttons: {}".format(len(p.buttons)))
@@ -264,23 +295,27 @@ def show_profile(r, args):
 
 def show_resolution(r, args):
     r, p, d = find_resolution(r, args)
-    print("Resolution {} on Profile {} on {} ({})".format(args.resolution,
-                                                          args.profile,
-                                                          d.id,
-                                                          d.name))
+    print(
+        "Resolution {} on Profile {} on {} ({})".format(
+            args.resolution, args.profile, d.id, d.name
+        )
+    )
     print_resolution(d, p, r, 0)
-    caps = {RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE: "individual-report-rate",
-            RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION: "separate-xy-resolution"}
+    caps = {
+        RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE: "individual-report-rate",
+        RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION: "separate-xy-resolution",
+    }
     capabilities = [caps[c] for c in r.capabilities]
     print("  Capabilities: {}".format(", ".join(capabilities)))
 
 
 def show_button(r, args):
     b, p, d = find_button(r, args)
-    print("Button {} on Profile {} on {} ({})".format(args.button,
-                                                      args.profile,
-                                                      d.id,
-                                                      d.name))
+    print(
+        "Button {} on Profile {} on {} ({})".format(
+            args.button, args.profile, d.id, d.name
+        )
+    )
     print_button(d, p, b, 0)
 
 
@@ -393,14 +428,14 @@ def func_button_action_set_macro(r, args):
         is_timeout = False
 
         s = s.upper()
-        if s[0] == 'T':
+        if s[0] == "T":
             is_timeout = True
             is_press = False
             is_release = False
-        elif s[0] == '+':
+        elif s[0] == "+":
             is_release = False
             s = s[1:]
-        elif s[0] == '-':
+        elif s[0] == "-":
             is_press = False
             s = s[1:]
 
@@ -532,14 +567,16 @@ def func_profile_name_get(r, args):
     # See https://github.com/libratbag/libratbag/issues/617
     # ratbag converts to ascii, so this has no real effect there, but
     # ratbag-command may still have a non-ascii string.
-    string = bytes(p.name, 'utf-8', 'ignore')
-    print(string.decode('utf-8'))
+    string = bytes(p.name, "utf-8", "ignore")
+    print(string.decode("utf-8"))
 
 
 def func_profile_name_set(r, args):
     p, d = find_profile(r, args)
     if not p.name:
-        raise RatbagErrorCapability("assigning a profile name is not supported on this profile")
+        raise RatbagErrorCapability(
+            "assigning a profile name is not supported on this profile"
+        )
     p.name = args.name
     commit(d, args)
 
@@ -581,19 +618,19 @@ def func_device_name_get(r, args):
 
 # key elements
 """the type of the element (see 'types' below)"""
-of_type = 'type'
+of_type = "type"
 """the name of the element, it'll be the one matching the args on the CLI"""
-name = 'name'
+name = "name"
 """the group to logically associate commands while printing the help"""
-group = 'group'
+group = "group"
 """list of positional arguments for the given command"""
-pos_args = 'pos_args'
+pos_args = "pos_args"
 """a tag that we can refer latrer in an element of type 'link'"""
-tag = 'tag'
+tag = "tag"
 """the element pointed to in an element of type 'link'"""
-dest = 'dest'
+dest = "dest"
 """the function to associate to the switch or command"""
-func = 'func'
+func = "func"
 """this is a particular command that is an integer, but not an terminating argument.
 example:
  profile active get
@@ -601,38 +638,38 @@ example:
  - "profile" needs to be a switch
  - "2" needs to be translated as a N_access, given it is a requirement to be able to call 'button'
  """
-N_access = 'N_access'
+N_access = "N_access"
 
 # argparse.add_argument parameters (forwarded as such)
 """'type' of the argument"""
-arg_type = 'arg_type'
+arg_type = "arg_type"
 """'metavar' of the argument"""
-metavar = 'metavar'
+metavar = "metavar"
 """'help' of the argument"""
-help_str = 'help'
+help_str = "help"
 """'nargs' of the argument"""
-nargs = 'nargs'
+nargs = "nargs"
 """'choices' of the argument"""
-choices = 'choices'
+choices = "choices"
 
 # types
 """an option to interpret as a command (example 'list', 'info')"""
-command = 'command'
+command = "command"
 """an argument that is required for the given command arguments are leaf nodes
 and can not have children
 """
-argument = 'argument'
+argument = "argument"
 """provides a list of choice of commands for instance, a switch of [A, B] means
 we can have A or B only when parsing the command line
 """
-switch = 'switch'
+switch = "switch"
 """same as list, except we can loop inside the list for instance, a set of
 [A, B] means we can have A and B (and A, ...) one after the other, no matter
 the order
 """
-set = 'set'
+set = "set"
 """a reference to any other element in the tree marked with a tag"""
-link = 'link'
+link = "link"
 
 ################################################################################
 
@@ -649,9 +686,9 @@ def color(string):
     except ValueError:
         msg = "%r is not a color in hex format" % string
         raise argparse.ArgumentTypeError(msg)
-    r = (int_value >> 16) & 0xff
-    g = (int_value >> 8) & 0xff
-    b = (int_value >> 0) & 0xff
+    r = (int_value >> 16) & 0xFF
+    g = (int_value >> 8) & 0xFF
+    b = (int_value >> 0) & 0xFF
     return (r, g, b)
 
 
@@ -669,7 +706,7 @@ def dpi(string):
     except ValueError:
         pass
     else:
-        return (int_value, )
+        return (int_value,)
     if string.endswith("dpi"):
         string = string[:-3]
     x, y = string.split("x")
@@ -686,45 +723,45 @@ def dpi(string):
 parser_def = [
     {
         of_type: command,
-        name: 'info',
-        help_str: 'Show device information',
+        name: "info",
+        help_str: "Show device information",
         func: show_device,
-        group: 'Device',
+        group: "Device",
     },
     {
         of_type: command,
-        name: 'name',
-        help_str: 'Returns the device name',
+        name: "name",
+        help_str: "Returns the device name",
         func: func_device_name_get,
     },
     {
         of_type: switch,
-        name: 'profile',
-        help_str: 'Access profile information',
-        tag: 'profile',
-        group: 'Profile',
+        name: "profile",
+        help_str: "Access profile information",
+        tag: "profile",
+        group: "Profile",
         switch: [
             {
                 of_type: switch,
-                name: 'active',
-                help_str: 'access active profile information',
+                name: "active",
+                help_str: "access active profile information",
                 switch: [
                     {
                         of_type: command,
-                        name: 'get',
-                        help_str: 'Show current active profile',
+                        name: "get",
+                        help_str: "Show current active profile",
                         func: func_profile_active_get,
                     },
                     {
                         of_type: command,
-                        name: 'set',
-                        help_str: 'Set current active profile',
+                        name: "set",
+                        help_str: "Set current active profile",
                         pos_args: [
                             {
                                 of_type: argument,
-                                name: 'profile_n',
-                                metavar: 'N',
-                                help_str: 'The profile to set as current',
+                                name: "profile_n",
+                                metavar: "N",
+                                help_str: "The profile to set as current",
                                 arg_type: int,
                             },
                         ],
@@ -735,37 +772,37 @@ parser_def = [
         ],
         N_access: {
             of_type: N_access,
-            name: 'profile_n',
-            metavar: 'N',
-            help_str: 'The profile to act on',
+            name: "profile_n",
+            metavar: "N",
+            help_str: "The profile to act on",
             switch: [
                 {
                     of_type: command,
-                    name: 'get',
-                    help_str: 'Show selected profile information',
+                    name: "get",
+                    help_str: "Show selected profile information",
                     func: func_profile_get,
                 },
                 {
                     of_type: switch,
-                    name: 'name',
-                    help_str: 'access profile name information',
+                    name: "name",
+                    help_str: "access profile name information",
                     switch: [
                         {
                             of_type: command,
-                            name: 'get',
-                            help_str: 'Show the name of the profile',
+                            name: "get",
+                            help_str: "Show the name of the profile",
                             func: func_profile_name_get,
                         },
                         {
                             of_type: command,
-                            name: 'set',
-                            help_str: 'Set the name of the profile',
+                            name: "set",
+                            help_str: "Set the name of the profile",
                             pos_args: [
                                 {
                                     of_type: argument,
-                                    name: 'name',
-                                    metavar: 'blah',
-                                    help_str: 'The name to set',
+                                    name: "name",
+                                    metavar: "blah",
+                                    help_str: "The name to set",
                                 },
                             ],
                             func: func_profile_name_set,
@@ -774,70 +811,70 @@ parser_def = [
                 },
                 {
                     of_type: command,
-                    name: 'enable',
-                    help_str: 'Enable a profile',
+                    name: "enable",
+                    help_str: "Enable a profile",
                     func: func_profile_enable,
                 },
                 {
                     of_type: command,
-                    name: 'disable',
-                    help_str: 'Disable a profile',
+                    name: "disable",
+                    help_str: "Disable a profile",
                     func: func_profile_disable,
                 },
                 {
                     of_type: link,
-                    dest: 'resolution',
+                    dest: "resolution",
                 },
                 {
                     of_type: link,
-                    dest: 'dpi',
+                    dest: "dpi",
                 },
                 {
                     of_type: link,
-                    dest: 'rate',
+                    dest: "rate",
                 },
                 {
                     of_type: link,
-                    dest: 'button',
+                    dest: "button",
                 },
                 {
                     of_type: link,
-                    dest: 'led',
+                    dest: "led",
                 },
             ],
         },
     },
     {
         of_type: switch,
-        name: 'resolution',
+        name: "resolution",
         help_str: """Access resolution information
 
 Resolution commands work on the given profile, or on the
 active profile if none is given.""",
-        tag: 'resolution',
-        group: 'Resolution',
+        tag: "resolution",
+        group: "Resolution",
         switch: [
             {
                 of_type: switch,
-                name: 'active',
-                help_str: 'access active resolution information',
+                name: "active",
+                help_str: "access active resolution information",
                 switch: [
                     {
                         of_type: command,
-                        name: 'get',
-                        help_str: 'Show current active resolution',
+                        name: "get",
+                        help_str: "Show current active resolution",
                         func: func_resolution_active_get,
                     },
                     {
                         of_type: command,
-                        name: 'set',
-                        help_str: 'Set current active resolution',
+                        name: "set",
+                        help_str: "Set current active resolution",
                         pos_args: [
                             {
                                 of_type: argument,
-                                name: 'resolution_n',
-                                metavar: 'N',
-                                help_str: 'The resolution to set as current',
+                                name: "resolution_n",
+                                metavar: "N",
+                                help_str: "The resolution to set as current",
                                 arg_type: int,
                             },
                         ],
@@ -847,25 +884,25 @@ active profile if none is given.""",
             },
             {
                 of_type: switch,
-                name: 'default',
-                help_str: 'access default resolution information',
+                name: "default",
+                help_str: "access default resolution information",
                 switch: [
                     {
                         of_type: command,
-                        name: 'get',
-                        help_str: 'Show current default resolution',
+                        name: "get",
+                        help_str: "Show current default resolution",
                         func: func_resolution_default_get,
                     },
                     {
                         of_type: command,
-                        name: 'set',
-                        help_str: 'Set current default resolution',
+                        name: "set",
+                        help_str: "Set current default resolution",
                         pos_args: [
                             {
                                 of_type: argument,
-                                name: 'resolution_n',
-                                metavar: 'N',
-                                help_str: 'The resolution to set as default',
+                                name: "resolution_n",
+                                metavar: "N",
+                                help_str: "The resolution to set as default",
                                 arg_type: int,
                             },
                         ],
@@ -876,93 +913,93 @@ active profile if none is given.""",
         ],
         N_access: {
             of_type: N_access,
-            name: 'resolution_n',
-            metavar: 'N',
-            help_str: 'The resolution to act on',
+            name: "resolution_n",
+            metavar: "N",
+            help_str: "The resolution to act on",
             switch: [
                 {
                     of_type: command,
-                    name: 'get',
-                    help_str: 'Show selected resolution',
+                    name: "get",
+                    help_str: "Show selected resolution",
                     func: func_resolution_get,
                 },
                 {
                     of_type: switch,
-                    name: 'disabled',
-                    help_str: 'access disabled resolution information',
+                    name: "disabled",
+                    help_str: "access disabled resolution information",
                     switch: [
                         {
                             of_type: command,
-                            name: 'get',
-                            help_str: 'Show if resolution is disabled',
+                            name: "get",
+                            help_str: "Show if resolution is disabled",
                             func: func_resolution_disabled_get,
                         },
                         {
                             of_type: command,
-                            name: 'set',
-                            help_str: 'Set resolution as disabled',
+                            name: "set",
+                            help_str: "Set resolution as disabled",
                             func: func_resolution_disabled_set,
                         },
-                    ]
+                    ],
                 },
                 {
                     of_type: switch,
-                    name: 'enabled',
-                    help_str: 'access enabled resolution information',
+                    name: "enabled",
+                    help_str: "access enabled resolution information",
                     switch: [
                         {
                             of_type: command,
-                            name: 'get',
-                            help_str: 'Show if resolution is enabled',
+                            name: "get",
+                            help_str: "Show if resolution is enabled",
                             func: func_resolution_enabled_get,
                         },
                         {
                             of_type: command,
-                            name: 'set',
-                            help_str: 'Set resolution as enabled',
+                            name: "set",
+                            help_str: "Set resolution as enabled",
                             func: func_resolution_enabled_set,
                         },
-                    ]
+                    ],
                 },
                 {
                     of_type: link,
-                    dest: 'dpi',
+                    dest: "dpi",
                 },
             ],
         },
     },
     {
         of_type: switch,
-        name: 'dpi',
+        name: "dpi",
         help_str: """Access DPI information
 
 DPI commands work on the given profile and resolution, or on the
 active resolution of the active profile if none are given.""",
-        tag: 'dpi',
-        group: 'DPI',
+        tag: "dpi",
+        group: "DPI",
         switch: [
             {
                 of_type: command,
-                name: 'get',
-                help_str: 'Show current DPI value',
+                name: "get",
+                help_str: "Show current DPI value",
                 func: func_dpi_get,
             },
             {
                 of_type: command,
-                name: 'get-all',
-                help_str: 'Show all available DPIs',
+                name: "get-all",
+                help_str: "Show all available DPIs",
                 func: func_dpi_get_all,
             },
             {
                 of_type: command,
-                name: 'set',
-                help_str: 'Set the DPI value to N',
+                name: "set",
+                help_str: "Set the DPI value to N",
                 pos_args: [
                     {
                         of_type: argument,
-                        name: 'dpi_n',
-                        metavar: 'N',
-                        help_str: 'The resolution to set as current',
+                        name: "dpi_n",
+                        metavar: "N",
+                        help_str: "The resolution to set as current",
                         arg_type: dpi,
                     },
                 ],
@@ -972,35 +1009,35 @@ active resolution of the active profile if none are given.""",
     },
     {
         of_type: switch,
-        name: 'rate',
+        name: "rate",
         help_str: """Access report rate information
 
 Rate commands work on the given profile, or on the active profile if none is given.""",
-        tag: 'rate',
-        group: 'Rate',
+        tag: "rate",
+        group: "Rate",
         switch: [
             {
                 of_type: command,
-                name: 'get',
-                help_str: 'Show current report rate',
+                name: "get",
+                help_str: "Show current report rate",
                 func: func_report_rate_get,
             },
             {
                 of_type: command,
-                name: 'get-all',
-                help_str: 'Show all available report rates',
+                name: "get-all",
+                help_str: "Show all available report rates",
                 func: func_report_rate_get_all,
             },
             {
                 of_type: command,
-                name: 'set',
-                help_str: 'Set the report rate to N',
+                name: "set",
+                help_str: "Set the report rate to N",
                 pos_args: [
                     {
                         of_type: argument,
-                        name: 'rate_n',
-                        metavar: 'N',
-                        help_str: 'The report rate to set as current',
+                        name: "rate_n",
+                        metavar: "N",
+                        help_str: "The report rate to set as current",
                         arg_type: int,
                     },
                 ],
@@ -1010,59 +1047,59 @@ Rate commands work on the given profile, or on the active profile if none is giv
     },
     {
         of_type: switch,
-        name: 'button',
+        name: "button",
         help_str: """Access Button information
 
 Button commands work on the given profile, or on the
 active profile if none is given.""",
-        tag: 'button',
-        group: 'Button',
+        tag: "button",
+        group: "Button",
         switch: [
             {
                 of_type: command,
-                name: 'count',
-                help_str: 'Print the number of buttons',
+                name: "count",
+                help_str: "Print the number of buttons",
                 func: func_button_count,
             },
         ],
         N_access: {
             of_type: N_access,
-            name: 'button_n',
-            metavar: 'N',
-            help_str: 'The button to act on',
+            name: "button_n",
+            metavar: "N",
+            help_str: "The button to act on",
             switch: [
                 {
                     of_type: command,
-                    name: 'get',
-                    help_str: 'Show selected button',
+                    name: "get",
+                    help_str: "Show selected button",
                     func: func_button_get,
                 },
                 {
                     of_type: switch,
-                    name: 'action',
-                    help_str: 'Act on the selected button',
+                    name: "action",
+                    help_str: "Act on the selected button",
                     switch: [
                         {
                             of_type: command,
-                            name: 'get',
-                            help_str: 'Print the button action',
+                            name: "get",
+                            help_str: "Print the button action",
                             func: func_button_get,
                         },
                         {
                             of_type: switch,
-                            name: 'set',
-                            help_str: 'Set an action on the selected button',
+                            name: "set",
+                            help_str: "Set an action on the selected button",
                             switch: [
                                 {
                                     of_type: command,
-                                    name: 'button',
-                                    help_str: 'Set the button action to button B',
+                                    name: "button",
+                                    help_str: "Set the button action to button B",
                                     pos_args: [
                                         {
                                             of_type: argument,
-                                            name: 'target_button',
-                                            metavar: 'B',
-                                            help_str: 'The new button value to assign',
+                                            name: "target_button",
+                                            metavar: "B",
+                                            help_str: "The new button value to assign",
                                             arg_type: int,
                                         },
                                     ],
@@ -1070,36 +1107,36 @@ active profile if none is given.""",
                                 },
                                 {
                                     of_type: command,
-                                    name: 'special',
-                                    help_str: 'Set the button action to special action S',
+                                    name: "special",
+                                    help_str: "Set the button action to special action S",
                                     pos_args: [
                                         {
                                             of_type: argument,
-                                            name: 'target_special',
-                                            metavar: 'S',
-                                            help_str: 'The new special value to assign',
-                                            choices: button_special_names
+                                            name: "target_special",
+                                            metavar: "S",
+                                            help_str: "The new special value to assign",
+                                            choices: button_special_names,
                                         },
                                     ],
                                     func: func_button_action_set_special,
                                 },
                                 {
                                     of_type: command,
-                                    name: 'key',
-                                    help_str: 'Set the button action to key',
+                                    name: "key",
+                                    help_str: "Set the button action to key",
                                     pos_args: [
                                         {
                                             of_type: argument,
-                                            name: 'target_key',
-                                            metavar: 'S',
-                                            help_str: 'The new key value to assign',
+                                            name: "target_key",
+                                            metavar: "S",
+                                            help_str: "The new key value to assign",
                                         },
                                     ],
                                     func: func_button_action_set_key,
                                 },
                                 {
                                     of_type: command,
-                                    name: 'macro',
+                                    name: "macro",
                                     help_str: """Set the button action to the given macro
 
   Macro syntax:
@@ -1112,9 +1149,9 @@ active profile if none is given.""",
                                     pos_args: [
                                         {
                                             of_type: argument,
-                                            name: 'target_macro',
-                                            metavar: '...',
-                                            help_str: 'The new macro to assign',
+                                            name: "target_macro",
+                                            metavar: "...",
+                                            help_str: "The new macro to assign",
                                             nargs: argparse.REMAINDER,
                                         },
                                     ],
@@ -1122,110 +1159,110 @@ active profile if none is given.""",
                                 },
                                 {
                                     of_type: command,
-                                    name: 'disabled',
-                                    help_str: 'Disable this button',
+                                    name: "disabled",
+                                    help_str: "Disable this button",
                                     pos_args: [],
                                     func: func_button_action_set_none,
                                 },
-                            ]
+                            ],
                         },
-                    ]
+                    ],
                 },
             ],
         },
     },
     {
         of_type: switch,
-        name: 'led',
+        name: "led",
         help_str: """Access LED information
 
 LED commands work on the given profile, or on the
 active profile if none is given.""",
-        tag: 'led',
-        group: 'LED',
+        tag: "led",
+        group: "LED",
         switch: [
             {
                 of_type: command,
-                name: 'get',
-                help_str: 'Show current LED value',
+                name: "get",
+                help_str: "Show current LED value",
                 func: func_led_get_all,
             },
         ],
         N_access: {
             of_type: N_access,
-            name: 'led_n',
-            metavar: 'N',
-            help_str: 'The LED to act on',
+            name: "led_n",
+            metavar: "N",
+            help_str: "The LED to act on",
             switch: [
                 {
                     of_type: command,
-                    name: 'get',
-                    help_str: 'Show current LED value',
+                    name: "get",
+                    help_str: "Show current LED value",
                     func: func_led_get,
                 },
                 {
                     of_type: command,
-                    name: 'capabilities',
-                    help_str: 'Show LED capabilities',
+                    name: "capabilities",
+                    help_str: "Show LED capabilities",
                     func: func_led_caps,
                 },
                 {
                     of_type: set,
-                    name: 'set',
-                    help_str: 'Act on the selected LED',
+                    name: "set",
+                    help_str: "Act on the selected LED",
                     switch: [
                         {
                             of_type: command,
-                            name: 'mode',
-                            help_str: 'The mode to set as current',
+                            name: "mode",
+                            help_str: "The mode to set as current",
                             pos_args: [
                                 {
                                     of_type: argument,
-                                    name: 'mode',
-                                    metavar: 'mode',
-                                    help_str: 'The mode to set as current',
+                                    name: "mode",
+                                    metavar: "mode",
+                                    help_str: "The mode to set as current",
                                     choices: led_mode_names,
                                 },
                             ],
                         },
                         {
                             of_type: command,
-                            name: 'color',
-                            help_str: 'The color to set as current',
+                            name: "color",
+                            help_str: "The color to set as current",
                             pos_args: [
                                 {
                                     of_type: argument,
-                                    name: 'color',
-                                    metavar: 'RRGGBB',
-                                    help_str: 'The color in hex format to set as current',
+                                    name: "color",
+                                    metavar: "RRGGBB",
+                                    help_str: "The color in hex format to set as current",
                                     arg_type: color,
                                 },
                             ],
                         },
                         {
                             of_type: command,
-                            name: 'duration',
-                            help_str: 'The duration to set as current',
+                            name: "duration",
+                            help_str: "The duration to set as current",
                             pos_args: [
                                 {
                                     of_type: argument,
-                                    name: 'duration',
-                                    metavar: 'R',
-                                    help_str: 'The duration in ms to set as current',
+                                    name: "duration",
+                                    metavar: "R",
+                                    help_str: "The duration in ms to set as current",
                                     arg_type: int,
                                 },
                             ],
                         },
                         {
                             of_type: command,
-                            name: 'brightness',
-                            help_str: 'The brightness to set as current',
+                            name: "brightness",
+                            help_str: "The brightness to set as current",
                             pos_args: [
                                 {
                                     of_type: argument,
-                                    name: 'brightness',
-                                    metavar: 'B',
-                                    help_str: 'The brightness to set as current',
+                                    name: "brightness",
+                                    metavar: "B",
+                                    help_str: "The brightness to set as current",
                                     arg_type: u8,
                                 },
                             ],
@@ -1257,7 +1294,9 @@ class RatbagParser(object):
         self.help = help
 
     def repr_args(self):
-        return "name='{}', tag='{}', func='{}', help='{}'".format(self.name, self.tag, self.func, self.help)
+        return "name='{}', tag='{}', func='{}', help='{}'".format(
+            self.name, self.tag, self.func, self.help
+        )
 
     def __repr__(self):
         return "{}({})".format(type(self), self.repr_args())
@@ -1289,7 +1328,17 @@ class RatbagParser(object):
 
 
 class RatbagParserSwitch(RatbagParser):
-    def __init__(self, type, name, group=None, switch=[], N_access=None, tag=None, func=None, help=None):
+    def __init__(
+        self,
+        type,
+        name,
+        group=None,
+        switch=[],
+        N_access=None,
+        tag=None,
+        func=None,
+        help=None,
+    ):
         super().__init__(type, name, group, tag, func, help)
         self.switch = [classes[obj[of_type]](**obj) for obj in switch]
         if N_access is not None:
@@ -1298,7 +1347,9 @@ class RatbagParserSwitch(RatbagParser):
             self.N_access = None
 
     def repr_args(self):
-        return """switch='{}', N_access='{}', {}""".format([repr(o) for o in self.switch], self.N_access, RatbagParser.repr_args(self))
+        return """switch='{}', N_access='{}', {}""".format(
+            [repr(o) for o in self.switch], self.N_access, RatbagParser.repr_args(self)
+        )
 
     def _add_to_subparsers(self, parent):
         parser = parent.add_parser(self.name, help=self.help)
@@ -1317,9 +1368,11 @@ class RatbagParserSwitch(RatbagParser):
                 # N_access subtree of the command
                 return self.N_access._sub_parse(self, input_string, ns)
 
-        parser = argparse.ArgumentParser(prog="{} <device> {}".format(sys.argv[0], self.name),
-                                         description=self.help,
-                                         add_help=False)
+        parser = argparse.ArgumentParser(
+            prog="{} <device> {}".format(sys.argv[0], self.name),
+            description=self.help,
+            add_help=False,
+        )
 
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
@@ -1330,9 +1383,9 @@ class RatbagParserSwitch(RatbagParser):
 
     def _print_help(self, prefix):
         if self.help and self.group is not None:
-            string = self.help.split('\n')
+            string = self.help.split("\n")
             string = "\n  ".join(string)
-            print(" ", string, '\n')
+            print(" ", string, "\n")
         for e in self.switch:
             e.print_help(None, "{}{} ".format(prefix, self.name))
         if self.N_access is not None:
@@ -1343,13 +1396,24 @@ class RatbagParserSwitch(RatbagParser):
 
 
 class RatbagParserNAccess(RatbagParserSwitch):
-    def __init__(self, type, name, group=None, switch=[], metavar=None, tag=None, func=None, help=None):
+    def __init__(
+        self,
+        type,
+        name,
+        group=None,
+        switch=[],
+        metavar=None,
+        tag=None,
+        func=None,
+        help=None,
+    ):
         super().__init__(type, name, group, switch, None, tag, func, help)
         self.metavar = metavar
 
     def _sub_parse(self, parent, input_string, ns):
-        parser = argparse.ArgumentParser(prog="{} <device> {}".format(sys.argv[0], parent.name),
-                                         add_help=False)
+        parser = argparse.ArgumentParser(
+            prog="{} <device> {}".format(sys.argv[0], parent.name), add_help=False
+        )
         parser.add_argument(self.name, help=self.help, type=int)
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
@@ -1358,7 +1422,9 @@ class RatbagParserNAccess(RatbagParserSwitch):
         return parser
 
     def repr_args(self):
-        return """switch='{}', metavar = '{}', {}""".format([repr(o) for o in self.switch], self.metavar, RatbagParser.repr_args(self))
+        return """switch='{}', metavar = '{}', {}""".format(
+            [repr(o) for o in self.switch], self.metavar, RatbagParser.repr_args(self)
+        )
 
     def __repr__(self):
         return "N_Access({})".format(self.repr_args())
@@ -1369,7 +1435,17 @@ class RatbagParserNAccess(RatbagParserSwitch):
 
 
 class RatbagParserSet(RatbagParserSwitch):
-    def __init__(self, type, name, group=None, switch=[], N_access=None, tag=None, func=None, help=None):
+    def __init__(
+        self,
+        type,
+        name,
+        group=None,
+        switch=[],
+        N_access=None,
+        tag=None,
+        func=None,
+        help=None,
+    ):
         super().__init__(type, name, group, switch, N_access, tag, func, help)
 
     def _add_to_subparsers(self, parent):
@@ -1377,8 +1453,9 @@ class RatbagParserSet(RatbagParserSwitch):
         parser.set_defaults(subparse=self.sub_parse)
 
     def _sub_parse(self, input_string, ns):
-        parser = argparse.ArgumentParser(prog="{} <device> {}".format(sys.argv[0], self.name),
-                                         add_help=False)
+        parser = argparse.ArgumentParser(
+            prog="{} <device> {}".format(sys.argv[0], self.name), add_help=False
+        )
         # create a new subparser to handle all commands
         subs = parser.add_subparsers(title="COMMANDS", help=None)
         for e in self.switch:
@@ -1394,14 +1471,15 @@ class RatbagParserSet(RatbagParserSwitch):
 
     def _print_help(self, prefix):
         command = prefix + "{COMMAND} ..."
-        print("  {:<36}{}".format(command,
-                                  self.help if self.help else ""))
+        print("  {:<36}{}".format(command, self.help if self.help else ""))
         for e in self.switch:
             e.print_help(None, " " * len(prefix))
 
 
 class RatbagParserCommand(RatbagParser):
-    def __init__(self, type, name, group=None, pos_args=[], tag=None, func=None, help=None):
+    def __init__(
+        self, type, name, group=None, pos_args=[], tag=None, func=None, help=None
+    ):
         super().__init__(type, name, group, tag, func, help)
         self.pos_args = [classes[obj[of_type]](**obj) for obj in pos_args]
 
@@ -1421,12 +1499,23 @@ class RatbagParserCommand(RatbagParser):
                 command += " {}".format(a.metavar)
             else:
                 command += " [{}]".format("|".join(a.choices))
-        print("  {:<36}{}".format(command,
-                                  self.help if self.help else ""))
+        print("  {:<36}{}".format(command, self.help if self.help else ""))
 
 
 class RatbagParserArgument(RatbagParser):
-    def __init__(self, type, name, group=None, arg_type=None, metavar=None, nargs=None, choices=None, tag=None, func=None, help=None):
+    def __init__(
+        self,
+        type,
+        name,
+        group=None,
+        arg_type=None,
+        metavar=None,
+        nargs=None,
+        choices=None,
+        tag=None,
+        func=None,
+        help=None,
+    ):
         super().__init__(type, name, group, tag, func, help)
         self.arg_type = arg_type
         self.metavar = metavar
@@ -1434,7 +1523,14 @@ class RatbagParserArgument(RatbagParser):
         self.choices = choices
 
     def _add_to_subparsers(self, parent):
-        parent.add_argument(self.name, metavar=self.metavar, help=self.help, type=self.arg_type, nargs=self.nargs, choices=self.choices)
+        parent.add_argument(
+            self.name,
+            metavar=self.metavar,
+            help=self.help,
+            type=self.arg_type,
+            nargs=self.nargs,
+            choices=self.choices,
+        )
 
 
 class RatbagParserLink(RatbagParser):
@@ -1455,7 +1551,11 @@ class RatbagParserLink(RatbagParser):
 
     def _print_help(self, prefix):
         dest = self.get_dest()
-        print("  {:<36}Use {}for '{} Commands'".format(prefix + self.dest + " ...", prefix, dest.group))
+        print(
+            "  {:<36}Use {}for '{} Commands'".format(
+                prefix + self.dest + " ...", prefix, dest.group
+            )
+        )
 
 
 classes = {
@@ -1470,18 +1570,23 @@ classes = {
 
 class RatbagParserRoot(object):
     def __init__(self, commands):
-        self.children = [classes[def_parser[of_type]](**def_parser) for def_parser in commands]
+        self.children = [
+            classes[def_parser[of_type]](**def_parser) for def_parser in commands
+        ]
         self.want_keepalive = False
 
     def parse(self, input_string):
-        self.parser = argparse.ArgumentParser(description="Inspect and modify a configurable device",
-                                              add_help=False)
-        self.parser.add_argument("-V", "--version", action="version", version="@version@")
-        self.parser.add_argument('--verbose', '-v', action='count', default=0)
-        self.parser.add_argument('--help', '-h', action='store_true', default=False)
-        self.parser.add_argument('--nocommit', action='store_true', default=False)
+        self.parser = argparse.ArgumentParser(
+            description="Inspect and modify a configurable device", add_help=False
+        )
+        self.parser.add_argument(
+            "-V", "--version", action="version", version="@version@"
+        )
+        self.parser.add_argument("--verbose", "-v", action="count", default=0)
+        self.parser.add_argument("--help", "-h", action="store_true", default=False)
+        self.parser.add_argument("--nocommit", action="store_true", default=False)
         if self.want_keepalive:
-            self.parser.add_argument('--keepalive', action='store_true', default=False)
+            self.parser.add_argument("--keepalive", action="store_true", default=False)
 
         # retrieve the global options now and remove them from the processing
         ns, rest = self.parser.parse_known_args(input_string)
@@ -1490,10 +1595,10 @@ class RatbagParserRoot(object):
             return ns
 
         # retrieve the device and remove it from the command processing
-        self.parser.add_argument('device_or_list', action="store")
+        self.parser.add_argument("device_or_list", action="store")
         ns, rest = self.parser.parse_known_args(rest, namespace=ns)
 
-        if ns.device_or_list == 'list':
+        if ns.device_or_list == "list":
             if rest:
                 self.parser.error("extra arguments: '{}'".format(" ".join(rest)))
             ns.func = list_devices
@@ -1502,9 +1607,11 @@ class RatbagParserRoot(object):
         ns.device = ns.device_or_list
 
         # we need a new parser or 'device_or_list' will eat all of our commands
-        command_parser = argparse.ArgumentParser(description="command parser",
-                                                 prog="{} <device>".format(sys.argv[0]),
-                                                 add_help=False)
+        command_parser = argparse.ArgumentParser(
+            description="command parser",
+            prog="{} <device>".format(sys.argv[0]),
+            add_help=False,
+        )
 
         subs = command_parser.add_subparsers(title="COMMANDS")
 
@@ -1534,20 +1641,27 @@ class RatbagParserRoot(object):
         print("usage: {} [OPTIONS] list".format(self.parser.prog))
         print("       {} [OPTIONS] <device> {{COMMAND}} ...\n".format(self.parser.prog))
         print(self.parser.description)
-        print("""
+        print(
+            """
 Common options:
     --version -V                show program's version number and exit
     --verbose, -v               increase verbosity level
     --nocommit                  Do not immediately write the settings to the mouse
-    --help, -h                  show this help and exit""")
+    --help, -h                  show this help and exit"""
+        )
         if self.want_keepalive:
-            print("    --keepalive                 do not terminate ratbagd after the processing")
-        print("""
+            print(
+                "    --keepalive                 do not terminate ratbagd after the processing"
+            )
+        print(
+            """
 General Commands:
-  list                                List supported devices (does not take a device argument)""")
+  list                                List supported devices (does not take a device argument)"""
+        )
         for c in self.children:
             c.print_help(None)
-        print("""
+        print(
+            """
 Examples:
   {0} profile active get
   {0} profile 0 resolution active set 4
@@ -1563,7 +1677,10 @@ Exit codes:
   1     Unsupported feature, index out of available range or invalid device
   2     Commandline arguments are invalid
   3     A command failed on the device
-""".format(self.parser.prog))
+""".format(
+                self.parser.prog
+            )
+        )
 
 
 def get_parser():
@@ -1572,25 +1689,68 @@ def get_parser():
 
 def on_device_added(ratbagd, device):
     device_names = [
-            'mara', 'capybara', 'porcupine', 'paca',
-            'vole', 'woodrat', 'gerbil', 'shrew',
-            'hutia', 'beaver', 'squirrel', 'chinchilla',
-            'rabbit', 'viscacha', 'hare', 'degu',
-            'gundi', 'acouchy', 'nutria', 'paca',
-            'hamster', 'zokor', 'chipmunk', 'gopher',
-            'marmot', 'groundhog', 'suslik', 'agouti',
-            'blesmol',
+        "mara",
+        "capybara",
+        "porcupine",
+        "paca",
+        "vole",
+        "woodrat",
+        "gerbil",
+        "shrew",
+        "hutia",
+        "beaver",
+        "squirrel",
+        "chinchilla",
+        "rabbit",
+        "viscacha",
+        "hare",
+        "degu",
+        "gundi",
+        "acouchy",
+        "nutria",
+        "paca",
+        "hamster",
+        "zokor",
+        "chipmunk",
+        "gopher",
+        "marmot",
+        "groundhog",
+        "suslik",
+        "agouti",
+        "blesmol",
     ]
 
     device_attr = [
-            'sobbing', 'whooping', 'barking', 'yapping',
-            'howling', 'squawking', 'cheering', 'warbling',
-            'thundering', 'booming', 'blustering', 'humming',
-            'crying', 'bawling', 'roaring', 'raging',
-            'chanting', 'crooning', 'murmuring', 'bellowing',
-            'wailing', 'weeping', 'screaming', 'yelling',
-            'yodeling', 'singing', 'honking', 'hooting',
-            'whispering', 'hollering',
+        "sobbing",
+        "whooping",
+        "barking",
+        "yapping",
+        "howling",
+        "squawking",
+        "cheering",
+        "warbling",
+        "thundering",
+        "booming",
+        "blustering",
+        "humming",
+        "crying",
+        "bawling",
+        "roaring",
+        "raging",
+        "chanting",
+        "crooning",
+        "murmuring",
+        "bellowing",
+        "wailing",
+        "weeping",
+        "screaming",
+        "yelling",
+        "yodeling",
+        "singing",
+        "honking",
+        "hooting",
+        "whispering",
+        "hollering",
     ]
 
     # Let's convert the sha into something not boring. This takes the first
@@ -1601,12 +1761,13 @@ def on_device_added(ratbagd, device):
     attr = device_attr[int(device.id[2:4], 16) % len(device_attr)]
     device.id = "-".join([attr, name])
 
+
 def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
         r = Ratbagd(RATBAGD_API_VERSION)
         r.verbose = verbose
         try:
-            r.connect('device-added', on_device_added)
+            r.connect("device-added", on_device_added)
             for d in r.devices:
                 on_device_added(r, d)
         except AttributeError:

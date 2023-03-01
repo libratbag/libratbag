@@ -78,11 +78,14 @@ class RatbagDeviceType(IntEnum):
 
 class RatbagdIncompatible(Exception):
     """ratbagd is incompatible with this client"""
+
     def __init__(self, ratbagd_version, required_version):
         super().__init__()
         self.ratbagd_version = ratbagd_version
         self.required_version = required_version
-        self.message = "ratbagd API version is {} but we require {}".format(ratbagd_version, required_version)
+        self.message = "ratbagd API version is {} but we require {}".format(
+            ratbagd_version, required_version
+        )
 
     def __str__(self):
         return self.message
@@ -90,41 +93,49 @@ class RatbagdIncompatible(Exception):
 
 class RatbagdUnavailable(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
+
     pass
 
 
 class RatbagdDBusTimeout(Exception):
     """Signals that a timeout occurred during a DBus method call."""
+
     pass
 
 
 class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
+
     pass
 
 
 class RatbagErrorDevice(RatbagError):
     """An exception corresponding to RatbagErrorCode.DEVICE."""
+
     pass
 
 
 class RatbagErrorCapability(RatbagError):
     """An exception corresponding to RatbagErrorCode.CAPABILITY."""
+
     pass
 
 
 class RatbagErrorValue(RatbagError):
     """An exception corresponding to RatbagErrorCode.VALUE."""
+
     pass
 
 
 class RatbagErrorSystem(RatbagError):
     """An exception corresponding to RatbagErrorCode.SYSTEM."""
+
     pass
 
 
 class RatbagErrorImplementation(RatbagError):
     """An exception corresponding to RatbagErrorCode.IMPLEMENTATION."""
+
     pass
 
 
@@ -134,7 +145,7 @@ EXCEPTION_TABLE = {
     RatbagErrorCode.CAPABILITY: RatbagErrorCapability,
     RatbagErrorCode.VALUE: RatbagErrorValue,
     RatbagErrorCode.SYSTEM: RatbagErrorSystem,
-    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation
+    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation,
 }
 
 
@@ -151,23 +162,25 @@ class _RatbagdDBus(GObject.GObject):
                 raise RatbagdUnavailable(e.message)
 
         ratbag1 = "org.freedesktop.ratbag1"
-        if os.environ.get('RATBAG_TEST'):
+        if os.environ.get("RATBAG_TEST"):
             ratbag1 = "org.freedesktop.ratbag_devel1"
 
         if object_path is None:
-            object_path = "/" + ratbag1.replace('.', '/')
+            object_path = "/" + ratbag1.replace(".", "/")
 
         self._object_path = object_path
         self._interface = "{}.{}".format(ratbag1, interface)
 
         try:
-            self._proxy = Gio.DBusProxy.new_sync(_RatbagdDBus._dbus,
-                                                 Gio.DBusProxyFlags.NONE,
-                                                 None,
-                                                 ratbag1,
-                                                 object_path,
-                                                 self._interface,
-                                                 None)
+            self._proxy = Gio.DBusProxy.new_sync(
+                _RatbagdDBus._dbus,
+                Gio.DBusProxyFlags.NONE,
+                None,
+                ratbag1,
+                object_path,
+                self._interface,
+                None,
+            )
         except GLib.Error as e:
             raise RatbagdUnavailable(e.message)
 
@@ -210,9 +223,13 @@ class _RatbagdDBus(GObject.GObject):
         val = GLib.Variant("{}".format(type), value)
         if readwrite:
             pval = GLib.Variant("(ssv)", (self._interface, property, val))
-            self._proxy.call_sync("org.freedesktop.DBus.Properties.Set",
-                                  pval, Gio.DBusCallFlags.NO_AUTO_START,
-                                  2000, None)
+            self._proxy.call_sync(
+                "org.freedesktop.DBus.Properties.Set",
+                pval,
+                Gio.DBusCallFlags.NO_AUTO_START,
+                2000,
+                None,
+            )
 
         # This is our local copy, so we don't have to wait for the async
         # update
@@ -228,9 +245,9 @@ class _RatbagdDBus(GObject.GObject):
         # the UI.
         val = GLib.Variant("({})".format(type), value)
         try:
-            res = self._proxy.call_sync(method, val,
-                                        Gio.DBusCallFlags.NO_AUTO_START,
-                                        2000, None)
+            res = self._proxy.call_sync(
+                method, val, Gio.DBusCallFlags.NO_AUTO_START, 2000, None
+            )
             if res in EXCEPTION_TABLE:
                 raise EXCEPTION_TABLE[res]
             return res.unpack()[0]  # Result is always a tuple
@@ -256,19 +273,22 @@ class Ratbagd(_RatbagdDBus):
     """
 
     __gsignals__ = {
-        "device-added":
-            (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
-        "device-removed":
-            (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
-        "daemon-disappeared":
-            (GObject.SignalFlags.RUN_FIRST, None, ()),
+        "device-added": (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        "device-removed": (
+            GObject.SignalFlags.RUN_FIRST,
+            None,
+            (GObject.TYPE_PYOBJECT,),
+        ),
+        "daemon-disappeared": (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __init__(self, api_version):
         super().__init__("Manager", None)
         result = self._get_dbus_property("Devices")
         if result is None and not self._proxy.get_cached_property_names():
-            raise RatbagdUnavailable("Make sure it is running and your user is in the required groups.")
+            raise RatbagdUnavailable(
+                "Make sure it is running and your user is in the required groups."
+            )
         if self.api_version != api_version:
             raise RatbagdIncompatible(self.api_version or -1, api_version)
         self._devices = [RatbagdDevice(objpath) for objpath in result or []]
@@ -318,10 +338,12 @@ class RatbagdDevice(_RatbagdDBus):
     """Represents a ratbagd device."""
 
     __gsignals__ = {
-        "active-profile-changed":
-            (GObject.SignalFlags.RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
-        "resync":
-            (GObject.SignalFlags.RUN_FIRST, None, ()),
+        "active-profile-changed": (
+            GObject.SignalFlags.RUN_FIRST,
+            None,
+            (GObject.TYPE_PYOBJECT,),
+        ),
+        "resync": (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __init__(self, object_path):
@@ -335,7 +357,7 @@ class RatbagdDevice(_RatbagdDBus):
             profile.connect("notify::is-active", self._on_active_profile_changed)
 
         # Use a SHA1 of our object path as our device's ID
-        self._id = hashlib.sha1(object_path.encode('utf-8')).hexdigest()
+        self._id = hashlib.sha1(object_path.encode("utf-8")).hexdigest()
 
     def _on_signal_received(self, proxy, sender_name, signal_name, parameters):
         if signal_name == "Resync":
@@ -387,7 +409,10 @@ class RatbagdDevice(_RatbagdDBus):
         for profile in self._profiles:
             if profile.is_active:
                 return profile
-        print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
+        print(
+            "No active profile. Please report this bug to the libratbag developers",
+            file=sys.stderr,
+        )
         return None
 
     def commit(self):
@@ -534,7 +559,10 @@ class RatbagdProfile(_RatbagdDBus):
         for resolution in self._resolutions:
             if resolution.is_active:
                 return resolution
-        print("No active resolution. Please report this bug to the libratbag developers", file=sys.stderr)
+        print(
+            "No active resolution. Please report this bug to the libratbag developers",
+            file=sys.stderr,
+        )
         return None
 
     @GObject.Property
@@ -627,11 +655,11 @@ class RatbagdResolution(_RatbagdDBus):
         """
         res = self.resolution
         if len(res) != len(resolution) or len(res) > 2:
-            raise ValueError('invalid resolution precision')
+            raise ValueError("invalid resolution precision")
         if len(res) == 1:
-            variant = GLib.Variant('u', resolution[0])
+            variant = GLib.Variant("u", resolution[0])
         else:
-            variant = GLib.Variant('(uu)', resolution)
+            variant = GLib.Variant("(uu)", resolution)
         self._set_dbus_property("Resolution", "v", variant)
 
     @GObject.Property
@@ -685,7 +713,7 @@ class RatbagdButton(_RatbagdDBus):
 
     class ActionSpecial(IntEnum):
         INVALID = -1
-        UNKNOWN = (1 << 30)
+        UNKNOWN = 1 << 30
         DOUBLECLICK = (1 << 30) + 1
         WHEEL_LEFT = (1 << 30) + 2
         WHEEL_RIGHT = (1 << 30) + 3
@@ -776,8 +804,9 @@ class RatbagdButton(_RatbagdDBus):
         @param button The button to map to, as int
         """
         button = GLib.Variant("u", button)
-        self._set_dbus_property("Mapping", "(uv)",
-                                (RatbagdButton.ActionType.BUTTON, button))
+        self._set_dbus_property(
+            "Mapping", "(uv)", (RatbagdButton.ActionType.BUTTON, button)
+        )
 
     @GObject.Property
     def macro(self):
@@ -797,8 +826,9 @@ class RatbagdButton(_RatbagdDBus):
                      the button, as RatbagdMacro.
         """
         macro = GLib.Variant("a(uu)", macro.keys)
-        self._set_dbus_property("Mapping", "(uv)",
-                                (RatbagdButton.ActionType.MACRO, macro))
+        self._set_dbus_property(
+            "Mapping", "(uv)", (RatbagdButton.ActionType.MACRO, macro)
+        )
 
     @GObject.Property
     def special(self):
@@ -816,8 +846,9 @@ class RatbagdButton(_RatbagdDBus):
         @param special The special entry, as one of RatbagdButton.ActionSpecial
         """
         special = GLib.Variant("u", special)
-        self._set_dbus_property("Mapping", "(uv)",
-                                (RatbagdButton.ActionType.SPECIAL, special))
+        self._set_dbus_property(
+            "Mapping", "(uv)", (RatbagdButton.ActionType.SPECIAL, special)
+        )
 
     @GObject.Property
     def key(self):
@@ -829,8 +860,7 @@ class RatbagdButton(_RatbagdDBus):
     @key.setter
     def key(self, key):
         key = GLib.Variant("u", key)
-        self._set_dbus_property("Mapping", "(uv)",
-                                (RatbagdButton.ActionType.KEY, key))
+        self._set_dbus_property("Mapping", "(uv)", (RatbagdButton.ActionType.KEY, key))
 
     @GObject.Property
     def action_type(self):
@@ -854,9 +884,10 @@ class RatbagdButton(_RatbagdDBus):
 
     def disable(self):
         """Disables this button."""
-        zero = GLib.Variant('u', 0)
-        self._set_dbus_property("Mapping", "(uv)",
-                                (RatbagdButton.ActionType.NONE, zero))
+        zero = GLib.Variant("u", 0)
+        self._set_dbus_property(
+            "Mapping", "(uv)", (RatbagdButton.ActionType.NONE, zero)
+        )
 
 
 class RatbagdMacro(GObject.Object):
@@ -871,18 +902,20 @@ class RatbagdMacro(GObject.Object):
     _MACRO_KEY = 1000
 
     _MACRO_DESCRIPTION = {
-        RatbagdButton.Macro.KEY_PRESS: lambda key:
-            "↓{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
-        RatbagdButton.Macro.KEY_RELEASE: lambda key:
-            "↑{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
-        RatbagdButton.Macro.WAIT: lambda val:
-            "{}ms".format(val),
-        _MACRO_KEY: lambda key:
-            "↕{}".format(ecodes.KEY[key][RatbagdMacro._PREFIX_LEN:]),
+        RatbagdButton.Macro.KEY_PRESS: lambda key: "↓{}".format(
+            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
+        ),
+        RatbagdButton.Macro.KEY_RELEASE: lambda key: "↑{}".format(
+            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
+        ),
+        RatbagdButton.Macro.WAIT: lambda val: "{}ms".format(val),
+        _MACRO_KEY: lambda key: "↕{}".format(
+            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
+        ),
     }
 
     __gsignals__ = {
-        'macro-set': (GObject.SignalFlags.RUN_FIRST, None, ()),
+        "macro-set": (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __init__(self, **kwargs):
@@ -929,7 +962,7 @@ class RatbagdMacro(GObject.Object):
 
         # Do not emit notify::keys for every key that we add.
         with ratbagd_macro.freeze_notify():
-            for (type, value) in macro:
+            for type, value in macro:
                 ratbagd_macro.append(type, value)
         return ratbagd_macro
 

@@ -35,12 +35,12 @@ def parse_data_file(path):
     data.optionxform = lambda option: option
     data.read(path)
 
-    matches = data['Device']['DeviceMatch']
-    return matches.split(';')
+    matches = data["Device"]["DeviceMatch"]
+    return matches.split(";")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Device duplicate match checker')
+    parser = argparse.ArgumentParser(description="Device duplicate match checker")
     parser.add_argument("directory")
     args = parser.parse_args()
     device_matches = {}
@@ -50,7 +50,11 @@ if __name__ == "__main__":
         fname = os.path.basename(path)
         for m in matches:
             if m in device_matches:
-                print('Duplicate DeviceMatch={} in {} and {}'.format(m, fname, device_matches[m]))
+                print(
+                    "Duplicate DeviceMatch={} in {} and {}".format(
+                        m, fname, device_matches[m]
+                    )
+                )
                 duplicates = True
             device_matches[m] = fname
 
