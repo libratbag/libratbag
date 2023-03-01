@@ -26,7 +26,10 @@ import sys
 import argparse
 import re
 
+# This must be on a single line, as we replace it using merge_ratbagd.py while building.
+# fmt: off
 from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability, RatbagDeviceType  # NOQA
+# fmt: on
 
 
 RATBAGD_API_VERSION = int("@RATBAGD_API_VERSION@")

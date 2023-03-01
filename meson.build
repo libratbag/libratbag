@@ -556,6 +556,8 @@ configure_file(input : 'tools/ratbagctl.test.py.in',
 
 env_test = environment()
 env_test.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
+# See: https://github.com/mesonbuild/meson/issues/3306.
+env_test.set('MESON_SOURCE_ROOT', meson.source_root())
 ratbagctl_test = find_program(join_paths(meson.build_root(), 'ratbagctl.test'))
 test('ratbagctl-test', ratbagctl_test, args: ['-v'], env : env_test)
 
@@ -629,5 +631,22 @@ custom_target('ratbag-command',
 
 #### output files ####
 configure_file(output: 'config.h', install: false, configuration: config_h)
+
+#### code formatting #####
+run_target(
+  'python-black',
+  command : 'tools/python-black.sh',
+)
+
+python_black_check = find_program(join_paths(meson.source_root(), 'test/python-black-check.sh'))
+run_target(
+  'python-black-check',
+  command : python_black_check,
+)
+test(
+  'python-black-check',
+  python_black_check,
+  env: env_test,
+)
 
 subdir('doc')
