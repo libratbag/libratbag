@@ -1178,6 +1178,25 @@ gskill_read_button(struct ratbag_button *button)
 		break;
 	case GSKILL_BUTTON_FUNCTION_MOUSE:
 		act->type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+
+		/* FIXME: There is almost no chance this is correct. */
+		switch (bcfg->params.mouse.button_mask) {
+		case GSKILL_BTN_MASK_LEFT:
+			act->action.button = 1;
+			break;
+		case GSKILL_BTN_MASK_RIGHT:
+			act->action.button = 3;
+			break;
+		case GSKILL_BTN_MASK_MIDDLE:
+			act->action.button = 2;
+			break;
+		case GSKILL_BTN_MASK_SIDE:
+			act->action.button = 15;
+			break;
+		case GSKILL_BTN_MASK_EXTRA:
+			act->action.button = 14;
+			break;
+		}
 		break;
 	case GSKILL_BUTTON_FUNCTION_KBD:
 		act->type = RATBAG_BUTTON_ACTION_TYPE_KEY;
@@ -1264,6 +1283,28 @@ gskill_update_button(struct ratbag_button *button)
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		bcfg->type = GSKILL_BUTTON_FUNCTION_MOUSE;
+
+		/* FIXME: There is almost no chance this is correct. */
+		switch (action->action.button) {
+		case 1:
+			bcfg->params.mouse.button_mask = GSKILL_BTN_MASK_LEFT;
+			break;
+		case 3:
+			bcfg->params.mouse.button_mask = GSKILL_BTN_MASK_RIGHT;
+			break;
+		case 2:
+			bcfg->params.mouse.button_mask = GSKILL_BTN_MASK_MIDDLE;
+			break;
+		case 15:
+			bcfg->params.mouse.button_mask = GSKILL_BTN_MASK_SIDE;
+			break;
+		case 14:
+			bcfg->params.mouse.button_mask = GSKILL_BTN_MASK_EXTRA;
+			break;
+		default:
+			return -EINVAL;
+		}
+
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(
