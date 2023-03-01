@@ -514,14 +514,14 @@ config_ratbagctl = configuration_data()
 config_ratbagctl.set('RATBAGD_API_VERSION', ratbagd_api_version)
 config_ratbagctl.set('version', meson.project_version())
 
-ratbagctl_in = configure_file(input : 'tools/ratbagctl.in.in',
-			      output : 'ratbagctl.in',
+ratbagctl_body = configure_file(input : 'tools/ratbagctl.body.py.in',
+			      output : 'ratbagctl.body.py',
 			      configuration: config_ratbagctl)
 
 # ratbagctl is the commandline tool to interact with ratbagd over DBus.
 custom_target('ratbagctl',
   output : 'ratbagctl',
-  input : [ratbagctl_in, 'tools/ratbagd.py'],
+  input : [ratbagctl_body, 'tools/ratbagd.py'],
   build_by_default : true,
   command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
@@ -546,11 +546,11 @@ configure_file(input : 'tools/toolbox.py',
 	       output : 'toolbox.py',
 	       configuration : config_ratbagctl_devel)
 # ratbagctl.devel starts a custom ratbagd and interacts with that over DBus
-configure_file(input : 'tools/ratbagctl.devel.in',
+configure_file(input : 'tools/ratbagctl.devel.py.in',
 	       output : 'ratbagctl.devel',
 	       configuration : config_ratbagctl_devel)
 # ratbagctl.test starts a custom ratbagd and interacts with that over DBus
-configure_file(input : 'tools/ratbagctl.test.in',
+configure_file(input : 'tools/ratbagctl.test.py.in',
 	       output : 'ratbagctl.test',
 	       configuration : config_ratbagctl_devel)
 
@@ -620,7 +620,7 @@ ratbagc_py = configure_file(input: 'tools/ratbagc.py.in',
 # development tool for protocol debugging etc.
 custom_target('ratbag-command',
   output : 'ratbag-command',
-  input : [ratbagctl_in, ratbagc_py],
+  input : [ratbagctl_body, ratbagc_py],
   build_by_default : true,
   command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
