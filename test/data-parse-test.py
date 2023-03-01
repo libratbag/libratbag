@@ -37,14 +37,14 @@ from typing import Collection, TypeVar
 T = TypeVar("T")
 
 
-def assertIn(element: T, l: Collection[T]):
-    if element not in l:
-        raise AssertionError(f"{element} must be in {l}")
+def assertIn(element: T, collection: Collection[T]):
+    if element not in collection:
+        raise AssertionError(f"{element} must be in {collection}")
 
 
-def assertNotIn(element: T, l: Collection[T]):
-    if element in l:
-        raise AssertionError(f"{element} must not be in {l}")
+def assertNotIn(element: T, collection: Collection[T]):
+    if element in collection:
+        raise AssertionError(f"{element} must not be in {collection}")
 
 
 def check_match_str(string: str):
