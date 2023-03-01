@@ -1386,10 +1386,9 @@ class RatbagParserSwitch(RatbagParser):
             if switch is not None
             else []
         )
-        if N_access is not None:
-            self.N_access = RatbagParserNAccess(**N_access)
-        else:
-            self.N_access = None
+        self.N_access = (
+            RatbagParserNAccess(**N_access) if N_access is not None else None
+        )
 
     def repr_args(self) -> str:
         return """switch='{}', N_access='{}', {}""".format(
