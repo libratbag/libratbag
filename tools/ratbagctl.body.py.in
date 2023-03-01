@@ -1330,14 +1330,18 @@ class RatbagParserSwitch(RatbagParser):
         type,
         name,
         group=None,
-        switch=[],
+        switch=None,
         N_access=None,
         tag=None,
         func=None,
         help=None,
     ):
         super().__init__(type, name, group, tag, func, help)
-        self.switch = [classes[obj[of_type]](**obj) for obj in switch]
+        self.switch = (
+            [classes[obj[of_type]](**obj) for obj in switch]
+            if switch is not None
+            else []
+        )
         if N_access is not None:
             self.N_access = RatbagParserNAccess(**N_access)
         else:
@@ -1398,7 +1402,7 @@ class RatbagParserNAccess(RatbagParserSwitch):
         type,
         name,
         group=None,
-        switch=[],
+        switch=None,
         metavar=None,
         tag=None,
         func=None,
@@ -1437,7 +1441,7 @@ class RatbagParserSet(RatbagParserSwitch):
         type,
         name,
         group=None,
-        switch=[],
+        switch=None,
         N_access=None,
         tag=None,
         func=None,
@@ -1475,10 +1479,14 @@ class RatbagParserSet(RatbagParserSwitch):
 
 class RatbagParserCommand(RatbagParser):
     def __init__(
-        self, type, name, group=None, pos_args=[], tag=None, func=None, help=None
+        self, type, name, group=None, pos_args=None, tag=None, func=None, help=None
     ):
         super().__init__(type, name, group, tag, func, help)
-        self.pos_args = [classes[obj[of_type]](**obj) for obj in pos_args]
+        self.pos_args = (
+            [classes[obj[of_type]](**obj) for obj in pos_args]
+            if pos_args is not None
+            else []
+        )
 
     def _add_to_subparsers(self, parent):
         parser = parent.add_parser(self.name, help=self.help)
