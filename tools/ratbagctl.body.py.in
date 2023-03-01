@@ -29,6 +29,9 @@ import re
 from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability, RatbagDeviceType  # NOQA
 
 
+RATBAGD_API_VERSION = int("@RATBAGD_API_VERSION@")
+
+
 def humanize(string):
     return string.lower().replace('_', '-')
 
@@ -1597,7 +1600,7 @@ def on_device_added(ratbagd, device):
 
 def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
-        r = Ratbagd(@RATBAGD_API_VERSION@)
+        r = Ratbagd(RATBAGD_API_VERSION)
         r.verbose = verbose
         try:
             r.connect('device-added', on_device_added)
