@@ -383,12 +383,12 @@ class RatbagdDevice(_RatbagdDBus):
         """The currently active profile. This is a non-DBus property computed
         over the cached list of profiles. In the unlikely case that your device
         driver is misconfigured and there is no active profile, this returns
-        the first profile."""
+        `None`."""
         for profile in self._profiles:
             if profile.is_active:
                 return profile
         print("No active profile. Please report this bug to the libratbag developers", file=sys.stderr)
-        return self._profiles[0]
+        return None
 
     def commit(self):
         """Commits all changes made to the device.
