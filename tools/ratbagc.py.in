@@ -365,12 +365,12 @@ class RatbagdProfile(metaclass=MetaRatbag):
         ]
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        for r in self._resolutions:
-            r.__exit__(None, None, None)
-        for b in self._buttons:
-            b.__exit__(None, None, None)
-        for l in self._leds:
-            l.__exit__(None, None, None)
+        for resolution in self._resolutions:
+            resolution.__exit__(None, None, None)
+        for button in self._buttons:
+            button.__exit__(None, None, None)
+        for led in self._leds:
+            led.__exit__(None, None, None)
         libratbag.ratbag_profile_unref(self._profile)
 
     @property

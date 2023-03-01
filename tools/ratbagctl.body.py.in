@@ -61,76 +61,76 @@ def convert_str_to_evcode(s: str) -> int:
         raise argparse.ArgumentTypeError(msg)
 
 
-def list_devices(r, args):
-    if not r.devices:
+def list_devices(ratbagd, args):
+    if not ratbagd.devices:
         print("No devices available.")
 
-    for d in r.devices:
-        print("{:20s} {:32s}".format(d.id + ":", d.name))
+    for device in ratbagd.devices:
+        print("{:20s} {:32s}".format(device.id + ":", device.name))
 
 
-def find_device(r, args):
-    dev = r[args.device]
-    if dev is None:
-        for d in r.devices:
-            if args.device in d.name:
-                return d
+def find_device(ratbagd, args):
+    device = ratbagd[args.device]
+    if device is None:
+        for device in ratbagd.devices:
+            if args.device in device.name:
+                return device
         print(f"Unable to find device {args.device}")
         sys.exit(1)
-    return dev
+    return device
 
 
-def find_profile(r, args):
-    d = find_device(r, args)
+def find_profile(ratbagd, args):
+    device = find_device(ratbagd, args)
     try:
-        p = d.profiles[args.profile_n]
+        profile = device.profiles[args.profile_n]
     except IndexError:
         print(f"Invalid profile index {args.profile_n}")
         sys.exit(1)
     except AttributeError:
-        p = d.active_profile
-        if r is None:
+        profile = device.active_profile
+        if ratbagd is None:
             print("The device has no active profile")
             sys.exit(1)
-    return p, d
+    return profile, device
 
 
-def find_resolution(r, args):
-    p, d = find_profile(r, args)
+def find_resolution(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
     try:
-        r = p.resolutions[args.resolution_n]
+        resolution = profile.resolutions[args.resolution_n]
     except IndexError:
         print(f"Invalid resolution index {args.resolution_n}")
         sys.exit(1)
     except AttributeError:
-        r = p.active_resolution
-        if r is None:
+        resolution = profile.active_resolution
+        if resolution is None:
             print("The device has no active resolution")
             sys.exit(1)
-    return r, p, d
+    return resolution, profile, device
 
 
-def find_button(r, args):
-    p, d = find_profile(r, args)
+def find_button(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
     try:
-        b = p.buttons[args.button_n]
+        button = profile.buttons[args.button_n]
     except IndexError:
         print(f"Invalid button index {args.button_n}")
         sys.exit(1)
-    return b, p, d
+    return button, profile, device
 
 
-def find_led(r, args):
-    p, d = find_profile(r, args)
+def find_led(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
     try:
-        l = p.leds[args.led_n]
+        led = profile.leds[args.led_n]
     except IndexError:
         print(f"Invalid LED index {args.led_n}")
         sys.exit(1)
-    return l, p, d
+    return led, profile, device
 
 
-def print_led(d, p, l, level):
+def print_led(_device, _profile, led, level):
     leds = {
         RatbagdLed.Mode.BREATHING: "breathing",
         RatbagdLed.Mode.CYCLE: "cycle",
@@ -142,192 +142,192 @@ def print_led(d, p, l, level):
         RatbagdLed.ColorDepth.RGB_888: "rgb",
         RatbagdLed.ColorDepth.RGB_111: "rgb111",
     }
-    if l.mode == RatbagdLed.Mode.OFF:
+    if led.mode == RatbagdLed.Mode.OFF:
         print(
             " " * level
             + "LED: {}, depth: {}, mode: {}".format(
-                l.index, depths[l.colordepth], leds[l.mode]
+                led.index, depths[led.colordepth], leds[led.mode]
             )
         )
-    elif l.mode == RatbagdLed.Mode.ON:
+    elif led.mode == RatbagdLed.Mode.ON:
         print(
             " " * level
             + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(
-                l.index,
-                depths[l.colordepth],
-                leds[l.mode],
-                l.color[0],
-                l.color[1],
-                l.color[2],
+                led.index,
+                depths[led.colordepth],
+                leds[led.mode],
+                led.color[0],
+                led.color[1],
+                led.color[2],
             )
         )
-    elif l.mode == RatbagdLed.Mode.CYCLE:
+    elif led.mode == RatbagdLed.Mode.CYCLE:
         print(
             " " * level
             + "LED: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(
-                l.index,
-                depths[l.colordepth],
-                leds[l.mode],
-                l.effect_duration,
-                l.brightness,
+                led.index,
+                depths[led.colordepth],
+                leds[led.mode],
+                led.effect_duration,
+                led.brightness,
             )
         )
-    elif l.mode == RatbagdLed.Mode.BREATHING:
+    elif led.mode == RatbagdLed.Mode.BREATHING:
         print(
             " " * level
             + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {}, brightness: {}".format(
-                l.index,
-                depths[l.colordepth],
-                leds[l.mode],
-                l.color[0],
-                l.color[1],
-                l.color[2],
-                l.effect_duration,
-                l.brightness,
+                led.index,
+                depths[led.colordepth],
+                leds[led.mode],
+                led.color[0],
+                led.color[1],
+                led.color[2],
+                led.effect_duration,
+                led.brightness,
             )
         )
 
 
-def print_led_caps(d, p, l, level):
+def print_led_caps(_device, _profile, led, level):
     leds = {
         RatbagdLed.Mode.BREATHING: "breathing",
         RatbagdLed.Mode.CYCLE: "cycle",
         RatbagdLed.Mode.OFF: "off",
         RatbagdLed.Mode.ON: "on",
     }
-    supported = sorted([v for k, v in leds.items() if k in l.modes])
+    supported = sorted([v for k, v in leds.items() if k in led.modes])
     print(" " * level + "Modes: {}".format(", ".join(supported)))
 
 
-def print_button(d, p, b, level):
-    header = " " * level + f"Button: {b.index} is mapped to "
+def print_button(_device, _profile, button, level):
+    header = " " * level + f"Button: {button.index} is mapped to "
 
-    if b.action_type == RatbagdButton.ActionType.BUTTON:
-        print(f"{header}'button {b.mapping}'")
-    elif b.action_type == RatbagdButton.ActionType.SPECIAL:
-        print(f"{header}'{button_specials_strmap[b.special]}'")
-    elif b.action_type == RatbagdButton.ActionType.KEY:
-        key_name = evdev.ecodes.KEY[b.key][RatbagdMacro._PREFIX_LEN :]
+    if button.action_type == RatbagdButton.ActionType.BUTTON:
+        print(f"{header}'button {button.mapping}'")
+    elif button.action_type == RatbagdButton.ActionType.SPECIAL:
+        print(f"{header}'{button_specials_strmap[button.special]}'")
+    elif button.action_type == RatbagdButton.ActionType.KEY:
+        key_name = evdev.ecodes.KEY[button.key][RatbagdMacro._PREFIX_LEN :]
         print(f"{header}key '{key_name}'")
-    elif b.action_type == RatbagdButton.ActionType.MACRO:
-        print(f"{header}macro '{str(b.macro)}'")
-    elif b.action_type == RatbagdButton.ActionType.NONE:
+    elif button.action_type == RatbagdButton.ActionType.MACRO:
+        print(f"{header}macro '{str(button.macro)}'")
+    elif button.action_type == RatbagdButton.ActionType.NONE:
         print(f"{header}none")
     else:
         print(f"{header}UNKNOWN")
 
 
-def print_resolution(d, p, r, level):
-    if r.resolution == (0, 0):
-        print(" " * level + f"{r.index}: <disabled>")
+def print_resolution(_device, _profile, resolution, level):
+    if resolution.resolution == (0, 0):
+        print(" " * level + f"{resolution.index}: <disabled>")
         return
-    if len(r.resolution) == 2:
-        dpi = f"{r.resolution[0]}x{r.resolution[1]}"
+    if len(resolution.resolution) == 2:
+        dpi = f"{resolution.resolution[0]}x{resolution.resolution[1]}"
     else:
-        dpi = f"{r.resolution[0]}"
+        dpi = f"{resolution.resolution[0]}"
 
     print(
         " " * level
         + "{}: {}dpi{}{}{}".format(
-            r.index,
+            resolution.index,
             dpi,
-            " (active)" if r.is_active else "",
-            " (default)" if r.is_default else "",
-            " (disabled)" if r.is_disabled else "",
+            " (active)" if resolution.is_active else "",
+            " (default)" if resolution.is_default else "",
+            " (disabled)" if resolution.is_disabled else "",
         )
     )
 
 
-def print_profile(d, p, level):
+def print_profile(device, profile, level):
     print(
         " " * (level - 2)
         + "Profile {}:{}{}".format(
-            p.index,
-            " (disabled)" if p.disabled else "",
-            " (active)" if p.is_active else "",
+            profile.index,
+            " (disabled)" if profile.disabled else "",
+            " (active)" if profile.is_active else "",
         )
     )
 
-    if not p.disabled:
-        print(" " * level + "Name: {}".format(p.name or "n/a"))
-        if p.report_rate:
-            print(" " * level + f"Report Rate: {p.report_rate}Hz")
-        if p.resolutions:
+    if not profile.disabled:
+        print(" " * level + "Name: {}".format(profile.name or "n/a"))
+        if profile.report_rate:
+            print(" " * level + f"Report Rate: {profile.report_rate}Hz")
+        if profile.resolutions:
             print(" " * level + "Resolutions:")
-            for r in p.resolutions:
-                print_resolution(d, p, r, level + 2)
-        if p.buttons:
-            for b in p.buttons:
-                print_button(d, p, b, level)
-        if p.leds:
-            for l in p.leds:
-                print_led(d, p, l, level)
+            for resolution in profile.resolutions:
+                print_resolution(device, profile, resolution, level + 2)
+        if profile.buttons:
+            for button in profile.buttons:
+                print_button(device, profile, button, level)
+        if profile.leds:
+            for led in profile.leds:
+                print_led(device, profile, led, level)
 
 
-def print_device(d, level):
-    p = d.profiles[0]  # there should be always one
+def print_device(device, level):
+    profile = device.profiles[0]  # there should be always one
 
-    print(" " * level + f"{d.id} - {d.name}")
-    print(" " * level + f"             Model: {d.model}")
-    print(" " * level + f"       Device Type: {d.device_type.name.capitalize()}")
-    if d.firmware_version:
-        print(" " * level + f"  Firmware version: {d.firmware_version}")
-    print(" " * level + f" Number of Buttons: {len(p.buttons)}")
-    print(" " * level + f"    Number of Leds: {len(p.leds)}")
-    print(" " * level + f"Number of Profiles: {len(d.profiles)}")
-    for p in d.profiles:
-        print_profile(d, p, level + 2)
-
-
-def show_device(r, args):
-    d = find_device(r, args)
-    print_device(d, 0)
+    print(" " * level + f"{device.id} - {device.name}")
+    print(" " * level + f"             Model: {device.model}")
+    print(" " * level + f"       Device Type: {device.device_type.name.capitalize()}")
+    if device.firmware_version:
+        print(" " * level + f"  Firmware version: {device.firmware_version}")
+    print(" " * level + f" Number of Buttons: {len(profile.buttons)}")
+    print(" " * level + f"    Number of Leds: {len(profile.leds)}")
+    print(" " * level + f"Number of Profiles: {len(device.profiles)}")
+    for profile in device.profiles:
+        print_profile(device, profile, level + 2)
 
 
-def show_profile(r, args):
-    p, d = find_profile(r, args)
-    print(f"Profile {args.profile} on {d.id} ({d.name})")
-    print_profile(d, p, 0)
+def show_device(ratbagd, args):
+    device = find_device(ratbagd, args)
+    print_device(device, 0)
 
 
-def show_resolution(r, args):
-    r, p, d = find_resolution(r, args)
+def show_profile(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    print(f"Profile {args.profile} on {device.id} ({device.name})")
+    print_profile(device, profile, 0)
+
+
+def show_resolution(ratbagd, args):
+    resolution, p, d = find_resolution(ratbagd, args)
     print(
         "Resolution {} on Profile {} on {} ({})".format(
             args.resolution, args.profile, d.id, d.name
         )
     )
-    print_resolution(d, p, r, 0)
+    print_resolution(d, p, resolution, 0)
     caps = {
         RatbagdResolution.CAP_INDIVIDUAL_REPORT_RATE: "individual-report-rate",
         RatbagdResolution.CAP_SEPARATE_XY_RESOLUTION: "separate-xy-resolution",
     }
-    capabilities = [caps[c] for c in r.capabilities]
+    capabilities = [caps[c] for c in resolution.capabilities]
     print("  Capabilities: {}".format(", ".join(capabilities)))
 
 
-def show_button(r, args):
-    b, p, d = find_button(r, args)
+def show_button(ratbagd, args):
+    button, profile, device = find_button(ratbagd, args)
     print(
         "Button {} on Profile {} on {} ({})".format(
-            args.button, args.profile, d.id, d.name
+            args.button, args.profile, device.id, device.name
         )
     )
-    print_button(d, p, b, 0)
+    print_button(device, profile, button, 0)
 
 
-def func_led_get(r, args):
-    l, p, d = find_led(r, args)
-    print_led(d, p, l, 0)
+def func_led_get(ratbagd, args):
+    led, profile, device = find_led(ratbagd, args)
+    print_led(device, profile, led, 0)
 
 
-def func_led_caps(r, args):
-    l, p, d = find_led(r, args)
-    print_led_caps(d, p, l, 0)
+def func_led_caps(ratbagd, args):
+    led, profile, device = find_led(ratbagd, args)
+    print_led_caps(device, profile, led, 0)
 
 
-def func_led_set(r, args):
-    l, p, d = find_led(r, args)
+def func_led_set(ratbagd, args):
+    led, _profile, device = find_led(ratbagd, args)
     try:
         mode = args.mode
     except AttributeError:
@@ -339,68 +339,68 @@ def func_led_set(r, args):
             "off": RatbagdLed.Mode.OFF,
             "on": RatbagdLed.Mode.ON,
         }
-        l.mode = leds[mode]
+        led.mode = leds[mode]
     try:
         color = args.color
     except AttributeError:
         pass
     else:
-        l.color = color
+        led.color = color
     try:
         duration = args.duration
     except AttributeError:
         pass
     else:
-        l.effect_duration = duration
+        led.effect_duration = duration
     try:
         brightness = args.brightness
     except AttributeError:
         pass
     else:
-        l.brightness = brightness
-    commit(d, args)
+        led.brightness = brightness
+    commit(device, args)
 
 
-def func_led_get_all(r, args):
-    p, d = find_profile(r, args)
-    for l in p.leds:
-        print_led(d, p, l, 0)
+def func_led_get_all(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    for led in profile.leds:
+        print_led(device, profile, led, 0)
 
 
-def func_button_get(r, args):
-    b, p, d = find_button(r, args)
-    print_button(b, p, b, 0)
+def func_button_get(ratbagd, args):
+    button, profile, _device = find_button(ratbagd, args)
+    print_button(button, profile, button, 0)
 
 
-def func_button_action_set_none(r, args):
-    b, p, d = find_button(r, args)
-    if b.ActionType.NONE not in b.action_types:
+def func_button_action_set_none(ratbagd, args):
+    button, _profile, device = find_button(ratbagd, args)
+    if button.ActionType.NONE not in button.action_types:
         raise RatbagErrorCapability("disabling buttons is not supported on this device")
 
-    b.disable()
-    commit(d, args)
+    button.disable()
+    commit(device, args)
 
 
-def func_button_action_set_button(r, args):
-    b, p, d = find_button(r, args)
-    b.mapping = args.target_button
-    commit(d, args)
+def func_button_action_set_button(ratbagd, args):
+    button, _profile, device = find_button(ratbagd, args)
+    button.mapping = args.target_button
+    commit(device, args)
 
 
-def func_button_action_set_special(r, args):
-    b, p, d = find_button(r, args)
+def func_button_action_set_special(ratbagd, args):
+    button, _profile, device = find_button(ratbagd, args)
     try:
         special = args.target_special
     except AttributeError:
         pass
     else:
-        b.special = button_specials_strmap[special]
-    commit(d, args)
+        button.special = button_specials_strmap[special]
+    commit(device, args)
 
 
-def func_button_action_set_key(r, args):
-    b, p, d = find_button(r, args)
-    if b.ActionType.KEY not in b.action_types:
+def func_button_action_set_key(ratbagd, args):
+    button, _profile, device = find_button(ratbagd, args)
+    if button.ActionType.KEY not in button.action_types:
         raise RatbagErrorCapability("assigning a key is not supported on this device")
 
     try:
@@ -408,13 +408,13 @@ def func_button_action_set_key(r, args):
     except AttributeError:
         pass
     else:
-        b.key = convert_str_to_evcode(key)
-    commit(d, args)
+        button.key = convert_str_to_evcode(key)
+    commit(device, args)
 
 
-def func_button_action_set_macro(r, args):
-    b, p, d = find_button(r, args)
-    if b.ActionType.MACRO not in b.action_types:
+def func_button_action_set_macro(ratbagd, args):
+    button, _profile, device = find_button(ratbagd, args)
+    if button.ActionType.MACRO not in button.action_types:
         raise RatbagErrorCapability("assigning a macro is not supported on this device")
 
     macro_keys = args.target_macro
@@ -446,69 +446,69 @@ def func_button_action_set_macro(r, args):
             if is_release:
                 macro.append(RatbagdButton.Macro.KEY_RELEASE, code)
 
-    b.macro = macro
-    commit(d, args)
+    button.macro = macro
+    commit(device, args)
 
 
-def func_button_count(r, args):
-    p, d = find_profile(r, args)
-    print(len(p.buttons))
+def func_button_count(ratbagd, args):
+    profile, _device = find_profile(ratbagd, args)
+    print(len(profile.buttons))
 
 
-def func_dpi_get(r, args):
-    r, p, d = find_resolution(r, args)
-    if len(r.resolution) == 2:
-        print(f"{r.resolution[0]}x{r.resolution[1]}dpi")
+def func_dpi_get(ratbagd, args):
+    ratbagd, _profile, _device = find_resolution(ratbagd, args)
+    if len(ratbagd.resolution) == 2:
+        print(f"{ratbagd.resolution[0]}x{ratbagd.resolution[1]}dpi")
     else:
-        print(f"{r.resolution[0]}dpi")
+        print(f"{ratbagd.resolution[0]}dpi")
 
 
-def func_dpi_get_all(r, args):
-    r, p, d = find_resolution(r, args)
-    dpis = r.resolutions
+def func_dpi_get_all(ratbagd, args):
+    resolution, _profile, _device = find_resolution(ratbagd, args)
+    dpis = resolution.resolutions
     print(" ".join([str(x) for x in dpis]))
 
 
-def func_dpi_set(r, args):
-    r, p, d = find_resolution(r, args)
+def func_dpi_set(ratbagd, args):
+    resolution, _profile, device = find_resolution(ratbagd, args)
     dpi = args.dpi_n
-    if len(r.resolution) > len(dpi):
+    if len(resolution.resolution) > len(dpi):
         dpi = (dpi[0], dpi[0])
-    r.resolution = dpi
-    commit(d, args)
+    resolution.resolution = dpi
+    commit(device, args)
 
 
-def func_report_rate_get(r, args):
-    p, d = find_profile(r, args)
-    print(p.report_rate)
+def func_report_rate_get(ratbagd, args):
+    profile, _device = find_profile(ratbagd, args)
+    print(profile.report_rate)
 
 
-def func_report_rate_get_all(r, args):
-    p, d = find_profile(r, args)
-    rates = p.report_rates
+def func_report_rate_get_all(ratbagd, args):
+    profile, _device = find_profile(ratbagd, args)
+    rates = profile.report_rates
     print(" ".join([str(x) for x in rates]))
 
 
-def func_report_rate_set(r, args):
-    p, d = find_profile(r, args)
-    p.report_rate = args.rate_n
-    commit(d, args)
+def func_report_rate_set(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    profile.report_rate = args.rate_n
+    commit(device, args)
 
 
-def func_resolution_get(r, args):
-    r, p, d = find_resolution(r, args)
-    print_resolution(d, p, r, 0)
+def func_resolution_get(ratbagd, args):
+    resolution, profile, device = find_resolution(ratbagd, args)
+    print_resolution(device, profile, resolution, 0)
 
 
-def func_resolution_active_get(r, args):
-    p, d = find_profile(r, args)
-    print(p.active_resolution.index)
+def func_resolution_active_get(ratbagd, args):
+    profile, _device = find_profile(ratbagd, args)
+    print(profile.active_resolution.index)
 
 
-def func_resolution_active_set(r, args):
-    r, p, d = find_resolution(r, args)
-    r.set_active()
-    commit(d, args)
+def func_resolution_active_set(ratbagd, args):
+    resolution, _profile, device = find_resolution(ratbagd, args)
+    resolution.set_active()
+    commit(device, args)
 
 
 def func_resolution_default_get(ratbagd, args):
@@ -525,89 +525,89 @@ def func_resolution_default_get(ratbagd, args):
     print(resolution.index)
 
 
-def func_default_resolution_set(r, args):
+def func_default_resolution_set(ratbagd, args):
     # FIXME: capabilities check?
-    r, p, d = find_resolution(r, args)
-    r.set_default()
-    commit(d, args)
+    resolution, _profile, device = find_resolution(ratbagd, args)
+    resolution.set_default()
+    commit(device, args)
 
 
-def func_resolution_disabled_get(r, args):
-    r, p, d = find_resolution(r, args)
-    print(r.is_disabled)
+def func_resolution_disabled_get(ratbagd, args):
+    resolution, _profile, _device = find_resolution(ratbagd, args)
+    print(resolution.is_disabled)
 
 
-def func_resolution_enabled_get(r, args):
-    r, p, d = find_resolution(r, args)
-    print(not r.is_disabled)
+def func_resolution_enabled_get(ratbagd, args):
+    resolution, _profile, _device = find_resolution(ratbagd, args)
+    print(not resolution.is_disabled)
 
 
-def func_resolution_disabled_set(r, args):
-    r, p, d = find_resolution(r, args)
-    r.set_disabled(True)
-    commit(d, args)
+def func_resolution_disabled_set(ratbagd, args):
+    resolution, _profile, device = find_resolution(ratbagd, args)
+    resolution.set_disabled(True)
+    commit(device, args)
 
 
-def func_resolution_enabled_set(r, args):
-    r, p, d = find_resolution(r, args)
-    r.set_disabled(False)
-    commit(d, args)
+def func_resolution_enabled_set(ratbagd, args):
+    resolution, _profile, device = find_resolution(ratbagd, args)
+    resolution.set_disabled(False)
+    commit(device, args)
 
 
-def func_profile_get(r, args):
-    p, d = find_profile(r, args)
-    print_profile(d, p, 0)
+def func_profile_get(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    print_profile(device, profile, 0)
 
 
-def func_profile_name_get(r, args):
-    p, d = find_profile(r, args)
+def func_profile_name_get(ratbagd, args):
+    profile, _device = find_profile(ratbagd, args)
     # See https://github.com/libratbag/libratbag/issues/617
     # ratbag converts to ascii, so this has no real effect there, but
     # ratbag-command may still have a non-ascii string.
-    string = bytes(p.name, "utf-8", "ignore")
+    string = bytes(profile.name, "utf-8", "ignore")
     print(string.decode("utf-8"))
 
 
-def func_profile_name_set(r, args):
-    p, d = find_profile(r, args)
-    if not p.name:
+def func_profile_name_set(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    if not profile.name:
         raise RatbagErrorCapability(
             "assigning a profile name is not supported on this profile"
         )
-    p.name = args.name
-    commit(d, args)
+    profile.name = args.name
+    commit(device, args)
 
 
-def func_profile_active_get(r, args):
-    d = find_device(r, args)
-    profile = d.active_profile
+def func_profile_active_get(ratbagd, args):
+    device = find_device(ratbagd, args)
+    profile = device.active_profile
     if profile is None:
         print("The device has no active profile")
         sys.exit(1)
     print(profile.index)
 
 
-def func_profile_active_set(r, args):
-    p, d = find_profile(r, args)
-    p.set_active()
-    commit(d, args)
+def func_profile_active_set(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    profile.set_active()
+    commit(device, args)
 
 
-def func_profile_enable(r, args):
-    p, d = find_profile(r, args)
-    p.disabled = False
-    commit(d, args)
+def func_profile_enable(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    profile.disabled = False
+    commit(device, args)
 
 
-def func_profile_disable(r, args):
-    p, d = find_profile(r, args)
-    p.disabled = True
-    commit(d, args)
+def func_profile_disable(ratbagd, args):
+    profile, device = find_profile(ratbagd, args)
+    profile.disabled = True
+    commit(device, args)
 
 
-def func_device_name_get(r, args):
-    d = find_device(r, args)
-    print(d.name)
+def func_device_name_get(ratbagd, args):
+    device = find_device(ratbagd, args)
+    print(device.name)
 
 
 ################################################################################
@@ -1761,12 +1761,12 @@ def on_device_added(ratbagd, device):
 
 def open_ratbagd(ratbagd_process=None, verbose=0):
     try:
-        r = Ratbagd(RATBAGD_API_VERSION)
-        r.verbose = verbose
+        ratbagd = Ratbagd(RATBAGD_API_VERSION)
+        ratbagd.verbose = verbose
         try:
-            r.connect("device-added", on_device_added)
-            for d in r.devices:
-                on_device_added(r, d)
+            ratbagd.connect("device-added", on_device_added)
+            for device in ratbagd.devices:
+                on_device_added(ratbagd, device)
         except AttributeError:
             pass  # the ratbag-command case
 
@@ -1782,7 +1782,7 @@ def open_ratbagd(ratbagd_process=None, verbose=0):
         ratbagd_process.poll()
         assert ratbagd_process.returncode is None
 
-    return r
+    return ratbagd
 
 
 def main(argv):
