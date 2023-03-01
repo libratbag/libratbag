@@ -8,7 +8,7 @@ env:
     libjson-glib-dev libsystemd-dev libudev-dev libunistring-dev
     python3-dev python3-evdev swig python3-sphinx
   UBUNTU_DEP_TEST: check python3-gi python3-lxml valgrind
-  PIP_PACKAGES: meson ninja libevdev pyudev pytest sphinx_rtd_theme black
+  PIP_PACKAGES: meson ninja libevdev pyudev pytest sphinx_rtd_theme black ruff
 
 jobs:
   build-and-dist:

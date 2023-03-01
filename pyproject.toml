@@ -1,2 +1,23 @@
 [tool.black]
 target-version = ["py37"]
+
+[tool.ruff]
+target-version = "py37"
+select = [
+	# pycodestyle
+	"E",
+	"W",
+	# pyflakes
+	"F",
+	# pyupgrade
+	# Use modern Python features for the best possible develop experience.
+	"UP",
+	# flake8-bugbear
+	# Find obvious bugs.
+	"B",
+]
+ignore = [
+	# Line too long.
+	# We have some places where it's just impossible to make it fit,
+	"E501",
+]

@@ -649,4 +649,21 @@ test(
   env: env_test,
 )
 
+#### code linting #####
+run_target(
+  'python-ruff',
+  command : 'tools/python-ruff.sh',
+)
+
+python_ruff_check = find_program(join_paths(meson.source_root(), 'test/python-ruff-check.sh'))
+run_target(
+  'python-ruff-check',
+  command : python_ruff_check,
+)
+test(
+  'python-ruff-check',
+  python_ruff_check,
+  env: env_test,
+)
+
 subdir('doc')
