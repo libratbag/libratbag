@@ -315,7 +315,7 @@ def parse_data_file(path: str):
         check_section_driver(driver, data[driver_section])
 
 
-def main() -> int:
+def main() -> None:
     is_error = False
 
     parser = argparse.ArgumentParser(description="Device data-file checker")
@@ -330,8 +330,9 @@ def main() -> int:
             is_error = True
             traceback.print_exception(e, file=sys.stdout)
 
-    return int(is_error)
+    if is_error:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
