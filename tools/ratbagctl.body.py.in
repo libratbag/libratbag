@@ -1682,7 +1682,7 @@ class RatbagParserArgument(RatbagParser):
         type: str,
         name: str,
         group: Optional[str] = None,
-        arg_type: Optional[str] = None,
+        arg_type: Optional[object] = None,
         metavar: Optional[str] = None,
         nargs: Optional[int] = None,
         choices: Optional[List] = None,
