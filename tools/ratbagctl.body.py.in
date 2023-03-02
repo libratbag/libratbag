@@ -30,7 +30,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # This must be on a single line, as we replace it using merge_ratbagd.py while building.
 # fmt: off
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailable, RatbagError, RatbagErrorCode, RatbagErrorCapability, RatbagDeviceType  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailableError, RatbagError, RatbagErrorCode, RatbagCapabilityError, RatbagDeviceType  # NOQA
 # fmt: on
 
 
@@ -402,7 +402,7 @@ def func_button_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_button_action_set_none(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     if button.ActionType.NONE not in button.action_types:
-        raise RatbagErrorCapability("disabling buttons is not supported on this device")
+        raise RatbagCapabilityError("disabling buttons is not supported on this device")
 
     button.disable()
     commit(device, args)
@@ -428,7 +428,7 @@ def func_button_action_set_special(ratbagd: Ratbagd, args: argparse.Namespace) -
 def func_button_action_set_key(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     if button.ActionType.KEY not in button.action_types:
-        raise RatbagErrorCapability("assigning a key is not supported on this device")
+        raise RatbagCapabilityError("assigning a key is not supported on this device")
 
     try:
         key = args.target_key
@@ -442,7 +442,7 @@ def func_button_action_set_key(ratbagd: Ratbagd, args: argparse.Namespace) -> No
 def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, _profile, device = find_button(ratbagd, args)
     if button.ActionType.MACRO not in button.action_types:
-        raise RatbagErrorCapability("assigning a macro is not supported on this device")
+        raise RatbagCapabilityError("assigning a macro is not supported on this device")
 
     macro_keys = args.target_macro
     macro = RatbagdMacro()
@@ -630,7 +630,7 @@ def func_profile_name_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_profile_name_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     if not profile.name:
-        raise RatbagErrorCapability(
+        raise RatbagCapabilityError(
             "assigning a profile name is not supported on this profile"
         )
     profile.name = args.name
@@ -1957,7 +1957,7 @@ def open_ratbagd(
         except AttributeError:
             pass  # the ratbag-command case
 
-    except RatbagdUnavailable as e:
+    except RatbagdUnavailableError as e:
         print(f"Unable to connect to ratbagd: {e}")
         return None
 
@@ -1993,7 +1993,7 @@ def main(argv: List[str]) -> None:
             else:
                 try:
                     f(r, cmd)
-                except RatbagErrorCapability as e:
+                except RatbagCapabilityError as e:
                     print(f"Error: {e}", file=sys.stderr)
 
 

@@ -76,7 +76,7 @@ class RatbagDeviceType(IntEnum):
     KEYBOARD = 3
 
 
-class RatbagdIncompatible(Exception):
+class RatbagdIncompatibleError(Exception):
     """ratbagd is incompatible with this client"""
 
     def __init__(self, ratbagd_version, required_version):
@@ -91,11 +91,11 @@ class RatbagdIncompatible(Exception):
         return self.message
 
 
-class RatbagdUnavailable(Exception):
+class RatbagdUnavailableError(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
 
 
-class RatbagdDBusTimeout(Exception):
+class RatbagdDBusTimeoutError(Exception):
     """Signals that a timeout occurred during a DBus method call."""
 
 
@@ -103,33 +103,33 @@ class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
 
 
-class RatbagErrorDevice(RatbagError):
+class RatbagDeviceError(RatbagError):
     """An exception corresponding to RatbagErrorCode.DEVICE."""
 
 
-class RatbagErrorCapability(RatbagError):
+class RatbagCapabilityError(RatbagError):
     """An exception corresponding to RatbagErrorCode.CAPABILITY."""
 
 
-class RatbagErrorValue(RatbagError):
+class RatbagValueError(RatbagError):
     """An exception corresponding to RatbagErrorCode.VALUE."""
 
 
-class RatbagErrorSystem(RatbagError):
+class RatbagSystemError(RatbagError):
     """An exception corresponding to RatbagErrorCode.SYSTEM."""
 
 
-class RatbagErrorImplementation(RatbagError):
+class RatbagImplementationError(RatbagError):
     """An exception corresponding to RatbagErrorCode.IMPLEMENTATION."""
 
 
 """A table mapping RatbagErrorCode values to RatbagError* exceptions."""
 EXCEPTION_TABLE = {
-    RatbagErrorCode.DEVICE: RatbagErrorDevice,
-    RatbagErrorCode.CAPABILITY: RatbagErrorCapability,
-    RatbagErrorCode.VALUE: RatbagErrorValue,
-    RatbagErrorCode.SYSTEM: RatbagErrorSystem,
-    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation,
+    RatbagErrorCode.DEVICE: RatbagDeviceError,
+    RatbagErrorCode.CAPABILITY: RatbagCapabilityError,
+    RatbagErrorCode.VALUE: RatbagValueError,
+    RatbagErrorCode.SYSTEM: RatbagSystemError,
+    RatbagErrorCode.IMPLEMENTATION: RatbagImplementationError,
 }
 
 
@@ -143,7 +143,7 @@ class _RatbagdDBus(GObject.GObject):
             try:
                 _RatbagdDBus._dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
             except GLib.Error as e:
-                raise RatbagdUnavailable(e.message) from e
+                raise RatbagdUnavailableError(e.message) from e
 
         ratbag1 = "org.freedesktop.ratbag1"
         if os.environ.get("RATBAG_TEST"):
@@ -166,10 +166,10 @@ class _RatbagdDBus(GObject.GObject):
                 None,
             )
         except GLib.Error as e:
-            raise RatbagdUnavailable(e.message) from e
+            raise RatbagdUnavailableError(e.message) from e
 
         if self._proxy.get_name_owner() is None:
-            raise RatbagdUnavailable(f"No one currently owns {ratbag1}")
+            raise RatbagdUnavailableError(f"No one currently owns {ratbag1}")
 
         self._proxy.connect("g-properties-changed", self._on_properties_changed)
         self._proxy.connect("g-signal", self._on_signal_received)
@@ -237,7 +237,7 @@ class _RatbagdDBus(GObject.GObject):
             return res.unpack()[0]  # Result is always a tuple
         except GLib.Error as e:
             if e.code == Gio.IOErrorEnum.TIMED_OUT:
-                raise RatbagdDBusTimeout(e.message) from e
+                raise RatbagdDBusTimeoutError(e.message) from e
             else:
                 # Unrecognized error code; print the message to stderr and raise
                 # the GLib.Error.
@@ -253,7 +253,7 @@ class Ratbagd(_RatbagdDBus):
     through ratbagd; actual interaction with the devices is via the
     RatbagdDevice, RatbagdProfile, RatbagdResolution and RatbagdButton objects.
 
-    Throws RatbagdUnavailable when the DBus service is not available.
+    Throws RatbagdUnavailableError when the DBus service is not available.
     """
 
     __gsignals__ = {
@@ -270,11 +270,11 @@ class Ratbagd(_RatbagdDBus):
         super().__init__("Manager", None)
         result = self._get_dbus_property("Devices")
         if result is None and not self._proxy.get_cached_property_names():
-            raise RatbagdUnavailable(
+            raise RatbagdUnavailableError(
                 "Make sure it is running and your user is in the required groups."
             )
         if self.api_version != api_version:
-            raise RatbagdIncompatible(self.api_version or -1, api_version)
+            raise RatbagdIncompatibleError(self.api_version or -1, api_version)
         self._devices = [RatbagdDevice(objpath) for objpath in result or []]
         self._proxy.connect("notify::g-name-owner", self._on_name_owner_changed)
 

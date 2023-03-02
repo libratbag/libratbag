@@ -99,7 +99,7 @@ class RatbagDeviceType(IntEnum):
     KEYBOARD = 3
 
 
-class RatbagdUnavailable(Exception):
+class RatbagdUnavailableError(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
 
 
@@ -107,33 +107,33 @@ class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
 
 
-class RatbagErrorDevice(RatbagError):
+class RatbagDeviceError(RatbagError):
     """An exception corresponding to RatbagErrorCode.DEVICE."""
 
 
-class RatbagErrorCapability(RatbagError):
+class RatbagCapabilityError(RatbagError):
     """An exception corresponding to RatbagErrorCode.CAPABILITY."""
 
 
-class RatbagErrorValue(RatbagError):
+class RatbagValueError(RatbagError):
     """An exception corresponding to RatbagErrorCode.VALUE."""
 
 
-class RatbagErrorSystem(RatbagError):
+class RatbagSystemError(RatbagError):
     """An exception corresponding to RatbagErrorCode.SYSTEM."""
 
 
-class RatbagErrorImplementation(RatbagError):
+class RatbagImplementationError(RatbagError):
     """An exception corresponding to RatbagErrorCode.IMPLEMENTATION."""
 
 
 """A table mapping RatbagErrorCode values to RatbagError* exceptions."""
 EXCEPTION_TABLE = {
-    RatbagErrorCode.DEVICE: RatbagErrorDevice,
-    RatbagErrorCode.CAPABILITY: RatbagErrorCapability,
-    RatbagErrorCode.VALUE: RatbagErrorValue,
-    RatbagErrorCode.SYSTEM: RatbagErrorSystem,
-    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation,
+    RatbagErrorCode.DEVICE: RatbagDeviceError,
+    RatbagErrorCode.CAPABILITY: RatbagCapabilityError,
+    RatbagErrorCode.VALUE: RatbagValueError,
+    RatbagErrorCode.SYSTEM: RatbagSystemError,
+    RatbagErrorCode.IMPLEMENTATION: RatbagImplementationError,
 }
 
 
@@ -157,7 +157,7 @@ class Ratbagd:
             name = os.path.join("/dev/", event)
             try:
                 dev = RatbagdDevice(self._ratbag, name)
-            except RatbagErrorDevice:
+            except RatbagDeviceError:
                 pass
             else:
                 self._devices[name] = dev
@@ -210,7 +210,7 @@ class Ratbagd:
         if id not in self._devices.keys():
             try:
                 dev = RatbagdDevice(self._ratbag, id)
-            except RatbagErrorDevice:
+            except RatbagDeviceError:
                 pass
             else:
                 self._devices[id] = dev
@@ -249,7 +249,7 @@ class RatbagdDevice(metaclass=MetaRatbag):
         self._ratbag = ratbag
         self._device = libratbag.ratbag_cmd_open_device(ratbag, path)
         if self._device is None:
-            raise RatbagErrorDevice("device not compatible")
+            raise RatbagDeviceError("device not compatible")
 
         self._profiles = [
             RatbagdProfile(self._device, i)

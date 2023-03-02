@@ -29,7 +29,7 @@ import time
 import toolbox
 import signal
 import sys
-from ratbagctl import RatbagErrorCapability  # NOQA
+from ratbagctl import RatbagCapabilityError  # NOQA
 
 
 def main(argv, start_ratbagd=True):
@@ -72,7 +72,7 @@ def main(argv, start_ratbagd=True):
                         # give time for ratbagd to receive async requests before
                         # we try to terminate it
                         time.sleep(0.5)
-                    except RatbagErrorCapability as e:
+                    except RatbagCapabilityError as e:
                         print(f"Error: {e}", file=sys.stderr)
     finally:
         try:

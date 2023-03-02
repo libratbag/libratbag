@@ -17,6 +17,9 @@ select = [
 	"B",
 	# flake8-pie
 	"PIE",
+	# pep8-naming
+	# `Error` suffix on exception names.
+	"N818",
 ]
 ignore = [
 	# Line too long.

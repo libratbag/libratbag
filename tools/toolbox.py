@@ -117,7 +117,7 @@ ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
 from ratbagctl import (  # noqa: E402
     RatbagError,
-    RatbagErrorCapability,
+    RatbagCapabilityError,
     get_parser,
     open_ratbagd,
 )
@@ -130,5 +130,5 @@ __all__ = [
     open_ratbagd,
     get_parser,
     RatbagError,
-    RatbagErrorCapability,
+    RatbagCapabilityError,
 ]
