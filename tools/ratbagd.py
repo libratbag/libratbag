@@ -238,11 +238,10 @@ class _RatbagdDBus(GObject.GObject):
         except GLib.Error as e:
             if e.code == Gio.IOErrorEnum.TIMED_OUT:
                 raise RatbagdDBusTimeoutError(e.message) from e
-            else:
-                # Unrecognized error code; print the message to stderr and raise
-                # the GLib.Error.
-                print(e.message, file=sys.stderr)
-                raise
+
+            # Unrecognized error code.
+            print(e.message, file=sys.stderr)
+            raise
 
     def __eq__(self, other):
         return other and self._object_path == other._object_path
@@ -660,7 +659,8 @@ class RatbagdResolution(_RatbagdDBus):
         res = self._get_dbus_property("Resolution")
         if isinstance(res, int):
             res = tuple([res])
-        return res
+        # False-positive RET504:
+        return res  # noqa: RET504
 
     @resolution.setter
     def resolution(self, resolution):

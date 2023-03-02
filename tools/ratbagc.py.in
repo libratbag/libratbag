@@ -168,13 +168,15 @@ class Ratbagd:
         v = libratbag.ratbag_log_get_priority(self._ratbag)
         if v == libratbag.RATBAG_LOG_PRIORITY_RAW:
             return 3
-        elif v == libratbag.RATBAG_LOG_PRIORITY_DEBUG:  # noqa: SIM114
+        if v == libratbag.RATBAG_LOG_PRIORITY_DEBUG:
             # to match with setter action, we return 1 instead of 2
             return 1
-        elif v == libratbag.RATBAG_LOG_PRIORITY_INFO:
+        if v == libratbag.RATBAG_LOG_PRIORITY_INFO:
             return 1
-        elif v == libratbag.RATBAG_LOG_PRIORITY_ERROR:
+        if v == libratbag.RATBAG_LOG_PRIORITY_ERROR:
             return 0
+
+        return 0
 
     @verbose.setter
     def verbose(self, verbosity):

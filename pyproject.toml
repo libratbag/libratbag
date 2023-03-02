@@ -17,6 +17,8 @@ select = [
 	"B",
 	# flake8-pie
 	"PIE",
+	# flake8-return
+	"RET",
 	# pep8-naming
 	# `Error` suffix on exception names.
 	"N818",

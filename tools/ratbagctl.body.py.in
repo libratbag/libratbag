@@ -525,7 +525,7 @@ def func_report_rate_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_angle_snapping_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     if profile.angle_snapping == -1:
-        return None
+        return
     print(bool(profile.angle_snapping))
 
 
@@ -538,7 +538,7 @@ def func_angle_snapping_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_debounce_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     if profile.debounce == -1:
-        return None
+        return
     print(profile.debounce)
 
 
@@ -1471,7 +1471,7 @@ class RatbagParser:
         self, input_string: List[str], ns: argparse.Namespace
     ) -> argparse.ArgumentParser:
         r = self._sub_parse(input_string, ns)
-        return r
+        return r  # noqa: RET504
 
     def print_help(self, group: Optional[str], prefix: str = "") -> None:
         if self.group is not None:

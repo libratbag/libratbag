@@ -46,11 +46,9 @@ def import_non_standard_path(name, path):
     # there's a problem we can't handle -- let the caller handle it.
 
     with open(path, "rb") as fp:
-        module = imp.load_module(
+        return imp.load_module(
             name, fp, os.path.basename(path), (".py", "rb", imp.PY_SOURCE)
         )
-
-    return module
 
 
 def start_ratbagd(verbosity=0):
