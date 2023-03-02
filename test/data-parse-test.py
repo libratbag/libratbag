@@ -39,12 +39,12 @@ T = TypeVar("T")
 
 def assertIn(element: T, collection: Collection[T]):
     if element not in collection:
-        raise AssertionError(f"{element} must be in {collection}")
+        raise ValueError(f"{element} must be in {collection}")
 
 
 def assertNotIn(element: T, collection: Collection[T]):
     if element in collection:
-        raise AssertionError(f"{element} must not be in {collection}")
+        raise ValueError(f"{element} must not be in {collection}")
 
 
 def check_match_str(string: str):
@@ -273,7 +273,7 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
         check_section_steelseries(section)
         return
 
-    raise AssertionError(f"Unsupported driver section {driver}")
+    raise ValueError(f"Unsupported driver section {driver}")
 
 
 def validate_data_file_name(path: str):
@@ -283,7 +283,7 @@ def validate_data_file_name(path: str):
     illegal_characters_regex = "([\\[\\]\\{\\}\\(\\)])"
     found_characters = re.findall(illegal_characters_regex, path)
     if found_characters:
-        raise AssertionError(
+        raise ValueError(
             "data file name '{}' contains illegal characters: '{}'".format(
                 path, "".join(found_characters)
             )
@@ -326,7 +326,7 @@ def main() -> int:
         try:
             validate_data_file_name(path_str)
             parse_data_file(path_str)
-        except AssertionError as e:
+        except ValueError as e:
             is_error = True
             traceback.print_exception(e, file=sys.stdout)
 
