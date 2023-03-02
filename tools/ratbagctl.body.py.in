@@ -771,8 +771,7 @@ def dpi(string: str) -> Union[Tuple[int, int], Tuple[int,]]:
         int_y = int(y)
     except ValueError as e:
         raise ValueError("%r is not a valid dpi" % string) from e
-    else:
-        return (int_x, int_y)
+    return (int_x, int_y)
 
 
 RatbagParserSchemaElement = Dict[str, Any]
