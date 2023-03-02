@@ -282,7 +282,7 @@ class Ratbagd(_RatbagdDBus):
         self.emit("daemon-disappeared")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "Devices" in changed_props.keys():
+        if "Devices" in changed_props:
             object_paths = [d._object_path for d in self._devices]
             for object_path in changed_props["Devices"]:
                 if object_path not in object_paths:
@@ -452,14 +452,14 @@ class RatbagdProfile(_RatbagdDBus):
             self.notify("dirty")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "IsActive" in changed_props.keys():
+        if "IsActive" in changed_props:
             active = changed_props["IsActive"]
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
                 self._on_obj_notify(None, None)
 
-        if "ReportRate" in changed_props.keys():
+        if "ReportRate" in changed_props:
             report_rate = changed_props["ReportRate"]
             if report_rate != self._report_rate:
                 self._report_rate = report_rate
@@ -619,19 +619,19 @@ class RatbagdResolution(_RatbagdDBus):
         self._disabled = self._get_dbus_property("IsDisabled")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "IsActive" in changed_props.keys():
+        if "IsActive" in changed_props:
             active = changed_props["IsActive"]
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
 
-        if "IsDefault" in changed_props.keys():
+        if "IsDefault" in changed_props:
             default = changed_props["IsDefault"]
             if default != self._default:
                 self._default = default
                 self.notify("is-default")
 
-        if "IsDisabled" in changed_props.keys():
+        if "IsDisabled" in changed_props:
             disabled = changed_props["IsDisabled"]
             if disabled != self._disabled:
                 self._disabled = disabled
@@ -792,7 +792,7 @@ class RatbagdButton(_RatbagdDBus):
         super().__init__("Button", object_path)
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "Mapping" in changed_props.keys():
+        if "Mapping" in changed_props:
             self.notify("action-type")
 
     def _mapping(self):

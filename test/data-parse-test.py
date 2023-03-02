@@ -72,7 +72,7 @@ def check_devicetype_str(string):
 def check_section_device(section: configparser.SectionProxy):
     required_keys = ["Name", "Driver", "DeviceMatch", "DeviceType"]
 
-    for key in section.keys():
+    for key in section:
         assertIn(key, required_keys)
 
     for r in required_keys:
@@ -131,7 +131,7 @@ def check_section_asus(section: configparser.SectionProxy):
         "Quirks",
         "Wireless",
     )
-    for key in section.keys():
+    for key in section:
         assertIn(key, permitted_keys)
 
     try:
@@ -161,7 +161,7 @@ def check_section_hidpp10(section: configparser.SectionProxy):
         "DeviceIndex",
         "Leds",
     ]
-    for key in section.keys():
+    for key in section:
         assertIn(key, permitted)
 
     try:
@@ -210,7 +210,7 @@ def check_section_hidpp10(section: configparser.SectionProxy):
 
 def check_section_hidpp20(section: configparser.SectionProxy):
     permitted = ["Buttons", "DeviceIndex", "Leds", "ReportRate", "Quirk"]
-    for key in section.keys():
+    for key in section:
         assertIn(key, permitted)
 
     try:
@@ -231,7 +231,7 @@ def check_section_steelseries(section: configparser.SectionProxy):
         "MacroLength",
         "Quirk",
     )
-    for key in section.keys():
+    for key in section:
         assertIn(key, permitted_keys)
 
     try:

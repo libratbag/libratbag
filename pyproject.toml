@@ -20,6 +20,9 @@ select = [
 	# pep8-naming
 	# `Error` suffix on exception names.
 	"N818",
+	# flake8-simplify
+	# Use 'key in dict' instead of 'key in dict.keys()'.
+	"SIM118",
 ]
 ignore = [
 	# Line too long.

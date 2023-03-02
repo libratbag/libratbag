@@ -43,7 +43,7 @@ class MetaRatbag(type):
         except KeyError:
             pass
         else:
-            for k in libratbag.__dict__.keys():
+            for k in libratbag.__dict__:
                 if k.startswith(prefix) and k.isupper():
                     key = k[len(prefix) :]
                     dct[key] = getattr(libratbag, k)
@@ -215,7 +215,7 @@ class Ratbagd:
             else:
                 self._devices[id] = dev
 
-        return self._devices[id] if id in self._devices.keys() else None
+        return self._devices[id] if id in self._devices else None
 
     def set_verbose(self, verbose):
         if verbose > 2:
@@ -230,7 +230,7 @@ class Ratbagd:
 
 def get_capabilities(type, object):
     capabilities = []
-    for k in libratbag.__dict__.keys():
+    for k in libratbag.__dict__:
         if k.startswith(f"RATBAG_{type.upper()}_CAP_") and "CAP_NONE" not in k:
             cap = getattr(libratbag, k)
             func = getattr(libratbag, f"ratbag_{type.lower()}_has_capability")
