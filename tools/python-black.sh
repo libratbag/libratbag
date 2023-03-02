@@ -7,4 +7,10 @@ fi
 
 cd "$MESON_SOURCE_ROOT" || exit 101
 
-black $(git ls-files "*.py" "*.py.in")
+files=$(git ls-files "*.py" "*.py.in")
+if [ -z "$files" ]; then
+	echo "Git didn't find any files"
+	exit 77
+fi
+
+black $files
