@@ -94,49 +94,33 @@ class RatbagdIncompatible(Exception):
 class RatbagdUnavailable(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
 
-    pass
-
 
 class RatbagdDBusTimeout(Exception):
     """Signals that a timeout occurred during a DBus method call."""
-
-    pass
 
 
 class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
 
-    pass
-
 
 class RatbagErrorDevice(RatbagError):
     """An exception corresponding to RatbagErrorCode.DEVICE."""
-
-    pass
 
 
 class RatbagErrorCapability(RatbagError):
     """An exception corresponding to RatbagErrorCode.CAPABILITY."""
 
-    pass
-
 
 class RatbagErrorValue(RatbagError):
     """An exception corresponding to RatbagErrorCode.VALUE."""
-
-    pass
 
 
 class RatbagErrorSystem(RatbagError):
     """An exception corresponding to RatbagErrorCode.SYSTEM."""
 
-    pass
-
 
 class RatbagErrorImplementation(RatbagError):
     """An exception corresponding to RatbagErrorCode.IMPLEMENTATION."""
-
-    pass
 
 
 """A table mapping RatbagErrorCode values to RatbagError* exceptions."""

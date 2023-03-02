@@ -15,6 +15,9 @@ select = [
 	# flake8-bugbear
 	# Find obvious bugs.
 	"B",
+	# flake8-pie
+	# Unnecessary `pass` statement.
+	"PIE790",
 ]
 ignore = [
 	# Line too long.
