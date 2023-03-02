@@ -23,6 +23,8 @@ select = [
 	# flake8-simplify
 	# Use 'key in dict' instead of 'key in dict.keys()'.
 	"SIM118",
+	# Use 'a != b' instead of 'not a == b'.
+	"SIM201",
 ]
 ignore = [
 	# Line too long.

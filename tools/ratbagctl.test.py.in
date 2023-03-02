@@ -917,7 +917,7 @@ def parse(input_string):
     run_ratbagctl_in_subprocess = ns.subprocess
     start_ratbagd = not ns.use_existing
 
-    if start_ratbagd and not os.geteuid() == 0:
+    if start_ratbagd and os.geteuid() != 0:
         print("Script must be run as root", file=sys.stderr)
         sys.exit(77)
 
