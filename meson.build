@@ -529,7 +529,7 @@ ratbagctl_body = configure_file(input : 'tools/ratbagctl.body.py.in',
 			      configuration: config_ratbagctl)
 
 # ratbagctl is the commandline tool to interact with ratbagd over DBus.
-custom_target('ratbagctl',
+ratbagctl_target = custom_target('ratbagctl',
   output : 'ratbagctl',
   input : [ratbagctl_body, 'tools/ratbagd.py'],
   build_by_default : true,
@@ -569,7 +569,15 @@ env_test.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 # See: https://github.com/mesonbuild/meson/issues/3306.
 env_test.set('MESON_SOURCE_ROOT', project_source_root)
 ratbagctl_test = find_program(join_paths(project_build_root, 'ratbagctl.test'))
-test('ratbagctl-test', ratbagctl_test, args: ['-v'], env : env_test)
+test(
+  'ratbagctl-test',
+  ratbagctl_test,
+  args : ['-v'],
+  depends : [
+    ratbagctl_target,
+  ],
+  env : env_test,
+)
 
 # ratbag-command uses Swig bindings to call libratbag directly
 swig = find_program('swig')
