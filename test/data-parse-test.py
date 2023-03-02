@@ -326,9 +326,9 @@ def main() -> None:
         try:
             validate_data_file_name(path_str)
             parse_data_file(path_str)
-        except ValueError as e:
+        except ValueError:
             is_error = True
-            traceback.print_exception(e, file=sys.stdout)
+            traceback.print_exc(file=sys.stdout)
 
     if is_error:
         raise SystemExit(1)
