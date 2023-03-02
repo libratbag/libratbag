@@ -55,13 +55,13 @@ button_specials_strmap = {
 def convert_str_to_evcode(s: str) -> int:
     if not s.startswith("KEY_") and not s.startswith("BTN_"):
         msg = f"Don't know how to convert {s}"
-        raise argparse.ArgumentTypeError(msg)
+        raise ValueError(msg)
 
     try:
         return evdev.ecodes.ecodes[s]
     except KeyError as e:
         msg = f"No such button or key `{s}`"
-        raise argparse.ArgumentTypeError(msg) from e
+        raise ValueError(msg) from e
 
 
 def list_devices(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
@@ -741,7 +741,7 @@ def color(string: str) -> Tuple[int, int, int]:
         int_value = int(string, 16)
     except ValueError as e:
         msg = "%r is not a color in hex format" % string
-        raise argparse.ArgumentTypeError(msg) from e
+        raise ValueError(msg) from e
     r = (int_value >> 16) & 0xFF
     g = (int_value >> 8) & 0xFF
     b = (int_value >> 0) & 0xFF
@@ -752,7 +752,7 @@ def u8(string: str) -> int:
     int_value = int(string)
     msg = "%r is not a single byte" % string
     if int_value < 0 or int_value > 255:
-        raise argparse.ArgumentTypeError(msg)
+        raise ValueError(msg)
     return int_value
 
 
@@ -770,7 +770,7 @@ def dpi(string: str) -> Union[Tuple[int, int], Tuple[int,]]:
         int_x = int(x)
         int_y = int(y)
     except ValueError as e:
-        raise argparse.ArgumentTypeError("%r is not a valid dpi" % string) from e
+        raise ValueError("%r is not a valid dpi" % string) from e
     else:
         return (int_x, int_y)
 
