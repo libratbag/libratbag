@@ -541,6 +541,63 @@ resolutions.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="AngleSnapping">
+<code class="descname">AngleSnapping</code><a class="headerlink" href="#AngleSnapping" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">i</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>Sensor angle snapping boolean value as an int (1 or 0), or <cite>-1</cite> to
+indicate that the device doesn’t support reading and/or writing this
+value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Debounce">
+<code class="descname">Debounce</code><a class="headerlink" href="#Debounce" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">i</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>Int for the button debounce time in milliseconds assigned to this
+profile. This time must be one of those listed in
+<a class="reference internal" href="#Debounces" title="Debounces"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Debounces</span></code></a>, or <cite>-1</cite> to indicate that changing debounce time
+for this device is not allowed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Debounces">
+<code class="descname">Debounces</code><a class="headerlink" href="#Debounces" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">au</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-write, constant</td>
+</tr>
+</tbody>
+</table>
+<p>A list of permitted button debounce times. Values in this list may
+be used in the <a class="reference internal" href="#Debounce" title="Debounce"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Debounce</span></code></a> property. This list is always sorted
+ascending, the lowest debounce time is the first item in the list.</p>
+<p>This list may be empty if the device does not support reading and/or
+writing the debounce time.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="ReportRate">
 <code class="descname">ReportRate</code><a class="headerlink" href="#ReportRate" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
