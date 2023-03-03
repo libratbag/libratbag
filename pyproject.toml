@@ -33,4 +33,8 @@ ignore = [
 	# I think it's better to use integrated language constructs instead
 	# of libraries.
 	"SIM105",
+	# Use `"key" in dict` instead of `"key" in dict.keys()`.
+	# While the lint itself is good, fixing it's warnings causes `KeyError`
+	# errors with `GLib.Variant`.
+	"SIM118",
 ]
