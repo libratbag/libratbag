@@ -13,4 +13,9 @@ if [ -z "$files" ]; then
 	exit 77
 fi
 
+command -v black >/dev/null 2>&1 || {
+	echo >&2 "black is not installed"
+	exit 77
+}
+
 black $files

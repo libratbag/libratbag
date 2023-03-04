@@ -13,4 +13,9 @@ if [ -z "$files" ]; then
 	exit 77
 fi
 
+command -v ruff >/dev/null 2>&1 || {
+	echo >&2 "ruff is not installed"
+	exit 77
+}
+
 ruff check $files
