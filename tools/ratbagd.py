@@ -456,6 +456,7 @@ class RatbagdProfile(_RatbagdDBus):
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
+                self._on_obj_notify(None, None)
 
         if "ReportRate" in changed_props.keys():
             report_rate = changed_props["ReportRate"]

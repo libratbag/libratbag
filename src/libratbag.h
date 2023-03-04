@@ -705,7 +705,8 @@ ratbag_profile_is_active(struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
- * Make the given profile the currently active profile
+ * Make the given profile the currently active profile. Note that you have to
+ * commit the device before this gets applied.
  *
  * @param profile The profile to make the active profile.
  *

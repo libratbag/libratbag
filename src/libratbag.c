@@ -878,6 +878,16 @@ ratbag_device_commit(struct ratbag_device *device)
 		list_for_each(resolution, &profile->resolutions, link)
 			resolution->dirty = false;
 
+		/* TODO: think if this should be moved into `driver-commit`. */
+		if (profile->is_active_dirty && profile->is_active) {
+			if (device->driver->set_active_profile == NULL)
+				return RATBAG_ERROR_IMPLEMENTATION;
+
+			rc = device->driver->set_active_profile(device, profile->index);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+		profile->is_active_dirty = false;
 	}
 
 	return RATBAG_SUCCESS;
@@ -888,20 +898,17 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct ratbag_profile *p;
-	int rc;
 
 	if (device->num_profiles == 1)
 		return RATBAG_SUCCESS;
 
-	assert(device->driver->set_active_profile);
-	rc = device->driver->set_active_profile(device, profile->index);
-	if (rc)
-		return RATBAG_ERROR_DEVICE;
-
-	list_for_each(p, &device->profiles, link)
+	list_for_each(p, &device->profiles, link) {
 		p->is_active = false;
+		p->is_active_dirty = true;
+	}
 
 	profile->is_active = true;
+	profile->is_active_dirty = true;
 	return RATBAG_SUCCESS;
 }
 
