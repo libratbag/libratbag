@@ -237,6 +237,17 @@ org.freedesktop.ratbag1.Profile
         profile must be active at all times. This property is read-only, use the
         :func:`SetActive` method to activate a profile.
 
+.. attribute:: IsDirty
+
+        :type: b
+        :flags: read-only, mutable
+
+        True if this profile is dirty, false otherwise.
+
+        Dirty, that is, the device needs committing after being configured.
+        This property becomes `true` whenever any other property of the
+        profile is updated.
+
 .. attribute:: Resolutions
 
         :type: ao

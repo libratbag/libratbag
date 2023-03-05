@@ -488,6 +488,25 @@ profile must be active at all times. This property is read-only, use the
 </dd></dl>
 
 <dl class="attribute">
+<dt id="IsDirty">
+<code class="descname">IsDirty</code><a class="headerlink" href="#IsDirty" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">b</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Flags:</th><td class="field-body">read-only, mutable</td>
+</tr>
+</tbody>
+</table>
+<p>True if this profile is dirty, false otherwise.</p>
+<p>Dirty, that is, the device needs committing after being configured.
+This property becomes <cite>true</cite> whenever any other property of the
+profile is updated.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="Resolutions">
 <code class="descname">Resolutions</code><a class="headerlink" href="#Resolutions" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
