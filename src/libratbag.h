@@ -705,6 +705,19 @@ ratbag_profile_is_active(struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
+ * Check if the given profile is dirty, that is, the device needs committing
+ * after having configuration changes.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return non-zero if the profile is dirty, zero otherwise
+ */
+bool
+ratbag_profile_is_dirty(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
  * Make the given profile the currently active profile. Note that you have to
  * commit the device before this gets applied.
  *

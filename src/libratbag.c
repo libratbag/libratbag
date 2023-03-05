@@ -826,6 +826,12 @@ ratbag_profile_is_active(struct ratbag_profile *profile)
 }
 
 LIBRATBAG_EXPORT bool
+ratbag_profile_is_dirty(const struct ratbag_profile *profile)
+{
+	return !!profile->dirty;
+}
+
+LIBRATBAG_EXPORT bool
 ratbag_profile_is_enabled(const struct ratbag_profile *profile)
 {
 	return !!profile->is_enabled;
