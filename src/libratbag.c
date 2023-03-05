@@ -864,6 +864,12 @@ ratbag_device_commit(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	int rc;
 
+	if (device->driver->commit == NULL) {
+		log_error(device->ratbag,
+			  "Trying to commit with a driver that doesn't support committing\n");
+		return RATBAG_ERROR_CAPABILITY;
+	}
+
 	rc = device->driver->commit(device);
 	if (rc)
 		return RATBAG_ERROR_DEVICE;
