@@ -36,7 +36,7 @@
 #include <systemd/sd-event.h>
 #include "ratbagd.h"
 #include "shared-macro.h"
-#include "shared-rbtree.h"
+#include <rbtree/shared-rbtree.h>
 
 #include "libratbag-util.h"
 

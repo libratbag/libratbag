@@ -25,8 +25,6 @@
   DEALINGS IN THE SOFTWARE.
 ***/
 
-#include "config.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

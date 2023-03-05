@@ -36,7 +36,7 @@
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
 #include "shared-macro.h"
-#include "shared-rbtree.h"
+#include <rbtree/shared-rbtree.h>
 
 #ifndef RATBAG_DBUS_INTERFACE
 #define RATBAG_DBUS_INTERFACE	"ratbag1"

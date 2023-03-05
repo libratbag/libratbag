@@ -376,6 +376,8 @@ if enable_tests
 	endif
 endif
 
+subdir('rbtree')
+
 #### ratbagd ####
 #
 # The main item of this repo, a DBus server that uses libratbag to talk to
@@ -383,8 +385,6 @@ endif
 #
 src_ratbagd = [
 	'src/shared-macro.h',
-	'src/shared-rbtree.h',
-	'src/shared-rbtree.c',
 	'ratbagd/ratbagd.h',
 	'ratbagd/ratbagd.c',
 	'ratbagd/ratbagd-led.c',
@@ -403,6 +403,7 @@ deps_ratbagd = [
 	dep_udev,
 	dep_logind,
 	dep_libratbag,
+	dep_rbtree,
 	dep_unistring,
 ]
 
