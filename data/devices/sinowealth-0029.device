@@ -4,7 +4,8 @@ DeviceType=mouse
 Driver=sinowealth
 Name=SinoWealth Generic Mouse (0029)
 
-# Configuration data size is 131 bytes.
+# Configuration data size: 131 bytes.
+# https://github.com/libratbag/libratbag/issues/1361
 [Driver/sinowealth/devices/MachenikeM620]
 ButtonCount=6
 DeviceName=Machenike M620
