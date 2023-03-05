@@ -903,12 +903,16 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 		return RATBAG_SUCCESS;
 
 	list_for_each(p, &device->profiles, link) {
-		p->is_active = false;
-		p->is_active_dirty = true;
+		if (p->is_active) {
+			p->is_active = false;
+			p->is_active_dirty = true;
+			p->dirty = true;
+		}
 	}
 
 	profile->is_active = true;
 	profile->is_active_dirty = true;
+	profile->dirty = true;
 	return RATBAG_SUCCESS;
 }
 
