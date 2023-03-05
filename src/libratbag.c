@@ -299,6 +299,13 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 					  device->name);
 			goto out;
 		}
+
+		if (profile->dirty) {
+			log_bug_libratbag(ratbag,
+					  "%s: profile is dirty while probing\n",
+					  device->name);
+			/* Don't bail yet, as we may have some drivers that do this. */
+		}
 	}
 
 	/* Require 1 active profile */
