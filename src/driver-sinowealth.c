@@ -225,9 +225,8 @@ struct sinowealth_config_report {
 	 * CONFIG_SIZE-8 - write.
 	 */
 	uint8_t config_write;
-	uint8_t unknown2[2];
+	uint8_t unknown2[5];
 	enum sinowealth_sensor sensor_type;
-	uint8_t unknown6[3];
 	/* @ref sinowealth_report_rate_map. */
 	uint8_t report_rate:4;
 	/* 0b1000 - make DPI axes independent. */
