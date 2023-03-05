@@ -38,8 +38,3 @@ option('logind-provider',
   choices: [ 'elogind', 'systemd'],
   value : 'systemd',
   description : 'Which logind provider to use')
-
-option('coverity',
-       type: 'boolean',
-       value: false,
-       description: 'Enable coverity build fixes, see meson.build for details [default=false]')
