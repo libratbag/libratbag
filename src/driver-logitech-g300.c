@@ -415,7 +415,7 @@ logitech_g300_read_profile(struct ratbag_profile *profile)
 	hz = logitech_g300_raw_to_frequency(report->frequency);
 
 	ratbag_profile_set_report_rate_list(profile, &hz, 1);
-	ratbag_profile_set_report_rate(profile, hz);
+	profile->hz = hz;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		struct logitech_g300_resolution *res =

@@ -426,7 +426,7 @@ etekcity_read_profile(struct ratbag_profile *profile)
 
 	ratbag_profile_set_report_rate_list(profile, report_rates,
 					    ARRAY_LENGTH(report_rates));
-	ratbag_profile_set_report_rate(profile, report_rate);
+	profile->hz = report_rate;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		dpi_x = setting_report->xres[resolution->index] * 50;

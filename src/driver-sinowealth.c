@@ -1146,7 +1146,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 
 	/* Report rate */
 	const unsigned int hz = sinowealth_raw_to_report_rate(config->report_rate);
-	ratbag_profile_set_report_rate(profile, hz);
+	profile->hz = hz;
 
 	unsigned int enabled_dpi_count = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {

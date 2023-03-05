@@ -871,7 +871,7 @@ roccat_read_dpi(struct roccat_settings_report* settings, struct ratbag_profile* 
 
 	ratbag_profile_set_report_rate_list(profile, report_rates,
 						ARRAY_LENGTH(report_rates));
-	ratbag_profile_set_report_rate(profile, report_rate);
+	profile->hz = report_rate;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		dpi_x = settings->xres[resolution->index] * 100 + 100;

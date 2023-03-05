@@ -162,7 +162,7 @@ test_read_profile(struct ratbag_profile *profile)
 		ratbag_profile_set_report_rate_list(profile,
 						    p0->report_rates,
 						    nrates);
-	ratbag_profile_set_report_rate(profile, p->hz);
+	profile->hz = p->hz;
 
 	for (i = 0; i < d->num_resolutions; i++) {
 		_cleanup_resolution_ struct ratbag_resolution *res = NULL;

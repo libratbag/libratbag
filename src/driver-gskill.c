@@ -974,7 +974,7 @@ gskill_read_resolutions(struct ratbag_profile *profile,
 
 	hz = GSKILL_MAX_POLLING_RATE / (report->polling_rate + 1);
 	ratbag_profile_set_report_rate_list(profile, rates, ARRAY_LENGTH(rates));
-	ratbag_profile_set_report_rate(profile, hz);
+	profile->hz = hz;
 
 	for (i = 0; i < report->dpi_num; i++) {
 		_cleanup_resolution_ struct ratbag_resolution *resolution = NULL;
