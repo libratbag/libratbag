@@ -142,6 +142,7 @@ _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 /* Sensor IDs used in SinoWealth firmware and software. */
 enum sinowealth_sensor {
 	SINOWEALTH_SENSOR_PMW3360 = 0x06,
+	SINOWEALTH_SENSOR_PMW3212 = 0x08,
 	SINOWEALTH_SENSOR_PMW3327 = 0x0e,
 	SINOWEALTH_SENSOR_PMW3389 = 0x0f,
 } __attribute__((packed));
@@ -605,6 +606,7 @@ sinowealth_get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 {
 	switch (sensor) {
 	case SINOWEALTH_SENSOR_PMW3327: return 10200;
+	case SINOWEALTH_SENSOR_PMW3212: return 7200;
 	case SINOWEALTH_SENSOR_PMW3360: return 12000;
 	case SINOWEALTH_SENSOR_PMW3389: return 16000;
 	default: return SINOWEALTH_DPI_FALLBACK;
