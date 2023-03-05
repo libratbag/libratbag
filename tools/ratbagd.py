@@ -407,10 +407,6 @@ class RatbagdDevice(_RatbagdDBus):
         device. No further interaction is required by the client.
         """
         self._dbus_call("Commit", "")
-        for profile in self._profiles:
-            if profile.dirty:
-                profile._dirty = False
-                profile.notify("dirty")
 
 
 class RatbagdProfile(_RatbagdDBus):
@@ -423,32 +419,20 @@ class RatbagdProfile(_RatbagdDBus):
 
     def __init__(self, object_path):
         super().__init__("Profile", object_path)
-        self._dirty = False
         self._active = self._get_dbus_property("IsActive")
+        self._dirty = self._get_dbus_property("IsDirty")
         self._report_rate = self._get_dbus_property("ReportRate")
 
         # FIXME: if we start adding and removing objects from any of these
         # lists, things will break!
         result = self._get_dbus_property("Resolutions") or []
         self._resolutions = [RatbagdResolution(objpath) for objpath in result]
-        self._subscribe_dirty(self._resolutions)
 
         result = self._get_dbus_property("Buttons") or []
         self._buttons = [RatbagdButton(objpath) for objpath in result]
-        self._subscribe_dirty(self._buttons)
 
         result = self._get_dbus_property("Leds") or []
         self._leds = [RatbagdLed(objpath) for objpath in result]
-        self._subscribe_dirty(self._leds)
-
-    def _subscribe_dirty(self, objects):
-        for obj in objects:
-            obj.connect("notify", self._on_obj_notify)
-
-    def _on_obj_notify(self, obj, pspec):
-        if not self._dirty:
-            self._dirty = True
-            self.notify("dirty")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
         if "IsActive" in changed_props.keys():
@@ -456,13 +440,12 @@ class RatbagdProfile(_RatbagdDBus):
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
-                self._on_obj_notify(None, None)
 
-        if "ReportRate" in changed_props.keys():
-            report_rate = changed_props["ReportRate"]
-            if report_rate != self._report_rate:
-                self._report_rate = report_rate
-                self._on_obj_notify(None, None)
+        if "IsDirty" in changed_props.keys():
+            dirty = changed_props["IsDirty"]
+            if dirty != self._dirty:
+                self._dirty = dirty
+                self.notify("dirty")
 
     @GObject.Property
     def capabilities(self):
