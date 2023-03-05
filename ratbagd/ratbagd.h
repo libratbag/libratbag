@@ -238,3 +238,6 @@ typedef void (*ratbagd_callback_t)(void *userdata);
 void ratbagd_schedule_task(struct ratbagd *ctx,
 			   ratbagd_callback_t callback,
 			   void *userdata);
+
+int ratbagd_profile_notify_dirty(sd_bus *bus,
+				 struct ratbagd_profile *profile);

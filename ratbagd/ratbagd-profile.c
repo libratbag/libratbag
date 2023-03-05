@@ -198,6 +198,23 @@ static int ratbagd_profile_is_active(sd_bus *bus,
 	return 0;
 }
 
+static int ratbagd_profile_is_dirty(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *reply,
+				    void *userdata,
+				    sd_bus_error *error)
+{
+	const struct ratbagd_profile *profile = userdata;
+
+	const int is_dirty = ratbag_profile_is_dirty(profile->lib_profile);
+
+	CHECK_CALL(sd_bus_message_append(reply, "b", is_dirty));
+
+	return 0;
+}
+
 static int ratbagd_profile_find_button(sd_bus *bus,
 				       const char *path,
 				       const char *interface,
@@ -278,6 +295,7 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 				      void *userdata,
 				      sd_bus_error *error)
 {
+	sd_bus *bus = sd_bus_message_get_bus(m);
 	struct ratbagd_profile *profile = userdata;
 	int r;
 
@@ -285,15 +303,16 @@ static int ratbagd_profile_set_active(sd_bus_message *m,
 
 	r = ratbag_profile_set_active(profile->lib_profile);
 	if (r < 0) {
-		sd_bus *bus = sd_bus_message_get_bus(m);
 		r = ratbagd_device_resync(profile->device, bus);
 		if (r < 0)
 			return r;
 	}
 
-	ratbagd_for_each_profile_signal(sd_bus_message_get_bus(m),
+	ratbagd_for_each_profile_signal(bus,
 					profile->device,
 					ratbagd_profile_active_signal_cb);
+
+	ratbagd_profile_notify_dirty(bus, profile);
 
 	CHECK_CALL(sd_bus_reply_method_return(m, "u", 0));
 
@@ -322,6 +341,8 @@ ratbagd_profile_set_disabled(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Profile",
 					       "Disabled",
 					       NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
 	}
 
 	return 0;
@@ -367,6 +388,8 @@ ratbagd_profile_set_name(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Profile",
 					       "Name",
 					       NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
 	}
 
 	return 0;
@@ -581,6 +604,8 @@ ratbagd_profile_set_report_rate(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Profile",
 					       "ReportRate",
 					       NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
 	}
 
 	return 0;
@@ -611,6 +636,8 @@ ratbagd_profile_set_angle_snapping(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Profile",
 					       "AngleSnapping",
 					       NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
 	}
 
 	return 0;
@@ -641,6 +668,8 @@ ratbagd_profile_set_debounce(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Profile",
 					       "Debounce",
 					       NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
 	}
 
 	return 0;
@@ -662,6 +691,7 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),
 	SD_BUS_PROPERTY("IsActive", "b", ratbagd_profile_is_active, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("IsDirty", "b", ratbagd_profile_is_dirty, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("ReportRate", "u",
 				 ratbagd_profile_get_report_rate,
 				 ratbagd_profile_set_report_rate, 0,
@@ -1072,4 +1102,16 @@ int ratbagd_profile_resync(sd_bus *bus,
 					      "Leds",
 					      "IsActive",
 					      NULL);
+}
+
+int ratbagd_profile_notify_dirty(sd_bus *bus,
+				 struct ratbagd_profile *profile)
+{
+	(void)sd_bus_emit_properties_changed(bus,
+					     profile->path,
+					     RATBAGD_NAME_ROOT ".Profile",
+					     "IsDirty",
+					     NULL);
+
+	return 0;
 }
