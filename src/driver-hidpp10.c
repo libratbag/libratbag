@@ -430,7 +430,7 @@ hidpp10drv_read_profile(struct ratbag_profile *profile)
 	}
 
 	ratbag_profile_set_report_rate_list(profile, rates, ARRAY_LENGTH(rates));
-	ratbag_profile_set_report_rate(profile, p.refresh_rate);
+	profile->hz = p.refresh_rate;
 
 	ratbag_profile_for_each_button(profile, button)
 		hidpp10drv_read_button(button);

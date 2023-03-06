@@ -142,6 +142,7 @@ _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 /* Sensor IDs used in SinoWealth firmware and software. */
 enum sinowealth_sensor {
 	SINOWEALTH_SENSOR_PMW3360 = 0x06,
+	SINOWEALTH_SENSOR_PMW3212 = 0x08,
 	SINOWEALTH_SENSOR_PMW3327 = 0x0e,
 	SINOWEALTH_SENSOR_PMW3389 = 0x0f,
 } __attribute__((packed));
@@ -225,9 +226,8 @@ struct sinowealth_config_report {
 	 * CONFIG_SIZE-8 - write.
 	 */
 	uint8_t config_write;
-	uint8_t unknown2[2];
+	uint8_t unknown2[5];
 	enum sinowealth_sensor sensor_type;
-	uint8_t unknown6[3];
 	/* @ref sinowealth_report_rate_map. */
 	uint8_t report_rate:4;
 	/* 0b1000 - make DPI axes independent. */
@@ -606,6 +606,7 @@ sinowealth_get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 {
 	switch (sensor) {
 	case SINOWEALTH_SENSOR_PMW3327: return 10200;
+	case SINOWEALTH_SENSOR_PMW3212: return 7200;
 	case SINOWEALTH_SENSOR_PMW3360: return 12000;
 	case SINOWEALTH_SENSOR_PMW3389: return 16000;
 	default: return SINOWEALTH_DPI_FALLBACK;
@@ -1145,7 +1146,7 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 
 	/* Report rate */
 	const unsigned int hz = sinowealth_raw_to_report_rate(config->report_rate);
-	ratbag_profile_set_report_rate(profile, hz);
+	profile->hz = hz;
 
 	unsigned int enabled_dpi_count = 0;
 	ratbag_profile_for_each_resolution(profile, resolution) {
@@ -1549,6 +1550,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc)
 		return rc;
 	ratbag_device_set_firmware_version(device, fw_version);
+	log_debug(device->ratbag, "Firmware version: %s\n", fw_version);
 
 	rc = sinowealth_read_raw_configs(device);
 	if (rc)
@@ -1590,10 +1592,13 @@ sinowealth_init_profile(struct ratbag_device *device)
 	drv_data->led_type = device_data->led_type;
 
 	log_info(device->ratbag, "Found device: %s\n", device_data->device_name);
+	log_debug(device->ratbag, "Sensor type: %#x\n", config->sensor_type);
 
 	/* LED count. */
 	drv_data->led_count = 0;
-	if (config->rgb_effect != RGB_NOT_SUPPORTED && drv_data->led_type != SINOWEALTH_LED_TYPE_NONE) {
+	if (config->rgb_effect == RGB_NOT_SUPPORTED) {
+		log_debug(device->ratbag, "Device config says LED effects are not supported\n");
+	} else if (drv_data->led_type != SINOWEALTH_LED_TYPE_NONE) {
 		drv_data->led_count += 1;
 	}
 	/* We may want to account for the DPI LEDs in the future.

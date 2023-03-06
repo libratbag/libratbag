@@ -214,7 +214,7 @@ class TestRatbagCtlProfile(TestRatbagCtl):
         self.assertEqual(r, "banana")
         # profile 0 doesn't have the capability RATBAG_PROFILE_CAP_WRITABLE_NAME
         self.launch_fail_with_exception_test(
-            "test_device profile 0 name set kiwi", toolbox.RatbagErrorCapability
+            "test_device profile 0 name set kiwi", toolbox.RatbagCapabilityError
         )
         # better be safe than sorry, checking that the previous actually failed :)
         r = self.launch_good_test("test_device profile 0 name get")
@@ -917,7 +917,7 @@ def parse(input_string):
     run_ratbagctl_in_subprocess = ns.subprocess
     start_ratbagd = not ns.use_existing
 
-    if start_ratbagd and not os.geteuid() == 0:
+    if start_ratbagd and os.geteuid() != 0:
         print("Script must be run as root", file=sys.stderr)
         sys.exit(77)
 

@@ -400,7 +400,7 @@ logitech_g600_read_profile(struct ratbag_profile *profile)
 
 	ratbag_profile_set_report_rate_list(profile, report_rates,
 					    ARRAY_LENGTH(report_rates));
-	ratbag_profile_set_report_rate(profile, 1000 / (report->frequency + 1));
+	profile->hz = 1000 / (report->frequency + 1);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		resolution->dpi_x = report->dpi[resolution->index] * 50;

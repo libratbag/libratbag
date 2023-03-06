@@ -198,6 +198,11 @@ static void ratbagd_device_commit_pending(void *data)
 		log_error("error committing device (%d)\n", r);
 	if (r < 0)
 		ratbagd_device_resync(device, device->ctx->bus);
+
+	ratbagd_for_each_profile_signal(device->ctx->bus,
+					device,
+					ratbagd_profile_notify_dirty);
+
 	ratbagd_device_unref(device);
 }
 

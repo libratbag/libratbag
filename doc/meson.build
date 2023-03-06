@@ -5,11 +5,11 @@ cmd_sphinx = find_program('sphinx-build-3', 'sphinx-build3', 'sphinx-build')
 doc_config = configuration_data()
 doc_config.set('PACKAGE_NAME', meson.project_name())
 doc_config.set('PACKAGE_VERSION', meson.project_version())
-doc_config.set('top_srcdir', meson.source_root())
+doc_config.set('top_srcdir', project_source_root)
 
 # Sphinx really really wants a _static directory in its source tree. Let's
 # make it happy
-run_command('mkdir', '-p', join_paths(meson.build_root(), 'doc', '_static'))
+run_command('mkdir', '-p', join_paths(project_build_root, 'doc', '_static'))
 
 # Effectively a noop copy. We *must* generate enums.rst so that will end up
 # in the build directory. sphinx doesn't allow for multiple source
@@ -34,8 +34,8 @@ custom_target('sphinx',
 		input : [ sphinx_conf, dst_rsts ],
 		output : 'html',
 		command : [ cmd_sphinx, '-b', 'html', '-q', '-n',
-				join_paths(meson.build_root(), 'doc'),
-				join_paths(meson.build_root(), 'doc', 'html') ],
+				join_paths(project_build_root, 'doc'),
+				join_paths(project_build_root, 'doc', 'html') ],
                 build_by_default : true,
 		install : false)
 

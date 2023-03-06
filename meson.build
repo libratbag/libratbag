@@ -4,6 +4,16 @@ project('libratbag', 'c',
 	default_options : [ 'c_std=gnu99', 'warning_level=2' ],
 	meson_version : '>= 0.50.0')
 
+# TODO: remove this once we bump meson version.
+if meson.version().version_compare('>=0.56')
+  project_build_root = meson.project_build_root()
+  project_source_root = meson.project_source_root()
+else
+  project_build_root = meson.build_root()
+  project_source_root = meson.source_root()
+  message('Embedding libratbag source will not work because an older version of meson is used')
+endif
+
 # The DBus API version. Increase this every time the DBus API changes.
 # No backwards/forwards guarantee, clients are expected to understand
 # whatever ratbagd speaks or bail out. This should be removed if we ever
@@ -45,7 +55,7 @@ config_h.set('RATBAGD_API_VERSION', ratbagd_api_version)
 libratbag_data_dir = join_paths(get_option('prefix'),
 				get_option('datadir'),
 				'libratbag')
-libratbag_data_dir_devel = join_paths(meson.source_root(), 'data', 'devices')
+libratbag_data_dir_devel = join_paths(project_source_root, 'data', 'devices')
 config_h.set_quoted('LIBRATBAG_DATA_DIR', libratbag_data_dir)
 
 # Coverity breaks because it doesn't define _Float128 correctly, you'll end
@@ -302,13 +312,13 @@ install_subdir('data/devices',
 	       exclude_files : ['device.example', 'README.md'],
 	       install_dir : join_paths(get_option('datadir'), 'libratbag'))
 
-data_parse_test = find_program(join_paths(meson.source_root(), 'test/data-parse-test.py'))
+data_parse_test = find_program(join_paths(project_source_root, 'test/data-parse-test.py'))
 test('data-parse-test', data_parse_test, args: libratbag_data_dir_devel)
 
-duplicate_test = find_program(join_paths(meson.source_root(), 'test/duplicate-check.py'))
+duplicate_test = find_program(join_paths(project_source_root, 'test/duplicate-check.py'))
 test('duplicate-test', duplicate_test, args : libratbag_data_dir_devel)
 
-receiver_id_test = find_program(join_paths(meson.source_root(), 'test/receiver-check.py'))
+receiver_id_test = find_program(join_paths(project_source_root, 'test/receiver-check.py'))
 test('receiver-id-test', receiver_id_test, args : libratbag_data_dir_devel)
 
 #### tests ####
@@ -347,7 +357,7 @@ if enable_tests
 
 	valgrind = find_program('valgrind', required : false)
 	if valgrind.found()
-		valgrind_suppressions_file = join_paths(meson.source_root(), 'test', 'valgrind.suppressions')
+		valgrind_suppressions_file = join_paths(project_source_root, 'test', 'valgrind.suppressions')
 		add_test_setup('valgrind',
 			       exe_wrapper : [
 				       valgrind,
@@ -389,11 +399,13 @@ deps_ratbagd = [
 	dep_unistring,
 ]
 
-executable('ratbagd',
-	   src_ratbagd,
-	   dependencies : deps_ratbagd,
-	   include_directories : include_directories('src'),
-	   install : true,
+executable(
+  'ratbagd',
+  src_ratbagd,
+  dependencies : deps_ratbagd,
+  include_directories : include_directories('src'),
+  install : true,
+  install_dir : get_option('sbindir'),
 )
 
 install_man('ratbagd/ratbagd.8')
@@ -421,7 +433,7 @@ executable('ratbagd.devel',
 	   include_directories : include_directories('src'),
 	   install : false,
 	   c_args : ['-DRATBAG_DBUS_INTERFACE="ratbag_devel1"',
-		     '-DDBUS_POLICY_SRC="@0@/@1@"'.format(meson.build_root(), dbus_devel_policy),
+		     '-DDBUS_POLICY_SRC="@0@/@1@"'.format(project_build_root, dbus_devel_policy),
 		     '-DDBUS_POLICY_DST="@0@/@1@"'.format(dbussystemdir, dbus_devel_policy),
 		     '-DDISABLE_COREDUMP=1'],
 )
@@ -452,14 +464,19 @@ if enable_systemd
 	endif
 endif
 
-config_bindir = configuration_data()
-config_bindir.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
+config_sbindir = configuration_data()
+config_sbindir.set(
+  'sbindir',
+  join_paths(get_option('prefix'), get_option('sbindir')),
+)
 
 if enable_systemd
-	configure_file(input : 'ratbagd/ratbagd.service.in',
-			output : 'ratbagd.service',
-			configuration : config_bindir,
-			install_dir : unitdir)
+  configure_file(
+    input : 'ratbagd/ratbagd.service.in',
+    output : 'ratbagd.service',
+    configuration : config_sbindir,
+    install_dir : unitdir,
+  )
 endif
 
 dbusdir = get_option('dbus-root-dir')
@@ -467,10 +484,12 @@ if dbusdir == ''
 	dbusdir = join_paths(get_option('prefix'), get_option('datadir'), 'dbus-1')
 endif
 
-configure_file(input : 'dbus/org.freedesktop.ratbag1.service.in',
-	       output : 'org.freedesktop.ratbag1.service',
-	       configuration : config_bindir,
-	       install_dir : join_paths(dbusdir, 'system-services'))
+configure_file(
+  input : 'dbus/org.freedesktop.ratbag1.service.in',
+  output : 'org.freedesktop.ratbag1.service',
+  configuration : config_sbindir,
+  install_dir : join_paths(dbusdir, 'system-services')
+)
 
 dbusgroup = get_option('dbus-group')
 if dbusgroup == ''
@@ -519,11 +538,11 @@ ratbagctl_body = configure_file(input : 'tools/ratbagctl.body.py.in',
 			      configuration: config_ratbagctl)
 
 # ratbagctl is the commandline tool to interact with ratbagd over DBus.
-custom_target('ratbagctl',
+ratbagctl_target = custom_target('ratbagctl',
   output : 'ratbagctl',
   input : [ratbagctl_body, 'tools/ratbagd.py'],
   build_by_default : true,
-  command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
+  command : [py3, join_paths(project_source_root, 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
 				'--output', '@OUTPUT@'],
   install: true,
@@ -538,7 +557,7 @@ man_ratbagctl = configure_file (
 )
 
 config_ratbagctl_devel = configuration_data()
-config_ratbagctl_devel.set('MESON_BUILD_ROOT', meson.build_root())
+config_ratbagctl_devel.set('MESON_BUILD_ROOT', project_build_root)
 config_ratbagctl_devel.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 config_ratbagctl_devel.set('RATBAGD_API_VERSION', ratbagd_api_version)
 
@@ -557,9 +576,17 @@ configure_file(input : 'tools/ratbagctl.test.py.in',
 env_test = environment()
 env_test.set('LIBRATBAG_DATA_DIR', libratbag_data_dir_devel)
 # See: https://github.com/mesonbuild/meson/issues/3306.
-env_test.set('MESON_SOURCE_ROOT', meson.source_root())
-ratbagctl_test = find_program(join_paths(meson.build_root(), 'ratbagctl.test'))
-test('ratbagctl-test', ratbagctl_test, args: ['-v'], env : env_test)
+env_test.set('MESON_SOURCE_ROOT', project_source_root)
+ratbagctl_test = find_program(join_paths(project_build_root, 'ratbagctl.test'))
+test(
+  'ratbagctl-test',
+  ratbagctl_test,
+  args : ['-v'],
+  depends : [
+    ratbagctl_target,
+  ],
+  env : env_test,
+)
 
 # ratbag-command uses Swig bindings to call libratbag directly
 swig = find_program('swig')
@@ -568,8 +595,8 @@ swig_gen = generator(
     output: ['@BASENAME@.c'],
     arguments: ['-python', '-py3', '-o', './@OUTPUT@',
                 '-outdir', '.',
-                '-I' + join_paths(meson.source_root(), 'src'),
-                '-I' + join_paths(meson.source_root(), 'tools'),
+                '-I' + join_paths(project_source_root, 'src'),
+                '-I' + join_paths(project_source_root, 'tools'),
                 '@INPUT@'],
 )
 
@@ -579,7 +606,7 @@ wrapper_deps = [
     dep_libshared,
 ]
 
-i_source = join_paths(meson.source_root(), 'src', 'libratbag.i')
+i_source = join_paths(project_source_root, 'src', 'libratbag.i')
 c_source = swig_gen.process(i_source)
 shared_library(
    'libratbag',
@@ -594,7 +621,7 @@ shared_library(
    install: false,
 )
 
-i_source = join_paths(meson.source_root(), 'src', 'hidpp.i')
+i_source = join_paths(project_source_root, 'src', 'hidpp.i')
 c_source = swig_gen.process(i_source)
 shared_library(
    'hidpp',
@@ -624,7 +651,7 @@ custom_target('ratbag-command',
   output : 'ratbag-command',
   input : [ratbagctl_body, ratbagc_py],
   build_by_default : true,
-  command : [py3, join_paths(meson.source_root(), 'tools', 'merge_ratbagd.py'),
+  command : [py3, join_paths(project_source_root, 'tools', 'merge_ratbagd.py'),
 				'@INPUT@',
 				'--output', '@OUTPUT@'],
   install: false)
@@ -638,7 +665,7 @@ run_target(
   command : 'tools/python-black.sh',
 )
 
-python_black_check = find_program(join_paths(meson.source_root(), 'test/python-black-check.sh'))
+python_black_check = find_program(join_paths(project_source_root, 'test/python-black-check.sh'))
 run_target(
   'python-black-check',
   command : python_black_check,
@@ -655,7 +682,7 @@ run_target(
   command : 'tools/python-ruff.sh',
 )
 
-python_ruff_check = find_program(join_paths(meson.source_root(), 'test/python-ruff-check.sh'))
+python_ruff_check = find_program(join_paths(project_source_root, 'test/python-ruff-check.sh'))
 run_target(
   'python-ruff-check',
   command : python_ruff_check,

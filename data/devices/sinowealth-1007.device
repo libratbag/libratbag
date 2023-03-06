@@ -13,6 +13,8 @@ Name=SinoWealth Generic Mouse (1007)
 #LedType=RBG
 #SensorType=A3050
 
+# Configuration size: 123 bytes.
+# https://github.com/libratbag/libratbag/issues/1091
 [Driver/sinowealth/devices/MarvoScorpionG961]
 ButtonCount=6
 DeviceName=Marvo Scorpion G961

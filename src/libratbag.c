@@ -299,6 +299,13 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 					  device->name);
 			goto out;
 		}
+
+		if (profile->dirty) {
+			log_bug_libratbag(ratbag,
+					  "%s: profile is dirty while probing\n",
+					  device->name);
+			/* Don't bail yet, as we may have some drivers that do this. */
+		}
 	}
 
 	/* Require 1 active profile */
@@ -362,28 +369,11 @@ error:
 	return false;
 }
 
-static inline bool
-ratbag_driver_fallback_logitech(struct ratbag_device *device,
-				const struct input_id *dev_id)
-{
-	int rc;
-
-	if (dev_id->vendor != USB_VENDOR_ID_LOGITECH)
-		return false;
-
-	rc = ratbag_try_driver(device, dev_id, "hidpp20", NULL);
-	if (!rc)
-		rc = ratbag_try_driver(device, dev_id, "hidpp10", NULL);
-
-	return rc;
-}
-
 bool
 ratbag_assign_driver(struct ratbag_device *device,
 		     const struct input_id *dev_id,
 		     const struct ratbag_test_device *test_device)
 {
-	bool rc;
 	const char *driver_name;
 
 	if (!test_device) {
@@ -393,14 +383,8 @@ ratbag_assign_driver(struct ratbag_device *device,
 		driver_name = "test_driver";
 	}
 
-	if (driver_name) {
-		log_debug(device->ratbag, "device assigned driver %s\n", driver_name);
-		rc = ratbag_try_driver(device, dev_id, driver_name, test_device);
-	} else {
-		rc = ratbag_driver_fallback_logitech(device, dev_id);
-	}
-
-	return rc;
+	log_debug(device->ratbag, "device assigned driver %s\n", driver_name);
+	return ratbag_try_driver(device, dev_id, driver_name, test_device);
 }
 
 static char *
@@ -820,9 +804,15 @@ ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 }
 
 LIBRATBAG_EXPORT bool
-ratbag_profile_is_active(struct ratbag_profile *profile)
+ratbag_profile_is_active(const struct ratbag_profile *profile)
 {
 	return !!profile->is_active;
+}
+
+LIBRATBAG_EXPORT bool
+ratbag_profile_is_dirty(const struct ratbag_profile *profile)
+{
+	return !!profile->dirty;
 }
 
 LIBRATBAG_EXPORT bool
@@ -832,19 +822,19 @@ ratbag_profile_is_enabled(const struct ratbag_profile *profile)
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_device_get_num_profiles(struct ratbag_device *device)
+ratbag_device_get_num_profiles(const struct ratbag_device *device)
 {
 	return device->num_profiles;
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_device_get_num_buttons(struct ratbag_device *device)
+ratbag_device_get_num_buttons(const struct ratbag_device *device)
 {
 	return device->num_buttons;
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_device_get_num_leds(struct ratbag_device *device)
+ratbag_device_get_num_leds(const struct ratbag_device *device)
 {
 	return device->num_leds;
 }
@@ -857,6 +847,12 @@ ratbag_device_commit(struct ratbag_device *device)
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	int rc;
+
+	if (device->driver->commit == NULL) {
+		log_error(device->ratbag,
+			  "Trying to commit with a driver that doesn't support committing\n");
+		return RATBAG_ERROR_CAPABILITY;
+	}
 
 	rc = device->driver->commit(device);
 	if (rc)
@@ -878,6 +874,16 @@ ratbag_device_commit(struct ratbag_device *device)
 		list_for_each(resolution, &profile->resolutions, link)
 			resolution->dirty = false;
 
+		/* TODO: think if this should be moved into `driver-commit`. */
+		if (profile->is_active_dirty && profile->is_active) {
+			if (device->driver->set_active_profile == NULL)
+				return RATBAG_ERROR_IMPLEMENTATION;
+
+			rc = device->driver->set_active_profile(device, profile->index);
+			if (rc)
+				return RATBAG_ERROR_DEVICE;
+		}
+		profile->is_active_dirty = false;
 	}
 
 	return RATBAG_SUCCESS;
@@ -888,25 +894,26 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct ratbag_profile *p;
-	int rc;
 
 	if (device->num_profiles == 1)
 		return RATBAG_SUCCESS;
 
-	assert(device->driver->set_active_profile);
-	rc = device->driver->set_active_profile(device, profile->index);
-	if (rc)
-		return RATBAG_ERROR_DEVICE;
-
-	list_for_each(p, &device->profiles, link)
-		p->is_active = false;
+	list_for_each(p, &device->profiles, link) {
+		if (p->is_active) {
+			p->is_active = false;
+			p->is_active_dirty = true;
+			p->dirty = true;
+		}
+	}
 
 	profile->is_active = true;
+	profile->is_active_dirty = true;
+	profile->dirty = true;
 	return RATBAG_SUCCESS;
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_profile_get_num_resolutions(struct ratbag_profile *profile)
+ratbag_profile_get_num_resolutions(const struct ratbag_profile *profile)
 {
 	return profile->num_resolutions;
 }
@@ -960,7 +967,7 @@ ratbag_resolution_unref(struct ratbag_resolution *resolution)
 }
 
 LIBRATBAG_EXPORT bool
-ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
+ratbag_resolution_has_capability(const struct ratbag_resolution *resolution,
 				 enum ratbag_resolution_capability cap)
 {
 	assert(cap <= RATBAG_RESOLUTION_CAP_DISABLE);
@@ -969,7 +976,7 @@ ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
 }
 
 static inline bool
-resolution_has_dpi(struct ratbag_resolution *resolution,
+resolution_has_dpi(const struct ratbag_resolution *resolution,
 		   unsigned int dpi)
 {
 	for (size_t i = 0; i < resolution->ndpis; i++) {
@@ -1065,13 +1072,13 @@ ratbag_profile_set_debounce(struct ratbag_profile *profile,
 }
 
 LIBRATBAG_EXPORT int
-ratbag_resolution_get_dpi(struct ratbag_resolution *resolution)
+ratbag_resolution_get_dpi(const struct ratbag_resolution *resolution)
 {
 	return resolution->dpi_x;
 }
 
 LIBRATBAG_EXPORT size_t
-ratbag_resolution_get_dpi_list(struct ratbag_resolution *resolution,
+ratbag_resolution_get_dpi_list(const struct ratbag_resolution *resolution,
 			       unsigned int *resolutions,
 			       size_t nres)
 {
@@ -1089,37 +1096,37 @@ ratbag_resolution_get_dpi_list(struct ratbag_resolution *resolution,
 }
 
 LIBRATBAG_EXPORT int
-ratbag_resolution_get_dpi_x(struct ratbag_resolution *resolution)
+ratbag_resolution_get_dpi_x(const struct ratbag_resolution *resolution)
 {
 	return resolution->dpi_x;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution)
+ratbag_resolution_get_dpi_y(const struct ratbag_resolution *resolution)
 {
 	return resolution->dpi_y;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_profile_get_report_rate(struct ratbag_profile *profile)
+ratbag_profile_get_report_rate(const struct ratbag_profile *profile)
 {
 	return profile->hz;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_profile_get_angle_snapping(struct ratbag_profile *profile)
+ratbag_profile_get_angle_snapping(const struct ratbag_profile *profile)
 {
 	return profile->angle_snapping;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_profile_get_debounce(struct ratbag_profile *profile)
+ratbag_profile_get_debounce(const struct ratbag_profile *profile)
 {
 	return profile->debounce;
 }
 
 LIBRATBAG_EXPORT size_t
-ratbag_profile_get_debounce_list(struct ratbag_profile *profile,
+ratbag_profile_get_debounce_list(const struct ratbag_profile *profile,
 				 unsigned int *debounces,
 				 size_t ndebounces)
 {
@@ -1137,7 +1144,7 @@ ratbag_profile_get_debounce_list(struct ratbag_profile *profile,
 }
 
 LIBRATBAG_EXPORT size_t
-ratbag_profile_get_report_rate_list(struct ratbag_profile *profile,
+ratbag_profile_get_report_rate_list(const struct ratbag_profile *profile,
 				    unsigned int *rates,
 				    size_t nrates)
 {
@@ -1272,13 +1279,13 @@ ratbag_profile_get_button(struct ratbag_profile *profile,
 }
 
 LIBRATBAG_EXPORT enum ratbag_button_action_type
-ratbag_button_get_action_type(struct ratbag_button *button)
+ratbag_button_get_action_type(const struct ratbag_button *button)
 {
 	return button->action.type;
 }
 
 LIBRATBAG_EXPORT bool
-ratbag_button_has_action_type(struct ratbag_button *button,
+ratbag_button_has_action_type(const struct ratbag_button *button,
 			      enum ratbag_button_action_type action_type)
 {
 	switch (action_type) {
@@ -1296,7 +1303,7 @@ ratbag_button_has_action_type(struct ratbag_button *button,
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_button_get_button(struct ratbag_button *button)
+ratbag_button_get_button(const struct ratbag_button *button)
 {
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_BUTTON)
 		return 0;
@@ -1335,7 +1342,7 @@ ratbag_button_set_button(struct ratbag_button *button, unsigned int btn)
 }
 
 LIBRATBAG_EXPORT enum ratbag_button_action_special
-ratbag_button_get_special(struct ratbag_button *button)
+ratbag_button_get_special(const struct ratbag_button *button)
 {
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_SPECIAL)
 		return RATBAG_BUTTON_ACTION_SPECIAL_INVALID;
@@ -1366,7 +1373,7 @@ ratbag_button_set_special(struct ratbag_button *button,
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_button_get_key(struct ratbag_button *button,
+ratbag_button_get_key(const struct ratbag_button *button,
 		      unsigned int *modifiers,
 		      size_t *sz)
 {
@@ -1498,13 +1505,13 @@ ratbag_led_unref(struct ratbag_led *led)
 }
 
 LIBRATBAG_EXPORT enum ratbag_led_mode
-ratbag_led_get_mode(struct ratbag_led *led)
+ratbag_led_get_mode(const struct ratbag_led *led)
 {
 	return led->mode;
 }
 
 LIBRATBAG_EXPORT bool
-ratbag_led_has_mode(struct ratbag_led *led,
+ratbag_led_has_mode(const struct ratbag_led *led,
 		    enum ratbag_led_mode mode)
 {
 	assert(mode <= RATBAG_LED_BREATHING);
@@ -1516,19 +1523,19 @@ ratbag_led_has_mode(struct ratbag_led *led,
 }
 
 LIBRATBAG_EXPORT struct ratbag_color
-ratbag_led_get_color(struct ratbag_led *led)
+ratbag_led_get_color(const struct ratbag_led *led)
 {
 	return led->color;
 }
 
 LIBRATBAG_EXPORT int
-ratbag_led_get_effect_duration(struct ratbag_led *led)
+ratbag_led_get_effect_duration(const struct ratbag_led *led)
 {
 	return led->ms;
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_led_get_brightness(struct ratbag_led *led)
+ratbag_led_get_brightness(const struct ratbag_led *led)
 {
 	return led->brightness;
 }
@@ -1552,7 +1559,7 @@ ratbag_led_set_color(struct ratbag_led *led, struct ratbag_color color)
 }
 
 LIBRATBAG_EXPORT enum ratbag_led_colordepth
-ratbag_led_get_colordepth(struct ratbag_led *led)
+ratbag_led_get_colordepth(const struct ratbag_led *led)
 {
 	return led->colordepth;
 }
@@ -1599,7 +1606,7 @@ ratbag_profile_get_led(struct ratbag_profile *profile,
 }
 
 LIBRATBAG_EXPORT const char *
-ratbag_profile_get_name(struct ratbag_profile *profile)
+ratbag_profile_get_name(const struct ratbag_profile *profile)
 {
 	return profile->name;
 }
@@ -1779,7 +1786,8 @@ ratbag_button_macro_set_event(struct ratbag_button_macro *m,
 }
 
 LIBRATBAG_EXPORT enum ratbag_macro_event_type
-ratbag_button_macro_get_event_type(struct ratbag_button_macro *macro, unsigned int index)
+ratbag_button_macro_get_event_type(const struct ratbag_button_macro *macro,
+				   unsigned int index)
 {
 	if (index >= MAX_MACRO_EVENTS)
 		return RATBAG_MACRO_EVENT_INVALID;
@@ -1788,9 +1796,10 @@ ratbag_button_macro_get_event_type(struct ratbag_button_macro *macro, unsigned i
 }
 
 LIBRATBAG_EXPORT int
-ratbag_button_macro_get_event_key(struct ratbag_button_macro *m, unsigned int index)
+ratbag_button_macro_get_event_key(const struct ratbag_button_macro *m,
+				  unsigned int index)
 {
-	struct ratbag_macro *macro = &m->macro;
+	const struct ratbag_macro *macro = &m->macro;
 
 	if (index >= MAX_MACRO_EVENTS)
 		return 0;
@@ -1803,10 +1812,10 @@ ratbag_button_macro_get_event_key(struct ratbag_button_macro *m, unsigned int in
 }
 
 LIBRATBAG_EXPORT int
-ratbag_button_macro_get_event_timeout(struct ratbag_button_macro *m,
+ratbag_button_macro_get_event_timeout(const struct ratbag_button_macro *m,
 				      unsigned int index)
 {
-	struct ratbag_macro *macro = &m->macro;
+	const struct ratbag_macro *macro = &m->macro;
 
 	if (index >= MAX_MACRO_EVENTS)
 		return 0;
@@ -1818,13 +1827,13 @@ ratbag_button_macro_get_event_timeout(struct ratbag_button_macro *m,
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_button_macro_get_num_events(struct ratbag_button_macro *macro)
+ratbag_button_macro_get_num_events(const struct ratbag_button_macro *macro)
 {
 	return MAX_MACRO_EVENTS;
 }
 
 LIBRATBAG_EXPORT const char *
-ratbag_button_macro_get_name(struct ratbag_button_macro *macro)
+ratbag_button_macro_get_name(const struct ratbag_button_macro *macro)
 {
 	return macro->macro.name;
 }
@@ -1933,9 +1942,9 @@ ratbag_button_macro_new_from_keycode(struct ratbag_button *button,
 }
 
 int
-ratbag_action_macro_num_keys(struct ratbag_button_action *action)
+ratbag_action_macro_num_keys(const struct ratbag_button_action *action)
 {
-	struct ratbag_macro *macro = action->macro;
+	const struct ratbag_macro *macro = action->macro;
 	int i, count;
 
 	count = 0;
@@ -1965,7 +1974,7 @@ ratbag_action_macro_num_keys(struct ratbag_button_action *action)
 }
 
 int
-ratbag_action_keycode_from_macro(struct ratbag_button_action *action,
+ratbag_action_keycode_from_macro(const struct ratbag_button_action *action,
 				 unsigned int *key_out,
 				 unsigned int *modifiers_out)
 {

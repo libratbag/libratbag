@@ -147,9 +147,9 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 
 	switch (dpi_count) {
 	case 2:  /* 2 DPI presets */
-		ratbag_profile_set_report_rate(profile, resolution_data.data2.rate);
-		ratbag_profile_set_angle_snapping(profile, resolution_data.data2.snapping);
-		ratbag_profile_set_debounce(profile, resolution_data.data2.response);
+		profile->hz = resolution_data.data2.rate;
+		profile->angle_snapping = resolution_data.data2.snapping;
+		profile->debounce = resolution_data.data2.response;
 		ratbag_profile_for_each_resolution(profile, resolution)
 			ratbag_resolution_set_resolution(
 				resolution,
@@ -158,9 +158,9 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 		break;
 
 	case 4:  /* 4 DPI presets */
-		ratbag_profile_set_report_rate(profile, resolution_data.data4.rate);
-		ratbag_profile_set_angle_snapping(profile, resolution_data.data4.snapping);
-		ratbag_profile_set_debounce(profile, resolution_data.data4.response);
+		profile->hz = resolution_data.data4.rate;
+		profile->angle_snapping = resolution_data.data4.snapping;
+		profile->debounce = resolution_data.data4.response;
 		ratbag_profile_for_each_resolution(profile, resolution)
 			ratbag_resolution_set_resolution(
 				resolution,

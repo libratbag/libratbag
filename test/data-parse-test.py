@@ -31,21 +31,6 @@ import re
 import sys
 import traceback
 
-from typing import Collection, TypeVar
-
-
-T = TypeVar("T")
-
-
-def assertIn(element: T, collection: Collection[T]):
-    if element not in collection:
-        raise AssertionError(f"{element} must be in {collection}")
-
-
-def assertNotIn(element: T, collection: Collection[T]):
-    if element in collection:
-        raise AssertionError(f"{element} must not be in {collection}")
-
 
 def check_match_str(string: str):
     bustypes = ["usb", "bluetooth"]
@@ -57,7 +42,7 @@ def check_match_str(string: str):
 
         parts = match.split(":")
         assert len(parts) == 3
-        assertIn(parts[0], bustypes)
+        assert parts[0] in bustypes
         vid = parts[1]
         assert vid == f"{int(vid, 16):04x}"
         pid = parts[2]
@@ -66,17 +51,17 @@ def check_match_str(string: str):
 
 def check_devicetype_str(string):
     permitted_types = ["mouse", "keyboard", "other"]
-    assertIn(string, permitted_types)
+    assert string in permitted_types
 
 
 def check_section_device(section: configparser.SectionProxy):
     required_keys = ["Name", "Driver", "DeviceMatch", "DeviceType"]
 
-    for key in section.keys():
-        assertIn(key, required_keys)
+    for key in section:
+        assert key in required_keys
 
     for r in required_keys:
-        assertIn(r, section)
+        assert r in section
 
     check_devicetype_str(section["DeviceType"])
 
@@ -117,7 +102,7 @@ def check_dpi_list_str(string: str):
 
 def check_profile_type_str(string: str):
     types = ["G9", "G500", "G700"]
-    assertIn(string, types)
+    assert string in types
 
 
 def check_section_asus(section: configparser.SectionProxy):
@@ -131,8 +116,8 @@ def check_section_asus(section: configparser.SectionProxy):
         "Quirks",
         "Wireless",
     )
-    for key in section.keys():
-        assertIn(key, permitted_keys)
+    for key in section:
+        assert key in permitted_keys
 
     try:
         check_dpi_range_str(section["DpiRange"])
@@ -146,7 +131,7 @@ def check_section_asus(section: configparser.SectionProxy):
             "STRIX_PROFILE",
         )
         for quirk in section["Quirks"].split(";"):
-            assertIn(quirk, quirks)
+            assert quirk in quirks
     except KeyError:
         # No such section - not an error.
         pass
@@ -161,8 +146,8 @@ def check_section_hidpp10(section: configparser.SectionProxy):
         "DeviceIndex",
         "Leds",
     ]
-    for key in section.keys():
-        assertIn(key, permitted)
+    for key in section:
+        assert key in permitted
 
     try:
         nprofiles = int(section["Profiles"])
@@ -181,14 +166,14 @@ def check_section_hidpp10(section: configparser.SectionProxy):
 
     try:
         check_dpi_range_str(section["DpiRange"])
-        assertNotIn("DpiList", section.keys())
+        assert "DpiList" not in section.keys()
     except KeyError:
         # No such section - not an error.
         pass
 
     try:
         check_dpi_list_str(section["DpiList"])
-        assertNotIn("DpiRange", section.keys())
+        assert "DpiRange" not in section.keys()
     except KeyError:
         # No such section - not an error.
         pass
@@ -210,8 +195,8 @@ def check_section_hidpp10(section: configparser.SectionProxy):
 
 def check_section_hidpp20(section: configparser.SectionProxy):
     permitted = ["Buttons", "DeviceIndex", "Leds", "ReportRate", "Quirk"]
-    for key in section.keys():
-        assertIn(key, permitted)
+    for key in section:
+        assert key in permitted
 
     try:
         index = int(section["DeviceIndex"], 16)
@@ -231,26 +216,26 @@ def check_section_steelseries(section: configparser.SectionProxy):
         "MacroLength",
         "Quirk",
     )
-    for key in section.keys():
-        assertIn(key, permitted_keys)
+    for key in section:
+        assert key in permitted_keys
 
     try:
         check_dpi_list_str(section["DpiList"])
-        assertNotIn("DpiRange", section.keys())
+        assert "DpiRange" not in section.keys()
     except KeyError:
         # No such section - not an error.
         pass
 
     try:
         check_dpi_range_str(section["DpiRange"])
-        assertNotIn("DpiList", section.keys())
+        assert "DpiList" not in section.keys()
     except KeyError:
         # No such section - not an error.
         pass
 
     try:
         quirks = ("Rival100", "SenseiRAW")
-        assertIn(section["Quirk"], quirks)
+        assert section["Quirk"] in quirks
     except KeyError:
         # No such section - not an error.
         pass
@@ -273,7 +258,7 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
         check_section_steelseries(section)
         return
 
-    raise AssertionError(f"Unsupported driver section {driver}")
+    raise ValueError(f"Unsupported driver section {driver}")
 
 
 def validate_data_file_name(path: str):
@@ -283,7 +268,7 @@ def validate_data_file_name(path: str):
     illegal_characters_regex = "([\\[\\]\\{\\}\\(\\)])"
     found_characters = re.findall(illegal_characters_regex, path)
     if found_characters:
-        raise AssertionError(
+        raise ValueError(
             "data file name '{}' contains illegal characters: '{}'".format(
                 path, "".join(found_characters)
             )
@@ -297,7 +282,7 @@ def parse_data_file(path: str):
     data.optionxform = lambda option: option
     data.read(path)
 
-    assertIn("Device", data.sections())
+    assert "Device" in data.sections()
     check_section_device(data["Device"])
 
     driver = data["Device"]["Driver"]
@@ -309,13 +294,13 @@ def parse_data_file(path: str):
         print("Skipping `Driver` section check for a `sinowealth` device")
     else:
         for s in data.sections():
-            assertIn(s, permitted_sections)
+            assert s in permitted_sections
 
     if data.has_section(driver_section):
         check_section_driver(driver, data[driver_section])
 
 
-def main() -> int:
+def main() -> None:
     is_error = False
 
     parser = argparse.ArgumentParser(description="Device data-file checker")
@@ -326,12 +311,13 @@ def main() -> int:
         try:
             validate_data_file_name(path_str)
             parse_data_file(path_str)
-        except AssertionError as e:
+        except Exception:
             is_error = True
-            traceback.print_exception(e, file=sys.stdout)
+            traceback.print_exc(file=sys.stdout)
 
-    return int(is_error)
+    if is_error:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

@@ -348,7 +348,7 @@ steelseries_probe(struct ratbag_device *device)
 		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
 		ratbag_profile_set_report_rate_list(profile, report_rates,
 						    ARRAY_LENGTH(report_rates));
-		ratbag_profile_set_report_rate(profile, 1000);
+		profile->hz = 1000;
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (resolution->index == 0) {

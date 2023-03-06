@@ -528,7 +528,7 @@ ratbag_device_commit(struct ratbag_device *device);
  * @return The number of profiles available on this device.
  */
 unsigned int
-ratbag_device_get_num_profiles(struct ratbag_device *device);
+ratbag_device_get_num_profiles(const struct ratbag_device *device);
 
 /**
  * @ingroup device
@@ -539,7 +539,7 @@ ratbag_device_get_num_profiles(struct ratbag_device *device);
  * @return The number of buttons available on this device.
  */
 unsigned int
-ratbag_device_get_num_buttons(struct ratbag_device *device);
+ratbag_device_get_num_buttons(const struct ratbag_device *device);
 
 /**
  * @ingroup device
@@ -550,7 +550,7 @@ ratbag_device_get_num_buttons(struct ratbag_device *device);
  * @return The number of LEDs available on this device.
  */
 unsigned int
-ratbag_device_get_num_leds(struct ratbag_device *device);
+ratbag_device_get_num_leds(const struct ratbag_device *device);
 
 /**
  * @ingroup profile
@@ -597,7 +597,7 @@ ratbag_profile_has_capability(const struct ratbag_profile *profile,
  * @return the profile name
  */
 const char *
-ratbag_profile_get_name(struct ratbag_profile *profile);
+ratbag_profile_get_name(const struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
@@ -700,12 +700,26 @@ ratbag_device_get_profile(struct ratbag_device *device, unsigned int index);
  * @return non-zero if the profile is currently active, zero otherwise
  */
 bool
-ratbag_profile_is_active(struct ratbag_profile *profile);
+ratbag_profile_is_active(const struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
  *
- * Make the given profile the currently active profile
+ * Check if the given profile is dirty, that is, the device needs committing
+ * after having configuration changes.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return non-zero if the profile is dirty, zero otherwise
+ */
+bool
+ratbag_profile_is_dirty(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Make the given profile the currently active profile. Note that you have to
+ * commit the device before this gets applied.
  *
  * @param profile The profile to make the active profile.
  *
@@ -743,7 +757,7 @@ ratbag_profile_set_report_rate(struct ratbag_profile *profile,
  * @return The report rate for this profile in Hz
  */
 int
-ratbag_profile_get_report_rate(struct ratbag_profile *profile);
+ratbag_profile_get_report_rate(const struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
@@ -765,7 +779,7 @@ ratbag_profile_get_report_rate(struct ratbag_profile *profile);
  * is larger than nrates, the list was truncated.
  */
 size_t
-ratbag_profile_get_report_rate_list(struct ratbag_profile *profile,
+ratbag_profile_get_report_rate_list(const struct ratbag_profile *profile,
 				    unsigned int *rates,
 				    size_t nrates);
 
@@ -798,7 +812,7 @@ ratbag_profile_set_angle_snapping(struct ratbag_profile *profile,
  * @return Angle snapping value
  */
 int
-ratbag_profile_get_angle_snapping(struct ratbag_profile *profile);
+ratbag_profile_get_angle_snapping(const struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
@@ -827,7 +841,7 @@ ratbag_profile_set_debounce(struct ratbag_profile *profile,
  * @return Debounce time for this profile in ms
  */
 int
-ratbag_profile_get_debounce(struct ratbag_profile *profile);
+ratbag_profile_get_debounce(const struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
@@ -849,7 +863,7 @@ ratbag_profile_get_debounce(struct ratbag_profile *profile);
  * is larger than ndebounces, the list was truncated.
  */
 size_t
-ratbag_profile_get_debounce_list(struct ratbag_profile *profile,
+ratbag_profile_get_debounce_list(const struct ratbag_profile *profile,
 				 unsigned int *debounces,
 				 size_t ndebounces);
 
@@ -869,7 +883,7 @@ ratbag_profile_get_debounce_list(struct ratbag_profile *profile,
  * @return The number of resolutions available.
  */
 unsigned int
-ratbag_profile_get_num_resolutions(struct ratbag_profile *profile);
+ratbag_profile_get_num_resolutions(const struct ratbag_profile *profile);
 
 /**
  * @ingroup profile
@@ -955,7 +969,7 @@ ratbag_resolution_get_user_data(const struct ratbag_resolution *resolution);
  * @return non-zero if the capability is available, zero otherwise.
  */
 bool
-ratbag_resolution_has_capability(struct ratbag_resolution *resolution,
+ratbag_resolution_has_capability(const struct ratbag_resolution *resolution,
 				 enum ratbag_resolution_capability cap);
 
 /**
@@ -1021,7 +1035,7 @@ ratbag_resolution_set_dpi_xy(struct ratbag_resolution *resolution,
  * @return The resolution in dpi
  */
 int
-ratbag_resolution_get_dpi(struct ratbag_resolution *resolution);
+ratbag_resolution_get_dpi(const struct ratbag_resolution *resolution);
 
 /**
  * @ingroup resolution
@@ -1043,7 +1057,7 @@ ratbag_resolution_get_dpi(struct ratbag_resolution *resolution);
  * is larger than nres, the list was truncated.
  */
 size_t
-ratbag_resolution_get_dpi_list(struct ratbag_resolution *resolution,
+ratbag_resolution_get_dpi_list(const struct ratbag_resolution *resolution,
 			       unsigned int *resolutions,
 			       size_t nres);
 
@@ -1062,7 +1076,7 @@ ratbag_resolution_get_dpi_list(struct ratbag_resolution *resolution,
  * @return The resolution in dpi
  */
 int
-ratbag_resolution_get_dpi_x(struct ratbag_resolution *resolution);
+ratbag_resolution_get_dpi_x(const struct ratbag_resolution *resolution);
 
 /**
  * @ingroup resolution
@@ -1079,7 +1093,7 @@ ratbag_resolution_get_dpi_x(struct ratbag_resolution *resolution);
  * @return The resolution in dpi
  */
 int
-ratbag_resolution_get_dpi_y(struct ratbag_resolution *resolution);
+ratbag_resolution_get_dpi_y(const struct ratbag_resolution *resolution);
 
 /**
  * @ingroup resolution
@@ -1229,7 +1243,7 @@ ratbag_button_get_user_data(const struct ratbag_button *button);
  * @return The type of the action currently configured for this button
  */
 enum ratbag_button_action_type
-ratbag_button_get_action_type(struct ratbag_button *button);
+ratbag_button_get_action_type(const struct ratbag_button *button);
 
 /**
  * @ingroup button
@@ -1249,7 +1263,7 @@ ratbag_button_get_action_type(struct ratbag_button *button);
  * @return non-zero if the action type is supported, zero otherwise.
  */
 bool
-ratbag_button_has_action_type(struct ratbag_button *button,
+ratbag_button_has_action_type(const struct ratbag_button *button,
 			      enum ratbag_button_action_type action_type);
 
 /**
@@ -1272,7 +1286,7 @@ ratbag_button_has_action_type(struct ratbag_button *button,
  * @see ratbag_button_set_button
  */
 unsigned int
-ratbag_button_get_button(struct ratbag_button *button);
+ratbag_button_get_button(const struct ratbag_button *button);
 
 /**
  * @ingroup button
@@ -1304,7 +1318,7 @@ ratbag_button_set_button(struct ratbag_button *button,
  * @see ratbag_button_set_button
  */
 enum ratbag_button_action_special
-ratbag_button_get_special(struct ratbag_button *button);
+ratbag_button_get_special(const struct ratbag_button *button);
 
 /**
  * @ingroup led
@@ -1338,7 +1352,7 @@ ratbag_profile_get_led(struct ratbag_profile *profile, unsigned int index);
  * @see ratbag_led_set_mode
  */
 bool
-ratbag_led_has_mode(struct ratbag_led *led,
+ratbag_led_has_mode(const struct ratbag_led *led,
 		    enum ratbag_led_mode mode);
 
 /**
@@ -1352,7 +1366,7 @@ ratbag_led_has_mode(struct ratbag_led *led,
  * @see ratbag_led_set_mode
  */
 enum ratbag_led_mode
-ratbag_led_get_mode(struct ratbag_led *led);
+ratbag_led_get_mode(const struct ratbag_led *led);
 /**
  * @ingroup led
  *
@@ -1369,7 +1383,7 @@ ratbag_led_get_mode(struct ratbag_led *led);
  * @see ratbag_led_set_color
  */
 struct ratbag_color
-ratbag_led_get_color(struct ratbag_led *led);
+ratbag_led_get_color(const struct ratbag_led *led);
 
 /**
  * @ingroup led
@@ -1382,7 +1396,7 @@ ratbag_led_get_color(struct ratbag_led *led);
  * @see ratbag_led_set_color
  */
 enum ratbag_led_colordepth
-ratbag_led_get_colordepth(struct ratbag_led *led);
+ratbag_led_get_colordepth(const struct ratbag_led *led);
 
 /**
  * @ingroup led
@@ -1395,7 +1409,7 @@ ratbag_led_get_colordepth(struct ratbag_led *led);
  * @see ratbag_led_set_effect_duration
  */
 int
-ratbag_led_get_effect_duration(struct ratbag_led *led);
+ratbag_led_get_effect_duration(const struct ratbag_led *led);
 /**
  * @ingroup led
  *
@@ -1407,7 +1421,7 @@ ratbag_led_get_effect_duration(struct ratbag_led *led);
  * @see ratbag_led_get_brightness
  */
 unsigned int
-ratbag_led_get_brightness(struct ratbag_led *led);
+ratbag_led_get_brightness(const struct ratbag_led *led);
 
 /**
  * @ingroup led
@@ -1511,7 +1525,7 @@ ratbag_button_set_special(struct ratbag_button *button,
  * @return The button number
  */
 unsigned int
-ratbag_button_get_key(struct ratbag_button *button,
+ratbag_button_get_key(const struct ratbag_button *button,
 		      unsigned int *modifiers,
 		      size_t *sz);
 
@@ -1555,7 +1569,7 @@ ratbag_button_disable(struct ratbag_button *button);
  * @return The name of the macro
  */
 const char *
-ratbag_button_macro_get_name(struct ratbag_button_macro *macro);
+ratbag_button_macro_get_name(const struct ratbag_button_macro *macro);
 
 /**
  * @ingroup button
@@ -1565,7 +1579,7 @@ ratbag_button_macro_get_name(struct ratbag_button_macro *macro);
  * @return The maximum number of events that can be assigned to this macro
  */
 unsigned int
-ratbag_button_macro_get_num_events(struct ratbag_button_macro *macro);
+ratbag_button_macro_get_num_events(const struct ratbag_button_macro *macro);
 
 /**
  * @ingroup button
@@ -1582,7 +1596,7 @@ ratbag_button_macro_get_num_events(struct ratbag_button_macro *macro);
  * @return The type of the event at the given index
  */
 enum ratbag_macro_event_type
-ratbag_button_macro_get_event_type(struct ratbag_button_macro *macro,
+ratbag_button_macro_get_event_type(const struct ratbag_button_macro *macro,
 				   unsigned int index);
 
 /**
@@ -1602,7 +1616,7 @@ ratbag_button_macro_get_event_type(struct ratbag_button_macro *macro,
  * @return The key of the event at the given index
  */
 int
-ratbag_button_macro_get_event_key(struct ratbag_button_macro*macro,
+ratbag_button_macro_get_event_key(const struct ratbag_button_macro*macro,
 				  unsigned int index);
 
 /**
@@ -1621,7 +1635,7 @@ ratbag_button_macro_get_event_key(struct ratbag_button_macro*macro,
  * @return The timeout of the event at the given index
  */
 int
-ratbag_button_macro_get_event_timeout(struct ratbag_button_macro *macro,
+ratbag_button_macro_get_event_timeout(const struct ratbag_button_macro *macro,
 				      unsigned int index);
 
 /**

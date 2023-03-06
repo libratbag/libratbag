@@ -43,7 +43,7 @@ class MetaRatbag(type):
         except KeyError:
             pass
         else:
-            for k in libratbag.__dict__.keys():
+            for k in libratbag.__dict__:
                 if k.startswith(prefix) and k.isupper():
                     key = k[len(prefix) :]
                     dct[key] = getattr(libratbag, k)
@@ -99,55 +99,41 @@ class RatbagDeviceType(IntEnum):
     KEYBOARD = 3
 
 
-class RatbagdUnavailable(Exception):
+class RatbagdUnavailableError(Exception):
     """Signals DBus is unavailable or the ratbagd daemon is not available."""
-
-    pass
 
 
 class RatbagError(Exception):
     """A common base exception to catch any ratbag exception."""
 
-    pass
 
-
-class RatbagErrorDevice(RatbagError):
+class RatbagDeviceError(RatbagError):
     """An exception corresponding to RatbagErrorCode.DEVICE."""
 
-    pass
 
-
-class RatbagErrorCapability(RatbagError):
+class RatbagCapabilityError(RatbagError):
     """An exception corresponding to RatbagErrorCode.CAPABILITY."""
 
-    pass
 
-
-class RatbagErrorValue(RatbagError):
+class RatbagValueError(RatbagError):
     """An exception corresponding to RatbagErrorCode.VALUE."""
 
-    pass
 
-
-class RatbagErrorSystem(RatbagError):
+class RatbagSystemError(RatbagError):
     """An exception corresponding to RatbagErrorCode.SYSTEM."""
 
-    pass
 
-
-class RatbagErrorImplementation(RatbagError):
+class RatbagImplementationError(RatbagError):
     """An exception corresponding to RatbagErrorCode.IMPLEMENTATION."""
-
-    pass
 
 
 """A table mapping RatbagErrorCode values to RatbagError* exceptions."""
 EXCEPTION_TABLE = {
-    RatbagErrorCode.DEVICE: RatbagErrorDevice,
-    RatbagErrorCode.CAPABILITY: RatbagErrorCapability,
-    RatbagErrorCode.VALUE: RatbagErrorValue,
-    RatbagErrorCode.SYSTEM: RatbagErrorSystem,
-    RatbagErrorCode.IMPLEMENTATION: RatbagErrorImplementation,
+    RatbagErrorCode.DEVICE: RatbagDeviceError,
+    RatbagErrorCode.CAPABILITY: RatbagCapabilityError,
+    RatbagErrorCode.VALUE: RatbagValueError,
+    RatbagErrorCode.SYSTEM: RatbagSystemError,
+    RatbagErrorCode.IMPLEMENTATION: RatbagImplementationError,
 }
 
 
@@ -171,7 +157,7 @@ class Ratbagd:
             name = os.path.join("/dev/", event)
             try:
                 dev = RatbagdDevice(self._ratbag, name)
-            except RatbagErrorDevice:
+            except RatbagDeviceError:
                 pass
             else:
                 self._devices[name] = dev
@@ -182,13 +168,15 @@ class Ratbagd:
         v = libratbag.ratbag_log_get_priority(self._ratbag)
         if v == libratbag.RATBAG_LOG_PRIORITY_RAW:
             return 3
-        elif v == libratbag.RATBAG_LOG_PRIORITY_DEBUG:
+        if v == libratbag.RATBAG_LOG_PRIORITY_DEBUG:
             # to match with setter action, we return 1 instead of 2
             return 1
-        elif v == libratbag.RATBAG_LOG_PRIORITY_INFO:
+        if v == libratbag.RATBAG_LOG_PRIORITY_INFO:
             return 1
-        elif v == libratbag.RATBAG_LOG_PRIORITY_ERROR:
+        if v == libratbag.RATBAG_LOG_PRIORITY_ERROR:
             return 0
+
+        return 0
 
     @verbose.setter
     def verbose(self, verbosity):
@@ -224,12 +212,12 @@ class Ratbagd:
         if id not in self._devices.keys():
             try:
                 dev = RatbagdDevice(self._ratbag, id)
-            except RatbagErrorDevice:
+            except RatbagDeviceError:
                 pass
             else:
                 self._devices[id] = dev
 
-        return self._devices[id] if id in self._devices.keys() else None
+        return self._devices[id] if id in self._devices else None
 
     def set_verbose(self, verbose):
         if verbose > 2:
@@ -244,7 +232,7 @@ class Ratbagd:
 
 def get_capabilities(type, object):
     capabilities = []
-    for k in libratbag.__dict__.keys():
+    for k in libratbag.__dict__:
         if k.startswith(f"RATBAG_{type.upper()}_CAP_") and "CAP_NONE" not in k:
             cap = getattr(libratbag, k)
             func = getattr(libratbag, f"ratbag_{type.lower()}_has_capability")
@@ -263,7 +251,7 @@ class RatbagdDevice(metaclass=MetaRatbag):
         self._ratbag = ratbag
         self._device = libratbag.ratbag_cmd_open_device(ratbag, path)
         if self._device is None:
-            raise RatbagErrorDevice("device not compatible")
+            raise RatbagDeviceError("device not compatible")
 
         self._profiles = [
             RatbagdProfile(self._device, i)

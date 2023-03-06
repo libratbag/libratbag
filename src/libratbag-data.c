@@ -465,11 +465,7 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 {
 	switch (data->drivertype) {
 	case HIDPP10:
-		if (data->hidpp10.dpi_list) {
-			free(data->hidpp10.dpi_list->entries);
-			free(data->hidpp10.dpi_list);
-		}
-
+		dpi_list_free(data->hidpp10.dpi_list);
 		free(data->hidpp10.dpi_range);
 		free(data->hidpp10.profile_type);
 		break;
@@ -486,11 +482,7 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 		break;
 	}
 	case STEELSERIES:
-		if (data->steelseries.dpi_list) {
-			free(data->steelseries.dpi_list->entries);
-			free(data->steelseries.dpi_list);
-		}
-
+		dpi_list_free(data->steelseries.dpi_list);
 		free(data->steelseries.dpi_range);
 		break;
 	default:

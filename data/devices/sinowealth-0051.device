@@ -1,0 +1,15 @@
+[Device]
+DeviceMatch=usb:258a:0051
+DeviceType=mouse
+Driver=sinowealth
+Name=Sinowealth Generic Mouse (0051)
+
+# Configuration data size: 123 bytes.
+# Maximum profiles: 2.
+# https://github.com/libratbag/libratbag/issues/1444.
+[Driver/sinowealth/devices/TDaggerImperialTTGM310]
+ButtonCount=8
+DeviceName=T-Dagger Imperial T-TGM310
+FwVersion=2642
+LedType=RGB
+SensorType=PMW3212
