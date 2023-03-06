@@ -49,6 +49,10 @@ enum sinowealth_command_id {
 	/* Same as GET_BUTTONS but for the second profile. */
 	SINOWEALTH_CMD_GET_BUTTONS2 = 0x22,
 	SINOWEALTH_CMD_MACRO = 0x30,
+	/* Same as GET_CONFIG but for the third profile. */
+	SINOWEALTH_CMD_GET_CONFIG3 = 0x31,
+	/* Same as GET_BUTTONS but for the third profile. */
+	SINOWEALTH_CMD_GET_BUTTONS3 = 0x32,
 	/* Puts the device into DFU mode.
 	 * To reset re-plug the mouse or do a clean reboot.
 	 */
@@ -104,7 +108,7 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  * why would SinoWealth even hide this feature.
  */
 #define SINOWEALTH_NUM_PROFILES 1
-_Static_assert(SINOWEALTH_NUM_PROFILES <= 2, "Too many profiles enabled");
+_Static_assert(SINOWEALTH_NUM_PROFILES <= 3, "Too many profiles enabled");
 
 /* Maximum amount of real events in a macro. */
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
@@ -784,6 +788,9 @@ sinowealth_get_buttons_command(size_t profile_index)
 	case 1:
 		config_command = SINOWEALTH_CMD_GET_BUTTONS2;
 		break;
+	case 2:
+		config_command = SINOWEALTH_CMD_GET_BUTTONS3;
+		break;
 	default:
 		abort();
 		break;
@@ -803,6 +810,9 @@ sinowealth_get_config_command(size_t profile_index)
 		break;
 	case 1:
 		config_command = SINOWEALTH_CMD_GET_CONFIG2;
+		break;
+	case 2:
+		config_command = SINOWEALTH_CMD_GET_CONFIG3;
 		break;
 	default:
 		abort();
