@@ -264,6 +264,8 @@ struct dpi_list {
 static inline void
 dpi_list_free(struct dpi_list *list)
 {
+	if (list == NULL)
+		return;
 	free(list->entries);
 	free(list);
 }
