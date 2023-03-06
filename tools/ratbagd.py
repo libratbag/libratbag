@@ -27,6 +27,7 @@ from enum import IntEnum
 from evdev import ecodes
 from gettext import gettext as _
 from gi.repository import Gio, GLib, GObject
+from typing import List, Optional, Tuple, Union
 
 
 # Deferred translations, see https://docs.python.org/3/library/gettext.html#deferred-translations
@@ -197,6 +198,12 @@ class _RatbagdDBus(GObject.GObject):
             return p.unpack()
         return p
 
+    def _get_dbus_property_nonnull(self, property: str):
+        p = self._get_dbus_property(property)
+        if p is None:
+            raise ValueError(f"D-Bus API returned `None` for property {property}")
+        return p
+
     def _set_dbus_property(self, property, type, value, readwrite=True):
         # Sets a cached property on the bus.
 
@@ -281,15 +288,20 @@ class Ratbagd(_RatbagdDBus):
         self.emit("daemon-disappeared")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "Devices" in changed_props.keys():
+        try:
+            new_device_object_paths = changed_props["Devices"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
             object_paths = [d._object_path for d in self._devices]
-            for object_path in changed_props["Devices"]:
+            for object_path in new_device_object_paths:
                 if object_path not in object_paths:
                     device = RatbagdDevice(object_path)
                     self._devices.append(device)
                     self.emit("device-added", device)
             for device in self.devices:
-                if device._object_path not in changed_props["Devices"]:
+                if device._object_path not in new_device_object_paths:
                     self._devices.remove(device)
                     self.emit("device-removed", device)
             self.notify("devices")
@@ -420,6 +432,8 @@ class RatbagdProfile(_RatbagdDBus):
     def __init__(self, object_path):
         super().__init__("Profile", object_path)
         self._active = self._get_dbus_property("IsActive")
+        self._angle_snapping = self._get_dbus_property("AngleSnapping")
+        self._debounce = self._get_dbus_property("Debounce")
         self._dirty = self._get_dbus_property("IsDirty")
         self._report_rate = self._get_dbus_property("ReportRate")
 
@@ -427,25 +441,75 @@ class RatbagdProfile(_RatbagdDBus):
         # lists, things will break!
         result = self._get_dbus_property("Resolutions") or []
         self._resolutions = [RatbagdResolution(objpath) for objpath in result]
+        self._subscribe_dirty(self._resolutions)
 
         result = self._get_dbus_property("Buttons") or []
         self._buttons = [RatbagdButton(objpath) for objpath in result]
+        self._subscribe_dirty(self._buttons)
 
         result = self._get_dbus_property("Leds") or []
         self._leds = [RatbagdLed(objpath) for objpath in result]
+        self._subscribe_dirty(self._leds)
+
+    def _subscribe_dirty(self, objects: List[GObject.GObject]):
+        for obj in objects:
+            obj.connect("notify", self._on_obj_notify)
+
+    def _on_obj_notify(self, obj: GObject.GObject, pspec: Optional[GObject.ParamSpec]):
+        if not self._dirty:
+            self._dirty = True
+            self.notify("dirty")
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "IsActive" in changed_props.keys():
+        try:
+            angle_snapping = changed_props["AngleSnapping"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if angle_snapping != self._angle_snapping:
+                self._angle_snapping = angle_snapping
+                self.notify("angle-snapping")
+
+        try:
+            debounce = changed_props["Debounce"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if debounce != self._debounce:
+                self._debounce = debounce
+                self.notify("debounce")
+
+        try:
             active = changed_props["IsActive"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
 
-        if "IsDirty" in changed_props.keys():
+        try:
             dirty = changed_props["IsDirty"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
             if dirty != self._dirty:
                 self._dirty = dirty
                 self.notify("dirty")
+
+        try:
+            report_rate = changed_props["ReportRate"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if report_rate != self._report_rate:
+                self._report_rate = report_rate
+                self.notify("report-rate")
 
     @GObject.Property
     def capabilities(self):
@@ -512,7 +576,7 @@ class RatbagdProfile(_RatbagdDBus):
     @GObject.Property
     def angle_snapping(self):
         """The angle snapping option."""
-        return self._get_dbus_property("AngleSnapping")
+        return self._angle_snapping
 
     @angle_snapping.setter
     def angle_snapping(self, value):
@@ -525,7 +589,7 @@ class RatbagdProfile(_RatbagdDBus):
     @GObject.Property
     def debounce(self):
         """The button debounce time in ms."""
-        return self._get_dbus_property("Debounce")
+        return self._debounce
 
     @debounce.setter
     def debounce(self, value):
@@ -599,22 +663,47 @@ class RatbagdResolution(_RatbagdDBus):
         self._active = self._get_dbus_property("IsActive")
         self._default = self._get_dbus_property("IsDefault")
         self._disabled = self._get_dbus_property("IsDisabled")
+        self._resolution = self._convert_resolution_from_dbus(
+            self._get_dbus_property_nonnull("Resolution")
+        )
 
     def _on_properties_changed(self, proxy, changed_props, invalidated_props):
-        if "IsActive" in changed_props.keys():
+        try:
+            resolution = self._convert_resolution_from_dbus(changed_props["Resolution"])
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if resolution != self._resolution:
+                self._resolution = resolution
+                self.notify("resolution")
+
+        try:
             active = changed_props["IsActive"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
             if active != self._active:
                 self._active = active
                 self.notify("is-active")
 
-        if "IsDefault" in changed_props.keys():
+        try:
             default = changed_props["IsDefault"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
             if default != self._default:
                 self._default = default
                 self.notify("is-default")
 
-        if "IsDisabled" in changed_props.keys():
+        try:
             disabled = changed_props["IsDisabled"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
             if disabled != self._disabled:
                 self._disabled = disabled
                 self.notify("is-disabled")
@@ -634,16 +723,23 @@ class RatbagdResolution(_RatbagdDBus):
         """The index of this resolution."""
         return self._get_dbus_property("Index")
 
+    @staticmethod
+    def _convert_resolution_from_dbus(
+        res: Union[int, Tuple[int, int]]
+    ) -> Union[Tuple[int], Tuple[int, int]]:
+        """
+        Convert resolution from what D-Bus API retuns - either an int or a tuple of two ints, to a tuple of either one or two ints.
+        """
+        if isinstance(res, int):
+            return (res,)
+        return res
+
     @GObject.Property
     def resolution(self):
         """The resolution in DPI, either as single value tuple ``(res, )``
         or as tuple ``(xres, yres)``.
         """
-        res = self._get_dbus_property("Resolution")
-        if isinstance(res, int):
-            res = tuple([res])
-        # False-positive RET504:
-        return res  # noqa: RET504
+        return self._resolution
 
     @resolution.setter
     def resolution(self, resolution):
@@ -986,12 +1082,6 @@ class RatbagdMacro(GObject.Object):
 class RatbagdLed(_RatbagdDBus):
     """Represents a ratbagd led."""
 
-    TYPE_LOGO = 1
-    TYPE_SIDE = 2
-    TYPE_BATTERY = 3
-    TYPE_DPI = 4
-    TYPE_WHEEL = 5
-
     class Mode(IntEnum):
         OFF = 0
         ON = 1
@@ -1018,6 +1108,11 @@ class RatbagdLed(_RatbagdDBus):
     def __init__(self, object_path):
         super().__init__("Led", object_path)
 
+        self._brightness = self._get_dbus_property("Brightness")
+        self._color = self._get_dbus_property("Color")
+        self._effect_duration = self._get_dbus_property("EffectDuration")
+        self._mode: RatbagdLed.Mode = self._get_dbus_property_nonnull("Mode")
+
     @GObject.Property
     def index(self):
         """The index of this led."""
@@ -1027,7 +1122,7 @@ class RatbagdLed(_RatbagdDBus):
     def mode(self):
         """This led's mode, one of Mode.OFF, Mode.ON, Mode.CYCLE and
         Mode.BREATHING."""
-        return self._get_dbus_property("Mode")
+        return self._mode
 
     @mode.setter
     def mode(self, mode):
@@ -1046,7 +1141,7 @@ class RatbagdLed(_RatbagdDBus):
     @GObject.Property
     def color(self):
         """An integer triple of the current LED color."""
-        return self._get_dbus_property("Color")
+        return self._color
 
     @color.setter
     def color(self, color):
@@ -1065,7 +1160,7 @@ class RatbagdLed(_RatbagdDBus):
     @GObject.Property
     def effect_duration(self):
         """The LED's effect duration in ms, values range from 0 to 10000."""
-        return self._get_dbus_property("EffectDuration")
+        return self._effect_duration
 
     @effect_duration.setter
     def effect_duration(self, effect_duration):
@@ -1078,7 +1173,7 @@ class RatbagdLed(_RatbagdDBus):
     @GObject.Property
     def brightness(self):
         """The LED's brightness, values range from 0 to 255."""
-        return self._get_dbus_property("Brightness")
+        return self._brightness
 
     @brightness.setter
     def brightness(self, brightness):
@@ -1087,3 +1182,44 @@ class RatbagdLed(_RatbagdDBus):
         @param brightness The new brightness, as int
         """
         self._set_dbus_property("Brightness", "u", brightness)
+
+    def _on_properties_changed(self, proxy, changed_props, invalidated_props):
+        try:
+            brightness = changed_props["Brightness"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if brightness != self._brightness:
+                self._brightness = brightness
+                self.notify("brightness")
+
+        try:
+            color = changed_props["Color"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if color != self._color:
+                self._color = color
+                self.notify("color")
+
+        try:
+            effect_duration = changed_props["EffectDuration"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if effect_duration != self._effect_duration:
+                self._effect_duration = effect_duration
+                self.notify("effect-duration")
+
+        try:
+            mode = changed_props["Mode"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if mode != self._mode:
+                self._mode = mode
+                self.notify("mode")
