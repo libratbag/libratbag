@@ -264,10 +264,11 @@ def print_resolution(
 def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) -> None:
     print(
         " " * (level - 2)
-        + "Profile {}:{}{}".format(
+        + "Profile {}:{}{}{}".format(
             profile.index,
             " (disabled)" if profile.disabled else "",
             " (active)" if profile.is_active else "",
+            " (dirty)" if profile.dirty else "",
         )
     )
 
