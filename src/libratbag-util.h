@@ -334,7 +334,7 @@ err:
 }
 
 static inline uint16_t
-get_unaligned_be_u16(uint8_t *buf)
+get_unaligned_be_u16(const uint8_t *buf)
 {
 	return (buf[0] << 8) | buf[1];
 }
@@ -347,7 +347,7 @@ set_unaligned_be_u16(uint8_t *buf, uint16_t value)
 }
 
 static inline uint16_t
-get_unaligned_le_u16(uint8_t *buf)
+get_unaligned_le_u16(const uint8_t *buf)
 {
 	return (buf[1] << 8) | buf[0];
 }
@@ -360,7 +360,7 @@ set_unaligned_le_u16(uint8_t *buf, uint16_t value)
 }
 
 static inline uint32_t
-get_unaligned_be_u32(uint8_t *buf)
+get_unaligned_be_u32(const uint8_t *buf)
 {
 	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 }

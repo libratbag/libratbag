@@ -459,7 +459,7 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 }
 
 int
-ratbag_action_macro_num_keys(struct ratbag_button_action *action);
+ratbag_action_macro_num_keys(const struct ratbag_button_action *action);
 
 int
 ratbag_button_macro_new_from_keycode(struct ratbag_button *button,
@@ -467,7 +467,7 @@ ratbag_button_macro_new_from_keycode(struct ratbag_button *button,
 				     unsigned int modifiers);
 
 int
-ratbag_action_keycode_from_macro(struct ratbag_button_action *action,
+ratbag_action_keycode_from_macro(const struct ratbag_button_action *action,
 				     unsigned int *key_out,
 				     unsigned int *modifiers_out);
 
@@ -518,7 +518,7 @@ ratbag_resolution_set_dpi_list_from_range(struct ratbag_resolution *res,
 
 static inline void
 ratbag_resolution_set_dpi_list(struct ratbag_resolution *res,
-			       unsigned int *dpis,
+			       const unsigned int *dpis,
 			       size_t ndpis)
 {
 	assert(ndpis <= ARRAY_LENGTH(res->dpis));
@@ -534,7 +534,7 @@ ratbag_resolution_set_dpi_list(struct ratbag_resolution *res,
 
 static inline void
 ratbag_profile_set_report_rate_list(struct ratbag_profile *profile,
-				    unsigned int *rates,
+				    const unsigned int *rates,
 				    size_t nrates)
 {
 	assert(nrates <= ARRAY_LENGTH(profile->rates));
