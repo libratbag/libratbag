@@ -1440,7 +1440,10 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 			break;
 		}
 		default:
-			log_debug(device->ratbag, "Can't set unsupported action type %#x to button %u\n", action->action.special, button->index);
+			log_debug(device->ratbag,
+				  "button %d: can't set unsupported action of type %u\n",
+				  button->index,
+				  action->type);
 			break;
 		}
 	}
