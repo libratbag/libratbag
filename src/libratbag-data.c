@@ -248,7 +248,12 @@ init_data_sinowealth(struct ratbag *ratbag,
 
 		struct sinowealth_device_data *device = zalloc(sizeof(struct sinowealth_device_data));
 
-		device->button_count = g_key_file_get_integer(keyfile, device_group, "ButtonCount", &error);
+		rc = g_key_file_get_integer(keyfile, device_group, "ButtonCount", &error);
+		if (rc != 0 && !error) {
+			device->button_count = rc;
+		} else {
+			device->button_count = -1;
+		}
 		g_clear_error(&error);
 
 		device->device_name = g_key_file_get_string(keyfile, device_group, "DeviceName", &error);

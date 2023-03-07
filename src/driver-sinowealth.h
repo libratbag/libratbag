@@ -35,7 +35,7 @@ struct sinowealth_device_data {
 	char *fw_version;
 	char *device_name;
 	enum sinowealth_led_format led_type;
-	unsigned int button_count;
+	int button_count;
 	int profile_count;
 
 	struct list link;

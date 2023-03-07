@@ -1668,7 +1668,18 @@ sinowealth_init_profile(struct ratbag_device *device)
 	const unsigned int active_profile_index = (unsigned int)rc;
 	log_debug(device->ratbag, "Active profile index: %d\n", rc);
 
-	drv_data->button_count = device_data->button_count;
+	rc = device_data->button_count;
+	if (rc == -1) {
+		drv_data->button_count = 0;
+	} else if (rc >= 0) {
+		drv_data->button_count = (unsigned int)rc;
+	} else {
+		log_error(device->ratbag,
+			  "Device file for firmware version %s specifies button count: %d\n",
+			  fw_version, rc);
+		return -EINVAL;
+	}
+
 	drv_data->led_type = device_data->led_type;
 
 	log_info(device->ratbag, "Found device: %s\n", device_data->device_name);
