@@ -248,8 +248,6 @@ init_data_sinowealth(struct ratbag *ratbag,
 
 		struct sinowealth_device_data *device = zalloc(sizeof(struct sinowealth_device_data));
 
-		device->profile_count = -1;
-
 		device->button_count = g_key_file_get_integer(keyfile, device_group, "ButtonCount", &error);
 		g_clear_error(&error);
 
@@ -276,8 +274,11 @@ init_data_sinowealth(struct ratbag *ratbag,
 		g_clear_error(&error);
 
 		rc = g_key_file_get_integer(keyfile, device_group, "ProfileCount", &error);
-		if (rc != 0 && !error)
+		if (rc != 0 && !error) {
 			device->profile_count = rc;
+		} else {
+			device->profile_count = -1;
+		}
 
 		list_insert(&data->sinowealth.supported_devices, &device->link);
 	}
