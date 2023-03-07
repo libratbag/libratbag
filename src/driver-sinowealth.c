@@ -448,6 +448,7 @@ struct sinowealth_data {
 	unsigned int button_count;
 	unsigned int config_size;
 	unsigned int led_count;
+	unsigned int profile_count;
 	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES];
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
 };
@@ -1099,7 +1100,7 @@ sinowealth_read_raw_button_configs(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
 		const uint8_t config_command = sinowealth_get_buttons_command(profile_index);
 
 		struct sinowealth_button_report *buttons = &drv_data->buttons[profile_index];
@@ -1125,7 +1126,7 @@ sinowealth_read_raw_configs(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
 		const uint8_t config_command = sinowealth_get_config_command(profile_index);
 
 		struct sinowealth_config_report *config = &drv_data->configs[profile_index];
@@ -1573,6 +1574,8 @@ sinowealth_init_profile(struct ratbag_device *device)
 		return -EINVAL;
 	}
 
+	drv_data->profile_count = 1;
+
 	rc = sinowealth_read_raw_configs(device);
 	if (rc)
 		return rc;
@@ -1585,14 +1588,14 @@ sinowealth_init_profile(struct ratbag_device *device)
 	if (rc < 0)
 		return rc;
 	/* If we are not compiled with support with support for this many profiles. */
-	if (rc >= SINOWEALTH_NUM_PROFILES) {
+	if (rc >= (int)drv_data->profile_count) {
 		const unsigned int PROFILE_TO_USE = 0;
 		log_error(device->ratbag,
-			  "Active profile index is %d, but our max is %d; "
+			  "Active profile index is %d, but the maximum in the device file is %d; "
 			  "Will use profile %d instead; "
 			  "Report this to libratbag developers!\n",
 			  rc,
-			  SINOWEALTH_NUM_PROFILES - 1,
+			  drv_data->profile_count - 1,
 			  PROFILE_TO_USE);
 		sinowealth_set_active_profile(device, PROFILE_TO_USE);
 		if (rc < 0)
@@ -1622,7 +1625,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 	/* Number of DPIs = all DPIs from min to max (inclusive). */
 	const unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1;
 
-	ratbag_device_init_profiles(device, SINOWEALTH_NUM_PROFILES, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
+	ratbag_device_init_profiles(device, drv_data->profile_count, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
 
 	ratbag_device_for_each_profile(device, profile) {
 		profile->is_active = profile->index == active_profile_index;
@@ -1727,7 +1730,7 @@ sinowealth_write_buttons(struct ratbag_device *device)
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
-	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
 		struct sinowealth_button_report *buttons = &drv_data->buttons[profile_index];
 
 		buttons->report_id = config_report_id;
@@ -1757,7 +1760,7 @@ sinowealth_write_configs(struct ratbag_device *device)
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
-	for (size_t profile_index = 0; profile_index < SINOWEALTH_NUM_PROFILES; ++profile_index) {
+	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
 		struct sinowealth_config_report *config = &drv_data->configs[profile_index];
 
 		config->report_id = config_report_id;
