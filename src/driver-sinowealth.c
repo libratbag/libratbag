@@ -1440,11 +1440,11 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 			break;
 		}
 		default:
-			log_debug(device->ratbag,
+			log_error(device->ratbag,
 				  "button %d: can't set unsupported action of type %u\n",
 				  button->index,
 				  action->type);
-			break;
+			return -EINVAL;
 		}
 	}
 
@@ -1921,8 +1921,12 @@ err:
 	return rc;
 }
 
-/* Update saved raw configuration data of the mouse with values from profile `profile`. */
-static void
+/*
+ * Update saved raw configuration data of the mouse with values from profile `profile`.
+ *
+ * @return 0 on success or a negative errno.
+ */
+static int
 sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
@@ -1936,10 +1940,7 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 	uint8_t reported_rate = sinowealth_report_rate_to_raw(profile->hz);
 	if (reported_rate == 0) {
 		log_error(device->ratbag, "Incorrect report rate %u was requested\n", profile->hz);
-
-		/* Fall back to 125hz. */
-		reported_rate = sinowealth_report_rate_to_raw(125);
-		profile->hz = 125;
+		return -EINVAL;
 	}
 	config->report_rate = reported_rate;
 
@@ -2004,6 +2005,8 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 		/* Reset the value in case we accidentally managed to set it when we were not supposed to. */
 		config->rgb_effect = RGB_NOT_SUPPORTED;
 	}
+
+	return 0;
 }
 
 static int
@@ -2013,8 +2016,12 @@ sinowealth_commit(struct ratbag_device *device)
 	struct ratbag_profile *profile = NULL;
 
 	ratbag_device_for_each_profile(device, profile) {
-		sinowealth_update_config_from_profile(profile);
-		sinowealth_update_buttons_from_profile(profile);
+		rc = sinowealth_update_config_from_profile(profile);
+		if (rc)
+			return rc;
+		rc = sinowealth_update_buttons_from_profile(profile);
+		if (rc)
+			return rc;
 	}
 
 	rc = sinowealth_write_configs(device);
