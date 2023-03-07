@@ -234,6 +234,7 @@ init_data_sinowealth(struct ratbag *ratbag,
 	const char *devices_group = "Driver/sinowealth/devices/";
 
 	GError *error = NULL;
+	int rc;
 
 	size_t group_count = 0;
 	_cleanup_(g_strfreevp) char **groups = g_key_file_get_groups(keyfile, &group_count);
@@ -246,6 +247,8 @@ init_data_sinowealth(struct ratbag *ratbag,
 			continue;
 
 		struct sinowealth_device_data *device = zalloc(sizeof(struct sinowealth_device_data));
+
+		device->profile_count = -1;
 
 		device->button_count = g_key_file_get_integer(keyfile, device_group, "ButtonCount", &error);
 		g_clear_error(&error);
@@ -271,6 +274,10 @@ init_data_sinowealth(struct ratbag *ratbag,
 			}
 		}
 		g_clear_error(&error);
+
+		rc = g_key_file_get_integer(keyfile, device_group, "ProfileCount", &error);
+		if (rc != 0 && !error)
+			device->profile_count = rc;
 
 		list_insert(&data->sinowealth.supported_devices, &device->link);
 	}

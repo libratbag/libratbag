@@ -1579,7 +1579,20 @@ sinowealth_init_profile(struct ratbag_device *device)
 		return -EINVAL;
 	}
 
-	drv_data->profile_count = 1;
+	rc = device_data->profile_count;
+	if (rc == -1) {
+		drv_data->profile_count = 1;
+	} else if (rc <= 0 || rc > SINOWEALTH_NUM_PROFILES_MAX) {
+		log_error(device->ratbag,
+			  "Device file for firmware version %s specifies incorrect profile count: %d"
+			  " (should be in range %d-%d)\n",
+			  fw_version,
+			  rc, 1, SINOWEALTH_NUM_PROFILES_MAX);
+		return -EINVAL;
+	} else {
+		drv_data->profile_count = (unsigned int)rc;
+	}
+
 
 	rc = sinowealth_read_raw_configs(device);
 	if (rc)
