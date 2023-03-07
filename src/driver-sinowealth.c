@@ -111,7 +111,7 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  * button configuration, so you may have to use another mouse to assign
  * buttons.
  */
-#define SINOWEALTH_NUM_PROFILES_MAX 1
+#define SINOWEALTH_NUM_PROFILES_MAX 3
 _Static_assert(SINOWEALTH_NUM_PROFILES_MAX <= 3, "Too many profiles enabled");
 
 /* Maximum amount of real events in a macro. */
