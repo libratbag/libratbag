@@ -111,8 +111,8 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  * button configuration, so you may have to use another mouse to assign
  * buttons.
  */
-#define SINOWEALTH_NUM_PROFILES 1
-_Static_assert(SINOWEALTH_NUM_PROFILES <= 3, "Too many profiles enabled");
+#define SINOWEALTH_NUM_PROFILES_MAX 1
+_Static_assert(SINOWEALTH_NUM_PROFILES_MAX <= 3, "Too many profiles enabled");
 
 /* Maximum amount of real events in a macro. */
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
@@ -449,8 +449,8 @@ struct sinowealth_data {
 	unsigned int config_size;
 	unsigned int led_count;
 	unsigned int profile_count;
-	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES];
-	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES];
+	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES_MAX];
+	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES_MAX];
 };
 
 struct sinowealth_button_mapping {
@@ -504,8 +504,8 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 	/* None of the other bits do anything. */
 
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x1 } } }, BUTTON_ACTION_NONE },
-#if SINOWEALTH_NUM_PROFILES > 1
-	/* See the note near @ref SINOWEALTH_NUM_PROFILES. */
+#if SINOWEALTH_NUM_PROFILES_MAX > 1
+	/* See the note near @ref SINOWEALTH_NUM_PROFILES_MAX. */
 	/* Hidden. */
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 #endif
@@ -931,7 +931,7 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 static int
 sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 {
-	if (index >= SINOWEALTH_NUM_PROFILES) {
+	if (index >= SINOWEALTH_NUM_PROFILES_MAX) {
 		log_error(device->ratbag, "Profile index %u is out of range\n", index);
 		return -EINVAL;
 	}
