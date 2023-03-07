@@ -509,6 +509,8 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 	/* Hidden. */
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 #endif
+	/* Cycle LED modes. */
+	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x7 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN) },
 
 	/* This must defined after `SPECIAL` type so that correct raw data
 	 * for action type `NONE` is used. */
