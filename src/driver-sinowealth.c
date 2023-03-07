@@ -1077,7 +1077,10 @@ sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, u
 
 		rc = ratbag_hidraw_get_feature_report(device, config_report_id, buffer, SINOWEALTH_CONFIG_REPORT_SIZE);
 		if (rc < 0) {
-			log_error(device->ratbag, "Could not read device configuration data: %s (%d)\n", strerror(-rc), rc);
+			log_error(device->ratbag,
+				  "Could not get feature report while reading device configuration data: %s (%d)\n",
+				  strerror(-rc),
+				  rc);
 			return rc;
 		}
 		if (rc < (int)reply_len_min || rc > (int)reply_len_max) {
