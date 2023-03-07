@@ -92,20 +92,24 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
  */
 #define SINOWEALTH_NUM_DPIS 8
 
-/* Technically SinoWealth mice support second profile, but there isn't
- * a single configuration software that exposes it.
- * It's suggested that some may even support 3 profiles, but at least
- * V103 only supports 2.
- *
- * We could enable this, but by default other profiles have no button
- * mappings, so the user will have their mouse soft-locked if they don't
- * have another mouse to set some mappings with.
- *
- * To fix this we could populate empty profiles with some default
- * mappings.
- *
- * There may also be some other problem we are not aware of, after all,
- * why would SinoWealth even hide this feature.
+/*
+ * Depending on the mouse there may be support for up to three profiles.
+ * In official software utility they are called confusingly called
+ * "modes", while "profiles" are just configuration presets saved to the
+ * hard drive you can choose from.
+ * To show these "modes" in the utility, you may have to modify the
+ * configuration file of the utility. It is called `Cfg.ini` and resides
+ * near `OemDrv.exe`.
+ * We are interested in two section: `MS` and `SENSOR_X` (where `X` is a
+ * number that depends on the amount of sensors defined in the file).
+ * First, look at the value of key `Sensor` of `MS` section, then find a
+ * corresponding `SENSOR_X` section with the same `Sensor` key value.
+ * In it find a key `MDNUM`, whose value is supposed to be `3`, `6` or
+ * `9`. Now modify it to 3 * <amount of "modes" you want to show in the
+ * program>`.
+ * Just note that by default they may and most likely will have empty
+ * button configuration, so you may have to use another mouse to assign
+ * buttons.
  */
 #define SINOWEALTH_NUM_PROFILES 1
 _Static_assert(SINOWEALTH_NUM_PROFILES <= 3, "Too many profiles enabled");
