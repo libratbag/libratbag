@@ -548,10 +548,12 @@ sinowealth_button_action_to_raw(const struct ratbag_button_action *action, struc
 	const struct sinowealth_button_mapping *mapping = NULL;
 
 	ARRAY_FOR_EACH(sinowealth_button_map, mapping) {
-		if (ratbag_button_action_match(&mapping->action, action)) {
-			memcpy(data, &mapping->data, sizeof(struct sinowealth_button_data));
-			return 0;
+		if (!ratbag_button_action_match(&mapping->action, action)) {
+			continue;
 		}
+
+		memcpy(data, &mapping->data, sizeof(struct sinowealth_button_data));
+		return 0;
 	}
 
 	return 1;
