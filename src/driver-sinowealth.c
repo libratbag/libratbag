@@ -504,17 +504,23 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 	/* None of the other bits do anything. */
 
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x1 } } }, BUTTON_ACTION_NONE },
-#if SINOWEALTH_NUM_PROFILES_MAX > 1
-	/* See the note near @ref SINOWEALTH_NUM_PROFILES_MAX. */
-	/* Hidden. */
-	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
-#endif
 	/* Cycle LED modes. */
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x7 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN) },
 
 	/* This must defined after `SPECIAL` type so that correct raw data
 	 * for action type `NONE` is used. */
 	{ { SINOWEALTH_BUTTON_TYPE_NONE, { { 0 } } }, BUTTON_ACTION_NONE },
+};
+
+/*
+ * Button actions that are only allowed to be written if the mouse is
+ * specified to support additional profiles.
+ */
+static const struct sinowealth_button_mapping sinowealth_button_map_profiles[] = {
+	{
+		{ SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x6 } } },
+		BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP),
+	},
 };
 
 /* Check if two given button data structs are equal.
@@ -534,7 +540,9 @@ sinowealth_button_data_is_equal(const struct sinowealth_button_data *lhs, const 
 	return true;
 }
 
-/* Convert a button action to raw data using the `sinowealth_button_map`.
+/* Convert a button action to raw data using the `sinowealth_button_map`,
+ * and, if the device allows, using `sinowealth_button_map_profiles`.
+ *
  * NOTE: It does not contain all of the button types, as some of them are
  * better made programmatically. See @ref sinowealth_update_buttons_from_profile.
  *
@@ -543,7 +551,9 @@ sinowealth_button_data_is_equal(const struct sinowealth_button_data *lhs, const 
  * @return 0 on success or 1 if such action is not in the map.
  */
 static int
-sinowealth_button_action_to_raw(const struct ratbag_button_action *action, struct sinowealth_button_data *data)
+sinowealth_button_action_to_raw(const struct sinowealth_data *drv_data,
+				const struct ratbag_button_action *action,
+				struct sinowealth_button_data *data)
 {
 	const struct sinowealth_button_mapping *mapping = NULL;
 
@@ -556,22 +566,51 @@ sinowealth_button_action_to_raw(const struct ratbag_button_action *action, struc
 		return 0;
 	}
 
+	if (drv_data->profile_count > 1) {
+		ARRAY_FOR_EACH(sinowealth_button_map_profiles, mapping) {
+			if (!ratbag_button_action_match(&mapping->action, action)) {
+				continue;
+			}
+
+			memcpy(data, &mapping->data, sizeof(struct sinowealth_button_data));
+			return 0;
+		}
+	}
+
 	return 1;
 }
 
-/* Convert raw button data to a button action using the `sinowealth_button_map`.
+/* Convert raw button data to a button action using the `sinowealth_button_map`,
+ * and, if the device allows, using `sinowealth_button_map_profiles`.
+ *
  * NOTE: It does not contain all of the button types, as some of them are
  * better made programmatically. See @ref sinowealth_update_profile_from_buttons.
  *
  * @return Button action or NULL if such action is not in the map. */
 static const struct ratbag_button_action *
-sinowealth_raw_to_button_action(const struct sinowealth_button_data *data)
+sinowealth_raw_to_button_action(const struct ratbag_device *device,
+				const struct sinowealth_button_data *data)
 {
 	const struct sinowealth_button_mapping *mapping = NULL;
+	const struct sinowealth_data *drv_data = device->drv_data;
 
 	ARRAY_FOR_EACH(sinowealth_button_map, mapping) {
 		if (!sinowealth_button_data_is_equal(data, &mapping->data))
 			continue;
+
+		return &mapping->action;
+	}
+
+	ARRAY_FOR_EACH(sinowealth_button_map_profiles, mapping) {
+		if (!sinowealth_button_data_is_equal(data, &mapping->data))
+			continue;
+
+		if (drv_data->profile_count == 1) {
+			log_info(device->ratbag,
+				 "There is a profile-switching key binding, but the device file does not say the mouse supports them; "
+				 "Perhaps the mouse actually supports profile switching?; "
+				 "Consider reporting this to libratbag developers\n");
+		}
 
 		return &mapping->action;
 	}
@@ -1260,7 +1299,8 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 	ratbag_profile_for_each_button(profile, button) {
 		button_data = buf->buttons[button->index];
 
-		const struct ratbag_button_action *action = sinowealth_raw_to_button_action(&button_data);
+		const struct ratbag_button_action *action = sinowealth_raw_to_button_action(device,
+											    &button_data);
 		/* Match was found in the map, continue. */
 		if (action != NULL) {
 			button->action.action = action->action;
@@ -1377,7 +1417,7 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 		struct ratbag_button_action *action = &button->action;
 		struct sinowealth_button_data *button_data = &buttons->buttons[button->index];
 
-		rc = sinowealth_button_action_to_raw(action, button_data);
+		rc = sinowealth_button_action_to_raw(drv_data, action, button_data);
 		/* Match was found in the map, continue. */
 		if (rc == 0) {
 			continue;
