@@ -1566,6 +1566,13 @@ sinowealth_init_profile(struct ratbag_device *device)
 	ratbag_device_set_firmware_version(device, fw_version);
 	log_debug(device->ratbag, "Firmware version: %s\n", fw_version);
 
+	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device, fw_version);
+
+	if (device_data == NULL) {
+		log_error(device->ratbag, "Device with firmware version %s is not supported\n", fw_version);
+		return -EINVAL;
+	}
+
 	rc = sinowealth_read_raw_configs(device);
 	if (rc)
 		return rc;
@@ -1594,13 +1601,6 @@ sinowealth_init_profile(struct ratbag_device *device)
 	}
 	const unsigned int active_profile_index = (unsigned int)rc;
 	log_debug(device->ratbag, "Active profile index: %d\n", rc);
-
-	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device, fw_version);
-
-	if (device_data == NULL) {
-		log_error(device->ratbag, "Device with firmware version %s is not supported\n", fw_version);
-		return -EINVAL;
-	}
 
 	drv_data->button_count = device_data->button_count;
 	drv_data->led_type = device_data->led_type;
