@@ -35,6 +35,14 @@ def N_(x):
     return x
 
 
+def evcode_to_str(evcode: int) -> str:
+    # Values in ecodes.keys are stored as either a str or list[str].
+    value = ecodes.keys[evcode]
+    if isinstance(value, list):
+        return value[0]
+    return value
+
+
 class RatbagErrorCode(IntEnum):
     SUCCESS = 0
 
@@ -989,23 +997,14 @@ class RatbagdMacro(GObject.Object):
     linux/input.h and not those used by X.Org or any other higher layer such as
     Gdk."""
 
-    # All keys from ecodes.KEY have a KEY_ prefix. We strip it.
-    _PREFIX_LEN = len("KEY_")
-
     # Both a key press and release.
     _MACRO_KEY = 1000
 
     _MACRO_DESCRIPTION = {
-        RatbagdButton.Macro.KEY_PRESS: lambda key: "↓{}".format(
-            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
-        ),
-        RatbagdButton.Macro.KEY_RELEASE: lambda key: "↑{}".format(
-            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
-        ),
+        RatbagdButton.Macro.KEY_PRESS: lambda key: f"↓{evcode_to_str(key)}",
+        RatbagdButton.Macro.KEY_RELEASE: lambda key: f"↑{evcode_to_str(key)}",
         RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
-        _MACRO_KEY: lambda key: "↕{}".format(
-            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
-        ),
+        _MACRO_KEY: lambda key: f"↕{evcode_to_str(key)}",
     }
 
     __gsignals__ = {
