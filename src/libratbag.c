@@ -895,6 +895,9 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 	struct ratbag_device *device = profile->device;
 	struct ratbag_profile *p;
 
+	if (!profile->is_enabled)
+		return RATBAG_ERROR_VALUE;
+
 	if (device->num_profiles == 1)
 		return RATBAG_SUCCESS;
 
