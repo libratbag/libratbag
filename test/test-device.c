@@ -278,6 +278,34 @@ START_TEST(device_profiles_activate_disabled)
 }
 END_TEST
 
+START_TEST(device_profiles_disable_active)
+{
+	int rc;
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+
+	struct ratbag_test_device td = sane_device;
+
+	td.profiles[1].disabled = true;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 1);
+
+	ratbag_profile_set_cap(p, RATBAG_PROFILE_CAP_DISABLE);
+
+	rc = ratbag_profile_set_active(p);
+	ck_assert_int_eq(rc, RATBAG_ERROR_VALUE);
+
+	ratbag_profile_unref(p);
+
+	ratbag_unref(r);
+}
+END_TEST
+
 START_TEST(device_profiles_ref_unref)
 {
 	struct ratbag *r;
@@ -952,6 +980,7 @@ test_context_suite(void)
 	tc = tcase_create("profiles");
 	tcase_add_test(tc, device_profiles);
 	tcase_add_test(tc, device_profiles_activate_disabled);
+	tcase_add_test(tc, device_profiles_disable_active);
 	tcase_add_test(tc, device_profiles_ref_unref);
 	tcase_add_test(tc, device_profiles_num_0);
 	tcase_add_test(tc, device_profiles_multiple_active);
