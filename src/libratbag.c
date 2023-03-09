@@ -797,6 +797,9 @@ ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 	if (!ratbag_profile_has_capability(profile, RATBAG_PROFILE_CAP_DISABLE))
 		return RATBAG_ERROR_CAPABILITY;
 
+	if (profile->is_active && !enabled)
+		return RATBAG_ERROR_VALUE;
+
 	profile->is_enabled = enabled;
 	profile->dirty = true;
 
