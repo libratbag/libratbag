@@ -5,7 +5,7 @@ DeviceType=mouse
 Driver=sinowealth
 
 [Driver/sinowealth/devices/GloriousModelD]
-ButtonCount=6
+Buttons=6
 DeviceName=Glorious Model D
 FwVersion=V102
 LedType=RBG

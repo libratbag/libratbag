@@ -283,8 +283,8 @@ SINOWEALTH_REQUIRED_KEYS = (
 )
 SINOWEALTH_PERMITTED_KEYS = (
     *SINOWEALTH_REQUIRED_KEYS,
-    "ButtonCount",
-    "ProfileCount",
+    "Buttons",
+    "Profiles",
     "SensorType",
 )
 

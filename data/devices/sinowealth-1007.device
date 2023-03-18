@@ -7,7 +7,7 @@ Name=SinoWealth Generic Mouse (1007)
 # This does NOT work. See libratbag/libratbag#1296.
 # For future: ID of A3050 sensor is 0x2, and maximum DPI is 4000.
 #[Driver/sinowealth/devices/AntEsportsGM500]
-#ButtonCount=7
+#Buttons=7
 #DeviceName=Ant Esports GM500
 #FwVersion=0910
 #LedType=RBG
@@ -16,7 +16,7 @@ Name=SinoWealth Generic Mouse (1007)
 # Configuration size: 123 bytes.
 # https://github.com/libratbag/libratbag/issues/1091
 [Driver/sinowealth/devices/MarvoScorpionG961]
-ButtonCount=6
+Buttons=6
 DeviceName=Marvo Scorpion G961
 FwVersion=9677
 LedType=RGB

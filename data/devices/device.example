@@ -80,7 +80,7 @@ DpiRange=100:16000@100
 [Driver/sinowealth/devices/ADeviceNameWithoutSpaces]
 # Number of buttons.
 # Default to 0.
-ButtonCount=6
+Buttons=6
 
 # Device name
 DeviceName=CoolVendor CoolMouse
@@ -100,7 +100,7 @@ LedType=RGB
 # Number of profiles, called "modes" in official software utilities.
 # If you are unsure what the "mode" thing is about, don't set this field.
 # Defaults to 1.
-ProfileCount=2
+Profiles=1
 
 # Sensor type.
 # This field is unused, only used for book-keeping purposes.

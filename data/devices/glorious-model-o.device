@@ -5,7 +5,7 @@ DeviceType=mouse
 Driver=sinowealth
 
 [Driver/sinowealth/devices/GloriousModelO]
-ButtonCount=6
+Buttons=6
 DeviceName=Glorious Model O/O- (updated firmware)
 FwVersion=V103
 LedType=RBG

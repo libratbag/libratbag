@@ -5,14 +5,14 @@ Driver=sinowealth
 Name=SinoWealth Generic Mouse (0027)
 
 [Driver/sinowealth/devices/DreamMachinesDM5Blink]
-ButtonCount=8
+Buttons=8
 DeviceName=DreamMachines DM5 Blink
 FwVersion=3106
 LedType=RGB
 SensorType=PMW3389
 
 [Driver/sinowealth/devices/GWolvesHatiHTM]
-ButtonCount=6
+Buttons=6
 # Can be both `Ace` and `Classic` version.
 DeviceName=G-Wolves Hati HT-M Wired
 FwVersion=V161
@@ -25,14 +25,14 @@ SensorType=PMW3360
 # Side buttons are detachable.
 # There can be either 3 or 9 buttons on the side.
 # Going for the maximum count: 5 + 9 = 14.
-ButtonCount=14
+Buttons=14
 DeviceName=Genesys Xenon 770
 FwVersion=3110
 LedType=RGB
 SensorType=PMW3327
 
 [Driver/sinowealth/devices/GloriousModelOOld]
-ButtonCount=6
+Buttons=6
 DeviceName=Glorious Model O (old firmware)
 FwVersion=V102
 LedType=RBG
