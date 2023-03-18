@@ -666,10 +666,6 @@ run_target(
 )
 
 python_black_check = find_program(join_paths(project_source_root, 'test/python-black-check.sh'))
-run_target(
-  'python-black-check',
-  command : python_black_check,
-)
 test(
   'python-black-check',
   python_black_check,
@@ -683,10 +679,6 @@ run_target(
 )
 
 python_ruff_check = find_program(join_paths(project_source_root, 'test/python-ruff-check.sh'))
-run_target(
-  'python-ruff-check',
-  command : python_ruff_check,
-)
 test(
   'python-ruff-check',
   python_ruff_check,
