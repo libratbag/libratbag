@@ -25,6 +25,8 @@
 
 #include "libratbag-util.h"
 
+#define SINOWEALTH_FW_VERSION_LEN 4
+
 enum sinowealth_led_format {
 	SINOWEALTH_LED_TYPE_NONE,
 	SINOWEALTH_LED_TYPE_RBG,

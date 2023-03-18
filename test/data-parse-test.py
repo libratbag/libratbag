@@ -275,10 +275,10 @@ def validate_data_file_name(path: str):
         )
 
 
+SINOWEALTH_FW_VERSION_LEN = 4
 SINOWEALTH_DEVICE_SECTION_PREFIX = "Driver/sinowealth/devices/"
 SINOWEALTH_REQUIRED_KEYS = (
     "DeviceName",
-    "FwVersion",
     "LedType",
 )
 SINOWEALTH_PERMITTED_KEYS = (
@@ -310,6 +310,8 @@ def parse_data_file(path: str):
         for device_section_name in data.sections():
             if not device_section_name.startswith(SINOWEALTH_DEVICE_SECTION_PREFIX):
                 continue
+            fw_version = device_section_name[len(SINOWEALTH_DEVICE_SECTION_PREFIX) :]
+            assert len(fw_version) == SINOWEALTH_FW_VERSION_LEN
 
             device_section = data[device_section_name]
             for key in SINOWEALTH_REQUIRED_KEYS:

@@ -6,10 +6,9 @@ Name=Sinowealth Generic Mouse (0051)
 
 # Configuration data size: 123 bytes.
 # https://github.com/libratbag/libratbag/issues/1444.
-[Driver/sinowealth/devices/TDaggerImperialTTGM310]
+[Driver/sinowealth/devices/2642]
 Buttons=8
 DeviceName=T-Dagger Imperial T-TGM310
-FwVersion=2642
 LedType=RGB
 Profiles=2
 SensorType=PMW3212

@@ -77,20 +77,16 @@ DpiRange=100:16000@100
 # Device quirks
 # Quirk=DOUBLE_DPI;STRIX_PROFILE
 
-[Driver/sinowealth/devices/ADeviceNameWithoutSpaces]
+# Replace `FEED` in the group name with firmware version of the device.
+# To find the right value, see the output of ratbagd and search a message like:
+# "ratbag error: Device with firmware version FEED is not supported"
+[Driver/sinowealth/devices/FEED]
 # Number of buttons.
 # Default to 0.
 Buttons=6
 
 # Device name
 DeviceName=CoolVendor CoolMouse
-
-# Firmware version of the device.
-# This field is used for determining the mouse in the list.
-# If not specified, the entry will be ignored.
-# To find the right value, see the output of ratbagd and search a message like:
-# "ratbag error: Device with firmware version XXX is not supported"
-FwVersion=FEED
 
 # The order of LED pins on the mouse.
 # Change this to `RBG` if LED colors are weird.

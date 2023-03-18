@@ -117,8 +117,6 @@ _Static_assert(SINOWEALTH_NUM_PROFILES_MAX <= 3, "Too many profiles enabled");
 /* Maximum amount of real events in a macro. */
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
 
-#define SINOWEALTH_FW_VERSION_LEN 4
-
 static const unsigned int SINOWEALTH_DEBOUNCE_TIMES[] = {
 	4, 6, 8, 10, 12, 14, 16
 };

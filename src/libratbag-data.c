@@ -243,10 +243,20 @@ init_data_sinowealth(struct ratbag *ratbag,
 
 	for (size_t i = 0; i < group_count; ++i) {
 		const char *device_group = groups[i];
-		if (startswith(device_group, devices_group) == NULL)
+		const char* fw_version = startswith(device_group, devices_group);
+		if (fw_version == NULL)
 			continue;
+		rc = (int)strlen(fw_version);
+		if (rc != SINOWEALTH_FW_VERSION_LEN) {
+			log_error(ratbag,
+				  "Group '%s': incorrect firmware version string length `%d` (must be `%d`)\n",
+				  device_group, rc, SINOWEALTH_FW_VERSION_LEN);
+			continue;
+		}
 
 		struct sinowealth_device_data *device = zalloc(sizeof(struct sinowealth_device_data));
+
+		device->fw_version = strdup_safe(fw_version);
 
 		rc = g_key_file_get_integer(keyfile, device_group, "Buttons", &error);
 		if (rc != 0 && !error) {
@@ -257,9 +267,6 @@ init_data_sinowealth(struct ratbag *ratbag,
 		g_clear_error(&error);
 
 		device->device_name = g_key_file_get_string(keyfile, device_group, "DeviceName", &error);
-		g_clear_error(&error);
-
-		device->fw_version = g_key_file_get_string(keyfile, device_group, "FwVersion", &error);
 		g_clear_error(&error);
 
 		_cleanup_free_ char *led_type_str = g_key_file_get_string(keyfile, device_group, "LedType", &error);
