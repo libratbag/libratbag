@@ -1618,7 +1618,12 @@ sinowealth_init_profile(struct ratbag_device *device)
 	const struct sinowealth_device_data *device_data = sinowealth_find_device_data(device, fw_version);
 
 	if (device_data == NULL) {
-		log_error(device->ratbag, "Device with firmware version %s is not supported\n", fw_version);
+		log_info(device->ratbag,
+			  "Device with firmware version `%s` is not supported; "
+			  "Perhaps the device file is missing a section for this device?; "
+			  "See the example device file in the repository for more details (`libratbag/data/devices/device.example`)\n",
+			  fw_version
+		);
 		return -EINVAL;
 	}
 
