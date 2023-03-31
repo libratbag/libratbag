@@ -14,7 +14,7 @@
 #define ASUS_BUTTON_ACTION_TYPE_KEY 0  /* keyboard key */
 #define ASUS_BUTTON_ACTION_TYPE_BUTTON 1  /* mouse button */
 #define ASUS_BUTTON_CODE_DISABLED 0xff  /* disabled mouse button */
-#define ASUS_STATUS_ERROR 0xffaa  /* invalid state/request, disconnected or sleeping */
+#define ASUS_STATUS_ERROR 0xaaff  /* invalid state/request, disconnected or sleeping */
 
 /* maximum number of buttons across all ASUS devices */
 #define ASUS_MAX_NUM_BUTTON 17

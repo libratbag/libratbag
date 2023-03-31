@@ -434,6 +434,7 @@ asus_driver_probe(struct ratbag_device *device)
 	unsigned int profile_count, dpi_count, button_count, led_count;
 	const struct asus_button *asus_button;
 	struct asus_data *drv_data;
+	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
 	struct ratbag_resolution *resolution;
@@ -442,6 +443,12 @@ asus_driver_probe(struct ratbag_device *device)
 	rc = ratbag_open_hidraw(device);
 	if (rc)
 		return rc;
+
+	rc = asus_get_profile_data(device, &profile_data);
+	if (rc) {
+		ratbag_close_hidraw(device);
+		return -ENODEV;
+	}
 
 	/* create device state data */
 	drv_data = zalloc(sizeof(*drv_data));

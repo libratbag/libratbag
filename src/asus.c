@@ -136,7 +136,7 @@ asus_query(struct ratbag_device *device,
 		return rc;
 
 	/* invalid state, disconnected or sleeping */
-	if (response->data.code == 0xaaff) {
+	if (response->data.code == ASUS_STATUS_ERROR) {
 		return ASUS_STATUS_ERROR;
 	}
 
