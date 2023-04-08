@@ -350,7 +350,8 @@ struct ratbag_button_action {
 		enum ratbag_button_action_special special; /* action_type == special */
 		struct {
 			unsigned int key; /* action_type == key */
-			/* FIXME: modifiers */
+			unsigned int *modifiers;
+			size_t modifiers_size;
 		} key;
 	} action;
 	struct ratbag_macro *macro; /* dynamically allocated, so kept aside */

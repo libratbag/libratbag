@@ -1466,6 +1466,9 @@ ratbag_button_destroy(struct ratbag_button *button)
 		free(button->action.macro->group);
 		free(button->action.macro);
 	}
+	if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		free(button->action.action.key.modifiers);
+	}
 	free(button);
 }
 
