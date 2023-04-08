@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <linux/input-event-codes.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -363,4 +365,22 @@ static inline uint32_t
 get_unaligned_be_u32(const uint8_t *buf)
 {
 	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+}
+
+static inline bool
+ratbag_key_is_modifier(const unsigned int key)
+{
+	switch (key) {
+	case KEY_LEFTALT:
+	case KEY_LEFTCTRL:
+	case KEY_LEFTMETA:
+	case KEY_LEFTSHIFT:
+	case KEY_RIGHTALT:
+	case KEY_RIGHTCTRL:
+	case KEY_RIGHTMETA:
+	case KEY_RIGHTSHIFT:
+		return true;
+	default:
+		return false;
+	}
 }
