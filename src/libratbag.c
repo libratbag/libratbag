@@ -1384,12 +1384,23 @@ ratbag_button_get_key(const struct ratbag_button *button,
 		      unsigned int *modifiers,
 		      size_t *sz)
 {
+	const union ratbag_btn_action action = button->action.action;
+
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
 		return 0;
 
-	/* FIXME: modifiers */
-	if (sz != NULL)
-		*sz = 0;
+	if (action.key.modifiers_size > 0) {
+		if (sz == NULL || action.key.modifiers_size > *sz) {
+			// There are more modifiers than the client has space for.
+			return 0;
+		}
+		memcpy(modifiers, action.key.modifiers, action.key.modifiers_size * sizeof(*action.key.modifiers));
+	}
+
+	if (sz != NULL) {
+		*sz = action.key.modifiers_size;
+	}
+
 	return button->action.action.key.key;
 }
 
@@ -1407,7 +1418,20 @@ ratbag_button_set_key(struct ratbag_button *button,
 					   RATBAG_BUTTON_ACTION_TYPE_KEY))
 		return RATBAG_ERROR_CAPABILITY;
 
-	/* FIXME: modifiers */
+	// TODO: check for duplicates.
+	for (size_t modifier_index = 0; modifier_index < sz; ++modifier_index) {
+		const unsigned int modifier = modifiers[modifier_index];
+		if (!ratbag_key_is_modifier(modifier)) {
+			return RATBAG_ERROR_VALUE;
+		}
+	}
+
+	if (modifiers != NULL && sz > 0) {
+		const size_t array_bytes = sz * sizeof(*modifiers);
+		action.action.key.modifiers = zalloc(array_bytes);
+		action.action.key.modifiers_size = sz;
+		memcpy(action.action.key.modifiers, modifiers, array_bytes);
+	}
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 	action.action.key.key = key;
