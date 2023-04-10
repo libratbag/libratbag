@@ -802,6 +802,121 @@ START_TEST(device_buttons)
 }
 END_TEST
 
+START_TEST(device_buttons_key_action)
+{
+	enum ratbag_error_code error = RATBAG_SUCCESS;
+	struct ratbag_test_device td = sane_device;
+
+	struct ratbag *ratbag = ratbag_create_context(&abort_iface, NULL);
+	struct ratbag_device *device = ratbag_device_new_test_device(ratbag, &td);
+	struct ratbag_profile *profile = ratbag_device_get_profile(device, 0);
+	struct ratbag_button *button = ratbag_profile_get_button(profile, 0);
+
+	const unsigned int expected_key = KEY_A;
+	const unsigned int expected_modifiers[] = {
+		KEY_LEFTALT,
+		KEY_LEFTCTRL,
+		KEY_LEFTMETA,
+		KEY_LEFTSHIFT,
+		KEY_RIGHTALT,
+		KEY_RIGHTCTRL,
+		KEY_RIGHTMETA,
+		KEY_RIGHTSHIFT,
+	};
+
+	error = ratbag_button_set_key(button,
+				      expected_key,
+				      expected_modifiers,
+				      ARRAY_LENGTH(expected_modifiers));
+	ck_assert_uint_eq(error, RATBAG_SUCCESS);
+
+	// Not enough space for modifiers, should error.
+	{
+		unsigned int modifiers[1] = { 0 };
+		size_t modifiers_size = ARRAY_LENGTH(modifiers);
+		const unsigned int key = ratbag_button_get_key(button,
+							       (unsigned int *)modifiers,
+							       &modifiers_size);
+		ck_assert_uint_eq(key, 0);
+	}
+
+	// No space for modifiers provided, should error.
+	{
+		size_t modifiers_size = 0;
+		const unsigned int key = ratbag_button_get_key(button,
+							       NULL,
+							       &modifiers_size);
+		ck_assert_uint_eq(key, 0);
+	}
+
+	{
+		unsigned int modifiers[ARRAY_LENGTH(expected_modifiers)] = {};
+		size_t modifiers_size = ARRAY_LENGTH(modifiers);
+		const unsigned int key = ratbag_button_get_key(button,
+							       modifiers,
+							       &modifiers_size);
+
+		ck_assert_uint_eq(key, expected_key);
+		ck_assert_uint_eq(modifiers_size, ARRAY_LENGTH(expected_modifiers));
+		for (size_t modifier_index = 0; modifier_index < modifiers_size; ++modifier_index) {
+			const unsigned int modifier = modifiers[modifier_index];
+			const unsigned int expected_modifier = expected_modifiers[modifier_index];
+			ck_assert_uint_eq(modifier, expected_modifier);
+		}
+	}
+
+	ratbag_button_unref(button);
+	ratbag_profile_unref(profile);
+	ratbag_device_unref(device);
+	ratbag_unref(ratbag);
+}
+END_TEST
+
+START_TEST(device_buttons_key_action_no_mods)
+{
+	enum ratbag_error_code error = RATBAG_SUCCESS;
+	struct ratbag_test_device td = sane_device;
+
+	struct ratbag *ratbag = ratbag_create_context(&abort_iface, NULL);
+	struct ratbag_device *device = ratbag_device_new_test_device(ratbag, &td);
+	struct ratbag_profile *profile = ratbag_device_get_profile(device, 0);
+	struct ratbag_button *button = ratbag_profile_get_button(profile, 0);
+
+	const unsigned int expected_key = KEY_A;
+
+	error = ratbag_button_set_key(button, expected_key, NULL, 0);
+	ck_assert_uint_eq(error, RATBAG_SUCCESS);
+
+	// No space for modifiers provided, but we don't need any.
+	{
+		size_t modifiers_size = 0;
+		const unsigned int key = ratbag_button_get_key(button,
+							       NULL,
+							       &modifiers_size);
+
+		ck_assert_uint_eq(key, expected_key);
+		ck_assert_uint_eq(modifiers_size, 0);
+	}
+
+	// Space provided, but not used.
+	{
+		unsigned int modifiers[1] = { 0 };
+		size_t modifiers_size = ARRAY_LENGTH(modifiers);
+		const unsigned int key = ratbag_button_get_key(button,
+							       NULL,
+							       &modifiers_size);
+
+		ck_assert_uint_eq(key, expected_key);
+		ck_assert_uint_eq(modifiers_size, 0);
+	}
+
+	ratbag_button_unref(button);
+	ratbag_profile_unref(profile);
+	ratbag_device_unref(device);
+	ratbag_unref(ratbag);
+}
+END_TEST
+
 START_TEST(device_buttons_ref_unref)
 {
 	struct ratbag *r;
@@ -1000,6 +1115,8 @@ test_context_suite(void)
 
 	tc = tcase_create("buttons");
 	tcase_add_test(tc, device_buttons);
+	tcase_add_test(tc, device_buttons_key_action);
+	tcase_add_test(tc, device_buttons_key_action_no_mods);
 	tcase_add_test(tc, device_buttons_ref_unref);
 	tcase_add_test(tc, device_buttons_set);
 	suite_add_tcase(s, tc);
