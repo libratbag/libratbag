@@ -1407,7 +1407,7 @@ ratbag_button_get_key(const struct ratbag_button *button,
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_button_set_key(struct ratbag_button *button,
 		      unsigned int key,
-		      unsigned int *modifiers,
+		      const unsigned int *modifiers,
 		      size_t sz)
 {
 	struct ratbag_button_action action = {0};
