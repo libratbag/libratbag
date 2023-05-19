@@ -114,13 +114,11 @@ struct steelseries_led_cycle_spec {
 	int point_count_idx;	/* index of the point counter field */
 };
 
-struct _steelseries_message {
-	uint8_t report_id;
-	uint8_t parameters[STEELSERIES_REPORT_SIZE - 1];
-} __attribute__((packed));
-
 union steelseries_message {
-	struct _steelseries_message msg;
+	struct {
+		uint8_t report_id;
+		uint8_t parameters[STEELSERIES_REPORT_SIZE - 1];
+	} __attribute__((packed)) msg;
 	uint8_t data[STEELSERIES_REPORT_SIZE];
 };
 
