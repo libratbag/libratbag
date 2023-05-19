@@ -300,7 +300,7 @@ steelseries_probe(struct ratbag_device *device)
 	int device_version;
 	int rc;
 
-	unsigned int report_rates[] = { 125, 250, 500, 1000 };
+	static const unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 	rc = ratbag_find_hidraw(device, steelseries_test_hidraw);
 	if (rc)
