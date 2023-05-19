@@ -1023,9 +1023,7 @@ steelseries_write_profile(struct ratbag_profile *profile)
 		}
 
 		/* The same hz is used for all resolutions. Only write once. */
-		if (resolution->index > 0)
-			continue;
-
+		break;
 	}
 
 	ratbag_profile_for_each_button(profile, button) {
