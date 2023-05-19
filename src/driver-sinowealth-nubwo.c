@@ -243,8 +243,7 @@ static uint8_t normalize_brightness(int brightness)
 
 static int
 sinowealthnubwo_set_aesthetic(struct ratbag_device *device, struct ratbag_led *led) {
-	struct sinowealthnubwo_aesthetic_report report;
-	memset(&report, 0, sizeof(struct sinowealthnubwo_aesthetic_report));
+	struct sinowealthnubwo_aesthetic_report report = {0};
 	report.report_id = SINOWEALTHNUBWO_AESTHETIC_CMD_REPORTID;
 	memcpy(report.cmd, AESTHETIC_CMD, ARRAY_LENGTH(AESTHETIC_CMD));
 	report.r = led->color.red;
