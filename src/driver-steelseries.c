@@ -1000,7 +1000,7 @@ steelseries_write_profile(struct ratbag_profile *profile)
 		rc = steelseries_write_report_rate(profile);
 		if (rc != 0) {
 			log_error(device->ratbag,
-				  "Failed to write report rate: %s (%d)",
+				  "Failed to write report rate: %s (%d)\n",
 				  strerror(-rc), rc);
 			return rc;
 		}
@@ -1016,7 +1016,7 @@ steelseries_write_profile(struct ratbag_profile *profile)
 		rc = steelseries_write_dpi(resolution);
 		if (rc != 0) {
 			log_error(device->ratbag,
-				  "Failed to write resolution: %s (%d)",
+				  "Failed to write resolution: %s (%d)\n",
 				  strerror(-rc), rc);
 			return rc;
 		}
@@ -1037,7 +1037,7 @@ steelseries_write_profile(struct ratbag_profile *profile)
 		rc = steelseries_write_buttons(profile);
 		if (rc != 0) {
 			log_error(device->ratbag,
-				  "Failed to write buttons: %s (%d)",
+				  "Failed to write buttons: %s (%d)\n",
 				  strerror(-rc), rc);
 			return rc;
 		}
@@ -1053,7 +1053,7 @@ steelseries_write_profile(struct ratbag_profile *profile)
 		rc = steelseries_write_led(led);
 		if (rc != 0) {
 			log_error(device->ratbag,
-				  "Failed to write LED: %s (%d)",
+				  "Failed to write LED: %s (%d)\n",
 				  strerror(-rc), rc);
 			return rc;
 		}
@@ -1078,7 +1078,7 @@ steelseries_commit(struct ratbag_device *device)
 		rc = steelseries_write_profile(profile);
 		if (rc) {
 			log_error(device->ratbag,
-				  "Failed to write profile: %s (%d)",
+				  "Failed to write profile: %s (%d)\n",
 				  strerror(-rc), rc);
 			return rc;
 		}
@@ -1088,7 +1088,7 @@ steelseries_commit(struct ratbag_device *device)
 		rc = steelseries_write_save(device);
 		if (rc) {
 			log_error(device->ratbag,
-				  "Failed to save profile: %s (%d)",
+				  "Failed to save profile: %s (%d)\n",
 				  strerror(-rc), rc);
 			return rc;
 		}
