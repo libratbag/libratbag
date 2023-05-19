@@ -297,9 +297,13 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
-	int rc, button_count, led_count, device_version, quirk;
 	struct dpi_list *dpilist = NULL;
 	struct dpi_range *dpirange = NULL;
+	int button_count;
+	int device_version;
+	int led_count;
+	int quirk;
+	int rc;
 
 	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
@@ -565,7 +569,8 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 	ratbag_profile_for_each_button(profile, button) {
 		struct ratbag_button_action *action = &button->action;
 		uint16_t code;
-		unsigned int key, modifiers;
+		unsigned int key;
+		unsigned int modifiers;
 		int idx;
 
 		/* Each button takes up 3 or 5 bytes starting from index 2 */
