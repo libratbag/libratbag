@@ -105,9 +105,12 @@ sinowealth_get_firmware_string(struct ratbag_device *device, char **output)
 	}
 
 	size = ratbag_hidraw_get_feature_report(device, SINOWEALTHNUBWO_GET_FIRMWARE_CMD_REPORTID, buff, SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE);
+	if (size < 0) {
+		return size;
+	}
 	if (size != SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE) {
 		log_error(device->ratbag ,"Firmware report reply size mismatch expected %d got %d\n", SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE, size);
-		return size;
+		return -EIO;
 	}
 	
 	*output = strdup_ascii_only((char *) buff + SINOWEALTHNUBWO_GET_FIRMWARE_MSGOFFSET);
