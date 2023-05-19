@@ -141,8 +141,8 @@ steelseries_test_hidraw(struct ratbag_device *device)
 
 	if (device_version > 1)
 		return ratbag_hidraw_has_report(device, STEELSERIES_REPORT_ID_1);
-	else
-		return true;
+
+	return true;
 }
 
 static void
@@ -943,9 +943,9 @@ steelseries_write_led(struct ratbag_led *led)
 
 	if (device_version == 1)
 		return steelseries_write_led_v1(led);
-	else if (device_version == 2)
+	if (device_version == 2)
 		return steelseries_write_led_v2(led);
-	else if (device_version == 3)
+	if (device_version == 3)
 		return steelseries_write_led_v3(led);
 
 	return -ENOTSUP;
