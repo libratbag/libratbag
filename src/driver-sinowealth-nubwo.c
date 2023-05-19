@@ -79,7 +79,8 @@ sinowealthnubwo_aesthetic_report {
 	uint8_t brightness; // 0x01 to 0x03
 	uint8_t tempo; // 0x05 0x03 0x01
 	uint8_t padzero2[16*3+1];
-} __packed__;
+} __attribute__((packed));
+// FIXME: there is a missing static assert of size here.
 
 static uint8_t AESTHETIC_CMD[] = {0x06, 0xbb, 0xaa, 0x2a, 0x00, 0x0a, 0x00};
 
