@@ -989,23 +989,38 @@ steelseries_write_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
+	struct ratbag_device *device = profile->device;
 	struct ratbag_led *led;
 	int rc;
 	bool buttons_dirty = false;
 
 	if (profile->rate_dirty) {
+		log_debug(device->ratbag,
+			  "Report rate changed, rewriting\n");
+
 		rc = steelseries_write_report_rate(profile);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write report rate: %s (%d)",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (!resolution->dirty)
 			continue;
 
+		log_debug(device->ratbag,
+			  "Resolution %d changed, rewriting\n", resolution->index);
+
 		rc = steelseries_write_dpi(resolution);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write resolution: %s (%d)",
+				  strerror(-rc), rc);
 			return rc;
+		}
 
 		/* The same hz is used for all resolutions. Only write once. */
 		if (resolution->index > 0)
@@ -1016,21 +1031,35 @@ steelseries_write_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_button(profile, button) {
 		if (button->dirty)
 			buttons_dirty = true;
+
+		log_debug(device->ratbag,
+			  "Button %d changed, rewriting\n", button->index);
 	}
 
 	if (buttons_dirty) {
 		rc = steelseries_write_buttons(profile);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write buttons: %s (%d)",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	ratbag_profile_for_each_led(profile, led) {
 		if (!led->dirty)
 			continue;
 
+		log_debug(device->ratbag,
+			  "LED %d changed, rewriting\n", led->index);
+
 		rc = steelseries_write_led(led);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write LED: %s (%d)",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	return 0;
@@ -1050,14 +1079,22 @@ steelseries_commit(struct ratbag_device *device)
 			  "Profile %d changed, rewriting\n", profile->index);
 
 		rc = steelseries_write_profile(profile);
-		if (rc)
+		if (rc) {
+			log_error(device->ratbag,
+				  "Failed to write profile: %s (%d)",
+				  strerror(-rc), rc);
 			return rc;
+		}
 
 		/* persist the current settings on the device */
 
 		rc = steelseries_write_save(device);
-		if (rc)
+		if (rc) {
+			log_error(device->ratbag,
+				  "Failed to save profile: %s (%d)",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	return 0;
