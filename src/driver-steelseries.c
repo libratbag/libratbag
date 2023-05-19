@@ -425,7 +425,6 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 	struct dpi_list *dpilist = NULL;
 	struct dpi_range *dpirange = NULL;
 	int ret;
-	int i = 0;
 	size_t buf_len;
 
 	union steelseries_message msg = {
@@ -437,16 +436,17 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
 
 	switch (device_version) {
-	case 1:
+	case 1: {
+		size_t i = 0;
 		/* when using lists the entries are enumerated in reverse */
 		if (dpilist) {
-			for (i = 0; i < (int)resolution->ndpis; i++) {
+			for (i = 0; i < resolution->ndpis; i++) {
 				if (resolution->dpis[i] == resolution->dpi_x)
 					break;
 			}
 			i = resolution->ndpis - i;
 		} else {
-			i = resolution->dpi_x / dpirange->step - 1;
+			i = resolution->dpi_x / (size_t)dpirange->step - 1U;
 		}
 
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
@@ -454,25 +454,26 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 		msg.msg.parameters[1] = resolution->index + 1;
 		msg.msg.parameters[2] = i;
 		break;
+	}
 	case 2:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI;
 		msg.msg.parameters[2] = resolution->index + 1;
-		msg.msg.parameters[3] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[3] = resolution->dpi_x / (size_t)dpirange->step - 1;
 		msg.msg.parameters[6] = 0x42; /* not sure if needed */
 		break;
 	case 3:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI_PROTOCOL3;
 		msg.msg.parameters[2] = resolution->index + 1;
-		msg.msg.parameters[3] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[3] = resolution->dpi_x / (size_t)dpirange->step - 1;
 		msg.msg.parameters[5] = 0x42; /* not sure if needed */
 		break;
 	case 4:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI_PROTOCOL4;
 		msg.msg.parameters[1] = resolution->index + 1;
-		msg.msg.parameters[2] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[2] = resolution->dpi_x / (size_t)dpirange->step - 1;
 		break;
 	default:
 		return -ENOTSUP;
@@ -571,10 +572,9 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 		uint16_t code;
 		unsigned int key;
 		unsigned int modifiers;
-		int idx;
 
 		/* Each button takes up 3 or 5 bytes starting from index 2 */
-		idx = 2 + button->index * button_size;
+		size_t idx = 2 + button->index * button_size;
 
 		switch (action->type) {
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
