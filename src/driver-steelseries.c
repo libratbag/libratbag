@@ -409,7 +409,12 @@ steelseries_probe(struct ratbag_device *device)
 		}
 	}
 
-	steelseries_read_settings(device);
+	rc = steelseries_read_settings(device);
+	/* Some devices don't support reading settings, so ignore ENOTSUP. */
+	if (rc < 0 && rc != -ENOTSUP) {
+		log_error(device->ratbag, "Failed to read device settings\n");
+		return rc;
+	}
 
 	return 0;
 }
