@@ -386,6 +386,11 @@ openinput_read_supported_function_pages(struct ratbag_device *device)
 		return ret;
 
 	total = count + left;
+	if (total == 0) {
+		log_debug(ratbag,
+			  "openinput: not proceeding to read device functions as there are 0 pages\n");
+		return 0;
+	}
 	uint8_t pages[total];
 
 	memcpy(pages, buffer, count);
