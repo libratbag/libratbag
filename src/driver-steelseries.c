@@ -133,9 +133,15 @@ steelseries_test_hidraw(struct ratbag_device *device)
 	/* Rival mice are composite devices with multiple HID devices
 	 * and only the HID vendor device can be used to configure the
 	 * device.
+	 * However, this check doesn't apply to some devices, like
+	 * Sensei 310, Rival 600, Rival 650, etc, so we can't rely on
+	 * it.
 	 */
-	if (!ratbag_hidraw_has_vendor_page(device))
-		return false;
+	if (!ratbag_hidraw_has_vendor_page(device)) {
+		log_debug(device->ratbag,
+			  "This is a non-vendor HID device, "
+			  "it may show up as a duplicate configurable device in libratbag\n");
+	}
 
 	if (device_version > 1)
 		return ratbag_hidraw_has_report(device, STEELSERIES_REPORT_ID_1);
