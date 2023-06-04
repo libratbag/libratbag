@@ -326,15 +326,18 @@ asus_driver_load_profiles(struct ratbag_device *device)
 	int rc;
 	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
-	unsigned int current_profile_id;
+	unsigned int current_profile_id = 0;
 
 	/* get current profile id */
 	rc = asus_get_profile_data(device, &profile_data);
 	if (rc)
 		return rc;
 
-	current_profile_id = profile_data.profile_id;
-	log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+	if (device->num_profiles > 1) {
+		current_profile_id = profile_data.profile_id;
+		log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+	}
+
 	log_debug(
 		device->ratbag, "Primary version %02X.%02X.%02X\n",
 		profile_data.version_primary_major,
@@ -381,15 +384,17 @@ asus_driver_save_profiles(struct ratbag_device *device)
 	int rc;
 	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
-	unsigned int current_profile_id;
+	unsigned int current_profile_id = 0;
 
 	/* get current profile id */
-	rc = asus_get_profile_data(device, &profile_data);
-	if (rc)
-		return rc;
+	if (device->num_profiles > 1) {
+		rc = asus_get_profile_data(device, &profile_data);
+		if (rc)
+			return rc;
 
-	current_profile_id = profile_data.profile_id;
-	log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+		current_profile_id = profile_data.profile_id;
+		log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+	}
 
 	ratbag_device_for_each_profile(device, profile) {
 		if (!profile->dirty)
