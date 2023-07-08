@@ -994,8 +994,8 @@ class RatbagdButton(_RatbagdDBus):
 
 class RatbagdMacro(GObject.Object):
     """Represents a button macro. Note that it uses keycodes as defined by
-    linux/input.h and not those used by X.Org or any other higher layer such as
-    Gdk."""
+    linux/input-event-codes.h and not those used by X.Org or any other higher
+    layer such as Gdk."""
 
     # Both a key press and release.
     _MACRO_KEY = 1000

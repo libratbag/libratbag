@@ -1515,7 +1515,7 @@ ratbag_button_set_special(struct ratbag_button *button,
  *
  * @param button A previously initialized ratbag button
  * @param[out] modifiers Will be filled with the modifiers required for this
- * action. The modifiers are as defined in linux/input.h.
+ * action. The modifiers are as defined in linux/input-event-codes.h.
  * @param[in,out] sz Takes the size of the modifiers array and returns the
  * number of modifiers filled in. sz may be 0 if no modifiers are required.
  *
@@ -1534,10 +1534,10 @@ ratbag_button_get_key(const struct ratbag_button *button,
  *
  * @param button A previously initialized ratbag button
  * @param key The button number to assign to this button, one of BTN_* as
- * defined in linux/input.h
+ * defined in linux/input-event-codes.h
  * @param modifiers The modifiers required for this action. The
- * modifiers are as defined in linux/input.h, in the order they should be
- * pressed.
+ * modifiers are as defined in linux/input-event-codes.h, in the order they
+ * should be pressed.
  * @param sz The size of the modifiers array. sz may be 0 if no modifiers
  * are required.
  *

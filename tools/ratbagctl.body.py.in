@@ -1280,7 +1280,7 @@ active profile if none is given.""",
 
   Macro syntax:
         A macro is a series of key events or waiting periods.
-        Keys must be specified in linux/input.h key names.
+        Keys must be specified in linux/input-event-codes.h key names.
         KEY_A                   Press and release 'a'
         +KEY_A                  Press 'a'
         -KEY_A                  Release 'a'
