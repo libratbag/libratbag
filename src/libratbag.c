@@ -1386,12 +1386,16 @@ ratbag_button_get_key(const struct ratbag_button *button,
 {
 	const union ratbag_btn_action action = button->action.action;
 
-	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		log_debug(button->profile->device->ratbag,
+			  "%s called, but action type is not `KEY`\n", __func__);
 		return 0;
+	}
 
 	if (action.key.modifiers_size > 0) {
 		if (sz == NULL || action.key.modifiers_size > *sz) {
-			// There are more modifiers than the client has space for.
+			log_debug(button->profile->device->ratbag,
+				  "there are more modifiers than the client has space for\n");
 			return 0;
 		}
 		memcpy(modifiers, action.key.modifiers, action.key.modifiers_size * sizeof(*action.key.modifiers));
