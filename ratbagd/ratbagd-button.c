@@ -150,12 +150,12 @@ static int ratbagd_button_set_special(sd_bus *bus,
 }
 
 static int ratbagd_button_get_key(sd_bus *bus,
-				      const char *path,
-				      const char *interface,
-				      const char *property,
-				      sd_bus_message *reply,
-				      void *userdata,
-				      sd_bus_error *error)
+				  const char *path,
+				  const char *interface,
+				  const char *property,
+				  sd_bus_message *reply,
+				  void *userdata,
+				  sd_bus_error *error)
 {
 	struct ratbagd_button *button = userdata;
 
@@ -174,12 +174,12 @@ static int ratbagd_button_get_key(sd_bus *bus,
 }
 
 static int ratbagd_button_set_key(sd_bus *bus,
-				      const char *path,
-				      const char *interface,
-				      const char *property,
-				      sd_bus_message *m,
-				      void *userdata,
-				      sd_bus_error *error)
+				  const char *path,
+				  const char *interface,
+				  const char *property,
+				  sd_bus_message *m,
+				  void *userdata,
+				  sd_bus_error *error)
 {
 	struct ratbagd_button *button = userdata;
 	unsigned int key;
