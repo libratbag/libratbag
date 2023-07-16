@@ -321,9 +321,7 @@ def show_profile(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def show_resolution(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, p, d = find_resolution(ratbagd, args)
     print(
-        "Resolution {} on Profile {} on {} ({})".format(
-            args.resolution, args.profile, d.id, d.name
-        )
+        f"Resolution {args.resolution} on Profile {args.profile} on {d.id} ({d.name})"
     )
     print_resolution(d, p, resolution, 0)
     caps = {
@@ -337,9 +335,7 @@ def show_resolution(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def show_button(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, profile, device = find_button(ratbagd, args)
     print(
-        "Button {} on Profile {} on {} ({})".format(
-            args.button, args.profile, device.id, device.name
-        )
+        f"Button {args.button} on Profile {args.profile} on {device.id} ({device.name})"
     )
     print_button(device, profile, button, 0)
 
