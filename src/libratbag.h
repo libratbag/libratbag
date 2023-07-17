@@ -1533,7 +1533,7 @@ ratbag_button_get_key(const struct ratbag_button *button,
  * @ingroup button
  *
  * @param button A previously initialized ratbag button
- * @param key The button number to assign to this button, one of BTN_* as
+ * @param key The key number to assign to this button, one of KEY_* as
  * defined in linux/input-event-codes.h
  * @param modifiers The modifiers required for this action. The
  * modifiers are as defined in linux/input-event-codes.h, in the order they
