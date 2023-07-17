@@ -198,10 +198,28 @@ static int ratbagd_button_set_key(sd_bus *bus,
 	unsigned int key;
 	int r;
 
-	CHECK_CALL(sd_bus_message_read(m, "v", "u", &key));
+	CHECK_CALL(sd_bus_message_enter_container(m, 'v', "(uau)"));
+	CHECK_CALL(sd_bus_message_enter_container(m, SD_BUS_TYPE_STRUCT, "uau"));
+	CHECK_CALL(sd_bus_message_read(m, "u", &key));
 
-	unsigned int *modifiers = NULL;
+	CHECK_CALL(sd_bus_message_enter_container(m, 'a', "u"));
+
+	unsigned int modifiers[8];
 	size_t sz = 0;
+
+	unsigned int mod;
+	while ((r = sd_bus_message_read(m, "u", &mod)) > 0) {
+		if (sz <= ARRAY_LENGTH(modifiers)) {
+			modifiers[sz] = mod;
+			sz++;
+		} else {
+			printf("ignoring mod: %d\n", mod);
+		}
+	}
+
+	CHECK_CALL(sd_bus_message_exit_container(m));
+	CHECK_CALL(sd_bus_message_exit_container(m));
+
 	r = ratbag_button_set_key(button->lib_button, key, modifiers, sz);
 
 	if (r == 0) {

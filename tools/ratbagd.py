@@ -971,9 +971,10 @@ class RatbagdButton(_RatbagdDBus):
         return key, mods
 
     @key.setter
-    def key(self, key):
-        key = GLib.Variant("u", key)
-        self._set_dbus_property("Mapping", "(uv)", (RatbagdButton.ActionType.KEY, key))
+    def key(self, input: Tuple[int, List[int]]):
+        key, modifiers = input
+        data = GLib.Variant("(uau)", (key, modifiers))
+        self._set_dbus_property("Mapping", "(uv)", (RatbagdButton.ActionType.KEY, data))
 
     @GObject.Property
     def action_type(self):

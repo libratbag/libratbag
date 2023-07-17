@@ -432,12 +432,12 @@ def func_button_action_set_key(ratbagd: Ratbagd, args: argparse.Namespace) -> No
     if button.ActionType.KEY not in button.action_types:
         raise RatbagCapabilityError("assigning a key is not supported on this device")
 
-    try:
-        key = args.target_key
-    except AttributeError:
-        pass
-    else:
-        button.key = convert_str_to_evcode(key)
+    key = convert_str_to_evcode(args.target_key)
+    modifiers = [
+        convert_str_to_evcode(mod_str) for mod_str in args.target_key_modifiers
+    ]
+    button.key = (key, modifiers)
+
     commit(device, args)
 
 
@@ -1263,13 +1263,21 @@ active profile if none is given.""",
                                 {
                                     of_type: command,
                                     name: "key",
-                                    help_str: "Set the button action to key",
+                                    help_str: """Set the button action to the given key and modifiers
+    First is the key to assign, then the modifiers.
+        Keys must be specified in linux/input-event-codes.h key names.
+        KEY_A KEY_LEFTCTRL      Press 'a' while holding down Ctrl.""",
                                     pos_args: [
                                         {
                                             of_type: argument,
                                             name: "target_key",
                                             metavar: "S",
-                                            help_str: "The new key value to assign",
+                                        },
+                                        {
+                                            of_type: argument,
+                                            name: "target_key_modifiers",
+                                            metavar: "...",
+                                            nargs: argparse.REMAINDER,
                                         },
                                     ],
                                     func: func_button_action_set_key,
