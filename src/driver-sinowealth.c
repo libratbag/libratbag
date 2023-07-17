@@ -114,11 +114,18 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 #define SINOWEALTH_NUM_PROFILES_MAX 3
 _Static_assert(SINOWEALTH_NUM_PROFILES_MAX <= 3, "Too many profiles enabled");
 
+/* How much buttons we can support for a mouse. Arbitrary number. */
+#define SINOWEALTH_NUM_BUTTONS_MAX 64
+
 /* Maximum amount of real events in a macro. */
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
 
 static const unsigned int SINOWEALTH_DEBOUNCE_TIMES[] = {
 	4, 6, 8, 10, 12, 14, 16
+};
+
+static const unsigned int SINOWEALTH_REPORT_RATES[] = {
+	125, 250, 500, 1000
 };
 
 /* Bit mask for @ref sinowealth_config_report.config.
@@ -308,6 +315,43 @@ enum sinowealth_button_key_modifiers {
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_button_key_modifiers) == sizeof(uint8_t), "Invalid size");
 
+/* @return A single sinowealth_button_key_modifiers or -1. */
+static int
+sinowealth_button_key_modifier_from_evcode(unsigned int modifier_evcode)
+{
+	switch (modifier_evcode) {
+	case KEY_LEFTCTRL:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTCTRL;
+	case KEY_LEFTSHIFT:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTSHIFT;
+	case KEY_LEFTMETA:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTMETA;
+	case KEY_LEFTALT:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTALT;
+	default:
+		/* Handled below. */
+		break;
+	}
+	// TODO: should log a warning here.
+	return -1;
+}
+
+/* @return Combined sinowealth_button_key_modifiers or -1. */
+static int
+sinowealth_button_key_modifiers_from_evcodes(const unsigned int *modifiers, unsigned int modifiers_size)
+{
+	int rc;
+	int out = 0;
+	for (size_t modifier_index = 0; modifier_index < modifiers_size; ++modifier_index) {
+		const unsigned int modifier_evcode = modifiers[modifier_index];
+		rc = sinowealth_button_key_modifier_from_evcode(modifier_evcode);
+		if (rc < 0)
+			return -1;
+		out |= rc;
+	}
+	return out;
+}
+
 enum sinowealth_button_macro_mode {
 	/* Repeat <option> times. */
 	SINOWEALTH_BUTTON_MACRO_MODE_REPEAT = 0x1,
@@ -391,7 +435,7 @@ _Static_assert(sizeof(enum sinowealth_macro_command) == sizeof(uint8_t), "Invali
 struct sinowealth_macro_event {
 	enum sinowealth_macro_command command;
 	/* Use `1` for no delay.
-	 * In case this is set to `0`, the event will ignored.
+	 * If set to `0`, the event will get ignored.
 	 */
 	uint8_t delay;
 	union {
@@ -447,6 +491,7 @@ struct sinowealth_data {
 	unsigned int config_size;
 	unsigned int led_count;
 	unsigned int profile_count;
+	bool button_key_action_instead_of_macro[SINOWEALTH_NUM_BUTTONS_MAX];
 	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES_MAX];
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES_MAX];
 };
@@ -712,8 +757,8 @@ sinowealth_raw_to_color(struct ratbag_device *device, struct sinowealth_color ra
 	struct ratbag_color color;
 
 	switch (drv_data->led_type) {
-	/* Fall back to RBG if the LED type is incorrect. */
-	default:
+	/* Fall-back to RBG as it seems more often used. */
+	case SINOWEALTH_LED_TYPE_NONE:
 	case SINOWEALTH_LED_TYPE_RBG:
 		color.red = raw_color.data[0];
 		color.green = raw_color.data[2];
@@ -740,8 +785,8 @@ sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 	struct sinowealth_color raw_color;
 
 	switch (drv_data->led_type) {
-	/* Fall back to RBG if the LED type is incorrect. */
-	default:
+	/* Fall-back to RBG as it seems more often used. */
+	case SINOWEALTH_LED_TYPE_NONE:
 	case SINOWEALTH_LED_TYPE_RBG:
 		raw_color.data[0] = (uint8_t)color.red;
 		raw_color.data[1] = (uint8_t)color.blue;
@@ -782,7 +827,9 @@ sinowealth_rgb_mode_to_duration(struct sinowealth_rgb_mode mode)
 	case 1: return 1500;
 	case 2: return 1000;
 	case 3: return 500;
-	default: return 0;
+	default:
+		// TODO: should log warning error here.
+		return 0;
 	}
 }
 
@@ -1378,23 +1425,86 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 
 /* @return 0 on success or a negative errno. */
 static int
-sinowealth_button_set_key_action(struct ratbag_device *device, const struct ratbag_button *button, struct sinowealth_button_data *button_data)
+sinowealth_button_set_key_action(const struct ratbag_button *button, struct sinowealth_button_data *button_data)
 {
-	assert(button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY);
+	struct ratbag_device *device = button->profile->device;
+
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		log_bug_libratbag(device->ratbag, "button %u: action must be a key",
+				  button->index);
+		return -EINVAL;
+	}
 
 	const unsigned int key = button->action.action.key.key;
-	// libratbag doesn't support modifiers in `key` actions.
-	const unsigned int modifiers = 0;
+	const unsigned int modifiers =
+		sinowealth_button_key_modifiers_from_evcodes(button->action.action.key.modifiers,
+							     button->action.action.key.modifiers_size);
 
 	const uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
 	if (raw_key == 0) {
-		log_debug(device->ratbag, "Could not set unsupported key %#x to button %u\n", key, button->index);
+		log_error(device->ratbag, "button %u: couldn't assign unsupported key %#x\n",
+			  button->index, key);
 		return -EINVAL;
 	}
 
 	button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
 	button_data->key.modifiers = modifiers;
 	button_data->key.key = raw_key;
+
+	return 0;
+}
+
+/*
+ * @param modifiers_out Modifiers as bit ORd sinowealth_button_key_modifiers.
+ * @note On error assume out values are garbage.
+ * @return 0 on success or a negative errno.
+ */
+static int
+sinowealth_button_key_action_from_simple_macro(
+	const struct ratbag_button *button,
+	uint8_t *key_out, uint8_t *modifiers_out)
+{
+	struct ratbag_device *device = button->profile->device;
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+		log_bug_libratbag(device->ratbag, "Button's action is not a macro");
+		return -EINVAL;
+	}
+
+	for (unsigned int i = 0; i < MAX_MACRO_EVENTS; ++i) {
+		const struct ratbag_macro_event ratbag_macro_event = button->action.macro->events[i];
+		switch (ratbag_macro_event.type) {
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+			if (ratbag_key_is_modifier(ratbag_macro_event.event.key)) {
+				*modifiers_out |=
+					(uint8_t)sinowealth_button_key_modifier_from_evcode(ratbag_macro_event.event.key);
+				break;
+			}
+			if (*key_out != 0) {
+				/* Already found a key to press.
+				 * Don't warn on this as we try to use this function for any macros.
+				 */
+				return -EINVAL;
+			}
+			*key_out = ratbag_hidraw_get_keyboard_usage_from_keycode(device, ratbag_macro_event.event.key);
+			if (*key_out == 0) {
+				log_error(device->ratbag, "Couldn't get keyboard usage for keycode=%d\n", ratbag_macro_event.event.key);
+				return -EINVAL;
+			}
+			break;
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			/* We don't care about release events here. */
+			break;
+		case RATBAG_MACRO_EVENT_NONE:
+			goto out;
+		case RATBAG_MACRO_EVENT_INVALID:
+		case RATBAG_MACRO_EVENT_WAIT:
+			return -EINVAL;
+		}
+	}
+out:
+	if (*key_out == 0) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -1423,12 +1533,30 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 
 		switch (action->type) {
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
-			sinowealth_button_set_key_action(device, button, button_data);
+			rc = sinowealth_button_set_key_action(button, button_data);
+			if (rc < 0) {
+				return rc;
+			}
 			break;
 		case RATBAG_BUTTON_ACTION_TYPE_MACRO: {
 			/* Make the button activate a macro.
-			 * The macro itself will be written later by @ref sinowealth_write_macros.
+			 * The macro itself will be written later by sinowealth_write_macros(),
+			 * unless we choose to write it as a simple key instead.
 			 */
+			uint8_t raw_key = 0;
+			uint8_t raw_modifiers = 0;
+			rc = sinowealth_button_key_action_from_simple_macro(button, &raw_key, &raw_modifiers);
+			if (rc == 0) {
+				log_debug(device->ratbag,
+					  "button %d: Macro was simple enough to be written as a key action instead\n",
+					  button->index);
+				button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
+				button_data->key.modifiers = raw_modifiers;
+				button_data->key.key = raw_key;
+				drv_data->button_key_action_instead_of_macro[button->index] = true;
+				break;
+			}
+			drv_data->button_key_action_instead_of_macro[button->index] = false;
 
 			button_data->type = SINOWEALTH_BUTTON_TYPE_MACRO;
 			button_data->macro.index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
@@ -1449,8 +1577,10 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 	return 0;
 }
 
-/* Update macro report `macro` with macro button action in button `button`. */
-static void
+/* Update macro report `macro` with macro button action in button `button`.
+ * @return 0 on success or a negative errno.
+ */
+static int
 sinowealth_update_macro_events_from_action(
 	struct ratbag_device *device,
 	struct ratbag_button *button,
@@ -1458,7 +1588,10 @@ sinowealth_update_macro_events_from_action(
 {
 	struct ratbag_button_action *action = &button->action;
 
-	assert(action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO);
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+		log_bug_libratbag(device->ratbag, "Button's action is not a macro");
+		return -EINVAL;
+	}
 
 	/* Reset the `events` field. Even if we don't do this, the mouse will ignore unneeded data. */
 	memset(mouse_macro->events, 0, sizeof(mouse_macro->events));
@@ -1530,7 +1663,7 @@ sinowealth_update_macro_events_from_action(
 
 			if (raw_event_count == 0) {
 				log_error(device->ratbag, "Macro for button %u: can't use timeout as the first event in macro\n", button->index);
-				break;
+				return -EINVAL;
 			}
 
 			struct sinowealth_macro_event *prev_mouse_macro_event = &mouse_macro->events[raw_event_count - 1];
@@ -1552,7 +1685,6 @@ sinowealth_update_macro_events_from_action(
 			/* Handled separately above. */
 			break;
 		case RATBAG_MACRO_EVENT_INVALID:
-		default:
 			abort();
 			break;
 		}
@@ -1560,6 +1692,8 @@ sinowealth_update_macro_events_from_action(
 
 	/* Update the event counter in the macro. */
 	mouse_macro->event_count = raw_event_count;
+
+	return 0;
 }
 
 /*
@@ -1660,8 +1794,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 			  "Active profile index is %d, but the maximum in the device file is %d; "
 			  "Will use profile %d instead; "
 			  "Report this to libratbag developers!\n",
-			  rc,
-			  drv_data->profile_count - 1,
+			  rc, drv_data->profile_count - 1,
 			  PROFILE_TO_USE);
 		sinowealth_set_active_profile(device, PROFILE_TO_USE);
 		if (rc < 0)
@@ -1674,11 +1807,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 	rc = device_data->button_count;
 	if (rc == -1) {
 		drv_data->button_count = 0;
-	} else if (rc >= 0) {
+	} else if (rc >= 0 && rc <= SINOWEALTH_NUM_BUTTONS_MAX) {
 		drv_data->button_count = (unsigned int)rc;
 	} else {
 		log_error(device->ratbag,
-			  "Device file for firmware version %s specifies button count: %d\n",
+			  "Device file for firmware version %s specifies wrong button count: %d\n",
 			  fw_version, rc);
 		return -EINVAL;
 	}
@@ -1755,8 +1888,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 		}
 
 		/* Set up available report rates. */
-		unsigned int report_rates[] = { 125, 250, 500, 1000 };
-		ratbag_profile_set_report_rate_list(profile, report_rates, ARRAY_LENGTH(report_rates));
+		ratbag_profile_set_report_rate_list(profile, SINOWEALTH_REPORT_RATES, ARRAY_LENGTH(SINOWEALTH_REPORT_RATES));
 
 		/* Set up LED capabilities */
 		if (drv_data->led_count > 0) {
@@ -1878,15 +2010,20 @@ sinowealth_write_macros(struct ratbag_device *device)
 
 			struct ratbag_button_action *action = &button->action;
 
-			/* Ignore non macro actions.
-			 * They were already handled by @ref sinowealth_update_profile_from_buttons.
+			/* Ignore non macro actions and simple macros.
+			 * They were already handled by sinowealth_update_profile_from_buttons().
 			 */
-			if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+			if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO ||
+			    drv_data->button_key_action_instead_of_macro[button->index])
 				continue;
 
 			macro.index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
 
-			sinowealth_update_macro_events_from_action(device, button, &macro);
+			rc = sinowealth_update_macro_events_from_action(device, button, &macro);
+			if (rc < 0) {
+				log_error(device->ratbag, "Error while writing macro %u: %s (%d)\n", macro.index, strerror(-rc), rc);
+				return rc;
+			}
 
 			rc = sinowealth_query_write(device, (uint8_t*)&macro, sizeof(macro));
 			if (rc < 0) {
