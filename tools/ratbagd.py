@@ -92,9 +92,7 @@ class RatbagdIncompatibleError(Exception):
         super().__init__()
         self.ratbagd_version = ratbagd_version
         self.required_version = required_version
-        self.message = "ratbagd API version is {} but we require {}".format(
-            ratbagd_version, required_version
-        )
+        self.message = f"ratbagd API version is {ratbagd_version} but we require {required_version}"
 
     def __str__(self):
         return self.message
@@ -443,6 +441,7 @@ class RatbagdProfile(_RatbagdDBus):
         self._angle_snapping = self._get_dbus_property("AngleSnapping")
         self._debounce = self._get_dbus_property("Debounce")
         self._dirty = self._get_dbus_property("IsDirty")
+        self._disabled = self._get_dbus_property("Disabled")
         self._report_rate = self._get_dbus_property("ReportRate")
 
         # FIXME: if we start adding and removing objects from any of these
@@ -488,6 +487,16 @@ class RatbagdProfile(_RatbagdDBus):
             if debounce != self._debounce:
                 self._debounce = debounce
                 self.notify("debounce")
+
+        try:
+            disabled = changed_props["Disabled"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if disabled != self._disabled:
+                self._disabled = disabled
+                self.notify("disabled")
 
         try:
             active = changed_props["IsActive"]
@@ -554,7 +563,7 @@ class RatbagdProfile(_RatbagdDBus):
     @GObject.Property
     def disabled(self):
         """tells if the profile is disabled."""
-        return self._get_dbus_property("Disabled")
+        return self._disabled
 
     @disabled.setter
     def disabled(self, disabled):
