@@ -962,11 +962,13 @@ class RatbagdButton(_RatbagdDBus):
         )
 
     @GObject.Property
-    def key(self):
-        type, key = self._mapping()
-        if type != RatbagdButton.ActionType.KEY:
+    def key(self) -> Optional[Tuple[int, List[int]]]:
+        action_type, variant = self._mapping()
+        if action_type != RatbagdButton.ActionType.KEY:
             return None
-        return key
+
+        key, mods = variant
+        return key, mods
 
     @key.setter
     def key(self, key):

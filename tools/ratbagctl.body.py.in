@@ -225,8 +225,13 @@ def print_button(
     elif button.action_type == RatbagdButton.ActionType.SPECIAL:
         print(f"{header}'{button_specials_strmap[button.special]}'")
     elif button.action_type == RatbagdButton.ActionType.KEY:
-        key_name = evcode_to_str(button.key)
-        print(f"{header}key '{key_name}'")
+        key, mods = button.key
+
+        key_name = evcode_to_str(key)
+
+        mods_str = ", ".join(evcode_to_str(mod) for mod in mods)
+
+        print(f"{header}key '{key_name}' (modifiers: {mods_str})")
     elif button.action_type == RatbagdButton.ActionType.MACRO:
         print(f"{header}macro '{str(button.macro)}'")
     elif button.action_type == RatbagdButton.ActionType.NONE:

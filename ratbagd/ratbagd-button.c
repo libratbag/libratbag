@@ -159,16 +159,29 @@ static int ratbagd_button_get_key(sd_bus *bus,
 {
 	struct ratbagd_button *button = userdata;
 
-	unsigned int *modifiers = NULL;
-	size_t *sz = 0;
-	const unsigned int key = ratbag_button_get_key(button->lib_button, modifiers, sz);
+	unsigned int modifiers[8];
+	size_t modifiers_size = sizeof(modifiers);
+	const unsigned int key = ratbag_button_get_key(button->lib_button,
+						       (unsigned int *)modifiers,
+						       &modifiers_size);
+	assert(key != 0);
 
-	verify_unsigned_int(key);
+	CHECK_CALL(sd_bus_message_open_container(reply, SD_BUS_TYPE_STRUCT, "uv"));
+	CHECK_CALL(sd_bus_message_append(reply, "u", RATBAG_BUTTON_ACTION_TYPE_KEY));
 
-	CHECK_CALL(sd_bus_message_append(reply, "(uv)",
-					 RATBAG_BUTTON_ACTION_TYPE_KEY,
-					 "u",
-					 key));
+	CHECK_CALL(sd_bus_message_open_container(reply, 'v', "(uau)"));
+	CHECK_CALL(sd_bus_message_open_container(reply, SD_BUS_TYPE_STRUCT, "uau"));
+	CHECK_CALL(sd_bus_message_append(reply, "u", key));
+
+	CHECK_CALL(sd_bus_message_open_container(reply, 'a', "u"));
+	for (size_t i = 0; i < modifiers_size; ++i) {
+		CHECK_CALL(sd_bus_message_append(reply, "u", modifiers[i]));
+	}
+	CHECK_CALL(sd_bus_message_close_container(reply));
+
+	CHECK_CALL(sd_bus_message_close_container(reply));
+	CHECK_CALL(sd_bus_message_close_container(reply));
+	CHECK_CALL(sd_bus_message_close_container(reply));
 
 	return 0;
 }
