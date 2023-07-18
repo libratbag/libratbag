@@ -237,6 +237,11 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
+			if (button->action.action.key.modifiers_size > 0) {
+				log_error(device->ratbag, "Modifiers are not supported in simple key actions");
+				return -EINVAL;
+			}
+
 			/* Linux code to ASUS code */
 			rc = asus_find_key_code(button->action.action.key.key);
 			if (rc != -1) {
