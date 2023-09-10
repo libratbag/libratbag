@@ -22,7 +22,6 @@
  */
 
 #include "config.h"
-#include <assert.h>
 #include <errno.h>
 #include <libevdev/libevdev.h>
 #include <linux/input.h>
@@ -116,8 +115,12 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 		switch (asus_binding->type) {
 		case ASUS_BUTTON_ACTION_TYPE_KEY:
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-			/* ASUS code to Linux code */
-			button->action.action.key.key = asus_get_linux_key_code(asus_binding->action);
+			rc = asus_get_linux_key_code(asus_binding->action);
+			if (rc > 0) {
+				button->action.action.key.key = (unsigned int)rc;
+			} else {
+				log_debug(device->ratbag, "Unknown button code %02x\n", asus_binding->action);
+			}
 			break;
 
 		case ASUS_BUTTON_ACTION_TYPE_BUTTON:

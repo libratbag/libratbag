@@ -164,6 +164,11 @@ asus_find_button_by_code(uint8_t asus_code);
 int
 asus_find_key_code(unsigned int linux_code);
 
+/*
+ * @param asus_code ASUS key code.
+ * @return Linux key code (as defined defined in linux/input-event-codes.h) or
+ * -1 on error.
+ */
 int
 asus_get_linux_key_code(uint8_t asus_code);
 
