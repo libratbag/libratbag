@@ -1856,7 +1856,7 @@ Exit codes:
   1     Unsupported feature, index out of available range or invalid device
   2     Commandline arguments are invalid
   3     A command failed on the device
-""".format(
+""".format(  # noqa: UP032
                 self.parser.prog
             )
         )
