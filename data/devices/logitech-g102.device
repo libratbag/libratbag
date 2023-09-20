@@ -1,0 +1,6 @@
+# G102, G103 and G203 (USB)
+[Device]
+Name=Logitech, Inc. G102 LIGHTSYNC Gaming Mouse
+DeviceMatch=usb:046d:c09d
+Driver=hidpp20
+LedTypes=logo;side;
