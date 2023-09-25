@@ -1382,9 +1382,15 @@ sinowealth_update_profile_from_buttons(struct ratbag_profile *profile)
 
 /* @return 0 on success or a negative errno. */
 static int
-sinowealth_button_set_key_action(struct ratbag_device *device, const struct ratbag_button *button, struct sinowealth_button_data *button_data)
+sinowealth_button_set_key_action(const struct ratbag_button *button, struct sinowealth_button_data *button_data)
 {
-	assert(button->action.type == RATBAG_BUTTON_ACTION_TYPE_KEY);
+	struct ratbag_device *device = button->profile->device;
+
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY) {
+		log_bug_libratbag(device->ratbag, "button %u: action must be a key",
+				  button->index);
+		return -EINVAL;
+	}
 
 	const unsigned int key = button->action.action.key.key;
 	// libratbag doesn't support modifiers in `key` actions.
@@ -1392,7 +1398,8 @@ sinowealth_button_set_key_action(struct ratbag_device *device, const struct ratb
 
 	const uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
 	if (raw_key == 0) {
-		log_debug(device->ratbag, "Could not set unsupported key %#x to button %u\n", key, button->index);
+		log_error(device->ratbag, "button %u: couldn't assign unsupported key %#x\n",
+			  button->index, key);
 		return -EINVAL;
 	}
 
@@ -1427,7 +1434,10 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 
 		switch (action->type) {
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
-			sinowealth_button_set_key_action(device, button, button_data);
+			rc = sinowealth_button_set_key_action(button, button_data);
+			if (rc < 0) {
+				return rc;
+			}
 			break;
 		case RATBAG_BUTTON_ACTION_TYPE_MACRO: {
 			/* Make the button activate a macro.
