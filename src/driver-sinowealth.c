@@ -114,6 +114,9 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 #define SINOWEALTH_NUM_PROFILES_MAX 3
 _Static_assert(SINOWEALTH_NUM_PROFILES_MAX <= 3, "Too many profiles enabled");
 
+/* How much buttons we can support for a mouse. Arbitrary number. */
+#define SINOWEALTH_NUM_BUTTONS_MAX 64
+
 /* Maximum amount of real events in a macro. */
 #define SINOWEALTH_MACRO_LENGTH_MAX 168
 
@@ -312,6 +315,27 @@ enum sinowealth_button_key_modifiers {
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_button_key_modifiers) == sizeof(uint8_t), "Invalid size");
 
+/* @return A single sinowealth_button_key_modifiers or -1. */
+static int
+sinowealth_button_key_modifier_from_evcode(unsigned int modifier_evcode)
+{
+	switch (modifier_evcode) {
+	case KEY_LEFTCTRL:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTCTRL;
+	case KEY_LEFTSHIFT:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTSHIFT;
+	case KEY_LEFTMETA:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTMETA;
+	case KEY_LEFTALT:
+		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTALT;
+	default:
+		/* Handled below. */
+		break;
+	}
+	// TODO: should log a warning here.
+	return -1;
+}
+
 enum sinowealth_button_macro_mode {
 	/* Repeat <option> times. */
 	SINOWEALTH_BUTTON_MACRO_MODE_REPEAT = 0x1,
@@ -451,6 +475,7 @@ struct sinowealth_data {
 	unsigned int config_size;
 	unsigned int led_count;
 	unsigned int profile_count;
+	bool button_key_action_instead_of_macro[SINOWEALTH_NUM_BUTTONS_MAX];
 	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES_MAX];
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES_MAX];
 };
@@ -1395,7 +1420,9 @@ sinowealth_button_set_key_action(const struct ratbag_button *button, struct sino
 	}
 
 	const unsigned int key = button->action.action.key.key;
-	// libratbag doesn't support modifiers in `key` actions.
+	// libratbag does not support modifiers in simple key actions.
+	// We can can convert simple enough macros into key actions though, see
+	// sinowealth_button_key_action_from_simple_macro().
 	const unsigned int modifiers = 0;
 
 	const uint8_t raw_key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
@@ -1408,6 +1435,61 @@ sinowealth_button_set_key_action(const struct ratbag_button *button, struct sino
 	button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
 	button_data->key.modifiers = modifiers;
 	button_data->key.key = raw_key;
+
+	return 0;
+}
+
+/*
+ * @param modifiers_out Modifiers as bit ORd sinowealth_button_key_modifiers.
+ * @note On error assume out values are garbage.
+ * @return 0 on success or a negative errno.
+ */
+static int
+sinowealth_button_key_action_from_simple_macro(
+	const struct ratbag_button *button,
+	uint8_t *key_out, uint8_t *modifiers_out)
+{
+	struct ratbag_device *device = button->profile->device;
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+		log_bug_libratbag(device->ratbag, "Button's action is not a macro");
+		return -EINVAL;
+	}
+
+	for (unsigned int i = 0; i < MAX_MACRO_EVENTS; ++i) {
+		const struct ratbag_macro_event ratbag_macro_event = button->action.macro->events[i];
+		switch (ratbag_macro_event.type) {
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+			if (ratbag_key_is_modifier(ratbag_macro_event.event.key)) {
+				*modifiers_out |=
+					(uint8_t)sinowealth_button_key_modifier_from_evcode(ratbag_macro_event.event.key);
+				break;
+			}
+			if (*key_out != 0) {
+				/* Already found a key to press.
+				 * Don't warn on this as we try to use this function for any macros.
+				 */
+				return -EINVAL;
+			}
+			*key_out = ratbag_hidraw_get_keyboard_usage_from_keycode(device, ratbag_macro_event.event.key);
+			if (*key_out == 0) {
+				log_error(device->ratbag, "Couldn't get keyboard usage for keycode=%d\n", ratbag_macro_event.event.key);
+				return -EINVAL;
+			}
+			break;
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			/* We don't care about release events here. */
+			break;
+		case RATBAG_MACRO_EVENT_NONE:
+			goto out;
+		case RATBAG_MACRO_EVENT_INVALID:
+		case RATBAG_MACRO_EVENT_WAIT:
+			return -EINVAL;
+		}
+	}
+out:
+	if (*key_out == 0) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -1443,8 +1525,23 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 			break;
 		case RATBAG_BUTTON_ACTION_TYPE_MACRO: {
 			/* Make the button activate a macro.
-			 * The macro itself will be written later by @ref sinowealth_write_macros.
+			 * The macro itself will be written later by sinowealth_write_macros(),
+			 * unless we choose to write it as a simple key instead.
 			 */
+			uint8_t raw_key = 0;
+			uint8_t raw_modifiers = 0;
+			rc = sinowealth_button_key_action_from_simple_macro(button, &raw_key, &raw_modifiers);
+			if (rc == 0) {
+				log_debug(device->ratbag,
+					  "button %d: Macro was simple enough to be written as a key action instead\n",
+					  button->index);
+				button_data->type = SINOWEALTH_BUTTON_TYPE_KEY;
+				button_data->key.modifiers = raw_modifiers;
+				button_data->key.key = raw_key;
+				drv_data->button_key_action_instead_of_macro[button->index] = true;
+				break;
+			}
+			drv_data->button_key_action_instead_of_macro[button->index] = false;
 
 			button_data->type = SINOWEALTH_BUTTON_TYPE_MACRO;
 			button_data->macro.index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
@@ -1695,11 +1792,11 @@ sinowealth_init_profile(struct ratbag_device *device)
 	rc = device_data->button_count;
 	if (rc == -1) {
 		drv_data->button_count = 0;
-	} else if (rc >= 0) {
+	} else if (rc >= 0 && rc <= SINOWEALTH_NUM_BUTTONS_MAX) {
 		drv_data->button_count = (unsigned int)rc;
 	} else {
 		log_error(device->ratbag,
-			  "Device file for firmware version %s specifies button count: %d\n",
+			  "Device file for firmware version %s specifies wrong button count: %d\n",
 			  fw_version, rc);
 		return -EINVAL;
 	}
@@ -1898,10 +1995,11 @@ sinowealth_write_macros(struct ratbag_device *device)
 
 			struct ratbag_button_action *action = &button->action;
 
-			/* Ignore non macro actions.
-			 * They were already handled by @ref sinowealth_update_profile_from_buttons.
+			/* Ignore non macro actions and simple macros.
+			 * They were already handled by sinowealth_update_profile_from_buttons().
 			 */
-			if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
+			if (action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO ||
+			    drv_data->button_key_action_instead_of_macro[button->index])
 				continue;
 
 			macro.index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
