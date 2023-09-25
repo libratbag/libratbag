@@ -650,7 +650,7 @@ must be one of those listed in <a class="reference internal" href="#ReportRates"
 in the <a class="reference internal" href="#ReportRate" title="ReportRate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ReportRate</span></code></a> property. This list is always sorted
 ascending, the lowest report rate is the first item in the list.</p>
 <p>This list may be empty if the device does not support reading and/or
-writing to resolutions.</p>
+writing the report rate.</p>
 </dd></dl>
 
 <dl class="function">
@@ -780,9 +780,6 @@ the default resolution.</p>
 <p>True if this resolution is disabled, false otherwise.
 If the device does not have the disabled resolution
 capability, this property is always false.</p>
-<p>This property is read-only, use the <code class="xref py py-func docutils literal notranslate"><span class="pre">SetDisabled()</span></code>
-or <code class="xref py py-func docutils literal notranslate"><span class="pre">SetEnabled()</span></code> method to set a resolution as
-disabled or enabled .</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -946,10 +943,14 @@ type is one of the following:</p>
 <td>Mapping to a special function</td>
 </tr>
 <tr class="row-odd"><td>3</td>
+<td>Key</td>
+<td>Mapping to a simple key action</td>
+</tr>
+<tr class="row-even"><td>4</td>
 <td>Macro</td>
 <td>Mapping to a macro key sequence</td>
 </tr>
-<tr class="row-even"><td>1000</td>
+<tr class="row-odd"><td>1000</td>
 <td>Unknown</td>
 <td>An unknown or unreadable mapping type</td>
 </tr>
