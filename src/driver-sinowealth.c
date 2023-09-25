@@ -395,7 +395,7 @@ _Static_assert(sizeof(enum sinowealth_macro_command) == sizeof(uint8_t), "Invali
 struct sinowealth_macro_event {
 	enum sinowealth_macro_command command;
 	/* Use `1` for no delay.
-	 * In case this is set to `0`, the event will ignored.
+	 * If set to `0`, the event will get ignored.
 	 */
 	uint8_t delay;
 	union {
@@ -716,8 +716,8 @@ sinowealth_raw_to_color(struct ratbag_device *device, struct sinowealth_color ra
 	struct ratbag_color color;
 
 	switch (drv_data->led_type) {
-	/* Fall back to RBG if the LED type is incorrect. */
-	default:
+	/* Fall-back to RBG as it seems more often used. */
+	case SINOWEALTH_LED_TYPE_NONE:
 	case SINOWEALTH_LED_TYPE_RBG:
 		color.red = raw_color.data[0];
 		color.green = raw_color.data[2];
@@ -744,8 +744,8 @@ sinowealth_color_to_raw(struct ratbag_device *device, struct ratbag_color color)
 	struct sinowealth_color raw_color;
 
 	switch (drv_data->led_type) {
-	/* Fall back to RBG if the LED type is incorrect. */
-	default:
+	/* Fall-back to RBG as it seems more often used. */
+	case SINOWEALTH_LED_TYPE_NONE:
 	case SINOWEALTH_LED_TYPE_RBG:
 		raw_color.data[0] = (uint8_t)color.red;
 		raw_color.data[1] = (uint8_t)color.blue;
@@ -786,7 +786,9 @@ sinowealth_rgb_mode_to_duration(struct sinowealth_rgb_mode mode)
 	case 1: return 1500;
 	case 2: return 1000;
 	case 3: return 500;
-	default: return 0;
+	default:
+		// TODO: should log warning error here.
+		return 0;
 	}
 }
 
@@ -1680,8 +1682,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 			  "Active profile index is %d, but the maximum in the device file is %d; "
 			  "Will use profile %d instead; "
 			  "Report this to libratbag developers!\n",
-			  rc,
-			  drv_data->profile_count - 1,
+			  rc, drv_data->profile_count - 1,
 			  PROFILE_TO_USE);
 		sinowealth_set_active_profile(device, PROFILE_TO_USE);
 		if (rc < 0)
