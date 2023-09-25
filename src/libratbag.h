@@ -1514,41 +1514,27 @@ ratbag_button_set_special(struct ratbag_button *button,
  * this function returns 0 and leaves modifiers and sz untouched.
  *
  * @param button A previously initialized ratbag button
- * @param[out] modifiers Will be filled with the modifiers required for this
- * action. The modifiers are as defined in linux/input-event-codes.h.
- * @param[in,out] sz Takes the size of the modifiers array and returns the
- * number of modifiers filled in. sz may be 0 if no modifiers are required.
  *
  * @note The caller must ensure that modifiers is large enough to accommodate
  * for the key combination.
  *
- * @return The button number
+ * @return The key code as defined in linux/input-event-codes.h.
  */
 unsigned int
-ratbag_button_get_key(const struct ratbag_button *button,
-		      unsigned int *modifiers,
-		      size_t *sz);
+ratbag_button_get_key(const struct ratbag_button *button);
 
 /**
  * @ingroup button
  *
  * @param button A previously initialized ratbag button
- * @param key The button number to assign to this button, one of BTN_* as
+ * @param key The key number to assign to this button, one of KEY_* as
  * defined in linux/input-event-codes.h
- * @param modifiers The modifiers required for this action. The
- * modifiers are as defined in linux/input-event-codes.h, in the order they
- * should be pressed.
- * @param sz The size of the modifiers array. sz may be 0 if no modifiers
- * are required.
  *
  * @return 0 on success or an error code otherwise. On success, the button's
  * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_KEY.
  */
 enum ratbag_error_code
-ratbag_button_set_key(struct ratbag_button *button,
-		      unsigned int key,
-		      unsigned int *modifiers,
-		      size_t sz);
+ratbag_button_set_key(struct ratbag_button *button, unsigned int key);
 
 /**
  * @ingroup button

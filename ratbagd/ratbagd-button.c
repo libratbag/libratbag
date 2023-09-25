@@ -159,9 +159,7 @@ static int ratbagd_button_get_key(sd_bus *bus,
 {
 	struct ratbagd_button *button = userdata;
 
-	unsigned int *modifiers = NULL;
-	size_t *sz = 0;
-	const unsigned int key = ratbag_button_get_key(button->lib_button, modifiers, sz);
+	const unsigned int key = ratbag_button_get_key(button->lib_button);
 
 	verify_unsigned_int(key);
 
@@ -187,9 +185,7 @@ static int ratbagd_button_set_key(sd_bus *bus,
 
 	CHECK_CALL(sd_bus_message_read(m, "v", "u", &key));
 
-	unsigned int *modifiers = NULL;
-	size_t sz = 0;
-	r = ratbag_button_set_key(button->lib_button, key, modifiers, sz);
+	r = ratbag_button_set_key(button->lib_button, key);
 
 	if (r == 0) {
 		sd_bus_emit_properties_changed(bus,

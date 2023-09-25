@@ -741,11 +741,11 @@ class RatbagdButton(metaclass=MetaRatbag):
 
     @property
     def key(self):
-        return libratbag.ratbag_button_get_key(self._button, None, None)
+        return libratbag.ratbag_button_get_key(self._button)
 
     @key.setter
     def key(self, key):
-        libratbag.ratbag_button_set_key(self._button, key, None, 0)
+        libratbag.ratbag_button_set_key(self._button, key)
 
     @property
     def action_type(self):
