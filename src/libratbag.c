@@ -1952,31 +1952,21 @@ int
 ratbag_action_macro_num_keys(const struct ratbag_button_action *action)
 {
 	const struct ratbag_macro *macro = action->macro;
-	int i, count;
 
-	count = 0;
-	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
-		struct ratbag_macro_event event;
-
-		event = macro->events[i];
-		if (event.type == RATBAG_MACRO_EVENT_KEY_PRESSED)
-		{
-			switch(event.event.key) {
-			case KEY_LEFTCTRL:
-			case KEY_LEFTSHIFT:
-			case KEY_LEFTALT:
-			case KEY_LEFTMETA:
-			case KEY_RIGHTCTRL:
-			case KEY_RIGHTSHIFT:
-			case KEY_RIGHTALT:
-			case KEY_RIGHTMETA:
-				break;
-			default:
-				count++;
-			}
+	int count = 0;
+	for (int i = 0; i < MAX_MACRO_EVENTS; i++) {
+		struct ratbag_macro_event event = macro->events[i];
+		if (event.type == RATBAG_MACRO_EVENT_NONE ||
+		    event.type == RATBAG_MACRO_EVENT_INVALID) {
+			break;
+		}
+		if (ratbag_key_is_modifier(event.event.key)) {
+			continue;
+		}
+		if (event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
+			count += 1;
 		}
 	}
-
 	return count;
 }
 
