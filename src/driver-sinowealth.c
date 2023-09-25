@@ -121,6 +121,10 @@ static const unsigned int SINOWEALTH_DEBOUNCE_TIMES[] = {
 	4, 6, 8, 10, 12, 14, 16
 };
 
+static const unsigned int SINOWEALTH_REPORT_RATES[] = {
+	125, 250, 500, 1000
+};
+
 /* Bit mask for @ref sinowealth_config_report.config.
  *
  * This naming may be incorrect as it's not actually known what the other bits do.
@@ -1755,8 +1759,7 @@ sinowealth_init_profile(struct ratbag_device *device)
 		}
 
 		/* Set up available report rates. */
-		unsigned int report_rates[] = { 125, 250, 500, 1000 };
-		ratbag_profile_set_report_rate_list(profile, report_rates, ARRAY_LENGTH(report_rates));
+		ratbag_profile_set_report_rate_list(profile, SINOWEALTH_REPORT_RATES, ARRAY_LENGTH(SINOWEALTH_REPORT_RATES));
 
 		/* Set up LED capabilities */
 		if (drv_data->led_count > 0) {
