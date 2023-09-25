@@ -346,6 +346,9 @@ static int ratbagd_new(struct ratbagd **out)
 	_cleanup_(ratbagd_freep) struct ratbagd *ctx = NULL;
 	int r;
 
+	log_verbose("Starting ratbagd version %s (API version %d)\n",
+		 RATBAG_VERSION, RATBAGD_API_VERSION);
+
 	ctx = zalloc(sizeof(*ctx));
 	ctx->api_version = RATBAGD_API_VERSION;
 

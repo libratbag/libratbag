@@ -6,9 +6,8 @@ Name=SinoWealth Generic Mouse (0029)
 
 # Configuration data size: 131 bytes.
 # https://github.com/libratbag/libratbag/issues/1361
-[Driver/sinowealth/devices/MachenikeM620]
-ButtonCount=6
+[Driver/sinowealth/devices/V127]
+Buttons=6
 DeviceName=Machenike M620
-FwVersion=V127
 LedType=RGB
 SensorType=PMW3389

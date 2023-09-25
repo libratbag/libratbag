@@ -330,7 +330,7 @@ ratbagd_profile_set_disabled(sd_bus *bus,
 {
 	struct ratbagd_profile *profile = userdata;
 	int r;
-	bool disabled;
+	int disabled;
 
 	CHECK_CALL(sd_bus_message_read(m, "b", &disabled));
 

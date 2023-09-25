@@ -275,6 +275,20 @@ def validate_data_file_name(path: str):
         )
 
 
+SINOWEALTH_FW_VERSION_LEN = 4
+SINOWEALTH_DEVICE_SECTION_PREFIX = "Driver/sinowealth/devices/"
+SINOWEALTH_REQUIRED_KEYS = (
+    "DeviceName",
+    "LedType",
+)
+SINOWEALTH_PERMITTED_KEYS = (
+    *SINOWEALTH_REQUIRED_KEYS,
+    "Buttons",
+    "Profiles",
+    "SensorType",
+)
+
+
 def parse_data_file(path: str):
     print(f"Parsing file {path}")
     data = configparser.ConfigParser(strict=True)
@@ -289,9 +303,21 @@ def parse_data_file(path: str):
     driver_section = f"Driver/{driver}"
 
     permitted_sections = ["Device", driver_section]
-    # FIXME: remove this once `sinowealth` driver has a better way of defining data.
+    # The sinowealth driver uses non-static section names in device files as it
+    # uses a single device file for several actual devices. See the example
+    # device file for details.
     if driver == "sinowealth":
-        print("Skipping `Driver` section check for a `sinowealth` device")
+        for device_section_name in data.sections():
+            if not device_section_name.startswith(SINOWEALTH_DEVICE_SECTION_PREFIX):
+                continue
+            fw_version = device_section_name[len(SINOWEALTH_DEVICE_SECTION_PREFIX) :]
+            assert len(fw_version) == SINOWEALTH_FW_VERSION_LEN
+
+            device_section = data[device_section_name]
+            for key in SINOWEALTH_REQUIRED_KEYS:
+                assert key in device_section
+            for key in device_section:
+                assert key in SINOWEALTH_PERMITTED_KEYS
     else:
         for s in data.sections():
             assert s in permitted_sections

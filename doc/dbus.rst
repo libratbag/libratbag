@@ -324,7 +324,7 @@ org.freedesktop.ratbag1.Profile
         ascending, the lowest report rate is the first item in the list.
 
         This list may be empty if the device does not support reading and/or
-        writing to resolutions.
+        writing the report rate.
 
 .. function:: SetActive() → ()
 
@@ -402,10 +402,6 @@ org.freedesktop.ratbag1.Resolution
         True if this resolution is disabled, false otherwise.
         If the device does not have the disabled resolution
         capability, this property is always false.
-
-        This property is read-only, use the :func:`SetDisabled`
-        or :func:`SetEnabled` method to set a resolution as
-        disabled or enabled .
 
 .. attribute:: Resolution
 
@@ -504,7 +500,9 @@ org.freedesktop.ratbag1.Button
         +---------+---------+--------------------------------------+
         |   2     | Special | Mapping to a special function        |
         +---------+---------+--------------------------------------+
-        |   3     | Macro   | Mapping to a macro key sequence      |
+        |   3     | Key     | Mapping to a simple key action       |
+        +---------+---------+--------------------------------------+
+        |   4     | Macro   | Mapping to a macro key sequence      |
         +---------+---------+--------------------------------------+
         | 1000    | Unknown | An unknown or unreadable mapping type|
         +---------+---------+--------------------------------------+

@@ -5,7 +5,7 @@ DeviceType=mouse
 Driver=asus
 
 [Driver/asus]
-Profiles=0
+Profiles=1
 Buttons=6
 Leds=1
 Dpis=2

@@ -571,6 +571,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag_register_driver(ratbag, &hidpp10_driver);
 	ratbag_register_driver(ratbag, &logitech_g300_driver);
 	ratbag_register_driver(ratbag, &logitech_g600_driver);
+	ratbag_register_driver(ratbag, &marsgaming_driver);
 	ratbag_register_driver(ratbag, &roccat_driver);
 	ratbag_register_driver(ratbag, &roccat_kone_pure_driver);
 	ratbag_register_driver(ratbag, &roccat_emp_driver);
@@ -797,6 +798,9 @@ ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 	if (!ratbag_profile_has_capability(profile, RATBAG_PROFILE_CAP_DISABLE))
 		return RATBAG_ERROR_CAPABILITY;
 
+	if (profile->is_active && !enabled)
+		return RATBAG_ERROR_VALUE;
+
 	profile->is_enabled = enabled;
 	profile->dirty = true;
 
@@ -894,6 +898,9 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct ratbag_profile *p;
+
+	if (!profile->is_enabled)
+		return RATBAG_ERROR_VALUE;
 
 	if (device->num_profiles == 1)
 		return RATBAG_SUCCESS;
@@ -1373,24 +1380,16 @@ ratbag_button_set_special(struct ratbag_button *button,
 }
 
 LIBRATBAG_EXPORT unsigned int
-ratbag_button_get_key(const struct ratbag_button *button,
-		      unsigned int *modifiers,
-		      size_t *sz)
+ratbag_button_get_key(const struct ratbag_button *button)
 {
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
 		return 0;
 
-	/* FIXME: modifiers */
-	if (sz != NULL)
-		*sz = 0;
 	return button->action.action.key.key;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
-ratbag_button_set_key(struct ratbag_button *button,
-		      unsigned int key,
-		      unsigned int *modifiers,
-		      size_t sz)
+ratbag_button_set_key(struct ratbag_button *button, unsigned int key)
 {
 	struct ratbag_button_action action = {0};
 
@@ -1399,8 +1398,6 @@ ratbag_button_set_key(struct ratbag_button *button,
 	if (!ratbag_button_has_action_type(button,
 					   RATBAG_BUTTON_ACTION_TYPE_KEY))
 		return RATBAG_ERROR_CAPABILITY;
-
-	/* FIXME: modifiers */
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 	action.action.key.key = key;
@@ -1945,31 +1942,21 @@ int
 ratbag_action_macro_num_keys(const struct ratbag_button_action *action)
 {
 	const struct ratbag_macro *macro = action->macro;
-	int i, count;
 
-	count = 0;
-	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
-		struct ratbag_macro_event event;
-
-		event = macro->events[i];
-		if (event.type == RATBAG_MACRO_EVENT_KEY_PRESSED)
-		{
-			switch(event.event.key) {
-			case KEY_LEFTCTRL:
-			case KEY_LEFTSHIFT:
-			case KEY_LEFTALT:
-			case KEY_LEFTMETA:
-			case KEY_RIGHTCTRL:
-			case KEY_RIGHTSHIFT:
-			case KEY_RIGHTALT:
-			case KEY_RIGHTMETA:
-				break;
-			default:
-				count++;
-			}
+	int count = 0;
+	for (int i = 0; i < MAX_MACRO_EVENTS; i++) {
+		struct ratbag_macro_event event = macro->events[i];
+		if (event.type == RATBAG_MACRO_EVENT_NONE ||
+		    event.type == RATBAG_MACRO_EVENT_INVALID) {
+			break;
+		}
+		if (ratbag_key_is_modifier(event.event.key)) {
+			continue;
+		}
+		if (event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
+			count += 1;
 		}
 	}
-
 	return count;
 }
 

@@ -113,10 +113,11 @@ asus_find_key_code(unsigned int linux_code)
 	return -1;
 }
 
-/* convert ASUS key code to Linux key code */
 int
 asus_get_linux_key_code(uint8_t asus_code) {
-	assert(asus_code <= ARRAY_LENGTH(ASUS_KEY_MAPPING));
+	if (asus_code > ARRAY_LENGTH(ASUS_KEY_MAPPING)) {
+		return -1;
+	}
 	return ASUS_KEY_MAPPING[asus_code];
 }
 
@@ -136,7 +137,7 @@ asus_query(struct ratbag_device *device,
 		return rc;
 
 	/* invalid state, disconnected or sleeping */
-	if (response->data.code == 0xaaff) {
+	if (response->data.code == ASUS_STATUS_ERROR) {
 		return ASUS_STATUS_ERROR;
 	}
 

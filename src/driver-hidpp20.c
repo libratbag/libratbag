@@ -684,7 +684,7 @@ hidpp20drv_update_led_8070_8071(struct ratbag_led *led, struct ratbag_profile* p
 				struct hidpp20drv_data *drv_data)
 {
 	struct hidpp20_profile *h_profile;
-	struct hidpp20_led h_led_val;
+	struct hidpp20_led h_led_val = {0};
 	struct hidpp20_led *h_led = &h_led_val;
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {

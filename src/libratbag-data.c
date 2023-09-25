@@ -62,6 +62,7 @@ enum driver {
 	SINOWEALTH,
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
+	MARSGAMING,
 };
 
 struct data_hidpp20 {
@@ -234,6 +235,7 @@ init_data_sinowealth(struct ratbag *ratbag,
 	const char *devices_group = "Driver/sinowealth/devices/";
 
 	GError *error = NULL;
+	int rc;
 
 	size_t group_count = 0;
 	_cleanup_(g_strfreevp) char **groups = g_key_file_get_groups(keyfile, &group_count);
@@ -242,18 +244,30 @@ init_data_sinowealth(struct ratbag *ratbag,
 
 	for (size_t i = 0; i < group_count; ++i) {
 		const char *device_group = groups[i];
-		if (startswith(device_group, devices_group) == NULL)
+		const char* fw_version = startswith(device_group, devices_group);
+		if (fw_version == NULL)
 			continue;
+		rc = (int)strlen(fw_version);
+		if (rc != SINOWEALTH_FW_VERSION_LEN) {
+			log_error(ratbag,
+				  "Group '%s': incorrect firmware version string length `%d` (must be `%d`)\n",
+				  device_group, rc, SINOWEALTH_FW_VERSION_LEN);
+			continue;
+		}
 
 		struct sinowealth_device_data *device = zalloc(sizeof(struct sinowealth_device_data));
 
-		device->button_count = g_key_file_get_integer(keyfile, device_group, "ButtonCount", &error);
+		device->fw_version = strdup_safe(fw_version);
+
+		rc = g_key_file_get_integer(keyfile, device_group, "Buttons", &error);
+		if (rc != 0 && !error) {
+			device->button_count = rc;
+		} else {
+			device->button_count = -1;
+		}
 		g_clear_error(&error);
 
 		device->device_name = g_key_file_get_string(keyfile, device_group, "DeviceName", &error);
-		g_clear_error(&error);
-
-		device->fw_version = g_key_file_get_string(keyfile, device_group, "FwVersion", &error);
 		g_clear_error(&error);
 
 		_cleanup_free_ char *led_type_str = g_key_file_get_string(keyfile, device_group, "LedType", &error);
@@ -271,6 +285,13 @@ init_data_sinowealth(struct ratbag *ratbag,
 			}
 		}
 		g_clear_error(&error);
+
+		rc = g_key_file_get_integer(keyfile, device_group, "Profiles", &error);
+		if (rc != 0 && !error) {
+			device->profile_count = rc;
+		} else {
+			device->profile_count = -1;
+		}
 
 		list_insert(&data->sinowealth.supported_devices, &device->link);
 	}
@@ -433,6 +454,7 @@ static const struct driver_map {
 	{ SINOWEALTH, "sinowealth", init_data_sinowealth },
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
+	{ MARSGAMING, "marsgaming", NULL },
 };
 
 const char *

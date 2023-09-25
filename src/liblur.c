@@ -204,7 +204,7 @@ lur_receiver_enumerate(struct lur_receiver *lur,
 		bool is_new_device = true;
 
 		rc = hidpp10_device_new(&base, i, HIDPP10_PROFILE_UNKNOWN, 1, &d);
-		if (!d)
+		if (rc)
 			continue;
 
 		rc = hidpp10_get_pairing_information_device_name(d, name, &name_size);

@@ -30,7 +30,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # This must be on a single line, as we replace it using merge_ratbagd.py while building.
 # fmt: off
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailableError, RatbagError, RatbagErrorCode, RatbagCapabilityError, RatbagDeviceType  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailableError, RatbagError, RatbagErrorCode, RatbagCapabilityError, RatbagDeviceType, evcode_to_str  # NOQA
 # fmt: on
 
 
@@ -225,7 +225,7 @@ def print_button(
     elif button.action_type == RatbagdButton.ActionType.SPECIAL:
         print(f"{header}'{button_specials_strmap[button.special]}'")
     elif button.action_type == RatbagdButton.ActionType.KEY:
-        key_name = evdev.ecodes.KEY[button.key][RatbagdMacro._PREFIX_LEN :]
+        key_name = evcode_to_str(button.key)
         print(f"{header}key '{key_name}'")
     elif button.action_type == RatbagdButton.ActionType.MACRO:
         print(f"{header}macro '{str(button.macro)}'")
@@ -321,9 +321,7 @@ def show_profile(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def show_resolution(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     resolution, p, d = find_resolution(ratbagd, args)
     print(
-        "Resolution {} on Profile {} on {} ({})".format(
-            args.resolution, args.profile, d.id, d.name
-        )
+        f"Resolution {args.resolution} on Profile {args.profile} on {d.id} ({d.name})"
     )
     print_resolution(d, p, resolution, 0)
     caps = {
@@ -337,9 +335,7 @@ def show_resolution(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def show_button(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     button, profile, device = find_button(ratbagd, args)
     print(
-        "Button {} on Profile {} on {} ({})".format(
-            args.button, args.profile, device.id, device.name
-        )
+        f"Button {args.button} on Profile {args.profile} on {device.id} ({device.name})"
     )
     print_button(device, profile, button, 0)
 
@@ -1280,7 +1276,7 @@ active profile if none is given.""",
 
   Macro syntax:
         A macro is a series of key events or waiting periods.
-        Keys must be specified in linux/input.h key names.
+        Keys must be specified in linux/input-event-codes.h key names.
         KEY_A                   Press and release 'a'
         +KEY_A                  Press 'a'
         -KEY_A                  Release 'a'
@@ -1860,7 +1856,7 @@ Exit codes:
   1     Unsupported feature, index out of available range or invalid device
   2     Commandline arguments are invalid
   3     A command failed on the device
-""".format(
+""".format(  # noqa: UP032
                 self.parser.prog
             )
         )

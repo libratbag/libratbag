@@ -25,6 +25,8 @@
 
 #include "libratbag-util.h"
 
+#define SINOWEALTH_FW_VERSION_LEN 4
+
 enum sinowealth_led_format {
 	SINOWEALTH_LED_TYPE_NONE,
 	SINOWEALTH_LED_TYPE_RBG,
@@ -35,7 +37,8 @@ struct sinowealth_device_data {
 	char *fw_version;
 	char *device_name;
 	enum sinowealth_led_format led_type;
-	unsigned int button_count;
+	int button_count;
+	int profile_count;
 
 	struct list link;
 };

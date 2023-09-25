@@ -22,7 +22,6 @@
  */
 
 #include "config.h"
-#include <assert.h>
 #include <errno.h>
 #include <libevdev/libevdev.h>
 #include <linux/input.h>
@@ -116,8 +115,12 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 		switch (asus_binding->type) {
 		case ASUS_BUTTON_ACTION_TYPE_KEY:
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-			/* ASUS code to Linux code */
-			button->action.action.key.key = asus_get_linux_key_code(asus_binding->action);
+			rc = asus_get_linux_key_code(asus_binding->action);
+			if (rc > 0) {
+				button->action.action.key.key = (unsigned int)rc;
+			} else {
+				log_debug(device->ratbag, "Unknown button code %02x\n", asus_binding->action);
+			}
 			break;
 
 		case ASUS_BUTTON_ACTION_TYPE_BUTTON:
@@ -326,15 +329,18 @@ asus_driver_load_profiles(struct ratbag_device *device)
 	int rc;
 	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
-	unsigned int current_profile_id;
+	unsigned int current_profile_id = 0;
 
 	/* get current profile id */
 	rc = asus_get_profile_data(device, &profile_data);
 	if (rc)
 		return rc;
 
-	current_profile_id = profile_data.profile_id;
-	log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+	if (device->num_profiles > 1) {
+		current_profile_id = profile_data.profile_id;
+		log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+	}
+
 	log_debug(
 		device->ratbag, "Primary version %02X.%02X.%02X\n",
 		profile_data.version_primary_major,
@@ -381,15 +387,17 @@ asus_driver_save_profiles(struct ratbag_device *device)
 	int rc;
 	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
-	unsigned int current_profile_id;
+	unsigned int current_profile_id = 0;
 
 	/* get current profile id */
-	rc = asus_get_profile_data(device, &profile_data);
-	if (rc)
-		return rc;
+	if (device->num_profiles > 1) {
+		rc = asus_get_profile_data(device, &profile_data);
+		if (rc)
+			return rc;
 
-	current_profile_id = profile_data.profile_id;
-	log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+		current_profile_id = profile_data.profile_id;
+		log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
+	}
 
 	ratbag_device_for_each_profile(device, profile) {
 		if (!profile->dirty)
@@ -434,6 +442,7 @@ asus_driver_probe(struct ratbag_device *device)
 	unsigned int profile_count, dpi_count, button_count, led_count;
 	const struct asus_button *asus_button;
 	struct asus_data *drv_data;
+	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
 	struct ratbag_button *button;
 	struct ratbag_resolution *resolution;
@@ -442,6 +451,12 @@ asus_driver_probe(struct ratbag_device *device)
 	rc = ratbag_open_hidraw(device);
 	if (rc)
 		return rc;
+
+	rc = asus_get_profile_data(device, &profile_data);
+	if (rc) {
+		ratbag_close_hidraw(device);
+		return -ENODEV;
+	}
 
 	/* create device state data */
 	drv_data = zalloc(sizeof(*drv_data));

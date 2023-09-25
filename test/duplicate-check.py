@@ -50,11 +50,7 @@ if __name__ == "__main__":
         fname = os.path.basename(path)
         for m in matches:
             if m in device_matches:
-                print(
-                    "Duplicate DeviceMatch={} in {} and {}".format(
-                        m, fname, device_matches[m]
-                    )
-                )
+                print(f"Duplicate DeviceMatch={m} in {fname} and {device_matches[m]}")
                 duplicates = True
             device_matches[m] = fname
 

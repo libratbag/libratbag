@@ -101,7 +101,7 @@ struct steelseries_led_cycle {
 };
 
 struct steelseries_led_cycle_spec {
-	int hid_report_type;	/* either HID_OUTPUT_REPORT or HID_FEATURE_REPORT */
+	uint8_t hid_report_type;/* either HID_OUTPUT_REPORT or HID_FEATURE_REPORT */
 	int header_len;		/* number of bytes in the header */
 	uint8_t cmd_val;	/* command value for the color command */
 	bool has_2_led_ids;	/* some mice have 2 fields for led id */
@@ -114,13 +114,11 @@ struct steelseries_led_cycle_spec {
 	int point_count_idx;	/* index of the point counter field */
 };
 
-struct _steelseries_message {
-	uint8_t report_id;
-	uint8_t parameters[STEELSERIES_REPORT_SIZE - 1];
-} __attribute__((packed));
-
 union steelseries_message {
-	struct _steelseries_message msg;
+	struct {
+		uint8_t report_id;
+		uint8_t parameters[STEELSERIES_REPORT_SIZE - 1];
+	} __attribute__((packed)) msg;
 	uint8_t data[STEELSERIES_REPORT_SIZE];
 };
 
@@ -135,18 +133,24 @@ steelseries_test_hidraw(struct ratbag_device *device)
 	/* Rival mice are composite devices with multiple HID devices
 	 * and only the HID vendor device can be used to configure the
 	 * device.
+	 * However, this check doesn't apply to some devices, like
+	 * Sensei 310, Rival 600, Rival 650, etc, so we can't rely on
+	 * it.
 	 */
-	if (!ratbag_hidraw_has_vendor_page(device))
-		return false;
+	if (!ratbag_hidraw_has_vendor_page(device)) {
+		log_debug(device->ratbag,
+			  "This is a non-vendor HID device, "
+			  "it may show up as a duplicate configurable device in libratbag\n");
+	}
 
 	if (device_version > 1)
 		return ratbag_hidraw_has_report(device, STEELSERIES_REPORT_ID_1);
-	else
-		return true;
+
+	return true;
 }
 
 static void
-button_defaults_for_layout(struct ratbag_button *button, int button_count)
+button_defaults_for_layout(struct ratbag_button *button, size_t button_count)
 {
 	/* The default button mapping vary depending on the number of buttons
 	 * on the device. */
@@ -299,11 +303,10 @@ steelseries_probe(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
-	int rc, button_count, led_count, device_version, quirk;
-	struct dpi_list *dpilist = NULL;
-	struct dpi_range *dpirange = NULL;
+	int device_version;
+	int rc;
 
-	unsigned int report_rates[] = { 125, 250, 500, 1000 };
+	static const unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 	rc = ratbag_find_hidraw(device, steelseries_test_hidraw);
 	if (rc)
@@ -321,17 +324,19 @@ steelseries_probe(struct ratbag_device *device)
 		return -EINVAL;
 	}
 
-	button_count = ratbag_device_data_steelseries_get_button_count(device->data);
-	if (button_count == -1)
-		button_count = 0;
+	rc = ratbag_device_data_steelseries_get_button_count(device->data);
+	if (rc == -1)
+		rc = 0;
+	const unsigned int button_count = (unsigned int)rc;
 
-	led_count = ratbag_device_data_steelseries_get_led_count(device->data);
-	if (led_count == -1)
-		led_count = 0;
+	rc = ratbag_device_data_steelseries_get_led_count(device->data);
+	if (rc == -1)
+		rc = 0;
+	const unsigned int led_count = (unsigned int)rc;
 
-	dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
-	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
-	quirk = ratbag_device_data_steelseries_get_quirk(device->data);
+	const enum steelseries_quirk quirk = ratbag_device_data_steelseries_get_quirk(device->data);
+	const struct dpi_list *dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
+	const struct dpi_range *dpirange = ratbag_device_data_steelseries_get_dpi_range(device->data);
 
 	ratbag_device_init_profiles(device,
 				    STEELSERIES_NUM_PROFILES,
@@ -410,7 +415,12 @@ steelseries_probe(struct ratbag_device *device)
 		}
 	}
 
-	steelseries_read_settings(device);
+	rc = steelseries_read_settings(device);
+	/* Some devices don't support reading settings, so ignore ENOTSUP. */
+	if (rc < 0 && rc != -ENOTSUP) {
+		log_error(device->ratbag, "Failed to read device settings\n");
+		return rc;
+	}
 
 	return 0;
 }
@@ -423,7 +433,6 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 	struct dpi_list *dpilist = NULL;
 	struct dpi_range *dpirange = NULL;
 	int ret;
-	int i = 0;
 	size_t buf_len;
 
 	union steelseries_message msg = {
@@ -435,42 +444,44 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 	dpilist = ratbag_device_data_steelseries_get_dpi_list(device->data);
 
 	switch (device_version) {
-	case 1:
+	case 1: {
+		size_t i = 0;
 		/* when using lists the entries are enumerated in reverse */
 		if (dpilist) {
-			for (i = 0; i < (int)resolution->ndpis; i++) {
+			for (i = 0; i < resolution->ndpis; i++) {
 				if (resolution->dpis[i] == resolution->dpi_x)
 					break;
 			}
 			i = resolution->ndpis - i;
 		} else {
-			i = resolution->dpi_x / dpirange->step - 1;
+			i = resolution->dpi_x / (size_t)dpirange->step - 1U;
 		}
 
 		buf_len = STEELSERIES_REPORT_SIZE_SHORT;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI_SHORT;
-		msg.msg.parameters[1] = resolution->index + 1;
-		msg.msg.parameters[2] = i;
+		msg.msg.parameters[1] = (uint8_t)resolution->index + 1;
+		msg.msg.parameters[2] = (uint8_t)i;
 		break;
+	}
 	case 2:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI;
-		msg.msg.parameters[2] = resolution->index + 1;
-		msg.msg.parameters[3] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[2] = (uint8_t)resolution->index + 1;
+		msg.msg.parameters[3] = (uint8_t)(resolution->dpi_x / (size_t)dpirange->step - 1);
 		msg.msg.parameters[6] = 0x42; /* not sure if needed */
 		break;
 	case 3:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI_PROTOCOL3;
-		msg.msg.parameters[2] = resolution->index + 1;
-		msg.msg.parameters[3] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[2] = (uint8_t)resolution->index + 1;
+		msg.msg.parameters[3] = (uint8_t)(resolution->dpi_x / (size_t)dpirange->step - 1);
 		msg.msg.parameters[5] = 0x42; /* not sure if needed */
 		break;
 	case 4:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_DPI_PROTOCOL4;
-		msg.msg.parameters[1] = resolution->index + 1;
-		msg.msg.parameters[2] = resolution->dpi_x / dpirange->step - 1;
+		msg.msg.parameters[1] = (uint8_t)resolution->index + 1;
+		msg.msg.parameters[2] = (uint8_t)(resolution->dpi_x / (size_t)dpirange->step - 1);
 		break;
 	default:
 		return -ENOTSUP;
@@ -522,12 +533,12 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 	case 2:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE;
-		msg.msg.parameters[2] = 1000 / profile->hz;
+		msg.msg.parameters[2] = (uint8_t)1000 / profile->hz;
 		break;
         case 3:
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE_PROTOCOL3;
-		msg.msg.parameters[2] = 1000 / profile->hz;
+		msg.msg.parameters[2] = (uint8_t)1000 / profile->hz;
 		break;
 	default:
 		return -ENOTSUP;
@@ -553,8 +564,8 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 		return 0;
 
 	const bool is_senseiraw = ratbag_device_data_steelseries_get_quirk(device->data) == STEELSERIES_QUIRK_SENSEIRAW;
-	const int button_size = is_senseiraw ? 3 : 5;
-	const int report_size = is_senseiraw ? STEELSERIES_REPORT_SIZE_SHORT : STEELSERIES_REPORT_LONG_SIZE;
+	const size_t button_size = is_senseiraw ? 3 : 5;
+	const size_t report_size = is_senseiraw ? STEELSERIES_REPORT_SIZE_SHORT : STEELSERIES_REPORT_LONG_SIZE;
 	const int max_modifiers = is_senseiraw ? 0 : 3;
 
 	union steelseries_message msg = {
@@ -566,16 +577,15 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 
 	ratbag_profile_for_each_button(profile, button) {
 		struct ratbag_button_action *action = &button->action;
-		uint16_t code;
-		unsigned int key, modifiers;
-		int idx;
+		unsigned int key;
+		unsigned int modifiers;
 
 		/* Each button takes up 3 or 5 bytes starting from index 2 */
-		idx = 2 + button->index * button_size;
+		size_t idx = 2 + button->index * button_size;
 
 		switch (action->type) {
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-			msg.msg.parameters[idx] = action->action.button;
+			msg.msg.parameters[idx] = (uint8_t)action->action.button;
 			break;
 
 		case RATBAG_BUTTON_ACTION_TYPE_MACRO:
@@ -589,9 +599,9 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 				break;
 			}
 
-			code = ratbag_hidraw_get_keyboard_usage_from_keycode(
+			const uint8_t keyboard_code = ratbag_hidraw_get_keyboard_usage_from_keycode(
 						device, key);
-			if (code) {
+			if (keyboard_code) {
 				if (is_senseiraw) {
 					msg.msg.parameters[idx] = STEELSERIES_BUTTON_KEY;
 				} else {
@@ -615,12 +625,12 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 						msg.msg.parameters[++idx] = 0xE7;
 				}
 
-				msg.msg.parameters[idx + 1] = code;
+				msg.msg.parameters[idx + 1] = keyboard_code;
 			} else {
-				code = ratbag_hidraw_get_consumer_usage_from_keycode(
+				const uint16_t consumer_code = ratbag_hidraw_get_consumer_usage_from_keycode(
 						device, action->action.key.key);
 				msg.msg.parameters[idx] = STEELSERIES_BUTTON_CONSUMER;
-				msg.msg.parameters[idx + 1] = code;
+				msg.msg.parameters[idx + 1] = (uint8_t)consumer_code;
 			}
 			break;
 
@@ -674,7 +684,7 @@ steelseries_write_led_v1(struct ratbag_led *led)
 	};
 
 	msg.msg.parameters[0] = STEELSERIES_ID_LED_EFFECT_SHORT;
-	msg.msg.parameters[1] = quirk == STEELSERIES_QUIRK_RIVAL100 ? 0x00 : led->index + 1;
+	msg.msg.parameters[1] = quirk == STEELSERIES_QUIRK_RIVAL100 ? 0x00 : (uint8_t)led->index + 1;
 
 	switch(led->mode) {
 	case RATBAG_LED_OFF:
@@ -709,7 +719,7 @@ steelseries_write_led_v1(struct ratbag_led *led)
 
 	if (quirk == STEELSERIES_QUIRK_SENSEIRAW) {
 		msg.msg.parameters[0] = STEELSERIES_ID_LED_INTENSITY_SHORT;
-		msg.msg.parameters[1] = led->index + 1;
+		msg.msg.parameters[1] = (uint8_t)led->index + 1;
 		if (led->mode == RATBAG_LED_OFF || led->brightness == 0) {
 			msg.msg.parameters[2] = 1;
 		} else {
@@ -719,7 +729,7 @@ steelseries_write_led_v1(struct ratbag_led *led)
 	} else {
 		if (quirk != STEELSERIES_QUIRK_RIVAL100) {
 			msg.msg.parameters[0] = STEELSERIES_ID_LED_COLOR_SHORT;
-			msg.msg.parameters[1] = led->index + 1;
+			msg.msg.parameters[1] = (uint8_t)led->index + 1;
 		} else {
 			msg.msg.parameters[0] = STEELSERIES_ID_LED_COLOR_SHORT_RIVAL100;
 			msg.msg.parameters[1] = 0x00;
@@ -796,7 +806,7 @@ construct_cycle_buffer(struct steelseries_led_cycle *cycle,
 	buf[spec->point_count_idx] = npoints;
 
 	/* this seems to be the minimum allowed */
-	duration = max(buf[spec->point_count_idx] * 330, cycle->duration);
+	duration = max((uint16_t)(buf[spec->point_count_idx] * 330), cycle->duration);
 
 	set_unaligned_le_u16(&buf[spec->duration_idx], duration);
 }
@@ -823,7 +833,7 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 	const struct ratbag_color blue = { 0x00, 0x00, 0xFF };
 
 	create_cycle(&cycle);
-	cycle.led_id = led->index;
+	cycle.led_id = (uint8_t)led->index;
 
 	switch(led->mode) {
 	case RATBAG_LED_OFF:
@@ -860,7 +870,7 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 		list_append(&cycle.points, &point[2].link);
 		list_append(&cycle.points, &point[3].link);
 
-		cycle.duration = led->ms;
+		cycle.duration = (uint16_t)led->ms;
 		break;
 	case RATBAG_LED_BREATHING:
 		point[0].color = black;
@@ -876,7 +886,7 @@ steelseries_write_led_cycle(struct ratbag_led *led,
 		list_append(&cycle.points, &point[1].link);
 		list_append(&cycle.points, &point[2].link);
 
-		cycle.duration = led->ms;
+		cycle.duration = (uint16_t)led->ms;
 		break;
 	default:
 		return -EINVAL;
@@ -943,9 +953,9 @@ steelseries_write_led(struct ratbag_led *led)
 
 	if (device_version == 1)
 		return steelseries_write_led_v1(led);
-	else if (device_version == 2)
+	if (device_version == 2)
 		return steelseries_write_led_v2(led);
-	else if (device_version == 3)
+	if (device_version == 3)
 		return steelseries_write_led_v3(led);
 
 	return -ENOTSUP;
@@ -989,48 +999,75 @@ steelseries_write_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
+	struct ratbag_device *device = profile->device;
 	struct ratbag_led *led;
 	int rc;
 	bool buttons_dirty = false;
 
 	if (profile->rate_dirty) {
+		log_debug(device->ratbag,
+			  "Report rate changed, rewriting\n");
+
 		rc = steelseries_write_report_rate(profile);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write report rate: %s (%d)\n",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		if (!resolution->dirty)
 			continue;
 
+		log_debug(device->ratbag,
+			  "Resolution %d changed, rewriting\n", resolution->index);
+
 		rc = steelseries_write_dpi(resolution);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write resolution: %s (%d)\n",
+				  strerror(-rc), rc);
 			return rc;
+		}
 
 		/* The same hz is used for all resolutions. Only write once. */
-		if (resolution->index > 0)
-			continue;
-
+		break;
 	}
 
 	ratbag_profile_for_each_button(profile, button) {
 		if (button->dirty)
 			buttons_dirty = true;
+
+		log_debug(device->ratbag,
+			  "Button %d changed, rewriting\n", button->index);
 	}
 
 	if (buttons_dirty) {
 		rc = steelseries_write_buttons(profile);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write buttons: %s (%d)\n",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	ratbag_profile_for_each_led(profile, led) {
 		if (!led->dirty)
 			continue;
 
+		log_debug(device->ratbag,
+			  "LED %d changed, rewriting\n", led->index);
+
 		rc = steelseries_write_led(led);
-		if (rc != 0)
+		if (rc != 0) {
+			log_error(device->ratbag,
+				  "Failed to write LED: %s (%d)\n",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	return 0;
@@ -1050,14 +1087,22 @@ steelseries_commit(struct ratbag_device *device)
 			  "Profile %d changed, rewriting\n", profile->index);
 
 		rc = steelseries_write_profile(profile);
-		if (rc)
+		if (rc) {
+			log_error(device->ratbag,
+				  "Failed to write profile: %s (%d)\n",
+				  strerror(-rc), rc);
 			return rc;
+		}
 
 		/* persist the current settings on the device */
 
 		rc = steelseries_write_save(device);
-		if (rc)
+		if (rc) {
+			log_error(device->ratbag,
+				  "Failed to save profile: %s (%d)\n",
+				  strerror(-rc), rc);
 			return rc;
+		}
 	}
 
 	return 0;

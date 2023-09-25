@@ -79,14 +79,15 @@ sinowealthnubwo_aesthetic_report {
 	uint8_t brightness; // 0x01 to 0x03
 	uint8_t tempo; // 0x05 0x03 0x01
 	uint8_t padzero2[16*3+1];
-} __packed__;
+} __attribute__((packed));
+// FIXME: there is a missing static assert of size here.
 
 static uint8_t AESTHETIC_CMD[] = {0x06, 0xbb, 0xaa, 0x2a, 0x00, 0x0a, 0x00};
 
 static int
-sinowealthnubwo_test_hidraw(struct ratbag_device *device) 
+sinowealthnubwo_test_hidraw(struct ratbag_device *device)
 {
-	return 
+	return
 		ratbag_hidraw_has_report(device, SINOWEALTHNUBWO_AESTHETIC_CMD_REPORTID)
 		&& ratbag_hidraw_has_report(device, SINOWEALTHNUBWO_PERF_CMD_REPORTID)
 		&& ratbag_hidraw_has_report(device, SINOWEALTHNUBWO_GET_FIRMWARE_CMD_REPORTID);
@@ -105,11 +106,14 @@ sinowealth_get_firmware_string(struct ratbag_device *device, char **output)
 	}
 
 	size = ratbag_hidraw_get_feature_report(device, SINOWEALTHNUBWO_GET_FIRMWARE_CMD_REPORTID, buff, SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE);
-	if (size != SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE) {
-		log_error(device->ratbag ,"Firmware report reply size mismatch expected %d got %d\n", SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE, size);
+	if (size < 0) {
 		return size;
 	}
-	
+	if (size != SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE) {
+		log_error(device->ratbag ,"Firmware report reply size mismatch expected %d got %d\n", SINOWEALTHNUBWO_GET_FIRMWARE_MSGSIZE, size);
+		return -EIO;
+	}
+
 	*output = strdup_ascii_only((char *) buff + SINOWEALTHNUBWO_GET_FIRMWARE_MSGOFFSET);
 	return 0;
 }
@@ -121,7 +125,7 @@ sinowealthnubwo_probe(struct ratbag_device *device)
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
-	
+
 	error = ratbag_find_hidraw(device, sinowealthnubwo_test_hidraw);
 	if (error)
 		return error;
@@ -165,7 +169,7 @@ sinowealthnubwo_probe(struct ratbag_device *device)
 	return 0;
 }
 
-static uint8_t 
+static uint8_t
 encode_dpi(unsigned int dpi)
 {
 	for (size_t i = 0; i < ARRAY_LENGTH(DPILIST); i++)
@@ -174,7 +178,7 @@ encode_dpi(unsigned int dpi)
 	return DPI_ENCODED[0];
 }
 
-static uint8_t 
+static uint8_t
 encode_report_rate(unsigned int reportrate)
 {
 	for (size_t i = 0; i < ARRAY_LENGTH(REPORT_RATES); i++)
@@ -239,8 +243,7 @@ static uint8_t normalize_brightness(int brightness)
 
 static int
 sinowealthnubwo_set_aesthetic(struct ratbag_device *device, struct ratbag_led *led) {
-	struct sinowealthnubwo_aesthetic_report report;
-	memset(&report, 0, sizeof(struct sinowealthnubwo_aesthetic_report));
+	struct sinowealthnubwo_aesthetic_report report = {0};
 	report.report_id = SINOWEALTHNUBWO_AESTHETIC_CMD_REPORTID;
 	memcpy(report.cmd, AESTHETIC_CMD, ARRAY_LENGTH(AESTHETIC_CMD));
 	report.r = led->color.red;
@@ -290,7 +293,7 @@ sinowealthnubwo_write_profile(struct ratbag_device *device, struct ratbag_profil
 	return 0;
 }
 
-static int 
+static int
 sinowealthnubwo_commit(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
@@ -304,7 +307,7 @@ sinowealthnubwo_commit(struct ratbag_device *device)
 	return 0;
 }
 
-static void 
+static void
 sinowealthnubwo_remove(struct ratbag_device *device)
 {
 	ratbag_close_hidraw(device);

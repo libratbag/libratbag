@@ -34,6 +34,14 @@ def N_(x):
     return x
 
 
+def evcode_to_str(evcode: int) -> str:
+    # Values in ecodes.keys are stored as either a str or list[str].
+    value = ecodes.keys[evcode]
+    if isinstance(value, list):
+        return value[0]
+    return value
+
+
 # we use a metaclass to automatically load symbols from libratbag in the classes
 # define _PREFIX in subclasses to take advantage of this.
 class MetaRatbag(type):
@@ -733,11 +741,11 @@ class RatbagdButton(metaclass=MetaRatbag):
 
     @property
     def key(self):
-        return libratbag.ratbag_button_get_key(self._button, None, None)
+        return libratbag.ratbag_button_get_key(self._button)
 
     @key.setter
     def key(self, key):
-        libratbag.ratbag_button_set_key(self._button, key, None, 0)
+        libratbag.ratbag_button_set_key(self._button, key)
 
     @property
     def action_type(self):
@@ -772,27 +780,17 @@ class RatbagdButton(metaclass=MetaRatbag):
 
 class RatbagdMacro(metaclass=MetaRatbag):
     """Represents a button macro. Note that it uses keycodes as defined by
-    linux/input.h and not those used by X.Org or any other higher layer such as
-    Gdk."""
-
-    # All keys from ecodes.KEY have a KEY_ prefix. We strip it.
-    _PREFIX_LEN = len("KEY_")
+    linux/input-event-codes.h and not those used by X.Org or any other higher
+    layer such as Gdk."""
 
     # Both a key press and release.
     _MACRO_KEY = 1000
 
     _MACRO_DESCRIPTION = {
-        RatbagdButton.Macro.NONE: lambda key: ".",
-        RatbagdButton.Macro.KEY_PRESS: lambda key: "↓{}".format(
-            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
-        ),
-        RatbagdButton.Macro.KEY_RELEASE: lambda key: "↑{}".format(
-            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
-        ),
+        RatbagdButton.Macro.KEY_PRESS: lambda key: f"↓{evcode_to_str(key)}",
+        RatbagdButton.Macro.KEY_RELEASE: lambda key: f"↑{evcode_to_str(key)}",
         RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
-        _MACRO_KEY: lambda key: "↕{}".format(
-            ecodes.KEY[key][RatbagdMacro._PREFIX_LEN :]
-        ),
+        _MACRO_KEY: lambda key: f"↕{evcode_to_str(key)}",
     }
 
     def __init__(self):

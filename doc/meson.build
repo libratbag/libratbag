@@ -5,7 +5,6 @@ cmd_sphinx = find_program('sphinx-build-3', 'sphinx-build3', 'sphinx-build')
 doc_config = configuration_data()
 doc_config.set('PACKAGE_NAME', meson.project_name())
 doc_config.set('PACKAGE_VERSION', meson.project_version())
-doc_config.set('top_srcdir', project_source_root)
 
 # Sphinx really really wants a _static directory in its source tree. Let's
 # make it happy
