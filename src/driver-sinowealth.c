@@ -1453,8 +1453,10 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 	return 0;
 }
 
-/* Update macro report `macro` with macro button action in button `button`. */
-static void
+/* Update macro report `macro` with macro button action in button `button`.
+ * @return 0 on success or a negative errno.
+ */
+static int
 sinowealth_update_macro_events_from_action(
 	struct ratbag_device *device,
 	struct ratbag_button *button,
@@ -1462,7 +1464,10 @@ sinowealth_update_macro_events_from_action(
 {
 	struct ratbag_button_action *action = &button->action;
 
-	assert(action->type == RATBAG_BUTTON_ACTION_TYPE_MACRO);
+	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+		log_bug_libratbag(device->ratbag, "Button's action is not a macro");
+		return -EINVAL;
+	}
 
 	/* Reset the `events` field. Even if we don't do this, the mouse will ignore unneeded data. */
 	memset(mouse_macro->events, 0, sizeof(mouse_macro->events));
@@ -1534,7 +1539,7 @@ sinowealth_update_macro_events_from_action(
 
 			if (raw_event_count == 0) {
 				log_error(device->ratbag, "Macro for button %u: can't use timeout as the first event in macro\n", button->index);
-				break;
+				return -EINVAL;
 			}
 
 			struct sinowealth_macro_event *prev_mouse_macro_event = &mouse_macro->events[raw_event_count - 1];
@@ -1556,7 +1561,6 @@ sinowealth_update_macro_events_from_action(
 			/* Handled separately above. */
 			break;
 		case RATBAG_MACRO_EVENT_INVALID:
-		default:
 			abort();
 			break;
 		}
@@ -1564,6 +1568,8 @@ sinowealth_update_macro_events_from_action(
 
 	/* Update the event counter in the macro. */
 	mouse_macro->event_count = raw_event_count;
+
+	return 0;
 }
 
 /*
@@ -1889,7 +1895,11 @@ sinowealth_write_macros(struct ratbag_device *device)
 
 			macro.index = (uint8_t)(button->index + (profile->index * drv_data->button_count));
 
-			sinowealth_update_macro_events_from_action(device, button, &macro);
+			rc = sinowealth_update_macro_events_from_action(device, button, &macro);
+			if (rc < 0) {
+				log_error(device->ratbag, "Error while writing macro %u: %s (%d)\n", macro.index, strerror(-rc), rc);
+				return rc;
+			}
 
 			rc = sinowealth_query_write(device, (uint8_t*)&macro, sizeof(macro));
 			if (rc < 0) {
