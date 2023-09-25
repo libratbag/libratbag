@@ -29,7 +29,7 @@
  * The maximum macro size is 480 in the mouse software. One event keeps the event data and the timing/delay
 	- libratbag does not keep track of that number of events. It limits the mouse to 128 events
  * The mouse can repeat macro. Not supported in libratbag
- * In official soft, we can set a LED color to offset the cycle effect (only with predefined_led_colors). 
+ * In official soft, we can set a LED color to offset the cycle effect (only with predefined_led_colors).
  *   Since predefined colors are not handled, we can't reproduce this effect.
  */
 
@@ -93,7 +93,7 @@ struct color {
 	uint8_t b;
 } __attribute__((packed));
 
-struct color predefined_led_colors[] = { 
+struct color predefined_led_colors[] = {
 	{ 179, 0, 0 }, { 255, 0, 0 }, { 255, 71, 0}, { 255, 106, 0 },
 	{ 255, 157, 71 }, { 248, 232, 0 }, { 246, 255, 78 }, { 201, 255, 78 },
 	{ 185, 255, 78 }, { 132, 255, 78 }, { 0, 255, 0 }, { 0, 207, 55 },
@@ -101,7 +101,7 @@ struct color predefined_led_colors[] = {
 	{ 41, 197, 255 }, { 37, 162, 233 }, { 99, 158, 239 }, { 37, 132, 233 },
 	{ 0, 72, 255 }, { 15, 15, 255 }, { 15, 15, 188 }, { 89, 7, 255 },
 	{ 121, 12, 255 }, { 161, 12, 255 }, { 170, 108, 232 }, { 181, 10, 216 },
-	{ 205, 10, 217 }, { 217, 10, 125 } 
+	{ 205, 10, 217 }, { 217, 10, 125 }
 };
 
 struct led_data {
@@ -179,24 +179,24 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 2, BUTTON_ACTION_BUTTON(2) },
 	{ 3, BUTTON_ACTION_BUTTON(3) },
 	{ 4, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK) },
-/* FIXME:   { 5, Shortcut (modifier + key) }, */
+/* TODO:   { 5, Shortcut (modifier + key) }, */
 	{ 7, BUTTON_ACTION_BUTTON(4) }, /* Next page in browser */
 	{ 8, BUTTON_ACTION_BUTTON(5) }, /* Previous page in browser */
 	{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
 	{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
-/* FIXME:   { 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 -> Open any configurated app */
+/* TODO:   { 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 -> Open any configurated app */
 	{ 16, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
 	{ 17, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 	{ 18, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN) },
 	{ 20, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) },
 	{ 21, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
 	{ 22, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
-/* FIXME:   { 23, Toggle sensibility }, */
-/* FIXME:   { 24, Sensibility UP }, */
-/* FIXME:   { 25, Sensibility Down }, */
-/* FIXME:   { 27, open driver/swarm },  -> hidraw report 02 83 01 00 00 00 00 00 */
+/* TODO:   { 23, Toggle sensibility }, */
+/* TODO:   { 24, Sensibility UP }, */
+/* TODO:   { 25, Sensibility Down }, */
+/* TODO:   { 27, open driver/swarm },  -> hidraw report 02 83 01 00 00 00 00 00 */
 	//{ 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
 	{ 33, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
 	{ 34, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
@@ -206,92 +206,92 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 38, BUTTON_ACTION_KEY(KEY_VOLUMEUP) },
 	{ 39, BUTTON_ACTION_KEY(KEY_VOLUMEDOWN) },
 	{ 48, BUTTON_ACTION_MACRO },
-/* FIXME:   { 49, Start timer }, */
-/* FIXME:   { 50, Stop timer}, */
-/* FIXME:   { 51, EasyAim DPI 400 }, */
-/* FIXME:   { 52, EasyAim DPI 400 }, */
-/* FIXME:   { 53, EasyAim DPI 800 }, */
-/* FIXME:   { 54, EasyAim DPI 1200 }, */
-/* FIXME:   { 55, EasyAim DPI 1600 }, */
-/* FIXME:   { 56, EasyAim DPI 3200 }, */
+/* TODO:   { 49, Start timer }, */
+/* TODO:   { 50, Stop timer}, */
+/* TODO:   { 51, EasyAim DPI 400 }, */
+/* TODO:   { 52, EasyAim DPI 400 }, */
+/* TODO:   { 53, EasyAim DPI 800 }, */
+/* TODO:   { 54, EasyAim DPI 1200 }, */
+/* TODO:   { 55, EasyAim DPI 1600 }, */
+/* TODO:   { 56, EasyAim DPI 3200 }, */
 	{ 65, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE) },
-/* FIXME:   { 66, Easywheel sensitivity }, */
-/* FIXME:   { 67, Easywheel profile }, */
-/* FIXME:   { 68, Easywheel DPI }, */
-/* FIXME:   { 69, EasywheelVolume }, */
-/* FIXME:   { 70, Easywheel Alt-Tab }, */
-/* FIXME:   { 98, Home }, */
-/* FIXME:   { 99, End }, */
-/* FIXME:   { 100, Previous page }, */
-/* FIXME:   { 100, Next page }, */
-/* FIXME:   { 101, Maj left }, */
-/* FIXME:   { 102, Maj right }, */
-/* FIXME:   { 113, Sensibility -5 }, */
-/* FIXME:   { 114, Sensibility -4 }, */
-/* FIXME:   { 115, Sensibility -3 }, */
-/* FIXME:   { 116, Sensibility -2 }, */
-/* FIXME:   { 117, Sensibility -1 }, */
-/* FIXME:   { 118, Sensibility 0 }, */
-/* FIXME:   { 119, Sensibility 1 }, */
-/* FIXME:   { 120, Sensibility 2 }, */
-/* FIXME:   { 121, Sensibility 3 }, */
-/* FIXME:   { 122, Sensibility 4 }, */
-/* FIXME:   { 123, Sensibility 5 }, */
-/* FIXME:   { 124, EasyAim DPI Userset }, - second byte of button_data is the DPI */
-/* FIXME:   { 128, Browser search }, */
-/* FIXME:   { 129, Browser home }, */
-/* FIXME:   { 130, Browser stop }, */
-/* FIXME:   { 131, Browser refresh }, */
-/* FIXME:   { 132, Browser new tab (ctrl+T) }, */
-/* FIXME:   { 133, Browser new window }, */
-/* FIXME:   { 134, Open "Computer" }, */
-/* FIXME:   { 135, Open calculator }, */
-/* FIXME:   { 136, Open email }, */
-/* FIXME:   { 137, Open file }, */
-/* FIXME:   { 138, Open folder }, */
-/* FIXME:   { 139, Open URL }, */
-/* FIXME:   { 140, Mute mic }, */
-/* FIXME:   { 141, Open Desktop }, */
-/* FIXME:   { 142, Open Favorites }, */
-/* FIXME:   { 143, Open Fonts }, */
-/* FIXME:   { 144, Open My Documents }, */
-/* FIXME:   { 145, Open Downloads }, */
-/* FIXME:   { 146, Open Music }, */
-/* FIXME:   { 147, Open Pictures }, */
-/* FIXME:   { 148, Open Network }, */
-/* FIXME:   { 149, Printers }, */
-/* FIXME:   { 150, Network }, */
+/* TODO:   { 66, Easywheel sensitivity }, */
+/* TODO:   { 67, Easywheel profile }, */
+/* TODO:   { 68, Easywheel DPI }, */
+/* TODO:   { 69, EasywheelVolume }, */
+/* TODO:   { 70, Easywheel Alt-Tab }, */
+/* TODO:   { 98, Home }, */
+/* TODO:   { 99, End }, */
+/* TODO:   { 100, Previous page }, */
+/* TODO:   { 100, Next page }, */
+/* TODO:   { 101, Maj left }, */
+/* TODO:   { 102, Maj right }, */
+/* TODO:   { 113, Sensibility -5 }, */
+/* TODO:   { 114, Sensibility -4 }, */
+/* TODO:   { 115, Sensibility -3 }, */
+/* TODO:   { 116, Sensibility -2 }, */
+/* TODO:   { 117, Sensibility -1 }, */
+/* TODO:   { 118, Sensibility 0 }, */
+/* TODO:   { 119, Sensibility 1 }, */
+/* TODO:   { 120, Sensibility 2 }, */
+/* TODO:   { 121, Sensibility 3 }, */
+/* TODO:   { 122, Sensibility 4 }, */
+/* TODO:   { 123, Sensibility 5 }, */
+/* TODO:   { 124, EasyAim DPI Userset }, - second byte of button_data is the DPI */
+/* TODO:   { 128, Browser search }, */
+/* TODO:   { 129, Browser home }, */
+/* TODO:   { 130, Browser stop }, */
+/* TODO:   { 131, Browser refresh }, */
+/* TODO:   { 132, Browser new tab (ctrl+T) }, */
+/* TODO:   { 133, Browser new window }, */
+/* TODO:   { 134, Open "Computer" }, */
+/* TODO:   { 135, Open calculator }, */
+/* TODO:   { 136, Open email }, */
+/* TODO:   { 137, Open file }, */
+/* TODO:   { 138, Open folder }, */
+/* TODO:   { 139, Open URL }, */
+/* TODO:   { 140, Mute mic }, */
+/* TODO:   { 141, Open Desktop }, */
+/* TODO:   { 142, Open Favorites }, */
+/* TODO:   { 143, Open Fonts }, */
+/* TODO:   { 144, Open My Documents }, */
+/* TODO:   { 145, Open Downloads }, */
+/* TODO:   { 146, Open Music }, */
+/* TODO:   { 147, Open Pictures }, */
+/* TODO:   { 148, Open Network }, */
+/* TODO:   { 149, Printers }, */
+/* TODO:   { 150, Network }, */
 
-/* FIXME:   { 167, System hibernation }, */
-/* FIXME:   { 168, System reboot }, */
-/* FIXME:   { 169, System lock }, */
-/* FIXME:   { 179, Logout }, */
-/* FIXME:   { 171, Control panel }, */
-/* FIXME:   { 172, System settings }, */
-/* FIXME:   { 173, Task Manager }, */
-/* FIXME:   { 174, Screen settings }, */
-/* FIXME:   { 175, Screensaver settings }, */
-/* FIXME:   { 176, Themes }, */
-/* FIXME:   { 177, Date and Time }, */
-/* FIXME:   { 178, Network settings }, */
-/* FIXME:   { 179, Admin settings }, */
-/* FIXME:   { 180, Firewall }, */
-/* FIXME:   { 181, Regedit }, */
-/* FIXME:   { 182, Event monitor }, */
-/* FIXME:   { 183, Performance monitor }, */
-/* FIXME:   { 184, Audio settings }, */
-/* FIXME:   { 185, Internet settings }, */
-/* FIXME:   { 186, Directx diagnostics }, */
-/* FIXME:   { 187, Command line }, */
-/* FIXME:   { 188, System poweroff }, */
-/* FIXME:   { 189, System sleep }, */
-/* FIXME:   { 190, System wakeup }, */
+/* TODO:   { 167, System hibernation }, */
+/* TODO:   { 168, System reboot }, */
+/* TODO:   { 169, System lock }, */
+/* TODO:   { 179, Logout }, */
+/* TODO:   { 171, Control panel }, */
+/* TODO:   { 172, System settings }, */
+/* TODO:   { 173, Task Manager }, */
+/* TODO:   { 174, Screen settings }, */
+/* TODO:   { 175, Screensaver settings }, */
+/* TODO:   { 176, Themes }, */
+/* TODO:   { 177, Date and Time }, */
+/* TODO:   { 178, Network settings }, */
+/* TODO:   { 179, Admin settings }, */
+/* TODO:   { 180, Firewall }, */
+/* TODO:   { 181, Regedit }, */
+/* TODO:   { 182, Event monitor }, */
+/* TODO:   { 183, Performance monitor }, */
+/* TODO:   { 184, Audio settings }, */
+/* TODO:   { 185, Internet settings }, */
+/* TODO:   { 186, Directx diagnostics }, */
+/* TODO:   { 187, Command line }, */
+/* TODO:   { 188, System poweroff }, */
+/* TODO:   { 189, System sleep }, */
+/* TODO:   { 190, System wakeup }, */
 
-/* FIXME:   { 191, Set profile 1 }, */
-/* FIXME:   { 192, Set profile 2 }, */
-/* FIXME:   { 193, Set profile 3 }, */
-/* FIXME:   { 194, Set profile 4 }, */
-/* FIXME:   { 195, Set profile 5 }, */
+/* TODO:   { 191, Set profile 1 }, */
+/* TODO:   { 192, Set profile 2 }, */
+/* TODO:   { 193, Set profile 3 }, */
+/* TODO:   { 194, Set profile 4 }, */
+/* TODO:   { 195, Set profile 5 }, */
 };
 
 static const struct ratbag_button_action*
@@ -564,13 +564,13 @@ roccat_write_profile(struct ratbag_profile *profile)
 			report->dpi_mask += (1 << resolution->index);
 		}
 	}
-	
+
 	ratbag_profile_for_each_led(profile, led) {
 		report->leds[led->index].predefined = ROCCAT_USER_DEFINED_COLOR; // Always user defined with libratbag (easier)
 		report->leds[led->index].color.r = led->color.red;
 		report->leds[led->index].color.g = led->color.green;
 		report->leds[led->index].color.b = led->color.blue;
-	
+
 		// Last LED sets the profile values
 		switch(led->mode) {
 			case RATBAG_LED_OFF:
@@ -610,11 +610,11 @@ roccat_write_profile(struct ratbag_profile *profile)
 
 			if(button->action.macro->group) {
 				// Seems no use of group in libratbag
-				strncpy(macro->group, button->action.macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH); 
+				strncpy(macro->group, button->action.macro->group, ROCCAT_MACRO_GROUP_NAME_LENGTH);
 			} else {
-				strncpy(macro->group, "libratbag macros", ROCCAT_MACRO_GROUP_NAME_LENGTH); 
+				strncpy(macro->group, "libratbag macros", ROCCAT_MACRO_GROUP_NAME_LENGTH);
 			}
-			strncpy(macro->name, button->action.macro->name, ROCCAT_MACRO_NAME_LENGTH); 
+			strncpy(macro->name, button->action.macro->name, ROCCAT_MACRO_NAME_LENGTH);
 
 			for (i = 0; i < MAX_MACRO_EVENTS && count < ROCCAT_MAX_MACRO_LENGTH; i++) {
 				if (button->action.macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
@@ -652,13 +652,13 @@ roccat_write_profile(struct ratbag_profile *profile)
 				count++;
 			}
 			macro->length = count;
-			
+
 
 			// Macro has to be send in two packets
 			memcpy(bank_buf, macro, ROCCAT_REPORT_SIZE_MACRO_BANK);
 
 			rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_MACRO,
-						  bank_buf, ROCCAT_REPORT_SIZE_MACRO_BANK);    
+						  bank_buf, ROCCAT_REPORT_SIZE_MACRO_BANK);
 			if (rc < 0)
 				return rc;
 
@@ -674,7 +674,7 @@ roccat_write_profile(struct ratbag_profile *profile)
 			bank_buf[0] = ROCCAT_REPORT_ID_MACRO;
 			bank_buf[1] = ROCCAT_BANK_ID_2;
 			// The remaining macro structure is not big enough to fill the second bank
-			// Write the remaining, fill the end with 0 
+			// Write the remaining, fill the end with 0
 			unsigned int remaining_to_write = sizeof(struct roccat_macro)-ROCCAT_REPORT_SIZE_MACRO_BANK;
 			memcpy(bank_buf+2, &((uint8_t*)macro)[ROCCAT_REPORT_SIZE_MACRO_BANK], remaining_to_write);
 			memset(bank_buf+2+remaining_to_write, 0, ROCCAT_REPORT_SIZE_MACRO_BANK-(2+remaining_to_write));
@@ -834,8 +834,8 @@ roccat_read_button(struct ratbag_button *button)
 				  button->index, button->profile->index,
 				  rc < 0 ? strerror(-rc) : "not read enough", rc);
 			goto out_macro;
-		} 
-		
+		}
+
 		if (macro->reportID != ROCCAT_REPORT_ID_MACRO) {
 			log_error(device->ratbag,
 					"Error while reading the macro of button %d of profile %d.\n",
@@ -845,7 +845,7 @@ roccat_read_button(struct ratbag_button *button)
 		}
 		// No checksum for macros
 
-		roccat_read_macro(macro, button);       
+		roccat_read_macro(macro, button);
 
 out_macro:
 		msleep(10);
@@ -934,7 +934,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	struct ratbag_led *led;
 	struct roccat_settings_report *settings;
 	struct roccat_buttons* buttons;
-	int rc; 
+	int rc;
 
 	assert(profile->index <= ROCCAT_PROFILE_MAX);
 
@@ -979,7 +979,7 @@ roccat_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_button(profile, button)
 		roccat_read_button(button);
 
-	
+
 	log_debug(device->ratbag, "profile: %d %s:%d\n",
 		settings->profile,
 		__FILE__, __LINE__);
