@@ -1,0 +1,5 @@
+[Device]
+DeviceMatch=bluetooth:046d:b035
+DeviceType=mouse
+Driver=hidpp20
+Name=Logitech MX Master 3S for Business
