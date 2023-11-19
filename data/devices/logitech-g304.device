@@ -1,0 +1,9 @@
+[Device]
+Name=Logitech Gaming Mouse G304
+DeviceMatch=usb:046d:c53f
+Driver=hidpp20
+DeviceType=mouse
+
+[Driver/hidpp20]
+Leds=0
+Quirk=G304
