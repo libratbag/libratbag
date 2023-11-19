@@ -6,4 +6,4 @@ DeviceType=mouse
 
 [Driver/hidpp20]
 Leds=0
-Quirk=G304
+Quirk=G305
