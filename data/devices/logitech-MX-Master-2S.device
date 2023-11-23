@@ -1,6 +1,6 @@
 # Logitech MX Master 2S
 [Device]
 Name=Logitech MX Master 2S
-DeviceMatch=bluetooth:046d:b019;usb:046d:4069
+DeviceMatch=bluetooth:046d:b019;usb:046d:4069;usb:046d:c52b
 Driver=hidpp20
 DeviceType=mouse
