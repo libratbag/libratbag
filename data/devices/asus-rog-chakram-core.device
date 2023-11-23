@@ -1,0 +1,14 @@
+# ASUS ROG Chakram, but corded
+[Device]
+Name=ASUS ROG Chakram Core
+DeviceMatch=usb:0b05:1958
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=5
+Leds=3
+Dpis=4
+DpiRange=100:16000@100
+Quirks=DOUBLE_DPI;STRIX_PROFILE
