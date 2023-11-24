@@ -601,6 +601,8 @@ extern struct ratbag_driver asus_driver;
 extern struct ratbag_driver sinowealth_driver;
 extern struct ratbag_driver sinowealth_nubwo_driver;
 extern struct ratbag_driver openinput_driver;
+extern struct ratbag_driver holtek8a_driver;
+extern struct ratbag_driver holtek8b_driver;
 
 struct ratbag_device*
 ratbag_device_new(struct ratbag *ratbag, struct udev_device *udev_device,

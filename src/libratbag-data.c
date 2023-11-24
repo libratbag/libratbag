@@ -33,6 +33,7 @@
 #include "asus.h"
 #include "driver-sinowealth.h"
 #include "driver-steelseries.h"
+#include "driver-holtek.h"
 #include "libratbag.h"
 #include "libratbag-private.h"
 #include "libratbag-data.h"
@@ -63,6 +64,8 @@ enum driver {
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
 	MARSGAMING,
+	HOLTEK8A,
+	HOLTEK8B,
 };
 
 struct data_hidpp20 {
@@ -84,6 +87,10 @@ struct data_hidpp10 {
 };
 
 struct data_sinowealth {
+	struct list supported_devices;
+};
+
+struct data_holtek8 {
 	struct list supported_devices;
 };
 
@@ -122,6 +129,7 @@ struct ratbag_device_data {
 		struct data_sinowealth sinowealth;
 		struct data_steelseries steelseries;
 		struct data_asus asus;
+		struct data_holtek8 holtek8;
 	};
 };
 
@@ -298,6 +306,72 @@ init_data_sinowealth(struct ratbag *ratbag,
 }
 
 static void
+init_data_holtek8(struct ratbag *ratbag,
+		  GKeyFile *keyfile,
+		  struct ratbag_device_data *data)
+{
+// Based on init_data_sinowealth
+	const char *devices_group = "Driver/holtek8/devices/";
+
+	GError *error = NULL;
+	int rc;
+
+	size_t group_count = 0;
+	_cleanup_(g_strfreevp) char **groups = g_key_file_get_groups(keyfile, &group_count);
+
+	list_init(&data->holtek8.supported_devices);
+
+	for (size_t i = 0; i < group_count; ++i) {
+		const char *device_group = groups[i];
+		const char* fw_version = startswith(device_group, devices_group);
+		if (fw_version == NULL)
+			continue;
+		rc = (int)strlen(fw_version);
+		if (rc != HOLTEK8_FW_VERSION_LEN) {
+			log_error(ratbag,
+				  "Group '%s': incorrect firmware version string length `%d` (must be `%d`)\n",
+				  device_group, rc, HOLTEK8_FW_VERSION_LEN);
+			continue;
+		}
+
+		struct holtek8_device_data *device = zalloc(sizeof(struct holtek8_device_data));
+
+		device->fw_version = strdup_safe(fw_version);
+
+		rc = g_key_file_get_integer(keyfile, device_group, "Buttons", &error);
+		if (rc != 0 && !error) {
+			device->button_count = rc;
+		} else {
+			device->button_count = -1;
+		}
+		g_clear_error(&error);
+
+		device->device_name = g_key_file_get_string(keyfile, device_group, "DeviceName", &error);
+		g_clear_error(&error);
+
+		_cleanup_free_ char *sensor_str = g_key_file_get_string(keyfile, device_group, "SensorType", &error);
+		if (sensor_str) {
+			device->sensor = holtek8_get_sensor_from_name(sensor_str);
+
+			if (device->sensor == HOTLEK8_SENSOR_UNKNOWN) {
+				log_error(ratbag, "Unknown sensor '%s' in group '%s'\n", sensor_str, device_group);
+			}
+		}
+		g_clear_error(&error);
+
+		_cleanup_free_ char *password_str = g_key_file_get_string(keyfile, device_group, "Password", &error);
+		if (password_str) {
+			if (strlen(password_str) == sizeof(device->password)) {
+				memcpy(device->password, password_str, sizeof(device->password));
+			}
+		}
+		g_clear_error(&error);
+
+		list_insert(&data->holtek8.supported_devices, &device->link);
+	}
+}
+
+static void
 init_data_steelseries(struct ratbag *ratbag,
 		  GKeyFile *keyfile,
 		  struct ratbag_device_data *data)
@@ -455,6 +529,8 @@ static const struct driver_map {
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
 	{ MARSGAMING, "marsgaming", NULL },
+	{ HOLTEK8A, "holtek8a", init_data_holtek8},
+	{ HOLTEK8B, "holtek8b", init_data_holtek8},
 };
 
 const char *
@@ -496,6 +572,19 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 		struct sinowealth_device_data *device_data_next = NULL;
 
 		list_for_each_safe(device_data, device_data_next, &data->sinowealth.supported_devices, link) {
+			free(device_data->device_name);
+			free(device_data->fw_version);
+			free(device_data);
+		}
+
+		break;
+	}
+	case HOLTEK8A:
+	case HOLTEK8B: {
+		struct holtek8_device_data *device_data = NULL;
+		struct holtek8_device_data *device_data_next = NULL;
+
+		list_for_each_safe(device_data, device_data_next, &data->holtek8.supported_devices, link) {
 			free(device_data->device_name);
 			free(device_data->fw_version);
 			free(device_data);
@@ -805,6 +894,16 @@ ratbag_device_data_sinowealth_get_supported_devices(const struct ratbag_device_d
 	assert(data->drivertype == SINOWEALTH);
 
 	return &data->sinowealth.supported_devices;
+}
+
+/* Holtek */
+
+const struct list *
+ratbag_device_data_holtek8_get_supported_devices(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == HOLTEK8A || data->drivertype == HOLTEK8B);
+
+	return &data->holtek8.supported_devices;
 }
 
 /* SteelSeries */
