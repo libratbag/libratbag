@@ -215,7 +215,7 @@ struct sinowealth_xy_independent_dpi {
 };
 _Static_assert(sizeof(struct sinowealth_xy_independent_dpi) == sizeof(uint8_t[2]), "Invalid size");
 
-/* DPI/CPI is encoded in the way the PMW3360 and PWM3327 sensors
+/* DPI/CPI is encoded in the way the PMW3360 and PMW3327 sensors
  * accept it:
  * value = (DPI - 100) / 100;
  * or the way the PMW3389 sensor accepts it:
@@ -980,7 +980,7 @@ sinowealth_query_write(struct ratbag_device *device, uint8_t buffer[], unsigned 
 		return rc;
 	}
 	if (rc != (int)buffer_length) {
-		log_error(device->ratbag, "Unexpeced amount of written data: %d (instead of %u)\n", rc, buffer_length);
+		log_error(device->ratbag, "Unexpected amount of written data: %d (instead of %u)\n", rc, buffer_length);
 		return -EIO;
 	}
 
@@ -1741,11 +1741,10 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	if (device_data == NULL) {
 		log_info(device->ratbag,
-			  "Device with firmware version `%s` is not supported; "
-			  "Perhaps the device file is missing a section for this device?; "
-			  "See the example device file in the repository for more details (`libratbag/data/devices/device.example`)\n",
-			  fw_version
-		);
+			 "Device with firmware version `%s` is not supported; "
+			 "Perhaps the device file is missing a section for this device?; "
+			 "See the example device file in the repository for more details (`libratbag/data/devices/device.example`)\n",
+			 fw_version);
 		return -EINVAL;
 	}
 
@@ -1762,7 +1761,6 @@ sinowealth_init_profile(struct ratbag_device *device)
 	} else {
 		drv_data->profile_count = (unsigned int)rc;
 	}
-
 
 	rc = sinowealth_read_raw_configs(device);
 	if (rc)
