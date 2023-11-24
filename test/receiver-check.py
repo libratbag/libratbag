@@ -49,7 +49,7 @@ logitech_receivers = [
     0xC547,  # USB_DEVICE_ID_LOGITECH_NANO_RECEIVER_LIGHTSPEED_1_3
     0xC548,  # Bolt receiver
 ]
-RECEIVERS = [f"usb:046d:{r}" for r in logitech_receivers]
+RECEIVERS = [f"usb:046d:{r:04x}" for r in logitech_receivers]
 
 
 def parse_data_file(path):
