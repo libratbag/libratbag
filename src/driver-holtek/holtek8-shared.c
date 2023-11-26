@@ -981,8 +981,11 @@ holtek8_read_chunked(struct ratbag_device *device, uint8_t *buf, uint8_t len, st
 	for (i = 0; i < len/chunk_size; i++) {
 		rc = ratbag_hidraw_read_input_report(device, buf + i*chunk_size, chunk_size, NULL);
 
-		if (rc != chunk_size)
+		if (rc < 0)
 			return rc;
+
+		if (rc != chunk_size)
+			return -EIO;
 	}
 
 	return 0;
@@ -1066,8 +1069,11 @@ holtek8_read_padded(struct ratbag_device *device, uint8_t *buf, uint8_t len, str
 
 	rc = ratbag_hidraw_read_input_report(device, tmp_buf, chunk_size, NULL);
 
-	if (rc != chunk_size)
+	if (rc < 0)
 		return rc;
+
+	if (rc != chunk_size)
+		return -EIO;
 
 	memcpy(buf, tmp_buf, len);
 
