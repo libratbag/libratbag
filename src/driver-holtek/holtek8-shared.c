@@ -642,6 +642,9 @@ holtek8_macro_to_events(struct ratbag_button *button, struct holtek8_macro_event
 				else if (delay != 0) {
 					if (delay / delay_base_ms < 128) {
 						raw_delay = delay / delay_base_ms;
+						if (raw_delay == 0)
+							raw_delay = 1;
+
 						raw[event_i-1].delay = raw_delay;
 					}
 					else {
