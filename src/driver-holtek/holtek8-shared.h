@@ -259,6 +259,8 @@ holtek8_get_feature_report(struct ratbag_device *device, struct holtek8_feature_
 		case HOTLEK8_API_B:
 			return holtek8b_get_feature_report(device, report);
 	}
+
+	abort();
 }
 
 static inline int
@@ -273,4 +275,6 @@ holtek8_set_feature_report(struct ratbag_device *device, struct holtek8_feature_
 		case HOTLEK8_API_B:
 			return holtek8b_set_feature_report(device, report);
 	}
+
+	abort();
 }
