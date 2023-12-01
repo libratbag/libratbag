@@ -176,7 +176,7 @@ holtek8a_write_resolution_config(struct ratbag_device *device,
 
 static int
 holtek8a_read_button_config(struct ratbag_device *device,
-			     const struct holtek8a_button_config *button_config)
+			     struct holtek8a_button_config *button_config)
 {
 	struct holtek8_data *drv_data = device->drv_data;
 	uint8_t *data = (uint8_t*) button_config;
