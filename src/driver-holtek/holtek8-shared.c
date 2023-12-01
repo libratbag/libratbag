@@ -785,7 +785,9 @@ holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button
 				struct holtek8_macro_event macro_events[HOLTEK8_MAX_MACRO_EVENTS] = {0};
 
 				rc = holtek8_macro_to_events(button, macro_events);
-				//log_buf_error(device->ratbag, "MACRO: ", (uint8_t*) macro_events, 128);
+				if (rc < 0)
+					return rc;
+
 				rc = holtek8_write_macro_data(device, macro_events);
 				if (rc < 0)
 					return rc;
