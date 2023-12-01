@@ -158,10 +158,10 @@ holtek8a_read_resolution_config(struct ratbag_device *device,
 
 static int
 holtek8a_write_resolution_config(struct ratbag_device *device,
-			     struct holtek8a_resolution_config *resolution_config, uint8_t resolution_count)
+			     const struct holtek8a_resolution_config *resolution_config, uint8_t resolution_count)
 {
 	int rc;
-	uint8_t *data = (uint8_t*) resolution_config;
+	const uint8_t *data = (const uint8_t*) resolution_config;
 	struct holtek8_feature_report report = {0, HOLTEK8A_CMD_WRITE_RESOLUTION_CONFIG, {resolution_count, HOLTEK8A_RESOLUTION_CONFIG_SIZE}, 0};
 
 	assert(resolution_count >= 1 && resolution_count <= HOLTEK8A_RESOLUTION_COUNT);
@@ -176,7 +176,7 @@ holtek8a_write_resolution_config(struct ratbag_device *device,
 
 static int
 holtek8a_read_button_config(struct ratbag_device *device,
-			     struct holtek8a_button_config *button_config)
+			     const struct holtek8a_button_config *button_config)
 {
 	struct holtek8_data *drv_data = device->drv_data;
 	uint8_t *data = (uint8_t*) button_config;

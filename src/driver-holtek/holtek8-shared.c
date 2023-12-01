@@ -158,7 +158,7 @@ holtek8_button_map_action_to_raw(const struct ratbag_button_action *action, stru
 }
 
 static const struct ratbag_button_action *
-holtek8_button_map_raw_to_action(struct holtek8_button_data *data)
+holtek8_button_map_raw_to_action(const struct holtek8_button_data *data)
 {
 	const struct holtek8_button_mapping *mapping = NULL;
 
@@ -422,13 +422,13 @@ static int
 holtek8_keycodes_from_ratbag_macro(const struct ratbag_button_action *action, unsigned int *key1_out, unsigned int *key2_out, unsigned int *modifiers_out)
 {
 	const struct ratbag_macro *macro = action->macro;
+	const unsigned int num_keys = (unsigned int)ratbag_action_macro_num_keys(action);
 	unsigned int key1 = KEY_RESERVED;
 	unsigned int key2 = KEY_RESERVED;
 	unsigned int modifiers = 0;
 	unsigned int i;
 	unsigned int keys_pressed = 0;
 	unsigned int mods_pressed = 0;
-	unsigned int num_keys = ratbag_action_macro_num_keys(action);
 	unsigned int num_mods = 0;
 
 	if (!macro || action->type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
@@ -438,12 +438,12 @@ holtek8_keycodes_from_ratbag_macro(const struct ratbag_button_action *action, un
 		return -EPROTO;
 
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
-		struct ratbag_macro_event event = macro->events[i];
-		if (event.type == RATBAG_MACRO_EVENT_NONE ||
-		    event.type == RATBAG_MACRO_EVENT_INVALID) {
+		const struct ratbag_macro_event *event = &macro->events[i];
+		if (event->type == RATBAG_MACRO_EVENT_NONE ||
+		    event->type == RATBAG_MACRO_EVENT_INVALID) {
 			break;
 		}
-		if (ratbag_key_is_modifier(event.event.key) && event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
+		if (ratbag_key_is_modifier(event->event.key) && event->type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
 			num_mods += 1;
 		}
 	}
@@ -501,7 +501,7 @@ holtek8_keycodes_from_ratbag_macro(const struct ratbag_button_action *action, un
  * @return 0 on success or a negative errno.
  */
 static int
-holtek8_macro_from_events(struct ratbag_button *button, struct holtek8_macro_event *raw)
+holtek8_macro_from_events(struct ratbag_button *button, const struct holtek8_macro_event *raw)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct holtek8_data *drv_data = device->drv_data;
@@ -526,7 +526,7 @@ holtek8_macro_from_events(struct ratbag_button *button, struct holtek8_macro_eve
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 
 	for (i = 0; i < HOLTEK8_MAX_MACRO_EVENTS; i++) {
-		struct holtek8_macro_event *event = &raw[i];
+		const struct holtek8_macro_event *event = &raw[i];
 
 		if (event->delay == 0 && event->release == 0 && event->key == 0)
 			break;
@@ -593,10 +593,10 @@ err:
  * @return Number of events on success or a negative errno.
  */
 static int
-holtek8_macro_to_events(struct ratbag_button *button, struct holtek8_macro_event *raw)
+holtek8_macro_to_events(const struct ratbag_button *button, struct holtek8_macro_event *raw)
 {
-	struct ratbag_device *device = button->profile->device;
-	struct holtek8_data *drv_data = device->drv_data;
+	const struct ratbag_device *device = button->profile->device;
+	const struct holtek8_data *drv_data = device->drv_data;
 	const struct ratbag_macro *macro = button->action.macro;
 	int i;
 	int event_i = 0;
@@ -694,7 +694,7 @@ holtek8_macro_to_events(struct ratbag_button *button, struct holtek8_macro_event
  * @return 0 on success or a negative errno.
  */
 int
-holtek8_button_from_data(struct ratbag_button *button, struct holtek8_button_data *data)
+holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_button_data *data)
 {
 	struct ratbag_device *device = button->profile->device;
 	const struct ratbag_button_action *action;
@@ -711,16 +711,16 @@ holtek8_button_from_data(struct ratbag_button *button, struct holtek8_button_dat
 
 	switch (data->type) {
 		case HOLTEK8_BUTTON_TYPE_KEYBOARD: {
-			unsigned int modifiers = data->keyboard.modifiers;
-			unsigned int key1 = ratbag_hidraw_get_keycode_from_keyboard_usage(device, data->keyboard.hid_key);
-			unsigned int key2 = ratbag_hidraw_get_keycode_from_keyboard_usage(device, data->keyboard.hid_key2);
+			const unsigned int modifiers = data->keyboard.modifiers;
+			const unsigned int key1 = ratbag_hidraw_get_keycode_from_keyboard_usage(device, data->keyboard.hid_key);
+			const unsigned int key2 = ratbag_hidraw_get_keycode_from_keyboard_usage(device, data->keyboard.hid_key2);
 
 			holtek8_button_macro_new_from_keycodes(button, key1, key2, modifiers);
 			break;
 		}
 		case HOLTEK8_BUTTON_TYPE_MEDIA: {
-			uint16_t hid_code_cc = get_unaligned_le_u16(data->media.hid_key);
-			unsigned int key = ratbag_hidraw_get_keycode_from_consumer_usage(device, hid_code_cc);
+			const uint16_t hid_code_cc = get_unaligned_le_u16(data->media.hid_key);
+			const unsigned int key = ratbag_hidraw_get_keycode_from_consumer_usage(device, hid_code_cc);
 
 			holtek8_button_macro_new_from_keycodes(button, key, 0, 0);
 			break;
@@ -755,7 +755,7 @@ holtek8_button_from_data(struct ratbag_button *button, struct holtek8_button_dat
  * @return 0 on success or a negative errno.
  */
 int
-holtek8_button_to_data(struct ratbag_button *button, struct holtek8_button_data *data)
+holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button_data *data)
 {
 	struct ratbag_device *device = button->profile->device;
 	int rc;
@@ -766,8 +766,8 @@ holtek8_button_to_data(struct ratbag_button *button, struct holtek8_button_data 
 
 	switch (button->action.type) {
 		case RATBAG_BUTTON_ACTION_TYPE_KEY: {
-			uint8_t hid_code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, button->action.action.key.key);
-			uint16_t hid_code_cc = ratbag_hidraw_get_consumer_usage_from_keycode(device, button->action.action.key.key);
+			const uint8_t hid_code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, button->action.action.key.key);
+			const uint16_t hid_code_cc = ratbag_hidraw_get_consumer_usage_from_keycode(device, button->action.action.key.key);
 			data->type = HOLTEK8_BUTTON_TYPE_KEYBOARD;
 			data->keyboard.modifiers = 0;
 			data->keyboard.hid_key = 0;
@@ -1003,7 +1003,7 @@ holtek8_read_chunked(struct ratbag_device *device, uint8_t *buf, uint8_t len, st
  * @return 0 on success or a negative errno.
  */
 int
-holtek8_write_chunked(struct ratbag_device *device, uint8_t *buf, uint8_t len)
+holtek8_write_chunked(struct ratbag_device *device, const uint8_t *buf, uint8_t len)
 {
 	struct holtek8_data *drv_data = device->drv_data;
 	uint8_t chunk_size = drv_data->chunk_size;
@@ -1092,7 +1092,7 @@ holtek8_read_padded(struct ratbag_device *device, uint8_t *buf, uint8_t len, str
  * @return 0 on success or a negative errno.
  */
 int
-holtek8_write_padded(struct ratbag_device *device, uint8_t *buf, uint8_t len)
+holtek8_write_padded(struct ratbag_device *device, const uint8_t *buf, uint8_t len)
 {
 	struct holtek8_data *drv_data = device->drv_data;
 	uint8_t chunk_size = drv_data->chunk_size;
@@ -1153,7 +1153,7 @@ holtek8_test_echo(struct ratbag_device *device)
 }
 
 static const struct holtek8_device_data *
-holtek8_find_device_data(struct ratbag_device *device, const char *fw_version)
+holtek8_find_device_data(const struct ratbag_device *device, const char *fw_version)
 {
 	const struct ratbag_device_data *data = device->data;
 
@@ -1236,8 +1236,8 @@ int
 holtek8_test_report_descriptor(struct ratbag_device *device)
 {
 	int rc, desc_size = 0;
-	struct holtek8_data *drv_data = device->drv_data;
-	struct ratbag_hidraw *hidraw = &device->hidraw[0];
+	const struct holtek8_data *drv_data = device->drv_data;
+	const struct ratbag_hidraw *hidraw = &device->hidraw[0];
 	struct hidraw_report_descriptor report_desc = {0};
 	unsigned int i, j;
 	unsigned int desc_chunk;

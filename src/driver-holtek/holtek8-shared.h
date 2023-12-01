@@ -201,10 +201,10 @@ unsigned int
 holtek8_raw_to_dpi(struct ratbag_device *device, uint16_t raw);
 
 int
-holtek8_button_from_data(struct ratbag_button *button, struct holtek8_button_data *data);
+holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_button_data *data);
 
 int
-holtek8_button_to_data(struct ratbag_button *button, struct holtek8_button_data *data);
+holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button_data *data);
 
 const struct hotlek8_sensor_config*
 holtek8_get_sensor_config(enum holtek8_sensor sensor);
@@ -213,13 +213,13 @@ int
 holtek8_read_chunked(struct ratbag_device *device, uint8_t *buf, uint8_t len, struct holtek8_feature_report *response);
 
 int
-holtek8_write_chunked(struct ratbag_device *device, uint8_t *buf, uint8_t len);
+holtek8_write_chunked(struct ratbag_device *device, const uint8_t *buf, uint8_t len);
 
 int
 holtek8_read_padded(struct ratbag_device *device, uint8_t *buf, uint8_t len, struct holtek8_feature_report *response);
 
 int
-holtek8_write_padded(struct ratbag_device *device, uint8_t *buf, uint8_t len);
+holtek8_write_padded(struct ratbag_device *device, const uint8_t *buf, uint8_t len);
 
 void
 holtek8_calculate_checksum(struct holtek8_feature_report *report);
