@@ -231,7 +231,7 @@ holtek8_read_macro_data(struct ratbag_device *device, struct holtek8_macro_event
 		if (ev_data[0] == 0 && ev_data[1] == 0) {
 			return 0; // macro terminator reached
 		}
-		else if (ev_data[1] == HOLTEK8_MACRO_CMD_JUMP) {
+		if (ev_data[1] == HOLTEK8_MACRO_CMD_JUMP) {
 			if (single_page_macros)
 				return 0;
 
@@ -541,7 +541,7 @@ holtek8_macro_from_events(struct ratbag_button *button, const struct holtek8_mac
 			delay += get_unaligned_be_u16((uint8_t*) &raw[i]) * 2;
 			continue;
 		}
-		else if (event->key == HOLTEK8_MACRO_CMD_MOUSE) {
+		if (event->key == HOLTEK8_MACRO_CMD_MOUSE) {
 			//no support in ratbag for mouse movements in macros
 			i += 1;
 			continue;
@@ -723,7 +723,7 @@ holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_butt
 			rc = holtek8_read_macro_data(device, macro_events, data->macro.index);
 			if (rc == -EOVERFLOW)
 				return 0;
-			else if (rc < 0)
+			if (rc < 0)
 				return rc;
 
 			holtek8_macro_from_events(button, macro_events);
@@ -797,7 +797,7 @@ holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button
 
 				return 0;
 			}
-			else if (rc < 0) {
+			if (rc < 0) {
 				return rc;
 			}
 
@@ -922,7 +922,7 @@ holtek8_clear_read_buffer(struct ratbag_device *device)
 
 		if (nfds < 0)
 			return -errno;
-		else if (nfds > 0) {
+		if (nfds > 0) {
 			rc = (int)read(device->hidraw[0].fd, tmp_buf, chunk_size);
 
 			if (rc < 0)
