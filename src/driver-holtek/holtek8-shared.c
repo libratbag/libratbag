@@ -278,7 +278,7 @@ holtek8_write_macro_data(struct ratbag_device *device, struct holtek8_macro_even
 	unsigned int data_i = 0, events_i = 0;
 	unsigned int max_macro_index;
 	unsigned int events_to_write = 0;
-	int free_pages, pages_to_write;
+	unsigned int free_pages, pages_to_write;
 	uint8_t first_page = drv_data->macro_index;
 	bool single_page_macros = false;
 
@@ -875,11 +875,10 @@ holtek8_poll_write_ready(struct ratbag_device *device, uint8_t bytes_left)
 {
 	struct holtek8_data *drv_data = device->drv_data;
 	struct holtek8_feature_report report;
-	unsigned int api_version = drv_data->api_version;
 	uint8_t bytes_left_dev, bytes_left_pos;
 	int i, rc;
 
-	switch (api_version) {
+	switch (drv_data->api_version) {
 		case HOTLEK8_API_A:
 			bytes_left_pos = 3;
 			break;
@@ -934,7 +933,7 @@ holtek8_clear_read_buffer(struct ratbag_device *device)
 		if (nfds < 0)
 			return -errno;
 		else if (nfds > 0) {
-			rc = read(device->hidraw[0].fd, tmp_buf, chunk_size);
+			rc = (int)read(device->hidraw[0].fd, tmp_buf, chunk_size);
 
 			if (rc < 0)
 				return -errno;
@@ -982,7 +981,7 @@ holtek8_read_chunked(struct ratbag_device *device, uint8_t *buf, uint8_t len, st
 		return rc;
 
 	for (i = 0; i < len/chunk_size; i++) {
-		rc = ratbag_hidraw_read_input_report(device, buf + i*chunk_size, chunk_size, NULL);
+		rc = ratbag_hidraw_read_input_report(device, buf + (size_t)i*chunk_size, chunk_size, NULL);
 
 		if (rc < 0)
 			return rc;
@@ -1016,7 +1015,7 @@ holtek8_write_chunked(struct ratbag_device *device, const uint8_t *buf, uint8_t 
 
 	for (i = 0; i < len/chunk_size; i++) {
 		tmp_buf[0] = 0;
-		memcpy(tmp_buf + 1, buf + i*chunk_size, chunk_size);
+		memcpy(tmp_buf + 1, buf + (size_t)i*chunk_size, chunk_size);
 
 		rc = holtek8_poll_write_ready(device, bytes_left);
 		if (rc < 0)

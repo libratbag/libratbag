@@ -243,7 +243,7 @@ holtek8a_get_active_rate(struct ratbag_device *device)
 	if (report.command != HOLTEK8A_CMD_GET_ACTIVE_RATE)
 		return -EBADMSG;
 
-	rc = holtek8_raw_to_report_rate(report.arg[0]);
+	rc = (int)holtek8_raw_to_report_rate(report.arg[0]);
 	if (rc == 0)
 		return -EINVAL;
 
@@ -425,7 +425,7 @@ holtek8a_download_profile(struct ratbag_profile *profile)
 
 		raw = resolution_config.dpi_val[resolution->index] & 0x7f;
 
-		dpi = holtek8_raw_to_dpi(device, raw);
+		dpi = (int)holtek8_raw_to_dpi(device, raw);
 
 		ratbag_resolution_set_resolution(resolution, dpi, dpi);
 
@@ -499,8 +499,9 @@ holtek8a_upload_profile(struct ratbag_profile *profile)
 	struct ratbag_resolution *resolution;
 	struct holtek8a_resolution_config resolution_config = {0};
 	unsigned int active_resolution = 0;
+	unsigned int dpi;
 	unsigned int resolution_count = 0;
-	int rc, dpi;
+	int rc;
 	uint16_t raw;
 	bool resolution_dirty = false;
 

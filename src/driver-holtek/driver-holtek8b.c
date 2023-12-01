@@ -214,7 +214,7 @@ holtek8b_get_active_rate(struct ratbag_device *device, uint8_t profile_idx)
 	if (report.command != HOLTEK8B_CMD_GET_ACTIVE_RATE)
 		return -EBADMSG;
 
-	rc = holtek8_raw_to_report_rate(report.arg[1]);
+	rc = (int)holtek8_raw_to_report_rate(report.arg[1]);
 	if (rc == 0)
 		return -EINVAL;
 
@@ -414,8 +414,8 @@ holtek8b_download_profile(struct ratbag_profile *profile)
 			if (BIT_CHECK(profile_data.dpi_val_y_high_bit, resolution->index)) raw_y += 0x100;
 		}
 
-		dpi_x = holtek8_raw_to_dpi(device, raw_x);
-		dpi_y = holtek8_raw_to_dpi(device, raw_y);
+		dpi_x = (int)holtek8_raw_to_dpi(device, raw_x);
+		dpi_y = (int)holtek8_raw_to_dpi(device, raw_y);
 
 		if (sensor_cfg->independent_xy)
 			ratbag_resolution_set_resolution(resolution, dpi_x, dpi_y);
@@ -496,9 +496,9 @@ holtek8b_upload_profile(struct ratbag_profile *profile)
 	const struct hotlek8_sensor_config *sensor_cfg = drv_data->sensor_cfg;
 	struct holtek8b_profile_data profile_data;
 	struct ratbag_resolution *resolution;
-	int active_resolution = 0;
 	int rc;
 	unsigned int dpi_x, dpi_y;
+	uint8_t active_resolution = 0;
 	uint16_t raw_x, raw_y;
 	bool cfg_dirty = false;
 	bool resolution_dirty = false;
