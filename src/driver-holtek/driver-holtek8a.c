@@ -460,7 +460,7 @@ static int
 holtek8a_upload_buttons(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
-	struct holtek8a_button_config button_config;
+	struct holtek8a_button_config button_config = {0};
 	struct ratbag_button *button;
 	int rc;
 	uint8_t cfg_index;
