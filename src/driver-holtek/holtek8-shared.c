@@ -214,8 +214,6 @@ holtek8_read_macro_data(struct ratbag_device *device, struct holtek8_macro_event
 		case HOTLEK8_API_B:
 			report.command = HOLTEK8B_CMD_READ_MACRO_DATA;
 			break;
-		default:
-			assert(0);
 	}
 
 	rc = holtek8_set_feature_report(device, &report);
@@ -292,8 +290,6 @@ holtek8_write_macro_data(struct ratbag_device *device, struct holtek8_macro_even
 			report.command = HOLTEK8B_CMD_WRITE_MACRO_DATA;
 			max_macro_index = HOLTEK8B_MAX_MACRO_INDEX;
 			break;
-		default:
-			assert(0);
 	}
 
 	report.arg[1] = HOLTEK8_MACRO_DATA_SIZE;
@@ -519,8 +515,6 @@ holtek8_macro_from_events(struct ratbag_button *button, const struct holtek8_mac
 		case HOTLEK8_API_B:
 			delay_base_ms = HOLTEK8B_MACRO_DELAY_MS;
 			break;
-		default:
-			assert(0);
 	}
 
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
@@ -612,8 +606,6 @@ holtek8_macro_to_events(const struct ratbag_button *button, struct holtek8_macro
 		case HOTLEK8_API_B:
 			delay_base_ms = HOLTEK8B_MACRO_DELAY_MS;
 			break;
-		default:
-			assert(0);
 	}
 
 	if (!macro || button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO)
@@ -845,7 +837,7 @@ holtek8_get_sensor_config(enum holtek8_sensor sensor)
 		return cfg;
 	}
 
-	assert(0);
+	abort();
 }
 
 enum holtek8_sensor
@@ -885,8 +877,6 @@ holtek8_poll_write_ready(struct ratbag_device *device, uint8_t bytes_left)
 		case HOTLEK8_API_B:
 			bytes_left_pos = 1;
 			break;
-		default:
-			assert(0);
 	}
 
 	for (i = 0; i < HOLTEK8_POLL_RETRY_LIMIT; i++) {
