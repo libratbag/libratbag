@@ -321,7 +321,7 @@ static void
 holtek8a_init_profiles(struct ratbag_device *device)
 {
 	struct holtek8_data *drv_data = device->drv_data;
-	const struct hotlek8_sensor_config *sensor_cfg = drv_data->sensor_cfg;
+	const struct holtek8_sensor_config *sensor_cfg = drv_data->sensor_cfg;
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
@@ -589,7 +589,7 @@ holtek8a_probe(struct ratbag_device *device)
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
 
-	drv_data->api_version = HOTLEK8_API_A;
+	drv_data->api_version = HOLTEK8_API_A;
 	drv_data->chunk_size = HOLTEK8A_CHUNK_SIZE;
 
 	rc = ratbag_find_hidraw(device, holtek8a_test_hidraw);

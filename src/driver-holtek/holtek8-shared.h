@@ -16,11 +16,11 @@
 #define HOLTEK8_MAX_MACRO_EVENTS 256
 
 enum holtek8_api_version {
-	HOTLEK8_API_A = 1,
-	HOTLEK8_API_B = 2,
+	HOLTEK8_API_A = 1,
+	HOLTEK8_API_B = 2,
 };
 
-struct hotlek8_sensor_config {
+struct holtek8_sensor_config {
 	enum holtek8_sensor sensor;
 	const char *name;
 	unsigned int dpi_min;
@@ -32,7 +32,7 @@ struct hotlek8_sensor_config {
 
 struct holtek8_data {
 	enum holtek8_api_version api_version;
-	const struct hotlek8_sensor_config *sensor_cfg;
+	const struct holtek8_sensor_config *sensor_cfg;
 	uint8_t chunk_size;
 	int button_count;
 	uint8_t macro_index;
@@ -206,7 +206,7 @@ holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_butt
 int
 holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button_data *data);
 
-const struct hotlek8_sensor_config*
+const struct holtek8_sensor_config*
 holtek8_get_sensor_config(enum holtek8_sensor sensor);
 
 int
@@ -254,9 +254,9 @@ holtek8_get_feature_report(struct ratbag_device *device, struct holtek8_feature_
 	enum holtek8_api_version api_version = drv_data->api_version;
 
 	switch (api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			return holtek8a_get_feature_report(device, report);
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			return holtek8b_get_feature_report(device, report);
 	}
 
@@ -270,9 +270,9 @@ holtek8_set_feature_report(struct ratbag_device *device, struct holtek8_feature_
 	enum holtek8_api_version api_version = drv_data->api_version;
 
 	switch (api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			return holtek8a_set_feature_report(device, report);
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			return holtek8b_set_feature_report(device, report);
 	}
 

@@ -353,7 +353,7 @@ init_data_holtek8(struct ratbag *ratbag,
 		if (sensor_str) {
 			device->sensor = holtek8_get_sensor_from_name(sensor_str);
 
-			if (device->sensor == HOTLEK8_SENSOR_UNKNOWN) {
+			if (device->sensor == HOLTEK8_SENSOR_UNKNOWN) {
 				log_error(ratbag, "Unknown sensor '%s' in group '%s'\n", sensor_str, device_group);
 			}
 		}

@@ -27,10 +27,10 @@
 #define HOLTEK8B_MACRO_DELAY_MS 8
 
 
-static const struct hotlek8_sensor_config hotlek8_sensor_configurations[] = {
-	{ HOTLEK8_SENSOR_UNKNOWN, "", 200, 2000, 100, false, false }, //fallback
-	{ HOTLEK8_SENSOR_PAW3333, "PAW3333", 200, 8000, 100, false, false },
-	{ HOTLEK8_SENSOR_PMW3320, "PMW3320", 250, 3500, 250, false, false },
+static const struct holtek8_sensor_config holtek8_sensor_configurations[] = {
+	{ HOLTEK8_SENSOR_UNKNOWN, "", 200, 2000, 100, false, false }, //fallback
+	{ HOLTEK8_SENSOR_PAW3333, "PAW3333", 200, 8000, 100, false, false },
+	{ HOLTEK8_SENSOR_PMW3320, "PMW3320", 250, 3500, 250, false, false },
 };
 
 struct holtek8_button_mapping {
@@ -97,7 +97,7 @@ uint16_t
 holtek8_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 {
 	struct holtek8_data *drv_data = device->drv_data;
-	const struct hotlek8_sensor_config *sensor_cfg = drv_data->sensor_cfg;
+	const struct holtek8_sensor_config *sensor_cfg = drv_data->sensor_cfg;
 
 	if (dpi < sensor_cfg->dpi_min)
 		dpi = sensor_cfg->dpi_min;
@@ -117,7 +117,7 @@ unsigned int
 holtek8_raw_to_dpi(struct ratbag_device *device, uint16_t raw)
 {
 	struct holtek8_data *drv_data = device->drv_data;
-	const struct hotlek8_sensor_config *sensor_cfg = drv_data->sensor_cfg;
+	const struct holtek8_sensor_config *sensor_cfg = drv_data->sensor_cfg;
 
 	if (sensor_cfg->zero_indexed)
 		raw += 1;
@@ -207,11 +207,11 @@ holtek8_read_macro_data(struct ratbag_device *device, struct holtek8_macro_event
 	bool single_page_macros = false;
 
 	switch (drv_data->api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			report.command = HOLTEK8A_CMD_READ_MACRO_DATA;
 			single_page_macros = true;
 			break;
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			report.command = HOLTEK8B_CMD_READ_MACRO_DATA;
 			break;
 	}
@@ -281,12 +281,12 @@ holtek8_write_macro_data(struct ratbag_device *device, struct holtek8_macro_even
 	bool single_page_macros = false;
 
 	switch (drv_data->api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			report.command = HOLTEK8A_CMD_WRITE_MACRO_DATA;
 			max_macro_index = HOLTEK8A_MAX_MACRO_INDEX;
 			single_page_macros = true;
 			break;
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			report.command = HOLTEK8B_CMD_WRITE_MACRO_DATA;
 			max_macro_index = HOLTEK8B_MAX_MACRO_INDEX;
 			break;
@@ -509,10 +509,10 @@ holtek8_macro_from_events(struct ratbag_button *button, const struct holtek8_mac
 	unsigned int key;
 
 	switch (drv_data->api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			delay_base_ms = HOLTEK8A_MACRO_DELAY_MS;
 			break;
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			delay_base_ms = HOLTEK8B_MACRO_DELAY_MS;
 			break;
 	}
@@ -600,10 +600,10 @@ holtek8_macro_to_events(const struct ratbag_button *button, struct holtek8_macro
 	uint8_t key;
 
 	switch (drv_data->api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			delay_base_ms = HOLTEK8A_MACRO_DELAY_MS;
 			break;
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			delay_base_ms = HOLTEK8B_MACRO_DELAY_MS;
 			break;
 	}
@@ -825,12 +825,12 @@ holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button
 	return 0;
 }
 
-const struct hotlek8_sensor_config *
+const struct holtek8_sensor_config *
 holtek8_get_sensor_config(enum holtek8_sensor sensor)
 {
-	const struct hotlek8_sensor_config *cfg = NULL;
+	const struct holtek8_sensor_config *cfg = NULL;
 
-	ARRAY_FOR_EACH(hotlek8_sensor_configurations, cfg) {
+	ARRAY_FOR_EACH(holtek8_sensor_configurations, cfg) {
 		if (cfg->sensor != sensor) {
 			continue;
 		}
@@ -843,16 +843,16 @@ holtek8_get_sensor_config(enum holtek8_sensor sensor)
 enum holtek8_sensor
 holtek8_get_sensor_from_name(const char *name)
 {
-	const struct hotlek8_sensor_config *cfg = NULL;
+	const struct holtek8_sensor_config *cfg = NULL;
 
-	ARRAY_FOR_EACH(hotlek8_sensor_configurations, cfg) {
+	ARRAY_FOR_EACH(holtek8_sensor_configurations, cfg) {
 		if (!streq(cfg->name, name)) {
 			continue;
 		}
 		return cfg->sensor;
 	}
 
-	return HOTLEK8_SENSOR_UNKNOWN;
+	return HOLTEK8_SENSOR_UNKNOWN;
 }
 
 /*
@@ -871,10 +871,10 @@ holtek8_poll_write_ready(struct ratbag_device *device, uint8_t bytes_left)
 	int i, rc;
 
 	switch (drv_data->api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			bytes_left_pos = 3;
 			break;
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			bytes_left_pos = 1;
 			break;
 	}
@@ -1188,7 +1188,7 @@ holtek8_load_device_data(struct ratbag_device *device)
 	}
 
 	drv_data->sensor_cfg = holtek8_get_sensor_config(device_data->sensor);
-	if (drv_data->sensor_cfg->sensor == HOTLEK8_SENSOR_UNKNOWN)
+	if (drv_data->sensor_cfg->sensor == HOLTEK8_SENSOR_UNKNOWN)
 		log_error(device->ratbag, "Unknown sensor type, using fallback values\n");
 
 	if (device_data->button_count < 0 || device_data->button_count > 16) {
@@ -1198,11 +1198,11 @@ holtek8_load_device_data(struct ratbag_device *device)
 	drv_data->button_count = device_data->button_count;
 
 	switch (drv_data->api_version) {
-		case HOTLEK8_API_A:
+		case HOLTEK8_API_A:
 			assert(sizeof(drv_data->api_a.password) == 6 && sizeof(device_data->password) == 6);
 			memcpy(drv_data->api_a.password, device_data->password, sizeof(drv_data->api_a.password));
 			break;
-		case HOTLEK8_API_B:
+		case HOLTEK8_API_B:
 			break;
 	}
 
