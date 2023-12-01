@@ -15,6 +15,11 @@
 
 #define HOLTEK8_MAX_MACRO_EVENTS 256
 
+/*
+ * API names are unofficial and arbitrary.
+ * Version A is typically found in HT68FB550
+ * Version B is typically found in HT68FB560
+ */
 enum holtek8_api_version {
 	HOLTEK8_API_A = 1,
 	HOLTEK8_API_B = 2,
