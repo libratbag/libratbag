@@ -741,9 +741,10 @@ holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_butt
 /*
  * Converts ratbag button to raw device button data.
  * If the ratbag's button action is macro, writes an encoded macro
- * to the device memory and returns a data already pointing to the
+ * to the device memory and sets a data already pointing to the
  * just written macro.
  *
+ * @param[out] data Resulting raw button data, zeroed on error
  * @return 0 on success or a negative errno.
  */
 int
@@ -756,14 +757,13 @@ holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button
 	if (rc)
 		return 0;
 
+	memset(data, 0, sizeof(*data));
+
 	switch (button->action.type) {
 		case RATBAG_BUTTON_ACTION_TYPE_KEY: {
 			const uint8_t hid_code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, button->action.action.key.key);
 			const uint16_t hid_code_cc = ratbag_hidraw_get_consumer_usage_from_keycode(device, button->action.action.key.key);
 			data->type = HOLTEK8_BUTTON_TYPE_KEYBOARD;
-			data->keyboard.modifiers = 0;
-			data->keyboard.hid_key = 0;
-			data->keyboard.hid_key2 = 0;
 
 			if (hid_code > 0) {
 				data->keyboard.hid_key = hid_code;
@@ -793,7 +793,6 @@ holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button
 				data->type = HOLTEK8_BUTTON_TYPE_MACRO;
 				data->macro.mode = HOLTEK8_BUTTON_MACRO_REPEAT_COUNT;
 				data->macro.index = rc;
-				data->macro._padding = 0;
 
 				return 0;
 			}
