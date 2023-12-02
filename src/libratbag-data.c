@@ -336,7 +336,7 @@ init_data_holtek8(struct ratbag *ratbag,
 
 		struct holtek8_device_data *device = zalloc(sizeof(struct holtek8_device_data));
 
-		device->fw_version = strdup_safe(fw_version);
+		strncpy(device->fw_version, fw_version, HOLTEK8_FW_VERSION_LEN + 1);
 
 		rc = g_key_file_get_integer(keyfile, device_group, "Buttons", &error);
 		if (rc != 0 && !error) {
@@ -586,7 +586,6 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 
 		list_for_each_safe(device_data, device_data_next, &data->holtek8.supported_devices, link) {
 			free(device_data->device_name);
-			free(device_data->fw_version);
 			free(device_data);
 		}
 

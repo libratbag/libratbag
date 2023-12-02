@@ -16,7 +16,7 @@ enum holtek8_sensor {
 };
 
 struct holtek8_device_data {
-	char *fw_version;
+	char fw_version[HOLTEK8_FW_VERSION_LEN + 1];
 	char *device_name;
 	enum holtek8_sensor sensor;
 	int button_count;

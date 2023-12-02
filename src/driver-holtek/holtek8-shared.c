@@ -1151,7 +1151,7 @@ holtek8_find_device_data(const struct ratbag_device *device, const char *fw_vers
 
 	struct holtek8_device_data *device_data = NULL;
 	list_for_each(device_data, supported_devices, link) {
-		if (device_data->fw_version == NULL || device_data->device_name == NULL) {
+		if (device_data->device_name == NULL) {
 			log_error(device->ratbag, "Skipping invalid device data\n");
 			continue;
 		}
