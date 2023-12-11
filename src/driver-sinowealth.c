@@ -539,6 +539,8 @@ static const struct sinowealth_button_mapping sinowealth_button_map[] = {
 	/* None of the other bits do anything. */
 
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x1 } } }, BUTTON_ACTION_NONE },
+	/* Cycle report rates up. */
+	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x4 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN) },
 	/* Cycle LED modes. */
 	{ { SINOWEALTH_BUTTON_TYPE_SPECIAL, { { 0x7 } } }, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_UNKNOWN) },
 
