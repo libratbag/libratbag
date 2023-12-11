@@ -743,22 +743,6 @@ hidpp20drv_update_led(struct ratbag_led *led)
 }
 
 static int
-hidpp20drv_current_profile(struct ratbag_device *device)
-{
-	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
-	int rc;
-
-	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
-		return 0;
-
-	rc = hidpp20_onboard_profiles_get_current_profile(drv_data->dev);
-	if (rc < 0)
-		return rc;
-
-	return rc - 1;
-}
-
-static int
 hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
