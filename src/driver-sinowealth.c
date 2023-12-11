@@ -1114,8 +1114,14 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	int rc = 0;
 
 	/* TODO: implement angle snapping and lift-off distance changing once we have an API for that.
-	 * To implement LOD changing here: set the third index to <whether you want LOD high or low> + 1.
-	 * To implement angle snapping toggling here: set the fourth index to 1 or 0 to enable or disable accordingly.
+	 *
+	 * To implement LOD changing here: set the second to last bit of buf[2]
+	 * to <whether you want LOD high or low>.
+	 * TODO: what does the last bit in buf[2] mean? It was 0 on Fantech
+	 * Helios UX3 V2, but IIRC always 1 on G-Wolves Hati.
+	 *
+	 * To implement angle snapping toggling here: set last bit of buf[3] to
+	 * 1 or 0 to enable or disable accordingly.
 	 */
 	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
 
@@ -1127,8 +1133,16 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 		return rc;
 	}
 
-	log_info(device->ratbag, "Lift-off distance is high: %u\n", buf[2] - 1);
-	log_info(device->ratbag, "Angle snapping enabled: %u\n", buf[3]);
+	log_info(device->ratbag, "Lift-off distance: %s\n", buf[2] & 0b10 ? "high" : "low");
+	log_info(device->ratbag, "buf[2] unknown bit: %u\n", buf[2] & 0b1);
+	if ((buf[2] & ~0b11) != 0) {
+		log_info(device->ratbag, "buf[2] also has something else, full raw value: %u\n", buf[2]);
+	}
+
+	log_info(device->ratbag, "Angle snapping: %s\n", buf[3] & 0b1 ? "on" : "off");
+	if ((buf[1] & ~0b1) != 0) {
+		log_info(device->ratbag, "buf[3] also has something else, full raw value: %u\n", buf[3]);
+	}
 
 	return 0;
 }
