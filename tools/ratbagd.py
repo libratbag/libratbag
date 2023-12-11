@@ -745,7 +745,7 @@ class RatbagdResolution(_RatbagdDBus):
         res: Union[int, Tuple[int, int]]
     ) -> Union[Tuple[int], Tuple[int, int]]:
         """
-        Convert resolution from what D-Bus API retuns - either an int or a tuple of two ints, to a tuple of either one or two ints.
+        Convert resolution from what D-Bus API returns - either an int or a tuple of two ints, to a tuple of either one or two ints.
         """
         if isinstance(res, int):
             return (res,)
