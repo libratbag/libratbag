@@ -422,8 +422,8 @@ executable('ratbagd.devel',
 	   include_directories : include_directories('src'),
 	   install : false,
 	   c_args : ['-DRATBAG_DBUS_INTERFACE="ratbag_devel1"',
-		     '-DDBUS_POLICY_SRC="@0@/@1@"'.format(project_build_root, dbus_devel_policy),
-		     '-DDBUS_POLICY_DST="@0@/@1@"'.format(dbussystemdir, dbus_devel_policy),
+		     '-DDBUS_POLICY_SRC="@0@/@1@"'.format(project_build_root, 'org.freedesktop.ratbag_devel1.conf'),
+		     '-DDBUS_POLICY_DST="@0@/@1@"'.format(dbussystemdir, 'org.freedesktop.ratbag_devel1.conf'),
 		     '-DDISABLE_COREDUMP=1'],
 )
 
