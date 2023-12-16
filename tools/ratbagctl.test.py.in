@@ -29,6 +29,7 @@ import os
 import resource
 import subprocess
 import sys
+import time
 import toolbox
 import unittest
 
@@ -94,6 +95,8 @@ class TestRatbagCtl(unittest.TestCase):
         error = sys.stderr.getvalue()
         sys.stdout = stdout
         sys.stderr = stderr
+        # Small delay as we may not get an updated state on time from ratbagd.
+        time.sleep(0.001)
         toolbox.sync_dbus()
         return returncode, output.rstrip("\n"), error.rstrip("\n")
 
