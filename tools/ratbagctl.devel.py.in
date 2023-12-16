@@ -74,6 +74,8 @@ def main(argv, start_ratbagd=True):
                         time.sleep(0.5)
                     except RatbagCapabilityError as e:
                         print(f"Error: {e}", file=sys.stderr)
+                    except ValueError as e:
+                        print(f"Error: {e}", file=sys.stderr)
     finally:
         try:
             if cmd.keepalive:

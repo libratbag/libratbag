@@ -1977,7 +1977,7 @@ def main(argv: List[str]) -> None:
     cmd = parser.parse(argv)
     if cmd.help:
         parser.print_help()
-        return
+        return 0
 
     _r = open_ratbagd(verbose=cmd.verbose)
     if _r is not None:
@@ -1986,13 +1986,19 @@ def main(argv: List[str]) -> None:
                 f = cmd.func
             except AttributeError:
                 parser.print_help()
-                return
+                return 2
             else:
                 try:
                     f(r, cmd)
                 except RatbagCapabilityError as e:
                     print(f"Error: {e}", file=sys.stderr)
+                    return 1
+                except ValueError as e:
+                    print(f"Error: {e}", file=sys.stderr)
+                    return 2
+    return 0
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    ret = main(sys.argv[1:])
+    sys.exit(ret)

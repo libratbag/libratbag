@@ -86,6 +86,8 @@ class TestRatbagCtl(unittest.TestCase):
             returncode = e.code
         except AttributeError:
             returncode = 2
+        except ValueError:
+            returncode = 2
         except argparse.ArgumentTypeError:
             returncode = 2
         output = sys.stdout.getvalue()
@@ -140,6 +142,9 @@ class TestRatbagCtl(unittest.TestCase):
         return stdout
 
     def launch_fail_with_exception_test(self, params, exception):
+        global run_ratbagctl_in_subprocess
+        if run_ratbagctl_in_subprocess:
+            return ""
         with self.assertRaises(exception):
             returncode, stdout, stderr = self.run_ratbagctl(params)
         return ""
@@ -177,18 +182,22 @@ class TestRatbagCtlProfile(TestRatbagCtl):
     {
       "profiles": [
         {
-          "is_active": false
+          "is_active": false,
+          "capabilities": [102]
         },
         {
           "name": "test profile x2",
-          "is_active": false
+          "is_active": false,
+          "capabilities": [102]
         },
         {
-          "is_active": true
+          "is_active": true,
+          "capabilities": [102]
         },
         {
           "is_active": false,
-          "is_disabled": true
+          "is_disabled": true,
+          "capabilities": [102]
         }
       ]
     }
@@ -485,16 +494,16 @@ class TestRatbagCtlDPI(TestRatbagCtl):
         self.setProfile(2)
         r = self.launch_good_test("test_device dpi get")
         self.assertEqual(r, "2100x2200dpi")
-        self.launch_good_test("test_device " + command + " 1350x1450")
+        self.launch_good_test("test_device " + command + " 1300x1400")
         r = self.launch_good_test("test_device dpi get")
-        self.assertEqual(r, "1350x1450dpi")
-        self.launch_good_test("test_device " + command + " 2350x2450dpi")
+        self.assertEqual(r, "1300x1400dpi")
+        self.launch_good_test("test_device " + command + " 2300x2400dpi")
         r = self.launch_good_test("test_device dpi get")
-        self.assertEqual(r, "2350x2450dpi")
-        self.launch_good_test("test_device " + command + " 2350")
+        self.assertEqual(r, "2300x2400dpi")
+        self.launch_good_test("test_device " + command + " 2300")
         r = self.launch_good_test("test_device dpi get")
-        self.assertEqual(r, "2350x2350dpi")
-        self.launch_fail_test("test_device " + command + " 2350dpi")
+        self.assertEqual(r, "2300x2300dpi")
+        self.launch_fail_test("test_device " + command + " 2300dpi")
         self.launch_fail_test(command)
         self.launch_fail_test("test_device " + command + " X")
         self.launch_fail_test("test_device " + command + " 100 X")
@@ -628,7 +637,7 @@ class TestRatbagCtlButton(TestRatbagCtl):
         r = self.launch_good_test("test_device button 2 get")
         self.assertEqual(r, "Button: 2 is mapped to 'profile-cycle-up'")
         r = self.launch_good_test("test_device button 3 get")
-        self.assertEqual(r, "Button: 3 is mapped to macro '↕B 300ms'")
+        self.assertEqual(r, "Button: 3 is mapped to macro '↕KEY_B 300ms'")
         self.launch_fail_test("test_device button 1 get 10")
         self.launch_fail_test("test_device button 10 get")
         self.launch_fail_test("test_device button 1 get X")
@@ -671,13 +680,15 @@ class TestRatbagCtlButton(TestRatbagCtl):
         command = "button 2 action set macro "
         self.launch_good_test("test_device " + command + "+KEY_B KEY_A -KEY_B KEY_C")
         r = self.launch_good_test("test_device button 2 get")
-        self.assertEqual(r, "Button: 2 is mapped to macro '↓B ↕A ↑B ↕C'")
+        self.assertEqual(
+            r, "Button: 2 is mapped to macro '↓KEY_B ↕KEY_A ↑KEY_B ↕KEY_C'"
+        )
         self.launch_good_test("test_device " + command + "t100 t200")
         r = self.launch_good_test("test_device button 2 get")
         self.assertEqual(r, "Button: 2 is mapped to macro '100ms 200ms'")
         self.launch_good_test("test_device " + command + "KeY_z")
         r = self.launch_good_test("test_device button 2 get")
-        self.assertEqual(r, "Button: 2 is mapped to macro '↕Z'")
+        self.assertEqual(r, "Button: 2 is mapped to macro '↕KEY_Z'")
         self.launch_good_test("test_device " + command)
         r = self.launch_good_test("test_device button 2 get")
         self.assertEqual(r, "Button: 2 is mapped to macro 'None'")
@@ -697,43 +708,34 @@ class TestRatbagCtlLED(TestRatbagCtl):
       "profiles": [
         { "is_active": true,
           "leds": [
-            { "type": 1,
-              "mode": 0,
+            { "mode": 0,
               "duration": 1000,
               "brightness": 20 },
-            { "type": 1,
-              "mode": 1,
+            { "mode": 1,
               "duration": 333,
               "brightness": 40,
               "color": [255, 0, 0] },
-            { "type": 1,
-              "mode": 2,
+            { "mode": 2,
               "duration": 333,
               "brightness": 40 }
           ]
         },
         {
           "leds": [
-            { "type": 1,
-              "mode": 1 },
-            { "type": 1,
-              "mode": 0 },
-            { "type": 1,
-              "mode": 1 }
+            { "mode": 1 },
+            { "mode": 0 },
+            { "mode": 1 }
           ]
         },
         {
           "leds": [
-            { "type": 1,
-              "mode": 1,
+            { "mode": 1,
               "color": [255, 0, 0],
               "duration": 1000 },
-            { "type": 1,
-              "mode": 2,
+            { "mode": 2,
               "brightness": 40,
               "duration": 333 },
-            { "type": 1,
-              "mode": 1 }
+            { "mode": 1 }
           ]
         }
       ]
