@@ -21,7 +21,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import imp
+import importlib.util
+import importlib.machinery
 import os
 import subprocess
 import sys
@@ -45,10 +46,13 @@ def import_non_standard_path(name, path):
     # If any of the following calls raises an exception,
     # there's a problem we can't handle -- let the caller handle it.
 
-    with open(path, "rb") as fp:
-        return imp.load_module(
-            name, fp, os.path.basename(path), (".py", "rb", imp.PY_SOURCE)
-        )
+    loader = importlib.machinery.SourceFileLoader(name, path)
+    spec = importlib.util.spec_from_file_location(name, path, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    loader.exec_module(module)
+
+    return module
 
 
 def start_ratbagd(verbosity=0):
@@ -111,7 +115,7 @@ def sync_dbus():
         main_context.iteration(False)
 
 
-ratbagctl = import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
+import_non_standard_path(RATBAGCTL_NAME, RATBAGCTL_PATH)
 
 from ratbagctl import (  # noqa: E402
     RatbagError,
