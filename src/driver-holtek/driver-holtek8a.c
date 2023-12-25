@@ -501,6 +501,7 @@ holtek8a_upload_profile(struct ratbag_profile *profile)
 	unsigned int active_resolution = 0;
 	unsigned int dpi;
 	unsigned int resolution_count = 0;
+	unsigned int i = 0;
 	int rc;
 	uint16_t raw;
 	bool resolution_dirty = false;
@@ -526,6 +527,16 @@ holtek8a_upload_profile(struct ratbag_profile *profile)
 		raw = holtek8_dpi_to_raw(device, dpi);
 
 		resolution_config.dpi_val[resolution_count - 1] = raw;
+	}
+
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		if (!resolution->is_disabled)
+			continue;
+
+		dpi = resolution->dpi_x;
+		raw = holtek8_dpi_to_raw(device, dpi);
+
+		resolution_config.dpi_val[resolution_count + i++] = raw;
 	}
 
 	if (resolution_dirty) {
