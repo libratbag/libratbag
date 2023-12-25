@@ -80,7 +80,7 @@ holtek8a_encrypt(struct ratbag_device *device, struct holtek8_feature_report *re
 }
 
 /*
- * Decrytps a feature report using device's obfuscation algorithm
+ * Decrypts a feature report using device's obfuscation algorithm
  * if the password is set.
  */
 static void
@@ -556,7 +556,7 @@ holtek8a_upload_profile(struct ratbag_profile *profile)
 	if (profile->rate_dirty) {
 		rc = holtek8a_set_active_rate(device, profile->hz);
 		if (rc < 0) {
-			log_error(device->ratbag, "Failed to get active rate: %s\n", strerror(-rc));
+			log_error(device->ratbag, "Failed to set active rate: %s\n", strerror(-rc));
 			return rc;
 		}
 	}

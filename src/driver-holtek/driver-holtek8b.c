@@ -377,7 +377,7 @@ holtek8b_download_profile(struct ratbag_profile *profile)
 	 * For now. More testing is needed until we support disabling profiles
 	 * and no official software does it anyway so they should all be enabled.
 	 */
-	if (profile->index == 0 && (profile_data.enabled_profiles |
+	if (profile->index == 0 && (profile_data.enabled_profiles &
 		BITMASK(HOLTEK8B_PROFILE_COUNT)) != BITMASK(HOLTEK8B_PROFILE_COUNT)) {
 		log_error(device->ratbag, "Unexpected enabled profiles value: %#x\n", profile_data.enabled_profiles);
 		return -EINVAL;

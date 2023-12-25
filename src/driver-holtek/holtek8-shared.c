@@ -1074,7 +1074,7 @@ holtek8_read_padded(struct ratbag_device *device, uint8_t *buf, uint8_t len, str
 }
 
 /*
- * Wrtie a padded chunk with `len` bytes of data to device.
+ * Write a padded chunk with `len` bytes of data to device.
  *
  * The write is initiated with SET report with a command
  * and parameters (by the caller). Polls before a write.
