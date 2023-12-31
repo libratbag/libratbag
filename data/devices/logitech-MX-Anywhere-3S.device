@@ -1,0 +1,6 @@
+# Logitech MX Anywhere 3S
+[Device]
+Name=Logitech MX Anywhere 3S
+DeviceMatch=bluetooth:046d:b037
+DeviceType=mouse
+Driver=hidpp20
