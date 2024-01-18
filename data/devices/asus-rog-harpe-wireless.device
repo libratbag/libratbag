@@ -1,0 +1,13 @@
+[Device]
+Name=ASUS ROG Harpe Wireless
+DeviceMatch=usb:0b05:1a92
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=5
+Buttons=5
+Leds=1
+Dpis=4
+Wireless=1
+DpiRange=100:36000@50
