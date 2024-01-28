@@ -197,7 +197,7 @@ static const struct holtek8_modifier_mapping holtek8_modifier_map[] = {
  * @return 0 on success or a negative errno.
  */
 static int
-holtek8_read_macro_data(struct ratbag_device *device, struct holtek8_macro_event *macro_events, uint8_t macro_idx)
+holtek8_read_macro_data(struct ratbag_device *device, union holtek8_macro_event *macro_events, uint8_t macro_idx)
 {
 	int rc;
 	struct holtek8_data *drv_data = device->drv_data;
@@ -225,17 +225,16 @@ holtek8_read_macro_data(struct ratbag_device *device, struct holtek8_macro_event
 		return rc;
 
 	while (events_i < HOLTEK8_MAX_MACRO_EVENTS) {
-		struct holtek8_macro_event *ev = &macro_data.event[data_i];
-		uint8_t *ev_data = (uint8_t*) ev;
+		union holtek8_macro_event *ev = &macro_data.event[data_i];
 
-		if (ev_data[0] == 0 && ev_data[1] == 0) {
+		if (ev->argument == 0 && ev->command == 0) {
 			return 0; // macro terminator reached
 		}
-		if (ev_data[1] == HOLTEK8_MACRO_CMD_JUMP) {
+		if (ev->command == HOLTEK8_MACRO_CMD_JUMP) {
 			if (single_page_macros)
 				return 0;
 
-			report.arg[0] = ev_data[0];
+			report.arg[0] = ev->argument;
 			rc = holtek8_set_feature_report(device, &report);
 			if (rc < 0)
 				return rc;
@@ -267,7 +266,7 @@ holtek8_read_macro_data(struct ratbag_device *device, struct holtek8_macro_event
  * @return An index of a first page on success or a negative errno.
  */
 static int
-holtek8_write_macro_data(struct ratbag_device *device, struct holtek8_macro_event *macro_events)
+holtek8_write_macro_data(struct ratbag_device *device, union holtek8_macro_event *macro_events)
 {
 	int rc;
 	struct holtek8_data *drv_data = device->drv_data;
@@ -313,12 +312,11 @@ holtek8_write_macro_data(struct ratbag_device *device, struct holtek8_macro_even
 		return -ENOMEM;
 
 	while (events_i < events_to_write) {
-		struct holtek8_macro_event *ev = &macro_data.event[data_i];
-		uint8_t *ev_data = (uint8_t*) ev;
+		union holtek8_macro_event *ev = &macro_data.event[data_i];
 
 		if (data_i == (ARRAY_LENGTH(macro_data.event) - 1)) {
-			ev_data[0] = drv_data->macro_index + 1;
-			ev_data[1] = HOLTEK8_MACRO_CMD_JUMP;
+			ev->argument = drv_data->macro_index + 1;
+			ev->command = HOLTEK8_MACRO_CMD_JUMP;
 
 			assert(drv_data->macro_index <= max_macro_index && drv_data->macro_index > 0);
 			report.arg[0] = drv_data->macro_index++;
@@ -493,11 +491,11 @@ holtek8_keycodes_from_ratbag_macro(const struct ratbag_button_action *action, un
 /*
  * Converts raw macro events to ratbag macro and writes to a button
  *
- * @param raw A buffer of macro events at least HOLTEK8_MAX_MACRO_EVENTS of size
+ * @param macro_events A buffer of macro events at least HOLTEK8_MAX_MACRO_EVENTS of size
  * @return 0 on success or a negative errno.
  */
 static int
-holtek8_macro_from_events(struct ratbag_button *button, const struct holtek8_macro_event *raw)
+holtek8_macro_from_events(struct ratbag_button *button, const union holtek8_macro_event *macro_events)
 {
 	struct ratbag_device *device = button->profile->device;
 	struct holtek8_data *drv_data = device->drv_data;
@@ -520,16 +518,16 @@ holtek8_macro_from_events(struct ratbag_button *button, const struct holtek8_mac
 	button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 
 	for (i = 0; i < HOLTEK8_MAX_MACRO_EVENTS; i++) {
-		const struct holtek8_macro_event *event = &raw[i];
+		const union holtek8_macro_event *event = &macro_events[i];
 
-		if (event->delay == 0 && event->release == 0 && event->key == 0)
+		if (event->command == 0 && event->argument == 0)
 			break;
 
 		if (macro_i >= MAX_MACRO_EVENTS)
 			goto overflow;
 
-		if (event->key == HOLTEK8_MACRO_CMD_WAIT) {
-			if (event->delay != 0 || event->release != 0) {
+		if (event->command == HOLTEK8_MACRO_CMD_WAIT) {
+			if (event->argument != 0) {
 				rc = -EINVAL;
 				goto err;
 			}
@@ -538,10 +536,10 @@ holtek8_macro_from_events(struct ratbag_button *button, const struct holtek8_mac
 				goto err;
 			}
 
-			delay += get_unaligned_be_u16((uint8_t*) &raw[i]) * 2;
+			delay += get_unaligned_be_u16(macro_events[i].data) * 2;
 			continue;
 		}
-		if (event->key == HOLTEK8_MACRO_CMD_MOUSE) {
+		if (event->command == HOLTEK8_MACRO_CMD_MOUSE) {
 			//no support in ratbag for mouse movements in macros
 			i += 1;
 			continue;
@@ -583,11 +581,11 @@ err:
 /*
  * Reads ratbag macro from a button and converts to raw macro events
  *
- * @param raw A buffer of macro events at least HOLTEK8_MAX_MACRO_EVENTS of size
+ * @param macro_events A buffer of macro events at least HOLTEK8_MAX_MACRO_EVENTS of size
  * @return Number of events on success or a negative errno.
  */
 static int
-holtek8_macro_to_events(const struct ratbag_button *button, struct holtek8_macro_event *raw)
+holtek8_macro_to_events(const struct ratbag_button *button, union holtek8_macro_event *macro_events)
 {
 	const struct ratbag_device *device = button->profile->device;
 	const struct holtek8_data *drv_data = device->drv_data;
@@ -627,8 +625,9 @@ holtek8_macro_to_events(const struct ratbag_button *button, struct holtek8_macro
 					if (raw_delay == 0)
 						raw_delay = 1;
 
-					raw[event_i++].key = HOLTEK8_MACRO_CMD_WAIT;
-					set_unaligned_be_u16((uint8_t*) &raw[event_i++], raw_delay);
+					macro_events[event_i].command = HOLTEK8_MACRO_CMD_WAIT;
+					macro_events[event_i++].argument = 0;
+					set_unaligned_be_u16(macro_events[event_i++].data, raw_delay);
 					delay = 0;
 				}
 				else if (delay != 0) {
@@ -637,18 +636,19 @@ holtek8_macro_to_events(const struct ratbag_button *button, struct holtek8_macro
 						if (raw_delay == 0)
 							raw_delay = 1;
 
-						raw[event_i-1].delay = raw_delay;
+						macro_events[event_i-1].delay = raw_delay;
 					}
 					else {
 						raw_delay = delay / (2 * delay_base_ms);
-						raw[event_i++].key = HOLTEK8_MACRO_CMD_WAIT;
-						set_unaligned_be_u16((uint8_t*) &raw[event_i++], raw_delay);
+						macro_events[event_i].command = HOLTEK8_MACRO_CMD_WAIT;
+						macro_events[event_i++].argument = 0;
+						set_unaligned_be_u16(macro_events[event_i++].data, raw_delay);
 					}
 					delay = 0;
 				}
 
-				raw[event_i].release = ratbag_ev->type == RATBAG_MACRO_EVENT_KEY_RELEASED;
-				raw[event_i].delay = 1;
+				macro_events[event_i].release = ratbag_ev->type == RATBAG_MACRO_EVENT_KEY_RELEASED;
+				macro_events[event_i].delay = 1;
 
 				switch (ratbag_ev->event.key) {
 					case BTN_LEFT:   key = HOLTEK8_BUTTON_MOUSE_LEFT; break;
@@ -662,7 +662,7 @@ holtek8_macro_to_events(const struct ratbag_button *button, struct holtek8_macro
 				if (key == 0)
 					return -EINVAL;
 
-				raw[event_i].key = key;
+				macro_events[event_i].key = key;
 				event_i += 1;
 				break;
 			case RATBAG_MACRO_EVENT_WAIT:
@@ -718,7 +718,7 @@ holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_butt
 			break;
 		}
 		case HOLTEK8_BUTTON_TYPE_MACRO: {
-			struct holtek8_macro_event macro_events[HOLTEK8_MAX_MACRO_EVENTS] = {0};
+			union holtek8_macro_event macro_events[HOLTEK8_MAX_MACRO_EVENTS] = {0};
 
 			rc = holtek8_read_macro_data(device, macro_events, data->macro.index);
 			if (rc == -EOVERFLOW)
@@ -782,7 +782,7 @@ holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button
 
 			rc = holtek8_keycodes_from_ratbag_macro(&button->action, &key1, &key2, &modifiers);
 			if (rc == -EPROTO) {
-				struct holtek8_macro_event macro_events[HOLTEK8_MAX_MACRO_EVENTS] = {0};
+				union holtek8_macro_event macro_events[HOLTEK8_MAX_MACRO_EVENTS] = {0};
 
 				rc = holtek8_macro_to_events(button, macro_events);
 				if (rc < 0)

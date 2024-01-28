@@ -172,12 +172,19 @@ struct holtek8_button_data {
 } __attribute__((packed));
 _Static_assert(sizeof(struct holtek8_button_data) == HOLTEK8_BUTTON_SIZE, "Invalid size");
 
-struct holtek8_macro_event {
-	uint8_t delay : 7; // at least 1
-	uint8_t release : 1;
-	uint8_t key;
-} __attribute__((packed));
-_Static_assert(sizeof(struct holtek8_macro_event) == HOLTEK8_MACRO_EVENT_SIZE, "Invalid size");
+union holtek8_macro_event {
+	struct {
+		uint8_t delay : 7; // at least 1
+		uint8_t release : 1;
+		uint8_t key;
+	} __attribute__((packed));
+	struct {
+		uint8_t argument;
+		uint8_t command;
+	} __attribute__((packed));
+	uint8_t data[HOLTEK8_MACRO_EVENT_SIZE];
+};
+_Static_assert(sizeof(union holtek8_macro_event) == HOLTEK8_MACRO_EVENT_SIZE, "Invalid size");
 
 struct holtek8_rgb {
 	uint8_t r;
@@ -188,7 +195,7 @@ _Static_assert(sizeof(struct holtek8_rgb) == 3, "Invalid size");
 
 struct holtek8_macro_data {
 	uint8_t repeat_count[2]; //big-endian
-	struct holtek8_macro_event event[62];
+	union holtek8_macro_event event[62];
 	uint8_t _padding[2];
 } __attribute__((packed));
 _Static_assert(sizeof(struct holtek8_macro_data) == HOLTEK8_MACRO_DATA_SIZE, "Invalid size");
