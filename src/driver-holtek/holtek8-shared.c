@@ -908,47 +908,6 @@ holtek8_poll_write_ready(struct ratbag_device *device, uint8_t bytes_left)
 }
 
 /*
- * Clears hidraw's read buffer.
- * Prevents reading incorrect data if there was another
- * configuration program before us.
- *
- * @return Number of chunks of data cleared or a negative errno.
- */
-static int
-holtek8_clear_read_buffer(struct ratbag_device *device)
-{
-	struct holtek8_data *drv_data = device->drv_data;
-	uint8_t chunk_size = drv_data->chunk_size;
-	int rc, nfds;
-	struct pollfd fds;
-	uint8_t tmp_buf[HOLTEK8_MAX_CHUNK_SIZE + 1];
-	int chunks_cleared = 0;
-
-	assert(HOLTEK8_MAX_CHUNK_SIZE >= chunk_size);
-
-	fds.fd = device->hidraw[0].fd;
-	fds.events = POLLIN;
-
-	while (1) {
-		nfds = poll(&fds, 1, 0);
-
-		if (nfds < 0)
-			return -errno;
-		if (nfds > 0) {
-			rc = (int)read(device->hidraw[0].fd, tmp_buf, chunk_size);
-
-			if (rc < 0)
-				return -errno;
-
-			chunks_cleared++;
-		}
-		else {
-			return chunks_cleared;
-		}
-	}
-}
-
-/*
  * Read `len` bytes in chunks from device.
  *
  * These devices don't use numbered reports for configuration
@@ -974,7 +933,7 @@ holtek8_read_chunked(struct ratbag_device *device, uint8_t *buf, uint8_t len, st
 	if (response == NULL)
 		response = &tmp;
 
-	rc = holtek8_clear_read_buffer(device);
+	rc = ratbag_hidraw_clear_read_buffer(device);
 	if (rc < 0)
 		return rc;
 
@@ -1063,7 +1022,7 @@ holtek8_read_padded(struct ratbag_device *device, uint8_t *buf, uint8_t len, str
 	if (response == NULL)
 		response = &tmp;
 
-	rc = holtek8_clear_read_buffer(device);
+	rc = ratbag_hidraw_clear_read_buffer(device);
 	if (rc < 0)
 		return rc;
 
