@@ -551,7 +551,8 @@ holtek8_macro_from_events(struct ratbag_button *button, const union holtek8_macr
 			continue;
 		}
 		if (event->command == HOLTEK8_MACRO_CMD_MOUSE) {
-			//no support in ratbag for mouse movements in macros
+			// TODO: No support in ratbag for mouse movements in macros
+			log_debug(device->ratbag, "Skipping mouse movement macro event in button %u.\n", button->index);
 			i += 1;
 			continue;
 		}
@@ -732,8 +733,10 @@ holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_butt
 			union holtek8_macro_event macro_events[HOLTEK8_MAX_MACRO_EVENTS] = {0};
 
 			rc = holtek8_read_macro_data(device, macro_events, HOLTEK8_MAX_MACRO_EVENTS, data->macro.index);
-			if (rc == -EOVERFLOW)
+			if (rc == -EOVERFLOW) {
+				log_info(device->ratbag, "Device macro in button %u is too big, skipping.\n", button->index);
 				return 0;
+			}
 			if (rc < 0)
 				return rc;
 
