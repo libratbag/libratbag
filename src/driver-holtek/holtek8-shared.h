@@ -40,7 +40,7 @@ struct holtek8_data {
 	const struct holtek8_sensor_config *sensor_cfg;
 	uint8_t chunk_size;
 	int button_count;
-	uint8_t macro_index;
+	uint8_t allocated_pages[16][8];
 
 	union {
 		struct {
@@ -211,6 +211,9 @@ holtek8_dpi_to_raw(struct ratbag_device *device, unsigned int dpi);
 
 unsigned int
 holtek8_raw_to_dpi(struct ratbag_device *device, uint16_t raw);
+
+void
+holtek8_macro_page_clear_alloc(struct ratbag_button *button);
 
 int
 holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_button_data *data);

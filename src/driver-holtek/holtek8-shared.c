@@ -188,6 +188,93 @@ static const struct holtek8_modifier_mapping holtek8_modifier_map[] = {
 	{ HOLTEK8_MODIFIER_RIGHTMETA, KEY_RIGHTMETA },
 };
 
+void
+holtek8_macro_page_clear_alloc(struct ratbag_button *button)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct holtek8_data *drv_data = device->drv_data;
+
+	assert(button->index < ARRAY_LENGTH(drv_data->allocated_pages));
+	memset(drv_data->allocated_pages[button->index], 0,
+	       ARRAY_LENGTH(drv_data->allocated_pages[0]));
+}
+
+static int
+holtek8_macro_page_mark_allocated(const struct ratbag_button *button, uint8_t page)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct holtek8_data *drv_data = device->drv_data;
+	bool alloc_done = false;
+	size_t i;
+
+	assert(page > 0);
+	assert(button->index < ARRAY_LENGTH(drv_data->allocated_pages));
+
+	for (i = 0; i < ARRAY_LENGTH(drv_data->allocated_pages[0]); i++) {
+		if (drv_data->allocated_pages[button->index][i] == page)
+			return -EOVERFLOW;
+
+		if (drv_data->allocated_pages[button->index][i] == 0) {
+			drv_data->allocated_pages[button->index][i] = page;
+			alloc_done = true;
+			break;
+		}
+	}
+
+	if (!alloc_done)
+		return -EOVERFLOW;
+
+	return (int)page;
+}
+
+static int
+holtek8_macro_alloc_page(const struct ratbag_button *button)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct holtek8_data *drv_data = device->drv_data;
+	unsigned int max_macro_index;
+	uint8_t page;
+	size_t i,j;
+	bool allocated[64] = {0};
+
+	switch (drv_data->api_version) {
+		case HOLTEK8_API_A:
+			max_macro_index = HOLTEK8A_MAX_MACRO_INDEX;
+			_Static_assert(HOLTEK8A_MAX_MACRO_INDEX < ARRAY_LENGTH(allocated), "");
+			break;
+		case HOLTEK8_API_B:
+			max_macro_index = HOLTEK8B_MAX_MACRO_INDEX;
+			_Static_assert(HOLTEK8B_MAX_MACRO_INDEX < ARRAY_LENGTH(allocated), "");
+			break;
+	}
+
+	assert(button->index < ARRAY_LENGTH(drv_data->allocated_pages));
+
+	for (i = 0; i < ARRAY_LENGTH(drv_data->allocated_pages); i++) {
+		for (j = 0; j < ARRAY_LENGTH(drv_data->allocated_pages[0]); j++) {
+			page = drv_data->allocated_pages[i][j];
+			if (page == 0)
+				break;
+			if (page > 0 && page <= max_macro_index)
+				allocated[page-1] = true;
+		}
+	}
+
+	page = 0;
+	for (i = 0; i < max_macro_index; i++) {
+		if (!allocated[i]) {
+			page = i+1;
+			break;
+		}
+	}
+
+	if (page == 0)
+		return -ENOMEM;
+
+	assert(page <= max_macro_index);
+	return holtek8_macro_page_mark_allocated(button, page);
+}
+
 /*
  * Reads macro events from the device memory.
  *
@@ -200,9 +287,10 @@ static const struct holtek8_modifier_mapping holtek8_modifier_map[] = {
  * @return 0 on success or a negative errno.
  */
 static int
-holtek8_read_macro_data(struct ratbag_device *device, union holtek8_macro_event *macro_events, size_t macro_events_size, uint8_t macro_idx)
+holtek8_read_macro_data(struct ratbag_button *button, union holtek8_macro_event *macro_events, size_t macro_events_size, uint8_t macro_idx)
 {
 	int rc;
+	struct ratbag_device *device = button->profile->device;
 	struct holtek8_data *drv_data = device->drv_data;
 	struct holtek8_feature_report report = {0, 0, {macro_idx}, 0};
 	struct holtek8_macro_data macro_data;
@@ -227,6 +315,10 @@ holtek8_read_macro_data(struct ratbag_device *device, union holtek8_macro_event 
 	if (rc < 0)
 		return rc;
 
+	rc = holtek8_macro_page_mark_allocated(button, macro_idx);
+	if (rc < 0)
+		return rc;
+
 	while (events_i < macro_events_size) {
 		union holtek8_macro_event *ev = &macro_data.event[data_i];
 
@@ -236,6 +328,10 @@ holtek8_read_macro_data(struct ratbag_device *device, union holtek8_macro_event 
 		if (ev->command == HOLTEK8_MACRO_CMD_JUMP) {
 			if (single_page_macros)
 				return 0;
+
+			rc = holtek8_macro_page_mark_allocated(button, ev->argument);
+			if (rc < 0)
+				return rc;
 
 			report.arg[0] = ev->argument;
 			rc = holtek8_set_feature_report(device, &report);
@@ -271,28 +367,26 @@ holtek8_read_macro_data(struct ratbag_device *device, union holtek8_macro_event 
  * @return An index of a first page on success or a negative errno.
  */
 static int
-holtek8_write_macro_data(struct ratbag_device *device, union holtek8_macro_event *macro_events, size_t macro_events_size)
+holtek8_write_macro_data(const struct ratbag_button *button, union holtek8_macro_event *macro_events, size_t macro_events_size)
 {
 	int rc;
+	struct ratbag_device *device = button->profile->device;
 	struct holtek8_data *drv_data = device->drv_data;
 	struct holtek8_feature_report report = {0};
 	struct holtek8_macro_data macro_data = { .repeat_count = {0,1} };
 	size_t i, data_i = 0, events_i = 0;
-	unsigned int max_macro_index;
 	unsigned int events_to_write = 0;
-	unsigned int free_pages, pages_to_write;
-	uint8_t first_page = drv_data->macro_index;
+	unsigned int pages_to_write;
+	uint8_t first_page = 0, page_index;
 	bool single_page_macros = false;
 
 	switch (drv_data->api_version) {
 		case HOLTEK8_API_A:
 			report.command = HOLTEK8A_CMD_WRITE_MACRO_DATA;
-			max_macro_index = HOLTEK8A_MAX_MACRO_INDEX;
 			single_page_macros = true;
 			break;
 		case HOLTEK8_API_B:
 			report.command = HOLTEK8B_CMD_WRITE_MACRO_DATA;
-			max_macro_index = HOLTEK8B_MAX_MACRO_INDEX;
 			break;
 	}
 
@@ -309,7 +403,6 @@ holtek8_write_macro_data(struct ratbag_device *device, union holtek8_macro_event
 	if (events_to_write == 0 || events_to_write > HOLTEK8_MAX_MACRO_EVENTS)
 		return -EINVAL;
 
-	free_pages = max_macro_index - drv_data->macro_index + 1;
 	pages_to_write = events_to_write / (ARRAY_LENGTH(macro_data.event) - 1);
 
 	if (events_to_write % (ARRAY_LENGTH(macro_data.event) - 1) != 0)
@@ -318,18 +411,25 @@ holtek8_write_macro_data(struct ratbag_device *device, union holtek8_macro_event
 	if (single_page_macros && pages_to_write > 1)
 		return -ENOMEM;
 
-	if (pages_to_write > free_pages)
-		return -ENOMEM;
+	rc = holtek8_macro_alloc_page(button);
+	if (rc < 0)
+		return rc;
+	page_index = (uint8_t)rc;
+	first_page = page_index;
 
 	while (events_i < events_to_write) {
 		union holtek8_macro_event *ev = &macro_data.event[data_i];
 
 		if (data_i == (ARRAY_LENGTH(macro_data.event) - 1)) {
-			ev->argument = drv_data->macro_index + 1;
-			ev->command = HOLTEK8_MACRO_CMD_JUMP;
+			report.arg[0] = page_index;
 
-			assert(drv_data->macro_index <= max_macro_index && drv_data->macro_index > 0);
-			report.arg[0] = drv_data->macro_index++;
+			rc = holtek8_macro_alloc_page(button);
+			if (rc < 0)
+				return rc;
+			page_index = (uint8_t)rc;
+
+			ev->argument = page_index;
+			ev->command = HOLTEK8_MACRO_CMD_JUMP;
 
 			rc = holtek8_set_feature_report(device, &report);
 			if (rc < 0)
@@ -348,8 +448,7 @@ holtek8_write_macro_data(struct ratbag_device *device, union holtek8_macro_event
 		}
 	}
 
-	assert(drv_data->macro_index <= max_macro_index && drv_data->macro_index > 0);
-	report.arg[0] = drv_data->macro_index++;
+	report.arg[0] = page_index;
 
 	rc = holtek8_set_feature_report(device, &report);
 	if (rc < 0)
@@ -732,7 +831,7 @@ holtek8_button_from_data(struct ratbag_button *button, const struct holtek8_butt
 		case HOLTEK8_BUTTON_TYPE_MACRO: {
 			union holtek8_macro_event macro_events[HOLTEK8_MAX_MACRO_EVENTS] = {0};
 
-			rc = holtek8_read_macro_data(device, macro_events, HOLTEK8_MAX_MACRO_EVENTS, data->macro.index);
+			rc = holtek8_read_macro_data(button, macro_events, HOLTEK8_MAX_MACRO_EVENTS, data->macro.index);
 			if (rc == -EOVERFLOW) {
 				log_info(device->ratbag, "Device macro in button %u is too big, skipping.\n", button->index);
 				return 0;
@@ -802,7 +901,7 @@ holtek8_button_to_data(const struct ratbag_button *button, struct holtek8_button
 				if (rc < 0)
 					return rc;
 
-				rc = holtek8_write_macro_data(device, macro_events, HOLTEK8_MAX_MACRO_EVENTS);
+				rc = holtek8_write_macro_data(button, macro_events, HOLTEK8_MAX_MACRO_EVENTS);
 				if (rc < 0)
 					return rc;
 

@@ -467,6 +467,11 @@ holtek8b_upload_buttons(struct ratbag_profile *profile)
 		return rc;
 
 	ratbag_profile_for_each_button(profile, button) {
+		if (button->dirty)
+			holtek8_macro_page_clear_alloc(button);
+	}
+
+	ratbag_profile_for_each_button(profile, button) {
 		if (!button->dirty)
 			continue;
 
@@ -578,11 +583,8 @@ holtek8b_upload_profile(struct ratbag_profile *profile)
 static int
 holtek8b_commit(struct ratbag_device *device)
 {
-	struct holtek8_data *drv_data = device->drv_data;
 	struct ratbag_profile *profile;
 	int rc;
-
-	drv_data->macro_index = 1;
 
 	ratbag_device_for_each_profile(device, profile) {
 		if (!profile->dirty)
