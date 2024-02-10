@@ -411,7 +411,13 @@ hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	hidpp20_rgb_effects_get_device_info(drv_data->dev, &device_info);
 	cluster_info = drv_data->led_infos.color_leds_8071[led->index];
 	profile = &drv_data->profiles->profiles[led->profile->index];
-	h_led = &profile->leds[led->index];
+	if (drv_data->profiles->profile_format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G705 &&
+		drv_data->num_leds == 1) {
+		// On G705 the led effect is on the second led slot.
+		h_led = &profile->leds[1];
+	} else {
+		h_led = &profile->leds[led->index];
+	}
 
 	switch (h_led->mode) {
 	case HIDPP20_LED_ON:
@@ -689,7 +695,13 @@ hidpp20drv_update_led_8070_8071(struct ratbag_led *led, struct ratbag_profile* p
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 		h_profile = &drv_data->profiles->profiles[profile->index];
-		h_led = &(h_profile->leds[led->index]);
+		if (drv_data->profiles->profile_format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G705 &&
+			drv_data->num_leds == 1) {
+			// On G705 the effects need to be set on the second led slot.
+			h_led = &(h_profile->leds[1]);
+		} else {
+			h_led = &(h_profile->leds[led->index]);
+		}
 	}
 
 	if (!h_led)

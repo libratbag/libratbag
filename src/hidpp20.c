@@ -1798,10 +1798,6 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 #define HIDPP20_HOST_MODE				0x02
 
 #define HIDPP20_ONBOARD_PROFILES_MEMORY_TYPE_G402	0x01
-#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402	0x01
-#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
-#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
-#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915	0x04
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -2220,7 +2216,8 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G705)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -2285,6 +2282,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	profiles->has_g_shift = (info.mechanical_layout & 0x03) == 0x02;
 	profiles->has_dpi_shift = ((info.mechanical_layout & 0x0c) >> 2) == 0x02;
 	profiles->active_profile_index = active_profile_index;
+	profiles->profile_format_id = info.profile_format_id;
 	switch(info.various_info & 0x07) {
 	case 1:
 		profiles->corded = 1;
@@ -2958,6 +2956,10 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	hidpp20_buttons_from_cpu(profile, pdata->profile.buttons, profiles_list->num_buttons);
 
 	memcpy(pdata->profile.name.txt, profile->name, sizeof(profile->name));
+
+	// This field needs to be zero for leds to work in G705
+	// If a non zero value is set, custom animation will be used instead
+	pdata->profile.free[0] = 0x00;
 
 	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
 	if (rc < 0) {
