@@ -11,3 +11,12 @@ Buttons=6
 DeviceName=Machenike M620
 LedType=RGB
 SensorType=PMW3389
+
+# Configuration data size: 131 bytes.
+# https://github.com/libratbag/libratbag/pull/1587
+# https://maddog.pl/produkty/myszki/57,mad-dog-gm905
+[Driver/sinowealth/devices/V287]
+Buttons=14
+DeviceName=Mad Dog GM905
+LedType=RGB
+SensorType=PMW3389
