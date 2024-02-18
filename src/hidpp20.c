@@ -1827,7 +1827,8 @@ union hidpp20_internal_profile {
 		} name;
 		struct hidpp20_internal_led leds[2]; /* G303, g502, g900 only */
 		struct hidpp20_internal_led alt_leds[2];
-		uint8_t free[2];
+		uint8_t custom_animation_g705;
+		uint8_t free;
 		uint16_t crc;
 	} __attribute__((packed)) profile;
 };
@@ -2959,7 +2960,7 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 
 	// This field needs to be zero for leds to work in G705
 	// If a non zero value is set, custom animation will be used instead
-	pdata->profile.free[0] = 0x00;
+	pdata->profile.custom_animation_g705 = 0x00;
 
 	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
 	if (rc < 0) {
