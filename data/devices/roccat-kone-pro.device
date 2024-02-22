@@ -7,4 +7,4 @@ LedType=RGB
 Leds=2
 DpiRange=50:8000@10
 Profiles=5
-Buttons=7
+Buttons=8
