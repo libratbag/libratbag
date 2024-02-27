@@ -19,6 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from typing import Dict
 import libratbag
 import os
 import sys
@@ -155,7 +156,7 @@ class Ratbagd:
     def __init__(self, apiversion):
         os.environ["LIBRATBAG_DATA_DIR"] = LIBRATBAG_DATA_DIR
         self._ratbag = libratbag.ratbag_create_context(libratbag.interface, None)
-        self._devices = {}
+        self._devices: Dict[str, RatbagdDevice] = {}
         self._devices_initialized = False
 
     def _init_devices(self):
@@ -212,7 +213,7 @@ class Ratbagd:
             self._init_devices()
         return self._devices.values()
 
-    def __getitem__(self, id):
+    def __getitem__(self, id: str):
         """Returns the requested device, or None."""
         if id.startswith("hidraw"):
             id = f"/dev/{id}"
@@ -225,7 +226,7 @@ class Ratbagd:
             else:
                 self._devices[id] = dev
 
-        return self._devices[id] if id in self._devices else None
+        return self._devices.get(id, None)
 
     def set_verbose(self, verbose):
         if verbose > 2:
@@ -719,10 +720,8 @@ class RatbagdButton(metaclass=MetaRatbag):
                      the button, as RatbagdMacro.
         """
         macro_object = libratbag.ratbag_button_macro_new("macro")
-        i = 0
-        for type, value in macro.keys:
-            libratbag.ratbag_button_macro_set_event(macro_object, i, type, value)
-            i += 1
+        for i, (t, value) in enumerate(macro.keys):
+            libratbag.ratbag_button_macro_set_event(macro_object, i, t, value)
         libratbag.ratbag_button_set_macro(self._button, macro_object)
         libratbag.ratbag_button_macro_unref(macro_object)
 
