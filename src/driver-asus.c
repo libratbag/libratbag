@@ -117,7 +117,7 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
 			rc = asus_get_linux_key_code(asus_binding->action);
 			if (rc > 0) {
-				button->action.action.key.key = (unsigned int)rc;
+				button->action.action.key = (unsigned int)rc;
 			} else {
 				log_debug(device->ratbag, "Unknown button code %02x\n", asus_binding->action);
 			}
@@ -238,7 +238,7 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 
 		case RATBAG_BUTTON_ACTION_TYPE_KEY:
 			/* Linux code to ASUS code */
-			rc = asus_find_key_code(button->action.action.key.key);
+			rc = asus_find_key_code(button->action.action.key);
 			if (rc != -1) {
 				asus_code_dst = (uint8_t)rc;
 				rc = asus_set_button_action(

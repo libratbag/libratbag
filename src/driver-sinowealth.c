@@ -1443,7 +1443,7 @@ sinowealth_button_set_key_action(const struct ratbag_button *button, struct sino
 		return -EINVAL;
 	}
 
-	const unsigned int key = button->action.action.key.key;
+	const unsigned int key = button->action.action.key;
 	// libratbag does not support modifiers in simple key actions.
 	// We can can convert simple enough macros into key actions though, see
 	// sinowealth_button_key_action_from_simple_macro().

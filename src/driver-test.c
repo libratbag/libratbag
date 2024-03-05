@@ -61,7 +61,7 @@ test_read_button(struct ratbag_button *button)
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-		button->action.action.key.key = p->buttons[button->index].key;
+		button->action.action.key = p->buttons[button->index].key;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_MACRO;

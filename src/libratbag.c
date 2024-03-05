@@ -1385,7 +1385,7 @@ ratbag_button_get_key(const struct ratbag_button *button)
 	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_KEY)
 		return 0;
 
-	return button->action.action.key.key;
+	return button->action.action.key;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
@@ -1400,7 +1400,7 @@ ratbag_button_set_key(struct ratbag_button *button, unsigned int key)
 		return RATBAG_ERROR_CAPABILITY;
 
 	action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-	action.action.key.key = key;
+	action.action.key = key;
 
 	ratbag_button_set_action(button, &action);
 	button->dirty = true;

@@ -627,7 +627,7 @@ steelseries_write_buttons(struct ratbag_profile *profile)
 				msg.msg.parameters[idx + 1] = keyboard_code;
 			} else {
 				const uint16_t consumer_code = ratbag_hidraw_get_consumer_usage_from_keycode(
-						device, action->action.key.key);
+						device, action->action.key);
 				msg.msg.parameters[idx] = STEELSERIES_BUTTON_CONSUMER;
 				msg.msg.parameters[idx + 1] = (uint8_t)consumer_code;
 			}
