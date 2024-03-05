@@ -323,25 +323,25 @@ enum sinowealth_button_key_modifiers {
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_button_key_modifiers) == sizeof(uint8_t), "Invalid size");
 
-/* @return A single sinowealth_button_key_modifiers or -1. */
+/*
+ * @return 0 on success or a negative errno.
+ */
 static int
-sinowealth_button_key_modifier_from_evcode(unsigned int modifier_evcode)
+sinowealth_modifiers_to_raw(unsigned int modifiers)
 {
-	switch (modifier_evcode) {
-	case KEY_LEFTCTRL:
-		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTCTRL;
-	case KEY_LEFTSHIFT:
-		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTSHIFT;
-	case KEY_LEFTMETA:
-		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTMETA;
-	case KEY_LEFTALT:
-		return SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTALT;
-	default:
-		/* Handled below. */
-		break;
-	}
-	// TODO: should log a warning here.
-	return -1;
+	uint8_t raw_modifiers = 0;
+	if (modifiers & MODIFIER_LEFTCTRL)
+		raw_modifiers |= SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTCTRL;
+	if (modifiers & MODIFIER_LEFTSHIFT)
+		raw_modifiers |= SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTSHIFT;
+	if (modifiers & MODIFIER_LEFTALT)
+		raw_modifiers |= SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTALT;
+	if (modifiers & MODIFIER_LEFTMETA)
+		raw_modifiers |= SINOWEALTH_BUTTON_KEY_MODIFIER_LEFTMETA;
+	if (modifiers & MODIFIER_RIGHTCTRL || modifiers & MODIFIER_RIGHTSHIFT ||
+	    modifiers & MODIFIER_RIGHTALT || modifiers & MODIFIER_RIGHTMETA)
+		return -EINVAL;
+	return raw_modifiers;
 }
 
 enum sinowealth_button_macro_mode {
@@ -1473,47 +1473,23 @@ sinowealth_button_key_action_from_simple_macro(
 	const struct ratbag_button *button,
 	uint8_t *key_out, uint8_t *modifiers_out)
 {
-	struct ratbag_device *device = button->profile->device;
-	if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_MACRO) {
-		log_bug_libratbag(device->ratbag, "Button's action is not a macro");
-		return -EINVAL;
-	}
+	int rc;
+	unsigned int libratbag_key = 0;
+	unsigned int libratbag_modifiers = 0;
 
-	for (unsigned int i = 0; i < MAX_MACRO_EVENTS; ++i) {
-		const struct ratbag_macro_event ratbag_macro_event = button->action.macro->events[i];
-		switch (ratbag_macro_event.type) {
-		case RATBAG_MACRO_EVENT_KEY_PRESSED:
-			if (ratbag_key_is_modifier(ratbag_macro_event.event.key)) {
-				*modifiers_out |=
-					(uint8_t)sinowealth_button_key_modifier_from_evcode(ratbag_macro_event.event.key);
-				break;
-			}
-			if (*key_out != 0) {
-				/* Already found a key to press.
-				 * Don't warn on this as we try to use this function for any macros.
-				 */
-				return -EINVAL;
-			}
-			*key_out = ratbag_hidraw_get_keyboard_usage_from_keycode(device, ratbag_macro_event.event.key);
-			if (*key_out == 0) {
-				log_error(device->ratbag, "Couldn't get keyboard usage for keycode=%d\n", ratbag_macro_event.event.key);
-				return -EINVAL;
-			}
-			break;
-		case RATBAG_MACRO_EVENT_KEY_RELEASED:
-			/* We don't care about release events here. */
-			break;
-		case RATBAG_MACRO_EVENT_NONE:
-			goto out;
-		case RATBAG_MACRO_EVENT_INVALID:
-		case RATBAG_MACRO_EVENT_WAIT:
-			return -EINVAL;
-		}
-	}
-out:
-	if (*key_out == 0) {
+	rc = ratbag_action_keycode_from_macro(&button->action, &libratbag_key, &libratbag_modifiers);
+	if (rc < 0)
+		return rc;
+
+	rc = sinowealth_modifiers_to_raw(libratbag_modifiers);
+	if (rc < 0)
+		return rc;
+	*modifiers_out = (uint8_t)rc;
+
+	*key_out = ratbag_hidraw_get_keyboard_usage_from_keycode(
+		button->profile->device, libratbag_key);
+	if (*key_out == 0)
 		return -EINVAL;
-	}
 
 	return 0;
 }
