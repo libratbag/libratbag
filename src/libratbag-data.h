@@ -103,6 +103,11 @@ ratbag_device_data_hidpp20_get_quirk(const struct ratbag_device_data *data);
 const struct list *
 ratbag_device_data_sinowealth_get_supported_devices(const struct ratbag_device_data *data);
 
+/* Holtek */
+
+const struct list *
+ratbag_device_data_holtek8_get_supported_devices(const struct ratbag_device_data *data);
+
 /* SteelSeries */
 
 /**
