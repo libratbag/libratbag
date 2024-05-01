@@ -1,0 +1,92 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class FoodTrackerGUI {
+    private JFrame frame;
+    private JTextField categoryField;
+    private JTextField dailyEntryField;
+    private JButton addButton;
+    private JButton viewButton;
+    private JTextArea logArea;
+    private List<String> categories;
+    private List<String> dailyEntries;
+
+    public FoodTrackerGUI() {
+        categories = new ArrayList<>();
+        dailyEntries = new ArrayList<>();
+
+        frame = new JFrame("Food Tracker");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new GridLayout(2, 2));
+
+        JLabel categoryLabel = new JLabel("Category:");
+        inputPanel.add(categoryLabel);
+
+        categoryField = new JTextField(20);
+        inputPanel.add(categoryField);
+
+        JLabel dailyEntryLabel = new JLabel("Daily Entry:");
+        inputPanel.add(dailyEntryLabel);
+
+        dailyEntryField = new JTextField(20);
+        inputPanel.add(dailyEntryField);
+
+        addButton = new JButton("Add");
+        addButton.addActionListener(new AddButtonListener());
+        inputPanel.add(addButton);
+
+        viewButton = new JButton("View Log");
+        viewButton.addActionListener(new ViewButtonListener());
+        inputPanel.add(viewButton);
+
+        logArea = new JTextArea(10, 20);
+        logArea.setEditable(false);
+
+        frame.add(inputPanel, BorderLayout.NORTH);
+        frame.add(new JScrollPane(logArea), BorderLayout.CENTER);
+
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    private class AddButtonListener implements ActionListener {
+        
+        public void actionPerformed(ActionEvent e) {
+            String category = categoryField.getText();
+            String dailyEntry = dailyEntryField.getText();
+
+            if (!category.isEmpty() &&!dailyEntry.isEmpty()) {
+                categories.add(category);
+                dailyEntries.add(dailyEntry);
+                logArea.append("Added: " + category + " - " + dailyEntry + "\n");
+                categoryField.setText("");
+                dailyEntryField.setText("");
+            }
+        }
+    }
+
+    private class ViewButtonListener implements ActionListener {
+        
+        public void actionPerformed(ActionEvent e) {
+            logArea.setText("");
+            for (int i = 0; i < categories.size(); i++) {
+                logArea.append(categories.get(i) + " - " + dailyEntries.get(i) + "\n");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            
+            public void run() {
+                new FoodTrackerGUI();
+            }
+        });
+    }
+}
