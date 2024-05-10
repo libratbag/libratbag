@@ -46,17 +46,9 @@ static int ASUS_CONFIG_BUTTON_MAPPING[] = {
 	0xe6,  /* DPI */
 	0xe8,  /* wheel up */
 	0xe9,  /* wheel down */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
-	-1,  /* placeholder */
 };
 
+/* LedModes configuration property defaults */
 static unsigned int ASUS_LED_MODE[] = {
 	RATBAG_LED_ON,
 	RATBAG_LED_BREATHING,
@@ -69,12 +61,13 @@ static unsigned int ASUS_LED_MODE[] = {
 
 struct asus_data {
 	uint8_t is_ready;
-	int button_mapping[ASUS_MAX_NUM_BUTTON];
-	int button_indices[ASUS_MAX_NUM_BUTTON];
+	int button_mapping[ASUS_MAX_NUM_BUTTON * ASUS_MAX_NUM_BUTTON_GROUP];
+	int button_indices[ASUS_MAX_NUM_BUTTON * ASUS_MAX_NUM_BUTTON_GROUP];
+	int led_modes[ASUS_MAX_NUM_LED_MODES];
 };
 
 static int
-asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *profile)
+asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *profile, int dpi_preset)
 {
 	int rc;
 	const struct _asus_binding *asus_binding;
@@ -84,17 +77,27 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	union asus_binding_data binding_data;
+	union asus_binding_data binding_data_secondary;
 	union asus_led_data led_data;
 	union asus_resolution_data resolution_data;
+	union asus_resolution_data xy_resolution_data;
 	unsigned int dpi_count = ratbag_device_get_profile(device, 0)->num_resolutions;
+	unsigned int led_count = ratbag_device_get_num_leds(device);
+	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
 	struct asus_data *drv_data = ratbag_get_drv_data(device);
 
 	/* get buttons */
 
 	log_debug(device->ratbag, "Loading buttons data\n");
-	rc = asus_get_binding_data(device, &binding_data);
+	rc = asus_get_binding_data(device, &binding_data, 0);
 	if (rc)
 		return rc;
+
+	if (quirks & ASUS_QUIRK_BUTTONS_SECONDARY) {
+		rc = asus_get_binding_data(device, &binding_data_secondary, 1);
+		if (rc)
+			return rc;
+	}
 
 	ratbag_profile_for_each_button(profile, button) {
 		int asus_index = drv_data->button_indices[button->index];
@@ -103,7 +106,11 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 			continue;
 		}
 
-		asus_binding = &binding_data.data.binding[asus_index];
+		if (asus_index < ASUS_MAX_NUM_BUTTON) {
+			asus_binding = &binding_data.data.binding[asus_index];
+		} else {
+			asus_binding = &binding_data_secondary.data.binding[asus_index % ASUS_MAX_NUM_BUTTON];
+		}
 
 		/* disabled */
 		if (asus_binding->action == ASUS_BUTTON_CODE_DISABLED) {
@@ -144,31 +151,59 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 	/* get DPIs */
 
 	log_debug(device->ratbag, "Loading resolutions data\n");
-	rc = asus_get_resolution_data(device, &resolution_data);
+	rc = asus_get_resolution_data(device, &resolution_data, false);
 	if (rc)
 		return rc;
+
+	if (quirks & ASUS_QUIRK_SEPARATE_XY_DPI) {
+		rc = asus_get_resolution_data(device, &xy_resolution_data, true);
+		if (rc)
+			return rc;
+	}
 
 	switch (dpi_count) {
 	case 2:  /* 2 DPI presets */
 		profile->hz = resolution_data.data2.rate;
 		profile->angle_snapping = resolution_data.data2.snapping;
 		profile->debounce = resolution_data.data2.response;
-		ratbag_profile_for_each_resolution(profile, resolution)
-			ratbag_resolution_set_resolution(
-				resolution,
-				resolution_data.data2.dpi[resolution->index],
-				resolution_data.data2.dpi[resolution->index]);
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			if (quirks & ASUS_QUIRK_SEPARATE_XY_DPI) {
+				ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+				ratbag_resolution_set_resolution(
+					resolution,
+					xy_resolution_data.data_xy.dpi[resolution->index].x,
+					xy_resolution_data.data_xy.dpi[resolution->index].y);
+			} else {
+				ratbag_resolution_set_resolution(
+					resolution,
+					resolution_data.data2.dpi[resolution->index],
+					resolution_data.data2.dpi[resolution->index]);
+			}
+			if (dpi_preset != -1 && (unsigned int)dpi_preset == resolution->index)
+				resolution->is_active = true;
+		}
 		break;
 
 	case 4:  /* 4 DPI presets */
 		profile->hz = resolution_data.data4.rate;
 		profile->angle_snapping = resolution_data.data4.snapping;
 		profile->debounce = resolution_data.data4.response;
-		ratbag_profile_for_each_resolution(profile, resolution)
-			ratbag_resolution_set_resolution(
-				resolution,
-				resolution_data.data4.dpi[resolution->index],
-				resolution_data.data4.dpi[resolution->index]);
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			if (quirks & ASUS_QUIRK_SEPARATE_XY_DPI) {
+				ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+				ratbag_resolution_set_resolution(
+					resolution,
+					xy_resolution_data.data_xy.dpi[resolution->index].x,
+					xy_resolution_data.data_xy.dpi[resolution->index].y);
+			} else {
+				ratbag_resolution_set_resolution(
+					resolution,
+					resolution_data.data4.dpi[resolution->index],
+					resolution_data.data4.dpi[resolution->index]);
+			}
+			if (dpi_preset != -1 && (unsigned int)dpi_preset == resolution->index)
+				resolution->is_active = true;
+		}
 		break;
 
 	default:
@@ -177,16 +212,31 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 
 	/* get LEDs */
 
-	log_debug(device->ratbag, "Loading LEDs data\n");
-	rc = asus_get_led_data(device, &led_data);
-	if (rc)
-		return rc;
+	if (!(quirks & ASUS_QUIRK_SEPARATE_LEDS) && led_count) {
+		log_debug(device->ratbag, "Loading LEDs data\n");
+		rc = asus_get_led_data(device, &led_data, 0);
+		if (rc)
+			return rc;
+	}
 
 	ratbag_profile_for_each_led(profile, led) {
-		asus_led = &led_data.data.led[led->index];
-		led->mode = ASUS_LED_MODE[asus_led->mode];
-		/* convert brightness from 0-4 to 0-256 */
-		led->brightness = asus_led->brightness * 64;
+		if (quirks & ASUS_QUIRK_SEPARATE_LEDS) {
+			log_debug(device->ratbag, "Loading LED %d data\n", led->index);
+			rc = asus_get_led_data(device, &led_data, led->index);
+			if (rc)
+				return rc;
+			asus_led = &led_data.data.led[0];
+		} else {
+			asus_led = &led_data.data.led[led->index];
+		}
+
+		led->mode = drv_data->led_modes[asus_led->mode];
+		if (quirks & ASUS_QUIRK_RAW_BRIGHTNESS) {
+			led->brightness = asus_led->brightness;
+		} else {
+			/* convert brightness from 0-4 to 0-256 */
+			led->brightness = asus_led->brightness * 64;
+		}
 		led->color.red = asus_led->r;
 		led->color.green = asus_led->g;
 		led->color.blue = asus_led->b;
@@ -203,6 +253,7 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 	struct ratbag_led *led;
 	struct ratbag_resolution *resolution;
 	struct asus_data *drv_data = ratbag_get_drv_data(device);
+	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
 
 	/* set buttons */
 	ratbag_profile_for_each_button(profile, button) {
@@ -218,6 +269,7 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 		const struct asus_button *asus_button;
 		uint8_t asus_code_src;
 		uint8_t asus_code_dst;
+		bool is_joystick;
 
 		rc = drv_data->button_mapping[asus_index];
 		if (rc == -1) {
@@ -250,7 +302,18 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 		case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 			/* ratbag action to ASUS code */
-			asus_button = asus_find_button_by_action(button->action);
+			is_joystick = asus_code_is_joystick(asus_code_src);
+			if (is_joystick) {
+				asus_button = asus_find_button_by_action(button->action, true);
+				if (asus_button != NULL) {  /* found button to bind to */
+					rc = asus_set_button_action(
+						device, asus_code_src, asus_button->asus_code,
+						ASUS_BUTTON_ACTION_TYPE_BUTTON);
+					break;
+				}
+			}
+
+			asus_button = asus_find_button_by_action(button->action, false);
 			if (asus_button != NULL)  /* found button to bind to */
 				rc = asus_set_button_action(
 					device, asus_code_src, asus_button->asus_code,
@@ -306,15 +369,20 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 
 		log_debug(device->ratbag, "LED %d changed\n", led->index);
 		uint8_t led_mode = 0;
-		for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_LED_MODE); i++) {
-			if (ASUS_LED_MODE[i] == led->mode) {
+		for (unsigned int i = 0; i < ASUS_MAX_NUM_LED_MODES; i++) {
+			if (drv_data->led_modes[i] == (int) led->mode) {
 				led_mode = i;
 				break;
 			}
 		}
 
-		/* convert brightness from 0-256 to 0-4 */
-		uint8_t led_brightness = (uint8_t)round((double)led->brightness / 64.0);
+		uint8_t led_brightness;
+		if (quirks & ASUS_QUIRK_RAW_BRIGHTNESS) {
+			led_brightness = led->brightness;
+		} else {
+			/* convert brightness from 0-256 to 0-4 */
+			led_brightness = (uint8_t)round((double)led->brightness / 64.0);
+		}
 		rc = asus_set_led(device, led->index, led_mode, led_brightness, led->color);
 		if (rc)
 			return rc;
@@ -365,7 +433,7 @@ asus_driver_load_profiles(struct ratbag_device *device)
 				return rc;
 		}
 
-		rc = asus_driver_load_profile(device, profile);
+		rc = asus_driver_load_profile(device, profile, profile_data.dpi_preset);
 		if (rc)
 			return rc;
 	}
@@ -469,23 +537,37 @@ asus_driver_probe(struct ratbag_device *device)
 	button_count = ratbag_device_data_asus_get_button_count(device->data);
 	led_count = ratbag_device_data_asus_get_led_count(device->data);
 	const int *bm = ratbag_device_data_asus_get_button_mapping(device->data);
+	const int *led_modes = ratbag_device_data_asus_get_led_modes(device->data);
 
 	/* merge ButtonMapping configuration property with defaults */
-	for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON; i++) {
-		drv_data->button_mapping[i] = bm[i] != -1 ? bm[i] : ASUS_CONFIG_BUTTON_MAPPING[i];
+	for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON * ASUS_MAX_NUM_BUTTON_GROUP; i++) {
+		if (bm[i] != -1) {
+			drv_data->button_mapping[i] = bm[i];
+		} else {
+			if (i < ARRAY_LENGTH(ASUS_CONFIG_BUTTON_MAPPING)) {
+				drv_data->button_mapping[i] = ASUS_CONFIG_BUTTON_MAPPING[i];
+			} else {
+				drv_data->button_mapping[i] = -1;
+			}
+		}
 		drv_data->button_indices[i] = -1;
 	}
+
+	/* merge LedModes configuration property with defaults */
+	for (unsigned int i = 0; i < ASUS_MAX_NUM_LED_MODES; i++)
+		drv_data->led_modes[i] = (led_modes[i] != -1) ? led_modes[i] : (int) ASUS_LED_MODE[i];
 
 	/* setup a lookup table for all defined buttons */
 	unsigned int button_index = 0;
 	ARRAY_FOR_EACH(ASUS_BUTTON_MAPPING, asus_button) {
 		/* search for this button in the ButtonMapping by it's ASUS code */
-		for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON; i++) {
+		for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON * ASUS_MAX_NUM_BUTTON_GROUP; i++) {
 			if (drv_data->button_mapping[i] == (int)asus_button->asus_code) {
 				/* add button to indices array */
 				drv_data->button_indices[button_index] = (int)i;
-				log_debug(device->ratbag, "Button %d is mapped to 0x%02x\n",
-					  button_index, (uint8_t)drv_data->button_mapping[i]);
+				log_debug(device->ratbag, "Button %d is mapped to 0x%02x at position %d group %d\n",
+					  button_index, (uint8_t)drv_data->button_mapping[i],
+					  i % ASUS_MAX_NUM_BUTTON, i / ASUS_MAX_NUM_BUTTON);
 				button_index++;
 				break;
 			}
