@@ -75,15 +75,18 @@ static const unsigned char ASUS_KEY_MAPPING[] = {
 /* 5E */	KEY_KP8,	KEY_KP9,	0,
 };
 
-static unsigned int ASUS_POLLING_RATES[] = { 125, 250, 500, 1000 };
-static unsigned int ASUS_DEBOUNCE_TIMES[] = { 4, 8, 12, 16, 20, 24, 28, 32 };
+static const uint8_t ASUS_JOYSTICK_CODES[] = { 0xd0, 0xd1, 0xd2, 0xd3, 0xd7, 0xd8, 0xda, 0xdb };
+static const unsigned int ASUS_POLLING_RATES[] = { 125, 250, 500, 1000 };
+static const unsigned int ASUS_DEBOUNCE_TIMES[] = { 4, 8, 12, 16, 20, 24, 28, 32 };
 
 /* search for ASUS button by ratbag types */
 const struct asus_button *
-asus_find_button_by_action(struct ratbag_button_action action)
+asus_find_button_by_action(struct ratbag_button_action action, bool is_joystick)
 {
 	const struct asus_button *asus_button;
 	ARRAY_FOR_EACH(ASUS_BUTTON_MAPPING, asus_button) {
+		if (is_joystick != asus_code_is_joystick(asus_button->asus_code))
+			continue;
 		if ((action.type == RATBAG_BUTTON_ACTION_TYPE_BUTTON && asus_button->button == action.action.button) ||
 				(action.type == RATBAG_BUTTON_ACTION_TYPE_SPECIAL && asus_button->special == action.action.special))
 			return asus_button;
@@ -111,6 +114,15 @@ asus_find_key_code(unsigned int linux_code)
 			return i;
 	}
 	return -1;
+}
+
+bool
+asus_code_is_joystick(uint8_t asus_code) {
+	for (unsigned int i = 0; i < ARRAY_LENGTH(ASUS_JOYSTICK_CODES); i++) {
+		if (ASUS_JOYSTICK_CODES[i] == asus_code)
+			return true;
+	}
+	return false;
 }
 
 int
@@ -216,6 +228,11 @@ asus_get_profile_data(struct ratbag_device *device, struct asus_profile_data *da
 	else
 		data->profile_id = response.data.results[8];
 
+	if (response.data.results[9])
+		data->dpi_preset = response.data.results[9] - 1;
+	else
+		data->dpi_preset = -1;
+
 	data->version_primary_major = response.data.results[13];
 	data->version_primary_minor = response.data.results[12];
 	data->version_primary_build = response.data.results[11];
@@ -246,12 +263,13 @@ asus_set_profile(struct ratbag_device *device, unsigned int index)
 
 /* read button bindings */
 int
-asus_get_binding_data(struct ratbag_device *device, union asus_binding_data *data)
+asus_get_binding_data(struct ratbag_device *device, union asus_binding_data *data, unsigned int group)
 {
 	int rc;
 	union asus_response response;
 	union asus_request request = {
 		.data.cmd = ASUS_CMD_GET_BUTTON_DATA,
+		.data.params[0] = (uint8_t)group,
 	};
 
 	rc = asus_query(device, &request, &response);
@@ -289,7 +307,7 @@ asus_set_button_action(struct ratbag_device *device, uint8_t asus_code_src,
 }
 
 int
-asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_data *data)
+asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_data *data, bool sep_xy_dpi)
 {
 	int rc;
 	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
@@ -298,6 +316,7 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 	unsigned int i;
 	union asus_request request = {
 		.data.cmd = ASUS_CMD_GET_SETTINGS,
+		.data.params[0] = sep_xy_dpi ? 2 : 0,
 	};
 
 	rc = asus_query(device, &request, &response);
@@ -319,13 +338,24 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 		break;
 
 	case 4:  /* 4 DPI presets */
-		for (i = 0; i < dpi_count; i++) {
-			data->data4.dpi[i] = data->data4.dpi[i] * 50 + 50;
-			if (quirks & ASUS_QUIRK_DOUBLE_DPI)
-				data->data4.dpi[i] *= 2;
+		if (sep_xy_dpi) {  /* separate X & Y values */
+			for (i = 0; i < dpi_count; i++) {
+				data->data_xy.dpi[i].x = data->data_xy.dpi[i].x * 50 + 50;
+				data->data_xy.dpi[i].y = data->data_xy.dpi[i].y * 50 + 50;
+				if (quirks & ASUS_QUIRK_DOUBLE_DPI) {
+					data->data_xy.dpi[i].x *= 2;
+					data->data_xy.dpi[i].y *= 2;
+				}
+			}
+		} else {
+			for (i = 0; i < dpi_count; i++) {
+				data->data4.dpi[i] = data->data4.dpi[i] * 50 + 50;
+				if (quirks & ASUS_QUIRK_DOUBLE_DPI)
+					data->data4.dpi[i] *= 2;
+			}
+			data->data4.rate = ASUS_POLLING_RATES[data->data4.rate];
+			data->data4.response = ASUS_DEBOUNCE_TIMES[data->data4.response];
 		}
-		data->data4.rate = ASUS_POLLING_RATES[data->data4.rate];
-		data->data4.response = ASUS_DEBOUNCE_TIMES[data->data4.response];
 		break;
 
 	default:
@@ -440,12 +470,13 @@ asus_set_angle_snapping(struct ratbag_device *device, bool is_enabled)
 }
 
 int
-asus_get_led_data(struct ratbag_device *device, union asus_led_data *data)
+asus_get_led_data(struct ratbag_device *device, union asus_led_data *data, unsigned int led)
 {
 	int rc;
 	union asus_response response;
 	union asus_request request = {
 		.data.cmd = ASUS_CMD_GET_LED_DATA,
+		.data.params[0] = led,
 	};
 
 	rc = asus_query(device, &request, &response);
