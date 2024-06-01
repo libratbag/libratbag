@@ -24,6 +24,8 @@
 import evdev
 import subprocess
 import sys
+import os
+import json
 import argparse
 import textwrap
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -610,6 +612,18 @@ def func_profile_name_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     commit(device, args)
 
 
+def func_profile_import(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    if os.path.isfile(args.file) and os.access(args.file, os.R_OK):
+        args.nocommit = True
+        import_profile(ratbagd, args, profile)
+        args.nocommit = False
+        commit(device, args)
+    else:
+        print("ERROR: The file/path provided is not valid")
+        sys.exit(1)
+
+
 def func_profile_active_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     device = find_device(ratbagd, args)
     profile = device.active_profile
@@ -624,6 +638,21 @@ def func_profile_active_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile.set_active()
     commit(device, args)
 
+def func_profile_active_import(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    device = find_device(ratbagd, args)
+    profile = device.active_profile
+    if profile is None:
+        print("ERROR: The device has no active profile")
+        sys.exit(1)
+    else:
+        if os.path.isfile(args.file) and os.access(args.file, os.R_OK):
+            args.nocommit = True
+            import_profile(ratbagd, args, profile)
+            args.nocommit = False
+            commit(device, args)
+        else:
+            print("ERROR: The file/path provided is not valid")
+            sys.exit(1)
 
 def func_profile_enable(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
