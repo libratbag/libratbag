@@ -80,7 +80,7 @@ def find_device(ratbagd: Ratbagd, args: argparse.Namespace) -> RatbagdDevice:
         for device in ratbagd.devices:
             if args.device in device.name:
                 return device
-        print(f"Unable to find device {args.device}")
+        print(f"ERROR: Unable to find device {args.device}")
         sys.exit(1)
     return device
 
@@ -92,12 +92,12 @@ def find_profile(
     try:
         profile = device.profiles[args.profile_n]
     except IndexError:
-        print(f"Invalid profile index {args.profile_n}")
+        print(f"ERROR: Invalid profile index {args.profile_n}")
         sys.exit(1)
     except AttributeError:
         profile = device.active_profile
         if ratbagd is None:
-            print("The device has no active profile")
+            print("ERROR: The device has no active profile")
             sys.exit(1)
     return profile, device
 
@@ -109,12 +109,12 @@ def find_resolution(
     try:
         resolution = profile.resolutions[args.resolution_n]
     except IndexError:
-        print(f"Invalid resolution index {args.resolution_n}")
+        print(f"ERROR: Invalid resolution index {args.resolution_n}")
         sys.exit(1)
     except AttributeError:
         resolution = profile.active_resolution
         if resolution is None:
-            print("The device has no active resolution")
+            print("ERROR: The device has no active resolution")
             sys.exit(1)
     return resolution, profile, device
 
@@ -126,7 +126,7 @@ def find_button(
     try:
         button = profile.buttons[args.button_n]
     except IndexError:
-        print(f"Invalid button index {args.button_n}")
+        print(f"ERROR: Invalid button index {args.button_n}")
         sys.exit(1)
     return button, profile, device
 
@@ -138,7 +138,7 @@ def find_led(
     try:
         led = profile.leds[args.led_n]
     except IndexError:
-        print(f"Invalid LED index {args.led_n}")
+        print(f"ERROR: Invalid LED index {args.led_n}")
         sys.exit(1)
     return led, profile, device
 
@@ -652,7 +652,7 @@ def func_resolution_default_get(ratbagd: Ratbagd, args: argparse.Namespace) -> N
             break
 
     if resolution is None:
-        print("The device has no default resolution")
+        print("ERROR: The device has no default resolution")
         sys.exit(1)
 
     print(resolution.index)
@@ -727,7 +727,7 @@ def func_profile_active_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     device = find_device(ratbagd, args)
     profile = device.active_profile
     if profile is None:
-        print("The device has no active profile")
+        print("ERROR: The device has no active profile")
         sys.exit(1)
     print(profile.index)
 
