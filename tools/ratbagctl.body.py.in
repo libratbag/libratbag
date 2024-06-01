@@ -318,6 +318,105 @@ def show_button(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     print_button(device, profile, button, 0)
 
 
+def import_profile(ratbagd: Ratbagd, args: argparse.Namespace, profile: RatbagdProfile) -> None:
+    with open(args.file) as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Failed to parse '{f.name}' at line {e.lineno}, column {e.colno}")
+            sys.exit(1)
+    if not isinstance(data, dict):
+        print("ERROR: Failed to parse '{f.name}': Expected an object")
+        sys.exit(1)
+
+    profile_keys = data.keys()
+    if 'name' in profile_keys:
+        try:
+            args.name = data['name']
+            func_profile_name_set(ratbagd, args)
+        except RatbagCapabilityError as e:
+            print(f"WARNING: Could not set profile name: `{e}`")
+
+    if 'rate' in profile_keys:
+        args.rate_n = data['rate']
+        func_report_rate_set(ratbagd, args)
+
+    if 'resolutions' in profile_keys:
+        if type(data['resolutions']) is list:
+            for res in data['resolutions']:
+                res_keys = res.keys()
+                if 'index' in res_keys:
+                    args.resolution_n = res['index']
+                    if 'dpi' in res_keys:
+                        args.dpi_n = dpi(res['dpi'])
+                        func_dpi_set(ratbagd, args)
+                else:
+                    print("WARNING: Missing 'index' for resolution. Skipping...")
+        else:
+            print("WARNING: Invalid 'resolutions'. Skipping...")
+
+    if 'buttons' in profile_keys:
+        if type(data['buttons']) is list:
+            for bt in data['buttons']:
+                bt_keys = bt.keys()
+                if 'index' in bt_keys:
+                    args.button_n = bt['index']
+                    if 'action_type' in bt_keys:
+                        if bt['action_type'] == 'none':
+                            func_button_action_set_none(ratbagd, args)
+                        elif bt['action_type'] == 'button':
+                            if 'button' in bt_keys:
+                                args.target_button = bt['button']
+                                func_button_action_set_button(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'button' for button {bt['index']}. Skipping...")
+                        elif bt['action_type'] == 'special':
+                            if 'special' in bt_keys:
+                                args.target_special = bt['special']
+                                func_button_action_set_special(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'special' for button {bt['index']}. Skipping...")
+                        elif bt['action_type'] == 'key':
+                            if 'key' in bt_keys:
+                                args.target_key = bt['key']
+                                func_button_action_set_key(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'key' for button {bt['index']}. Skipping...")
+                        elif bt['action_type'] == 'macro':
+                            if 'macro' in bt_keys:
+                                args.target_macro = bt['macro']
+                                func_button_action_set_macro(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'macro' for button {bt['index']}. Skipping...")
+                    else:
+                        print("WARNING: Missing 'action_type' for button. Skipping...")
+                else:
+                    print("WARNING: Missing 'index' for button. Skipping...")
+        else:
+            print("WARNING: Invalid 'buttons'. Skipping...")
+
+    if 'leds' in profile_keys:
+        if type(data['leds']) is list:
+            for led in data['leds']:
+                led_keys = led.keys()
+                if 'index' in led_keys:
+                    args.led_n = led['index']
+                    if 'mode' in led_keys:
+                        args.mode = led['mode']
+                    if 'color' in led_keys:
+                        args.color = color(led['color'])
+                    if 'duration' in led_keys:
+                        args.duration = led['duration']
+                    if 'brightness' in led_keys:
+                        args.brightness = led['brightness']
+                    func_led_set(ratbagd, args)
+                else:
+                    print("WARNING: Missing 'index' for led. Skipping...")
+        else:
+            print("WARNING: Invalid 'leds'. Skipping...")
+
+
+
 def func_led_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     led, profile, device = find_led(ratbagd, args)
     print_led(device, profile, led, 0)
