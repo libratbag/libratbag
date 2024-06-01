@@ -798,6 +798,20 @@ parser_def: List[RatbagParserSchemaElement] = [
                         ],
                         func: func_profile_active_set,
                     },
+                    {
+                        of_type: command,
+                        name: "import",
+                        help_str: "Import from JSON file to the active profile",
+                        pos_args: [
+                            {
+                                of_type: argument,
+                                name: "file",
+                                metavar: "/path/to/file.json",
+                                help_str: "The file to import",
+                            },
+                        ],
+                        func: func_profile_active_import,
+                    },
                 ],
             },
         ],
@@ -839,6 +853,20 @@ parser_def: List[RatbagParserSchemaElement] = [
                             func: func_profile_name_set,
                         },
                     ],
+                },
+                {
+                    of_type: command,
+                    name: "import",
+                    help_str: "Import from a JSON file to the profile",
+                    pos_args: [
+                        {
+                            of_type: argument,
+                            name: "file",
+                            metavar: "/path/to/file.json",
+                            help_str: "The file to import",
+                        },
+                    ],
+                    func: func_profile_import,
                 },
                 {
                     of_type: command,
