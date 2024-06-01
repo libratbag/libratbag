@@ -714,9 +714,10 @@ def func_profile_name_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_profile_import(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     if os.path.isfile(args.file) and os.access(args.file, os.R_OK):
+        tmp = args.nocommit
         args.nocommit = True
         import_profile(ratbagd, args, profile)
-        args.nocommit = False
+        args.nocommit = tmp
         commit(device, args)
     else:
         print("ERROR: The file/path provided is not valid")
@@ -745,9 +746,10 @@ def func_profile_active_import(ratbagd: Ratbagd, args: argparse.Namespace) -> No
         sys.exit(1)
     else:
         if os.path.isfile(args.file) and os.access(args.file, os.R_OK):
+            tmp = args.nocommit
             args.nocommit = True
             import_profile(ratbagd, args, profile)
-            args.nocommit = False
+            args.nocommit = tmp
             commit(device, args)
         else:
             print("ERROR: The file/path provided is not valid")
