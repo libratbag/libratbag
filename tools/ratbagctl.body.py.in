@@ -158,47 +158,23 @@ def print_led(
     if led.mode == RatbagdLed.Mode.OFF:
         print(
             " " * level
-            + "LED: {}, depth: {}, mode: {}".format(
-                led.index, depths[led.colordepth], leds[led.mode]
-            )
+            + f"LED: {led.index}, depth: {depths[led.colordepth]}, mode: {leds[led.mode]}"
         )
     elif led.mode == RatbagdLed.Mode.ON:
         print(
             " " * level
-            + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}".format(
-                led.index,
-                depths[led.colordepth],
-                leds[led.mode],
-                led.color[0],
-                led.color[1],
-                led.color[2],
-            )
+            + f"LED: {led.index}, depth: {depths[led.colordepth]}, mode: {leds[led.mode]}, color: {led.color[0]:02x}{led.color[1]:02x}{led.color[2]:02x}"
         )
     elif led.mode == RatbagdLed.Mode.CYCLE:
         print(
             " " * level
-            + "LED: {}, depth: {}, mode: {}, duration: {}, brightness: {}".format(
-                led.index,
-                depths[led.colordepth],
-                leds[led.mode],
-                led.effect_duration,
-                led.brightness,
-            )
+            + f"LED: {led.index}, depth: {depths[led.colordepth]}, mode: {leds[led.mode]}, duration: {led.effect_duration}, brightness: {led.brightness}"
         )
     elif led.mode == RatbagdLed.Mode.BREATHING:
         print(
             " " * level
-            + "LED: {}, depth: {}, mode: {}, color: {:02x}{:02x}{:02x}, duration: {},"
-            " brightness: {}".format(
-                led.index,
-                depths[led.colordepth],
-                leds[led.mode],
-                led.color[0],
-                led.color[1],
-                led.color[2],
-                led.effect_duration,
-                led.brightness,
-            )
+            + f"LED: {led.index}, depth: {depths[led.colordepth]}, mode: {leds[led.mode]}, color: {led.color[0]:02x}{led.color[1]:02x}{led.color[2]:02x}, duration: {led.effect_duration},"
+            f" brightness: {led.brightness}"
         )
 
 
@@ -737,7 +713,7 @@ def color(string: str) -> Tuple[int, int, int]:
     try:
         int_value = int(string, 16)
     except ValueError as e:
-        msg = "%r is not a color in hex format" % string
+        msg = f"{string!r} is not a color in hex format"
         raise ValueError(msg) from e
     r = (int_value >> 16) & 0xFF
     g = (int_value >> 8) & 0xFF
@@ -747,7 +723,7 @@ def color(string: str) -> Tuple[int, int, int]:
 
 def u8(string: str) -> int:
     int_value = int(string)
-    msg = "%r is not a single byte" % string
+    msg = f"{string!r} is not a single byte"
     if int_value < 0 or int_value > 255:
         raise ValueError(msg)
     return int_value
@@ -767,7 +743,7 @@ def dpi(string: str) -> Union[Tuple[int, int], Tuple[int,]]:
         int_x = int(x)
         int_y = int(y)
     except ValueError as e:
-        raise ValueError("%r is not a valid dpi" % string) from e
+        raise ValueError(f"{string!r} is not a valid dpi") from e
     return (int_x, int_y)
 
 
@@ -1442,9 +1418,7 @@ class RatbagParser:
         self.help = help
 
     def repr_args(self) -> str:
-        return "name='{}', tag='{}', func='{}', help='{}'".format(
-            self.name, self.tag, self.func, self.help
-        )
+        return f"name='{self.name}', tag='{self.tag}', func='{self.func}', help='{self.help}'"
 
     def __repr__(self) -> str:
         return f"{type(self)}({self.repr_args()})"
@@ -1502,9 +1476,7 @@ class RatbagParserSwitch(RatbagParser):
         )
 
     def repr_args(self) -> str:
-        return """switch='{}', N_access='{}', {}""".format(
-            [repr(o) for o in self.switch], self.N_access, RatbagParser.repr_args(self)
-        )
+        return f"""switch='{[repr(o) for o in self.switch]}', N_access='{self.N_access}', {RatbagParser.repr_args(self)}"""
 
     def _add_to_subparsers(self, parent: Any) -> None:
         parser = parent.add_parser(self.name, help=self.help)
@@ -1579,9 +1551,7 @@ class RatbagParserNAccess(RatbagParserSwitch):
         return parser
 
     def repr_args(self) -> str:
-        return """switch='{}', metavar = '{}', {}""".format(
-            [repr(o) for o in self.switch], self.metavar, RatbagParser.repr_args(self)
-        )
+        return f"""switch='{[repr(o) for o in self.switch]}', metavar = '{self.metavar}', {RatbagParser.repr_args(self)}"""
 
     def __repr__(self) -> str:
         return f"N_Access({self.repr_args()})"
