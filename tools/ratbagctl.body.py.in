@@ -1939,7 +1939,7 @@ def open_ratbagd(
     return ratbagd
 
 
-def main(argv: List[str]) -> None:
+def main(argv: List[str]) -> int:
     if not argv:
         argv = ["list"]
 
