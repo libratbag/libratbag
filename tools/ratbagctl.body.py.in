@@ -30,7 +30,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # This must be on a single line, as we replace it using merge_ratbagd.py while building.
 # fmt: off
-from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailableError, RatbagError, RatbagErrorCode, RatbagCapabilityError, RatbagDeviceType, evcode_to_str  # NOQA
+from ratbagd import Ratbagd, RatbagdDevice, RatbagdProfile, RatbagdMacro, RatbagdResolution, RatbagdButton, RatbagdLed, RatbagdUnavailableError, RatbagCapabilityError, evcode_to_str  # NOQA
 # fmt: on
 
 
