@@ -1,0 +1,11 @@
+[Device]
+Name=Glorious Model I
+DeviceMatch=usb:22d4:1503
+DeviceType=mouse
+Driver=sinowealth
+
+[Driver/sinowealth/devices/V103]
+Buttons=9
+DeviceName=Glorious Model I
+LedType=RBG
+SensorType=PMW3360
