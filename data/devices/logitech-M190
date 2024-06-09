@@ -1,0 +1,6 @@
+# Logitech M190
+[Device]
+Name=Logitech M190
+DeviceMatch=usb:046d:c542
+Driver=hidpp20
+DeviceType=mouse
