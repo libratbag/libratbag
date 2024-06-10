@@ -1,5 +1,8 @@
 [Device]
 Name=Logitech G502 X Wireless
-DeviceMatch=usb:046d:c098
+DeviceMatch=usb:046d:c098;usb:046d:c547
 DeviceType=mouse
 Driver=hidpp20
+
+[Driver/hidpp20]
+DeviceIndex=1
