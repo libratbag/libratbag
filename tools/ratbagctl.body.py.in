@@ -317,6 +317,65 @@ def show_button(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     )
     print_button(device, profile, button, 0)
 
+def export_profile(ratbagd: Ratbagd, args: argparse.Namespace, profile: RatbagdProfile) -> None:
+    data = {}
+    data['name'] = bytes(profile.name, 'utf-8', 'ignore').decode('utf-8')
+    data['rate'] = profile.report_rate
+
+    data['resolutions'] = []
+    for resolution in profile.resolutions:
+        if len(resolution.resolution) == 2:
+            dpi = f"{resolution.resolution[0]}x{resolution.resolution[1]}"
+        else:
+            dpi = f"{resolution.resolution[0]}"
+
+        data['resolutions'].append( { "index": resolution.index, "dpi": dpi } )
+
+    data['buttons'] = []
+    for button in profile.buttons:
+        if button.action_type == RatbagdButton.ActionType.BUTTON:
+            action_type = 'button'
+            action = button.mapping
+        elif button.action_type == RatbagdButton.ActionType.SPECIAL:
+            action_type = 'special'
+            action = f"{button_specials_strmap[button.special]}"
+        elif button.action_type == RatbagdButton.ActionType.KEY:
+            action_type = 'key'
+            action = evcode_to_str(button.key)
+        elif button.action_type == RatbagdButton.ActionType.MACRO:
+            action_type = 'macro'
+            action = f"{str(button.macro).replace('\u2193', '+').replace('\u2191','-').replace('\u2195', '')}"
+        elif button.action_type == RatbagdButton.ActionType.NONE:
+            action_type = 'none'
+        else:
+            continue # skip unknown buttons
+
+        if action_type == 'none':
+            data['buttons'].append( { "index": button.index, "action_type": action_type } )
+        else:
+            data['buttons'].append(
+                    {
+                        "index": button.index,
+                        "action_type": action_type,
+                        f"{action_type}": action
+                    }
+                )
+
+    data['leds'] = []
+    for led in profile.leds:
+        if led.mode == RatbagdLed.Mode.OFF:
+            data['leds'].append( { "index": led.index, "mode": 'off' } )
+        elif led.mode == RatbagdLed.Mode.ON:
+            data['leds'].append( { "index": led.index, "mode": 'on', "color": f"{led.color[0]:02x}{led.color[1]:02x}{led.color[2]:02x}" } )
+        elif led.mode == RatbagdLed.Mode.CYCLE:
+            data['leds'].append( { "index": led.index, "mode": 'cycle', "duration": led.effect_duration, "brightness": led.brightness} )
+        elif led.mode == RatbagdLed.Mode.BREATHING:
+            data['leds'].append( { "index": led.index, "mode": 'breathing',
+                  "color": f"{led.color[0]:02x}{led.color[1]:02x}{led.color[2]:02x}",
+                  "duration": led.effect_duration, "brightness": led.brightness} )
+
+    with open(args.file, 'w') as f:
+        json.dump(data, f, indent=4)
 
 def import_profile(ratbagd: Ratbagd, args: argparse.Namespace, profile: RatbagdProfile) -> None:
     with open(args.file) as f:
