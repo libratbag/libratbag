@@ -1,5 +1,5 @@
 [Device]
-DeviceMatch=bluetooth:046d:b034
+DeviceMatch=bluetooth:046d:b034;usb:046d:C548
 DeviceType=mouse
 Driver=hidpp20
 Name=Logitech MX Master 3S
