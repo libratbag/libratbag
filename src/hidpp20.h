@@ -961,6 +961,7 @@ struct hidpp20_profiles {
 	uint8_t sector_count;
 	uint16_t sector_size;
 	uint8_t active_profile_index;
+	uint8_t format_id;
 	struct hidpp20_profile *profiles;
 };
 

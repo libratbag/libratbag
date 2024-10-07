@@ -2222,6 +2222,7 @@ int hidpp20_ext_adjustable_report_rate_set_report_rate(struct hidpp20_device *de
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915	0x04
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2	0x06
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -2230,13 +2231,16 @@ int hidpp20_ext_adjustable_report_rate_set_report_rate(struct hidpp20_device *de
 #define HIDPP20_PROFILE_DIR_END				0xFFFF
 #define HIDPP20_PROFILE_DIR_ENABLED			2
 
+// Profile
 union hidpp20_internal_profile {
 	uint8_t data[HIDPP20_PROFILE_SIZE];
 	struct {
 		uint8_t report_rate;
 		uint8_t default_dpi;
 		uint8_t switched_dpi;
+		// @0x3
 		uint16_t dpi[5];
+		// 0xd
 		struct hidpp20_color profile_color;
 		uint8_t power_mode;
 		uint8_t angle_snapping;
@@ -2256,6 +2260,46 @@ union hidpp20_internal_profile {
 	} __attribute__((packed)) profile;
 };
 _Static_assert(sizeof(union hidpp20_internal_profile) == HIDPP20_PROFILE_SIZE, "Invalid size");
+
+union hidpp20_internal_profile_ext {
+	uint8_t data[HIDPP20_PROFILE_SIZE];
+	struct {
+		uint8_t report_rate;
+		uint8_t report_rate_wireless; // TODO: check?
+		uint8_t default_dpi;
+		uint8_t switched_dpi;
+		struct {
+			uint16_t x;
+			uint16_t y;
+			uint8_t lod; /* 0x02 = medium */
+		} __attribute__((packed)) dpi[5];
+		// @0x1d
+		uint8_t unknown_1[4]; // set to 00
+		uint8_t unknown_2; // set to ff
+		uint8_t unknown_3; // set to 00
+		uint8_t unknown_4[9]; // set to ff
+		// @0x2b // TODO: confirm
+		uint16_t powersave_timeout;
+		uint16_t poweroff_timeout;
+		// @0x30
+		union hidpp20_button_binding buttons[16];
+		union hidpp20_button_binding alternate_buttons[12];
+		// @0xa0
+		union {
+			// Special string for default 'PROFILE_NAME_DEFAULT'
+			// UTF-16?
+			char txt[48];
+			uint8_t raw[48];
+		} name;
+		/* TODO: LEDs appear to be defined in the GPX SL2 but the device has no configurable LEDs */
+		struct hidpp20_internal_led leds[2];
+		struct hidpp20_internal_led alt_leds[2];
+		uint8_t unknown_5; /* default value of 0x03 */
+		uint16_t crc;
+		uint8_t unknown_6;
+	} __attribute__((packed)) profile;
+};
+_Static_assert(sizeof(union hidpp20_internal_profile_ext) == HIDPP20_PROFILE_SIZE, "Invalid size");
 
 int
 hidpp20_onboard_profiles_get_profiles_desc(struct hidpp20_device *device,
@@ -2283,6 +2327,18 @@ hidpp20_onboard_profiles_get_profiles_desc(struct hidpp20_device *device,
 	*info = *(struct hidpp20_onboard_profiles_info *)msg.msg.parameters;
 
 	info->sector_size = hidpp_be_u16_to_cpu(info->sector_size);
+
+	hidpp_log_debug(&device->base, "%s: onboard profile description\n", __func__);
+	hidpp_log_debug(&device->base, "%s: memory_model_id = 0x%x\n", __func__, info->memory_model_id);
+	hidpp_log_debug(&device->base, "%s: profile_format_id = 0x%x\n", __func__, info->profile_format_id);
+	hidpp_log_debug(&device->base, "%s: macro_format_id = 0x%x\n", __func__, info->macro_format_id);
+	hidpp_log_debug(&device->base, "%s: profile_count = %d\n", __func__, info->profile_count);
+	hidpp_log_debug(&device->base, "%s: profile_count oob = %d\n", __func__, info->profile_count_oob);
+	hidpp_log_debug(&device->base, "%s: button_count = %d\n", __func__, info->button_count);
+	hidpp_log_debug(&device->base, "%s: sector_count = %d\n", __func__, info->sector_count);
+	hidpp_log_debug(&device->base, "%s: sector_size = %d\n", __func__, info->sector_size);
+	hidpp_log_debug(&device->base, "%s: mechanical_layout = 0x%x\n", __func__, info->mechanical_layout);
+	hidpp_log_debug(&device->base, "%s: various_info = 0x%x\n", __func__, info->various_info);
 
 	return 0;
 }
@@ -2343,6 +2399,7 @@ hidpp20_onboard_profiles_is_sector_valid(struct hidpp20_device *device,
 	crc = hidpp_crc_ccitt(data, sector_size - 2);
 	read_crc = get_unaligned_be_u16(&data[sector_size - 2]);
 
+	hidpp_log_debug(&device->base, "CRC (read:%04x != %04x:computed)\n", read_crc, crc);
 	if (crc != read_crc)
 		hidpp_log_debug(&device->base, "Invalid CRC (%04x != %04x)\n", read_crc, crc);
 
@@ -2643,7 +2700,8 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -2700,6 +2758,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	profiles->profiles = zalloc(info.profile_count * sizeof(struct hidpp20_profile));
 	profiles->sector_size = info.sector_size;
 	profiles->sector_count = info.sector_count;
+	profiles->format_id = info.profile_format_id;
 	profiles->num_profiles = info.profile_count;
 	profiles->num_rom_profiles = info.profile_count_oob;
 	profiles->num_buttons = min(info.button_count, 16);
@@ -3124,12 +3183,12 @@ hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
 }
 
 static int
-hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
-				       struct hidpp20_profiles *profiles_list,
-				       unsigned index,
-				       bool check_crc)
+hidpp20_onboard_profiles_parse_profile_ext(struct hidpp20_device *device,
+					   struct hidpp20_profiles *profiles_list,
+					   unsigned index,
+					   bool check_crc)
 {
-	union hidpp20_internal_profile *pdata;
+	union hidpp20_internal_profile_ext *pdata;
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
 	uint16_t sector = profile->address;
 	_cleanup_free_ uint8_t *data = NULL;
@@ -3140,7 +3199,7 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 		return -EINVAL;
 
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
-	pdata = (union hidpp20_internal_profile *)data;
+	pdata = (union hidpp20_internal_profile_ext *)data;
 
 	hidpp_log_info(&device->base, "%s: reading sector 0x%x for profile %d, size = %d\n", __func__, sector, index, profiles_list->sector_size);
 
@@ -3188,9 +3247,101 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 
 	hidpp_log_info(&device->base, "%s: report_rate = %d\n", __func__, pdata->profile.report_rate);
 
+	profile->report_rate = hidpp20_ext_adjustable_report_rate_to_hz(pdata->profile.report_rate);
+	hidpp_log_info(&device->base, "%s: report_rate hz = %d\n", __func__, profile->report_rate);
+	profile->default_dpi = pdata->profile.default_dpi;
+	profile->switched_dpi = pdata->profile.switched_dpi;
+
+	hidpp_log_info(&device->base, "%s: default dpi = %d\n", __func__, profile->default_dpi);
+	hidpp_log_info(&device->base, "%s: switched dpi = %d\n", __func__, profile->switched_dpi);
+
+	profile->powersave_timeout = pdata->profile.powersave_timeout;
+	profile->poweroff_timeout = pdata->profile.poweroff_timeout;
+
+	for (i = 0; i < 5; i++) {
+		// profile->dpi[i] = get_unaligned_le_u16(&data[2 * i + 3]);
+		profile->dpi[i] = get_unaligned_le_u16(&data[5 * i + 4]); // TODO: X only
+		hidpp_log_info(&device->base, "%s: dpi[%d] = %d\n", __func__, i, profile->dpi[i]);
+	}
+
+	for (i = 0; i < profiles_list->num_leds; i++)
+	{
+		hidpp20_onboard_profiles_read_led(&profile->leds[i], pdata->profile.leds[i]);
+		hidpp20_onboard_profiles_read_led(&profile->alt_leds[i], pdata->profile.alt_leds[i]);
+	}
+
+	hidpp20_buttons_to_cpu(device, profiles_list, profile, pdata->profile.buttons, profiles_list->num_buttons);
+
+	// TODO: handle UTF-16?
+	memcpy(profile->name, pdata->profile.name.txt, sizeof(profile->name));
+	/* force terminating '\0' */
+	profile->name[sizeof(profile->name) - 1] = '\0';
+
+	/* check if we are using the default name or not */
+	for (i = 0; i < sizeof(profile->name); i++) {
+		if (pdata->profile.name.raw[i] != 0xff)
+			break;
+	}
+	if (i == sizeof(profile->name))
+		memset(profile->name, 0, sizeof(profile->name));
+
+	hidpp_log_info(&device->base, "%s: profile name '%s'\n", __func__, profile->name);
+
+	return 0;
+}
+
+
+static int
+hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
+				       struct hidpp20_profiles *profiles_list,
+				       unsigned index,
+				       bool check_crc)
+{
+	union hidpp20_internal_profile *pdata;
+	struct hidpp20_profile *profile = &profiles_list->profiles[index];
+	uint16_t sector = profile->address;
+	_cleanup_free_ uint8_t *data = NULL;
+	unsigned i;
+	int rc;
+
+	if (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/* Handle extended format profiles */
+		return hidpp20_onboard_profiles_parse_profile_ext(device, profiles_list, index, check_crc);
+	}
+
+	if (index >= profiles_list->num_profiles)
+		return -EINVAL;
+
+	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
+	pdata = (union hidpp20_internal_profile *)data;
+
+	hidpp_log_info(&device->base, "%s: reading sector 0x%x for profile %d, size = %d\n", __func__, sector, index, profiles_list->sector_size);
+
+	rc = hidpp20_onboard_profiles_read_sector(device,
+						  sector,
+						  profiles_list->sector_size,
+						  data);
+	if (rc < 0)
+		return rc;
+
+	hidpp_log_info(&device->base, "%s: check crc? = %d\n", __func__, check_crc);
+
+	if (check_crc) {
+		if (!hidpp20_onboard_profiles_is_sector_valid(device,
+							      profiles_list->sector_size,
+							      data)) {
+			return -EAGAIN;
+		}
+	}
+
+	hidpp_log_info(&device->base, "%s: report_rate = %d\n", __func__, pdata->profile.report_rate);
+
 	profile->report_rate = 1000 / max(1, pdata->profile.report_rate);
 	profile->default_dpi = pdata->profile.default_dpi;
 	profile->switched_dpi = pdata->profile.switched_dpi;
+
+	hidpp_log_info(&device->base, "%s: default dpi = %d\n", __func__, profile->default_dpi);
+	hidpp_log_info(&device->base, "%s: switched dpi = %d\n", __func__, profile->switched_dpi);
 
 	profile->powersave_timeout = pdata->profile.powersave_timeout;
 	profile->poweroff_timeout = pdata->profile.poweroff_timeout;
@@ -3218,6 +3369,8 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 	}
 	if (i == sizeof(profile->name))
 		memset(profile->name, 0, sizeof(profile->name));
+
+	hidpp_log_info(&device->base, "%s: profile name '%s'\n", __func__, profile->name);
 
 	return 0;
 }
@@ -3379,6 +3532,71 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 }
 
 static int
+hidpp20_onboard_profiles_write_profile_ext(struct hidpp20_device *device,
+				       struct hidpp20_profiles *profiles_list,
+				       unsigned int index)
+{
+	union hidpp20_internal_profile_ext *pdata;
+	_cleanup_free_ uint8_t *data = NULL;
+	uint16_t sector_size = profiles_list->sector_size;
+	uint16_t sector = index + 1;
+	struct hidpp20_profile *profile = &profiles_list->profiles[index];
+	unsigned i;
+	int rc;
+
+	if (index >= profiles_list->num_profiles)
+		return -EINVAL;
+
+	hidpp_log_debug(&device->base, "writing new profile?\n");
+
+	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
+	pdata = (union hidpp20_internal_profile_ext *)data;
+
+	memset(data, 0xff, profiles_list->sector_size);
+
+	/* TODO: Unknown fields */
+	pdata->profile.unknown_1[0] = 0x00;
+	pdata->profile.unknown_1[1] = 0x00;
+	pdata->profile.unknown_1[2] = 0x00;
+	pdata->profile.unknown_1[3] = 0x00;
+	pdata->profile.unknown_3 = 0x00;
+
+	pdata->profile.report_rate = hidpp20_ext_adjustable_report_rate_from_hz(profile->report_rate);
+	pdata->profile.report_rate_wireless = pdata->profile.report_rate; // TODO: handle?
+	pdata->profile.default_dpi = profile->default_dpi;
+	pdata->profile.switched_dpi = profile->switched_dpi;
+
+	pdata->profile.powersave_timeout = profile->powersave_timeout;
+	pdata->profile.poweroff_timeout = profile->poweroff_timeout;
+
+	for (i = 0; i < 5; i++) {
+		pdata->profile.dpi[i].x = hidpp_cpu_to_le_u16(profile->dpi[i]);
+		pdata->profile.dpi[i].y = hidpp_cpu_to_le_u16(profile->dpi[i]);
+		pdata->profile.dpi[i].lod = 2; /* TODO: default, medium */
+	}
+
+	for (i = 0; i < profiles_list->num_leds; i++)
+	{
+		hidpp20_onboard_profiles_write_led(&pdata->profile.leds[i], &profile->leds[i]);
+		/* we write the current led instead of the stored value */
+		hidpp20_onboard_profiles_write_led(&pdata->profile.alt_leds[i], &profile->leds[i]);
+	}
+
+	hidpp20_buttons_from_cpu(profile, pdata->profile.buttons, profiles_list->num_buttons);
+
+	// TODO: ???
+	// memcpy(pdata->profile.name.txt, profile->name, sizeof(profile->name));
+
+	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
+	if (rc < 0) {
+		hidpp_log_error(&device->base, "failed to write profile\n");
+		return rc;
+	}
+
+	return 0;
+}
+
+static int
 hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 				       struct hidpp20_profiles *profiles_list,
 				       unsigned int index)
@@ -3390,6 +3608,11 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
 	unsigned i;
 	int rc;
+
+	if (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/* Handle extended format profiles */
+		return hidpp20_onboard_profiles_write_profile_ext(device, profiles_list, index);
+	}
 
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;

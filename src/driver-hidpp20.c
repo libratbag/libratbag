@@ -1523,6 +1523,8 @@ hidpp20drv_init_profile_8100(struct ratbag_device *device)
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201)
 		drv_data->num_resolutions = drv_data->profiles->num_modes;
+	else if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202)
+		drv_data->num_resolutions = drv_data->profiles->num_modes;
 	/* We ignore the profile's num_leds and require
 	* HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
 	*/
