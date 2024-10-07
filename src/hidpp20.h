@@ -421,6 +421,29 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi);
 
 /* -------------------------------------------------------------------------- */
+/* 0x2202: Extended Adjustable DPI                                            */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI		0x2202
+
+/**
+ * allocates a list of sensors that has to be freed by the caller.
+ *
+ * returns the elements in the list or a negative error
+ */
+int hidpp20_ext_adjustable_dpi_get_sensors(struct hidpp20_device *device,
+					   struct hidpp20_sensor **sensors_list);
+
+/**
+ * set the current dpi of the provided sensor. sensor must have been
+ * allocated by hidpp20_ext_adjustable_dpi_get_sensors()
+ */
+int hidpp20_ext_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
+					      struct hidpp20_sensor *sensor,
+					      uint16_t dpi_x, uint16_t dpi_y,
+					      uint8_t lod);
+
+/* -------------------------------------------------------------------------- */
 /* 0x8060 - Adjustable Report Rate                                            */
 /* -------------------------------------------------------------------------- */
 
@@ -438,6 +461,28 @@ int hidpp20_adjustable_report_rate_get_report_rate(struct hidpp20_device *device
 
 int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
 						   uint8_t rate_ms);
+
+/* -------------------------------------------------------------------------- */
+/* 0x8061 - Extended Adjustable Report Rate                                   */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE	0x8061
+
+unsigned hidpp20_ext_adjustable_report_rate_to_hz(uint8_t rate_ms);
+uint8_t hidpp20_ext_adjustable_report_rate_from_hz(unsigned rate_hz);
+
+/**
+ * set the bitmap_ms to the supported report rates. Bits enabled reflect a
+ * supported report rate (non-linearly).
+ */
+int hidpp20_ext_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
+							uint16_t *bitflags);
+
+int hidpp20_ext_adjustable_report_rate_get_report_rate(struct hidpp20_device *device,
+						   uint8_t *rate);
+
+int hidpp20_ext_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
+						   uint8_t rate);
 
 /* -------------------------------------------------------------------------- */
 /* 0x8070v4 - Color LED effects                                               */
