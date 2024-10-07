@@ -2535,6 +2535,9 @@ hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 
 	unknown_0 = msg.msg.parameters[0];
 	active_profile_index = msg.msg.parameters[1];
+	/* TODO: profile index offset starts at 1? refer to set_current_profile, but prevent wrapping */
+	if (active_profile_index > 0)
+		active_profile_index = active_profile_index - 1;
 
 	hidpp_log_raw(
 	    &device->base,
