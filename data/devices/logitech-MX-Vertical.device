@@ -1,5 +1,5 @@
 [Device]
 Name=Logitech MX Vertical
-DeviceMatch=bluetooth:046d:b020;usb:046d:407b;usb:046d:c08a
+DeviceMatch=bluetooth:046d:b020;usb:046d:407b;usb:046d:c08a;usb:046d:c077
 Driver=hidpp20
 DeviceType=mouse
