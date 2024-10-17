@@ -273,6 +273,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		}
 
 		nres = ratbag_profile_get_num_resolutions(profile);
+		log_debug(profile->device->ratbag, "%s: resolutions = %d\n", __func__, nres);
 		if (nres > 16) {
 				log_bug_libratbag(ratbag,
 						  "%s: invalid number of resolutions (%d)\n",
@@ -283,6 +284,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			nvals = ratbag_resolution_get_dpi_list(resolution, vals, nvals);
+			log_debug(profile->device->ratbag, "%s: resolution values = %d\n", __func__, nvals);
 			if (nvals == 0) {
 				log_bug_libratbag(ratbag,
 						  "%s: invalid dpi list\n",
@@ -293,6 +295,7 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 		}
 
 		nvals = ratbag_profile_get_report_rate_list(profile, vals, nvals);
+		log_debug(profile->device->ratbag, "%s: rates = %d\n", __func__, nvals);
 		if (nvals == 0) {
 			log_bug_libratbag(ratbag,
 					  "%s: invalid report rate list\n",
@@ -922,6 +925,8 @@ ratbag_profile_set_active(struct ratbag_profile *profile)
 LIBRATBAG_EXPORT unsigned int
 ratbag_profile_get_num_resolutions(const struct ratbag_profile *profile)
 {
+	log_debug(profile->device->ratbag, "%s: profile->num_resolution = %d\n", profile->device->name, profile->num_resolutions);
+
 	return profile->num_resolutions;
 }
 
@@ -1156,6 +1161,9 @@ ratbag_profile_get_report_rate_list(const struct ratbag_profile *profile,
 				    size_t nrates)
 {
 	_Static_assert(sizeof(*rates) == sizeof(*profile->rates), "type mismatch");
+
+	log_debug(profile->device->ratbag, "%s: nrates = %ld\n", profile->device->name, nrates);
+	log_debug(profile->device->ratbag, "%s: profile->nrates = %ld\n", profile->device->name, profile->nrates);
 
 	assert(nrates > 0);
 

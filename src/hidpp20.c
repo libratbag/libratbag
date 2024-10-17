@@ -43,6 +43,26 @@
 #include "libratbag-util.h"
 #include "libratbag-private.h"
 
+#define DEBUG_PARAMETERS \
+	hidpp_log_debug(&device->base, "%s: parameters = %02x %02x %02x %02x   %02x %02x %02x %02x   %02x %02x %02x %02x   %02x %02x %02x %02x\n", __func__, \
+		msg.msg.parameters[0x0], \
+		msg.msg.parameters[0x1], \
+		msg.msg.parameters[0x2], \
+		msg.msg.parameters[0x3], \
+		msg.msg.parameters[0x4], \
+		msg.msg.parameters[0x5], \
+		msg.msg.parameters[0x6], \
+		msg.msg.parameters[0x7], \
+		msg.msg.parameters[0x8], \
+		msg.msg.parameters[0x9], \
+		msg.msg.parameters[0xa], \
+		msg.msg.parameters[0xb], \
+		msg.msg.parameters[0xc], \
+		msg.msg.parameters[0xd], \
+		msg.msg.parameters[0xe], \
+		msg.msg.parameters[0xf] \
+		);
+
 const char*
 hidpp20_feature_get_name(uint16_t feature)
 {
@@ -64,7 +84,9 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_WIRELESS_DEVICE_STATUS);
 	CASE_RETURN_STRING(HIDPP_PAGE_MOUSE_POINTER_BASIC);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_DPI);
+	CASE_RETURN_STRING(HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_REPORT_RATE);
+	CASE_RETURN_STRING(HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE);
 	CASE_RETURN_STRING(HIDPP_PAGE_COLOR_LED_EFFECTS);
 	CASE_RETURN_STRING(HIDPP_PAGE_RGB_EFFECTS);
 	CASE_RETURN_STRING(HIDPP_PAGE_ONBOARD_PROFILES);
@@ -1686,6 +1708,226 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x2202: Extended Adjustable DPI                                            */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_COUNT		0x00
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI_AXES		0x10
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST		0x20
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI		0x50
+#define CMD_EXTENDED_ADJUSTABLE_DPI_SET_SENSOR_DPI		0x60
+
+static int
+hidpp20_ext_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
+				    uint8_t reg,
+				    struct hidpp20_sensor *sensor)
+{
+	int rc;
+	unsigned int dpi_index = 0;
+	unsigned int list_page = 0; // TODO: is this the correct name for this?
+
+	hidpp_log_debug(&device->base, "%s: index = %d\n", __func__, sensor->index);
+
+	sensor->dpi_min = 0xffff;
+	sensor->dpi_max = 0x0000;
+
+	while (1) {
+		hidpp_log_debug(&device->base, "%s: list_page = %d\n", __func__, list_page);
+
+		union hidpp20_message msg = {
+			.msg.report_id = REPORT_ID_SHORT,
+			.msg.device_idx = device->index,
+			.msg.sub_id = reg,
+			.msg.address = CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
+			.msg.parameters[0] = sensor->index,
+			.msg.parameters[1] = 0x0, // direction? 1 for Y, 2 for LOD?
+			.msg.parameters[2] = list_page, // page offset in the list
+		};
+
+		rc = hidpp20_request_command(device, &msg);
+		if (rc)
+			return rc;
+
+		DEBUG_PARAMETERS
+
+
+		sensor->index = msg.msg.parameters[0]; // TODO: check this
+		// direction
+		// page
+
+		unsigned i = 3;
+		while (i < LONG_MESSAGE_LENGTH - 4U) {
+			uint16_t value = get_unaligned_be_u16(&msg.msg.parameters[i]);
+			hidpp_log_debug(&device->base, "%s: value = 0x%x\n", __func__, value);
+
+			if (value == 0)
+				break;
+
+			if (value >> 13 == 0x7) {
+				sensor->dpi_steps = value & 0x1fff;
+				hidpp_log_debug(&device->base, "%s: dpi steps = 0x%x\n", __func__, sensor->dpi_steps);
+			} else {
+				sensor->dpi_min = min(value, sensor->dpi_min);
+				sensor->dpi_max = max(value, sensor->dpi_max);
+				hidpp_log_debug(&device->base, "%s: dpi_index = %d, dpi min = 0x%x\n", __func__, dpi_index, sensor->dpi_min);
+				hidpp_log_debug(&device->base, "%s: dpi_index = %d, dpi max = 0x%x\n", __func__, dpi_index, sensor->dpi_max);
+				sensor->dpi_list[dpi_index++] = value;
+			}
+			assert(sensor->dpi_list[dpi_index] == 0x0000);
+			i += 2;
+		}
+
+		if (i >= LONG_MESSAGE_LENGTH - 4U) {
+			list_page += 1;
+			continue;
+		}
+
+		hidpp_log_debug(&device->base, "%s: end of list\n", __func__);
+		// End of list
+		break;
+	}
+	return 0;
+}
+
+static int
+hidpp20_ext_adjustable_dpi_get_dpi(struct hidpp20_device *device,
+			       uint8_t reg,
+			       struct hidpp20_sensor *sensor)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.sub_id = reg,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI,
+		.msg.parameters[0] = sensor->index,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	hidpp_log_debug(&device->base, "%s: get dpi for %d\n", __func__, sensor->index);
+
+	DEBUG_PARAMETERS
+
+	sensor->dpi = get_unaligned_be_u16(&msg.msg.parameters[1]);
+	hidpp_log_debug(&device->base, "%s: x dpi = 0x%x\n", __func__, sensor->dpi);
+
+	sensor->default_dpi = get_unaligned_be_u16(&msg.msg.parameters[3]);
+	hidpp_log_debug(&device->base, "%s: x default dpi = 0x%x\n", __func__, sensor->default_dpi);
+
+	// TODO: y dpi
+	hidpp_log_debug(&device->base, "%s: y dpi = 0x%x\n", __func__, get_unaligned_be_u16(&msg.msg.parameters[5]));
+	hidpp_log_debug(&device->base, "%s: y default dpi = 0x%x\n", __func__, get_unaligned_be_u16(&msg.msg.parameters[7]));
+	// TODO: LOD?
+	hidpp_log_debug(&device->base, "%s: lod = 0x%x\n", __func__, msg.msg.parameters[9]);
+
+	return 0;
+}
+
+
+int hidpp20_ext_adjustable_dpi_get_sensors(struct hidpp20_device *device,
+					   struct hidpp20_sensor **sensors_list)
+{
+	uint8_t feature_index;
+	struct hidpp20_sensor *s_list, *sensor;
+	uint8_t num_sensors;
+	unsigned i;
+	int rc;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	rc = hidpp20_adjustable_dpi_get_count(device, feature_index);
+
+	hidpp_log_raw(&device->base, "%s: extended dpi\n", __func__);
+
+	num_sensors = rc;
+	hidpp_log_raw(&device->base, "%s: number = %d (rc = 0x%x)\n", __func__, num_sensors, rc);
+	if (num_sensors == 0) {
+		*sensors_list = NULL;
+		return 0;
+	}
+
+	s_list = zalloc(num_sensors * sizeof(struct hidpp20_sensor));
+
+	for (i = 0; i < num_sensors; i++) {
+		sensor = &s_list[i];
+		sensor->index = i;
+		rc = hidpp20_ext_adjustable_dpi_get_dpi_list(device,
+							 feature_index,
+							 sensor);
+		if (rc)
+			goto err;
+
+		hidpp_log_raw(&device->base, "%s: first sensor?\n", __func__);
+
+		rc = hidpp20_ext_adjustable_dpi_get_dpi(device, feature_index, sensor);
+		if (rc)
+			goto err;
+
+		hidpp_log_raw(&device->base,
+			      "sensor %d: current dpi: %d (default: %d) min: %d max: %d steps: %d\n",
+			      sensor->index,
+			      sensor->dpi,
+			      sensor->default_dpi,
+			      sensor->dpi_min,
+			      sensor->dpi_max,
+			      sensor->dpi_steps);
+	}
+
+	*sensors_list = s_list;
+	return num_sensors;
+err:
+	free(s_list);
+	return rc > 0 ? -EPROTO : rc;
+}
+
+int hidpp20_ext_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
+					      struct hidpp20_sensor *sensor,
+					      uint16_t dpi_x, uint16_t dpi_y,
+					      uint8_t lod)
+
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_DPI_SET_SENSOR_DPI,
+		.msg.parameters[0] = sensor->index,
+	};
+
+	hidpp_log_raw(&device->base, "%s: sensor index = %d\n", __func__, sensor->index);
+
+	set_unaligned_be_u16(&msg.msg.parameters[1], dpi_x);
+	set_unaligned_be_u16(&msg.msg.parameters[3], dpi_y);
+	msg.msg.parameters[5] = lod;
+
+	hidpp_log_raw(&device->base, "%s: parameters encoded\n", __func__);
+	DEBUG_PARAMETERS
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	hidpp_log_raw(&device->base, "%s: set extended dpi\n", __func__);
+	DEBUG_PARAMETERS
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x8060 - Adjustable Report Rate                                            */
 /* -------------------------------------------------------------------------- */
 
@@ -1775,6 +2017,184 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x8061 - Extended Adjustable Report Rate                                   */
+/* -------------------------------------------------------------------------- */
+
+unsigned hidpp20_ext_adjustable_report_rate_to_hz(uint8_t rate_ms)
+{
+	switch (rate_ms)
+	{
+	case 0: /* 8ms */
+		return 125;
+	case 1: /* 4ms */
+		return 250;
+	case 2: /* 2ms */
+		return 500;
+	case 3: /* 1ms */
+		return 1000;
+	case 4: /* 500us */
+		return 2000;
+	case 5: /* 250us */
+		return 4000;
+	case 6: /* 250us */
+		return 8000;
+	default:
+		return 0;
+	}
+}
+
+uint8_t hidpp20_ext_adjustable_report_rate_from_hz(unsigned rate_hz)
+{
+	/* Non-linear frequency/millis -> index */
+	switch (rate_hz)
+	{
+	case 125: /* 8ms */
+		return 0;
+	case 250: /* 4ms */
+		return 1;
+	case 500: /* 2ms */
+		return 2;
+	case 1000: /* 1ms */
+		return 3;
+	case 2000: /* 500us */
+		return 4;
+	case 4000: /* 250us */
+		return 5;
+	case 8000: /* 125us */
+		return 6;
+	default:
+		return -1;
+	}
+}
+
+#define CMD_EXTENDED_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE_LIST	0x00
+#define CMD_EXTENDED_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE		0x20
+#define CMD_EXTENDED_ADJUSTABLE_REPORT_RATE_SET_REPORT_RATE		0x30
+
+int hidpp20_ext_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
+							uint16_t *bitflags)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE_LIST,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*bitflags = get_unaligned_be_u16(&msg.msg.parameters[0]);
+
+	hidpp_log_debug(&device->base, "%s: bitflags = 0x%x\n", __func__, *bitflags);
+	hidpp_log_debug(&device->base, "%s: parameters = %02x %02x %02x %02x   %02x %02x %02x %02x   %02x %02x %02x %02x   %02x %02x %02x %02x\n", __func__,
+		msg.msg.parameters[0x0],
+		msg.msg.parameters[0x1],
+		msg.msg.parameters[0x2],
+		msg.msg.parameters[0x3],
+		msg.msg.parameters[0x4],
+		msg.msg.parameters[0x5],
+		msg.msg.parameters[0x6],
+		msg.msg.parameters[0x7],
+		msg.msg.parameters[0x8],
+		msg.msg.parameters[0x9],
+		msg.msg.parameters[0xa],
+		msg.msg.parameters[0xb],
+		msg.msg.parameters[0xc],
+		msg.msg.parameters[0xd],
+		msg.msg.parameters[0xe],
+		msg.msg.parameters[0xf]
+		);
+
+	return 0;
+}
+
+int hidpp20_ext_adjustable_report_rate_get_report_rate(struct hidpp20_device *device,
+						   uint8_t *rate)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_REPORT_RATE_GET_REPORT_RATE,
+		.msg.parameters[0] = 0,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*rate = msg.msg.parameters[0];
+
+	hidpp_log_debug(&device->base, "%s: rate = 0x%x\n", __func__, *rate);
+	hidpp_log_debug(&device->base, "%s: parameters = %02x %02x %02x %02x   %02x %02x %02x %02x   %02x %02x %02x %02x   %02x %02x %02x %02x\n", __func__,
+		msg.msg.parameters[0x0],
+		msg.msg.parameters[0x1],
+		msg.msg.parameters[0x2],
+		msg.msg.parameters[0x3],
+		msg.msg.parameters[0x4],
+		msg.msg.parameters[0x5],
+		msg.msg.parameters[0x6],
+		msg.msg.parameters[0x7],
+		msg.msg.parameters[0x8],
+		msg.msg.parameters[0x9],
+		msg.msg.parameters[0xa],
+		msg.msg.parameters[0xb],
+		msg.msg.parameters[0xc],
+		msg.msg.parameters[0xd],
+		msg.msg.parameters[0xe],
+		msg.msg.parameters[0xf]
+		);
+
+	return 0;
+}
+
+int hidpp20_ext_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
+						   uint8_t rate)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_REPORT_RATE_SET_REPORT_RATE,
+		.msg.parameters[0] = rate,
+	};
+
+	hidpp_log_debug(&device->base, "%s: setting rate index = 0x%x\n", __func__, rate);
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
 /* -------------------------------------------------------------------------- */
 
@@ -1802,6 +2222,7 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915	0x04
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2	0x06
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -1810,13 +2231,16 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 #define HIDPP20_PROFILE_DIR_END				0xFFFF
 #define HIDPP20_PROFILE_DIR_ENABLED			2
 
+// Profile
 union hidpp20_internal_profile {
 	uint8_t data[HIDPP20_PROFILE_SIZE];
 	struct {
 		uint8_t report_rate;
 		uint8_t default_dpi;
 		uint8_t switched_dpi;
+		// @0x3
 		uint16_t dpi[5];
+		// 0xd
 		struct hidpp20_color profile_color;
 		uint8_t power_mode;
 		uint8_t angle_snapping;
@@ -1836,6 +2260,46 @@ union hidpp20_internal_profile {
 	} __attribute__((packed)) profile;
 };
 _Static_assert(sizeof(union hidpp20_internal_profile) == HIDPP20_PROFILE_SIZE, "Invalid size");
+
+union hidpp20_internal_profile_ext {
+	uint8_t data[HIDPP20_PROFILE_SIZE];
+	struct {
+		uint8_t report_rate;
+		uint8_t report_rate_wireless; // TODO: check?
+		uint8_t default_dpi;
+		uint8_t switched_dpi;
+		struct {
+			uint16_t x;
+			uint16_t y;
+			uint8_t lod; /* 0x02 = medium */
+		} __attribute__((packed)) dpi[5];
+		// @0x1d
+		uint8_t unknown_1[4]; // set to 00
+		uint8_t unknown_2; // set to ff
+		uint8_t unknown_3; // set to 00
+		uint8_t unknown_4[9]; // set to ff
+		// @0x2b // TODO: confirm
+		uint16_t powersave_timeout;
+		uint16_t poweroff_timeout;
+		// @0x30
+		union hidpp20_button_binding buttons[16];
+		union hidpp20_button_binding alternate_buttons[12];
+		// @0xa0
+		union {
+			// Special string for default 'PROFILE_NAME_DEFAULT'
+			// UTF-16?
+			char txt[48];
+			uint8_t raw[48];
+		} name;
+		/* TODO: LEDs appear to be defined in the GPX SL2 but the device has no configurable LEDs */
+		struct hidpp20_internal_led leds[2];
+		struct hidpp20_internal_led alt_leds[2];
+		uint8_t unknown_5; /* default value of 0x03 */
+		uint16_t crc;
+		uint8_t unknown_6;
+	} __attribute__((packed)) profile;
+};
+_Static_assert(sizeof(union hidpp20_internal_profile_ext) == HIDPP20_PROFILE_SIZE, "Invalid size");
 
 int
 hidpp20_onboard_profiles_get_profiles_desc(struct hidpp20_device *device,
@@ -1863,6 +2327,18 @@ hidpp20_onboard_profiles_get_profiles_desc(struct hidpp20_device *device,
 	*info = *(struct hidpp20_onboard_profiles_info *)msg.msg.parameters;
 
 	info->sector_size = hidpp_be_u16_to_cpu(info->sector_size);
+
+	hidpp_log_debug(&device->base, "%s: onboard profile description\n", __func__);
+	hidpp_log_debug(&device->base, "%s: memory_model_id = 0x%x\n", __func__, info->memory_model_id);
+	hidpp_log_debug(&device->base, "%s: profile_format_id = 0x%x\n", __func__, info->profile_format_id);
+	hidpp_log_debug(&device->base, "%s: macro_format_id = 0x%x\n", __func__, info->macro_format_id);
+	hidpp_log_debug(&device->base, "%s: profile_count = %d\n", __func__, info->profile_count);
+	hidpp_log_debug(&device->base, "%s: profile_count oob = %d\n", __func__, info->profile_count_oob);
+	hidpp_log_debug(&device->base, "%s: button_count = %d\n", __func__, info->button_count);
+	hidpp_log_debug(&device->base, "%s: sector_count = %d\n", __func__, info->sector_count);
+	hidpp_log_debug(&device->base, "%s: sector_size = %d\n", __func__, info->sector_size);
+	hidpp_log_debug(&device->base, "%s: mechanical_layout = 0x%x\n", __func__, info->mechanical_layout);
+	hidpp_log_debug(&device->base, "%s: various_info = 0x%x\n", __func__, info->various_info);
 
 	return 0;
 }
@@ -1923,6 +2399,7 @@ hidpp20_onboard_profiles_is_sector_valid(struct hidpp20_device *device,
 	crc = hidpp_crc_ccitt(data, sector_size - 2);
 	read_crc = get_unaligned_be_u16(&data[sector_size - 2]);
 
+	hidpp_log_debug(&device->base, "CRC (read:%04x != %04x:computed)\n", read_crc, crc);
 	if (crc != read_crc)
 		hidpp_log_debug(&device->base, "Invalid CRC (%04x != %04x)\n", read_crc, crc);
 
@@ -2115,6 +2592,9 @@ hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 
 	unknown_0 = msg.msg.parameters[0];
 	active_profile_index = msg.msg.parameters[1];
+	/* TODO: profile index offset starts at 1? refer to set_current_profile, but prevent wrapping */
+	if (active_profile_index > 0)
+		active_profile_index = active_profile_index - 1;
 
 	hidpp_log_raw(
 	    &device->base,
@@ -2220,7 +2700,8 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -2277,6 +2758,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	profiles->profiles = zalloc(info.profile_count * sizeof(struct hidpp20_profile));
 	profiles->sector_size = info.sector_size;
 	profiles->sector_count = info.sector_count;
+	profiles->format_id = info.profile_format_id;
 	profiles->num_profiles = info.profile_count;
 	profiles->num_rom_profiles = info.profile_count_oob;
 	profiles->num_buttons = min(info.button_count, 16);
@@ -2701,6 +3183,115 @@ hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
 }
 
 static int
+hidpp20_onboard_profiles_parse_profile_ext(struct hidpp20_device *device,
+					   struct hidpp20_profiles *profiles_list,
+					   unsigned index,
+					   bool check_crc)
+{
+	union hidpp20_internal_profile_ext *pdata;
+	struct hidpp20_profile *profile = &profiles_list->profiles[index];
+	uint16_t sector = profile->address;
+	_cleanup_free_ uint8_t *data = NULL;
+	unsigned i;
+	int rc;
+
+	if (index >= profiles_list->num_profiles)
+		return -EINVAL;
+
+	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
+	pdata = (union hidpp20_internal_profile_ext *)data;
+
+	hidpp_log_info(&device->base, "%s: reading sector 0x%x for profile %d, size = %d\n", __func__, sector, index, profiles_list->sector_size);
+
+	rc = hidpp20_onboard_profiles_read_sector(device,
+						  sector,
+						  profiles_list->sector_size,
+						  data);
+	if (rc < 0)
+		return rc;
+
+	for (i = 0; i < profiles_list->sector_size; i += 16) {
+		char buf[1024];
+		snprintf(buf, 1024, "%04x: %02x %02x %02x %02x %02x %02x %02x %02x  %02x %02x %02x %02x %02x %02x %02x %02x\n",
+			i,
+			data[i + 0],
+			data[i + 1],
+			data[i + 2],
+			data[i + 3],
+			data[i + 4],
+			data[i + 5],
+			data[i + 6],
+			data[i + 7],
+			data[i + 8],
+			data[i + 9],
+			data[i + 10],
+			data[i + 11],
+			data[i + 12],
+			data[i + 13],
+			data[i + 14],
+			data[i + 15]
+			);
+
+		hidpp_log_info(&device->base, "%s: data %s", __func__, buf);
+	}
+
+	hidpp_log_info(&device->base, "%s: check crc? = %d\n", __func__, check_crc);
+
+	if (check_crc) {
+		if (!hidpp20_onboard_profiles_is_sector_valid(device,
+							      profiles_list->sector_size,
+							      data)) {
+			return -EAGAIN;
+		}
+	}
+
+	hidpp_log_info(&device->base, "%s: report_rate = %d\n", __func__, pdata->profile.report_rate);
+
+	profile->report_rate = hidpp20_ext_adjustable_report_rate_to_hz(pdata->profile.report_rate);
+	hidpp_log_info(&device->base, "%s: report_rate hz = %d\n", __func__, profile->report_rate);
+	profile->default_dpi = pdata->profile.default_dpi;
+	profile->switched_dpi = pdata->profile.switched_dpi;
+
+	hidpp_log_info(&device->base, "%s: default dpi = %d\n", __func__, profile->default_dpi);
+	hidpp_log_info(&device->base, "%s: switched dpi = %d\n", __func__, profile->switched_dpi);
+
+	profile->powersave_timeout = pdata->profile.powersave_timeout;
+	profile->poweroff_timeout = pdata->profile.poweroff_timeout;
+
+	for (i = 0; i < 5; i++) {
+		// profile->dpi[i] = get_unaligned_le_u16(&data[2 * i + 3]);
+		profile->dpi[i] = get_unaligned_le_u16(&data[5 * i + 4]); // TODO: X only
+		hidpp_log_info(&device->base, "%s: dpi[%d] = %d\n", __func__, i, profile->dpi[i]);
+	}
+
+	for (i = 0; i < profiles_list->num_leds; i++)
+	{
+		hidpp20_onboard_profiles_read_led(&profile->leds[i], pdata->profile.leds[i]);
+		hidpp20_onboard_profiles_read_led(&profile->alt_leds[i], pdata->profile.alt_leds[i]);
+	}
+
+	hidpp20_buttons_to_cpu(device, profiles_list, profile, pdata->profile.buttons, profiles_list->num_buttons);
+
+	// TODO: handle UTF-16?
+	memcpy(profile->name, pdata->profile.name.txt, sizeof(profile->name));
+	/* force terminating '\0' */
+	profile->name[sizeof(profile->name) - 1] = '\0';
+
+	/* check if we are using the default name or not */
+	for (i = 0; i < sizeof(profile->name); i++) {
+		if (pdata->profile.name.raw[i] != 0xff)
+			break;
+	}
+	if (i == sizeof(profile->name))
+		memset(profile->name, 0, sizeof(profile->name));
+
+	hidpp_log_info(&device->base, "%s: profile name '%s'\n", __func__, profile->name);
+
+	return 0;
+}
+
+
+static int
 hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 				       struct hidpp20_profiles *profiles_list,
 				       unsigned index,
@@ -2713,11 +3304,18 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 	unsigned i;
 	int rc;
 
+	if (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/* Handle extended format profiles */
+		return hidpp20_onboard_profiles_parse_profile_ext(device, profiles_list, index, check_crc);
+	}
+
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
 
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
 	pdata = (union hidpp20_internal_profile *)data;
+
+	hidpp_log_info(&device->base, "%s: reading sector 0x%x for profile %d, size = %d\n", __func__, sector, index, profiles_list->sector_size);
 
 	rc = hidpp20_onboard_profiles_read_sector(device,
 						  sector,
@@ -2725,6 +3323,8 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 						  data);
 	if (rc < 0)
 		return rc;
+
+	hidpp_log_info(&device->base, "%s: check crc? = %d\n", __func__, check_crc);
 
 	if (check_crc) {
 		if (!hidpp20_onboard_profiles_is_sector_valid(device,
@@ -2734,9 +3334,14 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 		}
 	}
 
+	hidpp_log_info(&device->base, "%s: report_rate = %d\n", __func__, pdata->profile.report_rate);
+
 	profile->report_rate = 1000 / max(1, pdata->profile.report_rate);
 	profile->default_dpi = pdata->profile.default_dpi;
 	profile->switched_dpi = pdata->profile.switched_dpi;
+
+	hidpp_log_info(&device->base, "%s: default dpi = %d\n", __func__, profile->default_dpi);
+	hidpp_log_info(&device->base, "%s: switched dpi = %d\n", __func__, profile->switched_dpi);
 
 	profile->powersave_timeout = pdata->profile.powersave_timeout;
 	profile->poweroff_timeout = pdata->profile.poweroff_timeout;
@@ -2764,6 +3369,8 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 	}
 	if (i == sizeof(profile->name))
 		memset(profile->name, 0, sizeof(profile->name));
+
+	hidpp_log_info(&device->base, "%s: profile name '%s'\n", __func__, profile->name);
 
 	return 0;
 }
@@ -2858,13 +3465,21 @@ read_profiles:
 		else
 			profiles->profiles[i].address = HIDPP20_ROM_PROFILES_G402 + i + 1;
 
+		hidpp_log_info(&device->base, "%s: reading profile %d from ROM\n", __func__, i);
+
 		rc = hidpp20_onboard_profiles_parse_profile(device,
 							profiles,
 							i,
 							false);
 		if (rc < 0)
 			return rc;
+
+		// hidpp_log_info(&device->base, "%s: stop\n", __func__);
+		// return -1;
 	}
+
+	// hidpp_log_info(&device->base, "%s: stop\n", __func__);
+	// return -1;
 
 	return profiles->num_profiles;
 }
@@ -2917,6 +3532,71 @@ hidpp20_onboard_profiles_write_led(struct hidpp20_internal_led *internal_led,
 }
 
 static int
+hidpp20_onboard_profiles_write_profile_ext(struct hidpp20_device *device,
+				       struct hidpp20_profiles *profiles_list,
+				       unsigned int index)
+{
+	union hidpp20_internal_profile_ext *pdata;
+	_cleanup_free_ uint8_t *data = NULL;
+	uint16_t sector_size = profiles_list->sector_size;
+	uint16_t sector = index + 1;
+	struct hidpp20_profile *profile = &profiles_list->profiles[index];
+	unsigned i;
+	int rc;
+
+	if (index >= profiles_list->num_profiles)
+		return -EINVAL;
+
+	hidpp_log_debug(&device->base, "writing new profile?\n");
+
+	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
+	pdata = (union hidpp20_internal_profile_ext *)data;
+
+	memset(data, 0xff, profiles_list->sector_size);
+
+	/* TODO: Unknown fields */
+	pdata->profile.unknown_1[0] = 0x00;
+	pdata->profile.unknown_1[1] = 0x00;
+	pdata->profile.unknown_1[2] = 0x00;
+	pdata->profile.unknown_1[3] = 0x00;
+	pdata->profile.unknown_3 = 0x00;
+
+	pdata->profile.report_rate = hidpp20_ext_adjustable_report_rate_from_hz(profile->report_rate);
+	pdata->profile.report_rate_wireless = pdata->profile.report_rate; // TODO: handle?
+	pdata->profile.default_dpi = profile->default_dpi;
+	pdata->profile.switched_dpi = profile->switched_dpi;
+
+	pdata->profile.powersave_timeout = profile->powersave_timeout;
+	pdata->profile.poweroff_timeout = profile->poweroff_timeout;
+
+	for (i = 0; i < 5; i++) {
+		pdata->profile.dpi[i].x = hidpp_cpu_to_le_u16(profile->dpi[i]);
+		pdata->profile.dpi[i].y = hidpp_cpu_to_le_u16(profile->dpi[i]);
+		pdata->profile.dpi[i].lod = 2; /* TODO: default, medium */
+	}
+
+	for (i = 0; i < profiles_list->num_leds; i++)
+	{
+		hidpp20_onboard_profiles_write_led(&pdata->profile.leds[i], &profile->leds[i]);
+		/* we write the current led instead of the stored value */
+		hidpp20_onboard_profiles_write_led(&pdata->profile.alt_leds[i], &profile->leds[i]);
+	}
+
+	hidpp20_buttons_from_cpu(profile, pdata->profile.buttons, profiles_list->num_buttons);
+
+	// TODO: ???
+	// memcpy(pdata->profile.name.txt, profile->name, sizeof(profile->name));
+
+	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
+	if (rc < 0) {
+		hidpp_log_error(&device->base, "failed to write profile\n");
+		return rc;
+	}
+
+	return 0;
+}
+
+static int
 hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 				       struct hidpp20_profiles *profiles_list,
 				       unsigned int index)
@@ -2928,6 +3608,11 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	struct hidpp20_profile *profile = &profiles_list->profiles[index];
 	unsigned i;
 	int rc;
+
+	if (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/* Handle extended format profiles */
+		return hidpp20_onboard_profiles_write_profile_ext(device, profiles_list, index);
+	}
 
 	if (index >= profiles_list->num_profiles)
 		return -EINVAL;
