@@ -1949,9 +1949,6 @@ ratbag_action_macro_num_keys(const struct ratbag_button_action *action)
 		    event.type == RATBAG_MACRO_EVENT_INVALID) {
 			break;
 		}
-		if (ratbag_key_is_modifier(event.event.key)) {
-			continue;
-		}
 		if (event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
 			count += 1;
 		}
@@ -1975,8 +1972,13 @@ ratbag_action_keycode_from_macro(const struct ratbag_button_action *action,
 	if (macro->events[0].type == RATBAG_MACRO_EVENT_NONE)
 		return -EINVAL;
 
-	if (ratbag_action_macro_num_keys(action) != 1)
-		return -EINVAL;
+	int count = ratbag_action_macro_num_keys(action);
+	if (count == 1 && ratbag_key_is_modifier(macro->events[0].event.key)){
+		key = macro->events[0].event.key;
+		*key_out = key;
+		*modifiers_out = modifiers;
+		return 1;
+	}
 
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
 		struct ratbag_macro_event event;
