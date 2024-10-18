@@ -619,6 +619,15 @@ enum hidpp20_color_led_zone_effect {
 #define HIDPP20_DPI_COUNT				5
 #define HIDPP20_LED_COUNT				2
 
+enum hidpp20_onboard_profiles_profile_type {
+	HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402 = 0x01,
+	HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303 = 0x02,
+	HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900 = 0x03,
+	HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915 = 0x04,
+	HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G705 = 0x05,
+} __attribute__((packed));
+_Static_assert(sizeof(enum hidpp20_onboard_profiles_profile_type) == sizeof(uint8_t), "Invalid size");
+
 union hidpp20_button_binding {
 	struct {
 		uint8_t type;
@@ -916,6 +925,7 @@ struct hidpp20_profiles {
 	uint8_t sector_count;
 	uint16_t sector_size;
 	uint8_t active_profile_index;
+	uint8_t profile_format_id;
 	struct hidpp20_profile *profiles;
 };
 
