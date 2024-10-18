@@ -2,6 +2,7 @@
 [Device]
 Name=Logitech G602
 DeviceMatch=usb:046d:402c
+# Driver=logitech_g600
 Driver=hidpp20
 DeviceType=mouse
 
