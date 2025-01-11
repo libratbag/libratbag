@@ -1071,6 +1071,71 @@ hidpp20drv_update_report_rate(struct ratbag_profile *profile, int hz)
 }
 
 static int
+hidpp20drv_read_profile_name_8100(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *h_profile;
+	int rc;
+
+	h_profile = &drv_data->profiles->profiles[profile->index];
+
+	if (profile->name) {
+		free(profile->name);
+		profile->name = NULL;
+	}
+
+	/* Convert UTF-16LE onboard profile name to UTF8 */
+	rc = ratbag_utf8_from_enc(h_profile->name,
+				  sizeof(h_profile->name), "UTF-16LE",
+				  &profile->name);
+	if (rc < 0)
+		return -EINVAL;
+
+	return RATBAG_SUCCESS;
+}
+
+static int
+hidpp20drv_update_profile_name_8100(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hidpp20_profile *h_profile;
+	int rc;
+
+	if (!profile->name)
+		return -ENOTSUP;
+
+	h_profile = &drv_data->profiles->profiles[profile->index];
+
+	if (strlen(profile->name) == 0) {
+		/* Empty string */
+		memset(h_profile->name, 0, sizeof(h_profile->name));
+	} else {
+		/* Encode string as UTF-16 */
+		rc = ratbag_utf8_to_enc(h_profile->name,
+					sizeof(h_profile->name), "UTF-16LE",
+					"%s", profile->name);
+		if (rc < 0)
+			return -EINVAL;
+	}
+
+	return RATBAG_SUCCESS;
+}
+
+static int
+hidpp20drv_update_profile_name(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+		return hidpp20drv_update_profile_name_8100(profile);
+
+	return -ENOTSUP;
+}
+
+static int
 hidpp20drv_read_special_key_mouse(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -1206,6 +1271,8 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 		dpi_index = 0xff;
 
 	p = &drv_data->profiles->profiles[profile->index];
+
+	hidpp20drv_read_profile_name_8100(profile);
 
 	ratbag_profile_for_each_resolution(profile, res) {
 		struct hidpp20_sensor *sensor;
@@ -1484,6 +1551,14 @@ hidpp20drv_commit(struct ratbag_device *device)
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
 			continue;
+
+		if (profile->name != NULL) {
+			rc = hidpp20drv_update_profile_name(profile);
+			if (rc) {
+				log_error(device->ratbag, "hidpp20: failed to update profile name (%d)\n", rc);
+				return RATBAG_ERROR_DEVICE;
+			}
+		}
 
 		if (profile->rate_dirty) {
 			rc = hidpp20drv_update_report_rate(profile, profile->hz);
