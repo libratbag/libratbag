@@ -1522,7 +1522,9 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 				    struct hidpp20_sensor *sensor)
 {
 	int rc;
-	unsigned i = 1, dpi_index = 0;
+	unsigned i = 1;
+	struct hidpp20_sensor_axis *axis = &sensor->x;
+	struct hidpp20_sensor_dpi_range *range;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_SHORT,
 		.msg.device_idx = device->index,
@@ -1540,24 +1542,63 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	sensor->dpi_min = 0xffff;
+	sensor->has_y = false;
+	sensor->has_lod = false;
+	axis->dpi_min = 0xffff;
 
 	sensor->index = msg.msg.parameters[0];
-	while (i < LONG_MESSAGE_LENGTH - 4U &&
-	       get_unaligned_be_u16(&msg.msg.parameters[i]) != 0) {
+
+	while (1) {
+		if ((LONG_MESSAGE_LENGTH - 4U - i) < 2)
+			break; /* no enough data for 16-bit value */
+
 		uint16_t value = get_unaligned_be_u16(&msg.msg.parameters[i]);
+		if (value == 0)
+			break; /* break on end of list terminator */
 
 		if (device->quirk == HIDPP20_QUIRK_G602 && i == 2)
 			value += 0xe000;
 
 		if (value > 0xe000) {
-			sensor->dpi_steps = value - 0xe000;
+			if ((i + 4) >= (LONG_MESSAGE_LENGTH - 4U)) {
+				/* Missing the end extent of the range */
+				hidpp_log_error(&device->base,
+						"DPI list information contains invalid step range, not enough data\n");
+				return -EINVAL;
+			}
+			if (axis->num_dpi_ranges < 1) {
+				/* Missing the start of the steps */
+				hidpp_log_error(&device->base,
+						"Invalid DPI list step range, missing initial start value\n");
+				return -EINVAL;
+			}
+
+			/*
+			 * Range starting at last dpi + step, and going to the nearest
+			 * integer step preceeding the end value.
+			 */
+			uint16_t step = value - 0xe000;
+			uint16_t start = axis->dpi_ranges[axis->num_dpi_ranges - 1].end;
+			uint16_t end = get_unaligned_be_u16(&msg.msg.parameters[i + 2]);
+			int count = (end - start) / step;
+
+			assert(axis->num_dpi_ranges < HIDPP20_DPI_RANGES_MAX);
+			range = &axis->dpi_ranges[axis->num_dpi_ranges++];
+			range->start = start + step;
+			range->end = start + (step * count);
+			range->step = step;
+			axis->dpi_min = min(range->end, axis->dpi_min);
+			axis->dpi_max = max(range->end, axis->dpi_max);
+
+			i += 2; /* consume the range end value */
 		} else {
-			sensor->dpi_min = min(value, sensor->dpi_min);
-			sensor->dpi_max = max(value, sensor->dpi_max);
-			sensor->dpi_list[dpi_index++] = value;
+			axis->dpi_min = min(value, axis->dpi_min);
+			axis->dpi_max = max(value, axis->dpi_max);
+			assert(axis->num_dpi_ranges < HIDPP20_DPI_RANGES_MAX);
+			range = &axis->dpi_ranges[axis->num_dpi_ranges++];
+			range->start = range->end = value;
+			range->step = 0;
 		}
-		assert(sensor->dpi_list[dpi_index] == 0x0000);
 		i += 2;
 	}
 
@@ -1586,8 +1627,8 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 	if (rc)
 		return rc;
 
-	sensor->dpi = get_unaligned_be_u16(&msg.msg.parameters[1]);
-	sensor->default_dpi = get_unaligned_be_u16(&msg.msg.parameters[3]);
+	sensor->x.dpi = get_unaligned_be_u16(&msg.msg.parameters[1]);
+	sensor->x.default_dpi = get_unaligned_be_u16(&msg.msg.parameters[3]);
 
 	return 0;
 }
@@ -1632,13 +1673,12 @@ int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device,
 			goto err;
 
 		hidpp_log_raw(&device->base,
-			      "sensor %d: current dpi: %d (default: %d) min: %d max: %d steps: %d\n",
+			      "sensor %d: current dpi: %d (default: %d) min: %d max: %d\n",
 			      sensor->index,
-			      sensor->dpi,
-			      sensor->default_dpi,
-			      sensor->dpi_min,
-			      sensor->dpi_max,
-			      sensor->dpi_steps);
+			      sensor->x.dpi,
+			      sensor->x.default_dpi,
+			      sensor->x.dpi_min,
+			      sensor->x.dpi_max);
 	}
 
 	*sensors_list = s_list;

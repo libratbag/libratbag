@@ -392,18 +392,40 @@ int hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 
 #define HIDPP_PAGE_ADJUSTABLE_DPI			0x2201
 
-/**
- * either dpi_steps is not null or the values are stored in the null terminated
- * array dpi_list.
+/*
+ * The HID++20 protocol provides this data via a paged request mechanism, each
+ * page can store ~7 absolute values or ~3 ranges (start/end/step). The page
+ * index is only 8-bits, which could allow for at most 1500 entries however
+ * most devices only provide a smaller number of pages (e.g. 3). As such allow
+ * for 32 entries (approx. 5 pages).
  */
-struct hidpp20_sensor {
-	uint8_t index;
+#define HIDPP20_DPI_RANGES_MAX				32
+
+struct hidpp20_sensor_dpi_range {
+	uint16_t start;
+	uint16_t end;
+	uint16_t step;
+};
+
+struct hidpp20_sensor_axis {
 	uint16_t dpi;
 	uint16_t dpi_min;
 	uint16_t dpi_max;
-	uint16_t dpi_steps;
 	uint16_t default_dpi;
-	uint16_t dpi_list[LONG_MESSAGE_LENGTH / 2 + 1];
+	struct hidpp20_sensor_dpi_range dpi_ranges[HIDPP20_DPI_RANGES_MAX];
+	unsigned int num_dpi_ranges;
+};
+
+struct hidpp20_sensor {
+	uint8_t index;
+	bool has_y;
+	struct hidpp20_sensor_axis x;
+	struct hidpp20_sensor_axis y;
+
+	/* Lift Off Distance (LOD) has no valid ranges only fixed enum values */
+	bool has_lod;
+	uint8_t lod;
+	uint8_t default_lod;
 };
 
 /**
