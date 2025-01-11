@@ -953,10 +953,15 @@ struct hidpp20_profile {
 	uint16_t powersave_timeout;
 	uint16_t poweroff_timeout;
 	uint8_t report_rate;
+	uint8_t report_rate_wireless;
 	unsigned default_dpi;
 	unsigned switched_dpi;
 	unsigned current_dpi;
-	uint16_t dpi[HIDPP20_DPI_COUNT];
+	struct {
+		uint16_t x;
+		uint16_t y;
+		uint8_t lod;
+	} dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
@@ -991,6 +996,7 @@ struct hidpp20_profiles {
 	uint8_t sector_count;
 	uint16_t sector_size;
 	uint8_t active_profile_index;
+	uint8_t format_id;
 	struct hidpp20_profile *profiles;
 };
 
