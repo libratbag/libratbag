@@ -3259,7 +3259,7 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 		}
 	}
 
-	profile->report_rate = 1000 / max(1, pdata->profile.report_rate);
+	profile->report_rate = pdata->profile.report_rate;
 	profile->default_dpi = pdata->profile.default_dpi;
 	profile->switched_dpi = pdata->profile.switched_dpi;
 
@@ -3462,7 +3462,7 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 
 	memset(data, 0xff, profiles_list->sector_size);
 
-	pdata->profile.report_rate = 1000 / profile->report_rate;
+	pdata->profile.report_rate = profile->report_rate;
 	pdata->profile.default_dpi = profile->default_dpi;
 	pdata->profile.switched_dpi = profile->switched_dpi;
 
