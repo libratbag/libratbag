@@ -64,6 +64,7 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_WIRELESS_DEVICE_STATUS);
 	CASE_RETURN_STRING(HIDPP_PAGE_MOUSE_POINTER_BASIC);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_DPI);
+	CASE_RETURN_STRING(HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_REPORT_RATE);
 	CASE_RETURN_STRING(HIDPP_PAGE_COLOR_LED_EFFECTS);
 	CASE_RETURN_STRING(HIDPP_PAGE_RGB_EFFECTS);
@@ -1722,6 +1723,343 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 	/* version 0 of the protocol does not echo the parameters */
 	if (returned_parameters != dpi && returned_parameters)
 		return -EIO;
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x2202: Extended Adjustable DPI                                            */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_COUNT		0x00
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI_AXES		0x10
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST		0x20
+#define CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI		0x50
+#define CMD_EXTENDED_ADJUSTABLE_DPI_SET_SENSOR_DPI		0x60
+
+static int
+hidpp20_ext_adjustable_dpi_get_dpi_axes(struct hidpp20_device *device,
+					uint8_t reg,
+					struct hidpp20_sensor *sensor)
+{
+	int rc;
+
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.sub_id = reg,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI_AXES,
+		.msg.parameters[0] = sensor->index,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	if (msg.msg.parameters[0] != sensor->index)
+		return -EIO;
+
+	return msg.msg.parameters[2];
+}
+
+static int
+hidpp20_ext_adjustable_dpi_get_dpi_list_page(struct hidpp20_device *device,
+					     uint8_t reg,
+					     struct hidpp20_sensor *sensor,
+					     unsigned int axis_index, unsigned int page,
+					     uint8_t *buffer)
+{
+	int rc;
+
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.sub_id = reg,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
+		.msg.parameters[0] = sensor->index,
+		.msg.parameters[1] = axis_index, /* X/Y */
+		.msg.parameters[2] = page, /* page offset in the list */
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	if (msg.msg.parameters[0] != sensor->index)
+		return -EIO;
+	if (msg.msg.parameters[1] != axis_index)
+		return -EIO;
+	if (msg.msg.parameters[2] != page)
+		return -EIO;
+
+	memcpy(buffer, &msg.msg.parameters[3], LONG_MESSAGE_LENGTH - 4 - 3);
+	return LONG_MESSAGE_LENGTH - 4 - 3;
+}
+
+static int
+hidpp20_ext_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
+					uint8_t reg,
+					struct hidpp20_sensor *sensor,
+					unsigned int axis_index)
+{
+	int rc;
+	unsigned int page = 0;
+	/* buffer the messages, as fields occur across page boundaries */
+	uint8_t buffer[LONG_MESSAGE_LENGTH - 4 + 1];
+	unsigned int buf_remaining = 0;
+	unsigned int buf_index = 0;
+	struct hidpp20_sensor_axis *axis;
+	struct hidpp20_sensor_dpi_range *range;
+	uint16_t last_value;
+
+	if (axis_index > 2 || (!sensor->has_y && axis_index > 1))
+		return -ENOENT;
+
+	axis = (axis_index == 1) ? &sensor->y : &sensor->x;
+	axis->dpi_min = 0xffff;
+	axis->dpi_max = 0x0000;
+
+	while (1) {
+		if (buf_index != 0) {
+			/* shift remaining data to start of buffer */
+			memcpy(buffer, &buffer[buf_index], buf_remaining);
+			buf_index = 0;
+		}
+
+		rc = hidpp20_ext_adjustable_dpi_get_dpi_list_page(device, reg, sensor, axis_index, page, &buffer[buf_index + buf_remaining]);
+		if (rc < 0)
+			return rc;
+
+		buf_remaining += rc;
+
+		/* Process 2-byte fields */
+		while (buf_remaining >= 2) {
+			uint16_t value = get_unaligned_be_u16(&buffer[buf_index]);
+
+			if (value == 0) {
+				return 0; /* End of listing */
+			}
+
+			/* Step Range */
+			if (value >> 13 == 0x7) {
+				if (buf_remaining < 4) {
+					/* Not enough data, this field is likely across page
+					 * boundaries */
+					break;
+				}
+				if (axis->num_dpi_ranges < 1) {
+					hidpp_log_error(&device->base,
+							"Invalid DPI list step range, missing initial start value\n");
+					return -EINVAL;
+				}
+
+				/*
+				 * Range starting at last dpi + step, and going to the nearest
+				 * integer step preceeding the end value.
+				 */
+				uint16_t step = value & 0x1fff;
+				uint16_t start = last_value;
+				uint16_t end = get_unaligned_be_u16(&buffer[buf_index + 2]);
+				int count = (end - start) / step;
+
+				assert(axis->num_dpi_ranges < HIDPP20_DPI_RANGES_MAX);
+				range = &axis->dpi_ranges[axis->num_dpi_ranges++];
+				range->start = start + step;
+				range->end = start + (step * count);
+				range->step = step;
+				last_value = range->end;
+
+				buf_remaining -= 4;
+				buf_index += 4;
+			} else {
+				/* Singular value */
+				assert(axis->num_dpi_ranges < HIDPP20_DPI_RANGES_MAX);
+				range = &axis->dpi_ranges[axis->num_dpi_ranges++];
+				range->start = range->end = value;
+				range->step = 0;
+				last_value = value;
+
+				buf_remaining -= 2;
+				buf_index += 2;
+			}
+
+			axis->dpi_min = min(axis->dpi_min, last_value);
+			axis->dpi_max = max(axis->dpi_max, last_value);
+		}
+
+		/* More data on next page */
+		page += 1;
+	}
+}
+
+static int
+hidpp20_ext_adjustable_dpi_get_dpi_lists(struct hidpp20_device *device,
+					 uint8_t reg,
+					 struct hidpp20_sensor *sensor)
+{
+	int rc;
+
+	rc = hidpp20_ext_adjustable_dpi_get_dpi_axes(device, reg, sensor);
+	if (rc < 0)
+		return rc;
+
+	sensor->has_y = !!(rc & 0x1); /* Y axis is present */
+	sensor->has_lod = !!(rc & 0x2); /* LOD axis is present */
+
+	/* X */
+	rc = hidpp20_ext_adjustable_dpi_get_dpi_list(device, reg, sensor, 0);
+	if (rc)
+		return rc;
+
+	if (sensor->has_y) {
+		/* Y */
+		return hidpp20_ext_adjustable_dpi_get_dpi_list(device, reg, sensor, 1);
+	}
+	return 0;
+}
+
+static int
+hidpp20_ext_adjustable_dpi_get_dpi(struct hidpp20_device *device,
+				   uint8_t reg,
+				   struct hidpp20_sensor *sensor)
+{
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.sub_id = reg,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_DPI_GET_SENSOR_DPI,
+		.msg.parameters[0] = sensor->index,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	/* X */
+	sensor->x.dpi = get_unaligned_be_u16(&msg.msg.parameters[1]);
+	sensor->x.default_dpi = get_unaligned_be_u16(&msg.msg.parameters[3]);
+
+	/* Y */
+	if (sensor->has_y) {
+		sensor->y.dpi = get_unaligned_be_u16(&msg.msg.parameters[5]);
+		sensor->y.default_dpi = get_unaligned_be_u16(&msg.msg.parameters[7]);
+	}
+
+	/* LOD */
+	if (sensor->has_lod) {
+		sensor->lod = msg.msg.parameters[9];
+		sensor->default_lod = 2;
+	}
+
+	return 0;
+}
+
+
+int hidpp20_ext_adjustable_dpi_get_sensors(struct hidpp20_device *device,
+					   struct hidpp20_sensor **sensors_list)
+{
+	uint8_t feature_index;
+	struct hidpp20_sensor *s_list, *sensor;
+	uint8_t num_sensors;
+	unsigned i;
+	int rc;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	rc = hidpp20_adjustable_dpi_get_count(device, feature_index);
+	if (rc < 0)
+		return rc;
+
+	num_sensors = rc;
+	if (num_sensors == 0) {
+		*sensors_list = NULL;
+		return 0;
+	}
+
+	s_list = zalloc(num_sensors * sizeof(struct hidpp20_sensor));
+
+	for (i = 0; i < num_sensors; i++) {
+		sensor = &s_list[i];
+		sensor->index = i;
+		rc = hidpp20_ext_adjustable_dpi_get_dpi_lists(device,
+							 feature_index,
+							 sensor);
+		if (rc)
+			goto err;
+
+		rc = hidpp20_ext_adjustable_dpi_get_dpi(device, feature_index, sensor);
+		if (rc)
+			goto err;
+
+		hidpp_log_raw(&device->base,
+			      "sensor %d: current x dpi: %d (default: %d) min: %d max: %d ranges: %d\n",
+			      sensor->index,
+			      sensor->x.dpi,
+			      sensor->x.default_dpi,
+			      sensor->x.dpi_min,
+			      sensor->x.dpi_max,
+			      sensor->x.num_dpi_ranges);
+
+		if (sensor->has_y) {
+			hidpp_log_raw(&device->base,
+				      "sensor %d: current y dpi: %d (default: %d) min: %d max: %d ranges: %d\n",
+				      sensor->index,
+				      sensor->y.dpi,
+				      sensor->y.default_dpi,
+				      sensor->y.dpi_min,
+				      sensor->y.dpi_max,
+				      sensor->y.num_dpi_ranges);
+		}
+
+		if (sensor->has_lod) {
+			hidpp_log_raw(&device->base,
+				      "sensor %d: current lod: %d (default: %d)\n",
+				      sensor->index,
+				      sensor->lod,
+				      sensor->default_lod);
+		}
+	}
+
+	*sensors_list = s_list;
+	return num_sensors;
+err:
+	free(s_list);
+	return rc > 0 ? -EPROTO : rc;
+}
+
+int hidpp20_ext_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
+					      struct hidpp20_sensor *sensor,
+					      uint16_t dpi_x, uint16_t dpi_y,
+					      uint8_t lod)
+
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_EXTENDED_ADJUSTABLE_DPI_SET_SENSOR_DPI,
+		.msg.parameters[0] = sensor->index,
+	};
+
+	set_unaligned_be_u16(&msg.msg.parameters[1], dpi_x);
+	set_unaligned_be_u16(&msg.msg.parameters[3], dpi_y);
+	msg.msg.parameters[5] = lod;
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
 
 	return 0;
 }
