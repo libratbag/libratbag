@@ -59,6 +59,7 @@
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 #define HIDPP_CAP_RGB_EFFECTS_8071			(1 << 10)
 #define HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202		(1 << 11)
+#define HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8061		(1 << 12)
 
 #define HIDPP_HIDDEN_FEATURE				(1 << 6)
 
@@ -73,8 +74,14 @@ struct hidpp20drv_data {
 	struct hidpp20_led *leds;
 	union hidpp20_generic_led_zone_info led_infos;
 
-	unsigned int report_rates[4];
+	unsigned int report_rates[7];
+	unsigned int report_rates_min;
+	unsigned int report_rates_max;
 	unsigned int num_report_rates;
+	unsigned int report_rates_wireless[7];
+	unsigned int report_rates_wireless_min;
+	unsigned int report_rates_wireless_max;
+	unsigned int num_report_rates_wireless;
 
 	unsigned int num_profiles;
 	unsigned int num_resolutions;
@@ -926,6 +933,108 @@ hidpp20drv_read_report_rate_8060(struct ratbag_device *device)
 }
 
 static int
+hidpp20drv_parse_report_rates_bitflags_8061(uint16_t bitflags,
+					    unsigned int *rates,
+					    unsigned int *rate_min,
+					    unsigned int *rate_max)
+{
+	int nrates = 0;
+	int i;
+
+	if (bitflags & (1 << 0))
+		rates[nrates++] = 125;
+	if (bitflags & (1 << 1))
+		rates[nrates++] = 250;
+	if (bitflags & (1 << 2))
+		rates[nrates++] = 500;
+	if (bitflags & (1 << 3))
+		rates[nrates++] = 1000;
+	if (bitflags & (1 << 4))
+		rates[nrates++] = 2000;
+	if (bitflags & (1 << 5))
+		rates[nrates++] = 4000;
+	if (bitflags & (1 << 6))
+		rates[nrates++] = 8000;
+
+	if (nrates > 0) {
+		if (rate_min)
+			*rate_min = rates[0];
+		if (rate_max)
+			*rate_max = rates[0];
+		for (i = 1; i < nrates; i++) {
+			if (rate_min)
+				*rate_min = min(*rate_min, rates[i]);
+			if (rate_max)
+				*rate_max = max(*rate_max, rates[i]);
+		}
+	}
+
+	return nrates;
+}
+
+static int
+hidpp20drv_read_report_rate_8061(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag *ratbag = device->ratbag;
+	struct ratbag_profile *profile;
+	uint16_t bitflags;
+	int rc;
+	uint8_t rate;
+	unsigned rate_hz;
+
+	/* Wired */
+	rc = hidpp20_ext_adjustable_report_rate_get_report_rate_list(drv_data->dev,
+								     HIDPP20_EXT_RATE_CONN_TYPE_WIRED,
+								     &bitflags);
+	if (rc < 0)
+		return rc;
+
+	drv_data->num_report_rates =
+		hidpp20drv_parse_report_rates_bitflags_8061(bitflags,
+							    drv_data->report_rates,
+							    &drv_data->report_rates_min,
+							    &drv_data->report_rates_max);
+
+	/* Wireless */
+	rc = hidpp20_ext_adjustable_report_rate_get_report_rate_list(drv_data->dev,
+								     HIDPP20_EXT_RATE_CONN_TYPE_LIGHTSPEED,
+								     &bitflags);
+	if (rc < 0)
+		return rc;
+
+	drv_data->num_report_rates_wireless =
+		hidpp20drv_parse_report_rates_bitflags_8061(bitflags,
+							    drv_data->report_rates_wireless,
+							    &drv_data->report_rates_wireless_min,
+							    &drv_data->report_rates_wireless_max);
+
+	/*
+	 * FIXME: The hidpp20 driver does not currently know if a device is via
+	 * a wireless recevier so assume the device is a wired connection. This
+	 * report rate read mechanism is only used when profiles are not used
+	 * or are unsupported.
+	 */
+	rc = hidpp20_ext_adjustable_report_rate_get_report_rate(drv_data->dev,
+								HIDPP20_EXT_RATE_CONN_TYPE_WIRED,
+								&rate);
+	if (rc)
+		return rc;
+
+	rate_hz = hidpp20_ext_adjustable_report_rate_to_hz(rate);
+	if (rate_hz) {
+		log_debug(ratbag, "report rate is %u\n", rate_hz);
+		ratbag_device_for_each_profile(device, profile)
+			profile->hz = rate_hz;
+	}
+
+	log_debug(ratbag, "device has %d wired report rates, %d wireless report rates\n",
+		  drv_data->num_report_rates, drv_data->num_report_rates_wireless);
+
+	return 0;
+}
+
+static int
 hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
@@ -1000,6 +1109,16 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		if (rc < 0 && drv_data->report_rates[0] == 0)
 			return rc;
 
+		ratbag_profile_set_report_rate_list(profile,
+						    drv_data->report_rates,
+						    drv_data->num_report_rates);
+	} else if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8061) {
+		rc = hidpp20drv_read_report_rate_8061(device);
+		if (rc < 0 && drv_data->report_rates[0] == 0)
+			return rc;
+
+		/* FIXME: Handle wired/wireless rate differences. See
+		 * hidpp20drv_read_report_rate_8061. */
 		ratbag_profile_set_report_rate_list(profile,
 						    drv_data->report_rates,
 						    drv_data->num_report_rates);
@@ -1141,6 +1260,21 @@ hidpp20drv_update_report_rate_8060(struct ratbag_profile *profile, int hz)
 }
 
 static int
+hidpp20drv_update_report_rate_8061(struct ratbag_profile *profile, int hz)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+	uint8_t value = hidpp20_ext_adjustable_report_rate_from_hz(hz);
+
+	rc = hidpp20_ext_adjustable_report_rate_set_report_rate(drv_data->dev, value);
+	if (rc)
+		return rc;
+
+	return RATBAG_SUCCESS;
+}
+
+static int
 hidpp20drv_update_report_rate_8100(struct ratbag_profile *profile, int hz)
 {
 	struct ratbag_device *device = profile->device;
@@ -1169,6 +1303,14 @@ hidpp20drv_update_report_rate(struct ratbag_profile *profile, int hz)
 		/* re-populate the profile with the correct value if we fail */
 		if (rc)
 			hidpp20drv_read_report_rate_8060(profile->device);
+
+		return rc;
+	} else if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8061) {
+		rc = hidpp20drv_update_report_rate_8061(profile, hz);
+
+		/* re-populate the profile with the correct value if we fail */
+		if (rc)
+			hidpp20drv_read_report_rate_8061(profile->device);
 
 		return rc;
 	}
@@ -1622,6 +1764,18 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 			return 0; /* this is not a hard failure */
 
 		drv_data->capabilities |= HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060;
+		break;
+	}
+	case HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE: {
+		log_debug(ratbag, "device has extended adjustable report rate\n");
+
+		/* we read the profile once to get the correct number of
+		 * supported report rates. */
+		rc = hidpp20drv_read_report_rate_8061(device);
+		if (rc < 0)
+			return 0; /* this is not a hard failure */
+
+		drv_data->capabilities |= HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8061;
 		break;
 	}
 	case HIDPP_PAGE_COLOR_LED_EFFECTS: {
