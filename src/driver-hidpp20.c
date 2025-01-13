@@ -1282,7 +1282,7 @@ hidpp20drv_update_report_rate_8100(struct ratbag_profile *profile, int hz)
 	struct hidpp20_profile *h_profile;
 
 	h_profile = &drv_data->profiles->profiles[profile->index];
-	h_profile->report_rate = hz;
+	h_profile->report_rate = 1000 / hz;
 
 	return RATBAG_SUCCESS;
 }
@@ -1568,7 +1568,7 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 	ratbag_profile_set_report_rate_list(profile,
 					    drv_data->report_rates,
 					    drv_data->num_report_rates);
-	profile->hz = p->report_rate;
+	profile->hz = 1000 / max(1, p->report_rate);
 }
 
 static int
