@@ -486,6 +486,35 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 						   uint8_t rate_ms);
 
 /* -------------------------------------------------------------------------- */
+/* 0x8061 - Extended Adjustable Report Rate                                   */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE	0x8061
+
+unsigned hidpp20_ext_adjustable_report_rate_to_hz(uint8_t rate_ms);
+uint8_t hidpp20_ext_adjustable_report_rate_from_hz(unsigned rate_hz);
+
+enum hidpp20_ext_rate_conn_type {
+	HIDPP20_EXT_RATE_CONN_TYPE_WIRED = 0x00,
+	HIDPP20_EXT_RATE_CONN_TYPE_LIGHTSPEED = 0x01,
+};
+
+/**
+ * set the bitmap_ms to the supported report rates. Bits enabled reflect a
+ * supported report rate (non-linearly).
+ */
+int hidpp20_ext_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
+							    enum hidpp20_ext_rate_conn_type conn,
+							    uint16_t *bitflags);
+
+int hidpp20_ext_adjustable_report_rate_get_report_rate(struct hidpp20_device *device,
+						       enum hidpp20_ext_rate_conn_type conn,
+						       uint8_t *rate);
+
+int hidpp20_ext_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
+						       uint8_t rate);
+
+/* -------------------------------------------------------------------------- */
 /* 0x8070v4 - Color LED effects                                               */
 /* -------------------------------------------------------------------------- */
 
