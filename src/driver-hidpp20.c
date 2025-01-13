@@ -58,6 +58,7 @@
 #define HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060		(1 << 8)
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 #define HIDPP_CAP_RGB_EFFECTS_8071			(1 << 10)
+#define HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202		(1 << 11)
 
 #define HIDPP_HIDDEN_FEATURE				(1 << 6)
 
@@ -816,6 +817,50 @@ hidpp20drv_read_resolution_dpi_2201(struct ratbag_device *device)
 }
 
 static int
+hidpp20drv_read_resolution_dpi_2202(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag *ratbag = device->ratbag;
+	int rc;
+
+	free(drv_data->sensors);
+	drv_data->sensors = NULL;
+	drv_data->num_sensors = 0;
+	rc = hidpp20_ext_adjustable_dpi_get_sensors(drv_data->dev, &drv_data->sensors);
+	if (rc < 0) {
+		log_error(ratbag,
+			  "Error while requesting resolution: %s (%d)\n",
+			  strerror(-rc), rc);
+		return rc;
+	} else if (rc == 0) {
+		log_error(ratbag, "Error, no compatible sensors found.\n");
+		return -ENODEV;
+	}
+	log_debug(ratbag,
+		  "device is at %d x dpi (variable between %d and %d).\n",
+		  drv_data->sensors[0].x.dpi,
+		  drv_data->sensors[0].x.dpi_min,
+		  drv_data->sensors[0].x.dpi_max);
+	if (drv_data->sensors[0].has_y) {
+		log_debug(ratbag,
+			  "device is at %d y dpi (variable between %d and %d).\n",
+			  drv_data->sensors[0].y.dpi,
+			  drv_data->sensors[0].y.dpi_min,
+			  drv_data->sensors[0].y.dpi_max);
+	}
+
+	drv_data->num_sensors = rc;
+
+	/* if 0x8100 has already been enumerated we already have the supported
+	 * number of resolutions and shouldn't overwrite it
+	 */
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		drv_data->num_resolutions = drv_data->num_sensors;
+
+	return 0;
+}
+
+static int
 hidpp20drv_read_report_rate_8060(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -911,7 +956,14 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return rc;
+	} else if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202) {
+		rc = hidpp20drv_read_resolution_dpi_2202(device);
+		if (rc < 0)
+			return rc;
+	}
 
+	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201 ||
+	    drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202) {
 		ratbag_profile_for_each_resolution(profile, res) {
 			/* We only look at the first sensor. Multiple
 			 * sensors is too niche to care about right now */
@@ -1035,20 +1087,13 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_sensor *sensor;
-	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
 
 	if (resolution->is_disabled) {
 		if (!ratbag_resolution_has_capability(resolution, RATBAG_RESOLUTION_CAP_DISABLE))
 			return -ENOTSUP;
 
-		dpi = dpi_x = dpi_y = 0;
+		dpi_x = dpi_y = 0;
 	}
-
-	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
-		return hidpp20drv_update_resolution_dpi_8100(resolution, dpi_x, dpi_y);
-
-	if (!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201))
-		return -ENOTSUP;
 
 	if (!drv_data->num_sensors)
 		return -ENOTSUP;
@@ -1057,12 +1102,28 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 	sensor = &drv_data->sensors[0];
 
 	if (!resolution->is_disabled) {
+		if (!sensor->has_y)
+			dpi_y = dpi_x;
+
 		/* validate that the sensor accepts the given DPI */
-		if (!hidpp20drv_validate_dpi_ranges(sensor, dpi, dpi))
+		if (!hidpp20drv_validate_dpi_ranges(sensor, dpi_x, dpi_y))
 			return -EINVAL;
 	}
 
-	return hidpp20_adjustable_dpi_set_sensor_dpi(drv_data->dev, sensor, dpi);
+	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
+		return hidpp20drv_update_resolution_dpi_8100(resolution, dpi_x, dpi_y);
+
+	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201)
+		return hidpp20_adjustable_dpi_set_sensor_dpi(drv_data->dev, sensor, dpi_x);
+
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202)
+		return hidpp20_ext_adjustable_dpi_set_sensor_dpi(drv_data->dev,
+								 sensor,
+								 dpi_x, dpi_y,
+								 sensor->default_lod);
+
+	return -ENOTSUP;
+
 }
 
 static int
@@ -1489,6 +1550,16 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		if (rc < 0)
 			return 0; /* this is not a hard failure */
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
+		break;
+	}
+	case HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI: {
+		log_debug(ratbag, "device has extended adjustable dpi\n");
+		/* we read the profile once to get the correct number of
+		 * supported resolutions. */
+		rc = hidpp20drv_read_resolution_dpi_2202(device);
+		if (rc < 0)
+			return 0; /* this is not a hard failure */
+		drv_data->capabilities |= HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202;
 		break;
 	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
