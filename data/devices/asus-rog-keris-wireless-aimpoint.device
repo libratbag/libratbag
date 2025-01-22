@@ -1,6 +1,6 @@
 [Device]
 Name=ASUS ROG Keris Wireless AimPoint
-DeviceMatch=usb:0b05:1a68
+DeviceMatch=usb:0b05:1a68;usb:0b05:1a66
 DeviceType=mouse
 Driver=asus
 
