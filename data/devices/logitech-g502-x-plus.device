@@ -3,3 +3,6 @@ Name=Logitech G502 X PLUS
 DeviceMatch=usb:046d:c095
 DeviceType=mouse
 Driver=hidpp20
+
+[Driver/hidpp20]
+Quirk=G502X_PLUS
