@@ -1,0 +1,12 @@
+[Device]
+Name=Predator by Target
+DeviceMatch=usb:18f8:0f99
+DeviceType=mouse
+Driver=hidpp10
+
+[Driver/hidpp10]
+Profiles=1
+Buttons=5
+Leds=1
+Dpis=6
+DpiList=1000;1600;2400;3200;4000;4800
