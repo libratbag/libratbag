@@ -19,3 +19,9 @@ Buttons=6
 DeviceName=Marvo Scorpion G961
 LedType=RGB
 SensorType=PMW3327
+
+[Driver/sinowealth/devices/Y129]
+Buttons=7
+DeviceName=Tronsmart TG007 Mouse
+LedType=RGB
+SensorType=PMW3212
