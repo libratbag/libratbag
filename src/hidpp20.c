@@ -110,6 +110,7 @@ hidpp20_get_quirk_string(enum hidpp20_quirk quirk)
 	CASE_RETURN_STRING(HIDPP20_QUIRK_NONE);
 	CASE_RETURN_STRING(HIDPP20_QUIRK_G305);
 	CASE_RETURN_STRING(HIDPP20_QUIRK_G602);
+	CASE_RETURN_STRING(HIDPP20_QUIRK_G502X_PLUS);
 	}
 
 	abort();
@@ -1802,6 +1803,7 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303	0x02
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915	0x04
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X	0x05
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -1831,7 +1833,8 @@ union hidpp20_internal_profile {
 		} name;
 		struct hidpp20_internal_led leds[2]; /* G303, g502, g900 only */
 		struct hidpp20_internal_led alt_leds[2];
-		uint8_t free[2];
+		uint8_t custom_animation_index; // G502X Plus, G705
+		uint8_t free; // unused
 		uint16_t crc;
 	} __attribute__((packed)) profile;
 };
@@ -2220,7 +2223,8 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	if ((info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G402) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -2958,6 +2962,18 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	hidpp20_buttons_from_cpu(profile, pdata->profile.buttons, profiles_list->num_buttons);
 
 	memcpy(pdata->profile.name.txt, profile->name, sizeof(profile->name));
+
+	// Mice like G502X can store custom animations onboard.
+	// ratbag does not support this, so we set it to disable it to ensure
+	// that the actual lighting matches the user's settings.
+	if (device->quirk == HIDPP20_QUIRK_G502X_PLUS)
+	{
+		// Note(sewer56): There are two known mice which use this field;
+		// G502X PLUS and G705. [And I only own one of these.] But it's not known how 
+		// prevalent this is elsewhere, so in the interest of defensive programming;
+		// we're not setting this on unknown mice. 
+		pdata->profile.custom_animation_index = 0x00;
+	}
 
 	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
 	if (rc < 0) {
