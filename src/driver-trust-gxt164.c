@@ -3,7 +3,9 @@
 #include <linux/input-event-codes.h>
 
 // #include "driver-steelseries.h"
+#include "libratbag-enums.h"
 #include "libratbag-private.h"
+#include "libratbag.h"
 // #include "libratbag-hidraw.h"
 // #include "libratbag-data.h"
 
@@ -18,13 +20,23 @@
 #define GXT_164_MAX_DPI     5000
 #define GXT_164_DPI_STEP    100
 
+/*
+ * LED brightness
+*/
 #define GXT_164_LED_BRIGHTNESS_DIM      1
 #define GXT_164_LED_BRIGHTNESS_MEDIUM   2
 #define GXT_164_LED_BRIGHTNESS_BRIGHT   3
 
+/*
+ * LED modes
+ * (modes which have the same ID in ratbag are omitted)
+*/
 #define GXT_164_LED_BREATHING   0x02
 #define GXT_164_LED_COLOR_SHIFT 0x03
 
+/*
+ * LED blinking speed
+*/
 #define GXT_164_LED_SPEED_SLOW      0x05
 #define GXT_164_LED_SPEED_MEDIUM    0x03
 #define GXT_164_LED_SPEED_FAST      0x01
@@ -36,6 +48,16 @@
 #define GXT_164_PROFILE_1   0xa602
 #define GXT_164_PROFILE_2   0x3104 
 #define GXT_164_PROFILE_3   0xbc05
+
+/*
+ * Special action IDs
+*/
+#define GXT_164_ACTION_RESOLUTION_CYCLE_UP  0x20
+#define GXT_164_ACTION_RESOLUTION_UP        0x21
+#define GXT_164_ACTION_RESOLUTION_DOWN      0x22
+#define GXT_164_ACTION_PROFILE_CYCLE_UP     0x26
+#define GXT_164_ACTION_PROFILE_UP           0x27
+#define GXT_164_ACTION_PROFILE_DOWN         0x28
 
 /**
  * Check version string of a device
@@ -96,12 +118,19 @@ trust_gxt_164_probe(struct ratbag_device *device){
     //? Get firmware version
     // TODO: check if version == SST-ZMA-V1.0.3
     
+    // TODO: send GET_REPORT (maybe through ratbag_hidraw_raw_request(...))
+    // TODO: send SET_REPORT (maybe through ratbag_hidraw_raw_request(...))
+
     // uint8_t buf[256];
+    //return ratbag_hidraw_raw_request(device, reportnum, buf, len,
+    //                              HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
     // rc = ratbag_hidraw_get_feature_report(device, 0x04, buf, ARRAY_LENGTH(buf));
     // if (rc < 0){
-    //     log_error(device->ratbag, "Error while probing for device version: %s (%d)\n", strerror(-rc), rc);
-    //     ratbag_close_hidraw(device);
-    //     return rc;
+    //         log_error(device->ratbag, "Error while probing for device version: %s (%d)\n", strerror(-rc), rc);
+    //         ratbag_close_hidraw(device);
+    //         return rc;
+    // } else {
+    //     log_debug(device->ratbag, "Received magic string: %s\n", (buf+48));
     // }
     // if (rc != ARRAY_LENGTH(buf)){
     //     log_error(device->ratbag, "Unexpected amount of written data: %d (instead of %u)\n", rc, (int)ARRAY_LENGTH(buf));
@@ -192,7 +221,7 @@ trust_gxt_164_probe(struct ratbag_device *device){
         }
 
         ratbag_profile_for_each_button(profile, button){
-            // ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL); // TODO
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL); // TODO
             ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
             // ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);   // TODO
             ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
@@ -203,7 +232,6 @@ trust_gxt_164_probe(struct ratbag_device *device){
 
         ratbag_profile_for_each_led(profile, led){
             //? set default led options
-            // TODO make RATBAG_LED_CYCLE default (because it is)
             led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
             led->mode = RATBAG_LED_CYCLE;
             led->color.red = 255;
@@ -346,7 +374,8 @@ gxt_164_get_led_brightness_from_value(unsigned int brightness){
 }
 
 /**
- * Get button index from its ratbag value
+ * Get mouse button index from its ratbag value
+ * (Usage: )
  * 
  * @param button Ratbag button
  * 
@@ -355,15 +384,35 @@ gxt_164_get_led_brightness_from_value(unsigned int brightness){
 static int
 gxt_164_get_button_from_code(unsigned int button){
     switch(button){
-    case 1:
-    case 2:
+    case 1: // left click
+    case 2: // right click
         return button;
-    case 3:
+    case 3: // middle click
         return 0x04;
-    case 4: 
     default:
         // LEFT_CLICK if button is unknown
-        return 0x01;  
+        return 0x01;
+    }
+}
+
+static int
+gxt_164_get_special_mapped(unsigned int special){
+    switch(special){
+        case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN:
+            return GXT_164_ACTION_RESOLUTION_DOWN;
+        case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP:
+            return GXT_164_ACTION_RESOLUTION_UP;
+        case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP:
+            return GXT_164_ACTION_RESOLUTION_CYCLE_UP;
+        case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP:
+            return GXT_164_ACTION_PROFILE_CYCLE_UP;
+        case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP:
+            return GXT_164_ACTION_PROFILE_UP;
+        case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN:
+            return GXT_164_ACTION_PROFILE_DOWN;
+        default:
+            // LEFT_CLICK if action is unknown
+            return 0x01;
     }
 }
 
@@ -518,10 +567,10 @@ trust_gxt_164_commit(struct ratbag_device *device){
             buf_index++;    // buf[buf_index++] = 0x00;
             
             /*
-             * Trust GXT 164 mouse (or at least some versions of it) has a feature
+             * Trust GXT 164 mice (or at least some versions of it) have a feature
              * called "DPI Precision". According to manufacturer it is connected to 
              * DPI somehow, but I'm not sure what it does exactly.
-             * It was decided pick a middle value for this field (from range 0 - 1000) 
+             * It was decided to set it to a middle value for this field (from range 0 - 1000) 
             */
             // uint16_t dpi_precision = real_dpi_precision / 50
             buf[buf_index++] = 500 / 50;
@@ -543,13 +592,14 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 buf_index += 8;
                 break;
             case RATBAG_BUTTON_ACTION_TYPE_BUTTON:{ // mouse button
+                // 0x01, button_id, 0x00, 0x00
                 buf[buf_index++] = 0x01;
                 rc = ratbag_button_get_button(button);
                 log_debug(device->ratbag, "MOUSE_BUTTON: %d\n\n", rc);
                 rc = gxt_164_get_button_from_code(rc);
 
                 // mouse button index
-                buf[buf_index++] = rc;   
+                buf[buf_index++] = rc;
                 buf_index += 2;     // buf[buf_index++] = 0x00;
 
                 // Action activation type and timing
@@ -574,7 +624,7 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 buf[buf_index++] = 0x01;
 
                 // Action activation delay (uint16_t)
-                buf_index += 2;
+                buf_index += 2; // no delay
 
                 break;
             }
@@ -583,8 +633,7 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 buf[buf_index++] = 0x00;    // modifier = none
                 
                 unsigned int key = ratbag_button_get_key(button);
-
-                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key & 0xff);
+                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
                 if(rc == 0){
                     log_error(device->ratbag, "Error while commiting profile %d: "
                                               "couldn't find HID keyboard usage for the keycode: %d \n", 
@@ -627,24 +676,57 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 break;
             }
             case RATBAG_BUTTON_ACTION_TYPE_SPECIAL: {
-                // TODO
-                rc = button->action.action.special;
-                if(rc == RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP){
+                rc = ratbag_button_get_special(button);
+                
+                if(rc == RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK){
+                    // Special case for double left click
+                    // 0x01, 0x01, 0x00, 0x00 - left click
                     buf[buf_index++] = 0x01;
-                    buf[buf_index++] = 0x21;
-                    buf_index += 3;
-                    buf[buf_index++] = 0x01;
-                    buf_index += 2;
-                    break;
-                }else if(rc == RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN){
-                    buf[buf_index++] = 0x01;
-                    buf[buf_index++] = 0x22;
-                    buf_index += 3;
                     buf[buf_index++] = 0x01;
                     buf_index += 2;
-                    break;
+
+                    // value = action_activation_type + action_timing;
+                    buf[buf_index++] = 0x01;    // play n times on key press
+
+                    // Action activation count
+                    buf[buf_index++] = 0x02;
+
+                    // Action activation delay (uint16_t)
+                    buf[buf_index++] = 0x32;    // 50ms delay
+                    buf_index++;
+                } else {
+                    // 0x01, special_id, 0x00, 0x00
+                    buf[buf_index++] = 0x01;
+                    rc = gxt_164_get_special_mapped(rc);
+
+                    // mouse button index
+                    buf[buf_index++] = rc;
+                    buf_index += 2;
+
+                    // Action activation type and timing
+                    /*
+                    * Trust GXT 164 also supports binding an action which presses a given
+                    * key (+ modifier) N times, or repeats it until released or pressed again.
+                    *  0 - PLAY_ONCE
+                    *  1 - PLAY_N_TIMES
+                    *  2 - REPEAT_WHILE_PRESSED
+                    *  3 - TOGGLE_AUTO_REPEAT
+                    *  4 - TOGGLE_HOLD
+                    * 
+                    * action_timing
+                    * It's also possible to control when the action will be activated:
+                    *  0x00 - KEY_PRESS
+                    *  0x80 - KEY_RELEASE
+                    */
+                    // value = action_activation_type + action_timing;
+                    buf[buf_index++] = 0x00;    // play once on key press
+
+                    // Action activation count
+                    buf[buf_index++] = 0x01;
+
+                    // Action activation delay (uint16_t)
+                    buf_index += 2; // no delay
                 }
-                buf_index += 8;  //! Until special is implemented
                 break;
             }
             case RATBAG_BUTTON_ACTION_TYPE_UNKNOWN:{
