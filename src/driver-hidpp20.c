@@ -58,6 +58,7 @@
 #define HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060		(1 << 8)
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 #define HIDPP_CAP_RGB_EFFECTS_8071			(1 << 10)
+#define HIDPP_CAP_SWITCHABLE_RESOLUTION_8080		(1 << 11)
 
 #define HIDPP_HIDDEN_FEATURE				(1 << 6)
 
@@ -810,8 +811,9 @@ hidpp20drv_read_resolution_dpi_2201(struct ratbag_device *device)
 	 * number of resolutions and shouldn't overwrite it
 	 */
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
-		drv_data->num_resolutions = drv_data->num_sensors;
+		drv_data->num_resolutions = drv_data->num_sensors; // POI
 
+	log_debug(ratbag, "ZZZZZZZZZZZZZZZZZZZZZZZZZ %d\n", drv_data->num_resolutions);
 	return 0;
 }
 
@@ -945,6 +947,44 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		ratbag_profile_set_report_rate_list(profile, &default_rate, 1);
 	}
 
+	return 0;
+}
+
+static int
+hidpp20drv_read_resolution_dpi_8080(struct ratbag_device *device)
+{
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	struct ratbag *ratbag = device->ratbag;
+	int rc;
+
+	free(drv_data->sensors);
+	drv_data->sensors = NULL;
+	drv_data->num_sensors = 0;
+	rc = hidpp20_adjustable_dpi_get_sensors_8080(drv_data->dev, &drv_data->sensors);
+	if (rc < 0) {
+		log_error(ratbag,
+			  "Error while requesting resolution: %s (%d)\n",
+			  strerror(-rc), rc);
+		return rc;
+	} else if (rc == 0) {
+		log_error(ratbag, "Error, no compatible sensors found.\n");
+		return -ENODEV;
+	}
+	log_debug(ratbag,
+		  "device is at %d dpi (variable between %d and %d).\n",
+		  drv_data->sensors[0].dpi,
+		  drv_data->sensors[0].dpi_min,
+		  drv_data->sensors[0].dpi_max);
+
+	drv_data->num_sensors = rc;
+
+	/* if 0x8100 has already been enumerated we already have the supported
+	 * number of resolutions and shouldn't overwrite it
+	 */
+	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
+		drv_data->num_resolutions = drv_data->num_sensors; // POI
+
+	/* log_debug(ratbag, "ZZZZZZZZZZZZZZZZZZZZZZZZZ %d\n", drv_data->num_resolutions); */
 	return 0;
 }
 
@@ -1290,7 +1330,7 @@ hidpp20drv_init_profile_8100(struct ratbag_device *device)
 	drv_data->num_buttons = drv_data->profiles->num_buttons;
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201)
-		drv_data->num_resolutions = drv_data->profiles->num_modes;
+		drv_data->num_resolutions = drv_data->profiles->num_modes; // POI
 	/* We ignore the profile's num_leds and require
 	* HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
 	*/
@@ -1355,6 +1395,16 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		break;
 	case HIDPP_PAGE_MOUSE_POINTER_BASIC: {
 		drv_data->capabilities |= HIDPP_CAP_RESOLUTION_2200;
+		break;
+	}
+	case HIDPP_PAGE_RGB_EFFECTS: {
+		log_debug(ratbag, "device has adjustable dpi 8080\n");
+		/* we read the profile once to get the correct number of
+		 * supported resolutions. */
+		rc = hidpp20drv_read_resolution_dpi_8080(device);
+		if (rc < 0)
+			return 0; /* this is not a hard failure */
+		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_8080;
 		break;
 	}
 	case HIDPP_PAGE_ADJUSTABLE_DPI: {

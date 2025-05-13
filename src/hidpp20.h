@@ -573,6 +573,27 @@ enum hidpp20_color_led_zone_effect {
 #define HIDPP20_RGB_EFFECTS_SLOT_INFO_EFCT_NAME_21_31	0x06
 
 /* -------------------------------------------------------------------------- */
+/* 0x8080 - Adjustable DPI G600                                               */
+/* -------------------------------------------------------------------------- */
+#define HIDPP_PAGE_ADJUSTABLE_DPI_G600			0x8080
+
+/* /\** */
+/*  * allocates a list of sensors that has to be freed by the caller. */
+/*  * */
+/*  * returns the elements in the list or a negative error */
+/*  *\/ */
+/* int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device, */
+/* 				       struct hidpp20_sensor **sensors_list); */
+
+/* /\** */
+/*  * set the current dpi of the provided sensor. sensor must have been */
+/*  * allocated by  hidpp20_adjustable_dpi_get_sensors() */
+/*  *\/ */
+/* int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device, */
+/* 					  struct hidpp20_sensor *sensor, uint16_t dpi); */
+
+
+/* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
 /* -------------------------------------------------------------------------- */
 
