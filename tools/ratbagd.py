@@ -1042,7 +1042,10 @@ class RatbagdMacro(GObject.Object):
                         idx += 1
             except IndexError:
                 pass
-            keys.append(self._MACRO_DESCRIPTION[t](v))
+            if t not in self._MACRO_DESCRIPTION:
+                keys.append("?")
+            else:
+                keys.append(self._MACRO_DESCRIPTION[t](v))
             idx += 1
         return " ".join(keys)
 
