@@ -1137,10 +1137,10 @@ hidpp20drv_update_resolution_dpi_8100(struct ratbag_resolution *resolution,
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *h_profile;
-	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
 
 	h_profile = &drv_data->profiles->profiles[profile->index];
-	h_profile->dpi[resolution->index] = dpi;
+	h_profile->dpi[resolution->index].x = dpi_x;
+	h_profile->dpi[resolution->index].y = dpi_y;
 
 	if (resolution->is_default)
 		h_profile->default_dpi = resolution->index;
@@ -1280,9 +1280,38 @@ hidpp20drv_update_report_rate_8100(struct ratbag_profile *profile, int hz)
 	struct ratbag_device *device = profile->device;
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *h_profile;
+	unsigned value;
 
 	h_profile = &drv_data->profiles->profiles[profile->index];
-	h_profile->report_rate = 1000 / hz;
+
+	/*
+	 * FIXME: Handle wireless report rate independently of wired, for now
+	 * allow the report rate to be configured for the mode that supports
+	 * the highest rate (e.g. wireless) and restrict the alternate mode
+	 * reported rate to its maximum. This allows for configuring e.g. the
+	 * wireless rate as 2000hz when the wired rate is limited to 1000hz
+	 * (e.g. G Pro X Superlight 2)
+	 */
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8061) {
+		/* Restrict wired report rate */
+		h_profile->report_rate = 0;
+		if (drv_data->num_report_rates > 0) {
+			value = min(max((unsigned)hz, drv_data->report_rates_min),
+				    drv_data->report_rates_max);
+			h_profile->report_rate = hidpp20_ext_adjustable_report_rate_from_hz(value);
+		}
+
+		/* Restrict wireless report rate */
+		h_profile->report_rate_wireless = 0;
+		if (drv_data->num_report_rates_wireless > 0) {
+			value = min(max((unsigned)hz, drv_data->report_rates_wireless_min),
+				    drv_data->report_rates_wireless_max);
+			h_profile->report_rate_wireless = hidpp20_ext_adjustable_report_rate_from_hz(value);
+		}
+	} else {
+		h_profile->report_rate = 1000 / hz;
+		h_profile->report_rate_wireless = 0; /* not supported */
+	}
 
 	return RATBAG_SUCCESS;
 }
@@ -1529,8 +1558,8 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 		 * sensors is too niche to care about right now */
 		sensor = &drv_data->sensors[0];
 
-		dpi_x = p->dpi[res->index];
-		dpi_y = p->dpi[res->index];
+		dpi_x = p->dpi[res->index].x;
+		dpi_y = (sensor->has_y) ? p->dpi[res->index].y : dpi_x;
 
 		/* If the resolution is zero dpi it is disabled,
 		 * but internally we set the minimum value */
@@ -1565,10 +1594,32 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 		ratbag_resolution_set_dpi_list_from_range(res, dpi_min, dpi_max);
 	}
 
-	ratbag_profile_set_report_rate_list(profile,
-					    drv_data->report_rates,
-					    drv_data->num_report_rates);
-	profile->hz = 1000 / max(1, p->report_rate);
+	/*
+	 * FIXME: Handle wired/wrieless independently, for now parse the
+	 * highest rate, and allow the available rates to be the highest of
+	 * wired/wrieless where present. See hidpp20drv_update_report_rate_8100
+	 * for additional details.
+	 */
+	if (drv_data->num_report_rates_wireless > 0 &&
+	    drv_data->report_rates_wireless_max > drv_data->report_rates_max) {
+		ratbag_profile_set_report_rate_list(profile,
+						    drv_data->report_rates_wireless,
+						    drv_data->num_report_rates_wireless);
+	} else {
+		ratbag_profile_set_report_rate_list(profile,
+						    drv_data->report_rates,
+						    drv_data->num_report_rates);
+	}
+
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8061) {
+		/* FIXME: Handle wired/wrieless independently, for now use the
+		 * highest rate */
+		unsigned wired = hidpp20_ext_adjustable_report_rate_to_hz(p->report_rate);
+		unsigned wireless = hidpp20_ext_adjustable_report_rate_to_hz(p->report_rate_wireless);
+		profile->hz = max(wired, wireless);
+	} else {
+		profile->hz = 1000 / max(1, p->report_rate);
+	}
 }
 
 static int
@@ -1616,7 +1667,8 @@ hidpp20drv_init_profile_8100(struct ratbag_device *device)
 	drv_data->num_profiles = drv_data->profiles->num_profiles;
 	drv_data->num_buttons = drv_data->profiles->num_buttons;
 
-	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201)
+	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201 ||
+	    drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202)
 		drv_data->num_resolutions = drv_data->profiles->num_modes;
 	/* We ignore the profile's num_leds and require
 	* HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
