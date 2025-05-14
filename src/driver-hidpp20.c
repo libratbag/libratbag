@@ -593,10 +593,13 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		}
 		profile->buttons[button->index].subany.type = type;
 		profile->buttons[button->index].subany.subtype = subtype;
-		if (subtype == HIDPP20_BUTTON_HID_TYPE_KEYBOARD)
+		if (subtype == HIDPP20_BUTTON_HID_TYPE_KEYBOARD) {
 			profile->buttons[button->index].keyboard_keys.key = code;
-		else
+			/* clear any previously defined modifiers in profile */
+			profile->buttons[button->index].keyboard_keys.modifier_flags = 0;
+		} else {
 			profile->buttons[button->index].consumer_control.consumer_control = code;
+		}
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		code = hidpp20_onboard_profiles_get_code_from_special(action->action.special);
