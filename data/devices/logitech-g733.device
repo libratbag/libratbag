@@ -1,6 +1,6 @@
 [Device]
 Name=Logitech G733 Gaming Headset
-DeviceMatch=usb:046d:0ab5
+DeviceMatch=usb:046d:0ab5;usb:046d:0afe
 DeviceType=mouse
 Driver=hidpp20
 

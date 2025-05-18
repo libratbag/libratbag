@@ -1,0 +1,8 @@
+[Device]
+Name=Logitech G705
+DeviceMatch=usb:046d:c096;usb:046d:409d;bluetooth:046d:b02e
+Driver=hidpp20
+DeviceType=mouse
+
+[Driver/hidpp20]
+Quirk=G502X_PLUS

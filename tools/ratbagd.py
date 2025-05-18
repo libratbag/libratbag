@@ -742,7 +742,7 @@ class RatbagdResolution(_RatbagdDBus):
 
     @staticmethod
     def _convert_resolution_from_dbus(
-        res: Union[int, Tuple[int, int]]
+        res: Union[int, Tuple[int, int]],
     ) -> Union[Tuple[int], Tuple[int, int]]:
         """
         Convert resolution from what D-Bus API returns - either an int or a tuple of two ints, to a tuple of either one or two ints.

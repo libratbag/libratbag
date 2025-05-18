@@ -165,6 +165,12 @@ int
 ratbag_device_data_asus_get_led_count(const struct ratbag_device_data *data);
 
 /**
+ * @return Array of LED modes
+ */
+const int *
+ratbag_device_data_asus_get_led_modes(const struct ratbag_device_data *data);
+
+/**
  * @return Number of DPI presets
  */
 int

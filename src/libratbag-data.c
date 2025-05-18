@@ -100,12 +100,13 @@ struct data_steelseries {
 struct data_asus {
 	int profile_count;
 	int button_count;
-	int button_mapping[ASUS_MAX_NUM_BUTTON];
+	int button_mapping[ASUS_MAX_NUM_BUTTON * ASUS_MAX_NUM_BUTTON_GROUP];
 	int led_count;
 	int dpi_count;
 	int is_wireless;
 	struct dpi_range *dpi_range;
 	uint32_t quirks;
+	int led_modes[ASUS_MAX_NUM_LED_MODES];
 };
 
 struct ratbag_device_data {
@@ -224,6 +225,8 @@ init_data_hidpp20(struct ratbag *ratbag,
 			data->hidpp20.quirk = HIDPP20_QUIRK_G305;
 		else if(streq(str, "G602"))
 			data->hidpp20.quirk = HIDPP20_QUIRK_G602;
+		else if(streq(str, "G502X_PLUS"))
+			data->hidpp20.quirk = HIDPP20_QUIRK_G502X_PLUS;
 	}
 }
 
@@ -375,8 +378,10 @@ init_data_asus(struct ratbag *ratbag,
 	data->asus.dpi_range = NULL;
 	data->asus.is_wireless = -1;
 	data->asus.quirks = 0;
-	for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON; i++)
+	for (unsigned int i = 0; i < ASUS_MAX_NUM_BUTTON * ASUS_MAX_NUM_BUTTON_GROUP; i++)
 		data->asus.button_mapping[i] = -1;
+	for (unsigned int i = 0; i < ASUS_MAX_NUM_LED_MODES; i++)
+		data->asus.led_modes[i] = -1;
 
 	int profiles = g_key_file_get_integer(keyfile, group, "Profiles", &error);
 	if (!error && profiles >= 0)
@@ -388,11 +393,20 @@ init_data_asus(struct ratbag *ratbag,
 		data->asus.button_count = buttons;
 	g_clear_error(&error);
 
-	gsize button_mapping_count = 0;
-	_cleanup_(g_strfreevp) char **button_mapping = g_key_file_get_string_list(keyfile, group, "ButtonMapping", &button_mapping_count, &error);
-	if (!error && button_mapping) {
-		for (unsigned int i = 0; i < button_mapping_count; i++) {
-			data->asus.button_mapping[i] = strtoul(button_mapping[i], NULL, 16);
+	gsize btn_map_count = 0;
+	_cleanup_(g_strfreevp) char **btn_map = g_key_file_get_string_list(keyfile, group, "ButtonMapping", &btn_map_count, &error);
+	if (!error && btn_map) {
+		for (unsigned int i = 0; i < btn_map_count; i++) {
+			data->asus.button_mapping[i] = strtoul(btn_map[i], NULL, 16);
+		}
+	}
+	g_clear_error(&error);
+
+	gsize btn_map_2nd_count = 0;
+	_cleanup_(g_strfreevp) char **btn_map_2nd = g_key_file_get_string_list(keyfile, group, "ButtonMappingSecondary", &btn_map_2nd_count, &error);
+	if (!error && btn_map_2nd) {
+		for (unsigned int i = 0; i < btn_map_2nd_count; i++) {
+			data->asus.button_mapping[i + ASUS_MAX_NUM_BUTTON] = strtoul(btn_map_2nd[i], NULL, 16);
 		}
 	}
 	g_clear_error(&error);
@@ -425,8 +439,33 @@ init_data_asus(struct ratbag *ratbag,
 				data->asus.quirks |= ASUS_QUIRK_DOUBLE_DPI;
 			} else if (streq(quirks[i], "STRIX_PROFILE")) {
 				data->asus.quirks |= ASUS_QUIRK_STRIX_PROFILE;
+			} else if (streq(quirks[i], "RAW_BRIGHTNESS")) {
+				data->asus.quirks |= ASUS_QUIRK_RAW_BRIGHTNESS;
+			} else if (streq(quirks[i], "SEPARATE_XY_DPI")) {
+				data->asus.quirks |= ASUS_QUIRK_SEPARATE_XY_DPI;
+			} else if (streq(quirks[i], "SEPARATE_LEDS")) {
+				data->asus.quirks |= ASUS_QUIRK_SEPARATE_LEDS;
+			} else if (streq(quirks[i], "BUTTONS_SECONDARY")) {
+				data->asus.quirks |= ASUS_QUIRK_BUTTONS_SECONDARY;
 			} else {
-				log_debug(ratbag, "%s is invalid quirk. Ignoring...\n", quirks[i]);
+				log_error(ratbag, "%s is invalid quirk. Ignoring...\n", quirks[i]);
+			}
+		}
+	}
+	g_clear_error(&error);
+
+	gsize led_modes_count = 0;
+	_cleanup_(g_strfreevp) char **led_modes = g_key_file_get_string_list(keyfile, group, "LedModes", &led_modes_count, &error);
+	if (!error && led_modes) {
+		for (unsigned int i = 0; i < led_modes_count; i++) {
+			if (streq(led_modes[i], "ON")) {
+				data->asus.led_modes[i] = RATBAG_LED_ON;
+			} else if (streq(led_modes[i], "BREATHING")) {
+				data->asus.led_modes[i] = RATBAG_LED_BREATHING;
+			} else if (streq(led_modes[i], "CYCLE")) {
+				data->asus.led_modes[i] = RATBAG_LED_CYCLE;
+			} else {
+				log_error(ratbag, "%s is invalid LED mode. Ignoring...\n", led_modes[i]);
 			}
 		}
 	}
@@ -893,6 +932,13 @@ ratbag_device_data_asus_get_led_count(const struct ratbag_device_data *data)
 {
 	assert(data->drivertype == ASUS);
 	return data->asus.led_count;
+}
+
+const int *
+ratbag_device_data_asus_get_led_modes(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ASUS);
+	return data->asus.led_modes;
 }
 
 int
