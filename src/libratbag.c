@@ -1993,9 +1993,15 @@ ratbag_action_keycode_from_macro(const struct ratbag_button_action *action,
 	if (macro->events[0].type == RATBAG_MACRO_EVENT_NONE)
 		return -EINVAL;
 
-	if (ratbag_action_macro_num_keys(action) != 1)
-		if (!ratbag_action_is_single_modifier_key(action))
-			return -EINVAL;
+	if (ratbag_action_is_single_modifier_key(action)){
+		key = macro->events[0].event.key;
+		*key_out = key;
+		*modifiers_out = 0;
+		return 1;
+	}
+
+	if (ratbag_action_macro_num_keys(action) != 0)
+		return -EINVAL;
 
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
 		struct ratbag_macro_event event;
