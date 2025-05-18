@@ -1949,11 +1949,32 @@ ratbag_action_macro_num_keys(const struct ratbag_button_action *action)
 		    event.type == RATBAG_MACRO_EVENT_INVALID) {
 			break;
 		}
+		if (ratbag_key_is_modifier(event.event.key)) {
+			continue;
+		}
 		if (event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
 			count += 1;
 		}
 	}
 	return count;
+}
+
+bool
+ratbag_action_is_single_modifier_key(const struct ratbag_button_action *action)
+{
+	const struct ratbag_macro *macro = action->macro;
+	int count = 0;
+	for (int i = 0; i < MAX_MACRO_EVENTS; i++) {
+		struct ratbag_macro_event event = macro->events[i];
+		if (event.type == RATBAG_MACRO_EVENT_NONE ||
+		    event.type == RATBAG_MACRO_EVENT_INVALID) {
+			break;
+		}
+		if (ratbag_key_is_modifier(event.event.key) && event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
+			count += 1;
+		}
+	}
+	return count == 1;
 }
 
 int
@@ -1972,13 +1993,9 @@ ratbag_action_keycode_from_macro(const struct ratbag_button_action *action,
 	if (macro->events[0].type == RATBAG_MACRO_EVENT_NONE)
 		return -EINVAL;
 
-	int count = ratbag_action_macro_num_keys(action);
-	if (count == 1 && ratbag_key_is_modifier(macro->events[0].event.key)){
-		key = macro->events[0].event.key;
-		*key_out = key;
-		*modifiers_out = modifiers;
-		return 1;
-	}
+	if (ratbag_action_macro_num_keys(action) != 1)
+		if (!ratbag_action_is_single_modifier_key(action))
+			return -EINVAL;
 
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
 		struct ratbag_macro_event event;
