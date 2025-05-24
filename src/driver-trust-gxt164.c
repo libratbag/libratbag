@@ -1,13 +1,10 @@
-// #include "config.h" // don't know what this is
+// #include "config.h"
 #include <errno.h>
 #include <linux/input-event-codes.h>
 
-// #include "driver-steelseries.h"
 #include "libratbag-enums.h"
 #include "libratbag-private.h"
 #include "libratbag.h"
-// #include "libratbag-hidraw.h"
-// #include "libratbag-data.h"
 
 #define GXT_164_NUM_PROFILES    4
 #define GXT_164_NUM_BUTTONS     13
@@ -59,6 +56,42 @@
 #define GXT_164_ACTION_PROFILE_UP           0x27
 #define GXT_164_ACTION_PROFILE_DOWN         0x28
 
+#define GXT_164_MACRO_COUNT             30
+#define GXT_164_MACRO_EVENT_COUNT       34
+#define GXT_164_MACRO_SIZE              200
+#define GXT_164_MACRO_BASE_ADDRESS      0xC00
+
+#define GXT_164_MACRO_KEY_PRESS         0x84
+#define GXT_164_MACRO_KEY_RELEASE       0x04
+
+// Key press or release in a macro
+struct gxt_164_macro_event {
+    // 0x84 - press
+    // 0x04 - release
+    uint8_t press_type; // is this a button press or a button release
+
+    uint8_t key;        // HID code of the triggered key
+
+    uint8_t padding;    // padding (?)
+    
+    // 6 if there is a following event, 
+    // 0 if it's the last event
+    uint8_t next_size;  // size of the next event 
+
+    uint16_t delay;     // next event delay
+};
+_Static_assert(sizeof(struct gxt_164_macro_event) == sizeof(uint8_t[6]), "Invalid size");
+
+// Contains information about a macro and its raw bytes
+struct gxt_164_macro {
+    struct gxt_164_macro_event events[GXT_164_MACRO_EVENT_COUNT];  // raw macro bytes
+};
+
+// Additional saved data for this driver
+struct gxt_164_data {
+    uint8_t current_slot_index;     // which slot to write to next
+};
+
 /**
  * Check version string of a device
  * 
@@ -88,6 +121,167 @@
 //     return 0;
 // }
 
+
+/**
+ * Read a given macro slot and store it in the provided macro struct.
+ * If the read succeds, function changes out_macro->events,
+ * even if the macro data recieved is not valid.
+ * If the read doesn't succeed, no changes are made.
+ *
+ * @param device Ratbag device
+ * @param slot_index Index of the macro slot (0 <= slot_index < 30)
+ * @param out_macro Pointer to the output macro struct
+ * 
+ * @return 0 on success or a negative errno on error
+*/
+static int
+gxt_164_read_macro(struct ratbag_device *device, uint8_t slot_index, struct gxt_164_macro *out_macro){
+    if(!device || slot_index >= 30){
+        return -EINVAL;
+    }
+
+    int rc = 0;
+    uint16_t slot_address = GXT_164_MACRO_BASE_ADDRESS + slot_index*GXT_164_MACRO_SIZE;
+    uint8_t req_buf[16] = {
+        0x02, 0x05, 0xBB, 0xAA,     // read macro cmd
+        slot_address & 0xFF,                    // slot address low
+        (slot_address & 0xFF00) >> 8,           // slot address high
+        GXT_164_MACRO_SIZE                      // slot size
+    };
+    
+    /* start reading currently saved macro */
+    rc = ratbag_hidraw_set_feature_report(device, req_buf[0], req_buf, 16);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while sending read macro slot %d request! Error: %d\n", slot_index, rc);
+        return rc;
+    }
+
+    uint8_t res_buf[256] = {0};
+
+    /* read mouse's response (a saved macro in a given slot) */
+    rc = ratbag_hidraw_get_feature_report(device, 0x04, res_buf, 256);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while reading macro slot %d! Error: %d\n", slot_index, rc);
+        return rc;
+    }
+
+    memcpy(out_macro->events, (res_buf+8), sizeof(out_macro->events));
+
+    return 0;
+}
+
+/**
+ * Validates a given macro's  event sequence
+ *
+ * @param macro Macro to check
+ *
+ * @return 0 if macro is valid, 1 if macro isn't valid
+*/
+static int
+gxt_164_validate_macro(struct gxt_164_macro *macro){
+    struct gxt_164_macro_event* macro_events = macro->events;
+    bool is_macro_valid = true; // is this a valid macro
+    bool events_ended = false;  // have all non-zero events ended
+
+    if(macro_events[0].press_type == 0){
+        if(macro_events[0].key == 0
+            && macro_events[0].next_size == 0
+            && macro_events[0].delay == 0)
+        {
+            events_ended = true;
+        } else {
+            return -EINVAL;
+        }
+    }
+    
+    for(int i=0; i < GXT_164_MACRO_EVENT_COUNT; i++){
+        if(macro_events[i].padding != 0){
+            // non-zero padding (don't know if it matters, tbh)
+            is_macro_valid = false;
+            break;
+        }
+        
+        if(!events_ended){
+            if(macro_events[i].press_type != GXT_164_MACRO_KEY_PRESS 
+                && macro_events[i].press_type != GXT_164_MACRO_KEY_RELEASE)
+            {
+                // bad press_type
+                is_macro_valid = false;
+                break;
+            }
+            
+            if(macro_events[i].next_size == 0){
+                events_ended = true;
+            } else if(macro_events[i].next_size != 0x06){
+                // bad next_size
+                is_macro_valid = false;
+                break;
+            }
+        } else {
+            if(macro_events[i].press_type != 0
+                || macro_events[i].key != 0
+                || macro_events[i].next_size != 0
+                || macro_events[i].delay != 0)
+            {
+                // non-empty events after the macro end
+                is_macro_valid = false;
+                break;
+            }
+        }
+    }
+
+    return (is_macro_valid)?(0):(-EINVAL);
+}
+
+/**
+ * Write a given macro to the mouse memory.
+ *
+ * @param device Mouse ratbag device
+ * @param macro Macro to write
+ *
+ * @return Written macro slot index on success or a negative errno on error
+*/
+static int
+gxt_164_write_macro(struct ratbag_device *device, struct gxt_164_macro *macro){
+    if(!device || !macro){
+        return -EINVAL;
+    }
+    
+    int rc = gxt_164_validate_macro(macro);
+    if(rc){
+        log_error(device->ratbag, "Trying to upload an invalid macro.\n");
+        return -EINVAL;
+    }
+
+    struct gxt_164_data* drv_data = ratbag_get_drv_data(device);
+    int offset = drv_data->current_slot_index*GXT_164_MACRO_SIZE;
+    int slot_address = GXT_164_MACRO_BASE_ADDRESS + offset;
+
+    uint8_t buf[256] = {
+        0x04, 0x04, 0xBB, 0xAA,  // write macro cmd
+        slot_address & 0xFF,                 // slot address low
+        (slot_address & 0xFF00) >> 8,        // slot address high
+        GXT_164_MACRO_SIZE                   // slot size
+    };
+    
+    memcpy(buf+8, macro->events, GXT_164_MACRO_SIZE);
+    rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, 256);
+    if(rc < 0){
+        log_error(device->ratbag, "Error writing macro to the device: %s (%d)", 
+                                            strerror(-rc), rc);
+        return rc;
+    }
+
+    int uploaded_index = drv_data->current_slot_index;
+    drv_data->current_slot_index++;
+    if(drv_data->current_slot_index >= GXT_164_MACRO_COUNT){
+        drv_data->current_slot_index = 0;
+    }
+    
+    return uploaded_index;
+}
+
+
 /**
  * Probe the Trust GXT 164 mouse
  * 
@@ -114,6 +308,13 @@ trust_gxt_164_probe(struct ratbag_device *device){
 
     log_debug(device->ratbag,
             "Opened the hidraw device.\n");
+    
+    // Check if this is the right hidraw
+    rc = ratbag_hidraw_has_report(device, 0x02);
+    if(!rc){
+        ratbag_close_hidraw(device);
+        return -ENODEV;
+    }
 
     //? Get firmware version
     // TODO: check if version == SST-ZMA-V1.0.3
@@ -221,9 +422,9 @@ trust_gxt_164_probe(struct ratbag_device *device){
         }
 
         ratbag_profile_for_each_button(profile, button){
-            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL); // TODO
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
             ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
-            // ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);   // TODO
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
             ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
             ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 
@@ -247,24 +448,15 @@ trust_gxt_164_probe(struct ratbag_device *device){
         }
     }
 
+    struct gxt_164_data* drv_data = NULL;
+    drv_data = zalloc(sizeof(*drv_data));
+    // Select a random slot for writing
+    // Otherwise it will almost always write to the first(or n-th) slot
+    drv_data->current_slot_index = rand()%GXT_164_MACRO_COUNT;
+    ratbag_set_drv_data(device, drv_data);
+
     return 0;
-
-// err:
-//     free(drv_data);
-//     ratbag_set_drv_data(device, NULL);
-//     return rc;
 }
-
-/**
- * Commit led color, mode, brightness and change speed
- * 
- * @param led Ratbag led
- * 
- * @return 0 on success or a negative errno on error
- */
-// static int
-// trust_gxt_164_commit_led(struct ratbag_led *led){
-// }
 
 /**
  * Get profile id from its index
@@ -416,6 +608,8 @@ gxt_164_get_special_mapped(unsigned int special){
     }
 }
 
+
+
 /**
  * Write changes to the device
  *
@@ -425,11 +619,17 @@ gxt_164_get_special_mapped(unsigned int special){
 */
 static int
 trust_gxt_164_commit(struct ratbag_device *device){
+    struct gxt_164_data* drv_data = ratbag_get_drv_data(device);
     struct ratbag_profile* profile;
     struct ratbag_resolution *resolution;
     struct ratbag_button *button;
     struct ratbag_led *led;
     int rc;
+
+    if(!drv_data){
+        log_error(device->ratbag, "drv_data was not initialized before commiting.\n");
+        return -EINVAL;
+    }
 
     //? Commit macros, if there are any (changed/dirty)
     // TODO
@@ -479,7 +679,7 @@ trust_gxt_164_commit(struct ratbag_device *device){
             // Profile id
             (rc & 0xff00) >> 8,
             (rc & 0x00ff),
-            // Profile commit length (395 = 0x18b)
+            // Profile commit length (395 = 0x018b)
             0x8b, 0x01
         };
         unsigned int buf_index = 8;
@@ -587,6 +787,8 @@ trust_gxt_164_commit(struct ratbag_device *device){
          * Button setting section
         */
         ratbag_profile_for_each_button(profile, button){
+            // TODO check if there is a left click present among buttons
+            // if not - forcefuly asign it to the first one
             switch(ratbag_button_get_action_type(button)){
             case RATBAG_BUTTON_ACTION_TYPE_NONE:    // disabled
                 buf_index += 8;
@@ -595,7 +797,6 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 // 0x01, button_id, 0x00, 0x00
                 buf[buf_index++] = 0x01;
                 rc = ratbag_button_get_button(button);
-                log_debug(device->ratbag, "MOUSE_BUTTON: %d\n\n", rc);
                 rc = gxt_164_get_button_from_code(rc);
 
                 // mouse button index
@@ -637,7 +838,8 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 if(rc == 0){
                     log_error(device->ratbag, "Error while commiting profile %d: "
                                               "couldn't find HID keyboard usage for the keycode: %d \n", 
-                                              profile->index, resolution->index);
+                                              profile->index, key);
+                    // TODO make it just disable the button
                     return -EINVAL;
                 }
                 // HID keycode
@@ -671,8 +873,155 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 break;
             }
             case RATBAG_BUTTON_ACTION_TYPE_MACRO: {
-                // TODO
-                buf_index += 8;  //! Until macro is implemented
+                // TODO maybe cache the results
+                unsigned int key = 0;
+                unsigned int modifiers = 0;
+                rc = ratbag_action_keycode_from_macro(&(button->action), &key, &modifiers);
+                if(rc == 1){
+                    /* upload key+modifier instead of macro */
+                    log_debug(device->ratbag, "Macro can be converted to key+modifiers...\n");
+                    if(modifiers){
+                        // ignore modifier position (left-right)
+                        modifiers = (0x0F & modifiers) | ((0xF0 & modifiers) >> 4);
+                    }
+
+                    key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+                    if(key){
+                        log_debug(device->ratbag, "Macro converted into key(%d) and modifiers(%d).\n", key, modifiers);
+                        
+                        buf[buf_index++] = 0x02;
+                        buf[buf_index++] = modifiers;
+                        buf[buf_index++] = key;
+                        buf_index++;
+
+                        buf_index++;                // Play once on key press
+                        buf[buf_index++] = 0x01;    // Action activation count
+                        buf_index += 2;             // Action activation delay (uint16_t)
+                        
+                        break;
+                    }
+                    log_debug(device->ratbag, "Failed to convert: couldn't get key hid code.\n");
+                }
+
+                if(button->dirty){
+                    struct ratbag_macro_event* events = button->action.macro->events;
+                    struct gxt_164_macro temp_macro = {};
+                    
+                    if(events[34].type != RATBAG_MACRO_EVENT_NONE){
+                        // too many events; make button inactive
+                        log_error(device->ratbag, "Too many events in a macro (max %d)", 
+                                                            GXT_164_MACRO_EVENT_COUNT);
+                        buf_index+=8;
+                        break;
+                    }
+
+                    /* Parse macro */
+                    bool is_valid = true;
+                    int event_index = 0;
+                    for(int i=0; i < GXT_164_MACRO_EVENT_COUNT; i++){
+                        bool end_loop = false;
+                        switch(events[i].type){
+                            case RATBAG_MACRO_EVENT_NONE: {
+                                end_loop = true;
+                                break;
+                            }
+                            case RATBAG_MACRO_EVENT_INVALID: {
+                                log_error(device->ratbag, "Error while parsing macro: "
+                                                            "RATBAG_MACRO_EVENT_WAIT as a first event. Ignoring.\n");
+                                is_valid = false;
+                                end_loop = true;
+                                break;
+                            }
+                            case RATBAG_MACRO_EVENT_KEY_PRESSED: {
+                                unsigned int key = events[i].event.key;
+                                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+                                if(rc == 0){
+                                    log_error(device->ratbag, "Error while parsing macro: "
+                                                            "couldn't find HID keyboard usage for the keycode: %d \n", 
+                                                            key);
+                                    end_loop = true;
+                                    is_valid = false;
+                                    break;
+                                }
+                                
+                                temp_macro.events[event_index].press_type = GXT_164_MACRO_KEY_PRESS;
+                                temp_macro.events[event_index].key = rc;
+                                temp_macro.events[event_index].delay = 50;  // default delay = 50ms
+                                
+                                if(event_index != 0){
+                                    temp_macro.events[event_index-1].next_size = 0x06;
+                                }
+                                
+                                event_index++;
+                                break;
+                            }
+                            case RATBAG_MACRO_EVENT_KEY_RELEASED: {
+                                unsigned int key = events[i].event.key;
+                                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+                                if(rc == 0){
+                                    log_error(device->ratbag, "Error while parsing macro: "
+                                                            "couldn't find HID keyboard usage for the keycode: %d \n", 
+                                                            key);
+                                    end_loop = true;
+                                    is_valid = false;
+                                    break;
+                                }
+                                
+                                temp_macro.events[event_index].press_type = GXT_164_MACRO_KEY_RELEASE;
+                                temp_macro.events[event_index].key = rc;
+                                temp_macro.events[event_index].delay = 50;  // default delay = 50ms
+                                
+                                if(event_index != 0){
+                                    temp_macro.events[event_index-1].next_size = 0x06;
+                                }
+                                
+                                event_index++;
+                                break;
+                            }
+                            case RATBAG_MACRO_EVENT_WAIT: {
+                                if(event_index == 0){
+                                    log_error(device->ratbag, "Error while parsing macro: "
+                                                            "RATBAG_MACRO_EVENT_WAIT as a first event. Ignoring.\n");
+                                    break;
+                                }
+
+                                unsigned int delay = events[i].event.timeout;
+                                if(delay > 0xFFFF){
+                                    delay = 0xFFFF;
+                                }
+                                temp_macro.events[event_index-1].delay = delay;
+
+                                break;
+                            }
+                        }
+
+                        if(end_loop){
+                            break;
+                        }
+                    }
+                    if(!is_valid){
+                        log_error(device->ratbag, "Macro couldn't be parsed.\n");
+                        buf_index+=8;
+                        break;
+                    }
+
+                    rc = gxt_164_write_macro(device, &temp_macro);
+                    if(rc < 0){
+                        log_error(device->ratbag, "Macro couldn't be written. Disabling the button.");
+                        buf_index+=8;
+                        break;
+                    }
+
+                    buf[buf_index++] = 0x04;
+                    buf_index++;
+                    buf[buf_index++] = rc;  // macro slot index
+                    buf[buf_index++] = 0x51;
+
+                    buf[buf_index++] = 0x00;    // play once on key press
+                    buf[buf_index++] = 0x01;    // Action activation count
+                    buf_index += 2; // Action activation delay (uint16_t)
+                }
+                
                 break;
             }
             case RATBAG_BUTTON_ACTION_TYPE_SPECIAL: {
@@ -816,7 +1165,7 @@ trust_gxt_164_remove(struct ratbag_device *device){
         "Closing device hidraw.\n");
     
     ratbag_close_hidraw(device);
-    // free(ratbag_get_drv_data(device));
+    free(ratbag_get_drv_data(device));
 
     log_debug(device->ratbag,
         "### Trust GTX 164 driver finished ###\n");
