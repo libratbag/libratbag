@@ -1963,7 +1963,8 @@ bool
 ratbag_action_is_single_modifier_key(const struct ratbag_button_action *action)
 {
 	const struct ratbag_macro *macro = action->macro;
-	int count = 0;
+	int modifier_key_count = 0;
+	int action_key_count = 0;
 	for (int i = 0; i < MAX_MACRO_EVENTS; i++) {
 		struct ratbag_macro_event event = macro->events[i];
 		if (event.type == RATBAG_MACRO_EVENT_NONE ||
@@ -1971,10 +1972,13 @@ ratbag_action_is_single_modifier_key(const struct ratbag_button_action *action)
 			break;
 		}
 		if (ratbag_key_is_modifier(event.event.key) && event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
-			count += 1;
+			modifier_key_count += 1;
+		}
+		if (!ratbag_key_is_modifier(event.event.key) && event.type == RATBAG_MACRO_EVENT_KEY_PRESSED) {
+			action_key_count += 1;
 		}
 	}
-	return count == 1;
+	return modifier_key_count == 1 && action_key_count == 0;
 }
 
 int
@@ -2000,7 +2004,7 @@ ratbag_action_keycode_from_macro(const struct ratbag_button_action *action,
 		return 1;
 	}
 
-	if (ratbag_action_macro_num_keys(action) != 0)
+	if (ratbag_action_macro_num_keys(action) != 1)
 		return -EINVAL;
 
 	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
