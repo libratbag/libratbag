@@ -1,6 +1,8 @@
 // #include "config.h"
 #include <errno.h>
 #include <linux/input-event-codes.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "libratbag-enums.h"
 #include "libratbag-private.h"
@@ -89,7 +91,7 @@ struct gxt_164_macro {
 
 // Additional saved data for this driver
 struct gxt_164_data {
-    uint8_t current_slot_index;     // which slot to write to next
+    uint8_t current_slot_index;     // which macro slot to write to next
 };
 
 /**
@@ -171,6 +173,107 @@ gxt_164_read_macro(struct ratbag_device *device, uint8_t slot_index, struct gxt_
 }
 
 /**
+ * Parse a given ratbag macro and create a gxt_164_macro.
+ *
+ * @param device Ratbag device
+ * @param macro Ratbag macro to parse
+ * @param out_macro Pointer to the output macro
+ *
+ * @return 0 on success or a negative errno on error
+*/
+static int
+gxt_164_parse_macro(struct ratbag_device* device,
+                    struct ratbag_macro* macro, 
+                    struct gxt_164_macro* out_macro)
+{
+    if(!device || !macro || !out_macro){
+        return -EINVAL;
+    }
+
+    if(macro->events[34].type != RATBAG_MACRO_EVENT_NONE){
+        // too many events; make button inactive
+        log_error(device->ratbag, "Too many events in a macro (max %d)", 
+                                            GXT_164_MACRO_EVENT_COUNT);
+        return -EINVAL;
+    }
+
+    struct gxt_164_macro temp_macro = {};
+    int rc = 0;
+    int event_index = 0;
+    for(int i=0; i < GXT_164_MACRO_EVENT_COUNT; i++){
+        switch(macro->events[i].type){
+            case RATBAG_MACRO_EVENT_NONE: {
+                return -EINVAL;
+            }
+            case RATBAG_MACRO_EVENT_INVALID: {
+                log_error(device->ratbag, "Error while parsing macro: "
+                                            "Macro has an INVALID event.\n");
+                return -EINVAL;
+            }
+            case RATBAG_MACRO_EVENT_KEY_PRESSED: {
+                unsigned int key = macro->events[i].event.key;
+                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+                if(rc == 0){
+                    log_error(device->ratbag, "Error while parsing macro: "
+                                            "couldn't find HID keyboard usage for the keycode: %d\n", 
+                                            key);
+                    return -EINVAL;
+                }
+                
+                temp_macro.events[event_index].press_type = GXT_164_MACRO_KEY_PRESS;
+                temp_macro.events[event_index].key = rc;
+                temp_macro.events[event_index].delay = 50;  // default delay = 50ms
+                
+                if(event_index != 0){
+                    temp_macro.events[event_index-1].next_size = 0x06;
+                }
+                
+                event_index++;
+                break;
+            }
+            case RATBAG_MACRO_EVENT_KEY_RELEASED: {
+                unsigned int key = macro->events[i].event.key;
+                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+                if(rc == 0){
+                    log_error(device->ratbag, "Error while parsing macro: "
+                                            "couldn't find HID keyboard usage for the keycode: %d\n", 
+                                            key);
+                    return -EINVAL;
+                }
+                
+                temp_macro.events[event_index].press_type = GXT_164_MACRO_KEY_RELEASE;
+                temp_macro.events[event_index].key = rc;
+                temp_macro.events[event_index].delay = 50;  // default delay = 50ms
+                
+                if(event_index != 0){
+                    temp_macro.events[event_index-1].next_size = 0x06;
+                }
+                
+                event_index++;
+                break;
+            }
+            case RATBAG_MACRO_EVENT_WAIT: {
+                if(event_index == 0){
+                    log_debug(device->ratbag, "RATBAG_MACRO_EVENT_WAIT as a first event. Ignoring.\n");
+                    break;
+                }
+
+                unsigned int delay = macro->events[i].event.timeout;
+                if(delay > 0xFFFF){
+                    delay = 0xFFFF;
+                }
+                temp_macro.events[event_index-1].delay = delay;
+
+                break;
+            }
+        }
+    }
+
+    memcpy(out_macro, &temp_macro, sizeof(*out_macro));
+    return 0;
+}
+
+/**
  * Validates a given macro's  event sequence
  *
  * @param macro Macro to check
@@ -246,14 +349,19 @@ gxt_164_write_macro(struct ratbag_device *device, struct gxt_164_macro *macro){
     if(!device || !macro){
         return -EINVAL;
     }
-    
+
+    struct gxt_164_data* drv_data = ratbag_get_drv_data(device);
+    if(!drv_data){
+        log_error(device->ratbag, "drv_data was not initialized before commiting.\n");
+        return -EINVAL;
+    }
+
     int rc = gxt_164_validate_macro(macro);
     if(rc){
         log_error(device->ratbag, "Trying to upload an invalid macro.\n");
         return -EINVAL;
     }
 
-    struct gxt_164_data* drv_data = ratbag_get_drv_data(device);
     int offset = drv_data->current_slot_index*GXT_164_MACRO_SIZE;
     int slot_address = GXT_164_MACRO_BASE_ADDRESS + offset;
 
@@ -567,11 +675,10 @@ gxt_164_get_led_brightness_from_value(unsigned int brightness){
 
 /**
  * Get mouse button index from its ratbag value
- * (Usage: )
  * 
  * @param button Ratbag button
  * 
- * @return GXT_164 button index
+ * @return GXT_164 button index on success or negative errno on error
  */
 static int
 gxt_164_get_button_from_code(unsigned int button){
@@ -582,11 +689,17 @@ gxt_164_get_button_from_code(unsigned int button){
     case 3: // middle click
         return 0x04;
     default:
-        // LEFT_CLICK if button is unknown
-        return 0x01;
+        return -EINVAL;
     }
 }
 
+/**
+ * Get GXT_164 special action from its ratbag value 
+ * 
+ * @param button Ratbag special action code
+ * 
+ * @return GXT_164 special action code on success or negative errno on error
+ */
 static int
 gxt_164_get_special_mapped(unsigned int special){
     switch(special){
@@ -603,222 +716,206 @@ gxt_164_get_special_mapped(unsigned int special){
         case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN:
             return GXT_164_ACTION_PROFILE_DOWN;
         default:
-            // LEFT_CLICK if action is unknown
-            return 0x01;
+            return -EINVAL;
     }
 }
 
-
-
 /**
- * Write changes to the device
+ * Checks if a given profile has other changes aside from is_active.
  *
- * @param device Ratbag device
- * 
- * @return 0 on success or a negative errno on error
+ * @param profile Ratbag profile to check
+ *
+ * @return 1 if there are no changes or only is_active has changed; 0 otherwise
 */
 static int
-trust_gxt_164_commit(struct ratbag_device *device){
-    struct gxt_164_data* drv_data = ratbag_get_drv_data(device);
-    struct ratbag_profile* profile;
+gxt_164_is_only_active_dirty(struct ratbag_profile* profile){
+    struct ratbag_led* led;
+    struct ratbag_button* button;
+    struct ratbag_resolution* resolution;
+    bool only_is_active_dirty = true;
+    
+    // only_is_active_dirty = only_is_active_dirty && !(profile->angle_snapping_dirty);
+    // only_is_active_dirty = only_is_active_dirty && !(profile->debounce_dirty);
+    only_is_active_dirty = only_is_active_dirty && !(profile->rate_dirty);
+
+    ratbag_profile_for_each_led(profile, led){
+        only_is_active_dirty = only_is_active_dirty && !(led->dirty);
+    }
+    ratbag_profile_for_each_button(profile, button){
+        only_is_active_dirty = only_is_active_dirty && !(button->dirty);
+    }
+    ratbag_profile_for_each_resolution(profile, resolution){
+        only_is_active_dirty = only_is_active_dirty && !(resolution->dirty);
+    }
+    
+    return only_is_active_dirty;
+}
+
+/**
+ * Write ALL the settings of a given profile.
+ *
+ * @return 0 on success or negative errno on error
+*/
+static int
+gxt_164_write_profile_full(struct ratbag_device* device,
+                           struct ratbag_profile* profile)
+{
     struct ratbag_resolution *resolution;
     struct ratbag_button *button;
     struct ratbag_led *led;
     int rc;
 
-    if(!drv_data){
-        log_error(device->ratbag, "drv_data was not initialized before commiting.\n");
+    led = ratbag_profile_get_led(profile, 0);
+    if(!led){
+        log_error(device->ratbag, "Error while commiting profile %d: "
+                                    "couldn't get LED (maybe it isn't initialized)\n", 
+                                    profile->index);
         return -EINVAL;
     }
 
-    //? Commit macros, if there are any (changed/dirty)
-    // TODO
+    rc = gxt_164_get_profile_id_from_index(profile->index);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while commiting profile %d: "
+                                    "wrong profile index encountered: %d\n", 
+                                    profile->index, profile->index);
+        return rc;
+    }
+    
+    uint8_t buf[1024] = {
+        // Profile commit command
+        0x05, 0x04, 0xBB, 0xAA,
+        // Profile id
+        (rc & 0xff00) >> 8,
+        (rc & 0x00ff),
+        // Profile commit length (395 = 0x018b)
+        0x8b, 0x01
+    };
+    unsigned int buf_index = 8;
 
-    ratbag_device_for_each_profile(device, profile){
-        if(!profile->dirty){
-            continue;
-        }
+    rc = gxt_164_get_report_rate_from_hz(profile->hz);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while commiting profile %d: "
+                                    "wrong report rate encountered: %d\n", 
+                                    profile->index, profile->hz);
+        return rc;
+    }
+    // Report rate index
+    buf[buf_index++] = rc;
 
-        led = ratbag_profile_get_led(profile, 0);
-        if(!led){
-            log_error(device->ratbag, "Error while commiting profile %d: "
-                                      "couldn't get LED (maybe it isn't initialized)\n", 
-                                      profile->index);
-            return rc;
-        }
+    // Wheel speed (it never changes for some reason?)
+    buf[buf_index++] = 0x01;
 
-        // bool only_is_active_dirty = profile->is_active_dirty;
-        bool only_is_active_dirty = true;
-        
-        // only_is_active_dirty = only_is_active_dirty && !(profile->angle_snapping_dirty);
-        // only_is_active_dirty = only_is_active_dirty && !(profile->debounce_dirty);
-        only_is_active_dirty = only_is_active_dirty && !(profile->rate_dirty);
-        only_is_active_dirty = only_is_active_dirty && !(led->dirty);
-        
-        ratbag_profile_for_each_button(profile, button){
-            only_is_active_dirty = only_is_active_dirty && !(button->dirty);
-        }
-        ratbag_profile_for_each_resolution(profile, resolution){
-            only_is_active_dirty = only_is_active_dirty && !(resolution->dirty);
-        }
-        if(only_is_active_dirty){
-            continue;
-        }
 
-        rc = gxt_164_get_profile_id_from_index(profile->index);
-        if(rc < 0){
-            log_error(device->ratbag, "Error while commiting profile %d: "
-                                      "wrong profile index encountered: %d\n", 
-                                      profile->index, profile->index);
-            return rc;
-        }
-        
-        uint8_t buf[1024] = {
-            // Profile commit command id
-            0x05, 0x04, 0xBB, 0xAA,
-            // Profile id
-            (rc & 0xff00) >> 8,
-            (rc & 0x00ff),
-            // Profile commit length (395 = 0x018b)
-            0x8b, 0x01
-        };
-        unsigned int buf_index = 8;
 
-        rc = gxt_164_get_report_rate_from_hz(profile->hz);
-        if(rc < 0){
-            log_error(device->ratbag, "Error while commiting profile %d: "
-                                      "wrong report rate encountered: %d\n", 
-                                      profile->index, profile->hz);
-            return rc;
-        }
-        // Report rate index
-        buf[buf_index++] = rc;
+    /*
+     * Color settings section
+    */
 
-        // Wheel speed (it never changes for some reason?)
+    // LED color
+    buf[buf_index++] = led->color.red;
+    buf[buf_index++] = led->color.green;
+    buf[buf_index++] = led->color.blue;
+
+    // LED mode
+    rc = gxt_164_get_led_mode_mapped(led->mode);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while commiting profile %d: "
+                                    "wrong value for LED mode encountered: %d \n", 
+                                    profile->index, led->mode);
+        return rc;
+    }
+    buf[buf_index++] = rc;
+
+    buf_index++;    // buf[buf_index++] = 0x00;
+    
+    // LED brightness
+    rc = gxt_164_get_led_brightness_from_value(led->brightness);
+    buf[buf_index++] = rc;
+
+    // LED speed
+    rc = gxt_164_get_led_speed_from_ms(led->ms);
+    buf[buf_index++] = rc;
+
+    // 63 byte padding
+    buf_index += 63;
+
+    /*
+        * DPI settings section
+    */
+    // resolution number
+    buf[buf_index++] = GXT_164_NUM_DPI;
+
+    // active resolution index
+    ratbag_profile_for_each_resolution(profile, resolution){
+        if(resolution->is_active){
+            if(resolution->index >= GXT_164_NUM_DPI){
+                log_error(device->ratbag, "Error while commiting profile %d: "
+                                            "wrong value for resolution index encountered: %d \n", 
+                                            profile->index, resolution->index);
+                return -EINVAL;
+            }
+            buf[buf_index++] = resolution->index;
+            break;
+        }
+    }
+
+    // DPI sensor (haven't seen it change)
+    buf[buf_index++] = 0x05;
+
+    ratbag_profile_for_each_resolution(profile, resolution){
+        // is resolution enabled (I don't think this mouse supports turning it off)
         buf[buf_index++] = 0x01;
 
-        
-
-        /*
-         * Color settings section
-        */
-
-        // LED color
-        buf[buf_index++] = led->color.red;
-        buf[buf_index++] = led->color.green;
-        buf[buf_index++] = led->color.blue;
-
-        // LED mode
-        rc = gxt_164_get_led_mode_mapped(led->mode);
-        if(rc < 0){
-            log_error(device->ratbag, "Error while commiting profile %d: "
-                                      "wrong value for LED mode encountered: %d \n", 
-                                      profile->index, led->mode);
-            return rc;
-        }
-        buf[buf_index++] = rc;
-
+        // uint16_t dpi_x = real_dpi_x / 50
+        buf[buf_index++] = resolution->dpi_x / 50;
         buf_index++;    // buf[buf_index++] = 0x00;
         
-        // LED brightness
-        rc = gxt_164_get_led_brightness_from_value(led->brightness);
-        buf[buf_index++] = rc;
-
-        // LED speed
-        rc = gxt_164_get_led_speed_from_ms(led->ms);
-        buf[buf_index++] = rc;
-
-        // 63 byte padding
-        buf_index += 63;
-
+        // uint16_t dpi_y = real_dpi_y / 50
+        buf[buf_index++] = resolution->dpi_y / 50;
+        buf_index++;    // buf[buf_index++] = 0x00;
+        
         /*
-         * DPI settings section
+        * Trust GXT 164 mice (or at least some versions of it) have a feature
+        * called "DPI Precision". According to manufacturer it is connected to 
+        * DPI somehow, but I'm not sure what it does exactly.
+        * It was decided to set it to a middle value for this field (from range 0 - 1000) 
         */
-        // resolution number
-        buf[buf_index++] = GXT_164_NUM_DPI;
+        // uint16_t dpi_precision = real_dpi_precision / 50
+        buf[buf_index++] = 500 / 50;
+        buf_index++;    // buf[buf_index++] = 0x00;
 
-        // active resolution index
-        ratbag_profile_for_each_resolution(profile, resolution){
-            if(resolution->is_active){
-                if(resolution->index >= GXT_164_NUM_DPI){
-                    log_error(device->ratbag, "Error while commiting profile %d: "
-                                              "wrong value for resolution index encountered: %d \n", 
-                                              profile->index, resolution->index);
-                    return -EINVAL;
-                }
-                buf[buf_index++] = resolution->index;
-                break;
-            }
-        }
+        // padding
+        buf_index++;    // buf[buf_index++] = 0x00;
+    }
 
-        // DPI sensor (haven't seen it change)
-        buf[buf_index++] = 0x05;
+    // 48 byte padding
+    buf_index += 48;
 
-        ratbag_profile_for_each_resolution(profile, resolution){
-            // is resolution enabled (I don't think this mouse supports turning it off)
-            buf[buf_index++] = 0x01;
-
-            // uint16_t dpi_x = real_dpi_x / 50
-            buf[buf_index++] = resolution->dpi_x / 50;
-            buf_index++;    // buf[buf_index++] = 0x00;
-            
-            // uint16_t dpi_y = real_dpi_y / 50
-            buf[buf_index++] = resolution->dpi_y / 50;
-            buf_index++;    // buf[buf_index++] = 0x00;
-            
-            /*
-             * Trust GXT 164 mice (or at least some versions of it) have a feature
-             * called "DPI Precision". According to manufacturer it is connected to 
-             * DPI somehow, but I'm not sure what it does exactly.
-             * It was decided to set it to a middle value for this field (from range 0 - 1000) 
-            */
-            // uint16_t dpi_precision = real_dpi_precision / 50
-            buf[buf_index++] = 500 / 50;
-            buf_index++;    // buf[buf_index++] = 0x00;
-
-            // padding
-            buf_index++;    // buf[buf_index++] = 0x00;
-        }
-
-        // 48 byte padding
-        buf_index += 48;
-
-        /*
-         * Button setting section
-        */
-        ratbag_profile_for_each_button(profile, button){
-            // TODO check if there is a left click present among buttons
-            // if not - forcefuly asign it to the first one
-            switch(ratbag_button_get_action_type(button)){
+    /*
+     * Button setting section
+    */
+    ratbag_profile_for_each_button(profile, button){
+        // TODO check if there is a left click present among buttons
+        // if not - forcefuly asign it to the first one
+        switch(ratbag_button_get_action_type(button)){
             case RATBAG_BUTTON_ACTION_TYPE_NONE:    // disabled
                 buf_index += 8;
                 break;
             case RATBAG_BUTTON_ACTION_TYPE_BUTTON:{ // mouse button
+                rc = button->action.action.button;;
+                rc = gxt_164_get_button_from_code(rc);
+                if(rc < 0){
+                    log_error(device->ratbag, "Wrong mouse button in action: %d. Aborting profile write.\n",
+                                                button->action.action.button);
+                    return -EINVAL;
+                }
+
                 // 0x01, button_id, 0x00, 0x00
                 buf[buf_index++] = 0x01;
-                rc = ratbag_button_get_button(button);
-                rc = gxt_164_get_button_from_code(rc);
-
-                // mouse button index
                 buf[buf_index++] = rc;
                 buf_index += 2;     // buf[buf_index++] = 0x00;
 
                 // Action activation type and timing
-                /*
-                 * Trust GXT 164 also supports binding an action which presses a given
-                 * key (+ modifier) N times, or repeats it until released or pressed again.
-                 *  0 - PLAY_ONCE
-                 *  1 - PLAY_N_TIMES
-                 *  2 - REPEAT_WHILE_PRESSED
-                 *  3 - TOGGLE_AUTO_REPEAT
-                 *  4 - TOGGLE_HOLD
-                 * 
-                 * action_timing
-                 * It's also possible to control when the action will be activated:
-                 *  0x00 - KEY_PRESS
-                 *  0x80 - KEY_RELEASE
-                */
-                // value = action_activation_type + action_timing;
                 buf[buf_index++] = 0x00;    // play once on key press
 
                 // Action activation count
@@ -830,38 +927,21 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 break;
             }
             case RATBAG_BUTTON_ACTION_TYPE_KEY: {   // keyboard key
-                buf[buf_index++] = 0x02;    // action = key
-                buf[buf_index++] = 0x00;    // modifier = none
-                
-                unsigned int key = ratbag_button_get_key(button);
+                unsigned int key = button->action.action.key;
                 rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
                 if(rc == 0){
                     log_error(device->ratbag, "Error while commiting profile %d: "
-                                              "couldn't find HID keyboard usage for the keycode: %d \n", 
-                                              profile->index, key);
-                    // TODO make it just disable the button
+                                                "couldn't find HID keyboard usage for the keycode: %d \n", 
+                                                profile->index, key);
                     return -EINVAL;
                 }
-                // HID keycode
+
+                buf[buf_index++] = 0x02;    // action = key
+                buf[buf_index++] = 0x00;    // modifier = none
                 buf[buf_index++] = rc;
                 buf_index++;    // buf[buf_index++] = 0x00;
 
                 // Action activation type and timing
-                /*
-                 * Trust GXT 164 also supports binding an action which presses a given
-                 * key (+ modifier) N times, or repeats it until released or pressed again.
-                 *  0 - PLAY_ONCE
-                 *  1 - PLAY_N_TIMES
-                 *  2 - REPEAT_WHILE_PRESSED
-                 *  3 - TOGGLE_AUTO_REPEAT
-                 *  4 - TOGGLE_HOLD
-                 * 
-                 * action_timing
-                 * It's also possible to control when the action will be activated:
-                 *  0x00 - KEY_PRESS
-                 *  0x80 - KEY_RELEASE
-                */
-                // value = action_activation_type + action_timing;
                 buf[buf_index++] = 0x00;    // play once on key press
 
                 // Action activation count
@@ -909,107 +989,21 @@ trust_gxt_164_commit(struct ratbag_device *device){
                     
                     if(events[34].type != RATBAG_MACRO_EVENT_NONE){
                         // too many events; make button inactive
-                        log_error(device->ratbag, "Too many events in a macro (max %d)", 
+                        log_error(device->ratbag, "Too many events in a macro (max %d)\n", 
                                                             GXT_164_MACRO_EVENT_COUNT);
-                        buf_index+=8;
-                        break;
+                        return -EINVAL;
                     }
 
-                    /* Parse macro */
-                    bool is_valid = true;
-                    int event_index = 0;
-                    for(int i=0; i < GXT_164_MACRO_EVENT_COUNT; i++){
-                        bool end_loop = false;
-                        switch(events[i].type){
-                            case RATBAG_MACRO_EVENT_NONE: {
-                                end_loop = true;
-                                break;
-                            }
-                            case RATBAG_MACRO_EVENT_INVALID: {
-                                log_error(device->ratbag, "Error while parsing macro: "
-                                                            "RATBAG_MACRO_EVENT_WAIT as a first event. Ignoring.\n");
-                                is_valid = false;
-                                end_loop = true;
-                                break;
-                            }
-                            case RATBAG_MACRO_EVENT_KEY_PRESSED: {
-                                unsigned int key = events[i].event.key;
-                                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
-                                if(rc == 0){
-                                    log_error(device->ratbag, "Error while parsing macro: "
-                                                            "couldn't find HID keyboard usage for the keycode: %d \n", 
-                                                            key);
-                                    end_loop = true;
-                                    is_valid = false;
-                                    break;
-                                }
-                                
-                                temp_macro.events[event_index].press_type = GXT_164_MACRO_KEY_PRESS;
-                                temp_macro.events[event_index].key = rc;
-                                temp_macro.events[event_index].delay = 50;  // default delay = 50ms
-                                
-                                if(event_index != 0){
-                                    temp_macro.events[event_index-1].next_size = 0x06;
-                                }
-                                
-                                event_index++;
-                                break;
-                            }
-                            case RATBAG_MACRO_EVENT_KEY_RELEASED: {
-                                unsigned int key = events[i].event.key;
-                                rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
-                                if(rc == 0){
-                                    log_error(device->ratbag, "Error while parsing macro: "
-                                                            "couldn't find HID keyboard usage for the keycode: %d \n", 
-                                                            key);
-                                    end_loop = true;
-                                    is_valid = false;
-                                    break;
-                                }
-                                
-                                temp_macro.events[event_index].press_type = GXT_164_MACRO_KEY_RELEASE;
-                                temp_macro.events[event_index].key = rc;
-                                temp_macro.events[event_index].delay = 50;  // default delay = 50ms
-                                
-                                if(event_index != 0){
-                                    temp_macro.events[event_index-1].next_size = 0x06;
-                                }
-                                
-                                event_index++;
-                                break;
-                            }
-                            case RATBAG_MACRO_EVENT_WAIT: {
-                                if(event_index == 0){
-                                    log_error(device->ratbag, "Error while parsing macro: "
-                                                            "RATBAG_MACRO_EVENT_WAIT as a first event. Ignoring.\n");
-                                    break;
-                                }
-
-                                unsigned int delay = events[i].event.timeout;
-                                if(delay > 0xFFFF){
-                                    delay = 0xFFFF;
-                                }
-                                temp_macro.events[event_index-1].delay = delay;
-
-                                break;
-                            }
-                        }
-
-                        if(end_loop){
-                            break;
-                        }
-                    }
-                    if(!is_valid){
+                    rc = gxt_164_parse_macro(device, button->action.macro, &temp_macro);
+                    if(rc < 0){
                         log_error(device->ratbag, "Macro couldn't be parsed.\n");
-                        buf_index+=8;
-                        break;
+                        return -EINVAL;
                     }
 
                     rc = gxt_164_write_macro(device, &temp_macro);
                     if(rc < 0){
-                        log_error(device->ratbag, "Macro couldn't be written. Disabling the button.");
-                        buf_index+=8;
-                        break;
+                        log_error(device->ratbag, "Macro couldn't be written. Disabling the button.\n");
+                        return -EINVAL;
                     }
 
                     buf[buf_index++] = 0x04;
@@ -1044,30 +1038,17 @@ trust_gxt_164_commit(struct ratbag_device *device){
                     buf[buf_index++] = 0x32;    // 50ms delay
                     buf_index++;
                 } else {
+                    rc = gxt_164_get_special_mapped(rc);
+                    if(rc < 0){
+                        return -EINVAL;
+                    }
+                    
                     // 0x01, special_id, 0x00, 0x00
                     buf[buf_index++] = 0x01;
-                    rc = gxt_164_get_special_mapped(rc);
-
-                    // mouse button index
                     buf[buf_index++] = rc;
                     buf_index += 2;
 
                     // Action activation type and timing
-                    /*
-                    * Trust GXT 164 also supports binding an action which presses a given
-                    * key (+ modifier) N times, or repeats it until released or pressed again.
-                    *  0 - PLAY_ONCE
-                    *  1 - PLAY_N_TIMES
-                    *  2 - REPEAT_WHILE_PRESSED
-                    *  3 - TOGGLE_AUTO_REPEAT
-                    *  4 - TOGGLE_HOLD
-                    * 
-                    * action_timing
-                    * It's also possible to control when the action will be activated:
-                    *  0x00 - KEY_PRESS
-                    *  0x80 - KEY_RELEASE
-                    */
-                    // value = action_activation_type + action_timing;
                     buf[buf_index++] = 0x00;    // play once on key press
 
                     // Action activation count
@@ -1079,30 +1060,394 @@ trust_gxt_164_commit(struct ratbag_device *device){
                 break;
             }
             case RATBAG_BUTTON_ACTION_TYPE_UNKNOWN:{
-                buf_index += 8;
-                break;
+                return -EINVAL;
             }
+        }
+
+    }
+
+    buf[buf_index++] = 0x01;
+    buf[buf_index++] = 0x26;
+
+    rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, ARRAY_LENGTH(buf));
+    if (rc < 0){
+        log_error(device->ratbag, "Error while changing active profile: %s (%d)\n", strerror(-rc), rc);
+        return rc;
+    }
+    if (rc != ARRAY_LENGTH(buf)){
+        log_error(device->ratbag, "Unexpected amount of written data: %d (instead of %u)\n", rc, (int)ARRAY_LENGTH(buf));
+        return -EIO;
+    }
+}
+
+/**
+ * Write a given led settings to the mouse memory.
+ * Writes to the currently active profile.
+ *
+ * @param device Ratbag device
+ * @param led Led settings to write
+ * 
+ * @return 0 on success or a negative errno on error
+*/
+static int
+gxt_164_write_led(struct ratbag_device* device, 
+                  struct ratbag_led* led)
+{
+    if(!device || !led){
+        return -EINVAL;
+    }
+
+    int mode = gxt_164_get_led_mode_mapped(led->mode);
+    if(mode < 0){
+        return mode;
+    }
+
+    int speed = gxt_164_get_led_speed_from_ms(led->ms);
+    int brightness = gxt_164_get_led_brightness_from_value(led->brightness);
+
+    uint8_t buf[64] = {
+        0x03, 0x06, 0xBB, 0xAA, // led write cmd (1)
+        0x2a, 0x00, 0x0a, 0x00, // led write cmd (2)
+        led->color.red,
+        led->color.green,
+        led->color.blue,
+        mode,
+        0x00,
+        brightness,
+        speed
+    };
+
+    int rc = 0;
+    rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, 64);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while writing LED: %s (%d)", strerror(-rc), rc);
+        return rc;
+    }
+
+    return 0;
+}
+
+/**
+ * Write a given dpi settings to the mouse memory.
+ * Writes to the currently active profile.
+ *
+ * @param device Ratbag device
+ * @param resolution DPI settings to write
+ * 
+ * @return 0 on success or a negative errno on error
+*/
+static int
+gxt_164_write_dpi(struct ratbag_device* device,
+                  struct ratbag_resolution* resolution)
+{
+    if(!device || !resolution){
+        return -EINVAL;
+    }
+
+    unsigned int dpi_index = resolution->index;
+    if(dpi_index > GXT_164_NUM_DPI){
+        return -EINVAL;
+    }
+
+    int dpi_x = resolution->dpi_x;
+    int dpi_y = resolution->dpi_y;
+    if(dpi_x > GXT_164_MAX_DPI || dpi_x < GXT_164_MIN_DPI
+      || dpi_y > GXT_164_MAX_DPI || dpi_y < GXT_164_MIN_DPI)
+    {
+        return -EINVAL;
+    }
+
+    uint8_t buf[16] = {
+        0x02, 0x06, 0xBB, 0xAA,             // dpi write cmd (1)
+        (0x34 + dpi_index), 0x00, 0x08, 0x00, // dpi write cmd (2)
+        0x01,
+        dpi_x / 50, 0x00,
+        dpi_y / 50, 0x00,
+        500 / 50    // dpi_precision (don't know what is does)
+    };
+
+    int rc = 0;
+    rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, 16);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while writing DPI: %s (%d)", strerror(-rc), rc);
+        return rc;
+    }
+
+    return 0;
+}
+
+/**
+ * Write a given polling rate to the mouse memory.
+ * Writes to the currently active profile.
+ *
+ * @param device Ratbag device
+ * @param rate_hz Polling rate to write
+ * 
+ * @return 0 on success or a negative errno on error
+*/
+static int
+gxt_164_write_polling_rate(struct ratbag_device* device,
+                           unsigned int rate_hz)
+{
+    if(!device){
+        return -EINVAL;
+    }
+
+    int rate_index = gxt_164_get_report_rate_from_hz(rate_hz);
+    if(rate_index < 0){
+        return -EINVAL;
+    }
+
+    uint8_t buf[16] = {
+        0x02, 0x06, 0xBB, 0xAA,
+        0x28, 0x00, 0x01, 0x00,
+        rate_index
+    };
+
+    int rc = 0;
+    rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, 16);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while writing polling rate: %s (%d)", strerror(-rc), rc);
+        return rc;
+    }
+
+    return 0;
+}
+
+/**
+ * Set as current a dpi with a given index.
+ * Writes to the currently active profile.
+ *
+ * @param device Ratbag device
+ * @param rate_hz Polling rate to write
+ * 
+ * @return 0 on success or a negative errno on error
+*/
+static int
+gxt_164_set_active_dpi(struct ratbag_device* device,
+                        unsigned int dpi_index)
+{
+    if(!device || dpi_index >= GXT_164_NUM_DPI){
+        return -EINVAL;
+    }
+
+    uint8_t buf[16] = {
+        0x02, 0x06, 0xBB, 0xAA,
+        0x32, 0x00, 0x01, 0x00,
+        dpi_index
+    };
+
+    int rc = 0;
+    rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, 16);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while changing active DPI: %s (%d)", strerror(-rc), rc);
+        return rc;
+    }
+
+    return 0;
+}
+
+/**
+ * Write a new button action.
+ * Writes to the currently active profile.
+ *
+ * @param device Ratbag device
+ * @param button Button to write to the device.
+ *
+ * @return 0 on success or a negative errno on error
+*/
+static int
+gxt_164_write_button(struct ratbag_device* device,
+                     struct ratbag_button* button)
+{
+    if(!device || !button){
+        return -EINVAL;
+    }
+    
+    int rc = 0;
+    const unsigned int base_index = 0x3E;
+    uint8_t buf[16] = {
+        0x02, 0x06, 0xBB, 0xAA,
+        base_index + button->index,
+        0x00, 0x08, 0x00
+    };
+
+    // Action activation type and timing
+    /*
+        * Trust GXT 164 Sikanda supports binding an action which presses a given
+        * key (+ modifier) N times, or repeats it until released or pressed again.
+        *  0 - PLAY_ONCE
+        *  1 - PLAY_N_TIMES
+        *  2 - REPEAT_WHILE_PRESSED
+        *  3 - TOGGLE_AUTO_REPEAT
+        *  4 - TOGGLE_HOLD
+        * 
+        * action_timing
+        * It's also possible to control when the action will be activated:
+        *  0x00 - KEY_PRESS
+        *  0x80 - KEY_RELEASE
+    */
+    // buf[12] = action_activation_type + action_timing;
+
+
+    switch(button->action.type){
+        case RATBAG_BUTTON_ACTION_TYPE_NONE: {
+            break;
+        }
+        case RATBAG_BUTTON_ACTION_TYPE_BUTTON: {
+            rc = gxt_164_get_button_from_code(button->action.action.button);
+            if(rc < 0){
+                log_error(device->ratbag, "Wrong mouse button in action: %d. Aborting button write.\n",
+                                            button->action.action.button);
+                return -EINVAL;
+            }
+            
+            /* 0x01, button_id, 0x00, 0x00 */
+            buf[8] = 0x01;  
+            buf[9] = rc;    
+            // buf[10] = 0x00;
+            // buf[11] = 0x00;
+
+            // buf[12] = 0x00;     // play once on key press
+            buf[13] = 0x01;     // action activation count
+            // buf[14] = 0x00 // Action activation delay (LOW)
+            // buf[15] = 0x00 // Action activation delay (HIGH)
+
+            break;
+        }
+        case RATBAG_BUTTON_ACTION_TYPE_KEY: {
+            unsigned int key = button->action.action.key;
+            rc = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+            if(rc == 0){
+                log_error(device->ratbag, "Error while writing button: "
+                                            "couldn't find HID keyboard usage for the keycode: %d."
+                                            "Aborting button write.\n", 
+                                            key);
+                return -EINVAL;
             }
 
-        }
+            /* 0x02, modifier, HID_key, 0x00*/
+            buf[8] = 0x02;
+            // buf[9] = 0x00;      // modifier = none
+            buf[10] = rc;       // HID keycode
+            // buf[11] = 0x00;
+            
+            // buf[12] = 0x00;    // play once on key press
+            buf[13] = 0x01;    // action activation count
+            // buf[14] = 0x00 // Action activation delay (LOW)
+            // buf[15] = 0x00 // Action activation delay (HIGH)
 
-        /*
-         * Packet data end
-        */
-        buf[buf_index++] = 0x01;
-        buf[buf_index++] = 0x26;
-
-        rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, ARRAY_LENGTH(buf));
-        if (rc < 0){
-            log_error(device->ratbag, "Error while changing active profile: %s (%d)\n", strerror(-rc), rc);
-            return rc;
+            break;
         }
-        if (rc != ARRAY_LENGTH(buf)){
-            log_error(device->ratbag, "Unexpected amount of written data: %d (instead of %u)\n", rc, (int)ARRAY_LENGTH(buf));
-            return -EIO;
-        }
+        case RATBAG_BUTTON_ACTION_TYPE_SPECIAL: {
+            rc = button->action.action.special;
+                
+            if(rc == RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK){
+                // Special case for double left click
+                /* 0x01, 0x01, 0x00, 0x00 (left click action) */
+                buf[8] = 0x01;
+                buf[9] = 0x01;
+                // buf[10] = 0x00;
+                // buf[11] = 0x00;
 
-        if(profile->is_active) profile->is_active_dirty = true;
+                buf[12] = 0x01;     // play n times on key press
+                buf[13] = 0x02;     // action activation count
+
+                // Action activation delay (uint16_t)
+                buf[14] = 0x32;    // 50ms delay
+                buf[15] = 0x00;     
+            } else {
+                rc = gxt_164_get_special_mapped(rc);
+                if(rc < 0){
+                    log_error(device->ratbag, "Error while writing button: "
+                                            "couldn't find special for: %d."
+                                            "Aborting button write.\n", 
+                                            button->action.action.special);
+                    return -EINVAL;
+                }
+
+                /* 0x01, special_id, 0x00, 0x00 */
+                buf[8] = 0x01;
+                buf[9] = rc;        // special action id
+                // buf[10] = 0x00;
+                // buf[11] = 0x00;
+
+                // buf[12] = 0x00;    // play once on key press
+                buf[13] = 0x01;     // action activation count
+                // buf[14] = 0x00    // Action activation delay (LOW)
+                // buf[15] = 0x00    // Action activation delay (HIGH)
+            }
+
+            break;
+        }
+        case RATBAG_BUTTON_ACTION_TYPE_MACRO: {
+            unsigned int key = 0;
+            unsigned int modifiers = 0;
+            rc = ratbag_action_keycode_from_macro(&(button->action), &key, &modifiers);
+            if(rc == 1){
+                /* upload key+modifier instead of macro */
+                log_debug(device->ratbag, "Macro can be converted to key+modifiers...\n");
+                if(modifiers){
+                    // ignore modifier position (left-right)
+                    modifiers = (0x0F & modifiers) | ((0xF0 & modifiers) >> 4);
+                }
+
+                key = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
+                if(key){
+                    log_debug(device->ratbag, "Macro converted into key(%d) and modifiers(%d).\n", key, modifiers);
+                    
+                    buf[8] = 0x02;
+                    buf[9] = modifiers;
+                    buf[10] = key;
+                    // buf[11] = 0x00;
+
+                    // buf[11] = 0x00;     // play once on key press
+                    buf[12] = 0x01;     // Action activation count
+                    // buf[14] = 0x00    // Action activation delay (LOW)
+                    // buf[15] = 0x00    // Action activation delay (HIGH)
+                    
+                    break;
+                }
+                log_debug(device->ratbag, "Failed to convert: couldn't get the key hid code.\n");
+            }
+
+            /* Macro is not just a key+modifiers */
+            struct gxt_164_macro temp_macro = {};
+            
+            rc = gxt_164_parse_macro(device, button->action.macro, &temp_macro);
+            if(rc < 0){
+                log_error(device->ratbag, "Macro couldn't be parsed. Aborting button write.\n");
+                return -EINVAL;
+            }
+
+            rc = gxt_164_write_macro(device, &temp_macro);
+            if(rc < 0){
+                log_error(device->ratbag, "Macro couldn't be written. Aborting button write.\n");
+                return -EINVAL;
+            }
+
+            buf[8] = 0x04;
+            // buf[9] = 0x00;
+            buf[10] = rc;  // macro slot index
+            buf[11] = 0x51;
+
+            // buf[12] = 0x00;    // play once on key press
+            buf[13] = 0x01;    // Action activation count
+            // buf[14] = 0x00    // Action activation delay (LOW)
+            // buf[15] = 0x00    // Action activation delay (HIGH)
+            
+        
+            break;
+        }
+        case RATBAG_BUTTON_ACTION_TYPE_UNKNOWN: {
+            return -EINVAL;    
+        }
+    }
+
+    rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, 16);
+    if(rc < 0){
+        log_error(device->ratbag, "Error while changing writing button: %s (%d)", strerror(-rc), rc);
+        return rc;
     }
 
     return 0;
@@ -1153,6 +1498,124 @@ trust_gxt_164_set_active_profile(struct ratbag_device *device, unsigned int inde
     return 0;
 }
 
+/**
+ * Write CHANGED settings of a given profile.
+ *
+ * @return 0 on success or negative errno on error
+*/
+static int
+gxt_164_write_profile_changes(struct ratbag_device* device,
+                              struct ratbag_profile* profile)
+{
+    struct ratbag_resolution *resolution;
+    struct ratbag_button *button;
+    struct ratbag_led *led;
+    int rc = 0;
+
+    ratbag_profile_for_each_led(profile, led){
+        if(!led->dirty){
+            continue;
+        }
+        
+        rc = gxt_164_write_led(device, led);
+        if(rc < 0){
+            log_error(device->ratbag, "Couldn't write LED.\n");
+        }
+    }
+
+    ratbag_profile_for_each_resolution(profile, resolution){
+        if(!resolution->dirty){
+            continue;
+        }
+        
+        rc = gxt_164_write_dpi(device, resolution);
+        if(rc < 0){
+            log_error(device->ratbag, "Couldn't write dpi %d.\n", resolution->index);
+        }
+    }
+
+    if(profile->rate_dirty){
+        rc = gxt_164_write_polling_rate(device, profile->hz);
+        if(rc < 0){
+            log_error(device->ratbag, "Couldn't write polling rate.\n");
+        }
+    }
+
+    ratbag_profile_for_each_button(profile, button){
+        if(!button->dirty){
+            continue;
+        }
+        
+        rc = gxt_164_write_button(device, button);
+        if(rc < 0){
+            log_error(device->ratbag, "Couldn't write button %d.\n", button->index);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Write changes to the device
+ *
+ * @param device Ratbag device
+ * 
+ * @return 0 on success or a negative errno on error
+*/
+static int
+trust_gxt_164_commit(struct ratbag_device *device){
+    struct ratbag_profile* profile;
+    struct ratbag_profile* active_profile = NULL;
+    int rc = 0;
+
+    ratbag_device_for_each_profile(device, profile){
+        if(!profile->dirty)
+            continue;
+        
+        if(gxt_164_is_only_active_dirty(profile)){
+            continue;
+        }
+
+        if(profile->is_active){
+            active_profile = profile;
+            continue;
+        }
+
+        /* Profile must be active in order to write changes */
+        rc = trust_gxt_164_set_active_profile(device, profile->index);
+        if(rc < 0){
+            log_error(device->ratbag, "Profile %d couldn't be written.\n", profile->index);
+            continue;
+        }
+
+        rc = gxt_164_write_profile_changes(device, profile);
+        if(rc < 0){
+            log_error(device->ratbag, "Profile %d couldn't be written.\n", profile->index);
+            continue;
+        }
+    }
+
+    if(!active_profile){
+        // only is_active has changed, let libratbag handle that
+        return 0;
+    }
+    
+    rc = trust_gxt_164_set_active_profile(device, active_profile->index);
+    if(rc < 0){
+        log_error(device->ratbag, "Active profile %d couldn't be written.\n", active_profile->index);
+        return rc;
+    }
+
+    rc = gxt_164_write_profile_changes(device, active_profile);
+    if(rc < 0){
+        log_error(device->ratbag, "Active profile %d couldn't be written.\n", active_profile->index);
+        return rc;
+    }
+
+    active_profile->is_active_dirty = false;
+
+    return 0;
+}
 
 /**
  * Remove initialized earlier ratbag device
