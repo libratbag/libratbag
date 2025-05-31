@@ -646,9 +646,9 @@ gxt_164_get_led_mode_mapped(unsigned int mode){
 static int
 gxt_164_get_led_speed_from_ms(unsigned int ms){
     /* ms should be in range 0 - 10000 */
-    if(ms <= 3333)
+    if(ms <= 1000)
         return GXT_164_LED_SPEED_FAST;
-    if(3333 < ms && ms <= 6666)
+    if(1000 < ms && ms <= 4500)
         return GXT_164_LED_SPEED_MEDIUM;
 
     return GXT_164_LED_SPEED_SLOW;
