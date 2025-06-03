@@ -1543,6 +1543,13 @@ gxt_164_write_profile_changes(struct ratbag_device* device,
             continue;
         }
         
+        if(resolution->is_active){
+            rc = gxt_164_set_active_dpi(device, resolution->index);
+            if(rc < 0){
+                log_error(device->ratbag, "Couldn't change active dpi to %d.\n", resolution->index);
+            }
+        }
+
         rc = gxt_164_write_dpi(device, resolution);
         if(rc < 0){
             log_error(device->ratbag, "Couldn't write dpi %d.\n", resolution->index);
