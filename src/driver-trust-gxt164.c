@@ -51,9 +51,14 @@
 /*
  * Special action IDs
 */
+#define GXT_164_ACTION_WHEEL_UP             0x11    // experimental
+#define GXT_164_ACTION_WHEEL_DOWN           0x12    // experimental
+#define GXT_164_ACTION_WHEEL_LEFT           0x13    // experimental
+#define GXT_164_ACTION_WHEEL_RIGHT          0x14    // experimental
 #define GXT_164_ACTION_RESOLUTION_CYCLE_UP  0x20
 #define GXT_164_ACTION_RESOLUTION_UP        0x21
 #define GXT_164_ACTION_RESOLUTION_DOWN      0x22
+#define GXT_164_ACTION_DPI_PRESICION        0x23    // experimental
 #define GXT_164_ACTION_PROFILE_CYCLE_UP     0x26
 #define GXT_164_ACTION_PROFILE_UP           0x27
 #define GXT_164_ACTION_PROFILE_DOWN         0x28
@@ -518,6 +523,7 @@ trust_gxt_164_probe(struct ratbag_device *device){
             }
 
             ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+            ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
 
             //? Set possible dpi values
             ratbag_resolution_set_dpi_list(resolution,
@@ -715,6 +721,14 @@ gxt_164_get_special_mapped(unsigned int special){
             return GXT_164_ACTION_PROFILE_UP;
         case RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN:
             return GXT_164_ACTION_PROFILE_DOWN;
+        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:
+            return GXT_164_ACTION_WHEEL_UP;
+        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:
+            return GXT_164_ACTION_WHEEL_DOWN;
+        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT:
+            return GXT_164_ACTION_WHEEL_LEFT;
+        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT:
+            return GXT_164_ACTION_WHEEL_RIGHT;
         default:
             return -EINVAL;
     }
@@ -1160,7 +1174,7 @@ gxt_164_write_dpi(struct ratbag_device* device,
     uint8_t buf[16] = {
         0x02, 0x06, 0xBB, 0xAA,             // dpi write cmd (1)
         (0x34 + dpi_index), 0x00, 0x08, 0x00, // dpi write cmd (2)
-        0x01,
+        (resolution->is_disabled == 0),
         dpi_x / 50, 0x00,
         dpi_y / 50, 0x00,
         500 / 50    // dpi_precision (don't know what is does)
@@ -1474,10 +1488,11 @@ trust_gxt_164_set_active_profile(struct ratbag_device *device, unsigned int inde
         * a problem arises.
         */
         /* Profile change command id */
-        0x02, 0x06, 0xBB, 0xAA, 0x04, 0x00, 0x01, 0x00,
-
-        /* 64-bit profile index */
-        index, 0, 0, 0, 0, 0, 0, 0
+        0x02, 0x06, 0xBB, 0xAA, 
+        0x04, 0x00, 0x01, 0x00,
+        
+        // Profile index
+        index
     };
 
     rc = ratbag_hidraw_set_feature_report(device, buf[0], buf, ARRAY_LENGTH(buf));
@@ -1540,6 +1555,8 @@ gxt_164_write_profile_changes(struct ratbag_device* device,
             log_error(device->ratbag, "Couldn't write polling rate.\n");
         }
     }
+
+    // TODO: make sure there is always LEFT_CLICK among the button actions (?)
 
     ratbag_profile_for_each_button(profile, button){
         if(!button->dirty){
