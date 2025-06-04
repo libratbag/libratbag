@@ -1,8 +1,5 @@
-// #include "config.h"
 #include <errno.h>
 #include <linux/input-event-codes.h>
-#include <stdint.h>
-#include <string.h>
 
 #include "libratbag-enums.h"
 #include "libratbag-private.h"
