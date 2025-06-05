@@ -193,3 +193,7 @@ ratbag_device_data_asus_is_wireless(const struct ratbag_device_data *data);
  */
 uint32_t
 ratbag_device_data_asus_get_quirks(const struct ratbag_device_data *data);
+
+struct dpi_list *
+ratbag_device_data_rapoo_get_dpi_list(const struct ratbag_device_data *data);
+
