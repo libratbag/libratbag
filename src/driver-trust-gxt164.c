@@ -1112,6 +1112,8 @@ gxt_164_write_profile_full(struct ratbag_device* device,
         log_error(device->ratbag, "Unexpected amount of written data: %d (instead of %u)\n", rc, (int)ARRAY_LENGTH(buf));
         return -EIO;
     }
+
+    return 0;
 }
 
 /**
