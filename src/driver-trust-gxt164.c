@@ -569,10 +569,11 @@ trust_gxt_164_probe(struct ratbag_device *device){
             //? set default led options
             led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
             led->mode = RATBAG_LED_CYCLE;
-            led->color.red = 255;
+            led->color.red = 255;   // color = red
             led->color.blue = 0;
             led->color.green = 0;
-            led->brightness = 255;
+            led->brightness = 255;  // max brightness
+            led->ms = 1200;         // medium speed
 
             //? set led capabilities
             ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
