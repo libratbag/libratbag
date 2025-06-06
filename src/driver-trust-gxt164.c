@@ -225,10 +225,12 @@ gxt_164_parse_macro(struct ratbag_device* device,
     struct gxt_164_macro temp_macro = {};
     int rc = 0;
     int event_index = 0;
-    for(int i=0; i < GXT_164_MACRO_EVENT_COUNT; i++){
+    bool should_end = false;
+    for(int i=0; i < GXT_164_MACRO_EVENT_COUNT && !should_end; i++){
         switch(macro->events[i].type){
             case RATBAG_MACRO_EVENT_NONE: {
-                return -EINVAL;
+                should_end = true;
+                break;
             }
             case RATBAG_MACRO_EVENT_INVALID: {
                 log_error(device->ratbag, "Error while parsing macro: "
@@ -293,6 +295,13 @@ gxt_164_parse_macro(struct ratbag_device* device,
             }
         }
     }
+
+    if(event_index == 0){
+        // refuse parsing macros with 0 events
+        return -EINVAL;
+    }
+
+    temp_macro.events[event_index-1].delay = 0;
 
     memcpy(out_macro, &temp_macro, sizeof(*out_macro));
     return 0;
