@@ -71,14 +71,14 @@
 /*
  * Special action IDs
 */
-#define GXT_164_ACTION_WHEEL_UP             0x11    // experimental
-#define GXT_164_ACTION_WHEEL_DOWN           0x12    // experimental
-#define GXT_164_ACTION_WHEEL_LEFT           0x13    // experimental
-#define GXT_164_ACTION_WHEEL_RIGHT          0x14    // experimental
+#define GXT_164_ACTION_WHEEL_UP             0x11
+#define GXT_164_ACTION_WHEEL_DOWN           0x12
+#define GXT_164_ACTION_WHEEL_LEFT           0x13
+#define GXT_164_ACTION_WHEEL_RIGHT          0x14
 #define GXT_164_ACTION_RESOLUTION_CYCLE_UP  0x20
 #define GXT_164_ACTION_RESOLUTION_UP        0x21
 #define GXT_164_ACTION_RESOLUTION_DOWN      0x22
-#define GXT_164_ACTION_DPI_PRESICION        0x23    // experimental
+#define GXT_164_ACTION_DPI_PRESICION        0x23
 #define GXT_164_ACTION_PROFILE_CYCLE_UP     0x26
 #define GXT_164_ACTION_PROFILE_UP           0x27
 #define GXT_164_ACTION_PROFILE_DOWN         0x28
@@ -759,6 +759,8 @@ gxt_164_get_special_mapped(unsigned int special){
             return GXT_164_ACTION_WHEEL_LEFT;
         case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT:
             return GXT_164_ACTION_WHEEL_RIGHT;
+        case RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE:
+            return GXT_164_ACTION_DPI_PRESICION;
         default:
             return -EINVAL;
     }
