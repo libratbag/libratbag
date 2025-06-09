@@ -93,7 +93,7 @@ def check_dpi_list_str(string: str):
 
     for idx, entry in enumerate(entries):
         dpi = int(entry)
-        assert dpi >= 0 and dpi <= 12000
+        assert dpi >= 0 and dpi <= 19000
         if idx > 0:
             prev = entries[idx - 1]
             prev_dpi = int(prev)
@@ -259,6 +259,23 @@ def check_section_steelseries(section: configparser.SectionProxy):
         pass
 
 
+def check_section_rapoo(section: configparser.SectionProxy):
+    permitted_keys = (
+        "DpiList",
+        "Profiles",
+        "DeviceName",
+    )
+    for key in section:
+        assert key in permitted_keys, f"Unknown key: {key}"
+
+    try:
+        check_dpi_list_str(section["DpiList"])
+        assert "DpiRange" not in section.keys()
+    except KeyError:
+        # No such section - not an error.
+        pass
+
+
 def check_section_driver(driver: str, section: configparser.SectionProxy):
     if driver == "asus":
         check_section_asus(section)
@@ -274,6 +291,10 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
 
     if driver == "steelseries":
         check_section_steelseries(section)
+        return
+    
+    if driver == "rapoo":
+        check_section_rapoo(section)
         return
 
     raise ValueError(f"Unsupported driver section {driver}")

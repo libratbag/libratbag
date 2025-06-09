@@ -4,7 +4,7 @@
  * For notes about the protocol see:
  * https://gist.github.com/akvadrako/f334d36099802da2f80cb2b8b150b892
  *
- * Copyright © 2024 Devin Bayer
+ * Copyright © 2025 Devin Bayer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
