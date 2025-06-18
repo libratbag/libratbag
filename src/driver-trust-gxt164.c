@@ -71,8 +71,8 @@
 /*
  * Special action IDs
 */
-#define GXT_164_ACTION_WHEEL_UP             0x11
-#define GXT_164_ACTION_WHEEL_DOWN           0x12
+#define GXT_164_ACTION_WHEEL_UP             0x12
+#define GXT_164_ACTION_WHEEL_DOWN           0x11
 #define GXT_164_ACTION_WHEEL_LEFT           0x13
 #define GXT_164_ACTION_WHEEL_RIGHT          0x14
 #define GXT_164_ACTION_RESOLUTION_CYCLE_UP  0x20
