@@ -1833,7 +1833,7 @@ union hidpp20_internal_profile {
 		} name;
 		struct hidpp20_internal_led leds[2]; /* G303, g502, g900 only */
 		struct hidpp20_internal_led alt_leds[2];
-		uint8_t custom_animation_index; // G502X Plus, G705
+		uint8_t custom_animation_index; // G502X, G705
 		uint8_t free; // unused
 		uint16_t crc;
 	} __attribute__((packed)) profile;
@@ -2969,7 +2969,7 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	if (device->quirk == HIDPP20_QUIRK_G502X)
 	{
 		// Note(sewer56): There are two known mice which use this field;
-		// G502X PLUS and G705. [And I only own one of these.] But it's not known how
+		// G502X and G705. [And I only own one of these.] But it's not known how
 		// prevalent this is elsewhere, so in the interest of defensive programming;
 		// we're not setting this on unknown mice.
 		pdata->profile.custom_animation_index = 0x00;
