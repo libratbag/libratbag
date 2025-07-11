@@ -1,6 +1,6 @@
 [Device]
 Name=Logitech G502 X Plus
-DeviceMatch=usb:046d:c098;usb:046d:c547
+DeviceMatch=usb:046d:c098;usb:046d:4099;usb:046d:c547
 DeviceType=mouse
 Driver=hidpp20
 
