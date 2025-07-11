@@ -110,7 +110,7 @@ hidpp20_get_quirk_string(enum hidpp20_quirk quirk)
 	CASE_RETURN_STRING(HIDPP20_QUIRK_NONE);
 	CASE_RETURN_STRING(HIDPP20_QUIRK_G305);
 	CASE_RETURN_STRING(HIDPP20_QUIRK_G602);
-	CASE_RETURN_STRING(HIDPP20_QUIRK_G502X_PLUS);
+	CASE_RETURN_STRING(HIDPP20_QUIRK_G502X);
 	}
 
 	abort();
@@ -2966,7 +2966,7 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	// Mice like G502X can store custom animations onboard.
 	// ratbag does not support this, so we set it to disable it to ensure
 	// that the actual lighting matches the user's settings.
-	if (device->quirk == HIDPP20_QUIRK_G502X_PLUS)
+	if (device->quirk == HIDPP20_QUIRK_G502X)
 	{
 		// Note(sewer56): There are two known mice which use this field;
 		// G502X PLUS and G705. [And I only own one of these.] But it's not known how

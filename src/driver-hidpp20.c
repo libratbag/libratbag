@@ -411,7 +411,7 @@ hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	hidpp20_rgb_effects_get_device_info(drv_data->dev, &device_info);
 	cluster_info = drv_data->led_infos.color_leds_8071[led->index];
 	profile = &drv_data->profiles->profiles[led->profile->index];
-	if (drv_data->dev->quirk == HIDPP20_QUIRK_G502X_PLUS) {
+	if (drv_data->dev->quirk == HIDPP20_QUIRK_G502X) {
 		// On G502X+ the second slot controls the user configurable LED.
 		// (Note: There is only 1 reported LED, it just happens to use 2nd index though)
 		h_led = &profile->leds[1];
@@ -695,7 +695,7 @@ hidpp20drv_update_led_8070_8071(struct ratbag_led *led, struct ratbag_profile* p
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 		h_profile = &drv_data->profiles->profiles[profile->index];
-		if (drv_data->dev->quirk == HIDPP20_QUIRK_G502X_PLUS) {
+		if (drv_data->dev->quirk == HIDPP20_QUIRK_G502X) {
 			// On G502X+ the second slot controls the user configurable LED.
 			// (Note: There is only 1 reported LED, it just happens to use 2nd index though)
 			h_led = &(h_profile->leds[1]);
