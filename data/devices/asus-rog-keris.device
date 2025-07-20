@@ -1,0 +1,13 @@
+[Device]
+Name=ASUS ROG Keris
+DeviceMatch=usb:0b05:195c
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=8
+Leds=2
+Dpis=4
+DpiRange=100:16000@100
+Quirks=DOUBLE_DPI
