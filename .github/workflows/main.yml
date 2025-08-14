@@ -12,16 +12,20 @@ env:
 
 jobs:
   build-and-dist:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        meson_args:
-          - ''
-          - '-Dbuildtype=plain'
-          - '-Dbuildtype=release'
-          - '-Ddocumentation=true'
+        include:
+          - name: default
+            meson_args: ''
+          - name: plain
+            meson_args: '-Dbuildtype=plain'
+          - name: release
+            meson_args: '-Dbuildtype=release'
+          - name: documentation
+            meson_args: '-Ddocumentation=true'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/pkginstall
         with:
           apt: $UBUNTU_DEP_BUILD $UBUNTU_DEP_TEST
@@ -41,10 +45,10 @@ jobs:
       - name: check if any files are left after uninstall
         run: (test -d _instdir && tree _instdir && exit 1) || exit 0
       # Capture all the meson logs, even if we failed
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ always() }}  # even if we fail
         with:
-          name: meson test logs
+          name: 'meson test logs ${{ matrix.name }}'
           path: |
             builddir/meson-logs/testlog*.txt
             builddir/meson-logs/meson-log.txt
