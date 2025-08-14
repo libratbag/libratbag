@@ -344,7 +344,8 @@ def export_profile(ratbagd: Ratbagd, args: argparse.Namespace, profile: RatbagdP
             action = evcode_to_str(button.key)
         elif button.action_type == RatbagdButton.ActionType.MACRO:
             action_type = 'macro'
-            action = f"{str(button.macro).replace('\u2193', '+').replace('\u2191','-').replace('\u2195', '')}"
+            escaped_macro = str(button.macro).replace('\u2193', '+').replace('\u2191','-').replace('\u2195', '')
+            action = escaped_macro.split()
         elif button.action_type == RatbagdButton.ActionType.NONE:
             action_type = 'none'
         else:
