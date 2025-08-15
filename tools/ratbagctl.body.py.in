@@ -1871,7 +1871,7 @@ class RatbagParserSet(RatbagParserSwitch):
 
     def _print_help(self, prefix: str) -> None:
         command = prefix + "{COMMAND} ..."
-        print("  {:<36}{}".format(command, self.help if self.help else ""))
+        print("  {:<45}{}".format(command, self.help if self.help else ""))
         for e in self.switch:
             e.print_help(None, " " * len(prefix))
 
@@ -1910,7 +1910,7 @@ class RatbagParserCommand(RatbagParser):
                 command += f" {a.metavar}"
             else:
                 command += " [{}]".format("|".join(a.choices))
-        print("  {:<36}{}".format(command, self.help if self.help else ""))
+        print("  {:<45}{}".format(command, self.help if self.help else ""))
 
 
 class RatbagParserArgument(RatbagParser):
@@ -1971,7 +1971,7 @@ class RatbagParserLink(RatbagParser):
     def _print_help(self, prefix: str) -> None:
         dest = self.get_dest()
         print(
-            "  {:<36}Use {}for '{} Commands'".format(
+            "  {:<45}Use {}for '{} Commands'".format(
                 prefix + self.dest + " ...", prefix, dest.group
             )
         )
