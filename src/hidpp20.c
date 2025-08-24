@@ -2321,7 +2321,16 @@ int hidpp20_ext_adjustable_report_rate_set_report_rate(struct hidpp20_device *de
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915	0x04
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X	0x05
-#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2	0x06
+/* Profiles for a variety of G Pro X Superlight 2 and G Pro 2 models */
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2	0x06
+/*
+ * The BHOP feature extended the 0x06 profile type in firmware releases from
+ * 2025-04-01, resulting in the 0x07 type:
+ *  - G Pro X Superlight 2 (and SE) - 32.5.29
+ *  - G Pro X Superlight 2 DEX - 37.3.7
+ *  - G Pro 2 Lightspeed - 31.4.12
+ */
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2_BHOP	0x07
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -2370,7 +2379,14 @@ union hidpp20_internal_profile_ext {
 			uint16_t y;
 			uint8_t lod; /* 0x1 = low, 0x2 = medium, 0x3 = high */
 		} __attribute__((packed)) dpi[5];
-		uint8_t reserved[15];
+		uint8_t reserved[8];
+		/*
+		 * BHOP Mode - Only present in 0x07 profile formats.
+		 * 0x00 = disabled, 0x0a = 100ms, 0x64 = 1000ms (in 100ms
+		 * increments)
+		 */
+		uint8_t bhop_timeout;
+		uint8_t reserved_1[6];
 		uint16_t powersave_timeout;
 		uint16_t poweroff_timeout;
 		union hidpp20_button_binding buttons[16];
@@ -2777,7 +2793,8 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2_BHOP)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -3300,6 +3317,9 @@ hidpp20_onboard_profiles_parse_profile_ext(struct hidpp20_device *device,
 	profile->powersave_timeout = pdata->profile.powersave_timeout;
 	profile->poweroff_timeout = pdata->profile.poweroff_timeout;
 
+	/* Capture BHOP mode timeout configuration to preserve when updating */
+	profile->bhop_timeout = pdata->profile.bhop_timeout;
+
 	for (i = 0; i < 5; i++) {
 		unsigned int offset = 4 + (5 * i);
 		profile->dpi[i].x = get_unaligned_le_u16(&data[offset]);
@@ -3346,7 +3366,8 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 	unsigned i;
 	int rc;
 
-	if (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+	if ((profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2) ||
+	    (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2_BHOP)) {
 		/* Handle extended format profiles */
 		return hidpp20_onboard_profiles_parse_profile_ext(device, profiles_list, index, check_crc);
 	}
@@ -3583,6 +3604,8 @@ hidpp20_onboard_profiles_write_profile_ext(struct hidpp20_device *device,
 	pdata->profile.powersave_timeout = profile->powersave_timeout;
 	pdata->profile.poweroff_timeout = profile->poweroff_timeout;
 
+	pdata->profile.bhop_timeout = profile->bhop_timeout;
+
 	for (i = 0; i < 5; i++) {
 		pdata->profile.dpi[i].x = hidpp_cpu_to_le_u16(profile->dpi[i].x);
 		pdata->profile.dpi[i].y = hidpp_cpu_to_le_u16(profile->dpi[i].y);
@@ -3620,7 +3643,8 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	unsigned i;
 	int rc;
 
-	if (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+	if ((profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2) ||
+	    (profiles_list->format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2_BHOP)) {
 		/* Handle extended format profiles */
 		return hidpp20_onboard_profiles_write_profile_ext(device, profiles_list, index);
 	}

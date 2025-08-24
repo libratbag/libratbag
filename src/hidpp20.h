@@ -952,6 +952,7 @@ struct hidpp20_profile {
 	char name[16 * 3];
 	uint16_t powersave_timeout;
 	uint16_t poweroff_timeout;
+	uint8_t bhop_timeout;
 	uint8_t report_rate;
 	uint8_t report_rate_wireless;
 	unsigned default_dpi;
