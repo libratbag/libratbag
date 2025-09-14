@@ -108,10 +108,12 @@ def check_profile_type_str(string: str):
 def check_section_asus(section: configparser.SectionProxy):
     permitted_keys = (
         "ButtonMapping",
+        "ButtonMappingSecondary",
         "Buttons",
         "DpiRange",
         "Dpis",
         "Leds",
+        "LedModes",
         "Profiles",
         "Quirks",
         "Wireless",
@@ -129,9 +131,25 @@ def check_section_asus(section: configparser.SectionProxy):
         quirks = (
             "DOUBLE_DPI",
             "STRIX_PROFILE",
+            "RAW_BRIGHTNESS",
+            "SEPARATE_XY_DPI",
+            "SEPARATE_LEDS",
+            "BUTTONS_SECONDARY",
         )
         for quirk in section["Quirks"].split(";"):
             assert quirk in quirks
+    except KeyError:
+        # No such section - not an error.
+        pass
+
+    try:
+        led_modes = (
+            "ON",
+            "BREATHING",
+            "CYCLE",
+        )
+        for led_mode in section["LedModes"].split(";"):
+            assert led_mode in led_modes
     except KeyError:
         # No such section - not an error.
         pass

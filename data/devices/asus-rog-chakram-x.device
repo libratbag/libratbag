@@ -1,14 +1,16 @@
 [Device]
 Name=ASUS ROG Chakram X
-DeviceMatch=usb:0b05:1a18
+DeviceMatch=usb:0b05:1a18;usb:0b05:1a1a
 DeviceType=mouse
 Driver=asus
 
 [Driver/asus]
-Profiles=3
-Buttons=5
+Profiles=5
+Buttons=14
 Leds=3
 Dpis=4
 Wireless=1
 DpiRange=100:36000@100
-Quirks=DOUBLE_DPI
+Quirks=DOUBLE_DPI;RAW_BRIGHTNESS;SEPARATE_XY_DPI;SEPARATE_LEDS;BUTTONS_SECONDARY
+ButtonMapping=f0;f1;f2;0;0;e6;e8;e9;d0;d1;d2;d3
+ButtonMappingSecondary=0;0;ea;eb;ec;ed
