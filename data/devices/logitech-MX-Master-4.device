@@ -1,0 +1,5 @@
+[Device]
+DeviceMatch=bluetooth:046d:b042
+DeviceType=mouse
+Driver=hidpp20
+Name=Logitech MX Master 4
