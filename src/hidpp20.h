@@ -392,18 +392,40 @@ int hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 
 #define HIDPP_PAGE_ADJUSTABLE_DPI			0x2201
 
-/**
- * either dpi_steps is not null or the values are stored in the null terminated
- * array dpi_list.
+/*
+ * The HID++20 protocol provides this data via a paged request mechanism, each
+ * page can store ~7 absolute values or ~3 ranges (start/end/step). The page
+ * index is only 8-bits, which could allow for at most 1500 entries however
+ * most devices only provide a smaller number of pages (e.g. 3). As such allow
+ * for 32 entries (approx. 5 pages).
  */
-struct hidpp20_sensor {
-	uint8_t index;
+#define HIDPP20_DPI_RANGES_MAX				32
+
+struct hidpp20_sensor_dpi_range {
+	uint16_t start;
+	uint16_t end;
+	uint16_t step;
+};
+
+struct hidpp20_sensor_axis {
 	uint16_t dpi;
 	uint16_t dpi_min;
 	uint16_t dpi_max;
-	uint16_t dpi_steps;
 	uint16_t default_dpi;
-	uint16_t dpi_list[LONG_MESSAGE_LENGTH / 2 + 1];
+	struct hidpp20_sensor_dpi_range dpi_ranges[HIDPP20_DPI_RANGES_MAX];
+	unsigned int num_dpi_ranges;
+};
+
+struct hidpp20_sensor {
+	uint8_t index;
+	bool has_y;
+	struct hidpp20_sensor_axis x;
+	struct hidpp20_sensor_axis y;
+
+	/* Lift Off Distance (LOD) has no valid ranges only fixed enum values */
+	bool has_lod;
+	uint8_t lod;
+	uint8_t default_lod;
 };
 
 /**
@@ -420,6 +442,29 @@ int hidpp20_adjustable_dpi_get_sensors(struct hidpp20_device *device,
  */
 int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 					  struct hidpp20_sensor *sensor, uint16_t dpi);
+
+/* -------------------------------------------------------------------------- */
+/* 0x2202: Extended Adjustable DPI                                            */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI		0x2202
+
+/**
+ * allocates a list of sensors that has to be freed by the caller.
+ *
+ * returns the elements in the list or a negative error
+ */
+int hidpp20_ext_adjustable_dpi_get_sensors(struct hidpp20_device *device,
+					   struct hidpp20_sensor **sensors_list);
+
+/**
+ * set the current dpi of the provided sensor. sensor must have been
+ * allocated by hidpp20_ext_adjustable_dpi_get_sensors()
+ */
+int hidpp20_ext_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
+					      struct hidpp20_sensor *sensor,
+					      uint16_t dpi_x, uint16_t dpi_y,
+					      uint8_t lod);
 
 /* -------------------------------------------------------------------------- */
 /* 0x8060 - Adjustable Report Rate                                            */
@@ -439,6 +484,35 @@ int hidpp20_adjustable_report_rate_get_report_rate(struct hidpp20_device *device
 
 int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
 						   uint8_t rate_ms);
+
+/* -------------------------------------------------------------------------- */
+/* 0x8061 - Extended Adjustable Report Rate                                   */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE	0x8061
+
+unsigned hidpp20_ext_adjustable_report_rate_to_hz(uint8_t rate_ms);
+uint8_t hidpp20_ext_adjustable_report_rate_from_hz(unsigned rate_hz);
+
+enum hidpp20_ext_rate_conn_type {
+	HIDPP20_EXT_RATE_CONN_TYPE_WIRED = 0x00,
+	HIDPP20_EXT_RATE_CONN_TYPE_LIGHTSPEED = 0x01,
+};
+
+/**
+ * set the bitmap_ms to the supported report rates. Bits enabled reflect a
+ * supported report rate (non-linearly).
+ */
+int hidpp20_ext_adjustable_report_rate_get_report_rate_list(struct hidpp20_device *device,
+							    enum hidpp20_ext_rate_conn_type conn,
+							    uint16_t *bitflags);
+
+int hidpp20_ext_adjustable_report_rate_get_report_rate(struct hidpp20_device *device,
+						       enum hidpp20_ext_rate_conn_type conn,
+						       uint8_t *rate);
+
+int hidpp20_ext_adjustable_report_rate_set_report_rate(struct hidpp20_device *device,
+						       uint8_t rate);
 
 /* -------------------------------------------------------------------------- */
 /* 0x8070v4 - Color LED effects                                               */
@@ -878,11 +952,17 @@ struct hidpp20_profile {
 	char name[16 * 3];
 	uint16_t powersave_timeout;
 	uint16_t poweroff_timeout;
-	unsigned report_rate;
+	uint8_t bhop_timeout;
+	uint8_t report_rate;
+	uint8_t report_rate_wireless;
 	unsigned default_dpi;
 	unsigned switched_dpi;
 	unsigned current_dpi;
-	uint16_t dpi[HIDPP20_DPI_COUNT];
+	struct {
+		uint16_t x;
+		uint16_t y;
+		uint8_t lod;
+	} dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
@@ -917,6 +997,7 @@ struct hidpp20_profiles {
 	uint8_t sector_count;
 	uint16_t sector_size;
 	uint8_t active_profile_index;
+	uint8_t format_id;
 	struct hidpp20_profile *profiles;
 };
 
