@@ -581,6 +581,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag_register_driver(ratbag, &sinowealth_driver);
 	ratbag_register_driver(ratbag, &sinowealth_nubwo_driver);
 	ratbag_register_driver(ratbag, &openinput_driver);
+	ratbag_register_driver(ratbag, &trust_gxt164_driver);
 
 	return ratbag;
 }
