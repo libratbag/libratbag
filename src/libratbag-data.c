@@ -63,6 +63,7 @@ enum driver {
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
 	MARSGAMING,
+	RAPOO,
 };
 
 struct data_hidpp20 {
@@ -109,6 +110,10 @@ struct data_asus {
 	int led_modes[ASUS_MAX_NUM_LED_MODES];
 };
 
+struct data_rapoo {
+	struct dpi_list *dpi_list;
+};
+
 struct ratbag_device_data {
 	int refcount;
 	char *name;
@@ -123,6 +128,7 @@ struct ratbag_device_data {
 		struct data_sinowealth sinowealth;
 		struct data_steelseries steelseries;
 		struct data_asus asus;
+		struct data_rapoo rapoo;
 	};
 };
 
@@ -472,6 +478,19 @@ init_data_asus(struct ratbag *ratbag,
 	g_clear_error(&error);
 }
 
+static void
+init_data_rapoo(struct ratbag *ratbag,
+		  GKeyFile *keyfile,
+		  struct ratbag_device_data *data)
+{
+	const char *group = "Driver/rapoo";
+	_cleanup_(freep) char *str = NULL;
+
+	str = g_key_file_get_string(keyfile, group, "DpiList", NULL);
+	if (str)
+		data->rapoo.dpi_list = dpi_list_from_string(str);
+}
+
 static const struct driver_map {
 	enum driver map;
 	const char *driver;
@@ -494,6 +513,7 @@ static const struct driver_map {
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
 	{ MARSGAMING, "marsgaming", NULL },
+	{ RAPOO, "rapoo", init_data_rapoo },
 };
 
 const char *
@@ -545,6 +565,9 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 	case STEELSERIES:
 		dpi_list_free(data->steelseries.dpi_list);
 		free(data->steelseries.dpi_range);
+		break;
+	case RAPOO:
+		dpi_list_free(data->rapoo.dpi_list);
 		break;
 	default:
 		break;
@@ -968,3 +991,12 @@ ratbag_device_data_asus_get_quirks(const struct ratbag_device_data *data)
 	assert(data->drivertype == ASUS);
 	return data->asus.quirks;
 }
+
+struct dpi_list *
+ratbag_device_data_rapoo_get_dpi_list(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == RAPOO);
+
+	return data->rapoo.dpi_list;
+}
+
