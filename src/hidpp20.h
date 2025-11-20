@@ -55,7 +55,7 @@ enum hidpp20_quirk {
 	HIDPP20_QUIRK_NONE,
 	HIDPP20_QUIRK_G305,
 	HIDPP20_QUIRK_G602,
-	HIDPP20_QUIRK_G502X_PLUS, // G502X+ uses 2nd LED slot instead of 1st.
+	HIDPP20_QUIRK_G502X, // G502X uses 2nd LED slot instead of 1st.
 };
 
 struct hidpp20_device {
