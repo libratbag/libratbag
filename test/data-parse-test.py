@@ -259,6 +259,63 @@ def check_section_steelseries(section: configparser.SectionProxy):
         pass
 
 
+def check_section_sinowealth(section: configparser.SectionProxy):
+    SINOWEALTH_FW_VERSION_LEN = 4
+    SINOWEALTH_DEVICE_SECTION_PREFIX = "Driver/sinowealth/devices/"
+    SINOWEALTH_REQUIRED_KEYS = (
+        "DeviceName",
+        "LedType",
+    )
+    SINOWEALTH_PERMITTED_KEYS = (
+        *SINOWEALTH_REQUIRED_KEYS,
+        "Buttons",
+        "Profiles",
+        "SensorType",
+    )
+
+    assert section.name.startswith(SINOWEALTH_DEVICE_SECTION_PREFIX)
+
+    fw_version = section.name[len(SINOWEALTH_DEVICE_SECTION_PREFIX) :]
+    assert len(fw_version) == SINOWEALTH_FW_VERSION_LEN
+
+    for key in SINOWEALTH_REQUIRED_KEYS:
+        assert key in section
+    for key in section:
+        assert key in SINOWEALTH_PERMITTED_KEYS
+
+
+def check_section_holtek8(section: configparser.SectionProxy):
+    HOLTEK8_FW_VERSION_LEN = 4
+    HOLTEK8_DEVICE_SECTION_PREFIX = "Driver/holtek8/devices/"
+    HOLTEK8_REQUIRED_KEYS = (
+        "DeviceName",
+        "Buttons",
+    )
+    HOLTEK8_PERMITTED_KEYS = (
+        *HOLTEK8_REQUIRED_KEYS,
+        "SensorType",
+        "Password",
+    )
+    HOLTEK8_PERMITTED_VALUES = {
+        "Buttons": list(range(1, 17)),
+        "SensorType": ["PAW3333", "PMW3320"],
+    }
+
+    assert section.name.startswith(HOLTEK8_DEVICE_SECTION_PREFIX)
+
+    fw_version = section.name[len(HOLTEK8_DEVICE_SECTION_PREFIX) :]
+    assert len(fw_version) == HOLTEK8_FW_VERSION_LEN
+
+    for key in HOLTEK8_REQUIRED_KEYS:
+        assert key in section
+
+    for key in section:
+        assert key in HOLTEK8_PERMITTED_KEYS
+
+        if key in HOLTEK8_PERMITTED_VALUES.keys():
+            assert section[key] in map(str, HOLTEK8_PERMITTED_VALUES[key])
+
+
 def check_section_driver(driver: str, section: configparser.SectionProxy):
     if driver == "asus":
         check_section_asus(section)
@@ -274,6 +331,14 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
 
     if driver == "steelseries":
         check_section_steelseries(section)
+        return
+
+    if driver == "sinowealth":
+        check_section_sinowealth(section)
+        return
+
+    if driver == "holtek8":
+        check_section_holtek8(section)
         return
 
     raise ValueError(f"Unsupported driver section {driver}")
@@ -293,20 +358,6 @@ def validate_data_file_name(path: str):
         )
 
 
-SINOWEALTH_FW_VERSION_LEN = 4
-SINOWEALTH_DEVICE_SECTION_PREFIX = "Driver/sinowealth/devices/"
-SINOWEALTH_REQUIRED_KEYS = (
-    "DeviceName",
-    "LedType",
-)
-SINOWEALTH_PERMITTED_KEYS = (
-    *SINOWEALTH_REQUIRED_KEYS,
-    "Buttons",
-    "Profiles",
-    "SensorType",
-)
-
-
 def parse_data_file(path: str):
     print(f"Parsing file {path}")
     data = configparser.ConfigParser(strict=True)
@@ -318,30 +369,26 @@ def parse_data_file(path: str):
     check_section_device(data["Device"])
 
     driver = data["Device"]["Driver"]
+
+    # Holtek8 API drivers have common device file handling
+    if driver in ["holtek8a", "holtek8b"]:
+        driver = "holtek8"
+
     driver_section = f"Driver/{driver}"
-
     permitted_sections = ["Device", driver_section]
-    # The sinowealth driver uses non-static section names in device files as it
-    # uses a single device file for several actual devices. See the example
-    # device file for details.
-    if driver == "sinowealth":
-        for device_section_name in data.sections():
-            if not device_section_name.startswith(SINOWEALTH_DEVICE_SECTION_PREFIX):
-                continue
-            fw_version = device_section_name[len(SINOWEALTH_DEVICE_SECTION_PREFIX) :]
-            assert len(fw_version) == SINOWEALTH_FW_VERSION_LEN
 
-            device_section = data[device_section_name]
-            for key in SINOWEALTH_REQUIRED_KEYS:
-                assert key in device_section
-            for key in device_section:
-                assert key in SINOWEALTH_PERMITTED_KEYS
+    # The sinowealth and holtek8 drivers use non-static section names
+    # in device files as they use a single device file for several actual devices.
+    # See the example device file for details.
+    if driver in ["sinowealth", "holtek8"]:
+        for s in data.sections():
+            assert s == "Device" or s.startswith(driver_section)
     else:
         for s in data.sections():
             assert s in permitted_sections
 
-    if data.has_section(driver_section):
-        check_section_driver(driver, data[driver_section])
+    for section in [s for s in data.sections() if s.startswith(driver_section)]:
+        check_section_driver(driver, data[section])
 
 
 def main() -> None:

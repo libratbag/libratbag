@@ -1,0 +1,11 @@
+[Device]
+Name=Holtek Generic Mouse (a09f)
+DeviceMatch=usb:04d9:a09f
+DeviceType=mouse
+Driver=holtek8a
+
+[Driver/holtek8/devices/0232]
+Buttons=6
+DeviceName=Motospeed V30
+SensorType=PMW3320
+Password=2116B6
