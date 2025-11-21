@@ -1,0 +1,13 @@
+[Device]
+Name=ASUS ROG Keris II Origin
+DeviceMatch=usb:0b05:1c0c
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=5
+Buttons=8
+Leds=1
+Dpis=4
+Wireless=1
+DpiRange=100:42000@50
