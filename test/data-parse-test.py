@@ -76,7 +76,7 @@ def check_dpi_range_str(string: str):
     steps = float(m.group(3))
 
     assert min >= 0 and min <= 400
-    assert max >= 2000 and max <= 36000
+    assert max >= 2000 and max <= 42000
     assert steps > 0 and steps <= 100
 
     if int(steps) == steps:
@@ -93,7 +93,7 @@ def check_dpi_list_str(string: str):
 
     for idx, entry in enumerate(entries):
         dpi = int(entry)
-        assert dpi >= 0 and dpi <= 12000
+        assert dpi >= 0 and dpi <= 42000
         if idx > 0:
             prev = entries[idx - 1]
             prev_dpi = int(prev)
