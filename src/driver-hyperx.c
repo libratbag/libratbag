@@ -43,6 +43,8 @@
 #define HYPERX_USAGE_PAGE 0xff00
 #define HYPERX_PACKET_SIZE 64
 
+#define hyperx_led_value(x) ((int) ((x / 100.0) * 255))
+
 enum {
 	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
 	HYPERX_CONFIG_LED                       = 0xd2,
@@ -60,28 +62,68 @@ enum {
 	HYPERX_SAVE_BYTE_DPI_PROFILE_INDICATORS = 0x03
 };
 
+/**
+ * Reading settings from the mouse is not implemented, so we load default settings.
+ */
 static void
 hyperx_read_profile(struct ratbag_profile *profile)
 {
+	struct ratbag_resolution *resolution;
+	struct ratbag_button *button;
+	struct ratbag_led *led;
+
+	struct ratbag_button_action default_actions[] = {
+		BUTTON_ACTION_BUTTON(1),
+		BUTTON_ACTION_BUTTON(2),
+		BUTTON_ACTION_BUTTON(3),
+		BUTTON_ACTION_BUTTON(4),
+		BUTTON_ACTION_BUTTON(5),
+		BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP),
+	};
+
+	int dpi_levels[] = { 400, 800, 1600, 3200, 6000 };
 	unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
-	struct ratbag_resolution *resolution;
-	int dpi = 500;
 	int polling_rate = 1000;
 
-	ratbag_profile_for_each_resolution(profile, resolution) {
-		ratbag_resolution_set_resolution(resolution, dpi, dpi);
-		ratbag_resolution_set_dpi_list_from_range(resolution,
-			HYPERX_MIN_DPI, HYPERX_MAX_DPI);
+	profile->is_active = true;
 
-		resolution->is_active = resolution->index == 0;
-	}
-
+	ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
 	ratbag_profile_set_report_rate_list(profile, report_rates,
 		ARRAY_LENGTH(report_rates));
+
 	profile->hz = polling_rate;
 
-	profile->is_active = true;
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		ratbag_resolution_set_dpi_list_from_range(resolution,
+			HYPERX_MIN_DPI, HYPERX_MAX_DPI);
+		ratbag_resolution_set_dpi(resolution, dpi_levels[resolution->index]);
+
+		if (resolution->index == 0) {
+			resolution->is_active = true;
+			ratbag_resolution_set_default(resolution);
+		}
+	}
+
+	ratbag_profile_for_each_button(profile, button) {
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+
+		ratbag_button_set_action(button, default_actions + button->index);
+	}
+
+	ratbag_profile_for_each_led(profile, led) {
+		ratbag_led_set_mode(led, RATBAG_LED_ON);
+		ratbag_led_set_color(led, (struct ratbag_color) {
+			.red = 0xff,
+			.green = 0,
+			.blue = 0
+		});
+		ratbag_led_set_brightness(led, hyperx_led_value(50));
+	}
 }
 
 static int
