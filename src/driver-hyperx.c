@@ -45,6 +45,8 @@
 
 #define hyperx_led_value(x) ((int) ((x / 100.0) * 255))
 
+#define BYTES_AFTER
+
 enum {
 	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
 	HYPERX_CONFIG_LED                       = 0xd2,
@@ -62,6 +64,57 @@ enum {
 	HYPERX_SAVE_BYTE_DPI_PROFILE_INDICATORS = 0x03
 };
 
+static int
+hyperx_write_polling_rate(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	log_debug(device->ratbag, "Changing polling rate to %d\n", profile->hz);
+
+	int rate_count = profile->nrates;
+	bool valid_polling_rate = false;
+
+	int rate_index;
+	for (rate_index = 0; rate_index < rate_count; rate_index++) {
+		if (profile->hz == profile->rates[rate_index]) {
+			valid_polling_rate = true;
+			break;
+		}
+	}
+
+	if (!valid_polling_rate) return -EINVAL;
+
+	uint8_t buf[HYPERX_PACKET_SIZE] = {
+		HYPERX_CONFIG_POLLING_RATE,
+		0,
+		0,
+		BYTES_AFTER 1,
+		rate_index
+	};
+
+	int rc = ratbag_hidraw_output_report(device, buf, HYPERX_PACKET_SIZE);
+	if (rc < 0) return rc;
+
+	log_debug(device->ratbag, "Changed polling rate successfully\n");
+	return 0;
+}
+
+static int
+hyperx_write_resolution(struct ratbag_resolution *resolution)
+{
+	return 0;
+}
+
+static int
+hyperx_write_button(struct ratbag_button *button)
+{
+	return 0;
+}
+
+static int
+hyperx_write_led(struct ratbag_led *led)
+{
+	return 0;
+}
 /**
  * Reading settings from the mouse is not implemented, so we load default settings.
  */
@@ -163,6 +216,41 @@ hyperx_remove(struct ratbag_device *device)
 static int
 hyperx_commit(struct ratbag_device *device)
 {
+	struct ratbag_profile *profile;
+	struct ratbag_resolution *resolution;
+	struct ratbag_button *button;
+	struct ratbag_led *led;
+
+	int rc;
+
+	ratbag_device_for_each_profile(device, profile) {
+		if (profile->rate_dirty) {
+			rc = hyperx_write_polling_rate(profile);
+			if (rc) return rc;
+		}
+
+		ratbag_profile_for_each_resolution(profile, resolution) {
+			if (!resolution->dirty) continue;
+
+			rc = hyperx_write_resolution(resolution);
+			if (rc) return rc;
+		}
+
+		ratbag_profile_for_each_button(profile, button) {
+			if (!button->dirty) continue;
+
+			rc = hyperx_write_button(button);
+			if (rc) return rc;
+		}
+
+		ratbag_profile_for_each_led(profile, led) {
+			if (!led->dirty) continue;
+
+			rc = hyperx_write_led(led);
+			if (rc) return rc;
+		}
+	}
+
 	return 0;
 }
 
