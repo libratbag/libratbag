@@ -23,10 +23,8 @@
 
 #include "config.h"
 #include <assert.h>
-#include <errno.h>
 #include <libevdev/libevdev.h>
 #include <linux/input.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -55,8 +53,8 @@
 #define BYTES_AFTER
 #define PADDING 0
 
-enum {
-	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
+enum HYPERX_CONFIG_VALUE {
+	HYPERX_CONFIG_POLLING_RATE              = 0xd1,
 	HYPERX_CONFIG_LED_EFFECT                = 0xda,
 	HYPERX_CONDIG_LED_MODE                  = 0xd9,
 	HYPERX_CONFIG_DPI                       = 0xd3,
@@ -67,12 +65,18 @@ enum {
 	HYPERX_CONFIG_SAVE_SETTINGS             = 0xde
 };
 
-enum {
+enum HYPERX_SAVE_BYTE {
 	HYPERX_SAVE_BYTE_ALL                    = 0xff,
 	HYPERX_SAVE_BYTE_DPI_PROFILE_INDICATORS = 0x03
 };
 
-enum {
+enum HYPERX_DPI_CONFIG {
+	HYPERX_DPI_CONFIG_SELECTED_PROFILE  = 0x00,
+	HYPERX_DPI_CONFIG_ENABLED_PROFILES  = 0x01,
+	HYPERX_DPI_CONFIG_DPI_VALUE         = 0x02,
+};
+
+enum HYPERX_LED_MODE {
 	HYPERX_LED_MODE_SOLID = 0x01
 };
 
@@ -93,6 +97,44 @@ union hyperx_led_packet {
 
 	uint8_t data[HYPERX_PACKET_SIZE];
 };
+
+union hyperx_dpi_profile_packet {
+	struct {
+		uint8_t dpi_cmd;
+		uint8_t value_type; // A HYPERX_DPI_CONFIG value
+		uint8_t dpi_profile_index;
+		uint8_t bytes_after;
+		uint16_t dpi_step_value;
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+};
+
+union hyperx_dpi_config_packet {
+	struct {
+		uint8_t dpi_cmd;
+		uint8_t config_type; // A HYPERX_DPI_CONFIG value
+		uint8_t _padding;
+		uint8_t bytes_after;
+		union {
+			uint8_t enabled_dpi_profiles;
+			uint8_t selected_profile;
+		};
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+};
+
+struct hyperx_data {
+	uint8_t enabled_dpi_profiles; // A 5-bit (little-endian) number, where the nth bit corresponds to profile n
+	uint8_t active_dpi_profile_index;
+};
+
+static int
+hyperx_write(struct ratbag_device *device, uint8_t buf[HYPERX_PACKET_SIZE])
+{
+	return ratbag_hidraw_output_report(device, buf, HYPERX_PACKET_SIZE);
+}
 
 static int
 hyperx_write_polling_rate(struct ratbag_profile *profile)
@@ -121,16 +163,79 @@ hyperx_write_polling_rate(struct ratbag_profile *profile)
 		rate_index
 	};
 
-	int rc = ratbag_hidraw_output_report(device, buf, HYPERX_PACKET_SIZE);
+	int rc = hyperx_write(device, buf);
 	if (rc < 0) return rc;
 
 	log_debug(device->ratbag, "Changed polling rate successfully\n");
 	return 0;
 }
 
+
+/**
+ * @brief Sets the enabled dpi profiles and the selected dpi profile.
+ */
+static int
+hyperx_write_dpi_configuration(struct ratbag_device *device, struct ratbag_profile *profile) {
+	struct hyperx_data *drv_data = ratbag_get_drv_data(device);
+
+	log_debug(device->ratbag, "Writing dpi configuration\n");
+
+	union hyperx_dpi_config_packet buf = {
+		.dpi_cmd = HYPERX_CONFIG_DPI,
+		.config_type = HYPERX_DPI_CONFIG_ENABLED_PROFILES,
+		.bytes_after = sizeof(buf.enabled_dpi_profiles),
+		.enabled_dpi_profiles = drv_data->enabled_dpi_profiles
+	};
+
+	_Static_assert(sizeof(buf.enabled_dpi_profiles) == 1, "Incorrect value for 'bytes_after'");
+
+	int rc = hyperx_write(device, buf.data);
+	if (rc < 0) return rc;
+
+	buf.config_type = HYPERX_DPI_CONFIG_SELECTED_PROFILE;
+	buf.selected_profile = drv_data->active_dpi_profile_index;
+
+	rc = hyperx_write(device, buf.data);
+	if (rc < 0) return rc;
+
+	log_debug(device->ratbag, "Wrote dpi configuration successfully\n");
+	return 0;
+}
+
 static int
 hyperx_write_resolution(struct ratbag_resolution *resolution)
 {
+	struct ratbag_device *device = resolution->profile->device;
+	struct hyperx_data *drv_data = ratbag_get_drv_data(device);
+
+	if (resolution->is_disabled) {
+		drv_data->enabled_dpi_profiles &= ~(1 << resolution->index);
+		return 0;
+	} else {
+		drv_data->enabled_dpi_profiles |= 1 << resolution->index;
+	}
+
+	log_debug(device->ratbag, "\nChanging resolution %d\nEnabled profiles: %b\n", resolution->index, drv_data->enabled_dpi_profiles);
+
+	if (resolution->is_active) {
+		drv_data->active_dpi_profile_index = resolution->index;
+	}
+
+	union hyperx_dpi_profile_packet buf = {
+		.dpi_cmd = HYPERX_CONFIG_DPI,
+		.value_type = HYPERX_DPI_CONFIG_DPI_VALUE,
+		.dpi_profile_index = resolution->index,
+		.bytes_after = sizeof(buf.dpi_step_value),
+		.dpi_step_value = htole16(ratbag_resolution_get_dpi(resolution) / 100),
+	};
+
+	_Static_assert(sizeof(buf.dpi_step_value) == 2, "Incorrect value for 'bytes_after'");
+
+	int rc = hyperx_write(device, buf.data);
+	if (rc < 0) return rc;
+
+	log_debug(device->ratbag, "Changed resolution successfully\n");
+
 	return 0;
 }
 
@@ -164,7 +269,7 @@ hyperx_write_led(struct ratbag_led *led)
 	assert(led_effect.bytes_after == 60);
 
 	for (int i = 0; i < HYPERX_LED_PACKET_COUNT; i++) {
-		int rc = ratbag_hidraw_output_report(device, led_effect.data, HYPERX_PACKET_SIZE);
+		int rc = hyperx_write(device, led_effect.data);
 		if (rc < 0) return rc;
 
 		memset(&led_effect.colors, 0, led_effect.bytes_after);
@@ -181,7 +286,7 @@ hyperx_write_led(struct ratbag_led *led)
 		HYPERX_LED_MODE_VALUE_AFTER
 	};
 
-	int rc = ratbag_hidraw_output_report(device, led_mode, HYPERX_PACKET_SIZE);
+	int rc = hyperx_write(device, led_mode);
 	if (rc < 0) return rc;
 
 	log_debug(device->ratbag, "Changed led successfully\n");
@@ -194,6 +299,8 @@ hyperx_write_led(struct ratbag_led *led)
 static void
 hyperx_read_profile(struct ratbag_profile *profile)
 {
+	struct ratbag_device *device = profile->device;
+	struct hyperx_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
@@ -221,15 +328,24 @@ hyperx_read_profile(struct ratbag_profile *profile)
 	profile->hz = polling_rate;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
+		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
+
 		ratbag_resolution_set_dpi_list_from_range(resolution,
 			HYPERX_MIN_DPI, HYPERX_MAX_DPI);
 		ratbag_resolution_set_dpi(resolution, dpi_levels[resolution->index]);
 
+		ratbag_resolution_set_disabled(resolution, true);
+
 		if (resolution->index == 0) {
-			resolution->is_active = true;
+			ratbag_resolution_set_disabled(resolution, false);
+			ratbag_resolution_set_active(resolution);
 			ratbag_resolution_set_default(resolution);
 		}
 	}
+
+	// Enable first profile only
+	drv_data->enabled_dpi_profiles = 1;
+	drv_data->active_dpi_profile_index = 0;
 
 	ratbag_profile_for_each_button(profile, button) {
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
@@ -259,6 +375,8 @@ static int
 hyperx_probe(struct ratbag_device *device)
 {
 	struct ratbag_profile *profile;
+	struct hyperx_data *drv_data;
+
 	int rc;
 
 	rc = ratbag_open_hidraw(device);
@@ -276,6 +394,9 @@ hyperx_probe(struct ratbag_device *device)
 		HYPERX_LED_COUNT
 	);
 
+	drv_data = zalloc(sizeof(*drv_data));
+	ratbag_set_drv_data(device, drv_data);
+
 	ratbag_device_for_each_profile(device, profile) {
 		hyperx_read_profile(profile);
 	}
@@ -287,6 +408,7 @@ static void
 hyperx_remove(struct ratbag_device *device)
 {
 	ratbag_close_hidraw(device);
+	free(ratbag_get_drv_data(device));
 }
 
 static int
@@ -301,16 +423,24 @@ hyperx_commit(struct ratbag_device *device)
 	log_debug(device->ratbag, "Commiting settings\n");
 
 	ratbag_device_for_each_profile(device, profile) {
+		if (!profile->dirty) continue;
+
 		if (profile->rate_dirty) {
 			rc = hyperx_write_polling_rate(profile);
 			if (rc) return rc;
 		}
 
+		int changed_resolutions = 0;
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			if (!resolution->dirty) continue;
+			changed_resolutions++;
 
 			rc = hyperx_write_resolution(resolution);
 			if (rc) return rc;
+		}
+
+		if (changed_resolutions > 0) {
+			hyperx_write_dpi_configuration(device, profile);
 		}
 
 		ratbag_profile_for_each_button(profile, button) {
