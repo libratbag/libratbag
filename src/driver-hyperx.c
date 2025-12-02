@@ -28,6 +28,7 @@
 #include <linux/input.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 
 #include "libratbag-private.h"
@@ -43,25 +44,54 @@
 #define HYPERX_USAGE_PAGE 0xff00
 #define HYPERX_PACKET_SIZE 64
 
-#define hyperx_led_value(x) ((int) ((x / 100.0) * 255))
+#define HYPERX_LED_PACKET_COUNT 6
+
+// Magic numbers, no clue what these mean
+#define HYPERX_LED_MODE_VALUE_BEFORE 0x55
+#define HYPERX_LED_MODE_VALUE_AFTER 0x23
+
+#define hyperx_brightness_value(x) ((int) ((x / 255.0) * 100))
 
 #define BYTES_AFTER
+#define PADDING 0
 
 enum {
 	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
-	HYPERX_CONFIG_LED                       = 0xd2,
+	HYPERX_CONFIG_LED_EFFECT                = 0xda,
+	HYPERX_CONDIG_LED_MODE                  = 0xd9,
 	HYPERX_CONFIG_DPI                       = 0xd3,
 	HYPERX_CONFIG_BUTTON_ASSIGNMENT         = 0xd4,
 	HYPERX_CONFIG_MACRO_ASSIGNMENT          = 0xd5,
 	HYPERX_CONFIG_MACRO_DATA                = 0xd6,
 
-	HYPERX_CONFIG_SAVE_SETTINGS_LED         = 0xda,
 	HYPERX_CONFIG_SAVE_SETTINGS             = 0xde
 };
 
 enum {
 	HYPERX_SAVE_BYTE_ALL                    = 0xff,
 	HYPERX_SAVE_BYTE_DPI_PROFILE_INDICATORS = 0x03
+};
+
+enum {
+	HYPERX_LED_MODE_SOLID = 0x01
+};
+
+struct hyperx_color {
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+};
+
+union hyperx_led_packet {
+	struct {
+		uint8_t led_cmd;
+		uint8_t led_mode;
+		uint8_t packet_number;
+		uint8_t bytes_after;
+		struct hyperx_color colors[20];
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
 };
 
 static int
@@ -85,8 +115,8 @@ hyperx_write_polling_rate(struct ratbag_profile *profile)
 
 	uint8_t buf[HYPERX_PACKET_SIZE] = {
 		HYPERX_CONFIG_POLLING_RATE,
-		0,
-		0,
+		PADDING,
+		PADDING,
 		BYTES_AFTER 1,
 		rate_index
 	};
@@ -113,8 +143,51 @@ hyperx_write_button(struct ratbag_button *button)
 static int
 hyperx_write_led(struct ratbag_led *led)
 {
+	struct ratbag_device *device = led->profile->device;
+	log_debug(device->ratbag, "Changing led\n");
+
+	uint8_t brightness = hyperx_brightness_value(led->brightness);
+	if (led->mode == RATBAG_LED_OFF) brightness = 0;
+
+	uint8_t red = led->color.red * ((float) brightness / 100);
+	uint8_t green = led->color.green * ((float) brightness / 100);
+	uint8_t blue = led->color.blue * ((float) brightness / 100);
+
+	union hyperx_led_packet led_effect = {
+		.led_cmd = HYPERX_CONFIG_LED_EFFECT,
+		.led_mode = HYPERX_LED_MODE_SOLID,
+		.packet_number = 0,
+		.bytes_after = sizeof(led_effect.colors),
+		.colors = {{.red = red, .green = green, .blue = blue}}
+	};
+
+	assert(led_effect.bytes_after == 60);
+
+	for (int i = 0; i < HYPERX_LED_PACKET_COUNT; i++) {
+		int rc = ratbag_hidraw_output_report(device, led_effect.data, HYPERX_PACKET_SIZE);
+		if (rc < 0) return rc;
+
+		memset(&led_effect.colors, 0, led_effect.bytes_after);
+		led_effect.packet_number = i + 1;
+	}
+
+	uint8_t led_mode[HYPERX_PACKET_SIZE] = {
+		HYPERX_CONDIG_LED_MODE,
+		PADDING,
+		PADDING,
+		BYTES_AFTER 3,
+		HYPERX_LED_MODE_VALUE_BEFORE,
+		HYPERX_LED_MODE_SOLID,
+		HYPERX_LED_MODE_VALUE_AFTER
+	};
+
+	int rc = ratbag_hidraw_output_report(device, led_mode, HYPERX_PACKET_SIZE);
+	if (rc < 0) return rc;
+
+	log_debug(device->ratbag, "Changed led successfully\n");
 	return 0;
 }
+
 /**
  * Reading settings from the mouse is not implemented, so we load default settings.
  */
@@ -169,13 +242,16 @@ hyperx_read_profile(struct ratbag_profile *profile)
 	}
 
 	ratbag_profile_for_each_led(profile, led) {
+		ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+		ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+
 		ratbag_led_set_mode(led, RATBAG_LED_ON);
 		ratbag_led_set_color(led, (struct ratbag_color) {
 			.red = 0xff,
 			.green = 0,
 			.blue = 0
 		});
-		ratbag_led_set_brightness(led, hyperx_led_value(50));
+		ratbag_led_set_brightness(led, 255);
 	}
 }
 
@@ -222,6 +298,7 @@ hyperx_commit(struct ratbag_device *device)
 	struct ratbag_led *led;
 
 	int rc;
+	log_debug(device->ratbag, "Commiting settings\n");
 
 	ratbag_device_for_each_profile(device, profile) {
 		if (profile->rate_dirty) {
@@ -250,6 +327,8 @@ hyperx_commit(struct ratbag_device *device)
 			if (rc) return rc;
 		}
 	}
+
+	log_debug(device->ratbag, "Commit successful\n");
 
 	return 0;
 }
