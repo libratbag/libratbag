@@ -48,13 +48,15 @@
 #define HYPERX_LED_MODE_VALUE_BEFORE 0x55
 #define HYPERX_LED_MODE_VALUE_AFTER 0x23
 
+#define HYPERX_ACTION_DPI_TOGGLE 8
+
 #define hyperx_brightness_value(x) ((int) ((x / 255.0) * 100))
 
 #define BYTES_AFTER
 #define PADDING 0
 
 enum HYPERX_CONFIG_VALUE {
-	HYPERX_CONFIG_POLLING_RATE              = 0xd1,
+	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
 	HYPERX_CONFIG_LED_EFFECT                = 0xda,
 	HYPERX_CONDIG_LED_MODE                  = 0xd9,
 	HYPERX_CONFIG_DPI                       = 0xd3,
@@ -71,8 +73,8 @@ enum HYPERX_SAVE_BYTE {
 };
 
 enum HYPERX_DPI_CONFIG {
-	HYPERX_DPI_CONFIG_SELECTED_PROFILE  = 0x00,
-	HYPERX_DPI_CONFIG_ENABLED_PROFILES  = 0x01,
+	HYPERX_DPI_CONFIG_SELECTED_PROFILE	= 0x00,
+	HYPERX_DPI_CONFIG_ENABLED_PROFILES	= 0x01,
 	HYPERX_DPI_CONFIG_DPI_VALUE         = 0x02,
 };
 
@@ -80,10 +82,26 @@ enum HYPERX_LED_MODE {
 	HYPERX_LED_MODE_SOLID = 0x01
 };
 
+enum {
+	HYPERX_ACTION_TYPE_DISABLED,
+	HYPERX_ACTION_TYPE_MOUSE,
+	HYPERX_ACTION_TYPE_KEY,
+	HYPERX_ACTION_TYPE_MEDIA,
+	HYPERX_ACTION_TYPE_MACRO,
+	HYPERX_ACTION_TYPE_SHORTCUT,
+	HYPERX_ACTION_TYPE_DPI_TOGGLE = 0x07,
+	HYPERX_ACTION_TYPE_UNKNOWN
+};
+
 struct hyperx_color {
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
+};
+
+struct hyperx_action {
+	uint8_t type;
+	uint8_t action;
 };
 
 union hyperx_led_packet {
@@ -125,6 +143,22 @@ union hyperx_dpi_config_packet {
 	uint8_t data[HYPERX_PACKET_SIZE];
 };
 
+union hyperx_button_packet {
+	struct {
+		uint8_t button_cmd;
+		uint8_t button;
+		uint8_t action_type;
+		uint8_t bytes_after;
+		union {
+			uint8_t macro_button; // The mouse button that a macro is assigned to
+			uint8_t action;
+		};
+		uint8_t unknown;
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+};
+
 struct hyperx_data {
 	uint8_t enabled_dpi_profiles; // A 5-bit (little-endian) number, where the nth bit corresponds to profile n
 	uint8_t active_dpi_profile_index;
@@ -134,6 +168,59 @@ static int
 hyperx_write(struct ratbag_device *device, uint8_t buf[HYPERX_PACKET_SIZE])
 {
 	return ratbag_hidraw_output_report(device, buf, HYPERX_PACKET_SIZE);
+}
+
+static inline struct hyperx_action
+hyperx_button_action_get_raw_action(struct ratbag_button *button)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct ratbag_button_action action = button->action;
+
+	uint8_t type_mapping[] = {
+		[RATBAG_BUTTON_ACTION_TYPE_NONE] = HYPERX_ACTION_TYPE_DISABLED,
+		[RATBAG_BUTTON_ACTION_TYPE_BUTTON] = HYPERX_ACTION_TYPE_MOUSE,
+		[RATBAG_BUTTON_ACTION_TYPE_KEY] = HYPERX_ACTION_TYPE_KEY,
+		[RATBAG_BUTTON_ACTION_TYPE_SPECIAL] = HYPERX_ACTION_TYPE_DPI_TOGGLE,
+		[RATBAG_BUTTON_ACTION_TYPE_MACRO] = HYPERX_ACTION_TYPE_MACRO,
+	};
+
+	if (action.type == RATBAG_BUTTON_ACTION_TYPE_UNKNOWN) {
+		return (struct hyperx_action) {.type = HYPERX_ACTION_TYPE_UNKNOWN};
+	}
+
+	struct hyperx_action raw_action = {
+		.type = type_mapping[action.type]
+	};
+
+	switch (action.type) {
+		case RATBAG_BUTTON_ACTION_TYPE_NONE:
+			raw_action.action = 0;
+			break;
+		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+			raw_action.action = action.action.button;
+			if (raw_action.action >= HYPERX_BUTTON_COUNT) {
+				raw_action.type = HYPERX_ACTION_TYPE_UNKNOWN;
+			}
+
+			break;
+		case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+			if (action.action.special != RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) {
+				raw_action.type = HYPERX_ACTION_TYPE_UNKNOWN;
+			}
+
+			raw_action.action = HYPERX_ACTION_DPI_TOGGLE;
+			break;
+		case RATBAG_BUTTON_ACTION_TYPE_KEY:
+			raw_action.action = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action.action.key);
+			break;
+		case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+			raw_action.action = button->index;
+			break;
+		default:
+			break;
+	}
+
+	return raw_action;
 }
 
 static int
@@ -175,7 +262,8 @@ hyperx_write_polling_rate(struct ratbag_profile *profile)
  * @brief Sets the enabled dpi profiles and the selected dpi profile.
  */
 static int
-hyperx_write_dpi_configuration(struct ratbag_device *device, struct ratbag_profile *profile) {
+hyperx_write_dpi_configuration(struct ratbag_device *device, struct ratbag_profile *profile)
+{
 	struct hyperx_data *drv_data = ratbag_get_drv_data(device);
 
 	log_debug(device->ratbag, "Writing dpi configuration\n");
@@ -240,8 +328,38 @@ hyperx_write_resolution(struct ratbag_resolution *resolution)
 }
 
 static int
+hyperx_write_macro(struct ratbag_button *button)
+{
+	return 0;
+}
+
+static int
 hyperx_write_button(struct ratbag_button *button)
 {
+	struct ratbag_device *device = button->profile->device;
+
+	log_debug(device->ratbag, "Changing action for button %d\n", button->index);
+
+	struct hyperx_action raw_action = hyperx_button_action_get_raw_action(button);
+	if (raw_action.type == HYPERX_ACTION_TYPE_UNKNOWN) return -EINVAL;
+
+	union hyperx_button_packet buf = {
+		.button_cmd = HYPERX_CONFIG_BUTTON_ASSIGNMENT,
+		.button = button->index,
+		.action_type = raw_action.type,
+		.bytes_after = sizeof(buf.action) + sizeof(buf.unknown),
+		.action = raw_action.action
+	};
+
+	int rc = hyperx_write(device, buf.data);
+	if (rc < 0) return rc;
+
+	if (raw_action.type == HYPERX_ACTION_TYPE_MACRO) {
+		return hyperx_write_macro(button);
+	}
+
+	log_debug(device->ratbag, "Button assignment successful\n");
+
 	return 0;
 }
 
@@ -352,7 +470,6 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
-		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 		ratbag_button_set_action(button, default_actions + button->index);
 	}
