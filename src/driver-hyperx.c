@@ -55,7 +55,7 @@
 #define BYTES_AFTER
 #define PADDING 0
 
-enum HYPERX_CONFIG_VALUE {
+enum hyperx_config_value {
 	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
 	HYPERX_CONFIG_LED_EFFECT                = 0xda,
 	HYPERX_CONDIG_LED_MODE                  = 0xd9,
@@ -67,18 +67,18 @@ enum HYPERX_CONFIG_VALUE {
 	HYPERX_CONFIG_SAVE_SETTINGS             = 0xde
 };
 
-enum HYPERX_SAVE_BYTE {
+enum hyperx_save_byte {
 	HYPERX_SAVE_BYTE_ALL                    = 0xff,
 	HYPERX_SAVE_BYTE_DPI_PROFILE_INDICATORS = 0x03
 };
 
-enum HYPERX_DPI_CONFIG {
+enum hyperx_dpi_config {
 	HYPERX_DPI_CONFIG_SELECTED_PROFILE	= 0x00,
 	HYPERX_DPI_CONFIG_ENABLED_PROFILES	= 0x01,
 	HYPERX_DPI_CONFIG_DPI_VALUE         = 0x02,
 };
 
-enum HYPERX_LED_MODE {
+enum hyperx_led_mode {
 	HYPERX_LED_MODE_SOLID = 0x01
 };
 
