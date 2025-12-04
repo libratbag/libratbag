@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <libevdev/libevdev.h>
 #include <linux/input.h>
+#include <math.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -50,10 +51,36 @@
 
 #define HYPERX_ACTION_DPI_TOGGLE 8
 
+#define HYPERX_MAX_MACRO_EVENTS 80
+#define HYPERX_MAX_MACRO_PACKETS 14
+#define HYPERX_MACRO_EVENT_MAX_KEYS 6
+#define HYPERX_MACRO_EVENT_DEFAULT_DELAY htole16(20)
+
+// Max number of events in a macro data packet
+#define HYPERX_MACRO_DATA_MAX_EVENTS 6
+
 #define hyperx_brightness_value(x) ((int) ((x / 255.0) * 100))
 
 #define BYTES_AFTER
 #define PADDING 0
+
+/**
+ * Every macro data packet seems to have a sum byte? after the button byte that alternates between adding 1 and 2 each packet.
+ * Another way of thinking about it is half of the numbers in the sum are 1 and half are 2.
+ *
+ * Thus, we get the following formula: (1x / 2) + (2x / 2). Which is simplified to 3x / 2. Note that this is int division, so there would be no fractional part.
+ *
+ * For example, the sum bytes for 6 packets would be: 0x00, 0x01, 0x03, 0x04, 0x06, 0x07
+ */
+#define HYPERX_MACRO_PACKET_SUM(x) ((3*(x)) / 2)
+
+/**
+ * The event count byte in odd indexed macro data packets have 0x80 added to it.
+ * For example, a packet with 2 events would be 0x02 if it was even, and 0x82 if it was odd.
+ */
+#define HYPERX_MACRO_PACKET_EVENT_COUNT(x) (((x) % 2) * 0x80)
+
+#define _Static_assert_bytes_after(expr) _Static_assert(expr, "Incorrect value for 'bytes_after'")
 
 enum hyperx_config_value {
 	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
@@ -82,7 +109,7 @@ enum hyperx_led_mode {
 	HYPERX_LED_MODE_SOLID = 0x01
 };
 
-enum {
+enum hyperx_action_type {
 	HYPERX_ACTION_TYPE_DISABLED,
 	HYPERX_ACTION_TYPE_MOUSE,
 	HYPERX_ACTION_TYPE_KEY,
@@ -93,15 +120,19 @@ enum {
 	HYPERX_ACTION_TYPE_UNKNOWN
 };
 
+enum hyperx_macro_event_type {
+	HYPERX_MACRO_EVENT_TYPE_KEY = 0x1a
+};
+
+enum hyperx_bytes_after {
+	HYPERX_BYTES_AFTER_MACRO_ASSIGNMENT = 5,
+	HYPERX_BYTES_AFTER_LED_MODE = 3,
+};
+
 struct hyperx_color {
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
-};
-
-struct hyperx_action {
-	uint8_t type;
-	uint8_t action;
 };
 
 union hyperx_led_packet {
@@ -126,7 +157,7 @@ union hyperx_dpi_profile_packet {
 	};
 
 	uint8_t data[HYPERX_PACKET_SIZE];
-};
+} __attribute((packed));
 
 union hyperx_dpi_config_packet {
 	struct {
@@ -143,6 +174,13 @@ union hyperx_dpi_config_packet {
 	uint8_t data[HYPERX_PACKET_SIZE];
 };
 
+struct hyperx_action {
+	uint8_t type;
+	uint8_t action;
+	uint8_t button_index;
+	struct ratbag_macro *macro;
+};
+
 union hyperx_button_packet {
 	struct {
 		uint8_t button_cmd;
@@ -150,7 +188,6 @@ union hyperx_button_packet {
 		uint8_t action_type;
 		uint8_t bytes_after;
 		union {
-			uint8_t macro_button; // The mouse button that a macro is assigned to
 			uint8_t action;
 		};
 		uint8_t unknown;
@@ -159,18 +196,56 @@ union hyperx_button_packet {
 	uint8_t data[HYPERX_PACKET_SIZE];
 };
 
+struct hyperx_macro_event {
+	uint8_t event_type;
+	uint8_t modifier;
+	uint8_t keys[HYPERX_MACRO_EVENT_MAX_KEYS];
+	uint16_t delay_next_event;
+} __attribute__((packed));
+
+union hyperx_macro_data_packet {
+	struct {
+		uint8_t macro_data_cmd;
+		uint8_t button_index;
+		uint8_t sum_value;
+		uint8_t event_count;
+		struct hyperx_macro_event events[HYPERX_MACRO_DATA_MAX_EVENTS];
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+};
+
+struct hyperx_macro {
+	int event_count;
+	union hyperx_macro_data_packet macro_packets[HYPERX_MAX_MACRO_PACKETS];
+};
+
+union hyperx_macro_assigment_packet {
+	struct {
+		uint8_t macro_assign_cmd;
+		uint8_t button;
+		uint8_t _padding;
+		uint8_t bytes_after;
+		uint8_t event_count;
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+};
+
 struct hyperx_data {
-	uint8_t enabled_dpi_profiles; // A 5-bit (little-endian) number, where the nth bit corresponds to profile n
+	uint8_t enabled_dpi_profiles; // A 5-bit little-endian number, where the nth bit corresponds to profile n
 	uint8_t active_dpi_profile_index;
 };
 
 static int
 hyperx_write(struct ratbag_device *device, uint8_t buf[HYPERX_PACKET_SIZE])
 {
+	//log_buf_debug(device->ratbag, "hyperx_write output report: ", buf, HYPERX_PACKET_SIZE);
+	//return 0;
 	return ratbag_hidraw_output_report(device, buf, HYPERX_PACKET_SIZE);
 }
 
-static inline struct hyperx_action
+static struct hyperx_action
 hyperx_button_action_get_raw_action(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
@@ -189,7 +264,8 @@ hyperx_button_action_get_raw_action(struct ratbag_button *button)
 	}
 
 	struct hyperx_action raw_action = {
-		.type = type_mapping[action.type]
+		.type = type_mapping[action.type],
+		.button_index = button->index
 	};
 
 	switch (action.type) {
@@ -215,6 +291,7 @@ hyperx_button_action_get_raw_action(struct ratbag_button *button)
 			break;
 		case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 			raw_action.action = button->index;
+			raw_action.macro = button->action.macro;
 			break;
 		default:
 			break;
@@ -232,7 +309,7 @@ hyperx_write_polling_rate(struct ratbag_profile *profile)
 	int rate_count = profile->nrates;
 	bool valid_polling_rate = false;
 
-	int rate_index;
+	uint8_t rate_index;
 	for (rate_index = 0; rate_index < rate_count; rate_index++) {
 		if (profile->hz == profile->rates[rate_index]) {
 			valid_polling_rate = true;
@@ -246,9 +323,11 @@ hyperx_write_polling_rate(struct ratbag_profile *profile)
 		HYPERX_CONFIG_POLLING_RATE,
 		PADDING,
 		PADDING,
-		BYTES_AFTER 1,
+		BYTES_AFTER sizeof(rate_index),
 		rate_index
 	};
+
+	_Static_assert_bytes_after(sizeof(rate_index) == 1);
 
 	int rc = hyperx_write(device, buf);
 	if (rc < 0) return rc;
@@ -275,7 +354,7 @@ hyperx_write_dpi_configuration(struct ratbag_device *device, struct ratbag_profi
 		.enabled_dpi_profiles = drv_data->enabled_dpi_profiles
 	};
 
-	_Static_assert(sizeof(buf.enabled_dpi_profiles) == 1, "Incorrect value for 'bytes_after'");
+	_Static_assert_bytes_after(sizeof(buf.enabled_dpi_profiles) == 1);
 
 	int rc = hyperx_write(device, buf.data);
 	if (rc < 0) return rc;
@@ -317,7 +396,7 @@ hyperx_write_resolution(struct ratbag_resolution *resolution)
 		.dpi_step_value = htole16(ratbag_resolution_get_dpi(resolution) / 100),
 	};
 
-	_Static_assert(sizeof(buf.dpi_step_value) == 2, "Incorrect value for 'bytes_after'");
+	_Static_assert_bytes_after(sizeof(buf.dpi_step_value) == 2);
 
 	int rc = hyperx_write(device, buf.data);
 	if (rc < 0) return rc;
@@ -328,9 +407,226 @@ hyperx_write_resolution(struct ratbag_resolution *resolution)
 }
 
 static int
-hyperx_write_macro(struct ratbag_button *button)
+hyperx_write_assignment(struct ratbag_device *device, struct hyperx_action *action)
 {
+	union hyperx_button_packet buf = {
+		.button_cmd = HYPERX_CONFIG_BUTTON_ASSIGNMENT,
+		.button = action->button_index,
+		.action_type = action->type,
+		.bytes_after = sizeof(buf.action) + sizeof(buf.unknown),
+		.action = action->action
+	};
+
+	_Static_assert_bytes_after(sizeof(buf.action) + sizeof(buf.unknown) == 2);
+
+	int rc = hyperx_write(device, buf.data);
+	if (rc < 0) return rc;
+
+	log_debug(device->ratbag, "Button assignment successful\n");
 	return 0;
+}
+
+static void hyperx_initialize_macro(struct hyperx_macro *macro, uint8_t button_index)
+{
+	for (int i = 0; i < HYPERX_MAX_MACRO_PACKETS; i++) {
+		macro->macro_packets[i].macro_data_cmd = HYPERX_CONFIG_MACRO_DATA;
+		macro->macro_packets[i].button_index = button_index;
+		macro->macro_packets[i].sum_value = HYPERX_MACRO_PACKET_SUM(i);
+		macro->macro_packets[i].event_count = HYPERX_MACRO_PACKET_EVENT_COUNT(i);
+	}
+}
+
+static void hyperx_macro_event_add_key(struct hyperx_macro_event *event, unsigned int keycode,
+	int *keys_down_count_ref, int *event_key_count_ref, int *event_index_ref)
+{
+	if (*keys_down_count_ref == 0) {
+		*event_index_ref += 1;
+		event++;
+
+		*event = (struct hyperx_macro_event) {
+			.event_type = HYPERX_MACRO_EVENT_TYPE_KEY,
+			.delay_next_event = HYPERX_MACRO_EVENT_DEFAULT_DELAY
+		};
+	}
+
+	const uint8_t modifier_map[] = {
+		[KEY_LEFTCTRL]	 = MODIFIER_LEFTCTRL,
+		[KEY_LEFTSHIFT]  = MODIFIER_LEFTSHIFT,
+		[KEY_LEFTALT]	 = MODIFIER_LEFTALT,
+		[KEY_LEFTMETA]	 = MODIFIER_LEFTMETA,
+		[KEY_RIGHTCTRL]  = MODIFIER_RIGHTCTRL,
+		[KEY_RIGHTSHIFT] = MODIFIER_RIGHTSHIFT,
+		[KEY_RIGHTALT]	 = MODIFIER_RIGHTALT,
+		[KEY_RIGHTMETA]  = MODIFIER_RIGHTMETA
+	};
+
+	uint8_t hid_code = ratbag_hidraw_get_keyboard_usage_from_keycode(NULL, keycode);
+
+	if (ratbag_key_is_modifier(keycode)) {
+		event->modifier |= modifier_map[keycode];
+	} else {
+		event->keys[*event_key_count_ref] = hid_code;
+		*event_key_count_ref += 1;
+	}
+
+	*keys_down_count_ref += 1;
+}
+
+static struct hyperx_macro_event *
+hyperx_get_macro_events(struct ratbag_device *device, struct ratbag_macro *macro, int *out_event_count)
+{
+	struct hyperx_macro_event *hyperx_events = zalloc(sizeof(*hyperx_events) * HYPERX_MAX_MACRO_EVENTS);
+
+	int event_index = -1;
+	int keys_down_count = 0;
+	int event_key_count = 0;
+
+	bool keys_down[UINT8_MAX] = {0};
+	bool event_keys[UINT8_MAX] = {0};
+	bool has_key;
+
+	for (int i = 0; i < MAX_MACRO_EVENTS; i++) {
+		struct ratbag_macro_event *event = macro->events + i;
+		unsigned int key = event->event.key;
+
+		switch (event->type) {
+		case RATBAG_MACRO_EVENT_INVALID:
+			goto invalid_macro;
+		case RATBAG_MACRO_EVENT_NONE:
+			goto loop_end;
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+			assert(key <= UINT8_MAX);
+			has_key = keys_down[key] || event_keys[key];
+			if (has_key
+				|| (event_key_count == HYPERX_MACRO_EVENT_MAX_KEYS
+					&& !ratbag_key_is_modifier(key))
+			) {
+				continue;
+			}
+
+			keys_down[key] = true;
+			event_keys[key] = true;
+
+			hyperx_macro_event_add_key(hyperx_events + event_index, key,
+				&keys_down_count, &event_key_count, &event_index);
+
+			break;
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			assert(event->event.key <= UINT8_MAX);
+			has_key = keys_down[key] || event_keys[key];
+			if (!has_key) continue;
+
+			if (keys_down_count == 0) {
+				log_error(device->ratbag, "Lone key up event\n");
+				goto invalid_macro;
+			}
+
+			keys_down[key] = false;
+			keys_down_count--;
+
+			if (keys_down_count > 0) continue;
+
+			event_index++;
+
+			hyperx_events[event_index] = (struct hyperx_macro_event) {
+				.event_type = HYPERX_MACRO_EVENT_TYPE_KEY,
+				.delay_next_event = HYPERX_MACRO_EVENT_DEFAULT_DELAY
+			};
+
+			memset(event_keys, 0, sizeof(bool) * UINT8_MAX);
+			event_key_count = 0;
+
+			break;
+		case RATBAG_MACRO_EVENT_WAIT:
+			if (event_index < 0) continue;
+			if (event->event.timeout > UINT16_MAX) goto invalid_macro;
+
+			hyperx_events[event_index].delay_next_event = htole16(event->event.timeout);
+			break;
+		}
+	}
+
+	loop_end:
+
+	if (keys_down_count > 0 || (event_index + 1) > HYPERX_MAX_MACRO_EVENTS) {
+		goto invalid_macro;
+	}
+
+	*out_event_count = event_index + 1;
+
+	return hyperx_events;
+
+	invalid_macro:
+		free(hyperx_events);
+		return NULL;
+}
+
+static struct hyperx_macro *
+hyperx_parse_macro(struct ratbag_device *device, struct ratbag_macro *macro, uint8_t button_index)
+{
+	int packet_index = 0;
+	int event_index = 0;
+	int event_count = 0;
+
+	struct hyperx_macro *hyperx_macro = zalloc(sizeof(*hyperx_macro));
+	hyperx_initialize_macro(hyperx_macro, button_index);
+
+	struct hyperx_macro_event *hyperx_events = hyperx_get_macro_events(device, macro, &event_count);
+	if (!hyperx_events) goto invalid_macro;
+
+	union hyperx_macro_data_packet *packet;
+
+	for (int i = 0; i < event_count; i++) {
+		packet_index = i / HYPERX_MACRO_DATA_MAX_EVENTS;
+		event_index = i % HYPERX_MACRO_DATA_MAX_EVENTS;
+		packet = hyperx_macro->macro_packets + packet_index;
+
+		packet->events[event_index] = hyperx_events[i];
+		packet->event_count++;
+	}
+
+	hyperx_macro->event_count = event_count;
+	free(hyperx_events);
+
+	return hyperx_macro;
+
+	invalid_macro:
+		free(hyperx_macro);
+		return NULL;
+}
+
+static int
+hyperx_write_macro(struct ratbag_device *device, struct hyperx_action *action)
+{
+	struct ratbag_macro *macro = action->macro;
+	struct hyperx_macro *hyperx_macro = hyperx_parse_macro(device, macro, action->button_index);
+
+	if (!hyperx_macro) return -EINVAL;
+
+	const int events_per_packet = ARRAY_LENGTH(hyperx_macro->macro_packets->events);
+	uint8_t packet_count = ceil(hyperx_macro->event_count / (double) events_per_packet);
+
+	int rc = hyperx_write_assignment(device, action);
+	if (rc < 0) goto free_macro;
+
+	for (int i = 0; i < packet_count; i++) {
+		rc = hyperx_write(device, hyperx_macro->macro_packets[i].data);
+		if (rc < 0) goto free_macro;
+	}
+
+	union hyperx_macro_assigment_packet buf = {
+		.macro_assign_cmd = HYPERX_CONFIG_MACRO_ASSIGNMENT,
+		.button = action->button_index,
+		.bytes_after = HYPERX_BYTES_AFTER_MACRO_ASSIGNMENT,
+		.event_count = hyperx_macro->event_count
+	};
+
+	rc = hyperx_write(device, buf.data);
+
+	free_macro:
+		free(hyperx_macro);
+
+	return rc;
 }
 
 static int
@@ -340,27 +636,14 @@ hyperx_write_button(struct ratbag_button *button)
 
 	log_debug(device->ratbag, "Changing action for button %d\n", button->index);
 
-	struct hyperx_action raw_action = hyperx_button_action_get_raw_action(button);
-	if (raw_action.type == HYPERX_ACTION_TYPE_UNKNOWN) return -EINVAL;
+	struct hyperx_action action = hyperx_button_action_get_raw_action(button);
+	if (action.type == HYPERX_ACTION_TYPE_UNKNOWN) return -EINVAL;
 
-	union hyperx_button_packet buf = {
-		.button_cmd = HYPERX_CONFIG_BUTTON_ASSIGNMENT,
-		.button = button->index,
-		.action_type = raw_action.type,
-		.bytes_after = sizeof(buf.action) + sizeof(buf.unknown),
-		.action = raw_action.action
-	};
-
-	int rc = hyperx_write(device, buf.data);
-	if (rc < 0) return rc;
-
-	if (raw_action.type == HYPERX_ACTION_TYPE_MACRO) {
-		return hyperx_write_macro(button);
+	if (action.type == HYPERX_ACTION_TYPE_MACRO) {
+		return hyperx_write_macro(device, &action);
 	}
 
-	log_debug(device->ratbag, "Button assignment successful\n");
-
-	return 0;
+	return hyperx_write_assignment(device, &action);
 }
 
 static int
@@ -384,7 +667,7 @@ hyperx_write_led(struct ratbag_led *led)
 		.colors = {{.red = red, .green = green, .blue = blue}}
 	};
 
-	assert(led_effect.bytes_after == 60);
+	_Static_assert_bytes_after(sizeof(led_effect.colors) == 60);
 
 	for (int i = 0; i < HYPERX_LED_PACKET_COUNT; i++) {
 		int rc = hyperx_write(device, led_effect.data);
@@ -398,7 +681,7 @@ hyperx_write_led(struct ratbag_led *led)
 		HYPERX_CONDIG_LED_MODE,
 		PADDING,
 		PADDING,
-		BYTES_AFTER 3,
+		HYPERX_BYTES_AFTER_LED_MODE,
 		HYPERX_LED_MODE_VALUE_BEFORE,
 		HYPERX_LED_MODE_SOLID,
 		HYPERX_LED_MODE_VALUE_AFTER
@@ -470,6 +753,7 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 		ratbag_button_set_action(button, default_actions + button->index);
 	}
@@ -575,7 +859,7 @@ hyperx_commit(struct ratbag_device *device)
 		}
 	}
 
-	log_debug(device->ratbag, "Commit successful\n");
+	log_debug(device->ratbag, "Commit successful\n\n");
 
 	return 0;
 }
