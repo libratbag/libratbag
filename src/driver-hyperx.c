@@ -59,6 +59,7 @@
 // Max number of events in a macro data packet
 #define HYPERX_MACRO_DATA_MAX_EVENTS 6
 
+#define hyperx_is_dpi_profile_enabled(profile_bitmask, n) ((profile_bitmask) & (1 << (n)))
 #define hyperx_brightness_value(x) ((int) ((x / 255.0) * 100))
 
 /**
@@ -744,6 +745,7 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP),
 	};
 
+	const uint8_t default_enabled_dpi_profiles = 0b01111;
 	const int polling_rate = 1000;
 	const int dpi_levels[] = { 400, 800, 1600, 3200, 6000 };
 	const unsigned int report_rates[] = { 125, 250, 500, 1000 };
@@ -756,6 +758,9 @@ hyperx_read_profile(struct ratbag_profile *profile)
 
 	ratbag_profile_set_report_rate(profile, polling_rate);
 
+	drv_data->enabled_dpi_profiles = default_enabled_dpi_profiles;
+	drv_data->active_dpi_profile_index = 0;
+
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
 
@@ -763,18 +768,14 @@ hyperx_read_profile(struct ratbag_profile *profile)
 			HYPERX_MIN_DPI, HYPERX_MAX_DPI);
 		ratbag_resolution_set_dpi(resolution, dpi_levels[resolution->index]);
 
-		ratbag_resolution_set_disabled(resolution, true);
+		ratbag_resolution_set_disabled(resolution,
+			!hyperx_is_dpi_profile_enabled(default_enabled_dpi_profiles, resolution->index));
 
-		if (resolution->index == 0) {
-			ratbag_resolution_set_disabled(resolution, false);
+		if (resolution->index == drv_data->active_dpi_profile_index) {
 			ratbag_resolution_set_active(resolution);
 			ratbag_resolution_set_default(resolution);
 		}
 	}
-
-	// Enable first profile only
-	drv_data->enabled_dpi_profiles = 1;
-	drv_data->active_dpi_profile_index = 0;
 
 	ratbag_profile_for_each_button(profile, button) {
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
