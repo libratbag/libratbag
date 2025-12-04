@@ -81,6 +81,8 @@
 #define HYPERX_MACRO_PACKET_EVENT_COUNT(x) (((x) % 2) * 0x80)
 
 #define _Static_assert_bytes_after(expr) _Static_assert(expr, "Incorrect value for 'bytes_after'")
+#define _Static_assert_enum_size(enum_name) _Static_assert(sizeof(enum enum_name) == 1, \
+		"Incorrect size for '" #enum_name "''")
 
 enum hyperx_config_value {
 	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
@@ -92,22 +94,30 @@ enum hyperx_config_value {
 	HYPERX_CONFIG_MACRO_DATA                = 0xd6,
 
 	HYPERX_CONFIG_SAVE_SETTINGS             = 0xde
-};
+} __attribute((packed));
+
+_Static_assert_enum_size(hyperx_config_value);
 
 enum hyperx_save_byte {
 	HYPERX_SAVE_BYTE_ALL                    = 0xff,
 	HYPERX_SAVE_BYTE_DPI_PROFILE_INDICATORS = 0x03
-};
+} __attribute((packed));
+
+_Static_assert_enum_size(hyperx_save_byte);
 
 enum hyperx_dpi_config {
 	HYPERX_DPI_CONFIG_SELECTED_PROFILE	= 0x00,
 	HYPERX_DPI_CONFIG_ENABLED_PROFILES	= 0x01,
 	HYPERX_DPI_CONFIG_DPI_VALUE         = 0x02,
-};
+} __attribute((packed));
+
+_Static_assert_enum_size(hyperx_dpi_config);
 
 enum hyperx_led_mode {
 	HYPERX_LED_MODE_SOLID = 0x01
-};
+} __attribute((packed));
+
+_Static_assert_enum_size(hyperx_led_mode);
 
 enum hyperx_action_type {
 	HYPERX_ACTION_TYPE_DISABLED,
@@ -118,13 +128,17 @@ enum hyperx_action_type {
 	HYPERX_ACTION_TYPE_SHORTCUT,
 	HYPERX_ACTION_TYPE_DPI_TOGGLE = 0x07,
 	HYPERX_ACTION_TYPE_UNKNOWN
-};
+} __attribute((packed));
+
+_Static_assert_enum_size(hyperx_action_type);
 
 enum hyperx_macro_event_type {
 	HYPERX_MACRO_EVENT_TYPE_KEY = 0x1a
-};
+} __attribute((packed));
 
-enum hyperx_bytes_after {
+_Static_assert_enum_size(hyperx_macro_event_type);
+
+enum {
 	HYPERX_BYTES_AFTER_MACRO_ASSIGNMENT = 5,
 	HYPERX_BYTES_AFTER_LED_MODE = 3,
 };
@@ -133,11 +147,11 @@ struct hyperx_color {
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
-};
+} __attribute((packed));
 
 union hyperx_led_packet {
 	struct {
-		uint8_t led_cmd;
+		enum hyperx_config_value led_cmd;
 		uint8_t led_mode;
 		uint8_t packet_number;
 		uint8_t bytes_after;
@@ -149,7 +163,7 @@ union hyperx_led_packet {
 
 union hyperx_dpi_profile_packet {
 	struct {
-		uint8_t dpi_cmd;
+		enum hyperx_config_value dpi_cmd;
 		uint8_t value_type; // A HYPERX_DPI_CONFIG value
 		uint8_t dpi_profile_index;
 		uint8_t bytes_after;
@@ -161,7 +175,7 @@ union hyperx_dpi_profile_packet {
 
 union hyperx_dpi_config_packet {
 	struct {
-		uint8_t dpi_cmd;
+		enum hyperx_config_value dpi_cmd;
 		uint8_t config_type; // A HYPERX_DPI_CONFIG value
 		uint8_t _padding;
 		uint8_t bytes_after;
@@ -183,7 +197,7 @@ struct hyperx_action {
 
 union hyperx_button_packet {
 	struct {
-		uint8_t button_cmd;
+		enum hyperx_config_value button_cmd;
 		uint8_t button;
 		uint8_t action_type;
 		uint8_t bytes_after;
@@ -197,7 +211,7 @@ union hyperx_button_packet {
 };
 
 struct hyperx_macro_event {
-	uint8_t event_type;
+	enum hyperx_macro_event_type event_type;
 	uint8_t modifier;
 	uint8_t keys[HYPERX_MACRO_EVENT_MAX_KEYS];
 	uint16_t delay_next_event;
@@ -205,7 +219,7 @@ struct hyperx_macro_event {
 
 union hyperx_macro_data_packet {
 	struct {
-		uint8_t macro_data_cmd;
+		enum hyperx_config_value macro_data_cmd;
 		uint8_t button_index;
 		uint8_t sum_value;
 		uint8_t event_count;
@@ -222,7 +236,7 @@ struct hyperx_macro {
 
 union hyperx_macro_assigment_packet {
 	struct {
-		uint8_t macro_assign_cmd;
+		enum hyperx_config_value macro_assign_cmd;
 		uint8_t button;
 		uint8_t _padding;
 		uint8_t bytes_after;
