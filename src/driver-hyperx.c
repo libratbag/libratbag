@@ -61,9 +61,6 @@
 
 #define hyperx_brightness_value(x) ((int) ((x / 255.0) * 100))
 
-#define BYTES_AFTER
-#define PADDING 0
-
 /**
  * Every macro data packet seems to have a sum byte? after the button byte that alternates between adding 1 and 2 each packet.
  * Another way of thinking about it is half of the numbers in the sum are 1 and half are 2.
@@ -143,6 +140,17 @@ enum {
 	HYPERX_BYTES_AFTER_LED_MODE = 3,
 };
 
+union hyperx_polling_rate_packet {
+	struct {
+		enum hyperx_config_value polling_rate_cmd;
+		uint8_t _padding[2];
+		uint8_t bytes_after;
+		uint8_t rate_index;
+	} __attribute((packed));
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+};
+
 struct hyperx_color {
 	uint8_t red;
 	uint8_t green;
@@ -161,10 +169,23 @@ union hyperx_led_packet {
 	uint8_t data[HYPERX_PACKET_SIZE];
 };
 
+union hyperx_led_mode_packet {
+	struct {
+		enum hyperx_config_value led_mode_cmd;
+		uint8_t _padding[2];
+		uint8_t bytes_after;
+		uint8_t led_mode_value_before;
+		enum hyperx_led_mode led_mode;
+		uint8_t led_mode_value_after;
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+} __attribute((packed));
+
 union hyperx_dpi_profile_packet {
 	struct {
 		enum hyperx_config_value dpi_cmd;
-		uint8_t value_type; // A HYPERX_DPI_CONFIG value
+		enum hyperx_dpi_config value_type;
 		uint8_t dpi_profile_index;
 		uint8_t bytes_after;
 		uint16_t dpi_step_value;
@@ -176,8 +197,8 @@ union hyperx_dpi_profile_packet {
 union hyperx_dpi_config_packet {
 	struct {
 		enum hyperx_config_value dpi_cmd;
-		uint8_t config_type; // A HYPERX_DPI_CONFIG value
-		uint8_t _padding;
+		enum hyperx_dpi_config config_type;
+		uint8_t _padding[1];
 		uint8_t bytes_after;
 		union {
 			uint8_t enabled_dpi_profiles;
@@ -201,9 +222,7 @@ union hyperx_button_packet {
 		uint8_t button;
 		uint8_t action_type;
 		uint8_t bytes_after;
-		union {
-			uint8_t action;
-		};
+		uint8_t action;
 		uint8_t unknown;
 	};
 
@@ -238,7 +257,7 @@ union hyperx_macro_assigment_packet {
 	struct {
 		enum hyperx_config_value macro_assign_cmd;
 		uint8_t button;
-		uint8_t _padding;
+		uint8_t _padding[1];
 		uint8_t bytes_after;
 		uint8_t event_count;
 	};
@@ -333,17 +352,15 @@ hyperx_write_polling_rate(struct ratbag_profile *profile)
 
 	if (!valid_polling_rate) return -EINVAL;
 
-	uint8_t buf[HYPERX_PACKET_SIZE] = {
-		HYPERX_CONFIG_POLLING_RATE,
-		PADDING,
-		PADDING,
-		BYTES_AFTER sizeof(rate_index),
-		rate_index
+	union hyperx_polling_rate_packet buf = {
+		.polling_rate_cmd = HYPERX_CONFIG_POLLING_RATE,
+		.bytes_after = sizeof(rate_count),
+		.rate_index = rate_index
 	};
 
-	_Static_assert_bytes_after(sizeof(rate_index) == 1);
+	_Static_assert_bytes_after(sizeof(buf.rate_index) == 1);
 
-	int rc = hyperx_write(device, buf);
+	int rc = hyperx_write(device, buf.data);
 	if (rc < 0) return rc;
 
 	log_debug(device->ratbag, "Changed polling rate successfully\n");
@@ -691,17 +708,15 @@ hyperx_write_led(struct ratbag_led *led)
 		led_effect.packet_number = i + 1;
 	}
 
-	uint8_t led_mode[HYPERX_PACKET_SIZE] = {
-		HYPERX_CONDIG_LED_MODE,
-		PADDING,
-		PADDING,
-		HYPERX_BYTES_AFTER_LED_MODE,
-		HYPERX_LED_MODE_VALUE_BEFORE,
-		HYPERX_LED_MODE_SOLID,
-		HYPERX_LED_MODE_VALUE_AFTER
+	union hyperx_led_mode_packet led_mode = {
+		.led_mode_cmd = HYPERX_CONDIG_LED_MODE,
+		.bytes_after = HYPERX_BYTES_AFTER_LED_MODE,
+		.led_mode_value_before = HYPERX_LED_MODE_VALUE_BEFORE,
+		.led_mode = HYPERX_LED_MODE_SOLID,
+		.led_mode_value_after = HYPERX_LED_MODE_VALUE_AFTER
 	};
 
-	int rc = hyperx_write(device, led_mode);
+	int rc = hyperx_write(device, led_mode.data);
 	if (rc < 0) return rc;
 
 	log_debug(device->ratbag, "Changed led successfully\n");
