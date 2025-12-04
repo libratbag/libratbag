@@ -438,7 +438,7 @@ hyperx_write_resolution(struct ratbag_resolution *resolution)
 }
 
 static int
-hyperx_write_assignment(struct ratbag_device *device, struct hyperx_action *action)
+hyperx_write_button_assignment(struct ratbag_device *device, struct hyperx_action *action)
 {
 	union hyperx_button_packet buf = {
 		.button_cmd = HYPERX_CONFIG_BUTTON_ASSIGNMENT,
@@ -637,7 +637,7 @@ hyperx_write_macro(struct ratbag_device *device, struct hyperx_action *action)
 	const int events_per_packet = ARRAY_LENGTH(hyperx_macro->macro_packets->events);
 	uint8_t packet_count = ceil(hyperx_macro->event_count / (double) events_per_packet);
 
-	int rc = hyperx_write_assignment(device, action);
+	int rc = hyperx_write_button_assignment(device, action);
 	if (rc < 0) goto free_macro;
 
 	for (int i = 0; i < packet_count; i++) {
@@ -661,7 +661,7 @@ hyperx_write_macro(struct ratbag_device *device, struct hyperx_action *action)
 }
 
 static int
-hyperx_write_button(struct ratbag_button *button)
+hyperx_write_button_action(struct ratbag_button *button)
 {
 	struct ratbag_device *device = button->profile->device;
 
@@ -674,7 +674,7 @@ hyperx_write_button(struct ratbag_button *button)
 		return hyperx_write_macro(device, &action);
 	}
 
-	return hyperx_write_assignment(device, &action);
+	return hyperx_write_button_assignment(device, &action);
 }
 
 static int
@@ -744,10 +744,9 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP),
 	};
 
-	int dpi_levels[] = { 400, 800, 1600, 3200, 6000 };
-	unsigned int report_rates[] = { 125, 250, 500, 1000 };
-
-	int polling_rate = 1000;
+	const int polling_rate = 1000;
+	const int dpi_levels[] = { 400, 800, 1600, 3200, 6000 };
+	const unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 	profile->is_active = true;
 
@@ -755,7 +754,7 @@ hyperx_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_set_report_rate_list(profile, report_rates,
 		ARRAY_LENGTH(report_rates));
 
-	profile->hz = polling_rate;
+	ratbag_profile_set_report_rate(profile, polling_rate);
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
@@ -797,7 +796,7 @@ hyperx_read_profile(struct ratbag_profile *profile)
 			.green = 0,
 			.blue = 0
 		});
-		ratbag_led_set_brightness(led, 255);
+		ratbag_led_set_brightness(led, 0xff);
 	}
 }
 
@@ -876,7 +875,7 @@ hyperx_commit(struct ratbag_device *device)
 		ratbag_profile_for_each_button(profile, button) {
 			if (!button->dirty) continue;
 
-			rc = hyperx_write_button(button);
+			rc = hyperx_write_button_action(button);
 			if (rc) return rc;
 		}
 
