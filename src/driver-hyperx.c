@@ -96,12 +96,12 @@ enum hyperx_config_value {
 
 _Static_assert_enum_size(hyperx_config_value);
 
-enum hyperx_save_byte {
-	HYPERX_SAVE_BYTE_ALL                    = 0xff,
-	HYPERX_SAVE_BYTE_DPI_PROFILE_INDICATORS = 0x03
+enum hyperx_save_type {
+	HYPERX_SAVE_TYPE_ALL                    = 0xff,
+	HYPERX_SAVE_TYPE_DPI_PROFILES           = 0x03
 } __attribute((packed));
 
-_Static_assert_enum_size(hyperx_save_byte);
+_Static_assert_enum_size(hyperx_save_type);
 
 enum hyperx_dpi_config {
 	HYPERX_DPI_CONFIG_SELECTED_PROFILE	= 0x00,
@@ -261,6 +261,15 @@ union hyperx_macro_assigment_packet {
 		uint8_t _padding[1];
 		uint8_t bytes_after;
 		uint8_t event_count;
+	};
+
+	uint8_t data[HYPERX_PACKET_SIZE];
+};
+
+union hyperx_save_settings_packet {
+	struct {
+		enum hyperx_config_value save_settings_cmd;
+		enum hyperx_save_type save_type;
 	};
 
 	uint8_t data[HYPERX_PACKET_SIZE];
@@ -887,6 +896,14 @@ hyperx_commit(struct ratbag_device *device)
 			if (rc) return rc;
 		}
 	}
+
+	union hyperx_save_settings_packet buf = {
+		.save_settings_cmd = HYPERX_CONFIG_SAVE_SETTINGS,
+		.save_type = HYPERX_SAVE_TYPE_ALL
+	};
+
+	rc = hyperx_write(device, buf.data);
+	if (rc < 0) return rc;
 
 	log_debug(device->ratbag, "Commit successful\n\n");
 
