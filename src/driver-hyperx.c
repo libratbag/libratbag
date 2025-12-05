@@ -794,6 +794,7 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
 		ratbag_button_set_action(button, default_actions + button->index);
+		button->dirty = true;
 	}
 
 	ratbag_profile_for_each_led(profile, led) {
