@@ -33,12 +33,7 @@
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
 
-#define HYPERX_PROFILE_COUNT 1
-#define HYPERX_BUTTON_COUNT 6
-#define HYPERX_NUM_DPI 5
-#define HYPERX_MIN_DPI 200
-#define HYPERX_MAX_DPI 16000
-#define HYPERX_LED_COUNT 1
+#include "driver-hyperx.h"
 
 #define HYPERX_USAGE_PAGE 0xff00
 #define HYPERX_PACKET_SIZE 64
@@ -275,7 +270,7 @@ union hyperx_save_settings_packet {
 	uint8_t data[HYPERX_PACKET_SIZE];
 };
 
-struct hyperx_data {
+struct hyperx_drv_data {
 	uint8_t enabled_dpi_profiles; // A 5-bit little-endian number, where the nth bit corresponds to profile n
 	uint8_t active_dpi_profile_index;
 };
@@ -317,7 +312,7 @@ hyperx_button_action_get_raw_action(struct ratbag_button *button)
 			break;
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 			raw_action.action = action.action.button;
-			if (raw_action.action >= HYPERX_BUTTON_COUNT) {
+			if (raw_action.action >= device->num_buttons) {
 				raw_action.type = HYPERX_ACTION_TYPE_UNKNOWN;
 			}
 
@@ -384,7 +379,7 @@ hyperx_write_polling_rate(struct ratbag_profile *profile)
 static int
 hyperx_write_dpi_configuration(struct ratbag_device *device, struct ratbag_profile *profile)
 {
-	struct hyperx_data *drv_data = ratbag_get_drv_data(device);
+	struct hyperx_drv_data *drv_data = ratbag_get_drv_data(device);
 
 	log_debug(device->ratbag, "Writing dpi configuration\n");
 
@@ -414,7 +409,7 @@ static int
 hyperx_write_resolution(struct ratbag_resolution *resolution)
 {
 	struct ratbag_device *device = resolution->profile->device;
-	struct hyperx_data *drv_data = ratbag_get_drv_data(device);
+	struct hyperx_drv_data *drv_data = ratbag_get_drv_data(device);
 
 	if (resolution->is_disabled) {
 		drv_data->enabled_dpi_profiles &= ~(1 << resolution->index);
@@ -589,7 +584,8 @@ hyperx_get_macro_events(struct ratbag_device *device, struct ratbag_macro *macro
 
 	loop_end:
 
-	if (keys_down_count > 0 || (event_index + 1) > HYPERX_MAX_MACRO_EVENTS) {
+	bool event_index_in_range = event_index >= 0 && event_index < HYPERX_MAX_MACRO_EVENTS;
+	if (keys_down_count > 0 || !event_index_in_range) {
 		goto invalid_macro;
 	}
 
@@ -740,10 +736,12 @@ static void
 hyperx_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
-	struct hyperx_data *drv_data = ratbag_get_drv_data(device);
+	struct hyperx_drv_data *drv_data = ratbag_get_drv_data(device);
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
+
+	const struct data_hyperx *device_data = ratbag_device_data_hyperx_get_data(device->data);
 
 	struct ratbag_button_action default_actions[] = {
 		BUTTON_ACTION_BUTTON(1),
@@ -774,7 +772,7 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
 
 		ratbag_resolution_set_dpi_list_from_range(resolution,
-			HYPERX_MIN_DPI, HYPERX_MAX_DPI);
+			device_data->dpi_range->min, device_data->dpi_range->max);
 		ratbag_resolution_set_dpi(resolution, dpi_levels[resolution->index]);
 
 		ratbag_resolution_set_disabled(resolution,
@@ -814,12 +812,14 @@ hyperx_read_profile(struct ratbag_profile *profile)
 static int
 hyperx_probe(struct ratbag_device *device)
 {
+	const struct data_hyperx *device_data;
 	struct ratbag_profile *profile;
-	struct hyperx_data *drv_data;
+	struct hyperx_drv_data *drv_data;
 
-	int rc;
+	device_data = ratbag_device_data_hyperx_get_data(device->data);
+	assert(device_data->dpi_range != NULL);
 
-	rc = ratbag_open_hidraw(device);
+	int rc = ratbag_open_hidraw(device);
 	if (rc) return rc;
 
 	if (ratbag_hidraw_get_usage_page(device, 0) != HYPERX_USAGE_PAGE) {
@@ -828,10 +828,10 @@ hyperx_probe(struct ratbag_device *device)
 	}
 
 	ratbag_device_init_profiles(device,
-		HYPERX_PROFILE_COUNT,
-		HYPERX_NUM_DPI,
-		HYPERX_BUTTON_COUNT,
-		HYPERX_LED_COUNT
+		device_data->profile_count,
+		device_data->dpi_count,
+		device_data->button_count,
+		device_data->led_count
 	);
 
 	drv_data = zalloc(sizeof(*drv_data));
