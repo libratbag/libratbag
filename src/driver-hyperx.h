@@ -6,6 +6,8 @@ struct data_hyperx {
 	int profile_count;
 	int button_count;
 	int led_count;
+	size_t nrates;
+	unsigned int *rates;
 	int dpi_count;
 	int is_wireless;
 	struct dpi_range *dpi_range;

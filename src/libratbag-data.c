@@ -504,6 +504,14 @@ init_data_hyperx(struct ratbag *ratbag,
 		data->hyperx.led_count = leds;
 	g_clear_error(&error);
 
+	size_t nrates;
+	int *rates = g_key_file_get_integer_list(keyfile, group, "ReportRates", &nrates, &error);
+	if (!error && nrates > 0) {
+		data->hyperx.nrates = nrates;
+		data->hyperx.rates = (unsigned int*) rates;
+	}
+	g_clear_error(&error);
+
 	int dpis = g_key_file_get_integer(keyfile, group, "Dpis", &error);
 	if (!error && dpis >= 0)
 		data->hyperx.dpi_count = dpis;
@@ -597,6 +605,7 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 		break;
 	case HYPERX:
 		free(data->hyperx.dpi_range);
+		free(data->hyperx.rates);
 		break;
 	default:
 		break;

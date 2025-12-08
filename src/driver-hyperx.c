@@ -677,6 +677,7 @@ hyperx_write_button_action(struct ratbag_button *button)
 	if (action.type == HYPERX_ACTION_TYPE_UNKNOWN) return -EINVAL;
 
 	if (action.type == HYPERX_ACTION_TYPE_MACRO) {
+		log_debug(device->ratbag, "Macro name: %s\n", button->action.macro->name);
 		return hyperx_write_macro(device, &action);
 	}
 
@@ -755,13 +756,12 @@ hyperx_read_profile(struct ratbag_profile *profile)
 	const uint8_t default_enabled_dpi_profiles = 0b01111;
 	const int polling_rate = 1000;
 	const int dpi_levels[] = { 400, 800, 1600, 3200, 6000 };
-	const unsigned int report_rates[] = { 125, 250, 500, 1000 };
 
 	profile->is_active = true;
 
 	ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
-	ratbag_profile_set_report_rate_list(profile, report_rates,
-		ARRAY_LENGTH(report_rates));
+	ratbag_profile_set_report_rate_list(profile, device_data->rates,
+		device_data->nrates);
 
 	ratbag_profile_set_report_rate(profile, polling_rate);
 
@@ -817,7 +817,7 @@ hyperx_probe(struct ratbag_device *device)
 	struct hyperx_drv_data *drv_data;
 
 	device_data = ratbag_device_data_hyperx_get_data(device->data);
-	assert(device_data->dpi_range != NULL);
+	assert(device_data->dpi_range != NULL && device_data->rates != NULL);
 
 	int rc = ratbag_open_hidraw(device);
 	if (rc) return rc;

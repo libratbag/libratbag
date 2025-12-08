@@ -8,6 +8,7 @@ Driver=hyperx
 Profiles=1
 Buttons=6
 Leds=1
+ReportRates=125;250;500;1000
 Dpis=5
 DpiRange=200:16000@100
 Wireless=1
