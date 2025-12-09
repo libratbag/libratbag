@@ -504,6 +504,9 @@ init_data_hyperx(struct ratbag *ratbag,
 		data->hyperx.led_count = leds;
 	g_clear_error(&error);
 
+	// We can't read onboard led settings, so we disable led config (for the time being)
+	data->hyperx.led_count = 0;
+
 	size_t nrates;
 	int *rates = g_key_file_get_integer_list(keyfile, group, "ReportRates", &nrates, &error);
 	if (!error && nrates > 0) {

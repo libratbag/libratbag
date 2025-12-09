@@ -703,7 +703,8 @@ hyperx_probe(struct ratbag_device *device)
 	assert(device_data->dpi_range != NULL && "Invalid/missing value for DpiRange in device file");
 	assert(device_data->rates != NULL     && "Invalid/missing value for ReportRates in device file");
 	assert(device_data->button_count > 0  && "Invalid/missing value for Buttons in device file");
-	assert(device_data->dpi_count > 0     && "Invalid/missing value for Buttons in device file");
+	assert(device_data->dpi_count > 0     && "Invalid/missing value for Dpis in device file");
+	assert(device_data->led_count >= 0    && "Invalid/missing value for Leds in device file");
 
 	int rc = ratbag_open_hidraw(device);
 	if (rc) return rc;
