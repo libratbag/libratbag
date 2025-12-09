@@ -35,245 +35,32 @@
 
 #include "driver-hyperx.h"
 
-#define HYPERX_USAGE_PAGE 0xff00
-#define HYPERX_PACKET_SIZE 64
+static inline void
+hyperx_resolution_set_dpi_list_from_range(struct ratbag_resolution *res,
+	unsigned int min_dpi, unsigned int max_dpi, unsigned int stepsize)
+{
+	unsigned int dpi = min_dpi;
+	bool maxed_out = false;
 
-#define HYPERX_LED_PACKET_COUNT 6
+	res->ndpis = 0;
 
-// Magic numbers, no clue what these mean
-#define HYPERX_LED_MODE_VALUE_BEFORE 0x55
-#define HYPERX_LED_MODE_VALUE_AFTER 0x23
+	while (res->ndpis < ARRAY_LENGTH(res->dpis)) {
+		if (dpi > (unsigned) max_dpi) {
+			maxed_out = true;
+			break;
+		}
 
-#define HYPERX_ACTION_DPI_TOGGLE 8
+		res->dpis[res->ndpis] = dpi;
+		res->ndpis++;
 
-#define HYPERX_MAX_MACRO_EVENTS 80
-#define HYPERX_MAX_MACRO_PACKETS 14
-#define HYPERX_MACRO_EVENT_MAX_KEYS 6
-#define HYPERX_MACRO_EVENT_DEFAULT_DELAY htole16(20)
+		dpi += stepsize;
+	}
 
-// Max number of events in a macro data packet
-#define HYPERX_MACRO_DATA_MAX_EVENTS 6
-
-#define hyperx_is_dpi_profile_enabled(profile_bitmask, n) ((profile_bitmask) & (1 << (n)))
-#define hyperx_brightness_value(x) ((int) ((x / 255.0) * 100))
-
-/**
- * Every macro data packet seems to have a sum byte? after the button byte that alternates between adding 1 and 2 each packet.
- * Another way of thinking about it is half of the numbers in the sum are 1 and half are 2.
- *
- * Thus, we get the following formula: (1x / 2) + (2x / 2). Which is simplified to 3x / 2. Note that this is int division, so there would be no fractional part.
- *
- * For example, the sum bytes for 6 packets would be: 0x00, 0x01, 0x03, 0x04, 0x06, 0x07
- */
-#define HYPERX_MACRO_PACKET_SUM(x) ((3*(x)) / 2)
-
-/**
- * The event count byte in odd indexed macro data packets have 0x80 added to it.
- * For example, a packet with 2 events would be 0x02 if it was even, and 0x82 if it was odd.
- */
-#define HYPERX_MACRO_PACKET_EVENT_COUNT(x) (((x) % 2) * 0x80)
-
-#define _Static_assert_bytes_after(expr) _Static_assert(expr, "Incorrect value for 'bytes_after'")
-#define _Static_assert_enum_size(enum_name) _Static_assert(sizeof(enum enum_name) == 1, \
-		"Incorrect size for '" #enum_name "''")
-
-enum hyperx_config_value {
-	HYPERX_CONFIG_POLLING_RATE              = 0xd0,
-	HYPERX_CONFIG_LED_EFFECT                = 0xda,
-	HYPERX_CONDIG_LED_MODE                  = 0xd9,
-	HYPERX_CONFIG_DPI                       = 0xd3,
-	HYPERX_CONFIG_BUTTON_ASSIGNMENT         = 0xd4,
-	HYPERX_CONFIG_MACRO_ASSIGNMENT          = 0xd5,
-	HYPERX_CONFIG_MACRO_DATA                = 0xd6,
-
-	HYPERX_CONFIG_SAVE_SETTINGS             = 0xde
-} __attribute((packed));
-
-_Static_assert_enum_size(hyperx_config_value);
-
-enum hyperx_save_type {
-	HYPERX_SAVE_TYPE_ALL                    = 0xff,
-	HYPERX_SAVE_TYPE_DPI_PROFILES           = 0x03
-} __attribute((packed));
-
-_Static_assert_enum_size(hyperx_save_type);
-
-enum hyperx_dpi_config {
-	HYPERX_DPI_CONFIG_SELECTED_PROFILE	= 0x00,
-	HYPERX_DPI_CONFIG_ENABLED_PROFILES	= 0x01,
-	HYPERX_DPI_CONFIG_DPI_VALUE         = 0x02,
-} __attribute((packed));
-
-_Static_assert_enum_size(hyperx_dpi_config);
-
-enum hyperx_led_mode {
-	HYPERX_LED_MODE_SOLID = 0x01
-} __attribute((packed));
-
-_Static_assert_enum_size(hyperx_led_mode);
-
-enum hyperx_action_type {
-	HYPERX_ACTION_TYPE_DISABLED,
-	HYPERX_ACTION_TYPE_MOUSE,
-	HYPERX_ACTION_TYPE_KEY,
-	HYPERX_ACTION_TYPE_MEDIA,
-	HYPERX_ACTION_TYPE_MACRO,
-	HYPERX_ACTION_TYPE_SHORTCUT,
-	HYPERX_ACTION_TYPE_DPI_TOGGLE = 0x07,
-	HYPERX_ACTION_TYPE_UNKNOWN
-} __attribute((packed));
-
-_Static_assert_enum_size(hyperx_action_type);
-
-enum hyperx_macro_event_type {
-	HYPERX_MACRO_EVENT_TYPE_KEY = 0x1a
-} __attribute((packed));
-
-_Static_assert_enum_size(hyperx_macro_event_type);
-
-enum {
-	HYPERX_BYTES_AFTER_MACRO_ASSIGNMENT = 5,
-	HYPERX_BYTES_AFTER_LED_MODE = 3,
-};
-
-union hyperx_polling_rate_packet {
-	struct {
-		enum hyperx_config_value polling_rate_cmd;
-		uint8_t _padding[2];
-		uint8_t bytes_after;
-		uint8_t rate_index;
-	} __attribute((packed));
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-};
-
-struct hyperx_color {
-	uint8_t red;
-	uint8_t green;
-	uint8_t blue;
-} __attribute((packed));
-
-union hyperx_led_packet {
-	struct {
-		enum hyperx_config_value led_cmd;
-		uint8_t led_mode;
-		uint8_t packet_number;
-		uint8_t bytes_after;
-		struct hyperx_color colors[20];
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-};
-
-union hyperx_led_mode_packet {
-	struct {
-		enum hyperx_config_value led_mode_cmd;
-		uint8_t _padding[2];
-		uint8_t bytes_after;
-		uint8_t led_mode_value_before;
-		enum hyperx_led_mode led_mode;
-		uint8_t led_mode_value_after;
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-} __attribute((packed));
-
-union hyperx_dpi_profile_packet {
-	struct {
-		enum hyperx_config_value dpi_cmd;
-		enum hyperx_dpi_config value_type;
-		uint8_t dpi_profile_index;
-		uint8_t bytes_after;
-		uint16_t dpi_step_value;
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-} __attribute((packed));
-
-union hyperx_dpi_config_packet {
-	struct {
-		enum hyperx_config_value dpi_cmd;
-		enum hyperx_dpi_config config_type;
-		uint8_t _padding[1];
-		uint8_t bytes_after;
-		union {
-			uint8_t enabled_dpi_profiles;
-			uint8_t selected_profile;
-		};
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-};
-
-struct hyperx_action {
-	uint8_t type;
-	uint8_t action;
-	uint8_t button_index;
-	struct ratbag_macro *macro;
-};
-
-union hyperx_button_packet {
-	struct {
-		enum hyperx_config_value button_cmd;
-		uint8_t button;
-		uint8_t action_type;
-		uint8_t bytes_after;
-		uint8_t action;
-		uint8_t unknown;
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-};
-
-struct hyperx_macro_event {
-	enum hyperx_macro_event_type event_type;
-	uint8_t modifier;
-	uint8_t keys[HYPERX_MACRO_EVENT_MAX_KEYS];
-	uint16_t delay_next_event;
-} __attribute__((packed));
-
-union hyperx_macro_data_packet {
-	struct {
-		enum hyperx_config_value macro_data_cmd;
-		uint8_t button_index;
-		uint8_t sum_value;
-		uint8_t event_count;
-		struct hyperx_macro_event events[HYPERX_MACRO_DATA_MAX_EVENTS];
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-};
-
-struct hyperx_macro {
-	int event_count;
-	union hyperx_macro_data_packet macro_packets[HYPERX_MAX_MACRO_PACKETS];
-};
-
-union hyperx_macro_assigment_packet {
-	struct {
-		enum hyperx_config_value macro_assign_cmd;
-		uint8_t button;
-		uint8_t _padding[1];
-		uint8_t bytes_after;
-		uint8_t event_count;
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-};
-
-union hyperx_save_settings_packet {
-	struct {
-		enum hyperx_config_value save_settings_cmd;
-		enum hyperx_save_type save_type;
-	};
-
-	uint8_t data[HYPERX_PACKET_SIZE];
-};
-
-struct hyperx_drv_data {
-	uint8_t enabled_dpi_profiles; // A 5-bit little-endian number, where the nth bit corresponds to profile n
-	uint8_t active_dpi_profile_index;
-};
+	if (!maxed_out)
+		log_bug_libratbag(res->profile->device->ratbag,
+			"%s: resolution range exceeds available space.\n",
+			res->profile->device->name);
+}
 
 static int
 hyperx_write(struct ratbag_device *device, uint8_t buf[HYPERX_PACKET_SIZE])
@@ -281,6 +68,64 @@ hyperx_write(struct ratbag_device *device, uint8_t buf[HYPERX_PACKET_SIZE])
 	//log_buf_debug(device->ratbag, "hyperx_write output report: ", buf, HYPERX_PACKET_SIZE);
 	//return 0;
 	return ratbag_hidraw_output_report(device, buf, HYPERX_PACKET_SIZE);
+}
+
+static bool
+hyperx_read_filter(uint8_t *buf, size_t len)
+{
+	return buf[0] == buf[-1];
+}
+
+// Request and read an input report
+static int
+hyperx_read(struct ratbag_device *device, struct hyperx_input_report *report)
+{
+	report->report_value = report->data[0];
+
+	int rc = ratbag_hidraw_output_report(device, report->data, HYPERX_PACKET_SIZE);
+	if (rc < 0) return rc;
+
+	return ratbag_hidraw_read_input_report(device, report->data,
+			HYPERX_PACKET_SIZE, hyperx_read_filter);
+}
+
+static struct ratbag_button_action
+hyperx_action_get_ratbag_button_action(struct hyperx_report_button_action *action)
+{
+	int type_mapping[] = {
+		[HYPERX_ACTION_TYPE_DISABLED] = RATBAG_BUTTON_ACTION_TYPE_NONE,
+		[HYPERX_ACTION_TYPE_MOUSE] = RATBAG_BUTTON_ACTION_TYPE_BUTTON,
+		[HYPERX_ACTION_TYPE_KEY] = RATBAG_BUTTON_ACTION_TYPE_KEY,
+		[HYPERX_ACTION_TYPE_DPI_TOGGLE] = RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
+		[HYPERX_ACTION_TYPE_MACRO] = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN,
+		[HYPERX_ACTION_TYPE_MEDIA] = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN,
+		[HYPERX_ACTION_TYPE_SHORTCUT] = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN,
+	};
+
+	struct ratbag_button_action button_action = {
+		.type = type_mapping[action->type]
+	};
+
+	switch (action->type) {
+		case HYPERX_ACTION_TYPE_DISABLED:
+			break;
+		case HYPERX_ACTION_TYPE_MOUSE:
+			button_action.action.button = action->action;
+			break;
+		case HYPERX_ACTION_TYPE_KEY:
+			button_action.action.key = ratbag_hidraw_get_keycode_from_keyboard_usage(NULL, action->action);
+			break;
+		case HYPERX_ACTION_TYPE_MACRO:
+		case HYPERX_ACTION_TYPE_MEDIA:
+		case HYPERX_ACTION_TYPE_SHORTCUT:
+		case HYPERX_ACTION_TYPE_INVALID:
+			break;
+		case HYPERX_ACTION_TYPE_DPI_TOGGLE:
+			button_action.action.special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP;
+			break;
+	}
+
+	return button_action;
 }
 
 static struct hyperx_action
@@ -297,10 +142,6 @@ hyperx_button_action_get_raw_action(struct ratbag_button *button)
 		[RATBAG_BUTTON_ACTION_TYPE_MACRO] = HYPERX_ACTION_TYPE_MACRO,
 	};
 
-	if (action.type == RATBAG_BUTTON_ACTION_TYPE_UNKNOWN) {
-		return (struct hyperx_action) {.type = HYPERX_ACTION_TYPE_UNKNOWN};
-	}
-
 	struct hyperx_action raw_action = {
 		.type = type_mapping[action.type],
 		.button_index = button->index
@@ -313,13 +154,13 @@ hyperx_button_action_get_raw_action(struct ratbag_button *button)
 		case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
 			raw_action.action = action.action.button;
 			if (raw_action.action >= device->num_buttons) {
-				raw_action.type = HYPERX_ACTION_TYPE_UNKNOWN;
+				raw_action.type = HYPERX_ACTION_TYPE_INVALID;
 			}
 
 			break;
 		case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 			if (action.action.special != RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP) {
-				raw_action.type = HYPERX_ACTION_TYPE_UNKNOWN;
+				raw_action.type = HYPERX_ACTION_TYPE_INVALID;
 			}
 
 			raw_action.action = HYPERX_ACTION_DPI_TOGGLE;
@@ -396,7 +237,7 @@ hyperx_write_dpi_configuration(struct ratbag_device *device, struct ratbag_profi
 	if (rc < 0) return rc;
 
 	buf.config_type = HYPERX_DPI_CONFIG_SELECTED_PROFILE;
-	buf.selected_profile = drv_data->active_dpi_profile_index;
+	buf.selected_profile = drv_data->selected_dpi_profile_index;
 
 	rc = hyperx_write(device, buf.data);
 	if (rc < 0) return rc;
@@ -421,7 +262,7 @@ hyperx_write_resolution(struct ratbag_resolution *resolution)
 	log_debug(device->ratbag, "\nChanging resolution %d\nEnabled profiles: %b\n", resolution->index, drv_data->enabled_dpi_profiles);
 
 	if (resolution->is_active) {
-		drv_data->active_dpi_profile_index = resolution->index;
+		drv_data->selected_dpi_profile_index = resolution->index;
 	}
 
 	union hyperx_dpi_profile_packet buf = {
@@ -429,7 +270,7 @@ hyperx_write_resolution(struct ratbag_resolution *resolution)
 		.value_type = HYPERX_DPI_CONFIG_DPI_VALUE,
 		.dpi_profile_index = resolution->index,
 		.bytes_after = sizeof(buf.dpi_step_value),
-		.dpi_step_value = htole16(ratbag_resolution_get_dpi(resolution) / 100),
+		.dpi_step_value = htole16(ratbag_resolution_get_dpi(resolution) / HYPERX_DPI_STEP),
 	};
 
 	_Static_assert_bytes_after(sizeof(buf.dpi_step_value) == 2);
@@ -472,7 +313,8 @@ static void hyperx_initialize_macro(struct hyperx_macro *macro, uint8_t button_i
 	}
 }
 
-static void hyperx_macro_event_add_key(struct hyperx_macro_event *event, unsigned int keycode,
+static void
+hyperx_macro_event_add_key(struct hyperx_macro_event *event, unsigned int keycode,
 	int *keys_down_count_ref, int *event_key_count_ref, int *event_index_ref)
 {
 	if (*keys_down_count_ref == 0) {
@@ -601,8 +443,6 @@ hyperx_get_macro_events(struct ratbag_device *device, struct ratbag_macro *macro
 static struct hyperx_macro *
 hyperx_parse_macro(struct ratbag_device *device, struct ratbag_macro *macro, uint8_t button_index)
 {
-	int packet_index = 0;
-	int event_index = 0;
 	int event_count = 0;
 
 	struct hyperx_macro *hyperx_macro = zalloc(sizeof(*hyperx_macro));
@@ -614,8 +454,8 @@ hyperx_parse_macro(struct ratbag_device *device, struct ratbag_macro *macro, uin
 	union hyperx_macro_data_packet *packet;
 
 	for (int i = 0; i < event_count; i++) {
-		packet_index = i / HYPERX_MACRO_DATA_MAX_EVENTS;
-		event_index = i % HYPERX_MACRO_DATA_MAX_EVENTS;
+		int packet_index = i / HYPERX_MACRO_DATA_MAX_EVENTS;
+		int event_index = i % HYPERX_MACRO_DATA_MAX_EVENTS;
 		packet = hyperx_macro->macro_packets + packet_index;
 
 		packet->events[event_index] = hyperx_events[i];
@@ -673,8 +513,10 @@ hyperx_write_button_action(struct ratbag_button *button)
 
 	log_debug(device->ratbag, "Changing action for button %d\n", button->index);
 
+	if (button->action.type == RATBAG_BUTTON_ACTION_TYPE_UNKNOWN) return 0;
+
 	struct hyperx_action action = hyperx_button_action_get_raw_action(button);
-	if (action.type == HYPERX_ACTION_TYPE_UNKNOWN) return -EINVAL;
+	if (action.type == HYPERX_ACTION_TYPE_INVALID) return 0;
 
 	if (action.type == HYPERX_ACTION_TYPE_MACRO) {
 		log_debug(device->ratbag, "Macro name: %s\n", button->action.macro->name);
@@ -716,7 +558,7 @@ hyperx_write_led(struct ratbag_led *led)
 	}
 
 	union hyperx_led_mode_packet led_mode = {
-		.led_mode_cmd = HYPERX_CONDIG_LED_MODE,
+		.led_mode_cmd = HYPERX_CONFIG_LED_MODE,
 		.bytes_after = HYPERX_BYTES_AFTER_LED_MODE,
 		.led_mode_value_before = HYPERX_LED_MODE_VALUE_BEFORE,
 		.led_mode = HYPERX_LED_MODE_SOLID,
@@ -730,10 +572,72 @@ hyperx_write_led(struct ratbag_led *led)
 	return 0;
 }
 
-/**
- * Reading settings from the mouse is not implemented, so we load default settings.
- */
-static void
+static int
+hyperx_read_settings(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct hyperx_drv_data *drv_data = ratbag_get_drv_data(device);
+	struct hyperx_device_settings_report *device_settings = &drv_data->device_settings;
+
+	const struct data_hyperx *device_data = ratbag_device_data_hyperx_get_data(device->data);
+
+	uint8_t *settings_member_address = drv_data->device_settings.settings_data;
+
+	device_settings->dpi_step_values = (uint16_t *) settings_member_address;
+	settings_member_address += sizeof(*device_settings->dpi_step_values) * device_data->dpi_count;
+
+	device_settings->dpi_indicator_colors = (struct hyperx_color *) settings_member_address;
+	settings_member_address += sizeof(*device_settings->dpi_indicator_colors) * device_data->dpi_count;
+
+	device_settings->button_actions = (struct hyperx_report_button_action *) settings_member_address;
+	settings_member_address += sizeof(*device_settings->button_actions) * device->num_buttons;
+
+	device_settings->polling_rate_index = settings_member_address;
+
+	device_settings->info_report_value = HYPERX_REPORT_DEVICE_INFO;
+	device_settings->info_type = HYPERX_REPORT_DEVICE_INFO_SETTINGS;
+
+	int rc = hyperx_read(device, (struct hyperx_input_report *) device_settings);
+	if (rc < 0) return rc;
+
+	struct hyperx_dpi_settings_report dpi_settings = {
+		.dpi_settings_report_value = HYPERX_RPEORT_DPI_SETTINGS
+	};
+
+	rc = hyperx_read(device, (struct hyperx_input_report *) &dpi_settings);
+	if (rc < 0) return rc;
+
+	drv_data->selected_dpi_profile_index = dpi_settings.selected_dpi_profile_index;
+	drv_data->enabled_dpi_profiles = dpi_settings.enabled_dpi_profiles;
+
+	return 0;
+}
+
+static inline void
+hyperx_read_resolution(struct ratbag_resolution *resolution) {
+	struct ratbag_device *device = resolution->profile->device;
+	struct hyperx_drv_data *drv_data = ratbag_get_drv_data(device);
+	const struct data_hyperx *device_data = ratbag_device_data_hyperx_get_data(device->data);
+
+	ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
+
+	hyperx_resolution_set_dpi_list_from_range(resolution,
+		device_data->dpi_range->min, device_data->dpi_range->max, device_data->dpi_range->step);
+
+	unsigned int dpi_step_value = le16toh(drv_data->device_settings.dpi_step_values[resolution->index]);
+	ratbag_resolution_set_dpi(resolution, dpi_step_value * HYPERX_DPI_STEP);
+
+	ratbag_resolution_set_disabled(resolution,
+		!hyperx_is_dpi_profile_enabled(drv_data->enabled_dpi_profiles, resolution->index));
+
+	if (resolution->index == drv_data->selected_dpi_profile_index) {
+		ratbag_resolution_set_active(resolution);
+	}
+
+	resolution->dirty = false;
+}
+
+static int
 hyperx_read_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
@@ -744,44 +648,22 @@ hyperx_read_profile(struct ratbag_profile *profile)
 
 	const struct data_hyperx *device_data = ratbag_device_data_hyperx_get_data(device->data);
 
-	struct ratbag_button_action default_actions[] = {
-		BUTTON_ACTION_BUTTON(1),
-		BUTTON_ACTION_BUTTON(2),
-		BUTTON_ACTION_BUTTON(3),
-		BUTTON_ACTION_BUTTON(4),
-		BUTTON_ACTION_BUTTON(5),
-		BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP),
-	};
-
-	const uint8_t default_enabled_dpi_profiles = 0b01111;
-	const int polling_rate = 1000;
-	const int dpi_levels[] = { 400, 800, 1600, 3200, 6000 };
+	int rc = hyperx_read_settings(profile);
+	if (rc < 0) return rc;
 
 	profile->is_active = true;
+	profile->is_active_dirty = false;
 
-	ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
+	//ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
 	ratbag_profile_set_report_rate_list(profile, device_data->rates,
 		device_data->nrates);
 
-	ratbag_profile_set_report_rate(profile, polling_rate);
-
-	drv_data->enabled_dpi_profiles = default_enabled_dpi_profiles;
-	drv_data->active_dpi_profile_index = 0;
+	ratbag_profile_set_report_rate(profile,
+		profile->rates[*drv_data->device_settings.polling_rate_index]);
+	profile->rate_dirty = false;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
-
-		ratbag_resolution_set_dpi_list_from_range(resolution,
-			device_data->dpi_range->min, device_data->dpi_range->max);
-		ratbag_resolution_set_dpi(resolution, dpi_levels[resolution->index]);
-
-		ratbag_resolution_set_disabled(resolution,
-			!hyperx_is_dpi_profile_enabled(default_enabled_dpi_profiles, resolution->index));
-
-		if (resolution->index == drv_data->active_dpi_profile_index) {
-			ratbag_resolution_set_active(resolution);
-			ratbag_resolution_set_default(resolution);
-		}
+		hyperx_read_resolution(resolution);
 	}
 
 	ratbag_profile_for_each_button(profile, button) {
@@ -791,8 +673,9 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 		ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
 
-		ratbag_button_set_action(button, default_actions + button->index);
-		button->dirty = true;
+		struct ratbag_button_action action = hyperx_action_get_ratbag_button_action(
+			&drv_data->device_settings.button_actions[button->index]);
+		ratbag_button_set_action(button, &action);
 	}
 
 	ratbag_profile_for_each_led(profile, led) {
@@ -800,13 +683,13 @@ hyperx_read_profile(struct ratbag_profile *profile)
 		ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 
 		ratbag_led_set_mode(led, RATBAG_LED_ON);
-		ratbag_led_set_color(led, (struct ratbag_color) {
-			.red = 0xff,
-			.green = 0,
-			.blue = 0
-		});
+		ratbag_led_set_color(led, (struct ratbag_color) {.red = 0xff});
 		ratbag_led_set_brightness(led, 0xff);
 	}
+
+	profile->dirty = false;
+
+	return 0;
 }
 
 static int
@@ -817,7 +700,10 @@ hyperx_probe(struct ratbag_device *device)
 	struct hyperx_drv_data *drv_data;
 
 	device_data = ratbag_device_data_hyperx_get_data(device->data);
-	assert(device_data->dpi_range != NULL && device_data->rates != NULL);
+	assert(device_data->dpi_range != NULL && "Invalid/missing value for DpiRange in device file");
+	assert(device_data->rates != NULL     && "Invalid/missing value for ReportRates in device file");
+	assert(device_data->button_count > 0  && "Invalid/missing value for Buttons in device file");
+	assert(device_data->dpi_count > 0     && "Invalid/missing value for Buttons in device file");
 
 	int rc = ratbag_open_hidraw(device);
 	if (rc) return rc;
@@ -838,7 +724,8 @@ hyperx_probe(struct ratbag_device *device)
 	ratbag_set_drv_data(device, drv_data);
 
 	ratbag_device_for_each_profile(device, profile) {
-		hyperx_read_profile(profile);
+		rc = hyperx_read_profile(profile);
+		if (rc < 0) return rc;
 	}
 
 	return 0;

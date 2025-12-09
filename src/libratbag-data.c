@@ -483,11 +483,11 @@ init_data_hyperx(struct ratbag *ratbag,
 	const char *group = "Driver/hyperx";
 	GError *error = NULL;
 
-	data->hyperx.profile_count = -1;
+	data->hyperx.profile_count = 1;
 	data->hyperx.button_count = -1;
 	data->hyperx.led_count = -1;
 	data->hyperx.dpi_count = -1;
-	data->hyperx.is_wireless = -1;
+	data->hyperx.is_wireless = 0;
 
 	int profiles = g_key_file_get_integer(keyfile, group, "Profiles", &error);
 	if (!error && profiles > 0)
@@ -513,7 +513,7 @@ init_data_hyperx(struct ratbag *ratbag,
 	g_clear_error(&error);
 
 	int dpis = g_key_file_get_integer(keyfile, group, "Dpis", &error);
-	if (!error && dpis >= 0)
+	if (!error && dpis > 0)
 		data->hyperx.dpi_count = dpis;
 	g_clear_error(&error);
 
@@ -523,7 +523,7 @@ init_data_hyperx(struct ratbag *ratbag,
 	g_clear_error(&error);
 
 	int wireless = g_key_file_get_integer(keyfile, group, "Wireless", &error);
-	if (!error && (wireless == 0 || wireless == 1))
+	if (!error && wireless == 1)
 		data->hyperx.is_wireless = wireless;
 	g_clear_error(&error);
 }
