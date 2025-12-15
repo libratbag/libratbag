@@ -260,6 +260,8 @@ def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) ->
             print(" " * level + f"Angle Snapping: {bool(profile.angle_snapping)}")
         if profile.debounce != -1:
             print(" " * level + f"Debounce time: {profile.debounce}ms")
+        if profile.charging_control != -1:
+            print(" " * level + f"Charging Enabled: {bool(profile.charging_control)}")
         if profile.buttons:
             for button in profile.buttons:
                 print_button(device, profile, button, level)
@@ -586,6 +588,19 @@ def func_resolution_enabled_set(ratbagd: Ratbagd, args: argparse.Namespace) -> N
     commit(device, args)
 
 
+def func_charging_control_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.charging_control == -1:
+        return
+    print(bool(profile.charging_control))
+
+
+def func_charging_control_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.charging_control = args.charging_control_s
+    commit(device, args)
+
+
 def func_profile_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     print_profile(device, profile, 0)
@@ -874,6 +889,10 @@ parser_def: List[RatbagParserSchemaElement] = [
                 },
                 {
                     of_type: link,
+                    dest: "charging_control",
+                },
+                {
+                    of_type: link,
                     dest: "button",
                 },
                 {
@@ -1151,6 +1170,38 @@ Debounce commands work on the given profile, or on the active profile if none is
                     },
                 ],
                 func: func_debounce_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "charging_control",
+        help_str: """Charging control information
+
+Charging control commands work on the given profile, or on the active profile if none is given.""",
+        tag: "charging_control",
+        group: "ChargingControl",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current charging control",
+                func: func_charging_control_get,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current charging control",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "charging_control_s",
+                        metavar: "S",
+                        help_str: "Charging enabled",
+                        arg_type: int,
+                    },
+                ],
+                func: func_charging_control_set,
             },
         ],
     },
