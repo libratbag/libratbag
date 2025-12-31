@@ -33,7 +33,6 @@
 #include "asus.h"
 #include "driver-sinowealth.h"
 #include "driver-steelseries.h"
-#include "driver-hyperx.h"
 #include "libratbag.h"
 #include "libratbag-private.h"
 #include "libratbag-data.h"

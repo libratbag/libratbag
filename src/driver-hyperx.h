@@ -308,18 +308,3 @@ struct hyperx_drv_data {
 	uint8_t selected_dpi_profile_index;
 	struct hyperx_device_settings_report device_settings;
 };
-
-struct data_hyperx {
-	int profile_count;
-	int button_count;
-	int led_count;
-	size_t nrates;
-	unsigned int *rates;
-	int dpi_count;
-	int is_wireless;
-	struct dpi_range *dpi_range;
-};
-
-const struct data_hyperx *
-ratbag_device_data_hyperx_get_data(const struct ratbag_device_data *data);
-

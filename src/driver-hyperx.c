@@ -32,6 +32,7 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "libratbag-data.h"
 
 #include "driver-hyperx.h"
 
