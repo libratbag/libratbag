@@ -564,13 +564,6 @@ asus_omni_identify_mouse(struct ratbag_device *device)
 	char signature[13] = {0};
 	memcpy(signature, &omni_rx_buf[5], 12);
 
-	log_debug(device->ratbag, "Omni mouse signature: '%s' (hex: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x)\n",
-		  signature,
-		  omni_rx_buf[5], omni_rx_buf[6], omni_rx_buf[7],
-		  omni_rx_buf[8], omni_rx_buf[9], omni_rx_buf[10],
-		  omni_rx_buf[11], omni_rx_buf[12], omni_rx_buf[13],
-		  omni_rx_buf[14], omni_rx_buf[15], omni_rx_buf[16]);
-
 	/* Match device name based on signature prefix */
 	const char *device_name = NULL;
 
@@ -635,8 +628,6 @@ asus_omni_identify_mouse(struct ratbag_device *device)
 		/* Default fallback - could not identify specific model */
 		device_name = "Unknown ASUS Omni Device";
 	}
-
-	log_debug(device->ratbag, "Omni receiver identified device: %s\n", device_name);
 
 	return strdup(device_name);
 }
