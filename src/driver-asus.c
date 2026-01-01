@@ -515,10 +515,25 @@ asus_driver_probe(struct ratbag_device *device)
 	struct ratbag_button *button;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
+	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
+
 
 	rc = ratbag_open_hidraw(device);
 	if (rc)
 		return rc;
+
+
+	/* Identify actual mouse if using ASUS Omni receiver */
+	if (quirks & ASUS_QUIRK_OMNI_RECEIVER) {
+		char *actual_name = asus_omni_identify_mouse(device);
+		if (actual_name) {
+			free(device->name);
+			device->name = actual_name;
+			log_info(device->ratbag, "ASUS Omni receiver identified device: %s\n", device->name);
+		} else {
+			log_error(device->ratbag, "Failed to identify mouse on ASUS Omni receiver\n");
+		}
+	}
 
 	rc = asus_get_profile_data(device, &profile_data);
 	if (rc) {

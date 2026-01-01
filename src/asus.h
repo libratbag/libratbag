@@ -13,6 +13,7 @@
 #define ASUS_QUIRK_SEPARATE_XY_DPI 1 << 4
 #define ASUS_QUIRK_SEPARATE_LEDS 1 << 5
 #define ASUS_QUIRK_BUTTONS_SECONDARY 1 << 6
+#define ASUS_QUIRK_OMNI_RECEIVER 1 << 7
 
 #define ASUS_PACKET_SIZE 64
 #define ASUS_BUTTON_ACTION_TYPE_KEY 0  /* keyboard key */
@@ -270,3 +271,7 @@ int
 asus_set_led(struct ratbag_device *device,
 		uint8_t index, uint8_t mode, uint8_t brightness,
 		struct ratbag_color color);
+
+/* ASUS Omni Receiver */
+char *
+asus_omni_identify_mouse(struct ratbag_device *device);
