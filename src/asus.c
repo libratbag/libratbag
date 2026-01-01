@@ -141,13 +141,13 @@ asus_query(struct ratbag_device *device,
 	int rc;
 	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
 	uint8_t omni_tx_buf[ASUS_PACKET_SIZE];
-    	uint8_t omni_rx_buf[ASUS_PACKET_SIZE];
+	uint8_t omni_rx_buf[ASUS_PACKET_SIZE];
 
 	if (quirks & ASUS_QUIRK_OMNI_RECEIVER) {
 		memset(omni_tx_buf, 0, ASUS_PACKET_SIZE);
-        omni_tx_buf[0] = 0x03;
-       		memcpy(omni_tx_buf + 1, request->raw, ASUS_PACKET_SIZE - 1);
-        	rc = ratbag_hidraw_output_report(device, omni_tx_buf, ASUS_PACKET_SIZE);
+	omni_tx_buf[0] = 0x03;
+		memcpy(omni_tx_buf + 1, request->raw, ASUS_PACKET_SIZE - 1);
+		rc = ratbag_hidraw_output_report(device, omni_tx_buf, ASUS_PACKET_SIZE);
 	} else {
 		rc = ratbag_hidraw_output_report(device, request->raw, ASUS_PACKET_SIZE);
 	}
@@ -158,9 +158,9 @@ asus_query(struct ratbag_device *device,
 
 	if (quirks & ASUS_QUIRK_OMNI_RECEIVER) {
 		rc = ratbag_hidraw_read_input_report(device, omni_rx_buf, ASUS_PACKET_SIZE, NULL);
-        	if (rc >= 0) {
-            	memcpy(response->raw, omni_rx_buf + 1, ASUS_PACKET_SIZE - 1);
-        	}
+		if (rc >= 0) {
+		memcpy(response->raw, omni_rx_buf + 1, ASUS_PACKET_SIZE - 1);
+		}
 	} else {
 		rc = ratbag_hidraw_read_input_report(device, response->raw, ASUS_PACKET_SIZE, NULL);
 		if (rc < 0)
