@@ -1,0 +1,12 @@
+[Device]
+Name=SteelSeries Rival 110
+DeviceMatch=usb:1038:1729
+Driver=steelseries
+DeviceType=mouse
+
+[Driver/steelseries]
+DeviceVersion=1
+Buttons=6
+Leds=1
+DpiRange=200:7200@100
+MacroLength=1
