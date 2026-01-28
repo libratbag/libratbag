@@ -1805,6 +1805,7 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900	0x03
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915	0x04
 #define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X	0x05
+#define HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2	0x07
 #define HIDPP20_ONBOARD_PROFILES_MACRO_TYPE_G402	0x01
 
 #define HIDPP20_USER_PROFILES_G402			0x0000
@@ -2225,7 +2226,8 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X) &&
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
@@ -2262,7 +2264,17 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 		return rc;
 
 	onboard_mode = rc;
-	if (onboard_mode != HIDPP20_ONBOARD_MODE) {
+	if (info.profile_format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/* GPXSL2 devices lack writable user profile sectors;
+		   onboard mode would read empty profiles and disable
+		   physical buttons.  Force host mode. */
+		if (onboard_mode != HIDPP20_HOST_MODE) {
+			rc = hidpp20_onboard_profiles_set_onboard_mode(device,
+								       HIDPP20_HOST_MODE);
+			if (rc < 0)
+				return rc;
+		}
+	} else if (onboard_mode != HIDPP20_ONBOARD_MODE) {
 		hidpp_log_raw(&device->base,
 			      "not on the correct mode: %d.\n",
 			      onboard_mode);
@@ -2294,6 +2306,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	profiles->has_g_shift = (info.mechanical_layout & 0x03) == 0x02;
 	profiles->has_dpi_shift = ((info.mechanical_layout & 0x0c) >> 2) == 0x02;
 	profiles->active_profile_index = active_profile_index;
+	profiles->profile_format_id = info.profile_format_id;
 	switch(info.various_info & 0x07) {
 	case 1:
 		profiles->corded = 1;
@@ -2750,8 +2763,15 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 	profile->powersave_timeout = pdata->profile.powersave_timeout;
 	profile->poweroff_timeout = pdata->profile.poweroff_timeout;
 
-	for (i = 0; i < 5; i++) {
-		profile->dpi[i] = get_unaligned_le_u16(&data[2 * i + 3]);
+	if (profiles_list->profile_format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/* 0x07 format: 5 bytes per DPI entry [LOD, X_lo, X_hi, Y_lo, Y_hi] */
+		for (i = 0; i < 5; i++) {
+			profile->dpi[i] = get_unaligned_le_u16(&data[5 * i + 4]);
+		}
+	} else {
+		for (i = 0; i < 5; i++) {
+			profile->dpi[i] = get_unaligned_le_u16(&data[2 * i + 3]);
+		}
 	}
 
 	for (i = 0; i < profiles_list->num_leds; i++)
@@ -2802,11 +2822,20 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 						  profiles->sector_size,
 						  data);
 
-	if (rc && device->quirk == HIDPP20_QUIRK_G305) {
-		/* The G305 has a bug where it throws an ERR_INVALID_ARGUMENT
-		   if the sector has not been written to yet. If this happens
-		   we will read the ROM profiles.*/
+	if (rc && (device->quirk == HIDPP20_QUIRK_G305 ||
+		   profiles->profile_format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2)) {
+		/* Some devices (G305, PRO X 2) throw ERR_INVALID_ARGUMENT
+		   when the user profile sector has not been written to.
+		   Fall back to ROM profiles and switch to host mode so the
+		   device does not try to use the empty onboard profiles
+		   (which would disable physical buttons). */
 		read_userdata = false;
+		rc = hidpp20_onboard_profiles_set_onboard_mode(device,
+							       HIDPP20_HOST_MODE);
+		if (rc < 0)
+			hidpp_log_error(&device->base,
+					"failed to switch to host mode (%d)\n",
+					rc);
 		goto read_profiles;
 	}
 
@@ -2944,7 +2973,21 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
 	pdata = (union hidpp20_internal_profile *)data;
 
-	memset(data, 0xff, profiles_list->sector_size);
+	if (profiles_list->profile_format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/*
+		 * Format 0x07 has 5-byte DPI entries containing LOD data
+		 * that libratbag doesn't track. Read the current sector
+		 * first to preserve those bytes, falling back to 0xff.
+		 */
+		rc = hidpp20_onboard_profiles_read_sector(device,
+							  sector,
+							  sector_size,
+							  data);
+		if (rc < 0)
+			memset(data, 0xff, sector_size);
+	} else {
+		memset(data, 0xff, sector_size);
+	}
 
 	pdata->profile.report_rate = 1000 / profile->report_rate;
 	pdata->profile.default_dpi = profile->default_dpi;
@@ -2953,8 +2996,20 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	pdata->profile.powersave_timeout = profile->powersave_timeout;
 	pdata->profile.poweroff_timeout = profile->poweroff_timeout;
 
-	for (i = 0; i < 5; i++) {
-		pdata->profile.dpi[i] = hidpp_cpu_to_le_u16(profile->dpi[i]);
+	if (profiles_list->profile_format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPXSL2) {
+		/*
+		 * Format 0x07: 5 bytes per DPI entry at offset 3.
+		 * Layout: [LOD, X_lo, X_hi, Y_lo, Y_hi]
+		 * LOD is preserved from the read. X and Y are set equal.
+		 */
+		for (i = 0; i < 5; i++) {
+			set_unaligned_le_u16(&data[5 * i + 4], profile->dpi[i]);
+			set_unaligned_le_u16(&data[5 * i + 6], profile->dpi[i]);
+		}
+	} else {
+		for (i = 0; i < 5; i++) {
+			pdata->profile.dpi[i] = hidpp_cpu_to_le_u16(profile->dpi[i]);
+		}
 	}
 
 	for (i = 0; i < profiles_list->num_leds; i++)
