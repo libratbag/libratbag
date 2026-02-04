@@ -1,0 +1,11 @@
+[Device]
+Name=Glorious Model O Eternal
+DeviceMatch=usb:3794:a000
+Driver=sinowealth
+DeviceType=mouse
+
+[Driver/sinowealth/devices/1009]
+ButtonCount=6
+LedType=RGB
+DeviceName=Glorious Model O Eternal
+SensorType=PMW3360
