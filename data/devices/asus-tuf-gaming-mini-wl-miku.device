@@ -1,0 +1,14 @@
+[Device]
+Name=ASUS TUF GAMING MINI WL MOUSE MIKU
+DeviceMatch=usb:0b05:1c56;usb:0b05:1c57
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=5
+Buttons=8
+Leds=1
+Dpis=4
+Wireless=1
+DpiRange=100:12000@100
+Quirks=SEPARATE_XY_DPI;RAW_BRIGHTNESS
