@@ -1,0 +1,12 @@
+[Device]
+Name=ASUS TUF GAMING M4 AIR
+DeviceMatch=usb:0b05:1a03
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=6
+Leds=0
+Dpis=4
+DpiRange=100:16000@100
