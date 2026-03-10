@@ -1,5 +1,6 @@
 /*
- * Copyright © 2025 AttackTS contributors
+ * Copyright © 2026 HarukaYamamoto0 (reverse engineering)
+ * Copyright © 2026 kmavrov (libratbag C driver)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,8 +25,8 @@
 /*
  * Driver for the Attack Shark X11 gaming mouse (wired and wireless 2.4GHz).
  *
- * Protocol reverse-engineered from the AttackTS TypeScript driver:
- *   https://github.com/ilievsoft4/AttackTS
+ * Protocol reverse-engineered from the HarukaYamamoto0 (https://github.com/HarukaYamamoto0) TypeScript driver:
+ *   https://github.com/HarukaYamamoto0/attack-shark-x11-driver
  *
  * The device exposes 4 HID interfaces. Configuration is done through
  * Interface 2 (hidraw, vendor-specific) via HID SET_FEATURE reports.
@@ -76,10 +77,8 @@
 
 /* ── Timing ──────────────────────────────────────────────────────────────── */
 
-/* Firmware stops responding if packets arrive faster than ~250 ms apart.
- * We use 60 ms here which is safe in practice and avoids slowing down
- * the commit unnecessarily. Increase if your device locks up. */
-#define ATTACKSHARK_TRANSFER_DELAY_US   60000u
+/* Firmware stops responding if packets arrive faster than ~250 ms apart. */
+#define ATTACKSHARK_TRANSFER_DELAY_US   250000u
 
 /* ── Firmware action codes (used in the button-mapping packet) ───────────── */
 
