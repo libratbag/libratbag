@@ -670,7 +670,7 @@ attackshark_build_prefs_packet(uint8_t *buf, size_t bufsz,
 	/* Fixed deep sleep of 10 minutes and sleep timer of 0.5 min.
 	 * These are not yet exposed via a ratbag API; use sensible defaults. */
 	const unsigned int deep_sleep_min = 10;
-	const unsigned int sleep_min_half = 1;  /* 0.5 min → value 1 */
+	const unsigned int sleep_min_half = 4;  /* 0.5 min → value 1 */
 
 	uint8_t led_speed = attackshark_ms_to_led_speed(drv->led_ms);
 	uint8_t hw_speed  = (uint8_t)(6 - led_speed);
