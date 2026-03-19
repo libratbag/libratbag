@@ -112,6 +112,7 @@ hidpp20_get_quirk_string(enum hidpp20_quirk quirk)
 	CASE_RETURN_STRING(HIDPP20_QUIRK_G602);
 	CASE_RETURN_STRING(HIDPP20_QUIRK_G502X_PLUS);
 	CASE_RETURN_STRING(HIDPP20_QUIRK_INDEX_OFFSET);
+	CASE_RETURN_STRING(HIDPP20_QUIRK_G733);
 	}
 
 	abort();
@@ -2982,8 +2983,16 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 
 	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
 	if (rc < 0) {
-		hidpp_log_error(&device->base, "failed to write profile\n");
-		return rc;
+		/* Some G733 firmware (USB ID 046d:0afe) returns ERR_LOGITECH_INTERNAL
+		 * for GET_INFO even though the hardware has 2 LED zones. Fall back to
+		 * probing the known zone count so LEDs are still exposed. */
+		if (device->quirk == HIDPP20_QUIRK_G733) {
+			hidpp_log_debug(&device->base,
+					"GET_INFO failed, using G733 hardcoded zone count of 2\n");
+			ledinfo.zone_count = 2;
+		} else {
+			return rc;
+		}
 	}
 
 	return 0;
