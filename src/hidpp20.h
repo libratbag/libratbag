@@ -58,6 +58,7 @@ enum hidpp20_quirk {
 	HIDPP20_QUIRK_G602 = (1 << 1),
 	HIDPP20_QUIRK_G502X_PLUS = (1 << 2), // G502X+ uses 2nd LED slot instead of 1st.
 	HIDPP20_QUIRK_INDEX_OFFSET = (1 << 3), // Device returns 1-indexed profile, decrement by 1.
+	HIDPP20_QUIRK_G733 = (1 << 4), // Device returns ERR_LOGITECH_INTERNAL for GET_INFO even though the hardware has 2 LED zones.
 };
 
 struct hidpp20_device {
