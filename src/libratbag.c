@@ -236,13 +236,52 @@ ratbag_device_destroy(struct ratbag_device *device)
 	free(device);
 }
 
+static bool
+ratbag_sanity_check_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct ratbag *ratbag = device->ratbag;
+	struct ratbag_resolution *resolution;
+	unsigned int vals[300];
+	unsigned int nvals = ARRAY_LENGTH(vals);
+	unsigned int nres;
+
+	nres = ratbag_profile_get_num_resolutions(profile);
+	if (nres > 16) {
+		log_bug_libratbag(ratbag,
+				  "%s: invalid number of resolutions (%d)\n",
+				  device->name,
+				  nres);
+		return false;
+	}
+
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		nvals = ratbag_resolution_get_dpi_list(resolution, vals, nvals);
+		if (nvals == 0) {
+			log_bug_libratbag(ratbag,
+					  "%s: invalid dpi list\n",
+					  device->name);
+			return false;
+		}
+	}
+
+	nvals = ratbag_profile_get_report_rate_list(profile, vals, nvals);
+	if (nvals == 0) {
+		log_bug_libratbag(ratbag,
+				  "%s: invalid report rate list\n",
+				  device->name);
+		return false;
+	}
+
+	return true;
+}
+
 static inline bool
 ratbag_sanity_check_device(struct ratbag_device *device)
 {
 	struct ratbag *ratbag = device->ratbag;
 	struct ratbag_profile *profile = NULL;
 	bool has_active = false;
-	unsigned int nres;
 	bool rc = false;
 
 	/* arbitrary number: max 16 profiles, does any mouse have more? but
@@ -257,10 +296,6 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 	}
 
 	ratbag_device_for_each_profile(device, profile) {
-		struct ratbag_resolution *resolution;
-		unsigned int vals[300];
-		unsigned int nvals = ARRAY_LENGTH(vals);
-
 		/* Allow max 1 active profile */
 		if (profile->is_active) {
 			if (has_active) {
@@ -272,33 +307,13 @@ ratbag_sanity_check_device(struct ratbag_device *device)
 			has_active = true;
 		}
 
-		nres = ratbag_profile_get_num_resolutions(profile);
-		if (nres > 16) {
-				log_bug_libratbag(ratbag,
-						  "%s: invalid number of resolutions (%d)\n",
-						  device->name,
-						  nres);
-				goto out;
-		}
+		/* Skip data validation for profiles not yet loaded by
+		 * drivers that support lazy loading via read_profile. */
+		if (!profile->loaded && device->driver->read_profile)
+			continue;
 
-		ratbag_profile_for_each_resolution(profile, resolution) {
-			nvals = ratbag_resolution_get_dpi_list(resolution, vals, nvals);
-			if (nvals == 0) {
-				log_bug_libratbag(ratbag,
-						  "%s: invalid dpi list\n",
-						  device->name);
-				goto out;
-			}
-
-		}
-
-		nvals = ratbag_profile_get_report_rate_list(profile, vals, nvals);
-		if (nvals == 0) {
-			log_bug_libratbag(ratbag,
-					  "%s: invalid report rate list\n",
-					  device->name);
+		if (!ratbag_sanity_check_profile(profile))
 			goto out;
-		}
 
 		if (profile->dirty) {
 			log_bug_libratbag(ratbag,
@@ -805,6 +820,38 @@ ratbag_profile_set_enabled(struct ratbag_profile *profile, bool enabled)
 	profile->dirty = true;
 
 	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_profile_load(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+
+	if (profile->loaded)
+		return 0;
+
+	if (!device->driver->read_profile) {
+		profile->loaded = true;
+		return 0;
+	}
+
+	int rc = device->driver->read_profile(profile);
+	if (rc) {
+		log_error(device->ratbag,
+			  "Failed to load profile %d: %d\n",
+			  profile->index, rc);
+		return rc;
+	}
+
+	if (!ratbag_sanity_check_profile(profile)) {
+		log_error(device->ratbag,
+			  "Profile %d failed sanity check after loading\n",
+			  profile->index);
+		return -EINVAL;
+	}
+
+	profile->loaded = true;
+	return 0;
 }
 
 LIBRATBAG_EXPORT bool

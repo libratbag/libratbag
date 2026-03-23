@@ -62,6 +62,11 @@ struct ratbagd_profile {
 	struct ratbagd_led **leds;
 };
 
+static int ratbagd_profile_ensure_loaded(struct ratbagd_profile *profile)
+{
+	return ratbag_profile_load(profile->lib_profile);
+}
+
 static int ratbagd_profile_find_resolution(sd_bus *bus,
 					   const char *path,
 					   const char *interface,
@@ -73,6 +78,8 @@ static int ratbagd_profile_find_resolution(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	unsigned int index = 0;
 	int r;
+
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	r = sd_bus_path_decode_many(path,
 				    RATBAGD_OBJ_ROOT "/resolution/%/p%/r%",
@@ -227,6 +234,8 @@ static int ratbagd_profile_find_button(sd_bus *bus,
 	unsigned int index = 0;
 	int r;
 
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
+
 	r = sd_bus_path_decode_many(path,
 				    RATBAGD_OBJ_ROOT "/button/%/p%/b%",
 				    NULL,
@@ -257,6 +266,8 @@ static int ratbagd_profile_find_led(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	unsigned int index = 0;
 	int r;
+
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	r = sd_bus_path_decode_many(path,
 				    RATBAGD_OBJ_ROOT "/led/%/p%/l%",
@@ -379,6 +390,7 @@ ratbagd_profile_set_name(sd_bus *bus,
 	int r;
 
 	CHECK_CALL(sd_bus_message_read(m, "s", &name));
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	r = ratbag_profile_set_name(profile->lib_profile, name);
 
@@ -405,6 +417,8 @@ ratbagd_profile_get_name(sd_bus *bus,
 			 sd_bus_error *error)
 {
 	struct ratbagd_profile *profile = userdata;
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
+
 	const char *name = ratbag_profile_get_name(profile->lib_profile);
 	_cleanup_free_ char *utf8 = NULL;
 
@@ -472,6 +486,8 @@ ratbagd_profile_get_report_rate(sd_bus *bus,
 	struct ratbag_profile *lib_profile = profile->lib_profile;
 	int rate;
 
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
+
 	rate = ratbag_profile_get_report_rate(lib_profile);
 	verify_unsigned_int(rate);
 	return sd_bus_message_append(reply, "u", rate);
@@ -490,6 +506,8 @@ ratbagd_profile_get_angle_snapping(sd_bus *bus,
 	struct ratbag_profile *lib_profile = profile->lib_profile;
 	int value;
 
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
+
 	value = ratbag_profile_get_angle_snapping(lib_profile);
 	return sd_bus_message_append(reply, "i", value);
 }
@@ -506,6 +524,8 @@ ratbagd_profile_get_debounce(sd_bus *bus,
 	struct ratbagd_profile *profile = userdata;
 	struct ratbag_profile *lib_profile = profile->lib_profile;
 	int value;
+
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	value = ratbag_profile_get_debounce(lib_profile);
 	return sd_bus_message_append(reply, "i", value);
@@ -529,6 +549,8 @@ ratbagd_profile_get_report_rates(sd_bus *bus,
 	r = sd_bus_message_open_container(reply, 'a', "u");
 	if (r < 0)
 		return r;
+
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	nrates = ratbag_profile_get_report_rate_list(lib_profile,
 						     rates, nrates);
@@ -562,6 +584,8 @@ ratbagd_profile_get_debounces(sd_bus *bus,
 	r = sd_bus_message_open_container(reply, 'a', "u");
 	if (r < 0)
 		return r;
+
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	ndebounces = ratbag_profile_get_debounce_list(lib_profile, debounces, ndebounces);
 	assert(ndebounces <= ARRAY_LENGTH(debounces));
@@ -600,6 +624,8 @@ ratbagd_profile_set_report_rate(sd_bus *bus,
 		rate = 8000;
 	}
 
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
+
 	r = ratbag_profile_set_report_rate(profile->lib_profile, rate);
 	if (r == 0) {
 		sd_bus_emit_properties_changed(bus,
@@ -630,6 +656,8 @@ ratbagd_profile_set_angle_snapping(sd_bus *bus,
 	r = sd_bus_message_read(m, "i", &value);
 	if (r < 0)
 		return r;
+
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	r = ratbag_profile_set_angle_snapping(profile->lib_profile, value);
 	if (r == 0) {
@@ -662,6 +690,8 @@ ratbagd_profile_set_debounce(sd_bus *bus,
 	r = sd_bus_message_read(m, "i", &value);
 	if (r < 0)
 		return r;
+
+	CHECK_CALL(ratbagd_profile_ensure_loaded(profile));
 
 	r = ratbag_profile_set_debounce(profile->lib_profile, value);
 	if (r == 0) {
