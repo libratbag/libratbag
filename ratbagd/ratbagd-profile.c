@@ -697,22 +697,28 @@ ratbagd_profile_get_debounces(sd_bus *bus,
 {
 	struct ratbagd_profile *profile = userdata;
 	struct ratbag_profile *lib_profile = profile->lib_profile;
-	unsigned int debounces[8];
-	unsigned int ndebounces = ARRAY_LENGTH(debounces);
+	unsigned int dummy;
+	unsigned int ndebounces;
 	int r;
 
 	r = sd_bus_message_open_container(reply, 'a', "u");
 	if (r < 0)
 		return r;
 
-	ndebounces = ratbag_profile_get_debounce_list(lib_profile, debounces, ndebounces);
-	assert(ndebounces <= ARRAY_LENGTH(debounces));
+	ndebounces = ratbag_profile_get_debounce_list(lib_profile, &dummy, 1);
+	if (ndebounces > 0) {
+		unsigned int *debounces = zalloc(ndebounces * sizeof(*debounces));
+		ratbag_profile_get_debounce_list(lib_profile, debounces, ndebounces);
 
-	for (unsigned int i = 0; i < ndebounces; i++) {
-		verify_unsigned_int(debounces[i]);
-		r = sd_bus_message_append(reply, "u", debounces[i]);
-		if (r < 0)
-			return r;
+		for (unsigned int i = 0; i < ndebounces; i++) {
+			verify_unsigned_int(debounces[i]);
+			r = sd_bus_message_append(reply, "u", debounces[i]);
+			if (r < 0) {
+				free(debounces);
+				return r;
+			}
+		}
+		free(debounces);
 	}
 
 	return sd_bus_message_close_container(reply);

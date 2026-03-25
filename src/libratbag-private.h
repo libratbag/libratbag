@@ -288,7 +288,7 @@ struct ratbag_profile {
 
 	int debounce;	/**< debounce time in ms */
 	bool debounce_dirty;
-	unsigned int debounces[8];	/**< debounce times available */
+	unsigned int *debounces;	/**< debounce times available */
 	size_t ndebounces;		/**< number of entries in debounces */
 
 	double lod;		/**< lift off distance in mm */
@@ -578,14 +578,12 @@ ratbag_profile_set_debounce_list(struct ratbag_profile *profile,
 				 const unsigned int *values,
 				 size_t nvalues)
 {
-	assert(nvalues <= ARRAY_LENGTH(profile->debounces));
-	_Static_assert(sizeof(*values) == sizeof(*profile->debounces), "Mismatching size");
+	for (size_t i = 1; i < nvalues; i++)
+		assert(values[i] > values[i - 1]);
 
-	for (size_t i = 0; i < nvalues; i++) {
-		profile->debounces[i] = values[i];
-		if (i > 0)
-			assert(values[i] > values[i - 1]);
-	}
+	free(profile->debounces);
+	profile->debounces = zalloc(nvalues * sizeof(*profile->debounces));
+	memcpy(profile->debounces, values, nvalues * sizeof(*values));
 	profile->ndebounces = nvalues;
 }
 
