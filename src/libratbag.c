@@ -753,6 +753,7 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 		ratbag_resolution_destroy(res);
 
 	free(profile->name);
+	free(profile->debounces);
 
 	list_remove(&profile->link);
 	free(profile);
