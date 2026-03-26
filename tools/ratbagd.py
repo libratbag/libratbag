@@ -439,6 +439,7 @@ class RatbagdProfile(_RatbagdDBus):
         super().__init__("Profile", object_path)
         self._active = self._get_dbus_property("IsActive")
         self._angle_snapping = self._get_dbus_property("AngleSnapping")
+        self._motion_sync = self._get_dbus_property("MotionSync")
         self._debounce = self._get_dbus_property("Debounce")
         self._lod = self._get_dbus_property("Lod")
         self._dirty = self._get_dbus_property("IsDirty")
@@ -478,6 +479,16 @@ class RatbagdProfile(_RatbagdDBus):
             if angle_snapping != self._angle_snapping:
                 self._angle_snapping = angle_snapping
                 self.notify("angle-snapping")
+
+        try:
+            motion_sync = changed_props["MotionSync"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if motion_sync != self._motion_sync:
+                self._motion_sync = motion_sync
+                self.notify("motion-sync")
 
         try:
             debounce = changed_props["Debounce"]
@@ -613,6 +624,19 @@ class RatbagdProfile(_RatbagdDBus):
         @param value The angle snapping option as int
         """
         self._set_dbus_property("AngleSnapping", "i", value)
+
+    @GObject.Property
+    def motion_sync(self):
+        """The motion sync option."""
+        return self._motion_sync
+
+    @motion_sync.setter
+    def motion_sync(self, value):
+        """Set the motion sync option.
+
+        @param value The motion sync option as int
+        """
+        self._set_dbus_property("MotionSync", "i", value)
 
     @GObject.Property
     def debounce(self):

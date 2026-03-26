@@ -284,6 +284,15 @@ org.freedesktop.ratbag1.Profile
         indicate that the device doesn't support reading and/or writing this
         value.
 
+.. attribute:: MotionSync
+
+        :type: i
+        :flags: read-write, mutable
+
+        Sensor motion sync boolean value as an int (1 or 0), or `-1` to
+        indicate that the device doesn't support reading and/or writing this
+        value.
+
 .. attribute:: Debounce
 
         :type: i

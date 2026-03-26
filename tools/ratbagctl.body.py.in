@@ -258,6 +258,8 @@ def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) ->
                 print_resolution(device, profile, resolution, level + 2)
         if profile.angle_snapping != -1:
             print(" " * level + f"Angle Snapping: {bool(profile.angle_snapping)}")
+        if profile.motion_sync != -1:
+            print(" " * level + f"Motion Sync: {bool(profile.motion_sync)}")
         if profile.debounce != -1:
             print(" " * level + f"Debounce time: {profile.debounce}ms")
         if profile.lod != -1:
@@ -507,6 +509,19 @@ def func_angle_snapping_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_angle_snapping_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.angle_snapping = 1 if args.angle_snapping_n else 0
+    commit(device, args)
+
+
+def func_motion_sync_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.motion_sync == -1:
+        return
+    print(bool(profile.motion_sync))
+
+
+def func_motion_sync_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.motion_sync = 1 if args.motion_sync_n else 0
     commit(device, args)
 
 
@@ -1138,6 +1153,38 @@ Angle snapping commands work on the given profile, or on the active profile if n
                     },
                 ],
                 func: func_angle_snapping_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "motion_sync",
+        help_str: """Motion sync information
+
+Motion sync commands work on the given profile, or on the active profile if none is given.""",
+        tag: "motion_sync",
+        group: "MotionSync",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current motion sync",
+                func: func_motion_sync_get,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current motion sync to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "motion_sync_n",
+                        metavar: "N",
+                        help_str: "The motion sync to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_motion_sync_set,
             },
         ],
     },

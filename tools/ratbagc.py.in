@@ -448,6 +448,19 @@ class RatbagdProfile(metaclass=MetaRatbag):
         libratbag.ratbag_profile_set_angle_snapping(self._profile, value)
 
     @property
+    def motion_sync(self):
+        """The motion sync option."""
+        return libratbag.ratbag_profile_get_motion_sync(self._profile)
+
+    @motion_sync.setter
+    def motion_sync(self, value):
+        """Set the motion sync option.
+
+        @param value The motion sync option as bool
+        """
+        libratbag.ratbag_profile_set_motion_sync(self._profile, value)
+
+    @property
     def debounce(self):
         """The debounce time in ms."""
         return libratbag.ratbag_profile_get_debounce(self._profile)

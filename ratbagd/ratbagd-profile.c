@@ -495,6 +495,23 @@ ratbagd_profile_get_angle_snapping(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_get_motion_sync(sd_bus *bus,
+				const char *path,
+				const char *interface,
+				const char *property,
+				sd_bus_message *reply,
+				void *userdata,
+				sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	int value;
+
+	value = ratbag_profile_get_motion_sync(lib_profile);
+	return sd_bus_message_append(reply, "i", value);
+}
+
+static int
 ratbagd_profile_get_debounce(sd_bus *bus,
 			     const char *path,
 			     const char *interface,
@@ -701,6 +718,38 @@ ratbagd_profile_set_angle_snapping(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_set_motion_sync(sd_bus *bus,
+				const char *path,
+				const char *interface,
+				const char *property,
+				sd_bus_message *m,
+				void *userdata,
+				sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	int value;
+	int r;
+
+	r = sd_bus_message_read(m, "i", &value);
+	if (r < 0)
+		return r;
+
+	r = ratbag_profile_set_motion_sync(profile->lib_profile, value);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "MotionSync",
+					       NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
+	}
+
+	return 0;
+}
+
+static int
 ratbagd_profile_set_debounce(sd_bus *bus,
 			     const char *path,
 			     const char *interface,
@@ -787,6 +836,10 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_WRITABLE_PROPERTY("AngleSnapping", "i",
 				 ratbagd_profile_get_angle_snapping,
 				 ratbagd_profile_set_angle_snapping, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("MotionSync", "i",
+				 ratbagd_profile_get_motion_sync,
+				 ratbagd_profile_set_motion_sync, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_WRITABLE_PROPERTY("Debounce", "i",
 				 ratbagd_profile_get_debounce,

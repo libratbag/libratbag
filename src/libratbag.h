@@ -817,6 +817,37 @@ ratbag_profile_get_angle_snapping(const struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
+ * Set the motion sync option for the profile.
+ *
+ * A value of 0 disables the mode.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Motion sync value
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_motion_sync(struct ratbag_profile *profile,
+			       int value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the motion sync option for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Motion sync value
+ */
+int
+ratbag_profile_get_motion_sync(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
  * Set the debounce time in ms for the profile.
  *
  * If the profile mode is the currently active profile,
