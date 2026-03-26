@@ -7,7 +7,7 @@ Name=SteelSeries Aerox 9 Wireless
 
 [Driver/steelseries]
 Buttons=0
-DeviceVersion=4
+DeviceVersion=5
 DpiRange=100:18000@100
-Leds=0
+Leds=3
 MacroLength=0
