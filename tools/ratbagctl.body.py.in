@@ -260,6 +260,8 @@ def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) ->
             print(" " * level + f"Angle Snapping: {bool(profile.angle_snapping)}")
         if profile.debounce != -1:
             print(" " * level + f"Debounce time: {profile.debounce}ms")
+        if profile.lod != -1:
+            print(" " * level + f"Lift off distance: {profile.lod}mm")
         if profile.buttons:
             for button in profile.buttons:
                 print_button(device, profile, button, level)
@@ -524,6 +526,25 @@ def func_debounce_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_debounce_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.debounce = args.debounce_n
+    commit(device, args)
+
+
+def func_lod_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.lod == -1:
+        return
+    print(profile.lod)
+
+
+def func_lod_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    values = profile.lods
+    print(" ".join([str(x) for x in values]))
+
+
+def func_lod_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.lod = args.lod_n
     commit(device, args)
 
 
@@ -874,6 +895,10 @@ parser_def: List[RatbagParserSchemaElement] = [
                 },
                 {
                     of_type: link,
+                    dest: "lod",
+                },
+                {
+                    of_type: link,
                     dest: "button",
                 },
                 {
@@ -1151,6 +1176,44 @@ Debounce commands work on the given profile, or on the active profile if none is
                     },
                 ],
                 func: func_debounce_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "lod",
+        help_str: """Access lift off distance information
+
+LOD commands work on the given profile, or on the active profile if none is given.""",
+        tag: "lod",
+        group: "Lift Off Distance",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current lift off distance",
+                func: func_lod_get,
+            },
+            {
+                of_type: command,
+                name: "get-all",
+                help_str: "Show all available lift off distances",
+                func: func_lod_get_all,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current lift off distance to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "lod_n",
+                        metavar: "N",
+                        help_str: "The lift off distance to set as current",
+                        arg_type: float,
+                    },
+                ],
+                func: func_lod_set,
             },
         ],
     },

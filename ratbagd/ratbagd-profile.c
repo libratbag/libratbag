@@ -512,6 +512,60 @@ ratbagd_profile_get_debounce(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_get_lod(sd_bus *bus,
+			const char *path,
+			const char *interface,
+			const char *property,
+			sd_bus_message *reply,
+			void *userdata,
+			sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	double value;
+
+	value = ratbag_profile_get_lod(lib_profile);
+	return sd_bus_message_append(reply, "d", value);
+}
+
+static int
+ratbagd_profile_get_lods(sd_bus *bus,
+			 const char *path,
+			 const char *interface,
+			 const char *property,
+			 sd_bus_message *reply,
+			 void *userdata,
+			 sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	double dummy;
+	unsigned int nlods;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "d");
+	if (r < 0)
+		return r;
+
+	nlods = ratbag_profile_get_lod_list(lib_profile, &dummy, 1);
+	if (nlods > 0) {
+		double *lods = zalloc(nlods * sizeof(*lods));
+		ratbag_profile_get_lod_list(lib_profile, lods, nlods);
+
+		for (unsigned int i = 0; i < nlods; i++) {
+			r = sd_bus_message_append(reply, "d", lods[i]);
+			if (r < 0) {
+				free(lods);
+				return r;
+			}
+		}
+		free(lods);
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
+static int
 ratbagd_profile_get_report_rates(sd_bus *bus,
 				 const char *path,
 				 const char *interface,
@@ -678,6 +732,37 @@ ratbagd_profile_set_debounce(sd_bus *bus,
 	return 0;
 }
 
+static int
+ratbagd_profile_set_lod(sd_bus *bus,
+			const char *path,
+			const char *interface,
+			const char *property,
+			sd_bus_message *m,
+			void *userdata,
+			sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	double value;
+	int r;
+
+	r = sd_bus_message_read(m, "d", &value);
+	if (r < 0)
+		return r;
+
+	r = ratbag_profile_set_lod(profile->lib_profile, value);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "Lod", NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
+	}
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_WRITABLE_PROPERTY("Name", "s",
@@ -709,6 +794,11 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ReportRates", "au", ratbagd_profile_get_report_rates, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Debounces", "au", ratbagd_profile_get_debounces, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_WRITABLE_PROPERTY("Lod", "d",
+				 ratbagd_profile_get_lod,
+				 ratbagd_profile_set_lod, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("Lods", "ad", ratbagd_profile_get_lods, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };

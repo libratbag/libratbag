@@ -468,6 +468,49 @@ class RatbagdProfile(metaclass=MetaRatbag):
         return values[:n]
 
     @property
+<<<<<<< Updated upstream
+=======
+    def lod(self):
+        """The lift off distance in mm."""
+        return libratbag.ratbag_profile_get_lod(self._profile)
+
+    @lod.setter
+    def lod(self, value):
+        """Set the lift off distance in mm.
+
+        @param value The new lift off distance, as float
+        """
+        libratbag.ratbag_profile_set_lod(self._profile, value)
+
+    @property
+    def lods(self):
+        """The list of supported lift off distances"""
+        values = [0.0 for i in range(300)]
+        n = libratbag.ratbag_profile_get_lod_list(self._profile, values)
+        return values[:n]
+
+    @property
+    def autosleep(self):
+        """The autosleep timeout in seconds."""
+        return libratbag.ratbag_profile_get_autosleep(self._profile)
+
+    @autosleep.setter
+    def autosleep(self, value):
+        """Set the autosleep timeout in seconds.
+
+        @param value The new autosleep timeout, as int
+        """
+        libratbag.ratbag_profile_set_autosleep(self._profile, value)
+
+    @property
+    def autosleeps(self):
+        """The list of supported autosleep timeouts"""
+        values = [0 for i in range(300)]
+        n = libratbag.ratbag_profile_get_autosleep_list(self._profile, values)
+        return values[:n]
+
+    @property
+>>>>>>> Stashed changes
     def resolutions(self):
         """A list of RatbagdResolution objects with this profile's resolutions.
         Note that the list of resolutions differs between profiles but the number

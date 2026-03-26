@@ -440,6 +440,7 @@ class RatbagdProfile(_RatbagdDBus):
         self._active = self._get_dbus_property("IsActive")
         self._angle_snapping = self._get_dbus_property("AngleSnapping")
         self._debounce = self._get_dbus_property("Debounce")
+        self._lod = self._get_dbus_property("Lod")
         self._dirty = self._get_dbus_property("IsDirty")
         self._disabled = self._get_dbus_property("Disabled")
         self._report_rate = self._get_dbus_property("ReportRate")
@@ -487,6 +488,16 @@ class RatbagdProfile(_RatbagdDBus):
             if debounce != self._debounce:
                 self._debounce = debounce
                 self.notify("debounce")
+
+        try:
+            lod = changed_props["Lod"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if lod != self._lod:
+                self._lod = lod
+                self.notify("lod")
 
         try:
             disabled = changed_props["Disabled"]
@@ -620,6 +631,24 @@ class RatbagdProfile(_RatbagdDBus):
     def debounces(self):
         """The list of supported debounce times"""
         return self._get_dbus_property("Debounces") or []
+
+    @GObject.Property
+    def lod(self):
+        """The lift off distance in mm."""
+        return self._lod
+
+    @lod.setter
+    def lod(self, value):
+        """Set the lift off distance in mm.
+
+        @param value The lift off distance, as float
+        """
+        self._set_dbus_property("Lod", "d", value)
+
+    @GObject.Property
+    def lods(self):
+        """The list of supported lift off distances"""
+        return self._get_dbus_property("Lods") or []
 
     @GObject.Property
     def resolutions(self):

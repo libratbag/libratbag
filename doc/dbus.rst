@@ -306,6 +306,27 @@ org.freedesktop.ratbag1.Profile
         This list may be empty if the device does not support reading and/or
         writing the debounce time.
 
+.. attribute:: Lod
+
+        :type: d
+        :flags: read-write, mutable
+
+        Sensor lift off distance in mm as a double, or `-1` to indicate that
+        the device doesn't support reading and/or writing this value. This
+        distance must be one of those listed in :attr:`Lods`.
+
+.. attribute:: Lods
+
+        :type: ad
+        :flags: read-write, constant
+
+        A list of permitted lift off distances. Values in this list may be
+        used in the :attr:`Lod` property. This list is always sorted
+        ascending, the lowest lift off distance is the first item in the list.
+
+        This list may be empty if the device does not support reading and/or
+        writing the lift off distance.
+
 .. attribute:: ReportRate
 
         :type: u

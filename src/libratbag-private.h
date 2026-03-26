@@ -275,6 +275,11 @@ struct ratbag_profile {
 	unsigned int debounces[8];	/**< debounce times available */
 	size_t ndebounces;		/**< number of entries in debounces */
 
+	double lod;		/**< lift off distance in mm */
+	bool lod_dirty;
+	double *lods;		/**< lift off distances available */
+	size_t nlods;		/**< number of entries in lods */
+
 	unsigned int num_resolutions;
 
 	bool is_active;		/**< profile is the currently active one */
@@ -561,6 +566,20 @@ ratbag_profile_set_debounce_list(struct ratbag_profile *profile,
 			assert(values[i] > values[i - 1]);
 	}
 	profile->ndebounces = nvalues;
+}
+
+static inline void
+ratbag_profile_set_lod_list(struct ratbag_profile *profile,
+			    const double *values,
+			    size_t nvalues)
+{
+	for (size_t i = 1; i < nvalues; i++)
+		assert(values[i] > values[i - 1]);
+
+	free(profile->lods);
+	profile->lods = zalloc(nvalues * sizeof(*profile->lods));
+	memcpy(profile->lods, values, nvalues * sizeof(*values));
+	profile->nlods = nvalues;
 }
 
 static inline void

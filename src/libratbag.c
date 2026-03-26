@@ -684,6 +684,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->name = NULL;
 	profile->angle_snapping = -1;
 	profile->debounce = -1;
+	profile->lod = -1;
 
 	list_append(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
@@ -753,6 +754,7 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 		ratbag_resolution_destroy(res);
 
 	free(profile->name);
+	free(profile->lods);
 
 	list_remove(&profile->link);
 	free(profile);
@@ -867,6 +869,7 @@ ratbag_device_commit(struct ratbag_device *device)
 
 		profile->angle_snapping_dirty = false;
 		profile->debounce_dirty = false;
+		profile->lod_dirty = false;
 		profile->rate_dirty = false;
 
 		list_for_each(button, &profile->buttons, link)
@@ -1148,6 +1151,43 @@ ratbag_profile_get_debounce_list(const struct ratbag_profile *profile,
 	       sizeof(unsigned int) * min(ndebounces, profile->ndebounces));
 
 	return profile->ndebounces;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_profile_set_lod(struct ratbag_profile *profile,
+		       double value)
+{
+	if (profile->lod != value) {
+		profile->lod = value;
+		profile->dirty = true;
+		profile->lod_dirty = true;
+	}
+
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT double
+ratbag_profile_get_lod(const struct ratbag_profile *profile)
+{
+	return profile->lod;
+}
+
+LIBRATBAG_EXPORT size_t
+ratbag_profile_get_lod_list(const struct ratbag_profile *profile,
+			    double *lods,
+			    size_t nlods)
+{
+	_Static_assert(sizeof(*lods) == sizeof(*profile->lods), "type mismatch");
+
+	assert(nlods > 0);
+
+	if (profile->nlods == 0)
+		return 0;
+
+	memcpy(lods, profile->lods,
+	       sizeof(double) * min(nlods, profile->nlods));
+
+	return profile->nlods;
 }
 
 LIBRATBAG_EXPORT size_t

@@ -870,6 +870,59 @@ ratbag_profile_get_debounce_list(const struct ratbag_profile *profile,
 /**
  * @ingroup profile
  *
+ * Set the lift off distance in mm for the profile.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Lift off distance in mm
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_lod(struct ratbag_profile *profile,
+		       double value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the lift off distance in mm for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Lift off distance for this profile in mm
+ */
+double
+ratbag_profile_get_lod(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Get the number of lift off distances in mm available for this profile.
+ * The list of lift off distances is sorted in ascending order but may be
+ * filtered by libratbag and does not necessarily reflect all values supported
+ * by the physical device.
+ *
+ * This function writes at most nlods values but returns the number of
+ * lift off distances available on this profile. In other words, if it returns
+ * a number larger than nlods, call it again with an array the size of the
+ * return value.
+ *
+ * @param[out] lods Set to the supported lift off distances in ascending order
+ * @param[in] nlods The number of elements
+ *
+ * @return The number of valid items in values. If the returned value
+ * is larger than nlods, the list was truncated.
+ */
+size_t
+ratbag_profile_get_lod_list(const struct ratbag_profile *profile,
+			    double *lods,
+			    size_t nlods);
+
+/**
+ * @ingroup profile
+ *
  * Get the number of @ref ratbag_resolution available in this profile. A
  * resolution mode is a tuple of (resolution, report rate), each mode can be
  * fetched with ratbag_profile_get_resolution().
