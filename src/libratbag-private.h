@@ -273,6 +273,9 @@ struct ratbag_profile {
 	int motion_sync;
 	bool motion_sync_dirty;
 
+	int ripple_control;
+	bool ripple_control_dirty;
+
 	int debounce;	/**< debounce time in ms */
 	bool debounce_dirty;
 	unsigned int debounces[8];	/**< debounce times available */

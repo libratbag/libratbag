@@ -440,6 +440,7 @@ class RatbagdProfile(_RatbagdDBus):
         self._active = self._get_dbus_property("IsActive")
         self._angle_snapping = self._get_dbus_property("AngleSnapping")
         self._motion_sync = self._get_dbus_property("MotionSync")
+        self._ripple_control = self._get_dbus_property("RippleControl")
         self._debounce = self._get_dbus_property("Debounce")
         self._lod = self._get_dbus_property("Lod")
         self._dirty = self._get_dbus_property("IsDirty")
@@ -489,6 +490,16 @@ class RatbagdProfile(_RatbagdDBus):
             if motion_sync != self._motion_sync:
                 self._motion_sync = motion_sync
                 self.notify("motion-sync")
+
+        try:
+            ripple_control = changed_props["RippleControl"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if ripple_control != self._ripple_control:
+                self._ripple_control = ripple_control
+                self.notify("ripple-control")
 
         try:
             debounce = changed_props["Debounce"]
@@ -637,6 +648,19 @@ class RatbagdProfile(_RatbagdDBus):
         @param value The motion sync option as int
         """
         self._set_dbus_property("MotionSync", "i", value)
+
+    @GObject.Property
+    def ripple_control(self):
+        """The ripple control option."""
+        return self._ripple_control
+
+    @ripple_control.setter
+    def ripple_control(self, value):
+        """Set the ripple control option.
+
+        @param value The ripple control option as int
+        """
+        self._set_dbus_property("RippleControl", "i", value)
 
     @GObject.Property
     def debounce(self):

@@ -260,6 +260,8 @@ def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) ->
             print(" " * level + f"Angle Snapping: {bool(profile.angle_snapping)}")
         if profile.motion_sync != -1:
             print(" " * level + f"Motion Sync: {bool(profile.motion_sync)}")
+        if profile.ripple_control != -1:
+            print(" " * level + f"Ripple Control: {bool(profile.ripple_control)}")
         if profile.debounce != -1:
             print(" " * level + f"Debounce time: {profile.debounce}ms")
         if profile.lod != -1:
@@ -522,6 +524,19 @@ def func_motion_sync_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_motion_sync_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.motion_sync = 1 if args.motion_sync_n else 0
+    commit(device, args)
+
+
+def func_ripple_control_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.ripple_control == -1:
+        return
+    print(bool(profile.ripple_control))
+
+
+def func_ripple_control_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.ripple_control = 1 if args.ripple_control_n else 0
     commit(device, args)
 
 
@@ -1185,6 +1200,38 @@ Motion sync commands work on the given profile, or on the active profile if none
                     },
                 ],
                 func: func_motion_sync_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "ripple_control",
+        help_str: """Ripple control information
+
+Ripple control commands work on the given profile, or on the active profile if none is given.""",
+        tag: "ripple_control",
+        group: "RippleControl",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current ripple control",
+                func: func_ripple_control_get,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current ripple control to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "ripple_control_n",
+                        metavar: "N",
+                        help_str: "The ripple control to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_ripple_control_set,
             },
         ],
     },

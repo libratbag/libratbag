@@ -684,6 +684,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->name = NULL;
 	profile->angle_snapping = -1;
 	profile->motion_sync = -1;
+	profile->ripple_control = -1;
 	profile->debounce = -1;
 	profile->lod = -1;
 
@@ -1083,6 +1084,19 @@ ratbag_profile_set_motion_sync(struct ratbag_profile *profile,
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_profile_set_ripple_control(struct ratbag_profile *profile,
+				  int value)
+{
+	if (profile->ripple_control != value) {
+		profile->ripple_control = value;
+		profile->dirty = true;
+		profile->ripple_control_dirty = true;
+	}
+
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_profile_set_debounce(struct ratbag_profile *profile,
 			    int value)
 {
@@ -1147,6 +1161,12 @@ LIBRATBAG_EXPORT int
 ratbag_profile_get_motion_sync(const struct ratbag_profile *profile)
 {
 	return profile->motion_sync;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_profile_get_ripple_control(const struct ratbag_profile *profile)
+{
+	return profile->ripple_control;
 }
 
 LIBRATBAG_EXPORT int

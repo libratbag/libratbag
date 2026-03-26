@@ -461,6 +461,19 @@ class RatbagdProfile(metaclass=MetaRatbag):
         libratbag.ratbag_profile_set_motion_sync(self._profile, value)
 
     @property
+    def ripple_control(self):
+        """The ripple control option."""
+        return libratbag.ratbag_profile_get_ripple_control(self._profile)
+
+    @ripple_control.setter
+    def ripple_control(self, value):
+        """Set the ripple control option.
+
+        @param value The ripple control option as bool
+        """
+        libratbag.ratbag_profile_set_ripple_control(self._profile, value)
+
+    @property
     def debounce(self):
         """The debounce time in ms."""
         return libratbag.ratbag_profile_get_debounce(self._profile)
