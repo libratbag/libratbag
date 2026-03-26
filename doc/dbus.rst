@@ -345,6 +345,28 @@ org.freedesktop.ratbag1.Profile
         This list may be empty if the device does not support reading and/or
         writing the lift off distance.
 
+.. attribute:: Autosleep
+
+        :type: i
+        :flags: read-write, mutable
+
+        Int for the autosleep timeout in seconds assigned to this profile.
+        This time must be one of those listed in :attr:`Autosleeps`, or ``-1``
+        to indicate that changing the autosleep timeout for this device is not
+        allowed.
+
+.. attribute:: Autosleeps
+
+        :type: au
+        :flags: read-write, constant
+
+        A list of permitted autosleep timeouts. Values in this list may be
+        used in the :attr:`Autosleep` property. This list is always sorted
+        ascending, the lowest autosleep timeout is the first item in the list.
+
+        This list may be empty if the device does not support reading and/or
+        writing the autosleep timeout.
+
 .. attribute:: ReportRate
 
         :type: u

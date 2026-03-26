@@ -266,6 +266,8 @@ def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) ->
             print(" " * level + f"Debounce time: {profile.debounce}ms")
         if profile.lod != -1:
             print(" " * level + f"Lift off distance: {profile.lod}mm")
+        if profile.autosleep != -1:
+            print(" " * level + f"Autosleep: {profile.autosleep}s")
         if profile.buttons:
             for button in profile.buttons:
                 print_button(device, profile, button, level)
@@ -575,6 +577,25 @@ def func_lod_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_lod_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.lod = args.lod_n
+    commit(device, args)
+
+
+def func_autosleep_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.autosleep == -1:
+        return
+    print(profile.autosleep)
+
+
+def func_autosleep_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    values = profile.autosleeps
+    print(" ".join([str(x) for x in values]))
+
+
+def func_autosleep_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.autosleep = args.autosleep_n
     commit(device, args)
 
 
@@ -926,6 +947,10 @@ parser_def: List[RatbagParserSchemaElement] = [
                 {
                     of_type: link,
                     dest: "lod",
+                },
+                {
+                    of_type: link,
+                    dest: "autosleep",
                 },
                 {
                     of_type: link,
@@ -1308,6 +1333,44 @@ LOD commands work on the given profile, or on the active profile if none is give
                     },
                 ],
                 func: func_lod_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "autosleep",
+        help_str: """Access autosleep timeout information
+
+Autosleep commands work on the given profile, or on the active profile if none is given.""",
+        tag: "autosleep",
+        group: "Autosleep",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current autosleep timeout",
+                func: func_autosleep_get,
+            },
+            {
+                of_type: command,
+                name: "get-all",
+                help_str: "Show all available autosleep timeouts",
+                func: func_autosleep_get_all,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current autosleep timeout to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "autosleep_n",
+                        metavar: "N",
+                        help_str: "The autosleep timeout in seconds to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_autosleep_set,
             },
         ],
     },

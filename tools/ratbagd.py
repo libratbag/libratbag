@@ -443,6 +443,7 @@ class RatbagdProfile(_RatbagdDBus):
         self._ripple_control = self._get_dbus_property("RippleControl")
         self._debounce = self._get_dbus_property("Debounce")
         self._lod = self._get_dbus_property("Lod")
+        self._autosleep = self._get_dbus_property("Autosleep")
         self._dirty = self._get_dbus_property("IsDirty")
         self._disabled = self._get_dbus_property("Disabled")
         self._report_rate = self._get_dbus_property("ReportRate")
@@ -520,6 +521,16 @@ class RatbagdProfile(_RatbagdDBus):
             if lod != self._lod:
                 self._lod = lod
                 self.notify("lod")
+
+        try:
+            autosleep = changed_props["Autosleep"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if autosleep != self._autosleep:
+                self._autosleep = autosleep
+                self.notify("autosleep")
 
         try:
             disabled = changed_props["Disabled"]
@@ -697,6 +708,24 @@ class RatbagdProfile(_RatbagdDBus):
     def lods(self):
         """The list of supported lift off distances"""
         return self._get_dbus_property("Lods") or []
+
+    @GObject.Property
+    def autosleep(self):
+        """The autosleep timeout in seconds."""
+        return self._autosleep
+
+    @autosleep.setter
+    def autosleep(self, value):
+        """Set the autosleep timeout in seconds.
+
+        @param value The autosleep timeout, as int
+        """
+        self._set_dbus_property("Autosleep", "i", value)
+
+    @GObject.Property
+    def autosleeps(self):
+        """The list of supported autosleep timeouts"""
+        return self._get_dbus_property("Autosleeps") or []
 
     @GObject.Property
     def resolutions(self):

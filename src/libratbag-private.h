@@ -286,6 +286,11 @@ struct ratbag_profile {
 	double *lods;		/**< lift off distances available */
 	size_t nlods;		/**< number of entries in lods */
 
+	int autosleep;		/**< autosleep timeout in seconds */
+	bool autosleep_dirty;
+	unsigned int *autosleeps;	/**< autosleep timeouts available */
+	size_t nautosleeps;		/**< number of entries in autosleeps */
+
 	unsigned int num_resolutions;
 
 	bool is_active;		/**< profile is the currently active one */
@@ -586,6 +591,20 @@ ratbag_profile_set_lod_list(struct ratbag_profile *profile,
 	profile->lods = zalloc(nvalues * sizeof(*profile->lods));
 	memcpy(profile->lods, values, nvalues * sizeof(*values));
 	profile->nlods = nvalues;
+}
+
+static inline void
+ratbag_profile_set_autosleep_list(struct ratbag_profile *profile,
+				  const unsigned int *values,
+				  size_t nvalues)
+{
+	for (size_t i = 1; i < nvalues; i++)
+		assert(values[i] > values[i - 1]);
+
+	free(profile->autosleeps);
+	profile->autosleeps = zalloc(nvalues * sizeof(*profile->autosleeps));
+	memcpy(profile->autosleeps, values, nvalues * sizeof(*values));
+	profile->nautosleeps = nvalues;
 }
 
 static inline void

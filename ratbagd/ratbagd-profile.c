@@ -600,6 +600,60 @@ ratbagd_profile_get_lods(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_get_autosleep(sd_bus *bus,
+			      const char *path,
+			      const char *interface,
+			      const char *property,
+			      sd_bus_message *reply,
+			      void *userdata,
+			      sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	int value;
+
+	value = ratbag_profile_get_autosleep(lib_profile);
+	return sd_bus_message_append(reply, "i", value);
+}
+
+static int
+ratbagd_profile_get_autosleeps(sd_bus *bus,
+			       const char *path,
+			       const char *interface,
+			       const char *property,
+			       sd_bus_message *reply,
+			       void *userdata,
+			       sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	unsigned int dummy;
+	unsigned int nautosleeps;
+	int r;
+
+	r = sd_bus_message_open_container(reply, 'a', "u");
+	if (r < 0)
+		return r;
+
+	nautosleeps = ratbag_profile_get_autosleep_list(lib_profile, &dummy, 1);
+	if (nautosleeps > 0) {
+		unsigned int *autosleeps = zalloc(nautosleeps * sizeof(*autosleeps));
+		ratbag_profile_get_autosleep_list(lib_profile, autosleeps, nautosleeps);
+
+		for (unsigned int i = 0; i < nautosleeps; i++) {
+			r = sd_bus_message_append(reply, "u", autosleeps[i]);
+			if (r < 0) {
+				free(autosleeps);
+				return r;
+			}
+		}
+		free(autosleeps);
+	}
+
+	return sd_bus_message_close_container(reply);
+}
+
+static int
 ratbagd_profile_get_report_rates(sd_bus *bus,
 				 const char *path,
 				 const char *interface,
@@ -861,6 +915,37 @@ ratbagd_profile_set_lod(sd_bus *bus,
 	return 0;
 }
 
+static int
+ratbagd_profile_set_autosleep(sd_bus *bus,
+			      const char *path,
+			      const char *interface,
+			      const char *property,
+			      sd_bus_message *m,
+			      void *userdata,
+			      sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	int value;
+	int r;
+
+	r = sd_bus_message_read(m, "i", &value);
+	if (r < 0)
+		return r;
+
+	r = ratbag_profile_set_autosleep(profile->lib_profile, value);
+	if (r == 0) {
+		sd_bus *bus = sd_bus_message_get_bus(m);
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "Autosleep", NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
+	}
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_WRITABLE_PROPERTY("Name", "s",
@@ -905,6 +990,11 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 				 ratbagd_profile_set_lod, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Lods", "ad", ratbagd_profile_get_lods, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_WRITABLE_PROPERTY("Autosleep", "i",
+				 ratbagd_profile_get_autosleep,
+				 ratbagd_profile_set_autosleep, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("Autosleeps", "au", ratbagd_profile_get_autosleeps, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("SetActive", "", "u", ratbagd_profile_set_active, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END,
 };

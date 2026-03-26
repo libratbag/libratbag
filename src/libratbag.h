@@ -985,6 +985,59 @@ ratbag_profile_get_lod_list(const struct ratbag_profile *profile,
 /**
  * @ingroup profile
  *
+ * Set the autosleep timeout in seconds for the profile.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Autosleep timeout in seconds
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_autosleep(struct ratbag_profile *profile,
+			     int value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the autosleep timeout in seconds for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Autosleep timeout for this profile in seconds
+ */
+int
+ratbag_profile_get_autosleep(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Get the number of autosleep timeouts in seconds available for this profile.
+ * The list of autosleep timeouts is sorted in ascending order but may be
+ * filtered by libratbag and does not necessarily reflect all values supported
+ * by the physical device.
+ *
+ * This function writes at most nautosleeps values but returns the number of
+ * autosleep timeouts available on this profile. In other words, if it returns
+ * a number larger than nautosleeps, call it again with an array the size of
+ * the return value.
+ *
+ * @param[out] autosleeps Set to the supported autosleep timeouts in ascending order
+ * @param[in] nautosleeps The number of elements
+ *
+ * @return The number of valid items in values. If the returned value
+ * is larger than nautosleeps, the list was truncated.
+ */
+size_t
+ratbag_profile_get_autosleep_list(const struct ratbag_profile *profile,
+				  unsigned int *autosleeps,
+				  size_t nautosleeps);
+
+/**
+ * @ingroup profile
+ *
  * Get the number of @ref ratbag_resolution available in this profile. A
  * resolution mode is a tuple of (resolution, report rate), each mode can be
  * fetched with ratbag_profile_get_resolution().

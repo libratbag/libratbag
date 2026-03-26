@@ -687,6 +687,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->ripple_control = -1;
 	profile->debounce = -1;
 	profile->lod = -1;
+	profile->autosleep = -1;
 
 	list_append(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
@@ -757,6 +758,7 @@ ratbag_profile_destroy(struct ratbag_profile *profile)
 
 	free(profile->name);
 	free(profile->lods);
+	free(profile->autosleeps);
 
 	list_remove(&profile->link);
 	free(profile);
@@ -872,6 +874,7 @@ ratbag_device_commit(struct ratbag_device *device)
 		profile->angle_snapping_dirty = false;
 		profile->debounce_dirty = false;
 		profile->lod_dirty = false;
+		profile->autosleep_dirty = false;
 		profile->rate_dirty = false;
 
 		list_for_each(button, &profile->buttons, link)
@@ -1228,6 +1231,43 @@ ratbag_profile_get_lod_list(const struct ratbag_profile *profile,
 	       sizeof(double) * min(nlods, profile->nlods));
 
 	return profile->nlods;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_profile_set_autosleep(struct ratbag_profile *profile,
+			     int value)
+{
+	if (profile->autosleep != value) {
+		profile->autosleep = value;
+		profile->dirty = true;
+		profile->autosleep_dirty = true;
+	}
+
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_profile_get_autosleep(const struct ratbag_profile *profile)
+{
+	return profile->autosleep;
+}
+
+LIBRATBAG_EXPORT size_t
+ratbag_profile_get_autosleep_list(const struct ratbag_profile *profile,
+				  unsigned int *autosleeps,
+				  size_t nautosleeps)
+{
+	_Static_assert(sizeof(*autosleeps) == sizeof(*profile->autosleeps), "type mismatch");
+
+	assert(nautosleeps > 0);
+
+	if (profile->nautosleeps == 0)
+		return 0;
+
+	memcpy(autosleeps, profile->autosleeps,
+	       sizeof(unsigned int) * min(nautosleeps, profile->nautosleeps));
+
+	return profile->nautosleeps;
 }
 
 LIBRATBAG_EXPORT size_t
