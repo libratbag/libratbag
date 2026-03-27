@@ -216,6 +216,26 @@ test_read_profile(struct ratbag_profile *profile)
 		profile->name = strdup(p->name);
 	}
 
+	profile->angle_snapping = p->angle_snapping;
+	profile->motion_sync = p->motion_sync;
+	profile->ripple_control = p->ripple_control;
+	profile->debounce = p->debounce;
+	profile->lod = p->lod;
+	profile->autosleep = p->autosleep;
+
+	if (p->ndebounces > 0)
+		ratbag_profile_set_debounce_list(profile,
+						 p->debounces,
+						 p->ndebounces);
+	if (p->nlods > 0)
+		ratbag_profile_set_lod_list(profile,
+					    p->lods,
+					    p->nlods);
+	if (p->nautosleeps > 0)
+		ratbag_profile_set_autosleep_list(profile,
+						  p->autosleeps,
+						  p->nautosleeps);
+
 	for (i = 0; i < ARRAY_LENGTH(p->caps) && p->caps[i]; i++) {
 		ratbag_profile_set_cap(profile, p->caps[i]);
 	}

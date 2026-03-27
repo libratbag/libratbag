@@ -83,6 +83,19 @@ struct ratbag_test_profile {
 
 	int hz;
 	unsigned int report_rates[5];
+
+	int angle_snapping;
+	int motion_sync;
+	int ripple_control;
+	int debounce;
+	unsigned int debounces[8];
+	size_t ndebounces;
+	double lod;
+	double lods[8];
+	size_t nlods;
+	int autosleep;
+	unsigned int autosleeps[8];
+	size_t nautosleeps;
 };
 
 struct ratbag_test_device {

@@ -964,6 +964,230 @@ START_TEST(device_leds_set)
 }
 END_TEST
 
+START_TEST(device_motion_sync)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].motion_sync = 1;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_motion_sync(p);
+	ck_assert_int_eq(val, 1);
+
+	ratbag_profile_set_motion_sync(p, 0);
+	val = ratbag_profile_get_motion_sync(p);
+	ck_assert_int_eq(val, 0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_ripple_control)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].ripple_control = 1;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_ripple_control(p);
+	ck_assert_int_eq(val, 1);
+
+	ratbag_profile_set_ripple_control(p, 0);
+	val = ratbag_profile_get_ripple_control(p);
+	ck_assert_int_eq(val, 0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_lod_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	double val;
+	double lods[8];
+	size_t nlods;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].lod = 2.0;
+	td.profiles[0].lods[0] = 1.0;
+	td.profiles[0].lods[1] = 2.0;
+	td.profiles[0].lods[2] = 3.0;
+	td.profiles[0].nlods = 3;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_lod(p);
+	ck_assert(val == 2.0);
+
+	nlods = ratbag_profile_get_lod_list(p, lods, ARRAY_LENGTH(lods));
+	ck_assert_int_eq(nlods, 3);
+	ck_assert(lods[0] == 1.0);
+	ck_assert(lods[1] == 2.0);
+	ck_assert(lods[2] == 3.0);
+
+	ratbag_profile_set_lod(p, 3.0);
+	val = ratbag_profile_get_lod(p);
+	ck_assert(val == 3.0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_autosleep_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+	unsigned int sleeps[8];
+	size_t nsleeps;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].autosleep = 60;
+	td.profiles[0].autosleeps[0] = 30;
+	td.profiles[0].autosleeps[1] = 60;
+	td.profiles[0].autosleeps[2] = 120;
+	td.profiles[0].nautosleeps = 3;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_autosleep(p);
+	ck_assert_int_eq(val, 60);
+
+	nsleeps = ratbag_profile_get_autosleep_list(p, sleeps, ARRAY_LENGTH(sleeps));
+	ck_assert_int_eq(nsleeps, 3);
+	ck_assert_int_eq(sleeps[0], 30);
+	ck_assert_int_eq(sleeps[1], 60);
+	ck_assert_int_eq(sleeps[2], 120);
+
+	ratbag_profile_set_autosleep(p, 120);
+	val = ratbag_profile_get_autosleep(p);
+	ck_assert_int_eq(val, 120);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_debounce_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+	unsigned int debounces[8];
+	size_t ndebounces;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].debounce = 10;
+	td.profiles[0].debounces[0] = 5;
+	td.profiles[0].debounces[1] = 10;
+	td.profiles[0].debounces[2] = 15;
+	td.profiles[0].ndebounces = 3;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_debounce(p);
+	ck_assert_int_eq(val, 10);
+
+	ndebounces = ratbag_profile_get_debounce_list(p, debounces, ARRAY_LENGTH(debounces));
+	ck_assert_int_eq(ndebounces, 3);
+	ck_assert_int_eq(debounces[0], 5);
+	ck_assert_int_eq(debounces[1], 10);
+	ck_assert_int_eq(debounces[2], 15);
+
+	ratbag_profile_set_debounce(p, 15);
+	val = ratbag_profile_get_debounce(p);
+	ck_assert_int_eq(val, 15);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_angle_snapping_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].angle_snapping = 1;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_angle_snapping(p);
+	ck_assert_int_eq(val, 1);
+
+	ratbag_profile_set_angle_snapping(p, 0);
+	val = ratbag_profile_get_angle_snapping(p);
+	ck_assert_int_eq(val, 0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_reset_no_support)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	enum ratbag_error_code rc;
+
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	rc = ratbag_device_reset(d);
+	ck_assert_int_eq(rc, RATBAG_ERROR_CAPABILITY);
+
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -1007,6 +1231,19 @@ test_context_suite(void)
 	tc = tcase_create("led");
 	tcase_add_test(tc, device_leds);
 	tcase_add_test(tc, device_leds_set);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("profile_settings");
+	tcase_add_test(tc, device_angle_snapping_get_set);
+	tcase_add_test(tc, device_motion_sync);
+	tcase_add_test(tc, device_ripple_control);
+	tcase_add_test(tc, device_debounce_get_set);
+	tcase_add_test(tc, device_lod_get_set);
+	tcase_add_test(tc, device_autosleep_get_set);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("reset");
+	tcase_add_test(tc, device_reset_no_support);
 	suite_add_tcase(s, tc);
 
 	return s;
