@@ -67,6 +67,7 @@ static int load_test_device(sd_bus_message *m,
 	}
 
 	ratbagd_device_link(ratbagd_test_device);
+	ratbagd_device_start_event_monitoring(ratbagd_test_device);
 	if (m) {
 		sd_bus_reply_method_return(m, "u", r);
 		(void) sd_bus_emit_properties_changed(ctx->bus,

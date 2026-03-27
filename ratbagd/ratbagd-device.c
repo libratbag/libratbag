@@ -27,17 +27,20 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <libratbag.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
 #include "ratbagd.h"
 #include "shared-macro.h"
 #include <rbtree/shared-rbtree.h>
 
+#include "libratbag-hidraw.h"
 #include "libratbag-util.h"
 
 struct ratbagd_device {
@@ -53,6 +56,8 @@ struct ratbagd_device {
 	sd_bus_slot *profile_enum_slot;
 	unsigned int n_profiles;
 	struct ratbagd_profile **profiles;
+
+	sd_event_source *hidraw_event_sources[MAX_HIDRAW];
 };
 
 #define ratbagd_device_from_node(_ptr) \
@@ -363,12 +368,96 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	return 0;
 }
 
+static int ratbagd_device_hidraw_event(sd_event_source *source,
+				       int fd,
+				       uint32_t mask,
+				       void *userdata)
+{
+	struct ratbagd_device *device = userdata;
+	uint8_t buf[256];
+	int hidraw_index = -1;
+	int rc;
+	unsigned int events;
+
+	if (!(mask & EPOLLIN))
+		return 0;
+
+	for (int i = 0; i < MAX_HIDRAW; i++) {
+		if (ratbag_device_get_hidraw_fd(device->lib_device, i) == fd) {
+			hidraw_index = i;
+			break;
+		}
+	}
+	if (hidraw_index < 0)
+		return 0;
+
+	rc = read(fd, buf, sizeof(buf));
+	if (rc <= 0) {
+		if (rc < 0 && errno == EAGAIN)
+			return 0;
+		log_error("hidraw read error on %s\n", device->sysname);
+		return 0;
+	}
+
+	events = ratbag_device_dispatch_event(device->lib_device,
+					      buf, (size_t)rc,
+					      hidraw_index);
+
+	if (events != RATBAG_EVENT_NONE)
+		ratbagd_device_resync(device, device->ctx->bus);
+
+	return 0;
+}
+
+void ratbagd_device_stop_event_monitoring(struct ratbagd_device *device)
+{
+	for (int i = 0; i < MAX_HIDRAW; i++) {
+		if (device->hidraw_event_sources[i]) {
+			sd_event_source_set_enabled(device->hidraw_event_sources[i],
+						    SD_EVENT_OFF);
+			sd_event_source_unref(device->hidraw_event_sources[i]);
+			device->hidraw_event_sources[i] = NULL;
+		}
+	}
+}
+
+int ratbagd_device_start_event_monitoring(struct ratbagd_device *device)
+{
+	int fd, r;
+
+	if (!ratbag_device_has_event_support(device->lib_device))
+		return 0;
+
+	fd = ratbag_device_get_hidraw_fd(device->lib_device, 0);
+	if (fd < 0)
+		return 0;
+
+	/* Set non-blocking to avoid stalling the event loop */
+	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+
+	r = sd_event_add_io(device->ctx->event,
+			    &device->hidraw_event_sources[0],
+			    fd,
+			    EPOLLIN,
+			    ratbagd_device_hidraw_event,
+			    device);
+	if (r < 0) {
+		log_error("%s: failed to add hidraw event source: %s\n",
+			  device->sysname, strerror(-r));
+		return r;
+	}
+
+	return 0;
+}
+
 static void ratbagd_device_free(struct ratbagd_device *device)
 {
 	unsigned int i;
 
 	if (!device)
 		return;
+
+	ratbagd_device_stop_event_monitoring(device);
 
 	assert(!ratbagd_device_linked(device));
 

@@ -106,6 +106,9 @@ struct ratbag_test_device {
 	struct ratbag_test_profile profiles[RATBAG_TEST_MAX_PROFILES];
 	void (*destroyed)(struct ratbag_device *device, void *data);
 	void *destroyed_data;
+	unsigned int (*handle_event)(struct ratbag_device *device,
+				     const uint8_t *buf, size_t len,
+				     int hidraw_index);
 };
 
 struct ratbag_device* ratbag_device_new_test_device(struct ratbag *ratbag,

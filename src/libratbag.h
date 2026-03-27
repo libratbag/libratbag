@@ -530,6 +530,49 @@ ratbag_device_reset(struct ratbag_device *device);
 /**
  * @ingroup device
  *
+ * Returns whether the device supports asynchronous event monitoring.
+ * A device supports it if its driver implements the handle_event callback.
+ *
+ * @param device A previously initialized ratbag device
+ * @return true if the device supports event monitoring
+ */
+bool
+ratbag_device_has_event_support(struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Returns the hidraw file descriptor for the given index, or -1 if not
+ * open or the index is out of range. The caller must NOT close this fd.
+ *
+ * @param device A previously initialized ratbag device
+ * @param index The hidraw index (0 or 1)
+ * @return The file descriptor, or -1
+ */
+int
+ratbag_device_get_hidraw_fd(struct ratbag_device *device, unsigned int index);
+
+/**
+ * @ingroup device
+ *
+ * Dispatch a raw HID input report to the device's driver for event
+ * handling. The driver parses the report, updates internal state, and
+ * returns a bitmask indicating what changed.
+ *
+ * @param device A previously initialized ratbag device
+ * @param buf The raw report data
+ * @param len Length of buf in bytes
+ * @param hidraw_index Which hidraw fd the data was read from
+ * @return Bitmask of enum ratbag_event_type, or RATBAG_EVENT_NONE
+ */
+unsigned int
+ratbag_device_dispatch_event(struct ratbag_device *device,
+			     const uint8_t *buf, size_t len,
+			     int hidraw_index);
+
+/**
+ * @ingroup device
+ *
  * Return the number of profiles supported by this device.
  *
  * Note that the number of profiles available may be different to the number

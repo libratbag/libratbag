@@ -285,6 +285,19 @@ test_commit(struct ratbag_device *device)
 	return 0;
 }
 
+static unsigned int
+test_handle_event(struct ratbag_device *device,
+		  const uint8_t *buf, size_t len,
+		  int hidraw_index)
+{
+	struct ratbag_test_device *d = ratbag_get_drv_data(device);
+
+	if (d->handle_event)
+		return d->handle_event(device, buf, len, hidraw_index);
+
+	return RATBAG_EVENT_NONE;
+}
+
 struct ratbag_driver test_driver = {
 	.name = "Test driver",
 	.id = "test_driver",
@@ -293,4 +306,5 @@ struct ratbag_driver test_driver = {
 	.remove = test_remove,
 	.commit = test_commit,
 	.set_active_profile = test_set_active_profile,
+	.handle_event = test_handle_event,
 };

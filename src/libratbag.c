@@ -829,6 +829,27 @@ ratbag_device_reset(struct ratbag_device *device) {
   return RATBAG_SUCCESS;
 }
 
+LIBRATBAG_EXPORT bool
+ratbag_device_has_event_support(struct ratbag_device *device) {
+  return device->driver && device->driver->handle_event != NULL;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_device_get_hidraw_fd(struct ratbag_device *device, unsigned int index) {
+  if (index >= MAX_HIDRAW)
+    return -1;
+  return device->hidraw[index].fd;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_device_dispatch_event(struct ratbag_device *device,
+                             const uint8_t *buf, size_t len,
+                             int hidraw_index) {
+  if (!device->driver || !device->driver->handle_event)
+    return RATBAG_EVENT_NONE;
+  return device->driver->handle_event(device, buf, len, hidraw_index);
+}
+
 LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_profile_set_active(struct ratbag_profile *profile) {
   struct ratbag_device *device = profile->device;

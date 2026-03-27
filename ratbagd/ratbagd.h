@@ -177,6 +177,8 @@ const char *ratbagd_device_get_path(struct ratbagd_device *device);
 unsigned int ratbagd_device_get_num_buttons(struct ratbagd_device *device);
 unsigned int ratbagd_device_get_num_leds(struct ratbagd_device *device);
 int ratbagd_device_resync(struct ratbagd_device *device, sd_bus *bus);
+int ratbagd_device_start_event_monitoring(struct ratbagd_device *device);
+void ratbagd_device_stop_event_monitoring(struct ratbagd_device *device);
 
 bool ratbagd_device_linked(struct ratbagd_device *device);
 void ratbagd_device_link(struct ratbagd_device *device);

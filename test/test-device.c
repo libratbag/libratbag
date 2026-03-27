@@ -1168,6 +1168,74 @@ START_TEST(device_angle_snapping_get_set)
 }
 END_TEST
 
+START_TEST(device_event_no_handler)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	unsigned int events;
+	uint8_t buf[] = { 0x01, 0x02, 0x03 };
+
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	ck_assert(ratbag_device_has_event_support(d));
+
+	/* no per-device handler set, should return NONE */
+	events = ratbag_device_dispatch_event(d, buf, sizeof(buf), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_NONE);
+
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+static unsigned int
+test_event_handler(struct ratbag_device *device,
+		   const uint8_t *buf, size_t len,
+		   int hidraw_index)
+{
+	if (len >= 1 && buf[0] == 0x01)
+		return RATBAG_EVENT_RESOLUTION_CHANGED;
+	if (len >= 1 && buf[0] == 0x02)
+		return RATBAG_EVENT_PROFILE_CHANGED;
+	return RATBAG_EVENT_NONE;
+}
+
+START_TEST(device_event_dispatch)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	unsigned int events;
+
+	struct ratbag_test_device td = sane_device;
+	td.handle_event = test_event_handler;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	ck_assert(ratbag_device_has_event_support(d));
+
+	uint8_t buf_dpi[] = { 0x01 };
+	events = ratbag_device_dispatch_event(d, buf_dpi, sizeof(buf_dpi), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_RESOLUTION_CHANGED);
+
+	uint8_t buf_profile[] = { 0x02 };
+	events = ratbag_device_dispatch_event(d, buf_profile, sizeof(buf_profile), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_PROFILE_CHANGED);
+
+	uint8_t buf_unknown[] = { 0xFF };
+	events = ratbag_device_dispatch_event(d, buf_unknown, sizeof(buf_unknown), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_NONE);
+
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
 START_TEST(device_reset_no_support)
 {
 	struct ratbag *r;
@@ -1244,6 +1312,11 @@ test_context_suite(void)
 
 	tc = tcase_create("reset");
 	tcase_add_test(tc, device_reset_no_support);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("events");
+	tcase_add_test(tc, device_event_no_handler);
+	tcase_add_test(tc, device_event_dispatch);
 	suite_add_tcase(s, tc);
 
 	return s;

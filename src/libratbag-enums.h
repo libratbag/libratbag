@@ -304,3 +304,18 @@ enum ratbag_device_type {
 	 */
 	TYPE_KEYBOARD,
 };
+
+/**
+ * @ingroup enums
+ *
+ * Bitmask of device state that changed due to an unsolicited event.
+ * Returned by a driver's handle_event callback.
+ */
+enum ratbag_event_type {
+	RATBAG_EVENT_NONE               = 0,
+	RATBAG_EVENT_PROFILE_CHANGED    = (1 << 0),
+	RATBAG_EVENT_RESOLUTION_CHANGED = (1 << 1),
+	RATBAG_EVENT_BATTERY_CHANGED    = (1 << 2),
+	RATBAG_EVENT_LED_CHANGED        = (1 << 3),
+	RATBAG_EVENT_UNKNOWN            = (1 << 15),
+};

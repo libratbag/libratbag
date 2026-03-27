@@ -209,6 +209,33 @@ struct ratbag_driver {
 	int (*reset)(struct ratbag_device *device);
 
 	/**
+	 * Handle an unsolicited HID input report from the device.
+	 *
+	 * Called when the hidraw fd becomes readable and raw data has been
+	 * read. The driver should parse the report and update internal
+	 * state (profiles, resolutions, etc.) accordingly.
+	 *
+	 * Drivers that do not support event monitoring should leave this
+	 * NULL. When NULL, no hidraw fds are monitored for this device.
+	 *
+	 * Note: Drivers that set this callback must not use
+	 * ratbag_hidraw_read_input_report() on the monitored hidraw fd,
+	 * as the event loop already reads from it. Using both would
+	 * cause one side to consume data intended for the other.
+	 *
+	 * @param device The ratbag device
+	 * @param buf The raw HID input report data
+	 * @param len The length of buf in bytes
+	 * @param hidraw_index Which hidraw fd the data came from (0 or 1)
+	 *
+	 * @return Bitmask of enum ratbag_event_type indicating what changed,
+	 *         or RATBAG_EVENT_NONE if the report was not relevant
+	 */
+	unsigned int (*handle_event)(struct ratbag_device *device,
+				     const uint8_t *buf, size_t len,
+				     int hidraw_index);
+
+	/**
 	 * Called to mark a previously written profile as active.
 	 *
 	 * There should be no need to write the profile here, a
