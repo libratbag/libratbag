@@ -178,6 +178,43 @@ struct ratbag_driver {
 	int (*probe)(struct ratbag_device *device);
 
 	/**
+	 * Optional callback to lazily load a profile's current values
+	 * from the device. Called via ratbag_profile_load() the first
+	 * time a profile's data is accessed and the profile has not
+	 * been loaded yet (profile->loaded is false).
+	 *
+	 * Drivers that set this callback may skip populating non-active
+	 * profiles during probe() and instead defer the device reads
+	 * until the profile is actually requested. For profiles that
+	 * are fully populated during probe() (e.g. the active profile),
+	 * the driver must set profile->loaded to true so that
+	 * ratbag_profile_load() does not invoke read_profile again.
+	 *
+	 * Drivers that do not set this callback are unaffected.
+	 *
+	 * probe() must still set up all profiles with structural and
+	 * capability data that does not require reading from the
+	 * device in the profile's context:
+	 *  - resolution DPI ranges (ratbag_resolution_set_dpi_list_from_range)
+	 *  - resolution capabilities (RATBAG_RESOLUTION_CAP_*)
+	 *  - report rate lists (ratbag_profile_set_report_rate_list)
+	 *  - debounce lists
+	 *  - profile capabilities (RATBAG_PROFILE_CAP_*)
+	 *  - LED color depth and supported modes
+	 *  - is_active, is_enabled flags
+	 *
+	 * read_profile() then populates the current values:
+	 *  - active DPI / resolution values
+	 *  - current report rate, angle snapping, debounce
+	 *  - button mappings and macros
+	 *  - LED colors, brightness, effect duration, mode
+	 *  - profile name
+	 *
+	 * If NULL, all profile data must be populated during probe().
+	 */
+	int (*read_profile)(struct ratbag_profile *profile);
+
+	/**
 	 * Callback called right before the struct ratbag_device is
 	 * unref-ed.
 	 *
@@ -334,6 +371,7 @@ struct ratbag_profile {
 	bool is_active_dirty;
 
 	bool is_enabled;
+	bool loaded;      /**< profile data has been read from device */
 	bool dirty;       /**< profile changed since last commit */
 	unsigned long capabilities[NLONGS(MAX_CAP)];
 };

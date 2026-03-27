@@ -749,6 +749,27 @@ ratbag_device_get_profile(struct ratbag_device *device, unsigned int index);
 /**
  * @ingroup profile
  *
+ * Ensure the profile's data has been loaded from the device.
+ *
+ * For drivers that support lazy profile loading, this triggers the
+ * actual device read the first time it is called. Subsequent calls
+ * are no-ops. For drivers that do not support lazy loading this
+ * function always returns success immediately.
+ *
+ * Callers should invoke this before reading any profile properties
+ * (resolutions, buttons, report rate, etc.) if the profile may not
+ * have been loaded during probe.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return 0 on success or a negative errno on failure
+ */
+int
+ratbag_profile_load(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
  * Check if the given profile is the currently active one. Note that some
  * devices allow switching profiles with hardware buttons thus making the
  * use of this function racy.
