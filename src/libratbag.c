@@ -902,6 +902,24 @@ ratbag_device_commit(struct ratbag_device *device)
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_device_reset(struct ratbag_device *device)
+{
+	int rc;
+
+	if (device->driver->reset == NULL) {
+		log_error(device->ratbag,
+			  "Trying to reset a device whose driver doesn't support reset\n");
+		return RATBAG_ERROR_CAPABILITY;
+	}
+
+	rc = device->driver->reset(device);
+	if (rc)
+		return RATBAG_ERROR_DEVICE;
+
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
 ratbag_profile_set_active(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;

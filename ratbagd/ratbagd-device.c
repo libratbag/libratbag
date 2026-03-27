@@ -221,6 +221,35 @@ static int ratbagd_device_commit(sd_bus_message *m,
 	return 0;
 }
 
+static void ratbagd_device_reset_pending(void *data)
+{
+	struct ratbagd_device *device = data;
+	int r;
+
+	r = ratbag_device_reset(device->lib_device);
+	if (r)
+		log_error("error resetting device (%d)\n", r);
+
+	ratbagd_device_resync(device, device->ctx->bus);
+
+	ratbagd_device_unref(device);
+}
+
+static int ratbagd_device_do_reset(sd_bus_message *m,
+				   void *userdata,
+				   sd_bus_error *error)
+{
+	struct ratbagd_device *device = userdata;
+
+	ratbagd_schedule_task(device->ctx,
+			      ratbagd_device_reset_pending,
+			      ratbagd_device_ref(device));
+
+	CHECK_CALL(sd_bus_reply_method_return(m, "u", 0));
+
+	return 0;
+}
+
 static int
 ratbagd_device_get_model(sd_bus *bus,
 			 const char *path,
@@ -271,6 +300,7 @@ const sd_bus_vtable ratbagd_device_vtable[] = {
 	SD_BUS_PROPERTY("FirmwareVersion", "s", ratbagd_device_get_firmware_version, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Profiles", "ao", ratbagd_device_get_profiles, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_METHOD("Commit", "", "u", ratbagd_device_commit, SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("Reset", "", "u", ratbagd_device_do_reset, SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_SIGNAL("Resync", "", 0),
 	SD_BUS_VTABLE_END,
 };

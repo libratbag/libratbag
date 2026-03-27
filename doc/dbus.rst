@@ -185,6 +185,17 @@ known to ratbagd.
         occurs, the :func:`Resync` signal is emitted and all properties are
         updated to the current state.
 
+.. function:: Reset() → ()
+
+        Instructs the device to perform a factory reset, restoring all
+        settings to their hardware defaults. This call is handled
+        asynchronously. A :func:`Resync` signal is always emitted after
+        the reset completes, regardless of success or failure. Clients
+        should re-read all properties after receiving the signal.
+
+        Not all devices support hardware reset. If the device's driver
+        does not implement reset, this call has no effect.
+
 .. function:: Resync()
 
         :type: Signal

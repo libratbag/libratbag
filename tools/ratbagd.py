@@ -426,6 +426,15 @@ class RatbagdDevice(_RatbagdDBus):
         """
         self._dbus_call("Commit", "")
 
+    def reset(self):
+        """Instructs the device to perform a factory reset.
+
+        This is implemented asynchronously inside ratbagd. A Resync signal
+        is always emitted after the reset completes, regardless of success
+        or failure. Not all devices support hardware reset.
+        """
+        self._dbus_call("Reset", "")
+
 
 class RatbagdProfile(_RatbagdDBus):
     """Represents a ratbagd profile."""

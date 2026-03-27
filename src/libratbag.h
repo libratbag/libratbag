@@ -515,6 +515,21 @@ ratbag_device_commit(struct ratbag_device *device);
 /**
  * @ingroup device
  *
+ * Instruct the device to perform a factory reset, restoring all
+ * settings to their hardware defaults.
+ *
+ * Not all devices support hardware reset. If the device's driver
+ * does not implement reset, RATBAG_ERROR_CAPABILITY is returned.
+ *
+ * @param device A previously initialized ratbag device
+ * @return RATBAG_SUCCESS on success or an error code otherwise
+ */
+enum ratbag_error_code
+ratbag_device_reset(struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
  * Return the number of profiles supported by this device.
  *
  * Note that the number of profiles available may be different to the number

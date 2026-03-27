@@ -199,6 +199,16 @@ struct ratbag_driver {
 	int (*commit)(struct ratbag_device *device);
 
 	/**
+	 * Callback called when the driver should instruct the hardware to
+	 * perform a factory reset, restoring all settings to their defaults.
+	 *
+	 * Drivers that do not support hardware reset should leave this NULL.
+	 * The library will return RATBAG_ERROR_CAPABILITY if this is called
+	 * on a device whose driver does not implement reset.
+	 */
+	int (*reset)(struct ratbag_device *device);
+
+	/**
 	 * Called to mark a previously written profile as active.
 	 *
 	 * There should be no need to write the profile here, a

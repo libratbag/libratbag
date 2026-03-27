@@ -714,6 +714,11 @@ def func_device_name_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     print(device.name)
 
 
+def func_device_reset(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    device = find_device(ratbagd, args)
+    device.reset()
+
+
 ################################################################################
 # these are definitions to be reused in the dict that defines our language
 
@@ -836,6 +841,13 @@ parser_def: List[RatbagParserSchemaElement] = [
         name: "name",
         help_str: "Returns the device name",
         func: func_device_name_get,
+    },
+    {
+        of_type: command,
+        name: "reset",
+        help_str: "Perform a factory reset on the device",
+        func: func_device_reset,
+        group: "Device",
     },
     {
         of_type: switch,

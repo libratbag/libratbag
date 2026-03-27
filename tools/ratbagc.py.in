@@ -333,6 +333,14 @@ class RatbagdDevice(metaclass=MetaRatbag):
         """
         return libratbag.ratbag_device_commit(self._device)
 
+    def reset(self):
+        """Instructs the device to perform a factory reset.
+
+        Not all devices support hardware reset. A Resync signal is always
+        emitted after the reset completes.
+        """
+        return libratbag.ratbag_device_reset(self._device)
+
 
 class RatbagdProfile(metaclass=MetaRatbag):
     """Represents a ratbagd profile."""
