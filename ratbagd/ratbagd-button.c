@@ -532,6 +532,64 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 	return 0;
 }
 
+static int ratbagd_button_get_macro_repeat(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *reply,
+					   void *userdata,
+					   sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	_cleanup_(ratbag_button_macro_unrefp) struct ratbag_button_macro *macro = NULL;
+	unsigned int mode = 0, count = 0;
+
+	if (ratbag_button_get_action_type(button->lib_button) ==
+	    RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+		macro = ratbag_button_get_macro(button->lib_button);
+		if (macro) {
+			mode = ratbag_button_macro_get_repeat_mode(macro);
+			count = ratbag_button_macro_get_repeat_count(macro);
+		}
+	}
+
+	return sd_bus_message_append(reply, "(uu)", mode, count);
+}
+
+static int ratbagd_button_set_macro_repeat(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *m,
+					   void *userdata,
+					   sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	_cleanup_(ratbag_button_macro_unrefp) struct ratbag_button_macro *macro = NULL;
+	unsigned int mode, count;
+
+	CHECK_CALL(sd_bus_message_read(m, "(uu)", &mode, &count));
+
+	if (ratbag_button_get_action_type(button->lib_button) !=
+	    RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		return 0;
+
+	macro = ratbag_button_get_macro(button->lib_button);
+	if (!macro)
+		return 0;
+
+	ratbag_button_macro_set_repeat(macro, mode, count);
+	ratbag_button_set_macro(button->lib_button, macro);
+
+	sd_bus_emit_properties_changed(bus,
+				       button->path,
+				       RATBAGD_NAME_ROOT ".Button",
+				       "MacroRepeat",
+				       NULL);
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_button, index), SD_BUS_VTABLE_PROPERTY_CONST),
@@ -540,6 +598,10 @@ const sd_bus_vtable ratbagd_button_vtable[] = {
 				 ratbagd_button_set_mapping,
 				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionTypes", "au", ratbagd_button_get_action_types, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_WRITABLE_PROPERTY("MacroRepeat", "(uu)",
+				 ratbagd_button_get_macro_repeat,
+				 ratbagd_button_set_macro_repeat,
+				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_VTABLE_END,
 };
 

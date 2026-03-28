@@ -2015,6 +2015,48 @@ ratbag_button_macro_set_event(struct ratbag_button_macro *macro,
 /**
  * @ingroup button
  *
+ * Return the repeat mode of this macro.
+ *
+ * @param macro A previously initialized ratbag button macro
+ *
+ * @return The repeat mode
+ */
+enum ratbag_macro_repeat_mode
+ratbag_button_macro_get_repeat_mode(const struct ratbag_button_macro *macro);
+
+/**
+ * @ingroup button
+ *
+ * Return the repeat count of this macro. Only meaningful when the
+ * repeat mode is @ref RATBAG_MACRO_REPEAT_COUNT.
+ *
+ * @param macro A previously initialized ratbag button macro
+ *
+ * @return The repeat count
+ */
+unsigned int
+ratbag_button_macro_get_repeat_count(const struct ratbag_button_macro *macro);
+
+/**
+ * @ingroup button
+ *
+ * Set the repeat mode and count for this macro.
+ *
+ * The count is only used when mode is @ref RATBAG_MACRO_REPEAT_COUNT
+ * and is ignored for other modes.
+ *
+ * @param macro A previously initialized ratbag button macro
+ * @param mode The repeat mode
+ * @param count The repeat count (for RATBAG_MACRO_REPEAT_COUNT)
+ */
+void
+ratbag_button_macro_set_repeat(struct ratbag_button_macro *macro,
+			       enum ratbag_macro_repeat_mode mode,
+			       unsigned int count);
+
+/**
+ * @ingroup button
+ *
  * Add a reference to the macro. A macro is destroyed whenever the
  * reference count reaches 0. See @ref ratbag_button_macro_unref.
  *

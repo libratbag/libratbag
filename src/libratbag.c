@@ -1784,6 +1784,8 @@ ratbag_button_get_macro(struct ratbag_button *button) {
   macro = ratbag_button_macro_new(button->action.macro->name);
   memcpy(macro->macro.events, button->action.macro->events,
          sizeof(macro->macro.events));
+  macro->macro.repeat_mode = button->action.macro->repeat_mode;
+  macro->macro.repeat_count = button->action.macro->repeat_count;
 
   return macro;
 }
@@ -1803,6 +1805,8 @@ void ratbag_button_copy_macro(struct ratbag_button *button,
          sizeof(macro->macro.events));
   button->action.macro->name = strdup_safe(macro->macro.name);
   button->action.macro->group = strdup_safe(macro->macro.group);
+  button->action.macro->repeat_mode = macro->macro.repeat_mode;
+  button->action.macro->repeat_count = macro->macro.repeat_count;
 }
 
 LIBRATBAG_EXPORT enum ratbag_error_code
@@ -1893,6 +1897,24 @@ ratbag_button_macro_get_num_events(const struct ratbag_button_macro *macro) {
 LIBRATBAG_EXPORT const char *
 ratbag_button_macro_get_name(const struct ratbag_button_macro *macro) {
   return macro->macro.name;
+}
+
+LIBRATBAG_EXPORT enum ratbag_macro_repeat_mode
+ratbag_button_macro_get_repeat_mode(const struct ratbag_button_macro *macro) {
+  return macro->macro.repeat_mode;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_button_macro_get_repeat_count(const struct ratbag_button_macro *macro) {
+  return macro->macro.repeat_count;
+}
+
+LIBRATBAG_EXPORT void
+ratbag_button_macro_set_repeat(struct ratbag_button_macro *macro,
+                               enum ratbag_macro_repeat_mode mode,
+                               unsigned int count) {
+  macro->macro.repeat_mode = mode;
+  macro->macro.repeat_count = count;
 }
 
 static void ratbag_button_macro_destroy(struct ratbag_button_macro *macro) {

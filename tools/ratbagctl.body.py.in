@@ -204,7 +204,16 @@ def print_button(
         key_name = evcode_to_str(button.key)
         print(f"{header}key '{key_name}'")
     elif button.action_type == RatbagdButton.ActionType.MACRO:
-        print(f"{header}macro '{str(button.macro)}'")
+        repeat = button.macro_repeat
+        if repeat and repeat[0] == RatbagdButton.RepeatMode.COUNT:
+            repeat_str = f" (repeat: {repeat[1]}x)"
+        elif repeat and repeat[0] == RatbagdButton.RepeatMode.WHILE_HELD:
+            repeat_str = " (repeat: while held)"
+        elif repeat and repeat[0] == RatbagdButton.RepeatMode.UNTIL_BUTTON_PRESSED:
+            repeat_str = " (repeat: until button pressed)"
+        else:
+            repeat_str = ""
+        print(f"{header}macro '{str(button.macro)}'{repeat_str}")
     elif button.action_type == RatbagdButton.ActionType.DPI_LOCK:
         x, y = button.dpi_lock
         if x == y:
@@ -431,7 +440,16 @@ def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> 
     if button.ActionType.MACRO not in button.action_types:
         raise RatbagCapabilityError("assigning a macro is not supported on this device")
 
-    macro_keys = args.target_macro
+    macro_keys = list(args.target_macro)
+
+    # Extract repeat:<mode> token if present (e.g. repeat:3, repeat:held)
+    repeat_arg = None
+    for i, s in enumerate(macro_keys):
+        if s.lower().startswith("repeat:"):
+            repeat_arg = s.split(":", 1)[1]
+            macro_keys.pop(i)
+            break
+
     macro = RatbagdMacro()
     for s in macro_keys:
         is_press = True
@@ -461,6 +479,18 @@ def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> 
                 macro.append(RatbagdButton.Macro.KEY_RELEASE, code)
 
     button.macro = macro
+
+    if repeat_arg is not None:
+        if repeat_arg == "held":
+            button.macro_repeat = (RatbagdButton.RepeatMode.WHILE_HELD, 0)
+        elif repeat_arg == "button-pressed":
+            button.macro_repeat = (
+                RatbagdButton.RepeatMode.UNTIL_BUTTON_PRESSED,
+                0,
+            )
+        else:
+            button.macro_repeat = (RatbagdButton.RepeatMode.COUNT, int(repeat_arg))
+
     commit(device, args)
 
 
@@ -1509,7 +1539,12 @@ active profile if none is given.""",
         KEY_A                   Press and release 'a'
         +KEY_A                  Press 'a'
         -KEY_A                  Release 'a'
-        t300                    Wait 300ms""",
+        t300                    Wait 300ms
+
+  Repeat:
+        repeat:N                Repeat the macro N times
+        repeat:held             Repeat while the button is held
+        repeat:button-pressed   Repeat until another button is pressed""",
                                     pos_args: [
                                         {
                                             of_type: argument,

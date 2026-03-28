@@ -424,6 +424,8 @@ struct ratbag_macro {
 	char *name;
 	char *group;
 	struct ratbag_macro_event events[MAX_MACRO_EVENTS];
+	enum ratbag_macro_repeat_mode repeat_mode;
+	unsigned int repeat_count;
 };
 
 struct ratbag_button_macro {

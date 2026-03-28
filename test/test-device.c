@@ -1413,6 +1413,179 @@ START_TEST(device_buttons_dpi_lock_wrong_type)
 }
 END_TEST
 
+START_TEST(device_macro_repeat_default)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_ONCE);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 0);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_count)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+	td.profiles[0].buttons[0].macro_repeat_mode = RATBAG_MACRO_REPEAT_COUNT;
+	td.profiles[0].buttons[0].macro_repeat_count = 5;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_COUNT);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 5);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_while_held)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+	td.profiles[0].buttons[0].macro_repeat_mode = RATBAG_MACRO_REPEAT_WHILE_HELD;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_WHILE_HELD);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_until_button_pressed)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+	td.profiles[0].buttons[0].macro_repeat_mode = RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_set)
+{
+	struct ratbag_button_macro *m;
+
+	m = ratbag_button_macro_new("test");
+
+	/* default is ONCE */
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_ONCE);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 0);
+
+	/* set to count */
+	ratbag_button_macro_set_repeat(m, RATBAG_MACRO_REPEAT_COUNT, 10);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_COUNT);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 10);
+
+	/* set to while held */
+	ratbag_button_macro_set_repeat(m, RATBAG_MACRO_REPEAT_WHILE_HELD, 0);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_WHILE_HELD);
+
+	/* set to until button pressed */
+	ratbag_button_macro_set_repeat(m, RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED, 0);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED);
+
+	ratbag_button_macro_unref(m);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -1456,6 +1629,11 @@ test_context_suite(void)
 	tcase_add_test(tc, device_buttons_dpi_lock_set);
 	tcase_add_test(tc, device_buttons_dpi_lock_has_action_type);
 	tcase_add_test(tc, device_buttons_dpi_lock_wrong_type);
+	tcase_add_test(tc, device_macro_repeat_default);
+	tcase_add_test(tc, device_macro_repeat_count);
+	tcase_add_test(tc, device_macro_repeat_while_held);
+	tcase_add_test(tc, device_macro_repeat_until_button_pressed);
+	tcase_add_test(tc, device_macro_repeat_set);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("led");

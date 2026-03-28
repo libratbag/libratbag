@@ -73,6 +73,8 @@ test_read_button(struct ratbag_button *button)
 				break;
 			ratbag_button_macro_set_event(m, idx++, e->type, e->value);
 		}
+		ratbag_button_macro_set_repeat(m, b->macro_repeat_mode,
+					       b->macro_repeat_count);
 		ratbag_button_copy_macro(button, m);
 		ratbag_button_macro_unref(m);
 		break;

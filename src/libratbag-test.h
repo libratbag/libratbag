@@ -50,6 +50,8 @@ struct ratbag_test_button {
 			unsigned int y;
 		} dpi_lock;
 	};
+	enum ratbag_macro_repeat_mode macro_repeat_mode;
+	unsigned int macro_repeat_count;
 };
 
 struct ratbag_test_resolution {

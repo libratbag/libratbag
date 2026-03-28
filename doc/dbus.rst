@@ -591,6 +591,33 @@ org.freedesktop.ratbag1.Button
 
         Clients must ignore :attr:`ActionTypes` unknown to them.
 
+.. attribute:: MacroRepeat
+
+        :type: (uu)
+        :flags: read-write, mutable
+
+        The macro repeat mode and count. Only meaningful when the button's
+        action type is *Macro*. The first element is the repeat mode, the
+        second element is the repeat count.
+
+        +-------+----------------------------------------------+
+        | Mode  | Description                                  |
+        +=======+==============================================+
+        |   0   | Play once (default)                          |
+        +-------+----------------------------------------------+
+        |   1   | Repeat a fixed number of times (use count)   |
+        +-------+----------------------------------------------+
+        |   2   | Repeat while the button is held              |
+        +-------+----------------------------------------------+
+        |   3   | Repeat until any other button is pressed     |
+        +-------+----------------------------------------------+
+
+        The count value is only used when the mode is 1 (repeat count).
+        For all other modes, the count should be set to 0.
+
+        Clients unaware of this property will get the default behavior
+        (play once) which preserves backwards compatibility.
+
 .. _led:
 
 org.freedesktop.ratbag1.Led

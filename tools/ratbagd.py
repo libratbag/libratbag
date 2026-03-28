@@ -966,6 +966,12 @@ class RatbagdButton(_RatbagdDBus):
         KEY_RELEASE = 2
         WAIT = 3
 
+    class RepeatMode(IntEnum):
+        ONCE = 0
+        COUNT = 1
+        WHILE_HELD = 2
+        UNTIL_BUTTON_PRESSED = 3
+
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
     BUTTON_DESCRIPTION = {
@@ -1056,6 +1062,24 @@ class RatbagdButton(_RatbagdDBus):
         self._set_dbus_property(
             "Mapping", "(uv)", (RatbagdButton.ActionType.MACRO, macro)
         )
+
+    @GObject.Property
+    def macro_repeat(self):
+        """A tuple (mode, count) of the macro repeat settings, or None
+        if not mapped to macro."""
+        type, _value = self._mapping()
+        if type != RatbagdButton.ActionType.MACRO:
+            return None
+        return self._get_dbus_property("MacroRepeat")
+
+    @macro_repeat.setter
+    def macro_repeat(self, value):
+        """Set the macro repeat mode and count.
+
+        @param value A tuple (mode, count).
+        """
+        value = GLib.Variant("(uu)", value)
+        self._set_dbus_property("MacroRepeat", "(uu)", value)
 
     @GObject.Property
     def special(self):

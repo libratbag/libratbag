@@ -718,6 +718,12 @@ class RatbagdButton(metaclass=MetaRatbag):
         KEY_RELEASE = libratbag.RATBAG_MACRO_EVENT_KEY_RELEASED
         WAIT = libratbag.RATBAG_MACRO_EVENT_WAIT
 
+    class RepeatMode(IntEnum):
+        ONCE = libratbag.RATBAG_MACRO_REPEAT_ONCE
+        COUNT = libratbag.RATBAG_MACRO_REPEAT_COUNT
+        WHILE_HELD = libratbag.RATBAG_MACRO_REPEAT_WHILE_HELD
+        UNTIL_BUTTON_PRESSED = libratbag.RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED
+
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
     BUTTON_DESCRIPTION = {

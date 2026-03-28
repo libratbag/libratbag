@@ -286,6 +286,22 @@ enum ratbag_macro_event_type {
 /**
  * @ingroup enums
  *
+ * Macro repeat modes describing how a macro is repeated.
+ */
+enum ratbag_macro_repeat_mode {
+	/** Play the macro once (default) */
+	RATBAG_MACRO_REPEAT_ONCE = 0,
+	/** Play the macro a fixed number of times */
+	RATBAG_MACRO_REPEAT_COUNT,
+	/** Repeat the macro while the button is held */
+	RATBAG_MACRO_REPEAT_WHILE_HELD,
+	/** Repeat the macro until any other button is pressed */
+	RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED,
+};
+
+/**
+ * @ingroup enums
+ *
  * Device Types
  * Describes the types specified in the .device files
  */
