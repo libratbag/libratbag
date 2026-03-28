@@ -684,6 +684,7 @@ class RatbagdButton(metaclass=MetaRatbag):
         SPECIAL = libratbag.RATBAG_BUTTON_ACTION_TYPE_SPECIAL
         KEY = libratbag.RATBAG_BUTTON_ACTION_TYPE_KEY
         MACRO = libratbag.RATBAG_BUTTON_ACTION_TYPE_MACRO
+        DPI_LOCK = libratbag.RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK
 
     class ActionSpecial(IntEnum):
         INVALID = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_INVALID
@@ -824,7 +825,7 @@ class RatbagdButton(metaclass=MetaRatbag):
     def action_type(self):
         """An enum describing the action type of the button. One of
         ActionType.NONE, ActionType.BUTTON, ActionType.SPECIAL,
-        ActionType.MACRO. This decides which
+        ActionType.MACRO, ActionType.DPI_LOCK. This decides which
         *Mapping property has a value.
         """
         return libratbag.ratbag_button_get_action_type(self._button)
@@ -838,6 +839,7 @@ class RatbagdButton(metaclass=MetaRatbag):
             RatbagdButton.ActionType.SPECIAL,
             RatbagdButton.ActionType.KEY,
             RatbagdButton.ActionType.MACRO,
+            RatbagdButton.ActionType.DPI_LOCK,
         )
 
         return [

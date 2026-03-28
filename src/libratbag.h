@@ -1738,6 +1738,77 @@ ratbag_led_set_brightness(struct ratbag_led *led, unsigned int brightness);
 /**
  * @ingroup button
  *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns the DPI lock target value for the X axis.
+ * If X and Y are the same, this is the uniform DPI lock value.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns -1.
+ *
+ * @return The DPI lock target X value, or -1 on error.
+ */
+int
+ratbag_button_get_dpi_lock(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns the DPI lock target value for the X axis.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns -1.
+ *
+ * @return The DPI lock target X value, or -1 on error.
+ */
+int
+ratbag_button_get_dpi_lock_x(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns the DPI lock target value for the Y axis.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns -1.
+ *
+ * @return The DPI lock target Y value, or -1 on error.
+ */
+int
+ratbag_button_get_dpi_lock_y(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * Set the DPI lock target to a uniform value for both axes.
+ *
+ * @param button A previously initialized ratbag button
+ * @param dpi The DPI value to lock to while the button is held.
+ * @return 0 on success or an error code otherwise. On success, the button's
+ * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK.
+ */
+enum ratbag_error_code
+ratbag_button_set_dpi_lock(struct ratbag_button *button, unsigned int dpi);
+
+/**
+ * @ingroup button
+ *
+ * Set the DPI lock target with independent X and Y values.
+ *
+ * @param button A previously initialized ratbag button
+ * @param x The DPI value for the X axis.
+ * @param y The DPI value for the Y axis.
+ * @return 0 on success or an error code otherwise. On success, the button's
+ * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK.
+ */
+enum ratbag_error_code
+ratbag_button_set_dpi_lock_xy(struct ratbag_button *button,
+			      unsigned int x, unsigned int y);
+
+/**
+ * @ingroup button
+ *
  * This function sets the special function assigned to this button.
  *
  * @param button A previously initialized ratbag button

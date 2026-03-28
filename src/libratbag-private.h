@@ -404,6 +404,12 @@ struct ratbag_profile {
 #define BUTTON_ACTION_MACRO \
  { .type = RATBAG_BUTTON_ACTION_TYPE_MACRO, \
 	/* FIXME: add the macro keys */ }
+#define BUTTON_ACTION_DPI_LOCK(dpi_) \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK, \
+	.action.dpi_lock = { .x = (dpi_), .y = (dpi_) } }
+#define BUTTON_ACTION_DPI_LOCK_XY(x_, y_) \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK, \
+	.action.dpi_lock = { .x = (x_), .y = (y_) } }
 
 struct ratbag_macro_event {
 	enum ratbag_macro_event_type type;
@@ -440,6 +446,10 @@ struct ratbag_button_action {
 		unsigned int button; /* action_type == button */
 		enum ratbag_button_action_special special; /* action_type == special */
 		unsigned int key; /* action_type == key */
+		struct { /* action_type == dpi_lock */
+			unsigned int x;
+			unsigned int y;
+		} dpi_lock;
 	} action;
 	struct ratbag_macro *macro; /* dynamically allocated, so kept aside */
 };
@@ -541,6 +551,9 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 		/* TODO: check if events match. */
 		return 1;
+	case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:
+		return match->action.dpi_lock.x == action->action.dpi_lock.x &&
+		       match->action.dpi_lock.y == action->action.dpi_lock.y;
 	default:
 		break;
 	}

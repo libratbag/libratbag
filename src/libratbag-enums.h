@@ -173,6 +173,10 @@ enum ratbag_button_action_type {
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_MACRO,
 	/**
+	 * Button locks DPI to a specific value while held
+	 */
+	RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+	/**
 	 * Button action is unknown
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_UNKNOWN = 1000,

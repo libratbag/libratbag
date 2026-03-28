@@ -45,6 +45,10 @@ struct ratbag_test_button {
 		int key;
 		enum ratbag_button_action_special special;
 		struct ratbag_test_macro_event macro[24];
+		struct {
+			unsigned int x;
+			unsigned int y;
+		} dpi_lock;
 	};
 };
 

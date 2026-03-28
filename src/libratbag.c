@@ -1378,6 +1378,7 @@ ratbag_button_has_action_type(const struct ratbag_button *button,
   case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
   case RATBAG_BUTTON_ACTION_TYPE_KEY:
   case RATBAG_BUTTON_ACTION_TYPE_MACRO:
+  case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:
     break;
   default:
     return 0;
@@ -1467,6 +1468,51 @@ ratbag_button_set_key(struct ratbag_button *button, unsigned int key) {
 
   action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
   action.action.key = key;
+
+  ratbag_button_set_action(button, &action);
+  button->dirty = true;
+  button->profile->dirty = true;
+
+  return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_button_get_dpi_lock(const struct ratbag_button *button) {
+  return ratbag_button_get_dpi_lock_x(button);
+}
+
+LIBRATBAG_EXPORT int
+ratbag_button_get_dpi_lock_x(const struct ratbag_button *button) {
+  if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK)
+    return -1;
+
+  return (int)button->action.action.dpi_lock.x;
+}
+
+LIBRATBAG_EXPORT int
+ratbag_button_get_dpi_lock_y(const struct ratbag_button *button) {
+  if (button->action.type != RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK)
+    return -1;
+
+  return (int)button->action.action.dpi_lock.y;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_button_set_dpi_lock(struct ratbag_button *button, unsigned int dpi) {
+  return ratbag_button_set_dpi_lock_xy(button, dpi, dpi);
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_button_set_dpi_lock_xy(struct ratbag_button *button,
+                              unsigned int x, unsigned int y) {
+  struct ratbag_button_action action = {0};
+
+  if (!ratbag_button_has_action_type(button, RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK))
+    return RATBAG_ERROR_CAPABILITY;
+
+  action.type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK;
+  action.action.dpi_lock.x = x;
+  action.action.dpi_lock.y = y;
 
   ratbag_button_set_action(button, &action);
   button->dirty = true;

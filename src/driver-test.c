@@ -80,6 +80,11 @@ test_read_button(struct ratbag_button *button)
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
 		button->action.action.special = p->buttons[button->index].special;
 		break;
+	case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK;
+		button->action.action.dpi_lock.x = p->buttons[button->index].dpi_lock.x;
+		button->action.action.dpi_lock.y = p->buttons[button->index].dpi_lock.y;
+		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
 	}
@@ -89,6 +94,7 @@ test_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK);
 }
 
 static void

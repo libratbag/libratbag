@@ -205,6 +205,12 @@ def print_button(
         print(f"{header}key '{key_name}'")
     elif button.action_type == RatbagdButton.ActionType.MACRO:
         print(f"{header}macro '{str(button.macro)}'")
+    elif button.action_type == RatbagdButton.ActionType.DPI_LOCK:
+        x, y = button.dpi_lock
+        if x == y:
+            print(f"{header}dpi-lock {x}")
+        else:
+            print(f"{header}dpi-lock {x}x{y}")
     elif button.action_type == RatbagdButton.ActionType.NONE:
         print(f"{header}none")
     else:
@@ -455,6 +461,21 @@ def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> 
                 macro.append(RatbagdButton.Macro.KEY_RELEASE, code)
 
     button.macro = macro
+    commit(device, args)
+
+
+def func_button_action_set_dpi_lock(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    button, _profile, device = find_button(ratbagd, args)
+    if button.ActionType.DPI_LOCK not in button.action_types:
+        raise RatbagCapabilityError("DPI lock is not supported on this device")
+
+    dpi_str = args.target_dpi
+    if "x" in dpi_str.lower():
+        x, y = dpi_str.lower().split("x", 1)
+        button.dpi_lock = (int(x), int(y))
+    else:
+        dpi = int(dpi_str)
+        button.dpi_lock = (dpi, dpi)
     commit(device, args)
 
 
@@ -1499,6 +1520,20 @@ active profile if none is given.""",
                                         },
                                     ],
                                     func: func_button_action_set_macro,
+                                },
+                                {
+                                    of_type: command,
+                                    name: "dpi-lock",
+                                    help_str: "Set the button to lock DPI while held",
+                                    pos_args: [
+                                        {
+                                            of_type: argument,
+                                            name: "target_dpi",
+                                            metavar: "DPI",
+                                            help_str: "DPI value (e.g. 400 or 400x800)",
+                                        },
+                                    ],
+                                    func: func_button_action_set_dpi_lock,
                                 },
                                 {
                                     of_type: command,

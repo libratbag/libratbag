@@ -936,6 +936,7 @@ class RatbagdButton(_RatbagdDBus):
         SPECIAL = 2
         KEY = 3
         MACRO = 4
+        DPI_LOCK = 5
 
     class ActionSpecial(IntEnum):
         INVALID = -1
@@ -1089,10 +1090,30 @@ class RatbagdButton(_RatbagdDBus):
         self._set_dbus_property("Mapping", "(uv)", (RatbagdButton.ActionType.KEY, key))
 
     @GObject.Property
+    def dpi_lock(self):
+        """A tuple (x, y) of the DPI lock target values, or None if not
+        mapped to DPI lock."""
+        type, value = self._mapping()
+        if type != RatbagdButton.ActionType.DPI_LOCK:
+            return None
+        return value
+
+    @dpi_lock.setter
+    def dpi_lock(self, dpi):
+        """Set the DPI lock target.
+
+        @param dpi A tuple (x, y) of DPI values.
+        """
+        dpi = GLib.Variant("(uu)", dpi)
+        self._set_dbus_property(
+            "Mapping", "(uv)", (RatbagdButton.ActionType.DPI_LOCK, dpi)
+        )
+
+    @GObject.Property
     def action_type(self):
         """An enum describing the action type of the button. One of
         ActionType.NONE, ActionType.BUTTON, ActionType.SPECIAL,
-        ActionType.MACRO. This decides which
+        ActionType.MACRO, ActionType.DPI_LOCK. This decides which
         *Mapping property has a value.
         """
         type, mapping = self._mapping()
