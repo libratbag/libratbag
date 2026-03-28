@@ -552,6 +552,11 @@ org.freedesktop.ratbag1.Button
         |   1     | Key press event                      |
         +---------+--------------------------------------+
 
+        If the ActionType is *DPI Lock*, the variant is an unsigned integer
+        tuple (``(uu)``) where the first element is the X DPI value and the
+        second element is the Y DPI value to lock to while the button is
+        held. For uniform DPI lock, both values are identical.
+
         If the ActionType is *None*, the variant is an unsigned integer
         (``u``) of value 0.
 
@@ -575,6 +580,8 @@ org.freedesktop.ratbag1.Button
         |   3     | Key     | Mapping to a simple key action       |
         +---------+---------+--------------------------------------+
         |   4     | Macro   | Mapping to a macro key sequence      |
+        +---------+---------+--------------------------------------+
+        |   5     | DPILock | Lock DPI to a value while held       |
         +---------+---------+--------------------------------------+
         | 1000    | Unknown | An unknown or unreadable mapping type|
         +---------+---------+--------------------------------------+
