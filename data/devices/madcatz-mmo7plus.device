@@ -1,0 +1,5 @@
+[Device]
+Name=Mad Catz M.M.O. 7+
+DeviceMatch=usb:0738:1c02
+Driver=madcatz
+DeviceType=mouse
