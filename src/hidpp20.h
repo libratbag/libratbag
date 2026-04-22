@@ -574,6 +574,34 @@ enum hidpp20_color_led_zone_effect {
 #define HIDPP20_RGB_EFFECTS_SLOT_INFO_EFCT_NAME_21_31	0x06
 
 /* -------------------------------------------------------------------------- */
+/* 0x8080 - G602 Onboard Profile                                              */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_G602_ONBOARD_PROFILE		0x8080
+#define HIDPP20_G602_PROFILE_SIZE		45
+
+int hidpp20_g602_read_profile(struct hidpp20_device *device, uint8_t *profile);
+int hidpp20_g602_write_profile(struct hidpp20_device *device, const uint8_t *profile);
+int hidpp20_g602_get_active_dpi_stage(struct hidpp20_device *device);
+int hidpp20_g602_set_active_dpi_stage(struct hidpp20_device *device, uint8_t stage);
+
+union hidpp20_g602_onboard_profile {
+	uint8_t data[HIDPP20_G602_PROFILE_SIZE];
+	struct {
+		uint8_t reserved0;
+		uint8_t report_rate;
+		uint8_t reserved1;
+		uint8_t dpi_shift;
+		uint8_t stages[5];
+		uint8_t reserved2;
+		uint8_t tail[5];
+		uint8_t chunk2[15];
+		uint8_t chunk3[15];
+	} __attribute__((packed)) profile;
+};
+_Static_assert(sizeof(union hidpp20_g602_onboard_profile) == HIDPP20_G602_PROFILE_SIZE, "Invalid size");
+
+/* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
 /* -------------------------------------------------------------------------- */
 

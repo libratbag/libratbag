@@ -58,6 +58,7 @@
 #define HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060		(1 << 8)
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 #define HIDPP_CAP_RGB_EFFECTS_8071			(1 << 10)
+#define HIDPP_CAP_G602_8080				(1 << 11)
 
 #define HIDPP_HIDDEN_FEATURE				(1 << 6)
 
@@ -71,6 +72,7 @@ struct hidpp20drv_data {
 	struct hidpp20_profiles *profiles;
 	struct hidpp20_led *leds;
 	union hidpp20_generic_led_zone_info led_infos;
+	union hidpp20_g602_onboard_profile *g602_profile;
 
 	unsigned int report_rates[4];
 	unsigned int num_report_rates;
@@ -907,7 +909,28 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 		return 0;
 	}
 
-	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
+	if (drv_data->capabilities & HIDPP_CAP_G602_8080) {
+		int active = hidpp20_g602_get_active_dpi_stage(drv_data->dev);
+		if (active < 0)
+			return active;
+		uint8_t uactive = active;
+
+		struct hidpp20_sensor *sensor;
+		sensor = &drv_data->sensors[0];
+
+		int num_of_dpis = (sensor->dpi_max - sensor->dpi_min) / sensor->dpi_steps + 1;
+		unsigned int *dpis = zalloc(sizeof(unsigned int) * num_of_dpis);
+		for (int i = 0; i < num_of_dpis; i++) {
+			dpis[i] = (i * sensor->dpi_steps) + sensor->dpi_min;
+		}
+		ratbag_profile_for_each_resolution(profile, res) {
+			int value = drv_data->g602_profile->profile.stages[res->index] * 250;
+			res->is_active = (res->index == uactive);
+			ratbag_resolution_set_resolution(res, value, value);
+			ratbag_resolution_set_dpi_list(res, dpis, num_of_dpis);
+		}
+		free(dpis);
+	} else if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
 		rc = hidpp20drv_read_resolution_dpi_2201(device);
 		if (rc < 0)
 			return rc;
@@ -968,6 +991,20 @@ hidpp20drv_update_resolution_dpi_8100(struct ratbag_resolution *resolution,
 }
 
 static int
+hidpp20drv_update_resolution_dpi_8080(struct ratbag_resolution *resolution,
+				      int dpi_x, int dpi_y)
+{
+	struct ratbag_profile *profile = resolution->profile;
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int dpi = dpi_x; /* dpi_x == dpi_y if we don't have the individual resolution cap */
+
+	drv_data->g602_profile->profile.stages[resolution->index] = dpi / 250;
+
+	return RATBAG_SUCCESS;
+}
+
+static int
 hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 				 int dpi_x, int dpi_y)
 {
@@ -987,6 +1024,9 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100)
 		return hidpp20drv_update_resolution_dpi_8100(resolution, dpi_x, dpi_y);
+
+	if (drv_data->capabilities & HIDPP_CAP_G602_8080)
+		return hidpp20drv_update_resolution_dpi_8080(resolution, dpi_x, dpi_y);
 
 	if (!(drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201))
 		return -ENOTSUP;
@@ -1367,6 +1407,19 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->capabilities |= HIDPP_CAP_SWITCHABLE_RESOLUTION_2201;
 		break;
 	}
+	case HIDPP_PAGE_G602_ONBOARD_PROFILE: {
+		log_debug(ratbag, "device has G602 onboard profile\n");
+		union hidpp20_g602_onboard_profile *profile = zalloc(sizeof(*profile));
+		rc = hidpp20_g602_read_profile(drv_data->dev, profile->data);
+		if (rc < 0) {
+			free(profile);
+			return 0;
+		}
+		drv_data->g602_profile = profile;
+		drv_data->capabilities |= HIDPP_CAP_G602_8080;
+		drv_data->num_resolutions = 5;
+		break;
+	}
 	case HIDPP_PAGE_SPECIAL_KEYS_BUTTONS: {
 		log_debug(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_BUTTON_KEY_1b04;
@@ -1548,6 +1601,27 @@ hidpp20drv_commit(struct ratbag_device *device)
 		}
 	}
 
+	if (drv_data->capabilities & HIDPP_CAP_G602_8080) {
+		rc = hidpp20_g602_write_profile(drv_data->dev,
+						     drv_data->g602_profile->data);
+		if (rc) {
+			log_error(device->ratbag, "hidpp20: failed to commit profile (%d)\n", rc);
+			return RATBAG_ERROR_DEVICE;
+		}
+
+		list_for_each(profile, &device->profiles, link) {
+			ratbag_profile_for_each_resolution(profile, resolution) {
+				if (resolution->is_active) {
+					rc = hidpp20_g602_set_active_dpi_stage(drv_data->dev, resolution->index);
+					if (rc) {
+						log_error(device->ratbag, "hidpp20: failed to set active resolution (%d)\n", rc);
+						return RATBAG_ERROR_DEVICE;
+					}
+				}
+			}
+		}
+	}
+
 	return RATBAG_SUCCESS;
 }
 
@@ -1623,6 +1697,7 @@ hidpp20drv_remove(struct ratbag_device *device)
 	free(drv_data->controls);
 	free(drv_data->sensors);
 	free(drv_data->leds);
+	free(drv_data->g602_profile);
 	if (drv_data->dev)
 		hidpp20_device_destroy(drv_data->dev);
 	free(drv_data);
