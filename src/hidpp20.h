@@ -876,7 +876,6 @@ _Static_assert(sizeof(union hidpp20_macro_data) == 3, "Invalid size");
 struct hidpp20_profile {
 	uint16_t address;
 	uint8_t enabled;
-	uint8_t custom_animation_index;
 	char name[16 * 3];
 	uint16_t powersave_timeout;
 	uint16_t poweroff_timeout;

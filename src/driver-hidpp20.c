@@ -1712,9 +1712,24 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), dev->proto_major, dev->proto_minor);
 
-	if (dev->quirk != HIDPP20_QUIRK_NONE)
-		log_debug(device->ratbag, "'%s' has quirk flags (0x%x)\n",
-			  ratbag_device_get_name(device), dev->quirk);
+	if (dev->quirk != HIDPP20_QUIRK_NONE) {
+		enum hidpp20_quirk quirks[] = {
+			HIDPP20_QUIRK_G305,
+			HIDPP20_QUIRK_G602,
+			HIDPP20_QUIRK_G502X_PLUS,
+			HIDPP20_QUIRK_INDEX_OFFSET,
+		};
+		size_t i;
+
+		for (i = 0; i < ARRAY_LENGTH(quirks); i++) {
+			if (!(dev->quirk & quirks[i]))
+				continue;
+
+			log_debug(device->ratbag, "'%s' has quirk %s\n",
+				  ratbag_device_get_name(device),
+				  hidpp20_get_quirk_string(quirks[i]));
+		}
+	}
 
 	/* add some defaults that will be overwritten by the device */
 	drv_data->num_profiles = 1;
