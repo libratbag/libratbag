@@ -1,3 +1,5 @@
+este es un proyecto para desarroyar un driver para del mouse sentey gs-3910 para el proyecto libratbag, dentro del la carpeta captures existen unas capturas de las comunicaciones entre el software para windows y el mouse. tambien dentro de la garpeta existe un fichero que dice guia que dice la codificacion de los nombres de los ficheros y la accion que se realizo y esporto a cada fichero. cabe destacar que cuando compilo el codigo en la computadora con garuda linux el servicio de libratbag detecta el mouse sentey como algun otro tipo de mouse lo mostrado por el software en modo debugues tambien se encuentra en la carpeta capures el nombre del fichero esta en el fichero gia que renombralo despues a indice
+
 captures/A2 LeftClick.txt   ### --  Asignacion al boton 2 la funcion LeftClick
 captures/A2 RightClick.txt   ### --  Asignacion al boton 2 la funcion RightClick
 captures/A3 LeftClick.txt   ### --  Asignacion al boton 3 la funcion LeftClick
