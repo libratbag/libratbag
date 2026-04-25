@@ -1532,7 +1532,7 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 		.msg.parameters[0] = sensor->index,
 	};
 
-	if (device->quirk == HIDPP20_QUIRK_G602) {
+	if (device->quirk & HIDPP20_QUIRK_G602) {
 		msg.msg.parameters[0] = 1;
 		i = 0;
 	}
@@ -1548,7 +1548,7 @@ hidpp20_adjustable_dpi_get_dpi_list(struct hidpp20_device *device,
 	       get_unaligned_be_u16(&msg.msg.parameters[i]) != 0) {
 		uint16_t value = get_unaligned_be_u16(&msg.msg.parameters[i]);
 
-		if (device->quirk == HIDPP20_QUIRK_G602 && i == 2)
+		if ((device->quirk & HIDPP20_QUIRK_G602) && i == 2)
 			value += 0xe000;
 
 		if (value > 0xe000) {
@@ -1580,7 +1580,7 @@ hidpp20_adjustable_dpi_get_dpi(struct hidpp20_device *device,
 		.msg.parameters[0] = sensor->index,
 	};
 
-	if (device->quirk == HIDPP20_QUIRK_G602)
+	if (device->quirk & HIDPP20_QUIRK_G602)
 		msg.msg.parameters[0] = 1;
 
 	rc = hidpp20_request_command(device, &msg);
@@ -1662,7 +1662,7 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 		.msg.parameters[0] = sensor->index,
 	};
 
-	if (device->quirk == HIDPP20_QUIRK_G602)
+	if (device->quirk & HIDPP20_QUIRK_G602)
 		msg.msg.parameters[0] = 1;
 
 	set_unaligned_be_u16(&msg.msg.parameters[1], dpi);
@@ -2279,7 +2279,7 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	active_profile_index = rc;
 
 	/* Apply quirk for devices that return 1-indexed profile */
-	if (device->quirk == HIDPP20_QUIRK_INDEX_OFFSET && active_profile_index > 0)
+	if ((device->quirk & HIDPP20_QUIRK_INDEX_OFFSET) && active_profile_index > 0)
 		active_profile_index--;
 
 	profiles = zalloc(sizeof(struct hidpp20_profiles));
@@ -2802,7 +2802,7 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 						  profiles->sector_size,
 						  data);
 
-	if (rc && device->quirk == HIDPP20_QUIRK_G305) {
+	if (rc && (device->quirk & HIDPP20_QUIRK_G305)) {
 		/* The G305 has a bug where it throws an ERR_INVALID_ARGUMENT
 		   if the sector has not been written to yet. If this happens
 		   we will read the ROM profiles.*/
@@ -2971,7 +2971,7 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	// Mice like G502X can store custom animations onboard.
 	// ratbag does not support this, so we set it to disable it to ensure
 	// that the actual lighting matches the user's settings.
-	if (device->quirk == HIDPP20_QUIRK_G502X_PLUS)
+	if (device->quirk & HIDPP20_QUIRK_G502X_PLUS)
 	{
 		// Note(sewer56): There are two known mice which use this field;
 		// G502X PLUS and G705. [And I only own one of these.] But it's not known how

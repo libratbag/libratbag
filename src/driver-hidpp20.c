@@ -411,7 +411,7 @@ hidpp20drv_read_led_8071(struct ratbag_led *led, struct hidpp20drv_data* drv_dat
 	hidpp20_rgb_effects_get_device_info(drv_data->dev, &device_info);
 	cluster_info = drv_data->led_infos.color_leds_8071[led->index];
 	profile = &drv_data->profiles->profiles[led->profile->index];
-	if (drv_data->dev->quirk == HIDPP20_QUIRK_G502X_PLUS) {
+	if (drv_data->dev->quirk & HIDPP20_QUIRK_G502X_PLUS) {
 		// On G502X+ the second slot controls the user configurable LED.
 		// (Note: There is only 1 reported LED, it just happens to use 2nd index though)
 		h_led = &profile->leds[1];
@@ -695,7 +695,7 @@ hidpp20drv_update_led_8070_8071(struct ratbag_led *led, struct ratbag_profile* p
 
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 		h_profile = &drv_data->profiles->profiles[profile->index];
-		if (drv_data->dev->quirk == HIDPP20_QUIRK_G502X_PLUS) {
+		if (drv_data->dev->quirk & HIDPP20_QUIRK_G502X_PLUS) {
 			// On G502X+ the second slot controls the user configurable LED.
 			// (Note: There is only 1 reported LED, it just happens to use 2nd index though)
 			h_led = &(h_profile->leds[1]);
@@ -1432,7 +1432,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 	case HIDPP_PAGE_COLOR_LED_EFFECTS: {
 		/* The 8070 feature implemented in the G602 doesn't follow the spec,
 		 * so we ignore it */
-		if (ratbag_device_data_hidpp20_get_quirk(device->data) == HIDPP20_QUIRK_G602)
+		if (ratbag_device_data_hidpp20_get_quirk(device->data) & HIDPP20_QUIRK_G602)
 			break;
 
 		log_debug(ratbag, "device has color effects\n");
@@ -1712,8 +1712,24 @@ hidpp20drv_probe(struct ratbag_device *device)
 
 	log_debug(device->ratbag, "'%s' is using protocol v%d.%d\n", ratbag_device_get_name(device), dev->proto_major, dev->proto_minor);
 
-	if(dev->quirk != HIDPP20_QUIRK_NONE)
-		log_debug(device->ratbag, "'%s' is quirked (%s)\n", ratbag_device_get_name(device), hidpp20_get_quirk_string(dev->quirk));
+	if (dev->quirk != HIDPP20_QUIRK_NONE) {
+		enum hidpp20_quirk quirks[] = {
+			HIDPP20_QUIRK_G305,
+			HIDPP20_QUIRK_G602,
+			HIDPP20_QUIRK_G502X_PLUS,
+			HIDPP20_QUIRK_INDEX_OFFSET,
+		};
+		size_t i;
+
+		for (i = 0; i < ARRAY_LENGTH(quirks); i++) {
+			if (!(dev->quirk & quirks[i]))
+				continue;
+
+			log_debug(device->ratbag, "'%s' has quirk %s\n",
+				  ratbag_device_get_name(device),
+				  hidpp20_get_quirk_string(quirks[i]));
+		}
+	}
 
 	/* add some defaults that will be overwritten by the device */
 	drv_data->num_profiles = 1;

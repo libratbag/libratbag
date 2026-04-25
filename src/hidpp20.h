@@ -52,11 +52,11 @@ struct hidpp20_feature {
 };
 
 enum hidpp20_quirk {
-	HIDPP20_QUIRK_NONE,
-	HIDPP20_QUIRK_G305,
-	HIDPP20_QUIRK_G602,
-	HIDPP20_QUIRK_G502X_PLUS, // G502X+ uses 2nd LED slot instead of 1st.
-	HIDPP20_QUIRK_INDEX_OFFSET, // Device returns 1-indexed profile, decrement by 1.
+	HIDPP20_QUIRK_NONE = 0,
+	HIDPP20_QUIRK_G305 = 1 << 0,
+	HIDPP20_QUIRK_G602 = 1 << 1,
+	HIDPP20_QUIRK_G502X_PLUS = 1 << 2, // G502X+ uses 2nd LED slot instead of 1st.
+	HIDPP20_QUIRK_INDEX_OFFSET = 1 << 3, // Device returns 1-indexed profile, decrement by 1.
 };
 
 struct hidpp20_device {
