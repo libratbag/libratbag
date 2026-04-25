@@ -58,6 +58,7 @@
 #define HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8060		(1 << 8)
 #define HIDPP_CAP_BATTERY_VOLTAGE_1001			(1 << 9)
 #define HIDPP_CAP_RGB_EFFECTS_8071			(1 << 10)
+#define HIDPP_CAP_CHARGING_CONTROL_1010			(1 << 11)
 
 #define HIDPP_HIDDEN_FEATURE				(1 << 6)
 
@@ -1071,6 +1072,19 @@ hidpp20drv_update_report_rate(struct ratbag_profile *profile, int hz)
 }
 
 static int
+hidpp20drv_update_charging_control(struct ratbag_profile *profile, bool status)
+{
+	struct ratbag_device *device = profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	int rc;
+
+	if (drv_data->capabilities & HIDPP_CAP_CHARGING_CONTROL_1010)
+		return hidpp20_charging_control_set_status(drv_data->dev, status);
+
+	return -ENOTSUP;
+}
+
+static int
 hidpp20drv_read_special_key_mouse(struct ratbag_device *device)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
@@ -1407,6 +1421,19 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 		drv_data->capabilities |= HIDPP_CAP_BATTERY_VOLTAGE_1001;
 		break;
 	}
+	case HIDPP_PAGE_CHARGING_CONTROL: {
+		bool status;
+
+		rc = hidpp20_charging_control_get_status(drv_data->dev, &status);
+		if (rc < 0)
+			return rc;
+
+		log_debug(ratbag, "device charging control status %d\n",
+			  status);
+
+		drv_data->capabilities |= HIDPP_CAP_CHARGING_CONTROL_1010;
+		break;
+	}
 	case HIDPP_PAGE_KBD_REPROGRAMMABLE_KEYS: {
 		log_debug(ratbag, "device has programmable keys/buttons\n");
 		drv_data->capabilities |= HIDPP_CAP_KBD_REPROGRAMMABLE_KEYS_1b00;
@@ -1484,6 +1511,14 @@ hidpp20drv_commit(struct ratbag_device *device)
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
 			continue;
+
+		if (profile->charging_control_dirty) {
+			rc = hidpp20drv_update_charging_control(profile, profile->charging_control);
+			if (rc) {
+				log_error(device->ratbag, "hidpp20: failed to update charging control (%d)\n", rc);
+				return RATBAG_ERROR_DEVICE;
+			}
+		}
 
 		if (profile->rate_dirty) {
 			rc = hidpp20drv_update_report_rate(profile, profile->hz);

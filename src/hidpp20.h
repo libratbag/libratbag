@@ -173,6 +173,18 @@ int hidpp20_batteryvoltage_get_battery_voltage(struct hidpp20_device *device,
 					       uint16_t *voltage);
 
 /* -------------------------------------------------------------------------- */
+/* 0x1010 - Charging control                                                  */
+/* -------------------------------------------------------------------------- */
+
+#define HIDPP_PAGE_CHARGING_CONTROL		0x1010
+
+int hidpp20_charging_control_get_status(struct hidpp20_device *device,
+					bool *status);
+
+int hidpp20_charging_control_set_status(struct hidpp20_device *device,
+					bool status);
+
+/* -------------------------------------------------------------------------- */
 /* 0x1300: LED software control                                               */
 /* -------------------------------------------------------------------------- */
 
