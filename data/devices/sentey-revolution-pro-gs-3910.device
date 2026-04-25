@@ -1,0 +1,11 @@
+[Device]
+Name=Sentey Revolution Pro GS-3910
+DeviceMatch=usb:e0ff:0002
+Driver=sinowealth
+DeviceType=mouse
+
+[Driver/sinowealth]
+Profiles=5
+Buttons=10
+Leds=1
+DpiRange=200:8200@100
