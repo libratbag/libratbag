@@ -1,0 +1,37 @@
+captures/A2 LeftClick.txt   ### --  Asignacion al boton 2 la funcion LeftClick
+captures/A2 RightClick.txt   ### --  Asignacion al boton 2 la funcion RightClick
+captures/A3 LeftClick.txt   ### --  Asignacion al boton 3 la funcion LeftClick
+captures/A3 WheelClick.txt   ### --  Asignacion al boton 3 la funcion WheelClick
+captures/A4 Button4.txt   ### --  Asignacion al boton 4 la funcion Button4
+captures/A4 LeftClick.txt   ### -- Asignacion al boton 4 la funcion LeftClick
+captures/A5 Button5.txt   ### -- Asignacion al boton 5 la funcion Button5
+captures/A5 LeftClick.txt   ### -- Asignacion al boton 5 la funcion LeftClick
+captures/A6 LeftClick.txt   ### -- Asignacion al boton 6 la funcion LeftClick
+captures/A7 LeftClick.txt   ### -- Asignacion al boton 7 la funcion LeftClick
+captures/A8 LeftClick.txt   ### -- Asignacion al boton 8 la funcion LeftClick
+captures/A9 ScrollUp.txt   ### -- Asignacion al boton 9 la funcion ScrollUp
+captures/A10 ScrollDown.txt   ### -- Asignacion al boton 10 la funcion ScrollDown
+captures/Apertura del software.txt   ### -- Comunicacion inicial cuando se abre el software
+captures/colores posibles perfil 1.txt   ### -- Aplicacion de la paleta de colores RGB al Perfil 1
+captures/DPI Mouse.png   ### -- Imagen del software original con las 4 etradas de DPI 
+captures/DPI1-4.txt   ### -- Asigancion de todos los niveles de DPI solo separados por una pausa de tiempo
+captures/DPI1.txt   ### -- Asigancion del primero modo de DPI x:2000 y:2000
+captures/DPI2.txt   ### -- Asigancion del segundo modo de DPI x:4200 y:4200
+captures/DPI3.txt   ### -- Asigancion del tercero modo de DPI x:6200 y:6200
+captures/DPI4.txt   ### -- Asigancion del cuarto modo de DPI x:8200 y:8200
+captures/Paleta de colores.png   ### -- Paleta de colores asignables a los leds rgbs del mouse
+captures/Perfil 1.txt   ### -- Asignacion del perfil 1
+captures/Perfil 2.txt   ### -- Asignacion del perfil 2
+captures/Perfil 3.txt   ### -- Asignacion del perfil 3
+captures/Perfil 4.txt   ### -- Asignacion del perfil 4
+captures/Perfil 5.txt   ### -- Asignacion del perfil 5
+captures/Perfiles.png   ### -- Captura de una imagen del software original en la vista de Perfiles
+captures/capturaLRB.txt  ### -- Captura de comunicacion entre el mouse y libratbag sin configurar el driver regla
+el comabdo lsusb devuelve lo siguiente en el sistema
+lsusb
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 001 Device 003: ID 0bda:568a Realtek Semiconductor Corp. Integrated Webcam
+Bus 001 Device 004: ID 0bda:0129 Realtek Semiconductor Corp. RTS5129 Card Reader Controller
+Bus 001 Device 005: ID 0cf3:e009 Qualcomm Atheros Communications
+Bus 001 Device 007: ID e0ff:0002 A..... G3 ----------> Este es el mouse
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub

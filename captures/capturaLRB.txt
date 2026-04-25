@@ -1,0 +1,67 @@
+[sudo] contraseña para dfedez:
+Starting ratbagd version 0.18 (API version 2)
+Initializing libratbag
+ratbag debug: New device: A..... G3
+ratbag debug: Using data directory '/usr/local/share/libratbag'
+ratbag debug: device assigned driver steelseries
+ratbag debug: hidraw info: bus 0x03 vendor 0xffffe0ff product 0x02
+ratbag debug: A..... G3 is device '/dev/hidraw3'.
+ratbag debug: Parsing HID report descriptor
+ratbag debug: Parsing HID report descriptor
+ratbag debug: This is a non-vendor HID device, it may show up as a duplicate configurable device in libratbag
+ratbag debug: hidraw info: bus 0x03 vendor 0xffffe0ff product 0x02
+ratbag debug: A..... G3 is device '/dev/hidraw4'.
+ratbag debug: Parsing HID report descriptor
+ratbag debug: Parsing HID report descriptor
+ratbag debug: - HID report ID 01
+ratbag debug: - HID report ID 02
+ratbag debug: - HID report ID 03
+ratbag debug: hidraw info: bus 0x03 vendor 0xffffe0ff product 0x02
+ratbag debug: A..... G3 is device '/dev/hidraw3'.
+ratbag debug: Parsing HID report descriptor
+ratbag debug: - HID report ID 01
+ratbag debug: - HID report ID 02
+ratbag debug: - HID report ID 03
+ratbag debug: Parsing HID report descriptor
+ratbag debug: - HID report ID 01
+ratbag debug: - HID report ID 02
+ratbag debug: - HID report ID 03
+ratbag raw: output report: 00 90 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ratbag raw: output report: 00 92 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ratbag error: Failed to read device settings
+ratbag error: A..... G3: error opening hidraw node (Connection timed out)
+ratbag debug: New device: A..... G3
+ratbag debug: Using data directory '/usr/local/share/libratbag'
+ratbag debug: device assigned driver steelseries
+ratbag debug: hidraw info: bus 0x03 vendor 0xffffe0ff product 0x02
+ratbag debug: A..... G3 is device '/dev/hidraw3'.
+ratbag debug: Parsing HID report descriptor
+ratbag debug: Parsing HID report descriptor
+ratbag debug: This is a non-vendor HID device, it may show up as a duplicate configurable device in libratbag
+ratbag debug: hidraw info: bus 0x03 vendor 0xffffe0ff product 0x02
+ratbag debug: A..... G3 is device '/dev/hidraw4'.
+ratbag debug: Parsing HID report descriptor
+ratbag debug: Parsing HID report descriptor
+ratbag debug: - HID report ID 01
+ratbag debug: - HID report ID 02
+ratbag debug: - HID report ID 03
+ratbag debug: hidraw info: bus 0x03 vendor 0xffffe0ff product 0x02
+ratbag debug: A..... G3 is device '/dev/hidraw3'.
+ratbag debug: Parsing HID report descriptor
+ratbag debug: - HID report ID 01
+ratbag debug: - HID report ID 02
+ratbag debug: - HID report ID 03
+ratbag debug: Parsing HID report descriptor
+ratbag debug: - HID report ID 01
+ratbag debug: - HID report ID 02
+ratbag debug: - HID report ID 03
+ratbag raw: output report: 00 90 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ratbag raw: input report:  00 00
+ratbag raw: output report: 00 92 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ratbag raw: input report:  00 01 00 01 00 00 00
+ratbag debug: driver match found: SteelSeries
+hidraw4: "A..... G3", 1 profiles
+ratbag debug: New device: DELL0810:00 044E:120A
+ratbag debug: Using data directory '/usr/local/share/libratbag'
+ratbag debug: No data file found for 044e:120a
+DBus server ready
