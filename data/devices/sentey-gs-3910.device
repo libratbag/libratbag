@@ -1,0 +1,11 @@
+[Device]
+Name=Sentey GS-3910
+DeviceMatch=usb:e0ff:0002
+DeviceType=mouse
+Driver=steelseries
+
+[Driver/steelseries]
+DeviceVersion=2
+Buttons=10
+Leds=1
+DpiList=2000;4200;6200;8200
