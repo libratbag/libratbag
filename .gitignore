@@ -1,2 +1,69 @@
-# Device files
-data/devices/*.device
+```
+# Build artifacts
+*.o
+*.obj
+*.out
+
+# Dependencies
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+
+# Distribution / packaging
+dist/
+build/
+*.egg
+*.egg-info/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.tmp
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Testing
+.coverage*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.gcda
+*.gcno
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+```
