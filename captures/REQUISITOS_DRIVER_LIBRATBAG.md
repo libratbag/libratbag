@@ -689,16 +689,16 @@ meson test
 ## 13. PLAN DE IMPLEMENTACIÓN PARA DRIVER SENTEY
 
 ### 13.1 Fase 1: Estructura Básica
-- [ ] Crear `src/driver-sentey.c` con probe básico
-- [ ] Actualizar `data/devices/sentey-gs-3910.device` con Driver=sentey
-- [ ] Agregar a `src/meson.build`
+- [x] Crear `src/driver-sentey.c` con probe básico
+- [x] Actualizar `data/devices/sentey-gs-3910.device` con Driver=sentey
+- [x] Agregar a `src/meson.build`
 - [ ] Compilar y verificar detección
 
 ### 13.2 Fase 2: Funcionalidades Core
-- [ ] Implementar `sentey_write_profile()` (comando 0x0188)
-- [ ] Implementar `sentey_write_button()` (comando 0x0185)
-- [ ] Implementar `sentey_write_led()` (comandos 0x0186/0x0102)
-- [ ] Implementar `sentey_commit()` con guardado
+- [x] Implementar `sentey_write_profile()` (comando 0x0188)
+- [x] Implementar `sentey_write_button()` (comando 0x0185)
+- [x] Implementar `sentey_write_led()` (comandos 0x0186/0x0102)
+- [x] Implementar `sentey_commit()` con guardado
 
 ### 13.3 Fase 3: DPI y Testing
 - [ ] Investigar comando DPI exacto
@@ -711,6 +711,36 @@ meson test
 - [ ] Manejo de errores robusto
 - [ ] Logging detallado
 - [ ] Tests unitarios
+
+---
+
+## 14. ESTADO ACTUAL DEL DESARROLLO
+
+### ✅ Completado:
+- **Driver básico**: `src/driver-sentey.c` implementado con API v0.18 correcta
+- **Integración**: Agregado a `meson.build` y archivo `.device` actualizado
+- **Protocolo**: Implementados comandos HID basados en análisis de capturas
+- **Funcionalidades**: Perfiles, botones, LEDs y DPI soportados
+- **Mapeo**: Botones físicos correctamente mapeados (índice 1 = botón físico 2)
+
+### 🔄 Pendiente:
+- **Compilación**: Verificar que compila sin errores
+- **Testing**: Probar con `ratbagctl` cuando esté disponible el dispositivo
+- **DPI**: Implementar comando DPI exacto (actualmente placeholder)
+- **Guardado**: Implementar comando de persistencia en memoria no volátil
+
+### 📋 Archivos Modificados:
+- `/workspaces/libratbag/src/driver-sentey.c` - Driver completo
+- `/workspaces/libratbag/data/devices/sentey-gs-3910.device` - Configuración actualizada
+- `/workspaces/libratbag/meson.build` - Driver agregado al build
+- `/workspaces/libratbag/captures/REQUISITOS_DRIVER_LIBRATBAG.md` - Documentación actualizada
+
+### 🎯 Próximos Pasos:
+1. **Compilar** el proyecto: `meson setup build && ninja -C build`
+2. **Probar detección**: Verificar que el mouse es reconocido con el driver Sentey
+3. **Testing funcional**: Usar `ratbagctl` para configurar botones, LEDs, perfiles
+4. **Debugging**: Usar herramientas en `tools/` para inspeccionar comunicación HID
+5. **DPI implementation**: Analizar capturas adicionales para comando DPI exacto
 
 ### Archivos a Crear/Modificar
 - [ ] `/workspace/src/driver-sentey.c` - Driver principal

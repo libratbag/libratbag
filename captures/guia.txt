@@ -47,3 +47,5 @@ lineas para la asignacion de DPI dpi
 25 - 30 Asignado DPI 1 X:4200 Y:4200
 31 - 36 Asignado DPI 1 X:6200 Y:6200
 37 - 42 Asignado DPI 1 X:8200 Y:8200
+
+fichero infotmacion oficial de mouse.md ### -- Descripcion del mouse extraida del sitio oficial

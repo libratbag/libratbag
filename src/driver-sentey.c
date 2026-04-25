@@ -21,183 +21,433 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "config.h"
+#include <assert.h>
+#include <errno.h>
+#include <libevdev/libevdev.h>
+#include <linux/input.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
-#include "shared-macro.h"
 
-#define SENTAY_REPORT_ID_FEATURE 0x03
-#define SENTAY_REPORT_SIZE 8
+#define SENTEY_NUM_PROFILES    5
+#define SENTEY_NUM_DPI         4
+#define SENTEY_NUM_BUTTONS     10
+#define SENTEY_NUM_LEDS        9
 
-/* Command structure for Sentey GS-3910 */
-struct sentay_report {
-    uint8_t report_id;
-    uint8_t command;
-    uint8_t index;
-    uint8_t value;
-    uint8_t data[3];
-    uint8_t suffix;
-} __attribute__((packed));
-_Static_assert(sizeof(struct sentay_report) == 8, "Invalid report size");
+#define SENTEY_REPORT_SIZE     8
 
-/* Button mapping commands */
-#define SENTAY_CMD_BUTTON_CONFIG  0x85
-#define SENTAY_CMD_PROFILE        0x88
-#define SENTAY_CMD_DPI            0x87
-#define SENTAY_CMD_LED            0x86
+/* Comandos HID identificados del análisis de capturas */
+#define SENTEY_CMD_PROFILE     0x0188
+#define SENTEY_CMD_BUTTON      0x0185
+#define SENTEY_CMD_LED_SET     0x0186
+#define SENTEY_CMD_LED_GET     0x0102
 
-/* Button indices (0-based, but button 1 is left click which is not configurable) */
-#define SENTAY_BUTTON_2_INDEX  0  /* Right click */
-#define SENTAY_BUTTON_3_INDEX  1  /* Wheel click */
-#define SENTAY_BUTTON_4_INDEX  2  /* Side button 1 */
-#define SENTAY_BUTTON_5_INDEX  3  /* Side button 2 */
-#define SENTAY_BUTTON_6_INDEX  4  /* Extra button 1 */
-#define SENTAY_BUTTON_7_INDEX  5  /* Extra button 2 */
-#define SENTAY_BUTTON_8_INDEX  6  /* Extra button 3 */
-#define SENTAY_BUTTON_9_INDEX  7  /* Scroll Up */
-#define SENTAY_BUTTON_10_INDEX 8  /* Scroll Down */
+/* Funciones de botones identificadas */
+#define SENTEY_BUTTON_LEFT_CLICK   0x801e
+#define SENTEY_BUTTON_RIGHT_CLICK  0x00ff
+#define SENTEY_BUTTON_WHEEL_CLICK  0x00ff
+#define SENTEY_BUTTON_BUTTON4      0x00ff
+#define SENTEY_BUTTON_BUTTON5      0x00ff
+#define SENTEY_BUTTON_SCROLL_UP    0x00ff
+#define SENTEY_BUTTON_SCROLL_DOWN  0x00ff
 
-/* Button action values */
-#define SENTAY_ACTION_LEFTCLICK      0x80
-#define SENTAY_ACTION_RIGHTCLICK     0x00
-#define SENTAY_ACTION_WHEELCLICK     0x00
-#define SENTAY_ACTION_BUTTON4        0x00
-#define SENTAY_ACTION_BUTTON5        0x00
-#define SENTAY_ACTION_SCROLLUP       0x00
-#define SENTAY_ACTION_SCROLLDOWN     0x00
+/* Mapeo de botones físicos a índices del dispositivo */
+static const uint8_t sentey_button_mapping[SENTEY_NUM_BUTTONS] = {
+    0x01,  /* Botón físico 2 (A2) → índice 1 */
+    0x02,  /* Botón físico 3 (A3) → índice 2 */
+    0x04,  /* Botón físico 4 (A4) → índice 4 */
+    0x03,  /* Botón físico 5 (A5) → índice 3 */
+    0x05,  /* Botón físico 6 (A6) → índice 5 */
+    0x06,  /* Botón físico 7 (A7) → índice 6 */
+    0x07,  /* Botón físico 8 (A8) → índice 7 */
+    0x08,  /* Botón físico 9 (A9) → índice 8 */
+    0x09,  /* Botón físico 10 (A10) → índice 9 */
+    0x00,  /* Botón físico 1 (click izquierdo) - no configurable */
+};
 
-/* Button function codes */
-#define SENTAY_FUNC_DEFAULT          0xFF
-#define SENTAY_FUNC_RIGHTCLICK       0xFF
-#define SENTAY_FUNC_WHEELCLICK       0xFF
-#define SENTAY_FUNC_BUTTON4          0xFF
-#define SENTAY_FUNC_BUTTON5          0xFF
-#define SENTAY_FUNC_SCROLLUP         0xFF
-#define SENTAY_FUNC_SCROLLDOWN       0xFF
+/* Lista de DPI soportados */
+static const unsigned int sentey_dpi_values[SENTEY_NUM_DPI] = {
+    2000, 4200, 6200, 8200
+};
 
-/* Suffix value observed in captures */
-#define SENTAY_SUFFIX                0x12
+/* Lista de report rates soportados */
+static const unsigned int sentey_report_rates[] = {
+    125, 250, 500, 1000
+};
+
+struct sentey_data {
+    uint8_t current_profile;
+};
 
 static int
-sentay_write_feature(struct ratbag_device *device, struct sentay_report *report)
+sentey_test_hidraw(struct ratbag_device *device)
 {
-    int ret;
-    uint8_t buf[SENTAY_REPORT_SIZE];
+    return ratbag_hidraw_has_report(device, 0x0300);
+}
 
-    memcpy(buf, report, sizeof(struct sentay_report));
+static int
+sentey_probe(struct ratbag_device *device)
+{
+    struct ratbag_profile *profile;
+    struct ratbag_resolution *resolution;
+    struct ratbag_button *button;
+    struct ratbag_led *led;
+    struct sentey_data *drv_data;
+    int rc;
 
-    ret = ratbag_hidraw_output_report(device, buf, sizeof(buf));
-    if (ret < 0)
-        return ret;
+    log_debug(device->ratbag, "Probing Sentey GS-3910\n");
+
+    /* Verificar que es un dispositivo HID compatible */
+    rc = ratbag_find_hidraw(device, sentey_test_hidraw);
+    if (rc) {
+        log_error(device->ratbag, "Failed to find compatible HID interface\n");
+        return rc;
+    }
+
+    /* Abrir el endpoint HID */
+    rc = ratbag_open_hidraw_index(device, 0, 0);
+    if (rc) {
+        log_error(device->ratbag, "Failed to open HID interface: %s (%d)\n",
+                  strerror(-rc), rc);
+        return rc;
+    }
+
+    /* Inicializar perfiles */
+    ratbag_device_init_profiles(device,
+                                SENTEY_NUM_PROFILES,
+                                SENTEY_NUM_DPI,
+                                SENTEY_NUM_BUTTONS,
+                                SENTEY_NUM_LEDS);
+
+    /* Asignar datos específicos del driver */
+    drv_data = zalloc(sizeof(*drv_data));
+    drv_data->current_profile = 0;
+    ratbag_set_drv_data(device, drv_data);
+
+    /* Configurar cada perfil */
+    ratbag_device_for_each_profile(device, profile) {
+        profile->is_active = (profile->index == 0); /* Solo perfil 0 activo por defecto */
+
+        /* Marcar como write-only ya que no podemos leer configuración actual */
+        ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
+
+        /* Configurar report rates */
+        ratbag_profile_set_report_rate_list(profile, sentey_report_rates,
+                                            ARRAY_LENGTH(sentey_report_rates));
+        profile->hz = 1000; /* Default 1000 Hz */
+
+        /* Configurar resoluciones (DPI) */
+        ratbag_profile_for_each_resolution(profile, resolution) {
+            if (resolution->index == 0) {
+                resolution->is_active = true;
+                resolution->is_default = true;
+            }
+
+            /* Establecer lista de DPI soportados */
+            ratbag_resolution_set_dpi_list(resolution, sentey_dpi_values,
+                                           SENTEY_NUM_DPI);
+
+            /* Valores por defecto */
+            resolution->dpi_x = sentey_dpi_values[resolution->index];
+            resolution->dpi_y = sentey_dpi_values[resolution->index];
+        }
+
+        /* Configurar botones */
+        ratbag_profile_for_each_button(profile, button) {
+            /* Habilitar tipos de acción soportados */
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+
+            /* Configurar acciones por defecto */
+            if (button->index == 0) {
+                /* Botón 1: Left click */
+                button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+                button->action.action.button = 1;
+            } else if (button->index == 1) {
+                /* Botón 2: Right click */
+                button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+                button->action.action.button = 2;
+            } else if (button->index == 2) {
+                /* Botón 3: Wheel click */
+                button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+                button->action.action.button = 3;
+            } else {
+                /* Otros botones: sin asignación por defecto */
+                button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+                button->action.action.button = button->index + 1;
+            }
+        }
+
+        /* Configurar LEDs (matriz 3x3 RGB) */
+        ratbag_profile_for_each_led(profile, led) {
+            led->mode = RATBAG_LED_OFF;
+            led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+
+            /* Color por defecto: azul */
+            led->color.red = 0;
+            led->color.green = 0;
+            led->color.blue = 255;
+
+            /* Habilitar modos soportados */
+            ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+            ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+            ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+            ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+        }
+    }
+
+    log_debug(device->ratbag, "Sentey GS-3910 probe successful\n");
+    return 0;
+}
+
+static int
+sentey_write_profile(struct ratbag_profile *profile)
+{
+    struct ratbag_device *device = profile->device;
+    struct sentey_data *drv_data = ratbag_get_drv_data(device);
+    uint8_t buf[SENTEY_REPORT_SIZE] = {0};
+    int rc;
+
+    log_debug(device->ratbag, "Writing profile %d\n", profile->index);
+
+    /* Comando de selección de perfil: 01 88 XX 00 00 00 00 12 */
+    buf[0] = 0x01;
+    buf[1] = (SENTEY_CMD_PROFILE >> 8) & 0xFF;
+    buf[2] = SENTEY_CMD_PROFILE & 0xFF;
+    buf[3] = profile->index;  /* 0-4 para perfiles 1-5 */
+    buf[4] = 0x00;
+    buf[5] = 0x00;
+    buf[6] = 0x00;
+    buf[7] = 0x12;
+
+    rc = ratbag_hidraw_raw_request(device, 0x0300, buf, sizeof(buf),
+                                   HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+    if (rc < 0) {
+        log_error(device->ratbag, "Failed to write profile: %s (%d)\n",
+                  strerror(-rc), rc);
+        return rc;
+    }
+
+    drv_data->current_profile = profile->index;
+    return 0;
+}
+
+static int
+sentey_write_button(struct ratbag_button *button)
+{
+    struct ratbag_device *device = button->device;
+    uint8_t buf[SENTEY_REPORT_SIZE] = {0};
+    uint16_t button_function = 0;
+    int rc;
+
+    log_debug(device->ratbag, "Writing button %d\n", button->index);
+
+    /* Solo botones configurables (índice 1-9, botones físicos 2-10) */
+    if (button->index == 0 || button->index >= SENTEY_NUM_BUTTONS)
+        return 0;
+
+    /* Convertir acción a código de función del dispositivo */
+    switch (button->action.type) {
+    case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+        switch (button->action.action.button) {
+        case 1: button_function = SENTEY_BUTTON_LEFT_CLICK; break;
+        case 2: button_function = SENTEY_BUTTON_RIGHT_CLICK; break;
+        case 3: button_function = SENTEY_BUTTON_WHEEL_CLICK; break;
+        case 4: button_function = SENTEY_BUTTON_BUTTON4; break;
+        case 5: button_function = SENTEY_BUTTON_BUTTON5; break;
+        default:
+            log_error(device->ratbag, "Unsupported button action: %d\n",
+                      button->action.action.button);
+            return -EINVAL;
+        }
+        break;
+    case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+        switch (button->action.action.special) {
+        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:
+            button_function = SENTEY_BUTTON_SCROLL_UP;
+            break;
+        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:
+            button_function = SENTEY_BUTTON_SCROLL_DOWN;
+            break;
+        default:
+            log_error(device->ratbag, "Unsupported special action: %d\n",
+                      button->action.action.special);
+            return -EINVAL;
+        }
+        break;
+    default:
+        log_error(device->ratbag, "Unsupported action type: %d\n",
+                  button->action.type);
+        return -EINVAL;
+    }
+
+    /* Comando de configuración de botón: 01 85 00 BB CC DD EE 12 */
+    buf[0] = 0x01;
+    buf[1] = (SENTEY_CMD_BUTTON >> 8) & 0xFF;
+    buf[2] = SENTEY_CMD_BUTTON & 0xFF;
+    buf[3] = 0x00;
+    buf[4] = sentey_button_mapping[button->index];  /* Índice del botón */
+    buf[5] = (button_function >> 8) & 0xFF;         /* Código alto */
+    buf[6] = button_function & 0xFF;                /* Código bajo */
+    buf[7] = 0x12;
+
+    rc = ratbag_hidraw_raw_request(device, 0x0300, buf, sizeof(buf),
+                                   HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+    if (rc < 0) {
+        log_error(device->ratbag, "Failed to write button: %s (%d)\n",
+                  strerror(-rc), rc);
+        return rc;
+    }
 
     return 0;
 }
 
 static int
-sentay_set_button(struct ratbag_button *button, uint8_t index, uint8_t action, uint8_t func)
+sentey_write_led(struct ratbag_led *led)
 {
-    struct ratbag_device *device = button->profile->device;
-    struct sentay_report report = {
-        .report_id = SENTAY_REPORT_ID_FEATURE,
-        .command = SENTAY_CMD_BUTTON_CONFIG,
-        .index = index,
-        .value = action,
-        .data = { [0] = func, [1] = 0xFF, [2] = 0x12 },
-        .suffix = SENTAY_SUFFIX,
-    };
-
-    /* Adjust data based on action type */
-    if (action == SENTAY_ACTION_LEFTCLICK) {
-        report.data[0] = 0x80;
-        report.data[1] = 0x1E;
-        report.data[2] = 0xFF;
-    } else {
-        report.data[0] = 0x00;
-        report.data[1] = 0xFF;
-        report.data[2] = 0xFF;
-    }
-
-    log_debug(device->ratbag, "Sentey: Setting button %d to action 0x%02x\n", index, action);
-
-    return sentay_write_feature(device, &report);
-}
-
-static int
-sentay_set_profile(struct ratbag_profile *profile)
-{
-    struct ratbag_device *device = profile->device;
-    struct sentay_report report = {
-        .report_id = SENTAY_REPORT_ID_FEATURE,
-        .command = SENTAY_CMD_PROFILE,
-        .index = profile->index,
-        .value = 0x00,
-        .data = { 0x00, 0x00, 0x00 },
-        .suffix = SENTAY_SUFFIX,
-    };
-
-    log_debug(device->ratbag, "Sentey: Switching to profile %d\n", profile->index);
-
-    return sentay_write_feature(device, &report);
-}
-
-static int
-sentay_set_dpi(struct ratbag_dpi *dpi)
-{
-    struct ratbag_profile *profile = dpi->profile;
-    struct ratbag_device *device = profile->device;
-    struct sentay_report report = {
-        .report_id = SENTAY_REPORT_ID_FEATURE,
-        .command = SENTAY_CMD_DPI,
-        .index = dpi->index,
-        .value = (dpi->dpi_x / 100) & 0xFF,
-        .data = { (dpi->dpi_x / 100) >> 8, 0x00, 0x00 },
-        .suffix = SENTAY_SUFFIX,
-    };
-
-    log_debug(device->ratbag, "Sentey: Setting DPI %d to %d\n", dpi->index, dpi->dpi_x);
-
-    return sentay_write_feature(device, &report);
-}
-
-static int
-sentay_commit(struct ratbag_device *device)
-{
-    struct ratbag_profile *profile;
-    struct ratbag_button *button;
-    struct ratbag_dpi *dpi;
+    struct ratbag_device *device = led->device;
+    uint8_t buf[SENTEY_REPORT_SIZE] = {0};
     int rc;
 
-    ratbag_device_for_each_profile(device, profile) {
-        /* Set profile */
-        rc = sentay_set_profile(profile);
-        if (rc)
-            return rc;
+    log_debug(device->ratbag, "Writing LED %d\n", led->index);
 
-        /* Commit buttons */
+    /* Comando de configuración RGB: 01 86 AA BB CC DD EE FF */
+    buf[0] = 0x01;
+    buf[1] = (SENTEY_CMD_LED_SET >> 8) & 0xFF;
+    buf[2] = SENTEY_CMD_LED_SET & 0xFF;
+    buf[3] = led->index;                    /* Índice del LED (0-8) */
+    buf[4] = led->color.red;                /* Componente rojo */
+    buf[5] = led->color.green;              /* Componente verde */
+    buf[6] = led->color.blue;               /* Componente azul */
+    buf[7] = (led->mode == RATBAG_LED_OFF) ? 0x00 : 0xFF;  /* Modo */
+
+    rc = ratbag_hidraw_raw_request(device, 0x0300, buf, sizeof(buf),
+                                   HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+    if (rc < 0) {
+        log_error(device->ratbag, "Failed to write LED: %s (%d)\n",
+                  strerror(-rc), rc);
+        return rc;
+    }
+
+    return 0;
+}
+
+static int
+sentey_write_resolution_dpi(struct ratbag_resolution *resolution)
+{
+    struct ratbag_device *device = resolution->device;
+    uint8_t buf[SENTEY_REPORT_SIZE] = {0};
+    int rc;
+
+    log_debug(device->ratbag, "Writing DPI %d for resolution %d\n",
+              resolution->dpi_x, resolution->index);
+
+    /* TODO: Implementar comando DPI cuando se identifique el patrón exacto */
+    /* Por ahora, solo loggear que se cambió */
+    log_info(device->ratbag, "DPI change requested: %d DPI (not yet implemented)\n",
+             resolution->dpi_x);
+
+    /* Comando DPI placeholder - necesita análisis adicional de capturas */
+    /* Posible formato basado en otros drivers: algún comando con índice de DPI */
+
+    return 0;  /* No error por ahora, pero no implementado */
+}
+
+static int
+sentey_commit(struct ratbag_device *device)
+{
+    struct ratbag_profile *profile;
+    struct ratbag_resolution *resolution;
+    struct ratbag_button *button;
+    struct ratbag_led *led;
+    int rc = 0;
+
+    log_debug(device->ratbag, "Committing changes to Sentey GS-3910\n");
+
+    /* Procesar cada perfil */
+    list_for_each(profile, &device->profiles, link) {
+        if (!profile->dirty)
+            continue;
+
+        log_debug(device->ratbag, "Profile %d changed, writing\n", profile->index);
+
+        /* Escribir perfil activo */
+        if (profile->is_active) {
+            rc = sentey_write_profile(profile);
+            if (rc)
+                return rc;
+        }
+
+        /* Escribir resoluciones (DPI) */
+        ratbag_profile_for_each_resolution(profile, resolution) {
+            if (!resolution->dirty)
+                continue;
+
+            rc = sentey_write_resolution_dpi(resolution);
+            if (rc)
+                return rc;
+        }
+
+        /* Escribir botones */
         ratbag_profile_for_each_button(profile, button) {
-            struct ratbag_button_action *action = &button->action;
-            uint8_t index, act_type, func;
+            if (!button->dirty)
+                continue;
 
-            /* Map button number to index */
-            switch (button->button) {
-                case 1: continue; /* Left click not configurable */
-                case 2: index = SENTAY_BUTTON_2_INDEX; break;
-                case 3: index = SENTAY_BUTTON_3_INDEX; break;
-                case 4: index = SENTAY_BUTTON_4_INDEX; break;
-                case 5: index = SENTAY_BUTTON_5_INDEX; break;
-                case 6: index = SENTAY_BUTTON_6_INDEX; break;
-                case 7: index = SENTAY_BUTTON_7_INDEX; break;
-                case 8: index = SENTAY_BUTTON_8_INDEX; break;
-                case 9: index = SENTAY_BUTTON_9_INDEX; break;
-                case 10: index = SENTAY_BUTTON_10_INDEX; break;
-                default: continue;
-            }
+            rc = sentey_write_button(button);
+            if (rc)
+                return rc;
+        }
 
-            /* Map action type */
-            switch (action->type) {
-                case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
-                    act_type = SENTAY_ACTION_LEFTCLICK;
-                    func = action->action.button;
-                    break;
+        /* Escribir LEDs */
+        ratbag_profile_for_each_led(profile, led) {
+            if (!led->dirty)
+                continue;
+
+            rc = sentey_write_led(led);
+            if (rc)
+                return rc;
+        }
+    }
+
+    /* TODO: Implementar comando de guardado si es necesario */
+    log_debug(device->ratbag, "Sentey GS-3910 commit successful\n");
+    return 0;
+}
+
+static void
+sentey_remove(struct ratbag_device *device)
+{
+    struct sentey_data *drv_data = ratbag_get_drv_data(device);
+
+    log_debug(device->ratbag, "Removing Sentey GS-3910\n");
+
+    ratbag_close_hidraw_index(device, 0);
+
+    if (drv_data)
+        free(drv_data);
+
+    ratbag_set_drv_data(device, NULL);
+}
+
+struct ratbag_driver sentey_driver = {
+    .name = "Sentey",
+    .id = "sentey",
+    .probe = sentey_probe,
+    .remove = sentey_remove,
+    .commit = sentey_commit,
+};
+struct ratbag_driver sentey_driver = {
+    .name = "Sentey",
+    .id = "sentey",
+    .probe = sentey_probe,
+    .remove = sentey_remove,
+    .commit = sentey_commit,
+};
                 case RATBAG_BUTTON_ACTION_TYPE_KEY:
                     act_type = SENTAY_ACTION_RIGHTCLICK;
                     func = SENTAY_FUNC_DEFAULT;
