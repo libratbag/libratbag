@@ -1238,9 +1238,14 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 							  sensor->dpi_max);
 	}
 
-	ratbag_profile_set_report_rate_list(profile,
-					    drv_data->report_rates,
-					    drv_data->num_report_rates);
+	if (drv_data->num_report_rates > 0) {
+		ratbag_profile_set_report_rate_list(profile,
+						    drv_data->report_rates,
+						    drv_data->num_report_rates);
+	} else {
+		unsigned int default_rate = p->report_rate ? p->report_rate : 1000;
+		ratbag_profile_set_report_rate_list(profile, &default_rate, 1);
+	}
 	profile->hz = p->report_rate;
 }
 
@@ -1289,8 +1294,23 @@ hidpp20drv_init_profile_8100(struct ratbag_device *device)
 	drv_data->num_profiles = drv_data->profiles->num_profiles;
 	drv_data->num_buttons = drv_data->profiles->num_buttons;
 
-	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201)
+	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201) {
 		drv_data->num_resolutions = drv_data->profiles->num_modes;
+	} else if (drv_data->profiles->num_modes > 0) {
+		/* Device has onboard profile modes but no 0x2201 feature
+		 * (e.g. uses 0x2202 Extended Adjustable DPI instead).
+		 * Use the profile mode count for resolutions. */
+		drv_data->num_resolutions = drv_data->profiles->num_modes;
+
+		/* Create a default sensor if none was set up by 0x2201 */
+		if (!drv_data->sensors) {
+			drv_data->sensors = zalloc(sizeof(*drv_data->sensors));
+			drv_data->num_sensors = 1;
+			drv_data->sensors[0].dpi_min = 100;
+			drv_data->sensors[0].dpi_max = 32000;
+			drv_data->sensors[0].dpi = 800;
+		}
+	}
 	/* We ignore the profile's num_leds and require
 	* HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
 	*/
