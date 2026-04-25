@@ -449,6 +449,8 @@ init_data_asus(struct ratbag *ratbag,
 				data->asus.quirks |= ASUS_QUIRK_SEPARATE_LEDS;
 			} else if (streq(quirks[i], "BUTTONS_SECONDARY")) {
 				data->asus.quirks |= ASUS_QUIRK_BUTTONS_SECONDARY;
+			} else if (streq(quirks[i], "OMNI_RECEIVER")) {
+				data->asus.quirks |= ASUS_QUIRK_OMNI_RECEIVER;
 			} else {
 				log_error(ratbag, "%s is invalid quirk. Ignoring...\n", quirks[i]);
 			}

@@ -1,0 +1,17 @@
+[Device]
+Name=ASUS ROG OMNI Receiver
+DeviceMatch=usb:0b05:1ace
+DeviceType=mouse
+Driver=asus
+
+# This is a generic configuration for the ASUS Omni wireless receiver
+# The actual device name will be identified during probe
+
+[Driver/asus]
+Profiles=5
+Buttons=8
+Leds=3
+Dpis=4
+Wireless=1
+DpiRange=100:36000@100
+Quirks=OMNI_RECEIVER;RAW_BRIGHTNESS

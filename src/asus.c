@@ -26,6 +26,7 @@
 #include "asus.h"
 
 #include <assert.h>
+#include <string.h>
 
 #include "libratbag-data.h"
 #include "libratbag-private.h"
@@ -138,15 +139,33 @@ asus_query(struct ratbag_device *device,
 		union asus_request *request, union asus_response *response)
 {
 	int rc;
+	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
+	uint8_t omni_tx_buf[ASUS_PACKET_SIZE];
+	uint8_t omni_rx_buf[ASUS_PACKET_SIZE];
 
-	rc = ratbag_hidraw_output_report(device, request->raw, ASUS_PACKET_SIZE);
+	if (quirks & ASUS_QUIRK_OMNI_RECEIVER) {
+		memset(omni_tx_buf, 0, ASUS_PACKET_SIZE);
+	omni_tx_buf[0] = 0x03;
+		memcpy(omni_tx_buf + 1, request->raw, ASUS_PACKET_SIZE - 1);
+		rc = ratbag_hidraw_output_report(device, omni_tx_buf, ASUS_PACKET_SIZE);
+	} else {
+		rc = ratbag_hidraw_output_report(device, request->raw, ASUS_PACKET_SIZE);
+	}
 	if (rc < 0)
 		return rc;
 
 	memset(response, 0, sizeof(union asus_response));
-	rc = ratbag_hidraw_read_input_report(device, response->raw, ASUS_PACKET_SIZE, NULL);
-	if (rc < 0)
-		return rc;
+
+	if (quirks & ASUS_QUIRK_OMNI_RECEIVER) {
+		rc = ratbag_hidraw_read_input_report(device, omni_rx_buf, ASUS_PACKET_SIZE, NULL);
+		if (rc >= 0) {
+		memcpy(response->raw, omni_rx_buf + 1, ASUS_PACKET_SIZE - 1);
+		}
+	} else {
+		rc = ratbag_hidraw_read_input_report(device, response->raw, ASUS_PACKET_SIZE, NULL);
+		if (rc < 0)
+			return rc;
+	}
 
 	/* invalid state, disconnected or sleeping */
 	if (response->data.code == ASUS_STATUS_ERROR) {
@@ -510,4 +529,105 @@ asus_set_led(struct ratbag_device *device,
 		return rc;
 
 	return 0;
+}
+
+/* identify omni */
+char *
+asus_omni_identify_mouse(struct ratbag_device *device)
+{
+	/* Omni signature query must be done directly with output/input reports
+	 * Not through the standard asus_query() function.
+	 * Format: 03 12 12 02 (report_id, then three command bytes) */
+	uint8_t omni_tx_buf[ASUS_PACKET_SIZE];
+	uint8_t omni_rx_buf[ASUS_PACKET_SIZE];
+	int rc;
+
+	memset(omni_tx_buf, 0, ASUS_PACKET_SIZE);
+	omni_tx_buf[0] = 0x03;  /* report ID */
+	omni_tx_buf[1] = 0x12;  /* command byte 1 */
+	omni_tx_buf[2] = 0x12;  /* command byte 2 */
+	omni_tx_buf[3] = 0x02;  /* parameter */
+
+	rc = ratbag_hidraw_output_report(device, omni_tx_buf, ASUS_PACKET_SIZE);
+	if (rc < 0) {
+		log_error(device->ratbag, "Failed to send Omni signature query (rc=%d)\n", rc);
+		return NULL;
+	}
+
+	rc = ratbag_hidraw_read_input_report(device, omni_rx_buf, ASUS_PACKET_SIZE, NULL);
+	if (rc < 0) {
+		log_error(device->ratbag, "Failed to read Omni signature response (rc=%d)\n", rc);
+		return NULL;
+	}
+
+	/* Extract signature from response (offset 5, 12 bytes) */
+	char signature[13] = {0};
+	memcpy(signature, &omni_rx_buf[5], 12);
+
+	/* Match device name based on signature prefix */
+	const char *device_name = NULL;
+
+	if (strncmp(signature, "B23", 3) == 0) {
+		/* B23072800062 */
+		device_name = "ASUS ROG Harpe Ace Aim Lab Edition";
+	} else if (strncmp(signature, "B241", 4) == 0) {
+		/* B24122666771 */
+		device_name = "ASUS ROG Harpe Ace Aim Lab Edition";
+	} else if (strncmp(signature, "B2501", 5) == 0) {
+		/* B25010476524 */
+		device_name = "ASUS ROG Harpe Ace Aim Lab Edition";
+	} else if (strncmp(signature, "B24", 3) == 0) {
+		/* B24082550833 */
+		device_name = "ASUS ROG Harpe Ace Mini";
+	} else if (strncmp(signature, "B25", 3) == 0) {
+		/* B25030817186 */
+		device_name = "ASUS ROG Harpe Ace Mini";
+	} else if (strncmp(signature, "R1", 2) == 0) {
+		/* R13121351391 */
+		device_name = "ASUS ROG Keris Wireless Aimpoint";
+	} else if (strncmp(signature, "F24", 3) == 0) {
+		/* F24B21DD03F4 */
+		device_name = "ASUS ROG Keris Wireless Aimpoint";
+	} else if (strncmp(signature, "FB", 2) == 0) {
+		/* FBA0CC1D6F9C */
+		device_name = "ASUS ROG Keris Wireless Aimpoint";
+	} else if (strncmp(signature, "024", 3) == 0) {
+		/* 024031316969 */
+		device_name = "ASUS ROG Keris Ace II";
+	} else if (strncmp(signature, "02501", 5) == 0) {
+		/* 0250105027981 */
+		device_name = "ASUS ROG Keris Ace II";
+	} else if (strncmp(signature, "025", 3) == 0) {
+		/* 025050613700 */
+		device_name = "ASUS ROG Keris II Origin";
+	} else if (strncmp(signature, "20", 2) == 0) {
+		/* 202405290700 */
+		device_name = "ASUS ROG Strix Impact III Wireless";
+	} else if (strncmp(signature, "R8", 2) == 0) {
+		/* R82020155689 */
+		device_name = "ASUS ROG Gladius III Aimpoint";
+	} else if (strncmp(signature, "R6", 2) == 0) {
+		/* R60120331787 */
+		device_name = "ASUS ROG Gladius III Aimpoint";
+	} else if (strncmp(signature, "RC", 2) == 0) {
+		/* RC1519430455 */
+		device_name = "ASUS ROG Gladius III Aimpoint";
+	} else if (strncmp(signature, "R903", 4) == 0) {
+		/* R90319215881 */
+		device_name = "ASUS ROG Gladius III Aimpoint";
+	} else if (strncmp(signature, "R923", 4) == 0) {
+		/* R92307410710 */
+		device_name = "ASUS ROG Gladius III Aimpoint";
+	} else if (strncmp(signature, "R9", 2) == 0) {
+		/* R90518300572 */
+		device_name = "ASUS ROG Keris Wireless Aimpoint";
+	} else if (strncmp(signature, "T5", 2) == 0) {
+		/* T5MPKR018406 */
+		device_name = "ASUS ROG Harpe Ace Extreme";
+	} else {
+		/* Default fallback - could not identify specific model */
+		device_name = "Unknown ASUS Omni Device";
+	}
+
+	return strdup(device_name);
 }
