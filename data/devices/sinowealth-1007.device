@@ -19,3 +19,11 @@ Buttons=6
 DeviceName=Marvo Scorpion G961
 LedType=RGB
 SensorType=PMW3327
+
+# https://dreammachines.pl/en/dm4evo
+[Driver/sinowealth/devices/M303]
+Buttons=7
+Profiles=1
+DeviceName=DM4 Evo
+LedType=RGB
+SensorType=PMW3327
