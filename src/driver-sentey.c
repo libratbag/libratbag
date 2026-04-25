@@ -245,7 +245,7 @@ sentey_write_profile(struct ratbag_profile *profile)
     buf[6] = 0x00;
     buf[7] = 0x12;
 
-    rc = ratbag_hidraw_raw_request(device, 0x0300, buf, sizeof(buf),
+    rc = ratbag_hidraw_raw_request(device, 0x03, buf, sizeof(buf),
                                    HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
     if (rc < 0) {
         log_error(device->ratbag, "Failed to write profile: %s (%d)\n",
@@ -260,7 +260,7 @@ sentey_write_profile(struct ratbag_profile *profile)
 static int
 sentey_write_button(struct ratbag_button *button)
 {
-    struct ratbag_device *device = button->device;
+    struct ratbag_device *device = button->profile->device;
     uint8_t buf[SENTEY_REPORT_SIZE] = {0};
     uint16_t button_function = 0;
     int rc;
@@ -326,7 +326,7 @@ sentey_write_button(struct ratbag_button *button)
     buf[6] = button_function & 0xFF;                /* Código bajo */
     buf[7] = 0x12;
 
-    rc = ratbag_hidraw_raw_request(device, 0x0300, buf, sizeof(buf),
+    rc = ratbag_hidraw_raw_request(device, 0x03, buf, sizeof(buf),
                                    HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
     if (rc < 0) {
         log_error(device->ratbag, "Failed to write button: %s (%d)\n",
@@ -340,7 +340,7 @@ sentey_write_button(struct ratbag_button *button)
 static int
 sentey_write_led(struct ratbag_led *led)
 {
-    struct ratbag_device *device = led->device;
+    struct ratbag_device *device = led->profile->device;
     uint8_t buf[SENTEY_REPORT_SIZE] = {0};
     int rc;
 
@@ -356,7 +356,7 @@ sentey_write_led(struct ratbag_led *led)
     buf[6] = led->color.blue;               /* Componente azul */
     buf[7] = (led->mode == RATBAG_LED_OFF) ? 0x00 : 0xFF;  /* Modo */
 
-    rc = ratbag_hidraw_raw_request(device, 0x0300, buf, sizeof(buf),
+    rc = ratbag_hidraw_raw_request(device, 0x03, buf, sizeof(buf),
                                    HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
     if (rc < 0) {
         log_error(device->ratbag, "Failed to write LED: %s (%d)\n",
@@ -370,9 +370,7 @@ sentey_write_led(struct ratbag_led *led)
 static int
 sentey_write_resolution_dpi(struct ratbag_resolution *resolution)
 {
-    struct ratbag_device *device = resolution->device;
-    uint8_t buf[SENTEY_REPORT_SIZE] = {0};
-    int rc;
+    struct ratbag_device *device = resolution->profile->device;
 
     log_debug(device->ratbag, "Writing DPI %d for resolution %d\n",
               resolution->dpi_x, resolution->index);
@@ -470,108 +468,4 @@ struct ratbag_driver sentey_driver = {
     .probe = sentey_probe,
     .remove = sentey_remove,
     .commit = sentey_commit,
-};
-        }
-
-        /* Commit DPIs */
-        ratbag_profile_for_each_dpi(profile, dpi) {
-            if (!dpi->active)
-                continue;
-
-            rc = sentay_set_dpi(dpi);
-            if (rc)
-                return rc;
-        }
-    }
-
-    return 0;
-}
-
-static int
-sentay_probe(struct ratbag_device *device)
-{
-    int rc;
-    struct ratbag_profile *profile;
-    struct ratbag_button *button;
-    struct ratbag_dpi *dpi;
-    unsigned int dpis[] = { 2000, 4200, 6200, 8200 };
-
-    rc = ratbag_find_hidraw(device, NULL);
-    if (rc)
-        return rc;
-
-    ratbag_device_init_profiles(device,
-                                5,  /* 5 profiles */
-                                10, /* 10 buttons */
-                                4,  /* 4 DPI levels */
-                                0); /* No resolution modes */
-
-    /* Configure profiles */
-    ratbag_device_for_each_profile(device, profile) {
-        profile->is_active = (profile->index == 0);
-
-        /* Configure DPIs */
-        ratbag_profile_for_each_dpi(profile, dpi) {
-            if (dpi->index < ARRAY_LENGTH(dpis)) {
-                dpi->dpi_x = dpis[dpi->index];
-                dpi->dpi_y = dpis[dpi->index];
-            }
-            dpi->is_active = (dpi->index == 0);
-        }
-
-        /* Configure buttons */
-        ratbag_profile_for_each_button(profile, button) {
-            switch (button->button) {
-                case 1:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-                    button->action.action.button = 1;
-                    break;
-                case 2:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-                    button->action.action.button = 2;
-                    break;
-                case 3:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-                    button->action.action.button = 3;
-                    break;
-                case 4:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-                    button->action.action.button = 4;
-                    break;
-                case 5:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-                    button->action.action.button = 5;
-                    break;
-                case 6:
-                case 7:
-                case 8:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
-                    button->action.action.button = button->button;
-                    break;
-                case 9:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
-                    button->action.action.special = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP;
-                    break;
-                case 10:
-                    button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
-                    button->action.action.special = RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN;
-                    break;
-            }
-        }
-    }
-
-    return 0;
-}
-
-static void
-sentay_remove(struct ratbag_device *device)
-{
-}
-
-struct ratbag_driver driver_sentey = {
-    .id = "sentey",
-    .name = "Sentey GS-3910",
-    .probe = sentay_probe,
-    .remove = sentay_remove,
-    .commit = sentay_commit,
 };
