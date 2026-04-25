@@ -76,71 +76,64 @@ DEVICE -> HOST: SET_REPORT Response (confirmación)
 
 **Propósito:** Configurar la función de cada botón del mouse
 
-**Formato:** `01 85 XX YY ZZ WW VV 12`
+**Formato real observado:** `01 85 00 BB CC DD EE 12`
 
 Donde:
-- `0185`: Código de comando de botón
-- `XX`: Índice del botón (00-09)
-- `YY ZZ`: Código de función del botón
-- `WW VV`: Parámetros adicionales (depende de la función)
-- `12`: Sufijo fijo
-
-**Códigos de función de botones identificados:**
-
-| Función | Código Hex | Bytes 2-3 | Bytes 4-5 | Observaciones |
-|---------|-----------|-----------|-----------|---------------|
-| LeftClick (predeterminado) | 0x801e | `80 1e` | `ff ff` | Click izquierdo estándar |
-| RightClick | 0x00ff | `00 ff` | `ff ff` | Click derecho |
-| WheelClick | 0x00ff | `00 ff` | `ff ff` | Click de rueda |
-| Button4 (ATRAS) | 0x00ff | `00 ff` | `ff ff` | Botón lateral 1 |
-| Button5 (ADELANTE) | 0x00ff | `00 ff` | `ff ff` | Botón lateral 2 |
-| ScrollUp | 0x00ff | `00 ff` | `ff ff` | Scroll arriba |
-| ScrollDown | 0x00ff | `00 ff` | `ff ff` | Scroll abajo |
+- `01 85`: comando de configuración de botón
+- Byte 2 = `00` (constante)
+- Byte 3 = `BB` Índice de botón en el dispositivo (01..09)
+- Byte 4-5 = Código de función o acción
+- Byte 6 = Parámetro/relleno (`ff` en todas las capturas)
+- Byte 7 = `12` sufijo fijo
 
 **Patrones encontrados por botón:**
 
 #### Botón A2 (Button 2):
-- **LeftClick:** `01 85 00 01 80 1e ff 12` → Botón 1, función 0x801e (click izquierdo)
-- **RightClick:** `01 85 00 01 00 ff ff 12` → Botón 1, función 0x00ff (click derecho)
+- **LeftClick:** `01 85 00 01 80 1e ff 12` → índice 0x01, función 0x801e (click izquierdo)
+- **RightClick:** `01 85 00 01 00 ff ff 12` → índice 0x01, función 0x00ff (click derecho)
 
 #### Botón A3 (Button 3 - Wheel):
-- **LeftClick:** `01 85 00 02 80 1e ff 12` → Botón 2, función 0x801e
-- **WheelClick:** `01 85 00 02 00 ff ff 12` → Botón 2, función 0x00ff
+- **LeftClick:** `01 85 00 02 80 1e ff 12` → índice 0x02, función 0x801e
+- **WheelClick:** `01 85 00 02 00 ff ff 12` → índice 0x02, función 0x00ff
 
 #### Botón A4 (Button 4):
-- **Button4:** `01 85 00 04 00 ff ff 12` → Botón 4, función 0x00ff (back)
-- **LeftClick:** `01 85 00 04 80 1e ff 12` → Botón 4, función 0x801e
+- **Button4:** `01 85 00 04 00 ff ff 12` → índice 0x04, función 0x00ff (back)
+- **LeftClick:** `01 85 00 04 80 1e ff 12` → índice 0x04, función 0x801e
 
 #### Botón A5 (Button 5):
-- **Button5:** `01 85 00 03 00 ff ff 12` → Botón 3, función 0x00ff (forward)
-- **LeftClick:** `01 85 00 03 80 1e ff 12` → Botón 3, función 0x801e
+- **Button5:** `01 85 00 03 00 ff ff 12` → índice 0x03, función 0x00ff (forward)
+- **LeftClick:** `01 85 00 03 80 1e ff 12` → índice 0x03, función 0x801e
 
 #### Botón A6 (Button 6):
-- **LeftClick:** `01 85 00 05 80 1e ff 12` → Botón 5, función 0x801e
+- **LeftClick:** `01 85 00 05 80 1e ff 12` → índice 0x05, función 0x801e
 
 #### Botón A7 (Button 7):
-- **LeftClick:** `01 85 00 06 80 1e ff 12` → Botón 6, función 0x801e
+- **LeftClick:** `01 85 00 06 80 1e ff 12` → índice 0x06, función 0x801e
 
 #### Botón A8 (Button 8):
-- **LeftClick:** `01 85 00 07 80 1e ff 12` → Botón 7, función 0x801e
+- **LeftClick:** `01 85 00 07 80 1e ff 12` → índice 0x07, función 0x801e
 
 #### Botón A9 (Button 9):
-- **ScrollUp:** `01 85 00 08 00 ff ff 12` → Botón 8, función 0x00ff (scroll up)
+- **ScrollUp:** `01 85 00 08 00 ff ff 12` → índice 0x08, función 0x00ff (scroll up)
 
 #### Botón A10 (Button 10):
-- **ScrollDown:** `01 85 00 09 00 ff ff 12` → Botón 9, función 0x00ff (scroll down)
+- **ScrollDown:** `01 85 00 09 00 ff ff 12` → índice 0x09, función 0x00ff (scroll down)
 
-**Mapeo de índices de botones:**
+**Observación importante:**
+- El valor `0x00ff` aparece para varias acciones de botones laterales y rueda. Esto sugiere que la acción completa puede depender del índice del botón, no solo del código de función.
+- En todas las capturas de botón, el byte 2 se mantiene en `00` y el byte 7 en `12`.
+
+**Mapeo de índices de botones capturados:**
 ```
-Índice 0x01 → Botón físico 2 (Click izquierdo/derecho principal)
-Índice 0x02 → Botón físico 3 (Rueda click)
-Índice 0x03 → Botón físico 5 (Lateral 2 / Button5)
-Índice 0x04 → Botón físico 4 (Lateral 1 / Button4)
-Índice 0x05 → Botón físico 6
-Índice 0x06 → Botón físico 7
-Índice 0x07 → Botón físico 8
-Índice 0x08 → Botón físico 9 (Scroll Up)
-Índice 0x09 → Botón físico 10 (Scroll Down)
+Índice 0x01 → A2
+Índice 0x02 → A3
+Índice 0x03 → A5
+Índice 0x04 → A4
+Índice 0x05 → A6
+Índice 0x06 → A7
+Índice 0x07 → A8
+Índice 0x08 → A9
+Índice 0x09 → A10
 ```
 
 ---
@@ -218,28 +211,24 @@ Los valores `6a030000` y `c03bab77` parecen ser:
 
 ### 3.4 COMANDO DE DPI (0x01??)
 
-**Nota:** No se encontraron fragmentos de datos explícitos en las capturas de DPI1.txt - DPI4.txt con el formato "Data Fragment". 
+**Nota de captura:** Las grabaciones `DPI1.txt` a `DPI4.txt` muestran secuencias HID `GET_REPORT` y `SET_REPORT` alrededor del cambio de DPI, pero el texto exportado no incluye la línea `Data Fragment:` con el contenido de los 8 bytes de payload. Por tanto, el comando DPI exacto no puede confirmarse directamente con estas exports.
 
-Sin embargo, basándose en:
-- La estructura similar a otros comandos
-- Los 4 niveles de DPI documentados (2000, 4200, 6200, 8200)
-- El patrón de otros dispositivos Sinowealth
+**Lo que se puede afirmar con seguridad:**
+- El dispositivo sigue usando el mismo transporte HID `SET_REPORT` para escribir la configuración.
+- Las solicitudes de `SET_REPORT` tienen 44 bytes en el bus, lo que coincide con un bloque de 8 bytes de payload más encabezados USB.
+- El flujo observado es:
+  1. `GET_REPORT` (lectura de estado/estado actual)
+  2. `SET_REPORT` (escritura de nueva configuración)
+  3. `GET_REPORT` (lectura de confirmación)
 
-**Hipótesis de formato DPI:**
-
-Es probable que use un comando similar a:
+**Hipótesis reforzada:**
+El comando DPI probablemente también es un bloque de 8 bytes empezando con `01`, posiblemente `0187` o `0189`, con:
 ```
-01 XX AA BB CC DD EE FF
+01 XX YY YY ZZ ZZ 12
 ```
+Donde `XX` podría seleccionar el nivel (0..3) y `YY YY` / `ZZ ZZ` codifican los valores X/Y de DPI.
 
-Donde:
-- `01XX`: Código de comando DPI (posiblemente `0187` o similar)
-- `AA`: Nivel de DPI (0-3 para los 4 niveles)
-- `BB CC`: Valor X del DPI (little-endian)
-- `DD EE`: Valor Y del DPI (little-endian, usualmente igual a X)
-- `FF`: Sufijo/checksum
-
-**Valores DPI documentados:**
+**Niveles documentados del dispositivo:**
 ```
 Nivel 0: 2000 x 2000 DPI
 Nivel 1: 4200 x 4200 DPI
@@ -247,15 +236,9 @@ Nivel 2: 6200 x 6200 DPI
 Nivel 3: 8200 x 8200 DPI
 ```
 
-**Comandos hipotéticos (por verificar con más capturas):**
-```
-Nivel 0: 01 87 00 D0 07 D0 07 12  (2000 = 0x07D0)
-Nivel 1: 01 87 01 A4 10 A4 10 12  (4200 = 0x1068)
-Nivel 2: 01 87 02 68 18 68 18 12  (6200 = 0x1838)
-Nivel 3: 01 87 03 38 20 38 20 12  (8200 = 0x2008)
-```
-
-**RECOMENDACIÓN:** Capturar tráfico específico al cambiar DPI para confirmar el formato exacto.
+**Recomendación:**
+- Reexportar o capturar el tráfico con un modo que conserve el contenido de los informes de características.
+- Buscar explícitamente los datos del `SET_REPORT` en el flujo DPI, ya que las capturas actuales solo muestran la presencia de la transacción, no su payload.
 
 ---
 
