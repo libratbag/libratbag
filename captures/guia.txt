@@ -35,3 +35,6 @@ Bus 001 Device 004: ID 0bda:0129 Realtek Semiconductor Corp. RTS5129 Card Reader
 Bus 001 Device 005: ID 0cf3:e009 Qualcomm Atheros Communications
 Bus 001 Device 007: ID e0ff:0002 A..... G3 ----------> Este es el mouse
 Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+el mouse es asignado por libratbag el driver de steelseries pero no lo es, 
+Marca del Mouse Sentey
+Modelo Revolution Pro GS-3910
