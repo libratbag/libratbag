@@ -63,6 +63,7 @@ enum driver {
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
 	MARSGAMING,
+	SENTEY,
 };
 
 struct data_hidpp20 {

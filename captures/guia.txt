@@ -17,10 +17,10 @@ captures/Apertura del software.txt   ### -- Comunicacion inicial cuando se abre 
 captures/colores posibles perfil 1.txt   ### -- Aplicacion de la paleta de colores RGB al Perfil 1
 captures/DPI Mouse.png   ### -- Imagen del software original con las 4 etradas de DPI 
 captures/DPI1-4.txt   ### -- Asigancion de todos los niveles de DPI solo separados por una pausa de tiempo
-captures/DPI1.txt   ### -- Asigancion del primero modo de DPI x:2000 y:2000
-captures/DPI2.txt   ### -- Asigancion del segundo modo de DPI x:4200 y:4200
-captures/DPI3.txt   ### -- Asigancion del tercero modo de DPI x:6200 y:6200
-captures/DPI4.txt   ### -- Asigancion del cuarto modo de DPI x:8200 y:8200
+captures/DPI1.txt   ### -- Asignación del primer modo de DPI x:400 y:400 (CORREGIDO)
+captures/DPI2.txt   ### -- Asignación del segundo modo de DPI x:1600 y:1600 (CORREGIDO)
+captures/DPI3.txt   ### -- Asignación del tercer modo de DPI x:3200 y:3200 (CORREGIDO)
+captures/DPI4.txt   ### -- Asignación del cuarto modo de DPI x:8200 y:8200 (CORRECTO)
 captures/Paleta de colores.png   ### -- Paleta de colores asignables a los leds rgbs del mouse
 captures/Perfil 1.txt   ### -- Asignacion del perfil 1
 captures/Perfil 2.txt   ### -- Asignacion del perfil 2
@@ -43,9 +43,18 @@ Modelo Revolution Pro GS-3910
 
 ### fichero Asignacion de 4 niveles de DPI 
 lineas para la asignacion de DPI dpi
-18 - 24 Asignado DPI 1 X:2000 Y:2000
-25 - 30 Asignado DPI 1 X:4200 Y:4200
-31 - 36 Asignado DPI 1 X:6200 Y:6200
-37 - 42 Asignado DPI 1 X:8200 Y:8200
-
+18 - 24 Asignado DPI 1 X:400 Y:400 (CORREGIDO)
+25 - 30 Asignado DPI 2 X:1600 Y:1600 (CORREGIDO)
+31 - 36 Asignado DPI 3 X:3200 Y:3200 (CORREGIDO)
+37 - 42 Asignado DPI 4 X:8200 Y:8200 (CORRECTO)
 fichero infotmacion oficial de mouse.md ### -- Descripcion del mouse extraida del sitio oficial
+
+### NOTA IMPORTANTE - CORRECCIÓN DE VALORES DPI
+Los valores DPI originales en esta guía estaban basados en suposiciones.
+Según la información oficial del fabricante Sentey, los valores reales son:
+- DPI 1: 400 CPI (no 2000)
+- DPI 2: 1600 CPI (no 4200)
+- DPI 3: 3200 CPI (no 6200)
+- DPI 4: 8200 CPI (correcto)
+
+Esta corrección se realizó el 25/04/2026 basándose en las especificaciones oficiales del mouse.

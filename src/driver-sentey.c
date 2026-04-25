@@ -19,6 +19,21 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
+ *
+ * Driver for Sentey Revolution Pro GS-3910 Gaming Mouse
+ *
+ * Especificaciones oficiales del dispositivo:
+ * - Sensor: Avago ADNS-9800 (DNA S9800)
+ * - DPI: 400/1600/3200/8200 CPI
+ * - Polling Rate: 500/1000 Hz
+ * - Aceleración: 30G
+ * - Track Speed: 150 ips
+ * - Frame Rate: 11750 FPS
+ * - Botones: 11 físicos (9 programables)
+ * - LEDs: Matriz 3x3 RGB (9 zonas)
+ * - Perfiles: 5 (almacenados onboard)
+ * - Peso: 170g neto, 220g bruto
+ * - Dimensiones: 126 x 84 x 42mm
  */
 
 #include "config.h"
@@ -35,8 +50,8 @@
 
 #define SENTEY_NUM_PROFILES    5
 #define SENTEY_NUM_DPI         4
-#define SENTEY_NUM_BUTTONS     10
-#define SENTEY_NUM_LEDS        9
+#define SENTEY_NUM_BUTTONS     11  /* 11 botones físicos totales */
+#define SENTEY_NUM_LEDS        9   /* Matriz 3x3 RGB */
 
 #define SENTEY_REPORT_SIZE     8
 
@@ -66,17 +81,18 @@ static const uint8_t sentey_button_mapping[SENTEY_NUM_BUTTONS] = {
     0x07,  /* Botón físico 8 (A8) → índice 7 */
     0x08,  /* Botón físico 9 (A9) → índice 8 */
     0x09,  /* Botón físico 10 (A10) → índice 9 */
-    0x00,  /* Botón físico 1 (click izquierdo) - no configurable */
+    0x00,  /* Botón físico 1 (click izquierdo) - no programable */
+    0x0A,  /* Botón físico 11 (selector DPI) - modo especial */
 };
 
 /* Lista de DPI soportados */
 static const unsigned int sentey_dpi_values[SENTEY_NUM_DPI] = {
-    2000, 4200, 6200, 8200
+    400, 1600, 3200, 8200
 };
 
 /* Lista de report rates soportados */
 static const unsigned int sentey_report_rates[] = {
-    125, 250, 500, 1000
+    500, 1000
 };
 
 struct sentey_data {
@@ -163,9 +179,9 @@ sentey_probe(struct ratbag_device *device)
             ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
             ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 
-            /* Configurar acciones por defecto */
+            /* Configurar acciones por defecto según especificaciones oficiales */
             if (button->index == 0) {
-                /* Botón 1: Left click */
+                /* Botón 1: Click izquierdo (no programable) */
                 button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
                 button->action.action.button = 1;
             } else if (button->index == 1) {
@@ -176,8 +192,12 @@ sentey_probe(struct ratbag_device *device)
                 /* Botón 3: Wheel click */
                 button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
                 button->action.action.button = 3;
+            } else if (button->index == 10) {
+                /* Botón 11: DPI selector (modo especial) */
+                button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
+                button->action.action.special = RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP;
             } else {
-                /* Otros botones: sin asignación por defecto */
+                /* Otros botones programables: sin asignación por defecto */
                 button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
                 button->action.action.button = button->index + 1;
             }
@@ -247,8 +267,18 @@ sentey_write_button(struct ratbag_button *button)
 
     log_debug(device->ratbag, "Writing button %d\n", button->index);
 
-    /* Solo botones configurables (índice 1-9, botones físicos 2-10) */
-    if (button->index == 0 || button->index >= SENTEY_NUM_BUTTONS)
+    /* El botón 0 (índice 0) es el click izquierdo - no programable */
+    if (button->index == 0)
+        return 0;
+
+    /* El botón 10 (índice 10) es el selector DPI - modo especial */
+    if (button->index == 10) {
+        log_debug(device->ratbag, "DPI selector button - special mode, skipping\n");
+        return 0;
+    }
+
+    /* Solo botones configurables (índices 1-9, botones físicos 2-10) */
+    if (button->index >= SENTEY_NUM_BUTTONS)
         return 0;
 
     /* Convertir acción a código de función del dispositivo */
@@ -441,40 +471,6 @@ struct ratbag_driver sentey_driver = {
     .remove = sentey_remove,
     .commit = sentey_commit,
 };
-struct ratbag_driver sentey_driver = {
-    .name = "Sentey",
-    .id = "sentey",
-    .probe = sentey_probe,
-    .remove = sentey_remove,
-    .commit = sentey_commit,
-};
-                case RATBAG_BUTTON_ACTION_TYPE_KEY:
-                    act_type = SENTAY_ACTION_RIGHTCLICK;
-                    func = SENTAY_FUNC_DEFAULT;
-                    break;
-                case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
-                    act_type = SENTAY_ACTION_RIGHTCLICK;
-                    switch (action->action.special) {
-                        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP:
-                            func = SENTAY_FUNC_SCROLLUP;
-                            break;
-                        case RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN:
-                            func = SENTAY_FUNC_SCROLLDOWN;
-                            break;
-                        default:
-                            func = SENTAY_FUNC_DEFAULT;
-                            break;
-                    }
-                    break;
-                default:
-                    act_type = SENTAY_ACTION_LEFTCLICK;
-                    func = SENTAY_FUNC_DEFAULT;
-                    break;
-            }
-
-            rc = sentay_set_button(button, index, act_type, func);
-            if (rc)
-                return rc;
         }
 
         /* Commit DPIs */

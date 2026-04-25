@@ -13,8 +13,62 @@
 **Interfaces HID:** 2 interfaces (hidraw3, hidraw4)  
 **Report IDs:** 0x01, 0x02, 0x03  
 
-**Problema actual:** Libratbag v0.18 lo asigna incorrectamente al driver `steelseries`  
-**Driver correcto necesario:** Driver personalizado para protocolo Sentey/Sinowealth
+### 1.1 Especificaciones Técnicas Oficiales
+**Sensor:** Avago ADNS-9800 (DNA S9800) - Sensor láser de alta precisión  
+**DPI Máximo:** 8200 DPI  
+**Niveles DPI:** 4 niveles preset: 400/1600/3200/8200 CPI  
+**Polling Rate:** 500-1000 Hz (seleccionable por software)  
+**Aceleración:** 30G  
+**Track Speed:** 150 pulgadas/segundo  
+**Frame Rate:** 11750 FPS  
+**Tecnología:** Laser-Stream con IAS + DSP  
+
+**Iluminación:**  
+- 5 colores base + 26 tonos para indicador DPI  
+- Matriz LED 3x3 (9 zonas RGB)  
+- Indicador de perfil activo  
+
+**Perfiles:** 5 perfiles independientes almacenados en memoria onboard  
+**Botones:** 11 físicos (1 izquierdo + 10 configurables), 9 programables vía software  
+**Peso:** 170g neto, 220g bruto (con pesos ajustables)  
+**Dimensiones:** 126 x 84 x 42mm  
+**Cable:** 1.8m trenzado de alta resistencia, USB Full-Speed (12 Mbps)  
+**Pies:** Cerámica con coeficiente de fricción bajo, punto de fusión 2715°C  
+
+---
+
+## 1.2 Especificaciones USB/HID Oficiales
+
+**Interface:** USB 2.0 Full-Speed (12 Mbps)  
+**Conector:** USB Tipo-A chapado en oro  
+**Cable:** 1.8 metros trenzado de alta resistencia  
+**Protocolo:** HID (Human Interface Device)  
+**Controller:** Desconocido (posiblemente Genius/A..... G3)  
+
+**Estructura HID Report Esperada:**
+- Report ID 0x01: Movimiento del mouse (X, Y, Wheel, Buttons)
+- Report ID 0x02: Reportes de características (DPI, perfil, LED)
+- Report ID 0x03: Configuración de macros/botones programables
+
+**Configuración de Botones (HID):**
+| Botón | Función | Programable |
+|-------|---------|-------------|
+| Click izquierdo | Principal | ❌ |
+| Click derecho | Secundario | ❌ |
+| Rueda (click) | Medio | ✅ |
+| Rueda (scroll) | Eje Z | ❌ |
+| Botón DPI | Cambio de sensibilidad | ✅ (modo) |
+| Botón lateral 1 | Atrás (Back) | ✅ |
+| Botón lateral 2 | Adelante (Forward) | ✅ |
+| Botón modo | Cambio de perfil/LED | ✅ |
+| Botón lift | Ajuste de altura | ✅ |
+| Extra 1-3 | Personalizables | ✅ |
+
+**Iluminación y Perfiles:**
+- 5 perfiles de usuario independientes, seleccionables por LED de color
+- 26 colores + 1 modo de iluminación LED
+- Los perfiles se almacenan en memoria interna del mouse (on-board memory)
+- Indicador LED muestra nivel DPI actual en 26 tonos diferentes
 
 ---
 
@@ -125,15 +179,19 @@ Donde:
 
 **Mapeo de índices de botones capturados:**
 ```
-Índice 0x01 → A2
-Índice 0x02 → A3
-Índice 0x03 → A5
-Índice 0x04 → A4
-Índice 0x05 → A6
-Índice 0x06 → A7
-Índice 0x07 → A8
-Índice 0x08 → A9
-Índice 0x09 → A10
+Botón físico 1: Click izquierdo (no programable)
+Botón físico 2 (A2): Índice 0x01 → Click izquierdo/derecho
+Botón físico 3 (A3): Índice 0x02 → Click izquierdo/rueda
+Botón físico 4 (A4): Índice 0x04 → Click izquierdo/botón 4
+Botón físico 5 (A5): Índice 0x03 → Click izquierdo/botón 5
+Botón físico 6 (A6): Índice 0x05 → Click izquierdo
+Botón físico 7 (A7): Índice 0x06 → Click izquierdo
+Botón físico 8 (A8): Índice 0x07 → Click izquierdo
+Botón físico 9 (A9): Índice 0x08 → Scroll up
+Botón físico 10 (A10): Índice 0x09 → Scroll down
+Botón físico 11: Selector DPI (modo especial)
+
+Total: 11 botones físicos, 9 programables vía software
 ```
 
 ---
@@ -230,10 +288,10 @@ Donde `XX` podría seleccionar el nivel (0..3) y `YY YY` / `ZZ ZZ` codifican los
 
 **Niveles documentados del dispositivo:**
 ```
-Nivel 0: 2000 x 2000 DPI
-Nivel 1: 4200 x 4200 DPI
-Nivel 2: 6200 x 6200 DPI
-Nivel 3: 8200 x 8200 DPI
+Nivel 0: 400 x 400 DPI   (anteriormente asumido 2000)
+Nivel 1: 1600 x 1600 DPI (anteriormente asumido 4200)
+Nivel 2: 3200 x 3200 DPI (anteriormente asumido 6200)
+Nivel 3: 8200 x 8200 DPI (anteriormente asumido 8200 - correcto)
 ```
 
 **Recomendación:**

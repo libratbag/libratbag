@@ -483,13 +483,19 @@ if (ret < 0)
 - [ ] Vendor ID: `0xe0ff`
 - [ ] Product ID: `0x0002`
 - [ ] Nombre: "Sentey Revolution Pro GS-3910"
+- [ ] Sensor: Avago ADNS-9800
+- [ ] Peso: 170g neto, 220g bruto
+- [ ] Dimensiones: 126 x 84 x 42mm
+- [ ] Cable: 1.8m trenzado USB 2.0 Full-Speed
 
 ### Capacidades a Implementar
-- [ ] 5 perfiles
-- [ ] 4 niveles de DPI (2000, 4200, 6200, 8200)
-- [ ] 9 botones configurables (A2-A10)
-- [ ] LEDs RGB configurables
-- [ ] Report rates: 125, 250, 500, 1000 Hz
+- [ ] 5 perfiles (almacenados en memoria onboard)
+- [ ] 4 niveles de DPI (400, 1600, 3200, 8200)
+- [ ] 11 botones físicos (9 programables vía software)
+- [ ] LEDs RGB configurables (matriz 3x3 = 9 zonas, 5 colores + 26 tonos DPI)
+- [ ] Report rates: 500, 1000 Hz (seleccionable)
+- [ ] Sensor: Avago ADNS-9800
+- [ ] Aceleración: 30G, Track Speed: 150 ips, Frame Rate: 11750 FPS
 
 ### Comandos HID Identificados (según capturas)
 - [ ] `0x0188` - Selección de perfil
@@ -518,7 +524,8 @@ if (ret < 0)
   - DPI: Por determinar (capturas no incluyen Data Fragment completo)
 
 ### 9.2 Mapeo de Botones
-Según `guia.txt` y análisis:
+Según `guia.txt`, análisis de capturas e información oficial:
+- Botón físico 1: Click izquierdo (no programable)
 - Botón físico 2 (A2) → Índice dispositivo 0x01
 - Botón físico 3 (A3) → Índice dispositivo 0x02
 - Botón físico 4 (A4) → Índice dispositivo 0x04
@@ -528,8 +535,9 @@ Según `guia.txt` y análisis:
 - Botón físico 8 (A8) → Índice dispositivo 0x07
 - Botón físico 9 (A9) → Índice dispositivo 0x08
 - Botón físico 10 (A10) → Índice dispositivo 0x09
+- Botón físico 11: Selector DPI (modo especial)
 
-**Nota importante**: El mapeo comienza desde el botón 2 (índice 1), el botón 1 es el click izquierdo principal.
+**Nota importante**: 11 botones físicos totales, 9 programables vía software. El mapeo comienza desde el botón 2 (índice 1), el botón 1 es el click izquierdo principal no configurable.
 
 ### 9.3 Funciones de Botones Identificadas
 - `0x801e`: LeftClick
@@ -621,10 +629,11 @@ Driver=sentey
 
 [Driver/sentey]
 Profiles=5
-Buttons=10
-Leds=9  # Matriz 3x3 RGB
-DpiList=2000;4200;6200;8200
-ReportRates=125;250;500;1000
+Buttons=11
+Leds=9
+DpiList=400;1600;3200;8200
+ReportRates=500;1000
+SensorType=Avago ADNS-9800
 ```
 
 ---
@@ -721,24 +730,38 @@ meson test
 - **Integración**: Agregado a `meson.build` y archivo `.device` actualizado
 - **Protocolo**: Implementados comandos HID basados en análisis de capturas
 - **Funcionalidades**: Perfiles, botones, LEDs y DPI soportados
-- **Mapeo**: Botones físicos correctamente mapeados (índice 1 = botón físico 2)
+- **Mapeo**: Botones físicos correctamente mapeados (11 físicos, 9 programables)
+- **Especificaciones**: Actualizadas con información oficial del fabricante
 
 ### 🔄 Pendiente:
 - **Compilación**: Verificar que compila sin errores
 - **Testing**: Probar con `ratbagctl` cuando esté disponible el dispositivo
 - **DPI**: Implementar comando DPI exacto (actualmente placeholder)
-- **Guardado**: Implementar comando de persistencia en memoria no volátil
+- **Report Rates**: Implementar cambio dinámico de polling rate (500/1000 Hz)
 
-### 📋 Archivos Modificados:
-- `/workspaces/libratbag/src/driver-sentey.c` - Driver completo
-- `/workspaces/libratbag/data/devices/sentey-gs-3910.device` - Configuración actualizada
+### 📋 Archivos Modificados/Creados:
+- `/workspaces/libratbag/src/driver-sentey.c` - Driver completo actualizado
+- `/workspaces/libratbag/data/devices/sentey-gs-3910.device` - Configuración corregida
 - `/workspaces/libratbag/meson.build` - Driver agregado al build
-- `/workspaces/libratbag/captures/REQUISITOS_DRIVER_LIBRATBAG.md` - Documentación actualizada
+- `/workspaces/libratbag/captures/ANALISIS_PATRONES.md` - Especificaciones oficiales agregadas
+- `/workspaces/libratbag/captures/REQUISITOS_DRIVER_LIBRATBAG.md` - Requisitos actualizados
 
-### 🎯 Próximos Pasos:
-1. **Compilar** el proyecto: `meson setup build && ninja -C build`
-2. **Probar detección**: Verificar que el mouse es reconocido con el driver Sentey
-3. **Testing funcional**: Usar `ratbagctl` para configurar botones, LEDs, perfiles
+### 🎯 Información Nueva Incorporada:
+- **Sensor**: Avago ADNS-9800 (DNA S9800) confirmado
+- **DPI reales**: 400/1600/3200/8200 (corregidos de valores asumidos)
+- **Botones**: 11 físicos (1 no programable + 10 configurables)
+- **Report Rates**: 500-1000 Hz (simplificado de lista anterior)
+- **Especificaciones físicas**: Peso, dimensiones, cable, pies cerámicos
+- **Iluminación**: 5 colores + 26 tonos para indicador DPI
+- **Memoria**: Perfiles almacenados onboard
+
+### 📋 Próximos Pasos Recomendados:
+1. **Compilar y probar**: `meson setup build && ninja -C build`
+2. **Verificar detección**: El mouse debería aparecer con "Sentey" como driver
+3. **Testing funcional**: Usar `ratbagctl` para configurar botones y LEDs
+4. **Debugging**: Usar herramientas en `tools/` si hay problemas
+5. **DPI implementation**: Analizar capturas adicionales para comando DPI exacto
+6. **Report Rate**: Implementar cambio de polling rate si es necesario
 4. **Debugging**: Usar herramientas en `tools/` para inspeccionar comunicación HID
 5. **DPI implementation**: Analizar capturas adicionales para comando DPI exacto
 

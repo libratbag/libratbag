@@ -1,12 +1,9 @@
-[Device]
-Name=Sentey Revolution Pro GS-3910
-DeviceMatch=usb:e0ff:0002
-DeviceType=mouse
-Driver=sentey
+# ARCHIVO DUPLICADO - ELIMINAR ESTE ARCHIVO
+# Este archivo tiene el mismo DeviceMatch que sentey-revolution-pro-gs-3910.device
+# Debe ser eliminado para evitar conflictos
 
-[Driver/sentey]
-Profiles=5
-Buttons=10
-Leds=9
-DpiList=2000;4200;6200;8200
-ReportRates=125;250;500;1000
+# [Device]
+# Name=Sentey Revolution Pro GS-3910
+# DeviceMatch=usb:e0ff:0002  ← DUPLICADO
+# DeviceType=mouse
+# Driver=sentey
