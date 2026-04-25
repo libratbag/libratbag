@@ -1,0 +1,623 @@
+# REQUISITOS PARA CREAR UN DRIVER EN LIBRATBAG V0.18 (API v2)
+
+## 1. ESTRUCTURA BÁSICA DEL ARCHIVO DEL DRIVER
+
+### Cabeceras Requeridas
+```c
+#include "config.h"
+#include <assert.h>
+#include <errno.h>
+#include <libevdev/libevdev.h>
+#include <linux/input.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "libratbag-private.h"
+#include "libratbag-hidraw.h"
+#include "libratbag-data.h"  // Si requiere datos específicos del dispositivo
+```
+
+### Definición de Constantes del Dispositivo
+```c
+#define NOMBRE_NUM_PROFILES    X          // Número de perfiles soportados
+#define NOMBRE_NUM_DPI         X          // Número de niveles DPI
+#define NOMBRE_NUM_BUTTONS     X          // Número de botones
+#define NOMBRE_NUM_LEDS        X          // Número de LEDs
+#define NOMBRE_REPORT_ID       0xXX       // Report ID si aplica
+#define NOMBRE_REPORT_SIZE     XX         // Tamaño del reporte HID
+```
+
+---
+
+## 2. FUNCIONES ESENCIALES DEL DRIVER
+
+### 2.1 Función `probe` (Detección del Dispositivo)
+**Propósito:** Inicializar el dispositivo cuando es detectado.
+
+**Requisitos:**
+- Verificar que el dispositivo es compatible (VID/PID)
+- Abrir la interfaz HID correcta (`ratbag_open_hidraw_index`)
+- Inicializar perfiles con `ratbag_device_init_profiles`
+- Configurar capacidades de cada perfil
+- Establecer valores por defecto (DPI, botones, LEDs, report rate)
+- Habilitar tipos de acciones soportadas para botones
+- Habilitar modos de LED soportados
+- Leer configuración actual del hardware (si es posible)
+- Retornar `0` en éxito o `-errno` en error
+
+**Ejemplo:**
+```c
+static int
+nombre_probe(struct ratbag_device *device)
+{
+    struct ratbag_profile *profile;
+    struct ratbag_resolution *resolution;
+    struct ratbag_button *button;
+    struct ratbag_led *led;
+    int rc;
+
+    // Verificar dispositivo HID
+    rc = ratbag_find_hidraw(device, nombre_test_hidraw);
+    if (rc)
+        return rc;
+
+    // Abrir endpoint HID
+    rc = ratbag_open_hidraw_index(device, ENDPOINT, INDEX);
+    if (rc)
+        return rc;
+
+    // Inicializar perfiles
+    ratbag_device_init_profiles(device,
+                                NOMBRE_NUM_PROFILES,
+                                NOMBRE_NUM_DPI,
+                                NOMBRE_NUM_BUTTONS,
+                                NOMBRE_NUM_LEDS);
+
+    // Configurar cada perfil
+    ratbag_device_for_each_profile(device, profile) {
+        profile->is_active = true;
+        
+        // Configurar capacidades
+        ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
+        
+        // Configurar report rates soportados
+        static const unsigned int report_rates[] = { 125, 250, 500, 1000 };
+        ratbag_profile_set_report_rate_list(profile, report_rates,
+                                            ARRAY_LENGTH(report_rates));
+        profile->hz = 1000;
+
+        // Configurar resoluciones (DPI)
+        ratbag_profile_for_each_resolution(profile, resolution) {
+            if (resolution->index == 0) {
+                resolution->is_active = true;
+                resolution->is_default = true;
+            }
+            
+            // Establecer lista de DPI soportados
+            ratbag_resolution_set_dpi_list(resolution, dpi_values, n_dpis);
+            
+            // Valores por defecto
+            resolution->dpi_x = 800 * (resolution->index + 1);
+            resolution->dpi_y = resolution->dpi_x;
+        }
+
+        // Configurar botones
+        ratbag_profile_for_each_button(profile, button) {
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+            ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+            
+            // Asignar acción por defecto
+            button->action.type = RATBAG_BUTTON_ACTION_TYPE_BUTTON;
+            button->action.action.button = button->index + 1;
+        }
+
+        // Configurar LEDs
+        ratbag_profile_for_each_led(profile, led) {
+            led->mode = RATBAG_LED_ON;
+            led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+            led->color.red = 0;
+            led->color.green = 0;
+            led->color.blue = 255;
+            
+            ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+            ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+            ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+            ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+        }
+    }
+
+    return 0;
+}
+```
+
+---
+
+### 2.2 Función `read_profile` (Lectura de Configuración)
+**Propósito:** Leer la configuración actual desde el hardware.
+
+**Nota:** Algunos dispositivos no soportan lectura. En ese caso, usar `RATBAG_PROFILE_CAP_WRITE_ONLY`.
+
+**Requisitos:**
+- Enviar comando HID de lectura usando `ratbag_hidraw_output_report` o `ratbag_hidraw_raw_request`
+- Recibir respuesta con `ratbag_hidraw_read_input_report_index`
+- Parsear los bytes recibidos
+- Actualizar estructuras de libratbag (`profile`, `resolution`, `button`, `led`)
+- Retornar `0` o `-errno`
+
+**Comandos HID Comunes:**
+```c
+// Enviar comando
+msleep(10);  // Esperar si el dispositivo lo requiere
+ret = ratbag_hidraw_output_report(device, buffer, buffer_size);
+
+// O usar raw_request para FEATURE_REPORTS
+ret = ratbag_hidraw_raw_request(device, report_id, buffer, size,
+                                HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+
+// Leer respuesta
+ret = ratbag_hidraw_read_input_report_index(device, buffer, size, index, NULL);
+```
+
+---
+
+### 2.3 Función `write_profile` (Escritura de Configuración)
+**Propósito:** Escribir cambios en el hardware.
+
+**Requisitos:**
+- Iterar sobre resoluciones, botones y LEDs marcados como `dirty`
+- Construir paquetes HID con los nuevos valores
+- Enviar comandos al dispositivo
+- Manejar errores apropiadamente
+- Retornar `0` o `-errno`
+
+**Patrón Típico:**
+```c
+static int
+nombre_write_profile(struct ratbag_profile *profile)
+{
+    struct ratbag_resolution *resolution;
+    struct ratbag_button *button;
+    struct ratbag_led *led;
+    struct ratbag_device *device = profile->device;
+    int rc;
+    bool something_dirty = false;
+
+    // Verificar y escribir DPI
+    ratbag_profile_for_each_resolution(profile, resolution) {
+        if (!resolution->dirty)
+            continue;
+
+        rc = nombre_write_dpi(resolution);
+        if (rc != 0) {
+            log_error(device->ratbag, "Failed to write DPI: %s (%d)\n",
+                      strerror(-rc), rc);
+            return rc;
+        }
+    }
+
+    // Verificar y escribir botones
+    ratbag_profile_for_each_button(profile, button) {
+        if (button->dirty)
+            something_dirty = true;
+    }
+
+    if (something_dirty) {
+        rc = nombre_write_buttons(profile);
+        if (rc != 0)
+            return rc;
+    }
+
+    // Verificar y escribir LEDs
+    ratbag_profile_for_each_led(profile, led) {
+        if (!led->dirty)
+            continue;
+
+        rc = nombre_write_led(led);
+        if (rc != 0)
+            return rc;
+    }
+
+    return 0;
+}
+```
+
+---
+
+### 2.4 Función `commit` (Persistir Cambios)
+**Propósito:** Aplicar todos los cambios pendientes y guardar en memoria no volátil.
+
+**Requisitos:**
+- Iterar sobre perfiles marcados como `dirty`
+- Llamar a `write_profile` para cada perfil
+- Enviar comando de guardado si el dispositivo lo requiere
+- Retornar `0` o `-errno`
+
+**Ejemplo:**
+```c
+static int
+nombre_commit(struct ratbag_device *device)
+{
+    struct ratbag_profile *profile;
+    int rc = 0;
+
+    list_for_each(profile, &device->profiles, link) {
+        if (!profile->dirty)
+            continue;
+
+        log_debug(device->ratbag, "Profile %d changed, rewriting\n", profile->index);
+
+        rc = nombre_write_profile(profile);
+        if (rc) {
+            log_error(device->ratbag, "Failed to write profile: %s (%d)\n",
+                      strerror(-rc), rc);
+            return rc;
+        }
+
+        // Guardar en memoria no volátil
+        rc = nombre_write_save(device);
+        if (rc) {
+            log_error(device->ratbag, "Failed to save profile: %s (%d)\n",
+                      strerror(-rc), rc);
+            return rc;
+        }
+    }
+
+    return 0;
+}
+```
+
+---
+
+### 2.5 Función `remove` (Limpieza)
+**Propósito:** Liberar recursos cuando el dispositivo es desconectado.
+
+**Ejemplo:**
+```c
+static void
+nombre_remove(struct ratbag_device *device)
+{
+    ratbag_close_hidraw_index(device, 0);
+    ratbag_close_hidraw_index(device, 1);  // Si hay múltiples endpoints
+}
+```
+
+---
+
+## 3. COMUNICACIÓN HID
+
+### 3.1 Funciones de Envío/Recepción
+
+| Función | Descripción | Uso |
+|---------|-------------|-----|
+| `ratbag_hidraw_output_report(device, buf, len)` | Envía un OUTPUT_REPORT | Comandos de escritura |
+| `ratbag_hidraw_raw_request(device, id, buf, size, type, req)` | Envía FEATURE_REPORT | Lectura/escritura directa |
+| `ratbag_hidraw_read_input_report_index(device, buf, size, index, timeout)` | Lee INPUT_REPORT | Respuestas del dispositivo |
+
+### 3.2 Tipos de Reportes HID
+- **HID_OUTPUT_REPORT**: Para enviar comandos al dispositivo
+- **HID_INPUT_REPORT**: Para recibir datos del dispositivo
+- **HID_FEATURE_REPORT**: Para configuración directa (get/set)
+
+### 3.3 Constantes de Request
+- `HID_REQ_SET_REPORT`: Para escribir configuración
+- `HID_REQ_GET_REPORT`: Para leer configuración
+
+---
+
+## 4. MANEJO DE PERFILES, DPI, BOTONES Y LEDS
+
+### 4.1 Perfiles
+```c
+// Iterar sobre perfiles
+ratbag_device_for_each_profile(device, profile) {
+    profile->is_active = true;
+    profile->hz = 1000;  // Report rate
+    
+    // Marcar como write-only si no se puede leer
+    ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_WRITE_ONLY);
+}
+```
+
+### 4.2 DPI/Resoluciones
+```c
+// Establecer lista de DPI soportados
+unsigned int dpi_values[] = { 400, 800, 1600, 3200, 6400 };
+ratbag_resolution_set_dpi_list(resolution, dpi_values, 5);
+
+// Marcar resolución activa
+resolution->is_active = true;
+resolution->is_default = true;
+
+// Leer estado dirty
+if (resolution->dirty) {
+    // El usuario cambió este DPI
+    int new_dpi = resolution->dpi_x;
+}
+```
+
+### 4.3 Botones
+```c
+// Habilitar tipos de acción
+ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
+ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
+ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
+
+// Tipos de acción especiales
+BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_CYCLE_UP)
+BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP)
+BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN)
+BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP)
+
+// Acciones de botón
+BUTTON_ACTION_BUTTON(1)  // Click izquierdo
+BUTTON_ACTION_BUTTON(2)  // Click derecho
+BUTTON_ACTION_BUTTON(3)  // Rueda click
+
+// Verificar si está dirty
+if (button->dirty) {
+    struct ratbag_button_action *action = &button->action;
+    // Procesar nueva acción
+}
+```
+
+### 4.4 LEDs
+```c
+// Configurar profundidad de color
+led->colordepth = RATBAG_LED_COLORDEPTH_RGB_888;
+led->color.red = 255;
+led->color.green = 0;
+led->color.blue = 0;
+
+// Habilitar modos
+ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
+ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
+ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+
+// Modos disponibles
+RATBAG_LED_OFF        // Apagado
+RATBAG_LED_ON         // Color fijo
+RATBAG_LED_BREATHING  // Respiración (led->ms para duración)
+RATBAG_LED_CYCLE      // Ciclo de colores (led->ms para duración)
+```
+
+---
+
+## 5. GESTIÓN DE ERRORES Y LOGGING
+
+### 5.1 Códigos de Error
+- Retornar `0` en éxito
+- Retornar `-errno` en error (ej. `-EINVAL`, `-ENOTSUP`, `-EIO`)
+
+### 5.2 Logging
+```c
+log_debug(device->ratbag, "Mensaje de debug: %d\n", valor);
+log_info(device->ratbag, "Mensaje informativo\n");
+log_error(device->ratbag, "Error: %s (%d)\n", strerror(-rc), rc);
+log_bug(device->ratbag, "Bug detectado\n");  // Para condiciones imposibles
+```
+
+---
+
+## 6. INTEGRACIÓN CON MESON.BUILD
+
+### 6.1 Agregar el Driver al Build
+Editar `/workspace/src/meson.build`:
+
+```python
+src_libratbag = files(
+    'driver-asus.c',
+    'driver-etekcity.c',
+    'driver-sentey.c',  # <-- Agregar tu driver aquí
+    ...
+)
+```
+
+### 6.2 Registrar el Driver
+Al final del archivo del driver:
+
+```c
+struct ratbag_driver sentey_driver = {
+    .name = "Sentey",
+    .id = "sentey",
+    .probe = sentey_probe,
+    .remove = sentey_remove,
+    .commit = sentey_commit,
+};
+```
+
+---
+
+## 7. PATRONES COMUNES DE COMANDOS HID
+
+### 7.1 Estructura de Mensaje Típica
+```c
+union device_message {
+    struct {
+        uint8_t report_id;
+        uint8_t command;
+        uint8_t data[SIZE];
+    } __attribute__((packed)) msg;
+    uint8_t data[TOTAL_SIZE];
+};
+
+_Static_assert(sizeof(union device_message) == TOTAL_SIZE,
+               "Size of union is wrong");
+```
+
+### 7.2 Secuencia de Escritura Típica
+```c
+// 1. Preparar buffer
+union device_message msg = {
+    .msg.report_id = REPORT_ID,
+    .msg.command = COMMAND_CODE,
+    .msg.data = { /* datos */ },
+};
+
+// 2. Esperar si es necesario
+msleep(10);
+
+// 3. Enviar comando
+ret = ratbag_hidraw_output_report(device, msg.data, msg_size);
+if (ret < 0)
+    return ret;
+
+// 4. Esperar respuesta si es necesario
+msleep(20);
+
+// 5. Leer respuesta (si aplica)
+uint8_t response[SIZE];
+ret = ratbag_hidraw_read_input_report_index(device, response, SIZE, INDEX, NULL);
+if (ret < 0)
+    return ret;
+```
+
+---
+
+## 8. CHECKLIST PARA IMPLEMENTAR DRIVER SENTEY GS-3910
+
+### Información del Dispositivo
+- [ ] Vendor ID: `0xe0ff`
+- [ ] Product ID: `0x0002`
+- [ ] Nombre: "Sentey Revolution Pro GS-3910"
+
+### Capacidades a Implementar
+- [ ] 5 perfiles
+- [ ] 4 niveles de DPI (2000, 4200, 6200, 8200)
+- [ ] 9 botones configurables (A2-A10)
+- [ ] LEDs RGB configurables
+- [ ] Report rates: 125, 250, 500, 1000 Hz
+
+### Comandos HID Identificados (según capturas)
+- [ ] `0x0188` - Selección de perfil
+- [ ] `0x0185` - Configuración de botones
+- [ ] `0x0186` / `0x0102` - Configuración RGB
+- [ ] Comandos DPI (por determinar exactamente)
+- [ ] Comando de guardado (por determinar)
+
+### Archivos a Crear/Modificar
+- [ ] `/workspace/src/driver-sentey.c` - Driver principal
+- [ ] `/workspace/src/meson.build` - Agregar driver al build
+- [ ] `/workspace/data/devices/sentey-revolution-pro-gs-3910.device` - Archivo de dispositivo
+
+### Pruebas
+- [ ] Compilar sin errores
+- [ ] Cargar driver con `ratbagd`
+- [ ] Verificar detección con `ratbagctl list`
+- [ ] Probar lectura/escritura de DPI
+- [ ] Probar configuración de botones
+- [ ] Probar configuración de LEDs
+- [ ] Verificar persistencia de cambios
+
+---
+
+## 9. REFERENCIAS Y HERRAMIENTAS
+
+### Herramientas de Depuración
+```bash
+# Listar dispositivos
+ratbagctl list
+
+# Información detallada
+ratbagctl info <device>
+
+# Monitorear eventos
+ratbagctl watch
+
+# Ver logs de ratbagd
+journalctl -u ratbagd -f
+
+# Ver comunicación HID raw
+usbmon (requiere kernel module)
+```
+
+### Drivers de Referencia
+- `driver-steelseries.c` - Bueno para dispositivos con protocolos simples
+- `driver-etekcity.c` - Ejemplo con múltiples perfiles y macros
+- `driver-logitech-g300.c` - Protocolo Logitech simple
+- `driver-hidpp10.c` / `driver-hidpp20.c` - Protocolo HID++ de Logitech (complejo)
+
+### Documentación
+- Libratbag GitHub: https://github.com/libratbag/libratbag
+- HID Specification: https://www.usb.org/hid
+- Linux HIDRAW API: https://www.kernel.org/doc/html/latest/hid/hidraw.html
+
+---
+
+## 10. EJEMPLO DE ESTRUCTURA FINAL DEL DRIVER
+
+```c
+/*
+ * Copyright © 2024 Tu Nombre.
+ * SPDX-License-Identifier: MIT
+ */
+
+#include "config.h"
+#include <assert.h>
+#include <errno.h>
+#include <libevdev/libevdev.h>
+#include <linux/input.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "libratbag-private.h"
+#include "libratbag-hidraw.h"
+
+#define SENTEY_NUM_PROFILES    5
+#define SENTEY_NUM_DPI         4
+#define SENTEY_NUM_BUTTONS     9
+#define SENTEY_NUM_LEDS        1
+#define SENTEY_REPORT_SIZE     64
+
+// Estructuras específicas del dispositivo
+union sentey_message {
+    struct {
+        uint8_t report_id;
+        uint8_t command;
+        uint8_t data[SENTEY_REPORT_SIZE - 2];
+    } __attribute__((packed)) msg;
+    uint8_t data[SENTEY_REPORT_SIZE];
+};
+
+// Funciones del driver
+static int sentey_probe(struct ratbag_device *device);
+static void sentey_remove(struct ratbag_device *device);
+static int sentey_commit(struct ratbag_device *device);
+static int sentey_write_dpi(struct ratbag_resolution *resolution);
+static int sentey_write_buttons(struct ratbag_profile *profile);
+static int sentey_write_led(struct ratbag_led *led);
+static int sentey_write_profile(struct ratbag_profile *profile);
+
+// Registro del driver
+struct ratbag_driver sentey_driver = {
+    .name = "Sentey",
+    .id = "sentey",
+    .probe = sentey_probe,
+    .remove = sentey_remove,
+    .commit = sentey_commit,
+};
+```
+
+---
+
+## NOTAS IMPORTANTES PARA EL DRIVER SENTEY
+
+1. **Protocolo Propietario**: Basado en las capturas, el mouse usa un protocolo propietario con comandos específicos (`0x0188`, `0x0185`, etc.)
+
+2. **Secuencia de Inicialización**: Según `Apertura del software.txt`, hay una secuencia inicial específica que debe replicarse
+
+3. **Comandos RGB**: Los patrones `0x0186` y `0x0102` parecen estar relacionados con configuración de colores. Analizar `colores posibles perfil 1.txt` para entender el formato
+
+4. **Botones**: Las asignaciones están documentadas en los archivos `A2-A10*.txt`. Mapear correctamente los códigos
+
+5. **DPI**: Los 4 niveles (2000, 4200, 6200, 8200) deben configurarse según los patrones en `DPI*.txt`
+
+6. **Write-Only**: Si el dispositivo no soporta lectura de configuración, marcar perfiles como `RATBAG_PROFILE_CAP_WRITE_ONLY`
+
+7. **Tiempos de Espera**: Usar `msleep()` entre comandos si el dispositivo lo requiere (observar en capturas)
+
+8. **Report ID**: Determinar si el dispositivo usa Report ID específico o `0x00`
