@@ -1,0 +1,6 @@
+[Device]
+Name=Attack Shark X11
+# Wired (USB cable) and 2.4 GHz wireless adapter share the same driver.
+DeviceMatch=usb:1d57:fa55;usb:1d57:fa60
+DeviceType=mouse
+Driver=attackshark
