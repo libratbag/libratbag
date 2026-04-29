@@ -1,0 +1,5 @@
+[Device]
+Name=Trust GXT 164 Sikanda Gaming Mouse
+DeviceMatch=usb:145f:020d
+Driver=trust_gxt_164
+DeviceType=mouse
