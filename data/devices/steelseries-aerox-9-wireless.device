@@ -1,0 +1,13 @@
+[Device]
+# Wired mode; 2.4 Ghz wireless mode; Bluetooth mode
+DeviceMatch=usb:1038:185a;usb:1038:1858;bluetooth:0111:185a
+DeviceType=mouse
+Driver=steelseries
+Name=SteelSeries Aerox 9 Wireless
+
+[Driver/steelseries]
+Buttons=0
+DeviceVersion=5
+DpiRange=100:18000@100
+Leds=3
+MacroLength=0
