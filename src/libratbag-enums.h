@@ -173,6 +173,10 @@ enum ratbag_button_action_type {
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_MACRO,
 	/**
+	 * Button locks DPI to a specific value while held
+	 */
+	RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+	/**
 	 * Button action is unknown
 	 */
 	RATBAG_BUTTON_ACTION_TYPE_UNKNOWN = 1000,
@@ -282,6 +286,22 @@ enum ratbag_macro_event_type {
 /**
  * @ingroup enums
  *
+ * Macro repeat modes describing how a macro is repeated.
+ */
+enum ratbag_macro_repeat_mode {
+	/** Play the macro once (default) */
+	RATBAG_MACRO_REPEAT_ONCE = 0,
+	/** Play the macro a fixed number of times */
+	RATBAG_MACRO_REPEAT_COUNT,
+	/** Repeat the macro while the button is held */
+	RATBAG_MACRO_REPEAT_WHILE_HELD,
+	/** Repeat the macro until any other button is pressed */
+	RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED,
+};
+
+/**
+ * @ingroup enums
+ *
  * Device Types
  * Describes the types specified in the .device files
  */
@@ -303,4 +323,19 @@ enum ratbag_device_type {
 	 * Used for keyboards
 	 */
 	TYPE_KEYBOARD,
+};
+
+/**
+ * @ingroup enums
+ *
+ * Bitmask of device state that changed due to an unsolicited event.
+ * Returned by a driver's handle_event callback.
+ */
+enum ratbag_event_type {
+	RATBAG_EVENT_NONE               = 0,
+	RATBAG_EVENT_PROFILE_CHANGED    = (1 << 0),
+	RATBAG_EVENT_RESOLUTION_CHANGED = (1 << 1),
+	RATBAG_EVENT_BATTERY_CHANGED    = (1 << 2),
+	RATBAG_EVENT_LED_CHANGED        = (1 << 3),
+	RATBAG_EVENT_UNKNOWN            = (1 << 15),
 };

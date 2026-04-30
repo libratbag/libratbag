@@ -204,7 +204,22 @@ def print_button(
         key_name = evcode_to_str(button.key)
         print(f"{header}key '{key_name}'")
     elif button.action_type == RatbagdButton.ActionType.MACRO:
-        print(f"{header}macro '{str(button.macro)}'")
+        repeat = button.macro_repeat
+        if repeat and repeat[0] == RatbagdButton.RepeatMode.COUNT:
+            repeat_str = f" (repeat: {repeat[1]}x)"
+        elif repeat and repeat[0] == RatbagdButton.RepeatMode.WHILE_HELD:
+            repeat_str = " (repeat: while held)"
+        elif repeat and repeat[0] == RatbagdButton.RepeatMode.UNTIL_BUTTON_PRESSED:
+            repeat_str = " (repeat: until button pressed)"
+        else:
+            repeat_str = ""
+        print(f"{header}macro '{str(button.macro)}'{repeat_str}")
+    elif button.action_type == RatbagdButton.ActionType.DPI_LOCK:
+        x, y = button.dpi_lock
+        if x == y:
+            print(f"{header}dpi-lock {x}")
+        else:
+            print(f"{header}dpi-lock {x}x{y}")
     elif button.action_type == RatbagdButton.ActionType.NONE:
         print(f"{header}none")
     else:
@@ -258,8 +273,16 @@ def print_profile(device: RatbagdDevice, profile: RatbagdProfile, level: int) ->
                 print_resolution(device, profile, resolution, level + 2)
         if profile.angle_snapping != -1:
             print(" " * level + f"Angle Snapping: {bool(profile.angle_snapping)}")
+        if profile.motion_sync != -1:
+            print(" " * level + f"Motion Sync: {bool(profile.motion_sync)}")
+        if profile.ripple_control != -1:
+            print(" " * level + f"Ripple Control: {bool(profile.ripple_control)}")
         if profile.debounce != -1:
             print(" " * level + f"Debounce time: {profile.debounce}ms")
+        if profile.lod != -1:
+            print(" " * level + f"Lift off distance: {profile.lod}mm")
+        if profile.autosleep != -1:
+            print(" " * level + f"Autosleep: {profile.autosleep}s")
         if profile.buttons:
             for button in profile.buttons:
                 print_button(device, profile, button, level)
@@ -417,7 +440,16 @@ def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> 
     if button.ActionType.MACRO not in button.action_types:
         raise RatbagCapabilityError("assigning a macro is not supported on this device")
 
-    macro_keys = args.target_macro
+    macro_keys = list(args.target_macro)
+
+    # Extract repeat:<mode> token if present (e.g. repeat:3, repeat:held)
+    repeat_arg = None
+    for i, s in enumerate(macro_keys):
+        if s.lower().startswith("repeat:"):
+            repeat_arg = s.split(":", 1)[1]
+            macro_keys.pop(i)
+            break
+
     macro = RatbagdMacro()
     for s in macro_keys:
         is_press = True
@@ -447,6 +479,33 @@ def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> 
                 macro.append(RatbagdButton.Macro.KEY_RELEASE, code)
 
     button.macro = macro
+
+    if repeat_arg is not None:
+        if repeat_arg == "held":
+            button.macro_repeat = (RatbagdButton.RepeatMode.WHILE_HELD, 0)
+        elif repeat_arg == "button-pressed":
+            button.macro_repeat = (
+                RatbagdButton.RepeatMode.UNTIL_BUTTON_PRESSED,
+                0,
+            )
+        else:
+            button.macro_repeat = (RatbagdButton.RepeatMode.COUNT, int(repeat_arg))
+
+    commit(device, args)
+
+
+def func_button_action_set_dpi_lock(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    button, _profile, device = find_button(ratbagd, args)
+    if button.ActionType.DPI_LOCK not in button.action_types:
+        raise RatbagCapabilityError("DPI lock is not supported on this device")
+
+    dpi_str = args.target_dpi
+    if "x" in dpi_str.lower():
+        x, y = dpi_str.lower().split("x", 1)
+        button.dpi_lock = (int(x), int(y))
+    else:
+        dpi = int(dpi_str)
+        button.dpi_lock = (dpi, dpi)
     commit(device, args)
 
 
@@ -508,6 +567,32 @@ def func_angle_snapping_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     commit(device, args)
 
 
+def func_motion_sync_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.motion_sync == -1:
+        return
+    print(bool(profile.motion_sync))
+
+
+def func_motion_sync_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.motion_sync = 1 if args.motion_sync_n else 0
+    commit(device, args)
+
+
+def func_ripple_control_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.ripple_control == -1:
+        return
+    print(bool(profile.ripple_control))
+
+
+def func_ripple_control_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.ripple_control = 1 if args.ripple_control_n else 0
+    commit(device, args)
+
+
 def func_debounce_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, _device = find_profile(ratbagd, args)
     if profile.debounce == -1:
@@ -524,6 +609,44 @@ def func_debounce_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_debounce_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.debounce = args.debounce_n
+    commit(device, args)
+
+
+def func_lod_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.lod == -1:
+        return
+    print(profile.lod)
+
+
+def func_lod_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    values = profile.lods
+    print(" ".join([str(x) for x in values]))
+
+
+def func_lod_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.lod = args.lod_n
+    commit(device, args)
+
+
+def func_autosleep_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    if profile.autosleep == -1:
+        return
+    print(profile.autosleep)
+
+
+def func_autosleep_get_all(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, _device = find_profile(ratbagd, args)
+    values = profile.autosleeps
+    print(" ".join([str(x) for x in values]))
+
+
+def func_autosleep_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    profile.autosleep = args.autosleep_n
     commit(device, args)
 
 
@@ -640,6 +763,11 @@ def func_profile_disable(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
 def func_device_name_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     device = find_device(ratbagd, args)
     print(device.name)
+
+
+def func_device_reset(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    device = find_device(ratbagd, args)
+    device.reset()
 
 
 ################################################################################
@@ -766,6 +894,13 @@ parser_def: List[RatbagParserSchemaElement] = [
         func: func_device_name_get,
     },
     {
+        of_type: command,
+        name: "reset",
+        help_str: "Perform a factory reset on the device",
+        func: func_device_reset,
+        group: "Device",
+    },
+    {
         of_type: switch,
         name: "profile",
         help_str: "Access profile information",
@@ -871,6 +1006,14 @@ parser_def: List[RatbagParserSchemaElement] = [
                 {
                     of_type: link,
                     dest: "debounce",
+                },
+                {
+                    of_type: link,
+                    dest: "lod",
+                },
+                {
+                    of_type: link,
+                    dest: "autosleep",
                 },
                 {
                     of_type: link,
@@ -1118,6 +1261,70 @@ Angle snapping commands work on the given profile, or on the active profile if n
     },
     {
         of_type: switch,
+        name: "motion_sync",
+        help_str: """Motion sync information
+
+Motion sync commands work on the given profile, or on the active profile if none is given.""",
+        tag: "motion_sync",
+        group: "MotionSync",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current motion sync",
+                func: func_motion_sync_get,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current motion sync to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "motion_sync_n",
+                        metavar: "N",
+                        help_str: "The motion sync to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_motion_sync_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "ripple_control",
+        help_str: """Ripple control information
+
+Ripple control commands work on the given profile, or on the active profile if none is given.""",
+        tag: "ripple_control",
+        group: "RippleControl",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current ripple control",
+                func: func_ripple_control_get,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current ripple control to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "ripple_control_n",
+                        metavar: "N",
+                        help_str: "The ripple control to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_ripple_control_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
         name: "debounce",
         help_str: """Access debounce time information
 
@@ -1151,6 +1358,82 @@ Debounce commands work on the given profile, or on the active profile if none is
                     },
                 ],
                 func: func_debounce_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "lod",
+        help_str: """Access lift off distance information
+
+LOD commands work on the given profile, or on the active profile if none is given.""",
+        tag: "lod",
+        group: "Lift Off Distance",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current lift off distance",
+                func: func_lod_get,
+            },
+            {
+                of_type: command,
+                name: "get-all",
+                help_str: "Show all available lift off distances",
+                func: func_lod_get_all,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current lift off distance to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "lod_n",
+                        metavar: "N",
+                        help_str: "The lift off distance to set as current",
+                        arg_type: float,
+                    },
+                ],
+                func: func_lod_set,
+            },
+        ],
+    },
+    {
+        of_type: switch,
+        name: "autosleep",
+        help_str: """Access autosleep timeout information
+
+Autosleep commands work on the given profile, or on the active profile if none is given.""",
+        tag: "autosleep",
+        group: "Autosleep",
+        switch: [
+            {
+                of_type: command,
+                name: "get",
+                help_str: "Show current autosleep timeout",
+                func: func_autosleep_get,
+            },
+            {
+                of_type: command,
+                name: "get-all",
+                help_str: "Show all available autosleep timeouts",
+                func: func_autosleep_get_all,
+            },
+            {
+                of_type: command,
+                name: "set",
+                help_str: "Set the current autosleep timeout to N",
+                pos_args: [
+                    {
+                        of_type: argument,
+                        name: "autosleep_n",
+                        metavar: "N",
+                        help_str: "The autosleep timeout in seconds to set as current",
+                        arg_type: int,
+                    },
+                ],
+                func: func_autosleep_set,
             },
         ],
     },
@@ -1256,7 +1539,12 @@ active profile if none is given.""",
         KEY_A                   Press and release 'a'
         +KEY_A                  Press 'a'
         -KEY_A                  Release 'a'
-        t300                    Wait 300ms""",
+        t300                    Wait 300ms
+
+  Repeat:
+        repeat:N                Repeat the macro N times
+        repeat:held             Repeat while the button is held
+        repeat:button-pressed   Repeat until another button is pressed""",
                                     pos_args: [
                                         {
                                             of_type: argument,
@@ -1267,6 +1555,20 @@ active profile if none is given.""",
                                         },
                                     ],
                                     func: func_button_action_set_macro,
+                                },
+                                {
+                                    of_type: command,
+                                    name: "dpi-lock",
+                                    help_str: "Set the button to lock DPI while held",
+                                    pos_args: [
+                                        {
+                                            of_type: argument,
+                                            name: "target_dpi",
+                                            metavar: "DPI",
+                                            help_str: "DPI value (e.g. 400 or 400x800)",
+                                        },
+                                    ],
+                                    func: func_button_action_set_dpi_lock,
                                 },
                                 {
                                     of_type: command,

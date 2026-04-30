@@ -185,6 +185,17 @@ known to ratbagd.
         occurs, the :func:`Resync` signal is emitted and all properties are
         updated to the current state.
 
+.. function:: Reset() → ()
+
+        Instructs the device to perform a factory reset, restoring all
+        settings to their hardware defaults. This call is handled
+        asynchronously. A :func:`Resync` signal is always emitted after
+        the reset completes, regardless of success or failure. Clients
+        should re-read all properties after receiving the signal.
+
+        Not all devices support hardware reset. If the device's driver
+        does not implement reset, this call has no effect.
+
 .. function:: Resync()
 
         :type: Signal
@@ -284,6 +295,24 @@ org.freedesktop.ratbag1.Profile
         indicate that the device doesn't support reading and/or writing this
         value.
 
+.. attribute:: MotionSync
+
+        :type: i
+        :flags: read-write, mutable
+
+        Sensor motion sync boolean value as an int (1 or 0), or `-1` to
+        indicate that the device doesn't support reading and/or writing this
+        value.
+
+.. attribute:: RippleControl
+
+        :type: i
+        :flags: read-write, mutable
+
+        Sensor ripple control boolean value as an int (1 or 0), or `-1` to
+        indicate that the device doesn't support reading and/or writing this
+        value.
+
 .. attribute:: Debounce
 
         :type: i
@@ -305,6 +334,49 @@ org.freedesktop.ratbag1.Profile
 
         This list may be empty if the device does not support reading and/or
         writing the debounce time.
+
+.. attribute:: Lod
+
+        :type: d
+        :flags: read-write, mutable
+
+        Sensor lift off distance in mm as a double, or `-1` to indicate that
+        the device doesn't support reading and/or writing this value. This
+        distance must be one of those listed in :attr:`Lods`.
+
+.. attribute:: Lods
+
+        :type: ad
+        :flags: read-write, constant
+
+        A list of permitted lift off distances. Values in this list may be
+        used in the :attr:`Lod` property. This list is always sorted
+        ascending, the lowest lift off distance is the first item in the list.
+
+        This list may be empty if the device does not support reading and/or
+        writing the lift off distance.
+
+.. attribute:: Autosleep
+
+        :type: i
+        :flags: read-write, mutable
+
+        Int for the autosleep timeout in seconds assigned to this profile.
+        This time must be one of those listed in :attr:`Autosleeps`, or ``-1``
+        to indicate that changing the autosleep timeout for this device is not
+        allowed.
+
+.. attribute:: Autosleeps
+
+        :type: au
+        :flags: read-write, constant
+
+        A list of permitted autosleep timeouts. Values in this list may be
+        used in the :attr:`Autosleep` property. This list is always sorted
+        ascending, the lowest autosleep timeout is the first item in the list.
+
+        This list may be empty if the device does not support reading and/or
+        writing the autosleep timeout.
 
 .. attribute:: ReportRate
 
@@ -480,6 +552,11 @@ org.freedesktop.ratbag1.Button
         |   1     | Key press event                      |
         +---------+--------------------------------------+
 
+        If the ActionType is *DPI Lock*, the variant is an unsigned integer
+        tuple (``(uu)``) where the first element is the X DPI value and the
+        second element is the Y DPI value to lock to while the button is
+        held. For uniform DPI lock, both values are identical.
+
         If the ActionType is *None*, the variant is an unsigned integer
         (``u``) of value 0.
 
@@ -504,6 +581,8 @@ org.freedesktop.ratbag1.Button
         +---------+---------+--------------------------------------+
         |   4     | Macro   | Mapping to a macro key sequence      |
         +---------+---------+--------------------------------------+
+        |   5     | DPILock | Lock DPI to a value while held       |
+        +---------+---------+--------------------------------------+
         | 1000    | Unknown | An unknown or unreadable mapping type|
         +---------+---------+--------------------------------------+
 
@@ -511,6 +590,33 @@ org.freedesktop.ratbag1.Button
         functions.
 
         Clients must ignore :attr:`ActionTypes` unknown to them.
+
+.. attribute:: MacroRepeat
+
+        :type: (uu)
+        :flags: read-write, mutable
+
+        The macro repeat mode and count. Only meaningful when the button's
+        action type is *Macro*. The first element is the repeat mode, the
+        second element is the repeat count.
+
+        +-------+----------------------------------------------+
+        | Mode  | Description                                  |
+        +=======+==============================================+
+        |   0   | Play once (default)                          |
+        +-------+----------------------------------------------+
+        |   1   | Repeat a fixed number of times (use count)   |
+        +-------+----------------------------------------------+
+        |   2   | Repeat while the button is held              |
+        +-------+----------------------------------------------+
+        |   3   | Repeat until any other button is pressed     |
+        +-------+----------------------------------------------+
+
+        The count value is only used when the mode is 1 (repeat count).
+        For all other modes, the count should be set to 0.
+
+        Clients unaware of this property will get the default behavior
+        (play once) which preserves backwards compatibility.
 
 .. _led:
 

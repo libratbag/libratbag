@@ -964,6 +964,628 @@ START_TEST(device_leds_set)
 }
 END_TEST
 
+START_TEST(device_motion_sync)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].motion_sync = 1;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_motion_sync(p);
+	ck_assert_int_eq(val, 1);
+
+	ratbag_profile_set_motion_sync(p, 0);
+	val = ratbag_profile_get_motion_sync(p);
+	ck_assert_int_eq(val, 0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_ripple_control)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].ripple_control = 1;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_ripple_control(p);
+	ck_assert_int_eq(val, 1);
+
+	ratbag_profile_set_ripple_control(p, 0);
+	val = ratbag_profile_get_ripple_control(p);
+	ck_assert_int_eq(val, 0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_lod_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	double val;
+	double lods[8];
+	size_t nlods;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].lod = 2.0;
+	td.profiles[0].lods[0] = 1.0;
+	td.profiles[0].lods[1] = 2.0;
+	td.profiles[0].lods[2] = 3.0;
+	td.profiles[0].nlods = 3;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_lod(p);
+	ck_assert(val == 2.0);
+
+	nlods = ratbag_profile_get_lod_list(p, lods, ARRAY_LENGTH(lods));
+	ck_assert_int_eq(nlods, 3);
+	ck_assert(lods[0] == 1.0);
+	ck_assert(lods[1] == 2.0);
+	ck_assert(lods[2] == 3.0);
+
+	ratbag_profile_set_lod(p, 3.0);
+	val = ratbag_profile_get_lod(p);
+	ck_assert(val == 3.0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_autosleep_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+	unsigned int sleeps[8];
+	size_t nsleeps;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].autosleep = 60;
+	td.profiles[0].autosleeps[0] = 30;
+	td.profiles[0].autosleeps[1] = 60;
+	td.profiles[0].autosleeps[2] = 120;
+	td.profiles[0].nautosleeps = 3;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_autosleep(p);
+	ck_assert_int_eq(val, 60);
+
+	nsleeps = ratbag_profile_get_autosleep_list(p, sleeps, ARRAY_LENGTH(sleeps));
+	ck_assert_int_eq(nsleeps, 3);
+	ck_assert_int_eq(sleeps[0], 30);
+	ck_assert_int_eq(sleeps[1], 60);
+	ck_assert_int_eq(sleeps[2], 120);
+
+	ratbag_profile_set_autosleep(p, 120);
+	val = ratbag_profile_get_autosleep(p);
+	ck_assert_int_eq(val, 120);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_debounce_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+	unsigned int debounces[8];
+	size_t ndebounces;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].debounce = 10;
+	td.profiles[0].debounces[0] = 5;
+	td.profiles[0].debounces[1] = 10;
+	td.profiles[0].debounces[2] = 15;
+	td.profiles[0].ndebounces = 3;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_debounce(p);
+	ck_assert_int_eq(val, 10);
+
+	ndebounces = ratbag_profile_get_debounce_list(p, debounces, ARRAY_LENGTH(debounces));
+	ck_assert_int_eq(ndebounces, 3);
+	ck_assert_int_eq(debounces[0], 5);
+	ck_assert_int_eq(debounces[1], 10);
+	ck_assert_int_eq(debounces[2], 15);
+
+	ratbag_profile_set_debounce(p, 15);
+	val = ratbag_profile_get_debounce(p);
+	ck_assert_int_eq(val, 15);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_angle_snapping_get_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	int val;
+
+	struct ratbag_test_device td = sane_device;
+	td.profiles[0].angle_snapping = 1;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	p = ratbag_device_get_profile(d, 0);
+	val = ratbag_profile_get_angle_snapping(p);
+	ck_assert_int_eq(val, 1);
+
+	ratbag_profile_set_angle_snapping(p, 0);
+	val = ratbag_profile_get_angle_snapping(p);
+	ck_assert_int_eq(val, 0);
+
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_event_no_handler)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	unsigned int events;
+	uint8_t buf[] = { 0x01, 0x02, 0x03 };
+
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	ck_assert(ratbag_device_has_event_support(d));
+
+	/* no per-device handler set, should return NONE */
+	events = ratbag_device_dispatch_event(d, buf, sizeof(buf), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_NONE);
+
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+static unsigned int
+test_event_handler(struct ratbag_device *device,
+		   const uint8_t *buf, size_t len,
+		   int hidraw_index)
+{
+	if (len >= 1 && buf[0] == 0x01)
+		return RATBAG_EVENT_RESOLUTION_CHANGED;
+	if (len >= 1 && buf[0] == 0x02)
+		return RATBAG_EVENT_PROFILE_CHANGED;
+	return RATBAG_EVENT_NONE;
+}
+
+START_TEST(device_event_dispatch)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	unsigned int events;
+
+	struct ratbag_test_device td = sane_device;
+	td.handle_event = test_event_handler;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	ck_assert(ratbag_device_has_event_support(d));
+
+	uint8_t buf_dpi[] = { 0x01 };
+	events = ratbag_device_dispatch_event(d, buf_dpi, sizeof(buf_dpi), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_RESOLUTION_CHANGED);
+
+	uint8_t buf_profile[] = { 0x02 };
+	events = ratbag_device_dispatch_event(d, buf_profile, sizeof(buf_profile), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_PROFILE_CHANGED);
+
+	uint8_t buf_unknown[] = { 0xFF };
+	events = ratbag_device_dispatch_event(d, buf_unknown, sizeof(buf_unknown), 0);
+	ck_assert_int_eq(events, RATBAG_EVENT_NONE);
+
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_reset_no_support)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	enum ratbag_error_code rc;
+
+	struct ratbag_test_device td = sane_device;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	ck_assert(d != NULL);
+
+	rc = ratbag_device_reset(d);
+	ck_assert_int_eq(rc, RATBAG_ERROR_CAPABILITY);
+
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_buttons_dpi_lock_init)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	int x, y;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 3;
+	td.profiles[0].buttons[1].action_type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK;
+	td.profiles[0].buttons[1].dpi_lock.x = 400;
+	td.profiles[0].buttons[1].dpi_lock.y = 400;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 1);
+
+	ck_assert_int_eq(ratbag_button_get_action_type(b),
+			 RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK);
+	x = ratbag_button_get_dpi_lock_x(b);
+	y = ratbag_button_get_dpi_lock_y(b);
+	ck_assert_int_eq(x, 400);
+	ck_assert_int_eq(y, 400);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock(b), 400);
+
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_buttons_dpi_lock_init_xy)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 3;
+	td.profiles[0].buttons[1].action_type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK;
+	td.profiles[0].buttons[1].dpi_lock.x = 800;
+	td.profiles[0].buttons[1].dpi_lock.y = 1600;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 1);
+
+	ck_assert_int_eq(ratbag_button_get_action_type(b),
+			 RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_x(b), 800);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_y(b), 1600);
+	/* get_dpi_lock returns x value when x != y */
+	ck_assert_int_eq(ratbag_button_get_dpi_lock(b), 800);
+
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_buttons_dpi_lock_set)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	int rc;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 3;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+
+	/* button starts as NONE, set to dpi lock uniform */
+	rc = ratbag_button_set_dpi_lock(b, 800);
+	ck_assert_int_eq(rc, RATBAG_SUCCESS);
+	ck_assert_int_eq(ratbag_button_get_action_type(b),
+			 RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_x(b), 800);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_y(b), 800);
+
+	/* set to dpi lock with independent x/y */
+	rc = ratbag_button_set_dpi_lock_xy(b, 400, 1600);
+	ck_assert_int_eq(rc, RATBAG_SUCCESS);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_x(b), 400);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_y(b), 1600);
+
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_buttons_dpi_lock_has_action_type)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+
+	/* test driver enables DPI_LOCK capability */
+	ck_assert(ratbag_button_has_action_type(b,
+		  RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK));
+
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_buttons_dpi_lock_wrong_type)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	/* button is default NONE type */
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+
+	/* getters return -1 when action type is not DPI_LOCK */
+	ck_assert_int_eq(ratbag_button_get_dpi_lock(b), -1);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_x(b), -1);
+	ck_assert_int_eq(ratbag_button_get_dpi_lock_y(b), -1);
+
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_default)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_ONCE);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 0);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_count)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+	td.profiles[0].buttons[0].macro_repeat_mode = RATBAG_MACRO_REPEAT_COUNT;
+	td.profiles[0].buttons[0].macro_repeat_count = 5;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_COUNT);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 5);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_while_held)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+	td.profiles[0].buttons[0].macro_repeat_mode = RATBAG_MACRO_REPEAT_WHILE_HELD;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_WHILE_HELD);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_until_button_pressed)
+{
+	struct ratbag *r;
+	struct ratbag_device *d;
+	struct ratbag_profile *p;
+	struct ratbag_button *b;
+	struct ratbag_button_macro *m;
+
+	struct ratbag_test_device td = sane_device;
+	td.num_buttons = 1;
+	td.profiles[0].buttons[0].action_type = RATBAG_BUTTON_ACTION_TYPE_MACRO;
+	td.profiles[0].buttons[0].macro[0].type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+	td.profiles[0].buttons[0].macro[0].value = KEY_A;
+	td.profiles[0].buttons[0].macro[1].type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+	td.profiles[0].buttons[0].macro[1].value = KEY_A;
+	td.profiles[0].buttons[0].macro_repeat_mode = RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED;
+
+	r = ratbag_create_context(&abort_iface, NULL);
+	d = ratbag_device_new_test_device(r, &td);
+	p = ratbag_device_get_profile(d, 0);
+	b = ratbag_profile_get_button(p, 0);
+	m = ratbag_button_get_macro(b);
+
+	ck_assert(m != NULL);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED);
+
+	ratbag_button_macro_unref(m);
+	ratbag_button_unref(b);
+	ratbag_profile_unref(p);
+	ratbag_device_unref(d);
+	ratbag_unref(r);
+}
+END_TEST
+
+START_TEST(device_macro_repeat_set)
+{
+	struct ratbag_button_macro *m;
+
+	m = ratbag_button_macro_new("test");
+
+	/* default is ONCE */
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_ONCE);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 0);
+
+	/* set to count */
+	ratbag_button_macro_set_repeat(m, RATBAG_MACRO_REPEAT_COUNT, 10);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_COUNT);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_count(m), 10);
+
+	/* set to while held */
+	ratbag_button_macro_set_repeat(m, RATBAG_MACRO_REPEAT_WHILE_HELD, 0);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_WHILE_HELD);
+
+	/* set to until button pressed */
+	ratbag_button_macro_set_repeat(m, RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED, 0);
+	ck_assert_int_eq(ratbag_button_macro_get_repeat_mode(m),
+			 RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED);
+
+	ratbag_button_macro_unref(m);
+}
+END_TEST
+
 static Suite *
 test_context_suite(void)
 {
@@ -1002,11 +1624,39 @@ test_context_suite(void)
 	tcase_add_test(tc, device_buttons);
 	tcase_add_test(tc, device_buttons_ref_unref);
 	tcase_add_test(tc, device_buttons_set);
+	tcase_add_test(tc, device_buttons_dpi_lock_init);
+	tcase_add_test(tc, device_buttons_dpi_lock_init_xy);
+	tcase_add_test(tc, device_buttons_dpi_lock_set);
+	tcase_add_test(tc, device_buttons_dpi_lock_has_action_type);
+	tcase_add_test(tc, device_buttons_dpi_lock_wrong_type);
+	tcase_add_test(tc, device_macro_repeat_default);
+	tcase_add_test(tc, device_macro_repeat_count);
+	tcase_add_test(tc, device_macro_repeat_while_held);
+	tcase_add_test(tc, device_macro_repeat_until_button_pressed);
+	tcase_add_test(tc, device_macro_repeat_set);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("led");
 	tcase_add_test(tc, device_leds);
 	tcase_add_test(tc, device_leds_set);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("profile_settings");
+	tcase_add_test(tc, device_angle_snapping_get_set);
+	tcase_add_test(tc, device_motion_sync);
+	tcase_add_test(tc, device_ripple_control);
+	tcase_add_test(tc, device_debounce_get_set);
+	tcase_add_test(tc, device_lod_get_set);
+	tcase_add_test(tc, device_autosleep_get_set);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("reset");
+	tcase_add_test(tc, device_reset_no_support);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("events");
+	tcase_add_test(tc, device_event_no_handler);
+	tcase_add_test(tc, device_event_dispatch);
 	suite_add_tcase(s, tc);
 
 	return s;
