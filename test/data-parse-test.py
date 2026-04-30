@@ -258,6 +258,26 @@ def check_section_steelseries(section: configparser.SectionProxy):
         # No such section - not an error.
         pass
 
+def check_section_hyperx(section: configparser.SectionProxy):
+    permitted_keys = (
+        "Profiles",
+        "Buttons",
+        "Leds",
+        "ReportRates",
+        "Dpis",
+        "DpiRange",
+        "Wireless"
+    )
+
+    for key in section:
+        assert key in permitted_keys
+
+    try:
+        check_dpi_range_str(section["DpiRange"])
+    except KeyError:
+        # No such section - not an error.
+        pass
+
 
 def check_section_driver(driver: str, section: configparser.SectionProxy):
     if driver == "asus":
@@ -274,6 +294,10 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
 
     if driver == "steelseries":
         check_section_steelseries(section)
+        return
+
+    if driver == "hyperx":
+        check_section_hyperx(section)
         return
 
     raise ValueError(f"Unsupported driver section {driver}")

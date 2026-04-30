@@ -63,6 +63,7 @@ enum driver {
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
 	MARSGAMING,
+	HYPERX,
 };
 
 struct data_hidpp20 {
@@ -123,6 +124,7 @@ struct ratbag_device_data {
 		struct data_sinowealth sinowealth;
 		struct data_steelseries steelseries;
 		struct data_asus asus;
+		struct data_hyperx hyperx;
 	};
 };
 
@@ -474,6 +476,62 @@ init_data_asus(struct ratbag *ratbag,
 	g_clear_error(&error);
 }
 
+static void
+init_data_hyperx(struct ratbag *ratbag,
+		GKeyFile *keyfile,
+		struct ratbag_device_data *data)
+{
+	const char *group = "Driver/hyperx";
+	GError *error = NULL;
+
+	data->hyperx.profile_count = 1;
+	data->hyperx.button_count = -1;
+	data->hyperx.led_count = -1;
+	data->hyperx.dpi_count = -1;
+	data->hyperx.is_wireless = 0;
+
+	int profiles = g_key_file_get_integer(keyfile, group, "Profiles", &error);
+	if (!error && profiles > 0)
+		data->hyperx.profile_count = profiles;
+	g_clear_error(&error);
+
+	int buttons = g_key_file_get_integer(keyfile, group, "Buttons", &error);
+	if (!error && buttons > 0)
+		data->hyperx.button_count = buttons;
+	g_clear_error(&error);
+
+	int leds = g_key_file_get_integer(keyfile, group, "Leds", &error);
+	if (!error && leds >= 0)
+		data->hyperx.led_count = leds;
+	g_clear_error(&error);
+
+	// We can't read onboard led settings, so we disable led config (for the time being)
+	data->hyperx.led_count = 0;
+
+	size_t nrates;
+	int *rates = g_key_file_get_integer_list(keyfile, group, "ReportRates", &nrates, &error);
+	if (!error && nrates > 0) {
+		data->hyperx.nrates = nrates;
+		data->hyperx.rates = (unsigned int*) rates;
+	}
+	g_clear_error(&error);
+
+	int dpis = g_key_file_get_integer(keyfile, group, "Dpis", &error);
+	if (!error && dpis > 0)
+		data->hyperx.dpi_count = dpis;
+	g_clear_error(&error);
+
+	_cleanup_(freep) char *dpi_range = g_key_file_get_string(keyfile, group, "DpiRange", &error);
+	if (!error && dpi_range)
+		data->hyperx.dpi_range = dpi_range_from_string(dpi_range);
+	g_clear_error(&error);
+
+	int wireless = g_key_file_get_integer(keyfile, group, "Wireless", &error);
+	if (!error && wireless == 1)
+		data->hyperx.is_wireless = wireless;
+	g_clear_error(&error);
+}
+
 static const struct driver_map {
 	enum driver map;
 	const char *driver;
@@ -496,6 +554,7 @@ static const struct driver_map {
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
 	{ MARSGAMING, "marsgaming", NULL },
+	{ HYPERX, "hyperx", init_data_hyperx },
 };
 
 const char *
@@ -547,6 +606,10 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 	case STEELSERIES:
 		dpi_list_free(data->steelseries.dpi_list);
 		free(data->steelseries.dpi_range);
+		break;
+	case HYPERX:
+		free(data->hyperx.dpi_range);
+		free(data->hyperx.rates);
 		break;
 	default:
 		break;
@@ -969,4 +1032,13 @@ ratbag_device_data_asus_get_quirks(const struct ratbag_device_data *data)
 {
 	assert(data->drivertype == ASUS);
 	return data->asus.quirks;
+}
+
+/* HyperX */
+
+const struct data_hyperx *
+ratbag_device_data_hyperx_get_data(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == HYPERX);
+	return &data->hyperx;
 }
