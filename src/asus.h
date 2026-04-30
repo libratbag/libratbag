@@ -167,12 +167,12 @@ static const struct asus_button ASUS_BUTTON_MAPPING[] = {
 	{ 0xe1, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 4, 0 },  /* backward, right side */
 	{ 0xe2, RATBAG_BUTTON_ACTION_TYPE_BUTTON, 5, 0 },  /* forward, right side */
 	{ 0xe7, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE },  /* DPI target */
-	{ 0xea, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button A */
-	{ 0xeb, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button B */
-	{ 0xec, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button C */
-	{ 0xed, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button D */
-	{ 0xee, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button E */
-	{ 0xef, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button F */
+	{ 0xea, RATBAG_BUTTON_ACTION_TYPE_SPECIAL, 0, RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_ALTERNATE },  /* side button A, bottom left */
+	{ 0xeb, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* side button B, center */
+	{ 0xec, RATBAG_BUTTON_ACTION_TYPE_KEY, KEY_LEFTMETA,   0 },  /* side button C, top left */
+	{ 0xed, RATBAG_BUTTON_ACTION_TYPE_KEY, KEY_VOLUMEDOWN, 0 },  /* side button D, bottom right */
+	{ 0xee, RATBAG_BUTTON_ACTION_TYPE_KEY, KEY_MUTE,       0 },  /* side button E, middle right */
+	{ 0xef, RATBAG_BUTTON_ACTION_TYPE_KEY, KEY_VOLUMEUP,   0 },  /* side button F, top right */
 	{ 0xd0, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* joystick up */
 	{ 0xd1, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* joystick down */
 	{ 0xd2, RATBAG_BUTTON_ACTION_TYPE_NONE, 0, 0 },  /* joystick forward */
