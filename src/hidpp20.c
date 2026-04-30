@@ -1792,7 +1792,7 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 #define CMD_ONBOARD_PROFILES_GET_CURRENT_DPI_INDEX	0xb0
 #define CMD_ONBOARD_PROFILES_SET_CURRENT_DPI_INDEX	0xc0
 
-#define HIDPP20_PROFILE_SIZE		256
+#define HIDPP20_PROFILE_SIZE		255
 #define HIDPP20_BUTTON_HID		0x80
 
 #define HIDPP20_MODE_NO_CHANGE				0x00
@@ -1835,7 +1835,6 @@ union hidpp20_internal_profile {
 		struct hidpp20_internal_led leds[2]; /* G303, g502, g900 only */
 		struct hidpp20_internal_led alt_leds[2];
 		uint8_t custom_animation_index; // G502X Plus, G705
-		uint8_t free; // unused
 		uint16_t crc;
 	} __attribute__((packed)) profile;
 };
