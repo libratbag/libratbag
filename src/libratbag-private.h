@@ -460,6 +460,9 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 int
 ratbag_action_macro_num_keys(const struct ratbag_button_action *action);
 
+bool
+ratbag_action_is_single_modifier_key(const struct ratbag_button_action *action);
+
 int
 ratbag_button_macro_new_from_keycode(struct ratbag_button *button,
 				     unsigned int key,
