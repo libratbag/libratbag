@@ -45,6 +45,9 @@
 #include "libratbag-private.h"
 #include "shared-macro.h"
 
+#define MODEL_O_WIRELESS_WIRED_MODE_PID 0x2011
+#define MODEL_O_MINUS_WIRELESS_WIRED_MODE_PID 0x2013
+
 #define SINOWEALTH_MODEL_O_WIRELESS_REPORT_ID 0x02
 #define SINOWEALTH_BUFF_SIZE 65
 #define SINOWEALTH_SET_AND_CHECK_BUFF_SIZE 55
@@ -176,6 +179,7 @@ sinowealth_probe(struct ratbag_device *device)
 {
 	int error;
 	bool wired;
+	uint32_t product_id;
 	struct ratbag_profile *profile;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
@@ -185,7 +189,8 @@ sinowealth_probe(struct ratbag_device *device)
 	if (error)
 		return error;
 
-	wired = ratbag_device_get_product_id(device) == 0x2011;
+	product_id = ratbag_device_get_product_id(device);
+	wired = product_id == MODEL_O_WIRELESS_WIRED_MODE_PID || product_id == MODEL_O_MINUS_WIRELESS_WIRED_MODE_PID;
 	log_msg(device->ratbag, RATBAG_LOG_PRIORITY_DEBUG, "is wired: %d\n", wired);
 
 	error = sinowealth_get_firmware(device, wired);
@@ -753,7 +758,7 @@ sinowealth_remove(struct ratbag_device *device)
 }
 
 struct ratbag_driver sinowealth_model_o_wireless_driver = {
-	.name = "Sinowealth Model O Wireless",
+	.name = "Sinowealth Model O/O- Wireless",
 	.id = "sinowealth_model_o_wireless",
 	.probe = sinowealth_probe,
 	.remove = sinowealth_remove,

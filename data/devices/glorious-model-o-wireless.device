@@ -1,5 +1,5 @@
 [Device]
-Name=Glorious Model O Wireless
-DeviceMatch=usb:258a:2011;usb:258a:2022
+Name=Glorious Model O/O- Wireless
+DeviceMatch=usb:258a:2011;usb:258a:2022;usb:258a:2013;usb:258a:2024
 DeviceType=mouse
 Driver=sinowealth_model_o_wireless
