@@ -1,0 +1,5 @@
+[Device]
+Name=Logitech G Pro X Wireless Superlight 2
+DeviceMatch=usb:046d:40a9;usb:046d:c09b
+DeviceType=mouse
+Driver=hidpp20
