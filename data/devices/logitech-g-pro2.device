@@ -1,0 +1,8 @@
+[Device]
+Name=Logitech G Pro 2 Lightspeed
+DeviceMatch=usb:046d:c09a;usb:046d:c543
+Driver=hidpp20
+DeviceType=mouse
+
+[Driver/hidpp20]
+DeviceIndex=1
