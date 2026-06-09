@@ -1,0 +1,5 @@
+[Device]
+Name=Redragon Sniper Pro M801P-RGB
+DeviceMatch=usb:25a7:fa0a;usb:25a7:fa09
+Driver=redragon
+DeviceType=mouse
