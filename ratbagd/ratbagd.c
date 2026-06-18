@@ -625,6 +625,9 @@ int main(int argc, char *argv[])
 	setrlimit(RLIMIT_CORE, &corelimit);
 #endif
 
+	setlinebuf(stdout);
+	setlinebuf(stderr);
+
 	if (argc > 1) {
 		if (streq(argv[1], "--version")) {
 			printf("%s\n", RATBAG_VERSION);
