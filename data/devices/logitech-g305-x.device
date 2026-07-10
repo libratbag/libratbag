@@ -1,0 +1,13 @@
+# Logitech G305 X SUPERLIGHT
+# https://www.logitechg.com/en-eu/shop/p/g305-x-superlight
+
+[Device]
+Name=Logitech G305 X SUPERLIGHT
+DeviceMatch=usb:046d:c547
+Driver=hidpp20
+DeviceType=mouse
+
+[Driver/hidpp20]
+Leds=1
+Quirk=G305X
+DpiRange=400:44000@100
