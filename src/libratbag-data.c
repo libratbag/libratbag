@@ -67,7 +67,7 @@ enum driver {
 
 struct data_hidpp20 {
 	int index;
-	enum hidpp20_quirk quirk;
+	uint32_t quirks; /* bitmask of enum hidpp20_quirk */
 	int led_count;
 	int report_rate;
 	int button_count;
@@ -176,6 +176,20 @@ init_data_hidpp10(struct ratbag *ratbag,
 	}
 }
 
+static uint32_t
+hidpp20_quirk_from_string(const char *str)
+{
+	if (streq(str, "G305"))
+		return HIDPP20_QUIRK_G305;
+	if (streq(str, "G602"))
+		return HIDPP20_QUIRK_G602;
+	if (streq(str, "G502X_PLUS"))
+		return HIDPP20_QUIRK_G502X_PLUS;
+	if (streq(str, "INDEX_OFFSET"))
+		return HIDPP20_QUIRK_INDEX_OFFSET;
+	return HIDPP20_QUIRK_NONE;
+}
+
 static void
 init_data_hidpp20(struct ratbag *ratbag,
 		  GKeyFile *keyfile,
@@ -184,7 +198,6 @@ init_data_hidpp20(struct ratbag *ratbag,
 	const char *group = "Driver/hidpp20";
 	GError *error = NULL;
 	int num;
-	char *str;
 
 	data->hidpp20.button_count = -1;
 	data->hidpp20.index = -1;
@@ -218,18 +231,13 @@ init_data_hidpp20(struct ratbag *ratbag,
 	if (error)
 		g_error_free(error);
 
-	str = g_key_file_get_string(keyfile, group, "Quirk", NULL);
-	data->hidpp20.quirk = HIDPP20_QUIRK_NONE;
-	if (str) {
-		if (streq(str, "G305"))
-			data->hidpp20.quirk = HIDPP20_QUIRK_G305;
-		else if(streq(str, "G602"))
-			data->hidpp20.quirk = HIDPP20_QUIRK_G602;
-		else if(streq(str, "G502X_PLUS"))
-			data->hidpp20.quirk = HIDPP20_QUIRK_G502X_PLUS;
-		else if(streq(str, "INDEX_OFFSET"))
-			data->hidpp20.quirk = HIDPP20_QUIRK_INDEX_OFFSET;
-	}
+	/* Quirks are a bitmask: "Quirk" takes a ;-separated list. */
+	data->hidpp20.quirks = HIDPP20_QUIRK_NONE;
+
+	gsize quirks_count = 0;
+	_cleanup_(g_strfreevp) char **quirks = g_key_file_get_string_list(keyfile, group, "Quirk", &quirks_count, NULL);
+	for (gsize i = 0; quirks && i < quirks_count; i++)
+		data->hidpp20.quirks |= hidpp20_quirk_from_string(quirks[i]);
 }
 
 static void
@@ -830,12 +838,12 @@ ratbag_device_data_hidpp20_get_report_rate(const struct ratbag_device_data *data
 	return data->hidpp20.report_rate;
 }
 
-enum hidpp20_quirk
-ratbag_device_data_hidpp20_get_quirk(const struct ratbag_device_data *data)
+uint32_t
+ratbag_device_data_hidpp20_get_quirks(const struct ratbag_device_data *data)
 {
 	assert(data->drivertype == HIDPP20);
 
-	return data->hidpp20.quirk;
+	return data->hidpp20.quirks;
 }
 
 /* SinoWealth */

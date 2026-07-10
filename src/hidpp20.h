@@ -51,12 +51,13 @@ struct hidpp20_feature {
 	uint8_t type;
 };
 
+/* Combinable flags so a device can have several at once (stored as a bitmask). */
 enum hidpp20_quirk {
-	HIDPP20_QUIRK_NONE,
-	HIDPP20_QUIRK_G305,
-	HIDPP20_QUIRK_G602,
-	HIDPP20_QUIRK_G502X_PLUS, // G502X+ uses 2nd LED slot instead of 1st.
-	HIDPP20_QUIRK_INDEX_OFFSET, // Device returns 1-indexed profile, decrement by 1.
+	HIDPP20_QUIRK_NONE = 0,
+	HIDPP20_QUIRK_G305 = (1 << 0),
+	HIDPP20_QUIRK_G602 = (1 << 1),
+	HIDPP20_QUIRK_G502X_PLUS = (1 << 2), // G502X+ uses 2nd LED slot instead of 1st.
+	HIDPP20_QUIRK_INDEX_OFFSET = (1 << 3), // Device returns 1-indexed profile, decrement by 1.
 };
 
 struct hidpp20_device {
@@ -66,7 +67,7 @@ struct hidpp20_device {
 	unsigned proto_minor;
 	unsigned feature_count;
 	struct hidpp20_feature *feature_list;
-	enum hidpp20_quirk quirk;
+	uint32_t quirks; /* bitmask of enum hidpp20_quirk */
 	unsigned int led_ext_caps;
 };
 
