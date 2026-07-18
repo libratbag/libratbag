@@ -3,3 +3,6 @@ Name=Logitech G502 X
 DeviceMatch=usb:046d:c099
 DeviceType=mouse
 Driver=hidpp20
+
+[Driver/hidpp20]
+Quirk=INDEX_OFFSET
