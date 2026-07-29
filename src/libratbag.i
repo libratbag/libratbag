@@ -21,12 +21,12 @@
   $1 = (unsigned int *) malloc(($2 + 1) * sizeof(unsigned int));
   for (i = 0; i < $2; i++) {
     PyObject *s = PyList_GetItem($input, i);
-    if (!PyInt_Check(s)) {
+    if (!PyLong_Check(s)) {
        free($1);
        PyErr_SetString(PyExc_ValueError, "List items must be integers");
        return NULL;
     }
-    $1[i] = PyInt_AsLong(s);
+    $1[i] = PyLong_AsLong(s);
   }
   $1[i] = 0;
 }
@@ -34,7 +34,7 @@
 %typemap(argout) (unsigned int *resolutions, size_t nres) {
   unsigned int i;
   for (i = 0; i < $2; i++) {
-    PyList_SetItem($input, i, PyInt_FromLong($1[i]));
+    PyList_SetItem($input, i, PyLong_FromLong($1[i]));
   }
 }
 
@@ -61,24 +61,24 @@
 
 /* uintXX_t mapping: Python -> C */
 %typemap(in) uint8_t {
-    $1 = (uint8_t) PyInt_AsLong($input);
+    $1 = (uint8_t) PyLong_AsLong($input);
 }
 %typemap(in) uint16_t {
-    $1 = (uint16_t) PyInt_AsLong($input);
+    $1 = (uint16_t) PyLong_AsLong($input);
 }
 %typemap(in) uint32_t {
-    $1 = (uint32_t) PyInt_AsLong($input);
+    $1 = (uint32_t) PyLong_AsLong($input);
 }
 
 /* uintXX_t mapping: C -> Python */
 %typemap(out) uint8_t {
-    $result = PyInt_FromLong((long) $1);
+    $result = PyLong_FromLong((long) $1);
 }
 %typemap(out) uint16_t {
-    $result = PyInt_FromLong((long) $1);
+    $result = PyLong_FromLong((long) $1);
 }
 %typemap(out) uint32_t {
-    $result = PyInt_FromLong((long) $1);
+    $result = PyLong_FromLong((long) $1);
 }
 
 /*  Parse the header file to generate wrappers */
