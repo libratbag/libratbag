@@ -756,10 +756,27 @@ c18_alloc_macro_id(struct c18_data *drv_data, unsigned int profile_index)
 	return drv_data->next_macro_id[profile_index]++;
 }
 
+/* event_byte's low 7 bits are a hold-duration timing value, NOT safely
+ * zeroable as PROTOCOL.md originally assumed. Confirmed via hardware
+ * testing: a value of exactly 0 makes the device's macro player either
+ * silently no-op (repeat_mode 0x00) or hang the device outright (modes
+ * 0x01/0x02) on button press, even though the upload transaction itself
+ * always completes and is acknowledged cleanly (see the device's
+ * newly-discovered GET_REPORT status echo). A UNIFORM non-zero value
+ * (every event using the same constant) reproduces the same failure -
+ * confirmed by testing 0x14 for every event. What actually works: small,
+ * non-zero, NON-REPEATING values, incrementing across events - matching
+ * the shape of PROTOCOL.md's real captured "no delay" macro (values
+ * 1,1,1,2, never 0, never repeated in sequence). Exact required precision
+ * beyond that is unconfirmed - this is a reasonable working default, not a
+ * calibrated value.
+ */
+
 /* Builds the macro's "00 01" header + press/release event stream into
  * drv_data, ready for c18_upload_macro_content() at commit time. Mirrors
- * c18ctl.c's build_macro_events(): event_byte's delay bits are always left
- * at 0 (uncalibrated - see PROTOCOL.md), wait events are skipped entirely.
+ * c18ctl.c's build_macro_events(). Wait events are skipped entirely
+ * (inter-key pause timing is a separate, still-uncalibrated mechanism -
+ * see PROTOCOL.md).
  */
 static int
 c18_stage_macro_content(struct ratbag_button *button, struct c18_macro *cm)
@@ -768,6 +785,7 @@ c18_stage_macro_content(struct ratbag_button *button, struct c18_macro *cm)
 	const struct ratbag_button_action *action = &button->action;
 	unsigned int i;
 	unsigned int off = 2;
+	uint8_t timing = 0x01;
 
 	cm->data[0] = 0x00;
 	cm->data[1] = 0x01;
@@ -788,8 +806,12 @@ c18_stage_macro_content(struct ratbag_button *button, struct c18_macro *cm)
 
 		usage = ratbag_hidraw_get_keyboard_usage_from_keycode(device,
 				action->macro->events[i].event.key);
-		cm->data[off++] = (type == RATBAG_MACRO_EVENT_KEY_RELEASED) ? 0x80 : 0x00;
+		cm->data[off++] = (type == RATBAG_MACRO_EVENT_KEY_RELEASED)
+					  ? (uint8_t)(0x80 | timing)
+					  : timing;
 		cm->data[off++] = usage;
+		/* stays within the 7-bit timing field and never wraps to 0 */
+		timing = (timing >= 0x7f) ? 1 : (uint8_t)(timing + 1);
 	}
 
 	cm->len = off;
