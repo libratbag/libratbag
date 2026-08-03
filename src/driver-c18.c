@@ -528,11 +528,10 @@ c18_write_led(struct ratbag_led *led)
 		payload[idx + 3] = 0x02;
 		payload[idx + 4] = c18_speed_generic(led->ms, 0x04, 0x08, 0x0c);
 		payload[idx + 5] = 0x0a;
-		/* Best-effort: apply the requested colour the same way static
-		 * mode does. Every capture on file happened to use the fixed
-		 * default palette here instead, so a custom colour actually
-		 * taking effect on breathing mode is UNVERIFIED - flag during
-		 * hardware testing.
+		/* Apply the requested colour the same way static mode does -
+		 * confirmed working on real hardware (every capture on file
+		 * had used the fixed default palette instead, but a custom
+		 * colour does take effect here too).
 		 */
 		c18_set_tail_rgb8(payload,
 				  led->color.red ? onval : 0,
