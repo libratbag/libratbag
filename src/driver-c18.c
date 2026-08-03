@@ -85,6 +85,22 @@
  */
 #define C18_MACRO_ID_BASE	0x10
 
+/* Settle delay after each 64-byte write specifically during macro-content
+ * upload (button-table write, macro content packet(s), and their ack
+ * packets). ratbag_hidraw_output_report() goes through the kernel hidraw
+ * write() syscall for the interrupt OUT report, which - unlike
+ * libusb_interrupt_transfer() (blocking, waits for the actual USB transfer
+ * to complete) - does not guarantee the packet has finished going out on
+ * the wire before it returns. Confirmed via hardware testing: a
+ * byte-for-byte identical macro-upload transaction plays back correctly
+ * over raw libusb with only 20-40ms between packets, but silently fails
+ * over this driver's hidraw transport with the same delays - only works
+ * once the delay around macro-content packets specifically is increased to
+ * this value. Not narrowed down further than "large enough to reliably
+ * work" - a smaller sufficient value likely exists but wasn't found.
+ */
+#define C18_MACRO_SETTLE_MS	200
+
 /* c18ctl.c's proven-working STATIC LED template (also the shared header for
  * the DPI-table packet - see PROTOCOL.md's note on the shared 64-byte
  * "config packet" format/pipeline reused across LED and DPI subsystems).
@@ -953,22 +969,16 @@ c18_upload_macro_content(struct ratbag_device *device, const struct c18_macro *c
 		rc = c18_output64(device, pkt);
 		if (rc)
 			return rc;
+		msleep(C18_MACRO_SETTLE_MS);
 	}
 
-	/* ack packet closing the content upload, per the worked example.
-	 * c18ctl.c's proven-working send_macro_content() waits 40ms after
-	 * this specific packet (double the normal 20ms every other packet
-	 * uses) before letting the next command go out - confirmed necessary
-	 * the hard way: without the extra delay here, the very next command
-	 * (the transaction-closing commit) reliably wedges the device's
-	 * firmware, requiring a physical unplug/replug to recover.
-	 */
+	/* ack packet closing the content upload, per the worked example. */
 	uint8_t zero[64] = {0};
 
 	rc = c18_output64(device, zero);
+	msleep(C18_MACRO_SETTLE_MS);
 	if (rc)
 		return rc;
-	msleep(20);
 	return 0;
 }
 
@@ -1109,7 +1119,16 @@ c18_commit(struct ratbag_device *device)
 				uint8_t zero[64] = {0};
 				unsigned int bi;
 
+				/* Longer settle delay needed on this path specifically -
+				 * see C18_MACRO_SETTLE_MS. Plain button writes (no macro
+				 * involved) work fine with the normal short delay inside
+				 * c18_output64(), already exercised successfully many
+				 * times without this.
+				 */
+				msleep(C18_MACRO_SETTLE_MS);
+
 				rc = c18_output64(device, zero);
+				msleep(C18_MACRO_SETTLE_MS);
 				if (rc)
 					return rc;
 
