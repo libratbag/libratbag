@@ -1002,14 +1002,40 @@ c18_test_hidraw(struct ratbag_device *device)
 	       !ratbag_hidraw_has_report(device, 1);
 }
 
+/* Finding this device's vendor-page sibling hidraw node can transiently
+ * fail with ENODEV if udev hasn't finished creating all 3 of the
+ * composite device's hidraw nodes yet at the moment a probe runs -
+ * confirmed directly during development: a probe log showed the vendor
+ * interface's node genuinely absent from the sibling search on one probe
+ * path (only 2 of 3 siblings visible), while a second, independent probe
+ * (udev fires one per interface, so a fast composite device can trigger
+ * several near-simultaneous probes) found it immediately. This project's
+ * own testing workflow - repeatedly killing one program and immediately
+ * claiming the device with another - triggers this far more often than
+ * any real deployment would, but retrying costs nothing at probe time.
+ */
+#define C18_PROBE_RETRIES	10
+#define C18_PROBE_RETRY_DELAY_MS 300
+
 static int
 c18_probe(struct ratbag_device *device)
 {
 	struct c18_data *drv_data;
 	struct ratbag_profile *profile;
 	int rc;
+	unsigned int attempt;
 
-	rc = ratbag_find_hidraw(device, c18_test_hidraw);
+	for (attempt = 0; attempt < C18_PROBE_RETRIES; attempt++) {
+		rc = ratbag_find_hidraw(device, c18_test_hidraw);
+		if (rc == 0)
+			break;
+		if (attempt + 1 < C18_PROBE_RETRIES) {
+			log_debug(device->ratbag,
+				  "c18: hidraw open failed (%s), retrying (%u/%u)\n",
+				  strerror(-rc), attempt + 1, C18_PROBE_RETRIES);
+			msleep(C18_PROBE_RETRY_DELAY_MS);
+		}
+	}
 	if (rc)
 		return rc;
 
