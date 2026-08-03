@@ -37,10 +37,13 @@
  *   i.e. all 8 bytes always sum to 0xFF.
  * - Larger 64-byte payloads (LED, DPI table, button table, macro content)
  *   go out on the interrupt OUT endpoint, also as an unnumbered report.
- * - The device has NO readback whatsoever (no GET_REPORT support seen
- *   anywhere) - every write replaces a whole table. This driver therefore
- *   caches each profile's full DPI/button tables in drv_data, seeded from
- *   known factory-default templates, and always writes the complete table
+ * - The device has no readback of actual DPI/button/profile *table
+ *   contents* - every write replaces a whole table. (It does have a
+ *   generic command-echo/status counter on GET_REPORT, discovered during
+ *   macro-playback debugging, but that's not a way to read back
+ *   configuration - see PROTOCOL.md.) This driver therefore caches each
+ *   profile's full DPI/button tables in drv_data, seeded from known
+ *   factory-default templates, and always writes the complete table
  *   on commit - never a partial/single-field update.
  */
 
