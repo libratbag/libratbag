@@ -306,14 +306,33 @@ c18_send_cmd(struct ratbag_device *device, uint8_t opcode, uint8_t b1, uint8_t b
 static int
 c18_output64(struct ratbag_device *device, const uint8_t payload[64])
 {
-	uint8_t buf[64];
+	uint8_t buf[65];
 	int rc;
 
-	/* Likewise unnumbered - the interrupt OUT report is exactly 64 bytes
-	 * on the wire, no leading ID byte. ratbag_hidraw_output_report() is a
-	 * plain write(), so no reportnum juggling needed here.
+	/* Root-caused via a real usbmon capture: ratbag_hidraw_output_report()
+	 * is a plain write(), and the kernel's hidraw write() path strips
+	 * buf[0] as an (unnumbered-report) ID placeholder whenever it is
+	 * literally 0x00 - but passes a nonzero buf[0] through untouched. This
+	 * device's payloads that never start with 0x00 (button table, DPI/LED,
+	 * primer) were never affected and have worked correctly all along.
+	 * But the macro protocol's own "00 01" content header, and the
+	 * all-zero ack packets, DO start with 0x00 - so the kernel silently
+	 * stripped that real leading byte before it ever reached the wire,
+	 * corrupting the macro header into garbage the device would then
+	 * reject/ignore (confirmed: usbmon showed a genuine 63-byte URB, not
+	 * just a capture artifact, exactly for these payloads, while the
+	 * button table write - buf[0]=0x01 - went out as a correct 64 bytes).
+	 * Fix: always prepend a real dummy 0x00 so the kernel has something
+	 * harmless to strip instead of real data, and send 65 bytes total -
+	 * the standard hidraw convention for unnumbered reports, which turned
+	 * out to genuinely apply here for the write()/Output-report path
+	 * specifically (unlike the ioctl/Feature-report path in c18_send_cmd,
+	 * where the same convention caused an EPIPE/STALL - these are
+	 * different kernel code paths with different real behavior, confirmed
+	 * empirically both times rather than assumed from documentation).
 	 */
-	memcpy(buf, payload, sizeof(buf));
+	buf[0] = 0x00;
+	memcpy(buf + 1, payload, 64);
 	rc = ratbag_hidraw_output_report(device, buf, sizeof(buf));
 	msleep(20);
 	if (rc < 0)
@@ -671,7 +690,23 @@ c18_build_macro_from_raw(struct ratbag_button *button, const struct c18_macro *c
 	for (off = 2; off + 1 < cm->len; off += 2) {
 		uint8_t event_byte = cm->data[off];
 		uint8_t usage = cm->data[off + 1];
-		unsigned int keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device, usage);
+		unsigned int keycode;
+
+		/* Wait-block: [00 03][00 <raw>] - see c18_wait_ms_to_raw(). The
+		 * timing byte is never 0 in content this driver itself staged
+		 * (starts at 1, wraps 0x7f->1), so this marker is unambiguous
+		 * against a real keystroke event within self-generated content.
+		 */
+		if (event_byte == 0x00 && usage == 0x03 && off + 3 < cm->len) {
+			uint8_t raw = cm->data[off + 3];
+
+			ratbag_button_macro_set_event(m, ev++,
+				RATBAG_MACRO_EVENT_WAIT, raw * 50u);
+			off += 2;
+			continue;
+		}
+
+		keycode = ratbag_hidraw_get_keycode_from_keyboard_usage(device, usage);
 
 		ratbag_button_macro_set_event(m, ev++,
 			(event_byte & 0x80) ? RATBAG_MACRO_EVENT_KEY_RELEASED
@@ -790,11 +825,27 @@ c18_alloc_macro_id(struct c18_data *drv_data, unsigned int profile_index)
  * calibrated value.
  */
 
-/* Builds the macro's "00 01" header + press/release event stream into
- * drv_data, ready for c18_upload_macro_content() at commit time. Mirrors
- * c18ctl.c's build_macro_events(). Wait events are skipped entirely
- * (inter-key pause timing is a separate, still-uncalibrated mechanism -
- * see PROTOCOL.md).
+/* Wait-block value: raw = round(delay_ms / 50), clamped to 0x7f (~6350ms,
+ * the device's confirmed max representable wait) - PROTOCOL.md's "Wait-block
+ * formula" section, calibrated exactly against the vendor software's own
+ * displayed timing values.
+ */
+static uint8_t
+c18_wait_ms_to_raw(unsigned int delay_ms)
+{
+	unsigned int raw = (delay_ms + 25) / 50; /* round to nearest */
+
+	if (raw > 0x7f)
+		raw = 0x7f;
+
+	return (uint8_t)raw;
+}
+
+/* Builds the macro's "00 01" header + event stream into drv_data, ready for
+ * c18_upload_macro_content() at commit time. Mirrors c18ctl.c's
+ * build_macro_events(): keystrokes are a press/release pair per PROTOCOL.md's
+ * Macros section, wait events are the fixed 4-byte `[00 03][00 <raw>]` block
+ * per PROTOCOL.md's "Wait-block formula" section.
  */
 static int
 c18_stage_macro_content(struct ratbag_button *button, struct c18_macro *cm)
@@ -816,8 +867,15 @@ c18_stage_macro_content(struct ratbag_button *button, struct c18_macro *cm)
 			return -EINVAL;
 		if (type == RATBAG_MACRO_EVENT_NONE)
 			break;
-		if (type == RATBAG_MACRO_EVENT_WAIT)
-			continue; /* uncalibrated - see PROTOCOL.md */
+		if (type == RATBAG_MACRO_EVENT_WAIT) {
+			if (off + 4 > C18_MACRO_BUF_LEN)
+				return -ENOSPC;
+			cm->data[off++] = 0x00;
+			cm->data[off++] = 0x03;
+			cm->data[off++] = 0x00;
+			cm->data[off++] = c18_wait_ms_to_raw(action->macro->events[i].event.timeout);
+			continue;
+		}
 
 		if (off + 2 > C18_MACRO_BUF_LEN)
 			return -ENOSPC;
