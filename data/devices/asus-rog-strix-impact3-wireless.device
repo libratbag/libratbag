@@ -1,0 +1,19 @@
+[Device]
+Name=ASUS ROG Strix Impact III Wireless
+DeviceMatch=usb:0b05:1ad7
+DeviceType=mouse
+Driver=asus
+
+# This device enumerates as usb 0b05:1ad7 behind the ASUS Omni receiver
+# (0b05:1ace). The usb id is resolved during probe: the receiver is
+# identified first (asus-rog-omni-receiver.device) and the serial number
+# signature prefix (OmniSignature) is matched against this file.
+[Driver/asus]
+Profiles=5
+Buttons=8
+Leds=1
+Dpis=4
+Wireless=1
+DpiRange=100:36000@50
+Quirks=OMNI_RECEIVER;SEPARATE_XY_DPI;LED_V2;SETTINGS_V2
+OmniSignature=20
