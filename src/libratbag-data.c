@@ -107,6 +107,7 @@ struct data_asus {
 	struct dpi_range *dpi_range;
 	uint32_t quirks;
 	int led_modes[ASUS_MAX_NUM_LED_MODES];
+	char *omni_signature;  /* serial number prefix of mice behind an Omni receiver */
 };
 
 struct ratbag_device_data {
@@ -441,6 +442,9 @@ init_data_asus(struct ratbag *ratbag,
 		data->asus.is_wireless = wireless;
 	g_clear_error(&error);
 
+	data->asus.omni_signature = g_key_file_get_string(keyfile, group, "OmniSignature", &error);
+	g_clear_error(&error);
+
 	gsize quirks_count = 0;
 	_cleanup_(g_strfreevp) char **quirks = g_key_file_get_string_list(keyfile, group, "Quirks", &quirks_count, &error);
 	if (!error && quirks) {
@@ -457,6 +461,12 @@ init_data_asus(struct ratbag *ratbag,
 				data->asus.quirks |= ASUS_QUIRK_SEPARATE_LEDS;
 			} else if (streq(quirks[i], "BUTTONS_SECONDARY")) {
 				data->asus.quirks |= ASUS_QUIRK_BUTTONS_SECONDARY;
+			} else if (streq(quirks[i], "OMNI_RECEIVER")) {
+				data->asus.quirks |= ASUS_QUIRK_OMNI_RECEIVER;
+			} else if (streq(quirks[i], "LED_V2")) {
+				data->asus.quirks |= ASUS_QUIRK_LED_V2;
+			} else if (streq(quirks[i], "SETTINGS_V2")) {
+				data->asus.quirks |= ASUS_QUIRK_SETTINGS_V2;
 			} else {
 				log_error(ratbag, "%s is invalid quirk. Ignoring...\n", quirks[i]);
 			}
@@ -753,7 +763,79 @@ out:
 	return data;
 }
 
+int
+ratbag_device_data_omni_signature_match(struct ratbag *ratbag,
+					const char *signature,
+					struct input_id *id)
+{
+	struct dirent **files;
+	const char *datadir;
+	int n, nfiles;
+	size_t best_len = 0;
+	int rc = -ENODEV;
 
+	datadir = getenv("LIBRATBAG_DATA_DIR");
+	if (!datadir)
+		datadir = LIBRATBAG_DATA_DIR;
+
+	n = scandir(datadir, &files, filter_device_files, alphasort);
+	if (n <= 0) {
+		log_error(ratbag, "Unable to locate device files in %s: %s\n",
+			  datadir, n == 0 ? "No files found" : strerror(errno));
+		return rc;
+	}
+
+	nfiles = n;
+	while (n--) {
+		_cleanup_(g_key_file_freep) GKeyFile *keyfile = NULL;
+		_cleanup_(g_error_freep) GError *error = NULL;
+		_cleanup_(g_strfreevp) char **match_strv = NULL;
+		_cleanup_free_ char *omni_signature = NULL;
+		_cleanup_(freep) char *file = NULL;
+		size_t len;
+		unsigned int vendor, product;
+
+		if (xasprintf(&file, "%s/%s", datadir, files[n]->d_name) == -1)
+			goto out;
+
+		keyfile = g_key_file_new();
+		if (!g_key_file_load_from_file(keyfile, file, G_KEY_FILE_NONE, &error)) {
+			log_error(ratbag, "Failed to parse keyfile %s: %s\n",
+				  file, error->message);
+			continue;
+		}
+
+		omni_signature = g_key_file_get_string(keyfile, "Driver/asus",
+						      "OmniSignature", NULL);
+		if (!omni_signature)
+			continue;
+
+		len = strlen(omni_signature);
+		if (len <= best_len || strncmp(signature, omni_signature, len) != 0)
+			continue;
+
+		match_strv = g_key_file_get_string_list(keyfile, GROUP_DEVICE,
+						      "DeviceMatch", NULL, NULL);
+		if (!match_strv)
+			continue;
+
+		/* the device must have a usb id to be resolvable */
+		if (sscanf(match_strv[0], "usb:%x:%x", &vendor, &product) != 2)
+			continue;
+
+		id->vendor = vendor;
+		id->product = product;
+		best_len = len;
+		rc = 0;
+	}
+
+out:
+	while (nfiles--)
+		free(files[nfiles]);
+	free(files);
+
+	return rc;
+}
 /* HID++ 1.0 */
 
 int

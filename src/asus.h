@@ -13,6 +13,9 @@
 #define ASUS_QUIRK_SEPARATE_XY_DPI 1 << 4
 #define ASUS_QUIRK_SEPARATE_LEDS 1 << 5
 #define ASUS_QUIRK_BUTTONS_SECONDARY 1 << 6
+#define ASUS_QUIRK_OMNI_RECEIVER 1 << 7  /* device is behind an ASUS Omni receiver, transport uses report ID 0x03 */
+#define ASUS_QUIRK_LED_V2 1 << 8  /* LED response is per-zone with data at offset 4, brightness is 0-100 */
+#define ASUS_QUIRK_SETTINGS_V2 1 << 9  /* settings/DPI response data starts at offset 4, rate/debounce/snapping are single bytes */
 
 #define ASUS_PACKET_SIZE 64
 #define ASUS_BUTTON_ACTION_TYPE_KEY 0  /* keyboard key */
@@ -221,6 +224,11 @@ asus_setup_led(struct ratbag_device *device, struct ratbag_led *led);
 
 int
 asus_query(struct ratbag_device *device, union asus_request *request, union asus_response *response);
+
+/* ASUS Omni receiver: identify the mouse behind the shared receiver and
+ * return the usb id that matches its own .device file. */
+int
+asus_omni_identify(struct ratbag_device *device, struct input_id *id);
 
 /* commit */
 

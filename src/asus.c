@@ -26,6 +26,7 @@
 #include "asus.h"
 
 #include <assert.h>
+#include <string.h>
 
 #include "libratbag-data.h"
 #include "libratbag-private.h"
@@ -138,15 +139,37 @@ asus_query(struct ratbag_device *device,
 		union asus_request *request, union asus_response *response)
 {
 	int rc;
+	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
+	uint8_t omni_tx_buf[ASUS_PACKET_SIZE];
+	uint8_t omni_rx_buf[ASUS_PACKET_SIZE];
 
-	rc = ratbag_hidraw_output_report(device, request->raw, ASUS_PACKET_SIZE);
-	if (rc < 0)
-		return rc;
+	if (quirks & ASUS_QUIRK_OMNI_RECEIVER) {
+		/* devices behind the Omni receiver use report ID 0x03 and a
+		 * 64-byte report, the payload is shifted by one byte */
+		memset(omni_tx_buf, 0, sizeof(omni_tx_buf));
+		omni_tx_buf[0] = 0x03;
+		memcpy(omni_tx_buf + 1, request->raw, ASUS_PACKET_SIZE - 1);
 
-	memset(response, 0, sizeof(union asus_response));
-	rc = ratbag_hidraw_read_input_report(device, response->raw, ASUS_PACKET_SIZE, NULL);
-	if (rc < 0)
-		return rc;
+		rc = ratbag_hidraw_output_report(device, omni_tx_buf, ASUS_PACKET_SIZE);
+		if (rc < 0)
+			return rc;
+
+		memset(response, 0, sizeof(union asus_response));
+		rc = ratbag_hidraw_read_input_report(device, omni_rx_buf, ASUS_PACKET_SIZE, NULL);
+		if (rc < 0)
+			return rc;
+
+		memcpy(response->raw, omni_rx_buf + 1, ASUS_PACKET_SIZE - 1);
+	} else {
+		rc = ratbag_hidraw_output_report(device, request->raw, ASUS_PACKET_SIZE);
+		if (rc < 0)
+			return rc;
+
+		memset(response, 0, sizeof(union asus_response));
+		rc = ratbag_hidraw_read_input_report(device, response->raw, ASUS_PACKET_SIZE, NULL);
+		if (rc < 0)
+			return rc;
+	}
 
 	/* invalid state, disconnected or sleeping */
 	if (response->data.code == ASUS_STATUS_ERROR) {
@@ -339,22 +362,49 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 
 	case 4:  /* 4 DPI presets */
 		if (sep_xy_dpi) {  /* separate X & Y values */
-			for (i = 0; i < dpi_count; i++) {
-				data->data_xy.dpi[i].x = data->data_xy.dpi[i].x * 50 + 50;
-				data->data_xy.dpi[i].y = data->data_xy.dpi[i].y * 50 + 50;
-				if (quirks & ASUS_QUIRK_DOUBLE_DPI) {
-					data->data_xy.dpi[i].x *= 2;
-					data->data_xy.dpi[i].y *= 2;
+			if (quirks & ASUS_QUIRK_SETTINGS_V2) {
+				/* new layout: data starts at offset 4, each preset
+				 * is x lo/hi, y lo/hi */
+				for (i = 0; i < dpi_count; i++) {
+					uint16_t x = data->raw[4 + i * 4] |
+						     (data->raw[5 + i * 4] << 8);
+					uint16_t y = data->raw[6 + i * 4] |
+						     (data->raw[7 + i * 4] << 8);
+					data->data_xy.dpi[i].x = x * 50 + 50;
+					data->data_xy.dpi[i].y = y * 50 + 50;
+				}
+			} else {
+				for (i = 0; i < dpi_count; i++) {
+					data->data_xy.dpi[i].x = data->data_xy.dpi[i].x * 50 + 50;
+					data->data_xy.dpi[i].y = data->data_xy.dpi[i].y * 50 + 50;
+					if (quirks & ASUS_QUIRK_DOUBLE_DPI) {
+						data->data_xy.dpi[i].x *= 2;
+						data->data_xy.dpi[i].y *= 2;
+					}
 				}
 			}
 		} else {
-			for (i = 0; i < dpi_count; i++) {
-				data->data4.dpi[i] = data->data4.dpi[i] * 50 + 50;
-				if (quirks & ASUS_QUIRK_DOUBLE_DPI)
-					data->data4.dpi[i] *= 2;
+			if (quirks & ASUS_QUIRK_SETTINGS_V2) {
+				/* new layout: data starts at offset 4, dpi presets
+				 * are 2 bytes each, rate/debounce/snapping are
+				 * single bytes at offset 12/14/16 */
+				for (i = 0; i < dpi_count; i++) {
+					uint16_t dpi = data->raw[4 + i * 2] |
+						       (data->raw[5 + i * 2] << 8);
+					data->data4.dpi[i] = dpi * 50 + 50;
+				}
+				data->data4.rate = ASUS_POLLING_RATES[data->raw[12] & 0x07];
+				data->data4.response = ASUS_DEBOUNCE_TIMES[data->raw[14]];
+				data->data4.snapping = data->raw[16];
+			} else {
+				for (i = 0; i < dpi_count; i++) {
+					data->data4.dpi[i] = data->data4.dpi[i] * 50 + 50;
+					if (quirks & ASUS_QUIRK_DOUBLE_DPI)
+						data->data4.dpi[i] *= 2;
+				}
+				data->data4.rate = ASUS_POLLING_RATES[data->data4.rate];
+				data->data4.response = ASUS_DEBOUNCE_TIMES[data->data4.response];
 			}
-			data->data4.rate = ASUS_POLLING_RATES[data->data4.rate];
-			data->data4.response = ASUS_DEBOUNCE_TIMES[data->data4.response];
 		}
 		break;
 
@@ -378,10 +428,12 @@ asus_set_dpi(struct ratbag_device *device, unsigned int index, unsigned int dpi)
 	if (quirks & ASUS_QUIRK_DOUBLE_DPI)
 		idpi /= 2;
 
+	idpi = (idpi - 50) / 50;
 	union asus_request request = {
 		.data.cmd = ASUS_CMD_SET_SETTING,
 		.data.params[0] = index,
-		.data.params[2] = (idpi - 50) / 50,
+		.data.params[2] = idpi & 0xff,
+		.data.params[3] = (idpi >> 8) & 0xff,
 	};
 
 	rc = asus_query(device, &request, &response);
@@ -509,5 +561,51 @@ asus_set_led(struct ratbag_device *device,
 	if (rc)
 		return rc;
 
+	return 0;
+}
+
+/* ASUS Omni receiver: identify the mouse behind the shared receiver.
+ *
+ * All mice connected to an Omni receiver share the same USB id
+ * (0b05:1ace), so the model is queried with a signature request
+ * (03 12 12 02). The response carries a 12 byte ASCII serial number at
+ * offset 5 and the model is derived from its prefix.
+ *
+ * The serial number is matched against the OmniSignature field of the
+ * .device files, so supporting a new model does not require any code
+ * changes. On success the usb id of the identified model is returned in
+ * id, so that the caller can resolve the mouse-specific .device data.
+ */
+int
+asus_omni_identify(struct ratbag_device *device, struct input_id *id)
+{
+	int rc;
+	union asus_request request = {
+		.data.cmd = 0x1212,
+		.data.params[0] = 0x02,
+	};
+	union asus_response response;
+	char signature[13];
+
+	rc = asus_query(device, &request, &response);
+	if (rc)
+		return rc;
+
+	/* signature is 12 ASCII bytes at offset 5 of the raw report,
+	 * which is offset 4 after the report id is stripped */
+	memcpy(signature, response.raw + 4, 12);
+	signature[12] = '\0';
+
+	rc = ratbag_device_data_omni_signature_match(device->ratbag, signature, id);
+	if (rc) {
+		log_debug(device->ratbag,
+			  "Unknown ASUS Omni device serial '%s'. Please add an "
+			  "OmniSignature entry to the .device file of the model.\n",
+			  signature);
+		return rc;
+	}
+
+	log_info(device->ratbag,
+		 "ASUS Omni device identified (serial %s)\n", signature);
 	return 0;
 }

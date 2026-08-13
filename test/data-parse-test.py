@@ -115,6 +115,7 @@ def check_section_asus(section: configparser.SectionProxy):
         "Leds",
         "LedModes",
         "Profiles",
+        "OmniSignature",
         "Quirks",
         "Wireless",
     )
@@ -135,6 +136,9 @@ def check_section_asus(section: configparser.SectionProxy):
             "SEPARATE_XY_DPI",
             "SEPARATE_LEDS",
             "BUTTONS_SECONDARY",
+            "OMNI_RECEIVER",
+            "LED_V2",
+            "SETTINGS_V2",
         )
         for quirk in section["Quirks"].split(";"):
             assert quirk in quirks

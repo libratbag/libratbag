@@ -212,7 +212,7 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 
 	/* get LEDs */
 
-	if (!(quirks & ASUS_QUIRK_SEPARATE_LEDS) && led_count) {
+	if (!(quirks & (ASUS_QUIRK_SEPARATE_LEDS | ASUS_QUIRK_LED_V2)) && led_count) {
 		log_debug(device->ratbag, "Loading LEDs data\n");
 		rc = asus_get_led_data(device, &led_data, 0);
 		if (rc)
@@ -220,15 +220,28 @@ asus_driver_load_profile(struct ratbag_device *device, struct ratbag_profile *pr
 	}
 
 	ratbag_profile_for_each_led(profile, led) {
-		if (quirks & ASUS_QUIRK_SEPARATE_LEDS) {
+		if (quirks & (ASUS_QUIRK_SEPARATE_LEDS | ASUS_QUIRK_LED_V2)) {
 			log_debug(device->ratbag, "Loading LED %d data\n", led->index);
 			rc = asus_get_led_data(device, &led_data, led->index);
 			if (rc)
 				return rc;
-			asus_led = &led_data.data.led[0];
-		} else {
-			asus_led = &led_data.data.led[led->index];
 		}
+
+		if (quirks & ASUS_QUIRK_LED_V2) {
+			/* new layout: a single zone per response with data at
+			 * offset 4, brightness is 0-100 percent */
+			led->mode = drv_data->led_modes[led_data.raw[4]];
+			led->brightness = led_data.raw[5] * 255 / 100;
+			led->color.red = led_data.raw[6];
+			led->color.green = led_data.raw[7];
+			led->color.blue = led_data.raw[8];
+			continue;
+		}
+
+		if (quirks & ASUS_QUIRK_SEPARATE_LEDS)
+			asus_led = &led_data.data.led[0];
+		else
+			asus_led = &led_data.data.led[led->index];
 
 		led->mode = drv_data->led_modes[asus_led->mode];
 		if (quirks & ASUS_QUIRK_RAW_BRIGHTNESS) {
@@ -379,6 +392,9 @@ asus_driver_save_profile(struct ratbag_device *device, struct ratbag_profile *pr
 		uint8_t led_brightness;
 		if (quirks & ASUS_QUIRK_RAW_BRIGHTNESS) {
 			led_brightness = led->brightness;
+		} else if (quirks & ASUS_QUIRK_LED_V2) {
+			/* convert brightness from 0-255 to 0-100 percent */
+			led_brightness = (uint8_t)round((double)led->brightness * 100.0 / 255.0);
 		} else {
 			/* convert brightness from 0-256 to 0-4 */
 			led_brightness = (uint8_t)round((double)led->brightness / 64.0);
@@ -515,16 +531,50 @@ asus_driver_probe(struct ratbag_device *device)
 	struct ratbag_button *button;
 	struct ratbag_resolution *resolution;
 	struct ratbag_led *led;
+	uint32_t quirks = ratbag_device_data_asus_get_quirks(device->data);
 
 	rc = ratbag_open_hidraw(device);
 	if (rc)
 		return rc;
 
-	rc = asus_get_profile_data(device, &profile_data);
-	if (rc) {
-		ratbag_close_hidraw(device);
-		return -ENODEV;
+	/* The Omni receiver is a shared USB device for multiple mice, so the
+	 * actual model has to be identified and resolved to its own .device
+	 * data before anything else. Wrong hidraw nodes (keyboard, media
+	 * control, etc.) fail the identification and are rejected here. */
+	if (quirks & ASUS_QUIRK_OMNI_RECEIVER) {
+		struct ratbag_device_data *data;
+		struct input_id id = device->ids;
+
+		rc = asus_omni_identify(device, &id);
+		if (rc) {
+			log_debug(device->ratbag,
+				  "Omni device is not a supported mouse\n");
+			ratbag_close_hidraw(device);
+			return -ENODEV;
+		}
+
+		data = ratbag_device_data_new_for_id(device->ratbag, &id);
+		if (!data) {
+			log_error(device->ratbag,
+				  "No device data for Omni mouse %04x:%04x\n",
+				  id.vendor, id.product);
+			ratbag_close_hidraw(device);
+			return -ENODEV;
+		}
+
+		ratbag_device_data_unref(device->data);
+		device->data = data;
+		device->devicetype = ratbag_device_data_get_device_type(device->data);
+		free(device->name);
+		device->name = strdup_safe(ratbag_device_data_get_name(device->data));
+		log_info(device->ratbag,
+			 "ASUS Omni receiver identified device: %s\n",
+			 device->name);
+
+		quirks = ratbag_device_data_asus_get_quirks(device->data);
 	}
+
+	rc = asus_get_profile_data(device, &profile_data);
 
 	/* create device state data */
 	drv_data = zalloc(sizeof(*drv_data));
