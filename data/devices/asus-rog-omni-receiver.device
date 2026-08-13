@@ -1,0 +1,12 @@
+[Device]
+Name=ASUS ROG Omni Receiver
+DeviceMatch=usb:0b05:1ace
+DeviceType=mouse
+Driver=asus
+
+# The Omni receiver is a shared USB device for multiple mice (all of them
+# enumerate with the same usb id), so the actual model is identified during
+# probe and resolved to the model-specific .device data. This file only
+# exists to get the asus driver probed on the receiver's hidraw nodes.
+[Driver/asus]
+Quirks=OMNI_RECEIVER

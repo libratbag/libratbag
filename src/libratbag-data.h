@@ -141,6 +141,19 @@ ratbag_device_data_steelseries_get_quirk(const struct ratbag_device_data *data);
 /* ASUS */
 
 /**
+ * Find the usb id of the device whose OmniSignature matches the serial
+ * number of a mouse behind an Omni receiver. The longest matching prefix
+ * wins. The bustype of id is left untouched, only vendor and product are
+ * set.
+ *
+ * @return 0 on success or -ENODEV if no .device file matches
+ */
+int
+ratbag_device_data_omni_signature_match(struct ratbag *ratbag,
+					const char *signature,
+					struct input_id *id);
+
+/**
  * @return Number of profiles
  */
 int
