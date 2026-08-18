@@ -1789,14 +1789,12 @@ class RatbagParserRoot:
         print(f"usage: {self.parser.prog} [OPTIONS] list")
         print(f"       {self.parser.prog} [OPTIONS] <device> {{COMMAND}} ...\n")
         print(self.parser.description)
-        print(
-            """
+        print("""
 Common options:
     --version -V                show program's version number and exit
     --verbose, -v               increase verbosity level
     --nocommit                  Do not immediately write the settings to the mouse
-    --help, -h                  show this help and exit"""
-        )
+    --help, -h                  show this help and exit""")
         if self.want_keepalive:
             print(
                 "    --keepalive                 do not terminate ratbagd after the"
@@ -1809,8 +1807,7 @@ General Commands:
         )
         for c in self.children:
             c.print_help(None)
-        print(
-            """
+        print("""
 Examples:
   {0} profile active get
   {0} profile 0 resolution active set 4
@@ -1826,10 +1823,7 @@ Exit codes:
   1     Unsupported feature, index out of available range or invalid device
   2     Commandline arguments are invalid
   3     A command failed on the device
-""".format(  # noqa: UP032
-                self.parser.prog
-            )
-        )
+""".format(self.parser.prog))  # noqa: UP032
 
 
 def get_parser() -> RatbagParserRoot:

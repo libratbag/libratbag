@@ -592,6 +592,7 @@ extern struct ratbag_driver marsgaming_driver;
 extern struct ratbag_driver roccat_driver;
 extern struct ratbag_driver roccat_kone_pure_driver;
 extern struct ratbag_driver roccat_emp_driver;
+extern struct ratbag_driver roccat_kone_aimo_driver;
 extern struct ratbag_driver gskill_driver;
 extern struct ratbag_driver steelseries_driver;
 extern struct ratbag_driver asus_driver;

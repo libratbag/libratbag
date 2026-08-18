@@ -64,7 +64,7 @@ class TestRatbagCtl(unittest.TestCase):
             env={"RATBAG_TEST": "1"},
         )
 
-        (stdout, stderr) = ratbagctl.communicate()
+        stdout, stderr = ratbagctl.communicate()
         return (
             ratbagctl.returncode,
             stdout.decode("utf-8").rstrip("\n"),
