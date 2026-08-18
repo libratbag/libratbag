@@ -289,6 +289,9 @@ int ratbagd_device_new(struct ratbagd_device **out,
 	assert(ctx);
 	assert(sysname);
 
+	if (!lib_device)
+		return -EINVAL;
+
 	device = zalloc(sizeof(*device));
 	device->refcount = 1;
 	device->ctx = ctx;

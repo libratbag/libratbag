@@ -48,6 +48,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(char **, g_strfreev);
 
 enum driver {
 	NONE = 0,
+	C18,
 	HIDPP10,
 	HIDPP20,
 	ROCCAT,
@@ -499,6 +500,7 @@ static const struct driver_map {
 		     GKeyFile *keyfile,
 		     struct ratbag_device_data *data);
 } driver_map[] = {
+	{ C18, "c18", NULL },
 	{ HIDPP10, "hidpp10", init_data_hidpp10 },
 	{ HIDPP20, "hidpp20", init_data_hidpp20 },
 	{ ROCCAT, "roccat", NULL },
