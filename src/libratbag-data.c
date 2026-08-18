@@ -61,6 +61,7 @@ enum driver {
 	ASUS,
 	SINOWEALTH,
 	SINOWEALTH_NUBWO,
+	SINOWEALTH_MODEL_O_WIRELESS,
 	OPENINPUT,
 	MARSGAMING,
 };
@@ -512,6 +513,7 @@ static const struct driver_map {
 	{ ASUS, "asus", init_data_asus },
 	{ SINOWEALTH, "sinowealth", init_data_sinowealth },
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
+	{ SINOWEALTH_MODEL_O_WIRELESS, "sinowealth_model_o_wireless", NULL},
 	{ OPENINPUT, "openinput", NULL },
 	{ MARSGAMING, "marsgaming", NULL },
 };
