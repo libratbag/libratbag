@@ -384,3 +384,11 @@ ratbag_key_is_modifier(const unsigned int key)
 		return false;
 	}
 }
+
+static inline void
+swap_u8(uint8_t *a, uint8_t *b)
+{
+	uint8_t tmp = *a;
+	*a = *b;
+	*b = tmp;
+}

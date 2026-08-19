@@ -1,0 +1,10 @@
+[Device]
+Name=Genesis Krypton 750
+DeviceMatch=usb:04d9:a2f1
+DeviceType=mouse
+Driver=holtek8b
+
+[Driver/holtek8/devices/0101]
+Buttons=6
+DeviceName=Genesis Krypton 750
+SensorType=PAW3333
