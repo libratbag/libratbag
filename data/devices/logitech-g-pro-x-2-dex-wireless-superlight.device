@@ -1,0 +1,8 @@
+[Device]
+Name=Logitech G Pro X 2 DEX
+DeviceMatch=usb:046d:c0a0;usb:046d:40b8;usb:046d:c54d
+Driver=hidpp20
+DeviceType=mouse
+
+[Driver/hidpp20]
+DeviceIndex=1
