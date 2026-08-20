@@ -1777,6 +1777,164 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x8080 - G602 Onboard Profile                                              */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_G602_ONBOARD_PROFILE_BEGIN_TRANSACTION	0x20
+#define CMD_G602_ONBOARD_PROFILE_TRANSFER_CHUNK		0x30
+#define CMD_G602_ONBOARD_PROFILE_WRITE_COMMIT		0x40
+#define CMD_G602_ONBOARD_PROFILE_GET_ACTIVE_STAGE	0x50
+#define CMD_G602_ONBOARD_PROFILE_SET_ACTIVE_STAGE	0x60
+#define HIDPP20_G602_CHUNK_DATA_SIZE			15
+
+int
+hidpp20_g602_read_profile(struct hidpp20_device *device, uint8_t *profile)
+{
+	/* Profile should be a 45 byte buffer */
+	int rc;
+	uint8_t feature_index = hidpp_root_get_feature_idx(device, HIDPP_PAGE_G602_ONBOARD_PROFILE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.sub_id = feature_index,
+		.msg.address = CMD_G602_ONBOARD_PROFILE_BEGIN_TRANSACTION,
+		.msg.parameters[0] = 0x80,
+		.msg.parameters[1] = 0x2a
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	unsigned i;
+	for (i = 1; i < 4; i++) {
+		union hidpp20_message msg = {
+			.msg.report_id = REPORT_ID_LONG,
+			.msg.device_idx = device->index,
+			.msg.sub_id = feature_index,
+			.msg.address = CMD_G602_ONBOARD_PROFILE_TRANSFER_CHUNK,
+			.msg.parameters[0] = i
+		};
+
+		rc = hidpp20_request_command(device, &msg);
+
+		if (rc)
+			return rc;
+		if (msg.msg.parameters[0] != i) {
+			/* Failed the echo back sanity check */
+			return -EPROTO;
+		}
+
+		memcpy(profile + (i-1) * HIDPP20_G602_CHUNK_DATA_SIZE, &msg.msg.parameters[1], HIDPP20_G602_CHUNK_DATA_SIZE);
+	}
+
+	return 0;
+}
+
+int
+hidpp20_g602_write_profile(struct hidpp20_device *device, const uint8_t *profile)
+{
+	int rc;
+	uint8_t feature_index = hidpp_root_get_feature_idx(device, HIDPP_PAGE_G602_ONBOARD_PROFILE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	union hidpp20_message begin_msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.sub_id = feature_index,
+		.msg.address = CMD_G602_ONBOARD_PROFILE_BEGIN_TRANSACTION,
+		.msg.parameters[0] = 0x81,
+		.msg.parameters[1] = 0x2a
+	};
+
+	rc = hidpp20_request_command(device, &begin_msg);
+	if (rc)
+		return rc;
+
+	unsigned i;
+	for (i = 1; i < 4; i++) {
+		union hidpp20_message msg = {
+			.msg.report_id = REPORT_ID_LONG,
+			.msg.device_idx = device->index,
+			.msg.sub_id = feature_index,
+			.msg.address = CMD_G602_ONBOARD_PROFILE_TRANSFER_CHUNK,
+			.msg.parameters[0] = i
+		};
+
+		memcpy(&msg.msg.parameters[1], profile + (i-1) * HIDPP20_G602_CHUNK_DATA_SIZE, HIDPP20_G602_CHUNK_DATA_SIZE);
+
+		rc = hidpp20_request_command(device, &msg);
+
+		if (rc)
+			return rc;
+	}
+
+	union hidpp20_message commit_msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.sub_id = feature_index,
+		.msg.address = CMD_G602_ONBOARD_PROFILE_WRITE_COMMIT,
+		.msg.parameters[0] = 0x82,
+		.msg.parameters[1] = 0x01
+	};
+
+	rc = hidpp20_request_command(device, &commit_msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+int
+hidpp20_g602_get_active_dpi_stage(struct hidpp20_device *device)
+{
+	int rc;
+	uint8_t feature_index = hidpp_root_get_feature_idx(device, HIDPP_PAGE_G602_ONBOARD_PROFILE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.sub_id = feature_index,
+		.msg.address = CMD_G602_ONBOARD_PROFILE_GET_ACTIVE_STAGE,
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return msg.msg.parameters[0];
+}
+
+int
+hidpp20_g602_set_active_dpi_stage(struct hidpp20_device *device, uint8_t stage)
+{
+	int rc;
+	uint8_t feature_index = hidpp_root_get_feature_idx(device, HIDPP_PAGE_G602_ONBOARD_PROFILE);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.sub_id = feature_index,
+		.msg.address = CMD_G602_ONBOARD_PROFILE_SET_ACTIVE_STAGE,
+		.msg.parameters[0] = stage
+	};
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x8100 - Onboard Profiles                                                  */
 /* -------------------------------------------------------------------------- */
 
