@@ -911,6 +911,35 @@ struct ratbag_resolution *
 ratbag_profile_get_resolution(struct ratbag_profile *profile, unsigned int idx);
 
 /**
+ * @ingroup profile
+ *
+ * Set the charging control option for the profile.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param status Charging enabled
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_charging_control(struct ratbag_profile *profile,
+				    int status);
+
+/**
+ * @ingroup profile
+ *
+ * Get the charging control option for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Charging enabled
+ */
+int
+ratbag_profile_get_charging_control(const struct ratbag_profile *profile);
+
+/**
  * @ingroup resolution
  *
  * Add a reference to the resolution. A resolution is destroyed whenever the

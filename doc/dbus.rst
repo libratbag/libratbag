@@ -326,6 +326,14 @@ org.freedesktop.ratbag1.Profile
         This list may be empty if the device does not support reading and/or
         writing the report rate.
 
+.. attribute:: ChargingControl
+
+        :type: i
+        :flags: read-write, mutable
+
+        Charging control boolean value as an int (1 or 0), or `-1` to indicate
+        that the device doesn't support reading and/or writing this value.
+
 .. function:: SetActive() → ()
 
         Set this profile to be the active profile

@@ -490,6 +490,11 @@ class RatbagdProfile(metaclass=MetaRatbag):
         return None
 
     @property
+    def charging_control(self):
+        """The charging control option."""
+        return libratbag.ratbag_profile_get_charging_control(self._profile)
+
+    @property
     def buttons(self):
         """A list of RatbagdButton objects with this profile's button mappings.
         Note that the list of buttons differs between profiles but the number

@@ -491,6 +491,66 @@ hidpp20_batteryvoltage_get_battery_voltage(struct hidpp20_device *device,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x1010 - Charging control                                                  */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_CHARGING_CONTROL_GET_STATUS	0x00
+#define CMD_CHARGING_CONTROL_SET_STATUS	0x10
+
+int hidpp20_charging_control_get_status(struct hidpp20_device *device,
+					bool *status)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_CHARGING_CONTROL_GET_STATUS,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_CHARGING_CONTROL);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	*status = msg.msg.parameters[0];
+
+	return 0;
+}
+
+int hidpp20_charging_control_set_status(struct hidpp20_device *device,
+					bool status)
+{
+	uint8_t feature_index;
+	int rc;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.address = CMD_CHARGING_CONTROL_SET_STATUS,
+		.msg.parameters[0] = status,
+	};
+
+	feature_index = hidpp_root_get_feature_idx(device,
+						   HIDPP_PAGE_CHARGING_CONTROL);
+	if (feature_index == 0)
+		return -ENOTSUP;
+
+	msg.msg.sub_id = feature_index;
+
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x1300: Non-RGB led support                                                */
 /* -------------------------------------------------------------------------- */
 
