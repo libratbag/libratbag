@@ -431,7 +431,7 @@ class RatbagdProfile(metaclass=MetaRatbag):
     def report_rates(self):
         """The list of supported report rates"""
         rates = [0 for i in range(300)]
-        n = libratbag.ratbag_resolution_get_report_rate_list(self._profile, rates)
+        n = libratbag.ratbag_profile_get_report_rate_list(self._profile, rates)
         return rates[:n]
 
     @property

@@ -25,6 +25,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <linux/hid.h>
 #include <poll.h>
 #include <libudev.h>
 #include <linux/hidraw.h>
@@ -1569,28 +1570,40 @@ ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 {
 	uint8_t tmp_buf[HID_MAX_BUFFER_SIZE];
 	int rc;
+	unsigned long op;
 
 	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw[0].fd < 0)
 		return -EINVAL;
-
-	if (rtype != HID_FEATURE_REPORT)
-		return -ENOTSUP;
 
 	switch (reqtype) {
 	case HID_REQ_GET_REPORT:
 		memset(tmp_buf, 0, len);
 		tmp_buf[0] = reportnum;
 
-		rc = ioctl(device->hidraw[0].fd, HIDIOCGFEATURE(len), tmp_buf);
+		switch (rtype) {
+			case HID_INPUT_REPORT:
+				op = HIDIOCGINPUT(len);
+				break;
+			case HID_FEATURE_REPORT:
+				op = HIDIOCGFEATURE(len);
+				break;
+			default:
+				return -ENOTSUP;
+		}
+
+		rc = ioctl(device->hidraw[0].fd, op, tmp_buf);
 		if (rc < 0)
 			return -errno;
 
-		log_buf_raw(device->ratbag, "feature get:   ", tmp_buf, (unsigned)rc);
+		log_buf_raw(device->ratbag, "get:   ", tmp_buf, (unsigned)rc);
 
 		memcpy(buf, tmp_buf, rc);
 		return rc;
 	case HID_REQ_SET_REPORT:
 		buf[0] = reportnum;
+
+		if (rtype != HID_FEATURE_REPORT)
+			return -ENOTSUP;
 
 		log_buf_raw(device->ratbag, "feature set:   ", buf, len);
 		rc = ioctl(device->hidraw[0].fd, HIDIOCSFEATURE(len), buf);
