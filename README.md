@@ -45,6 +45,27 @@ And to build or re-build after code-changes, run:
 
     ninja -C builddir
     sudo ninja -C builddir install
+
+Building with Docker
+--------------------
+
+This fork can also be built in a Docker container so the compiler and Meson
+dependencies do not need to be installed on the host. The helper script builds
+an Ubuntu image, compiles the project, runs the tests, and stages the install
+tree under `_docker-install/`:
+
+    ./scripts/docker-build.sh
+
+The staged files can then be installed onto the host with:
+
+    sudo ./scripts/docker-install.sh
+
+By default this uses Ubuntu 26.04 and installs with prefix `/usr`, matching the
+usual system DBus and systemd locations. On common Ubuntu architectures the
+library directory is set to the matching multiarch path. The defaults can be
+overridden:
+
+    UBUNTU_VERSION=24.04 PREFIX=/usr/local LIBDIR=lib TESTS=false ./scripts/docker-build.sh
     
 To remove/uninstall simply run:
 

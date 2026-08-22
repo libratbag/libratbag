@@ -887,6 +887,7 @@ struct hidpp20_profile {
 	uint16_t dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
+	uint32_t dirty_macros;
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
 	struct hidpp20_led alt_leds[HIDPP20_LED_COUNT];
 };
