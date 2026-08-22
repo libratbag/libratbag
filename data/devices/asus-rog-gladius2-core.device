@@ -1,0 +1,13 @@
+# Simplified version of "ASUS ROG Gladius II Origin"
+[Device]
+Name=ASUS ROG Gladius II Core
+DeviceMatch=usb:0b05:18dd
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=8
+Leds=3
+Dpis=2
+DpiRange=200:6200@100
+ButtonMapping=0;1;2;7;8;5;3;4
