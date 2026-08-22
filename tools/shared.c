@@ -206,6 +206,21 @@ button_action_macro_to_str(struct ratbag_button *button)
 }
 
 char *
+button_action_dpi_lock_to_str(struct ratbag_button *button)
+{
+	char str[96];
+	int x = ratbag_button_get_dpi_lock_x(button);
+	int y = ratbag_button_get_dpi_lock_y(button);
+
+	if (x == y)
+		sprintf_safe(str, "dpi-lock %d", x);
+	else
+		sprintf_safe(str, "dpi-lock %dx%d", x, y);
+
+	return strdup_safe(str);
+}
+
+char *
 button_action_to_str(struct ratbag_button *button)
 {
 	enum ratbag_button_action_type type;
@@ -218,6 +233,7 @@ button_action_to_str(struct ratbag_button *button)
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:	str = button_action_key_to_str(button); break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:	str = strdup_safe(button_action_special_to_str(button)); break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:	str = button_action_macro_to_str(button); break;
+	case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:	str = button_action_dpi_lock_to_str(button); break;
 	case RATBAG_BUTTON_ACTION_TYPE_NONE:	str = strdup_safe("none"); break;
 	default:
 		error("type %d unknown\n", type);

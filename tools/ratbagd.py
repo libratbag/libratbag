@@ -426,6 +426,15 @@ class RatbagdDevice(_RatbagdDBus):
         """
         self._dbus_call("Commit", "")
 
+    def reset(self):
+        """Instructs the device to perform a factory reset.
+
+        This is implemented asynchronously inside ratbagd. A Resync signal
+        is always emitted after the reset completes, regardless of success
+        or failure. Not all devices support hardware reset.
+        """
+        self._dbus_call("Reset", "")
+
 
 class RatbagdProfile(_RatbagdDBus):
     """Represents a ratbagd profile."""
@@ -439,7 +448,11 @@ class RatbagdProfile(_RatbagdDBus):
         super().__init__("Profile", object_path)
         self._active = self._get_dbus_property("IsActive")
         self._angle_snapping = self._get_dbus_property("AngleSnapping")
+        self._motion_sync = self._get_dbus_property("MotionSync")
+        self._ripple_control = self._get_dbus_property("RippleControl")
         self._debounce = self._get_dbus_property("Debounce")
+        self._lod = self._get_dbus_property("Lod")
+        self._autosleep = self._get_dbus_property("Autosleep")
         self._dirty = self._get_dbus_property("IsDirty")
         self._disabled = self._get_dbus_property("Disabled")
         self._report_rate = self._get_dbus_property("ReportRate")
@@ -479,6 +492,26 @@ class RatbagdProfile(_RatbagdDBus):
                 self.notify("angle-snapping")
 
         try:
+            motion_sync = changed_props["MotionSync"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if motion_sync != self._motion_sync:
+                self._motion_sync = motion_sync
+                self.notify("motion-sync")
+
+        try:
+            ripple_control = changed_props["RippleControl"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if ripple_control != self._ripple_control:
+                self._ripple_control = ripple_control
+                self.notify("ripple-control")
+
+        try:
             debounce = changed_props["Debounce"]
         except KeyError:
             # Different property changed, skip.
@@ -487,6 +520,26 @@ class RatbagdProfile(_RatbagdDBus):
             if debounce != self._debounce:
                 self._debounce = debounce
                 self.notify("debounce")
+
+        try:
+            lod = changed_props["Lod"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if lod != self._lod:
+                self._lod = lod
+                self.notify("lod")
+
+        try:
+            autosleep = changed_props["Autosleep"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if autosleep != self._autosleep:
+                self._autosleep = autosleep
+                self.notify("autosleep")
 
         try:
             disabled = changed_props["Disabled"]
@@ -604,6 +657,32 @@ class RatbagdProfile(_RatbagdDBus):
         self._set_dbus_property("AngleSnapping", "i", value)
 
     @GObject.Property
+    def motion_sync(self):
+        """The motion sync option."""
+        return self._motion_sync
+
+    @motion_sync.setter
+    def motion_sync(self, value):
+        """Set the motion sync option.
+
+        @param value The motion sync option as int
+        """
+        self._set_dbus_property("MotionSync", "i", value)
+
+    @GObject.Property
+    def ripple_control(self):
+        """The ripple control option."""
+        return self._ripple_control
+
+    @ripple_control.setter
+    def ripple_control(self, value):
+        """Set the ripple control option.
+
+        @param value The ripple control option as int
+        """
+        self._set_dbus_property("RippleControl", "i", value)
+
+    @GObject.Property
     def debounce(self):
         """The button debounce time in ms."""
         return self._debounce
@@ -620,6 +699,42 @@ class RatbagdProfile(_RatbagdDBus):
     def debounces(self):
         """The list of supported debounce times"""
         return self._get_dbus_property("Debounces") or []
+
+    @GObject.Property
+    def lod(self):
+        """The lift off distance in mm."""
+        return self._lod
+
+    @lod.setter
+    def lod(self, value):
+        """Set the lift off distance in mm.
+
+        @param value The lift off distance, as float
+        """
+        self._set_dbus_property("Lod", "d", value)
+
+    @GObject.Property
+    def lods(self):
+        """The list of supported lift off distances"""
+        return self._get_dbus_property("Lods") or []
+
+    @GObject.Property
+    def autosleep(self):
+        """The autosleep timeout in seconds."""
+        return self._autosleep
+
+    @autosleep.setter
+    def autosleep(self, value):
+        """Set the autosleep timeout in seconds.
+
+        @param value The autosleep timeout, as int
+        """
+        self._set_dbus_property("Autosleep", "i", value)
+
+    @GObject.Property
+    def autosleeps(self):
+        """The list of supported autosleep timeouts"""
+        return self._get_dbus_property("Autosleeps") or []
 
     @GObject.Property
     def resolutions(self):
@@ -821,6 +936,7 @@ class RatbagdButton(_RatbagdDBus):
         SPECIAL = 2
         KEY = 3
         MACRO = 4
+        DPI_LOCK = 5
 
     class ActionSpecial(IntEnum):
         INVALID = -1
@@ -849,6 +965,12 @@ class RatbagdButton(_RatbagdDBus):
         KEY_PRESS = 1
         KEY_RELEASE = 2
         WAIT = 3
+
+    class RepeatMode(IntEnum):
+        ONCE = 0
+        COUNT = 1
+        WHILE_HELD = 2
+        UNTIL_BUTTON_PRESSED = 3
 
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
@@ -942,6 +1064,24 @@ class RatbagdButton(_RatbagdDBus):
         )
 
     @GObject.Property
+    def macro_repeat(self):
+        """A tuple (mode, count) of the macro repeat settings, or None
+        if not mapped to macro."""
+        type, _value = self._mapping()
+        if type != RatbagdButton.ActionType.MACRO:
+            return None
+        return self._get_dbus_property("MacroRepeat")
+
+    @macro_repeat.setter
+    def macro_repeat(self, value):
+        """Set the macro repeat mode and count.
+
+        @param value A tuple (mode, count).
+        """
+        value = GLib.Variant("(uu)", value)
+        self._set_dbus_property("MacroRepeat", "(uu)", value)
+
+    @GObject.Property
     def special(self):
         """An enum describing the current special mapping, if mapped to
         special or None otherwise."""
@@ -974,10 +1114,30 @@ class RatbagdButton(_RatbagdDBus):
         self._set_dbus_property("Mapping", "(uv)", (RatbagdButton.ActionType.KEY, key))
 
     @GObject.Property
+    def dpi_lock(self):
+        """A tuple (x, y) of the DPI lock target values, or None if not
+        mapped to DPI lock."""
+        type, value = self._mapping()
+        if type != RatbagdButton.ActionType.DPI_LOCK:
+            return None
+        return value
+
+    @dpi_lock.setter
+    def dpi_lock(self, dpi):
+        """Set the DPI lock target.
+
+        @param dpi A tuple (x, y) of DPI values.
+        """
+        dpi = GLib.Variant("(uu)", dpi)
+        self._set_dbus_property(
+            "Mapping", "(uv)", (RatbagdButton.ActionType.DPI_LOCK, dpi)
+        )
+
+    @GObject.Property
     def action_type(self):
         """An enum describing the action type of the button. One of
         ActionType.NONE, ActionType.BUTTON, ActionType.SPECIAL,
-        ActionType.MACRO. This decides which
+        ActionType.MACRO, ActionType.DPI_LOCK. This decides which
         *Mapping property has a value.
         """
         type, mapping = self._mapping()

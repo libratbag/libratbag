@@ -333,6 +333,14 @@ class RatbagdDevice(metaclass=MetaRatbag):
         """
         return libratbag.ratbag_device_commit(self._device)
 
+    def reset(self):
+        """Instructs the device to perform a factory reset.
+
+        Not all devices support hardware reset. A Resync signal is always
+        emitted after the reset completes.
+        """
+        return libratbag.ratbag_device_reset(self._device)
+
 
 class RatbagdProfile(metaclass=MetaRatbag):
     """Represents a ratbagd profile."""
@@ -448,6 +456,32 @@ class RatbagdProfile(metaclass=MetaRatbag):
         libratbag.ratbag_profile_set_angle_snapping(self._profile, value)
 
     @property
+    def motion_sync(self):
+        """The motion sync option."""
+        return libratbag.ratbag_profile_get_motion_sync(self._profile)
+
+    @motion_sync.setter
+    def motion_sync(self, value):
+        """Set the motion sync option.
+
+        @param value The motion sync option as bool
+        """
+        libratbag.ratbag_profile_set_motion_sync(self._profile, value)
+
+    @property
+    def ripple_control(self):
+        """The ripple control option."""
+        return libratbag.ratbag_profile_get_ripple_control(self._profile)
+
+    @ripple_control.setter
+    def ripple_control(self, value):
+        """Set the ripple control option.
+
+        @param value The ripple control option as bool
+        """
+        libratbag.ratbag_profile_set_ripple_control(self._profile, value)
+
+    @property
     def debounce(self):
         """The debounce time in ms."""
         return libratbag.ratbag_profile_get_debounce(self._profile)
@@ -465,6 +499,46 @@ class RatbagdProfile(metaclass=MetaRatbag):
         """The list of supported debounce times"""
         values = [0 for i in range(300)]
         n = libratbag.ratbag_profile_get_debounce_list(self._profile, values)
+        return values[:n]
+
+    @property
+    def autosleep(self):
+        """The autosleep timeout in seconds."""
+        return libratbag.ratbag_profile_get_autosleep(self._profile)
+
+    @autosleep.setter
+    def autosleep(self, value):
+        """Set the autosleep timeout in seconds.
+
+        @param value The new autosleep timeout, as int
+        """
+        libratbag.ratbag_profile_set_autosleep(self._profile, value)
+
+    @property
+    def autosleeps(self):
+        """The list of supported autosleep timeouts"""
+        values = [0 for i in range(300)]
+        n = libratbag.ratbag_profile_get_autosleep_list(self._profile, values)
+        return values[:n]
+
+    @property
+    def lod(self):
+        """The lift off distance in mm."""
+        return libratbag.ratbag_profile_get_lod(self._profile)
+
+    @lod.setter
+    def lod(self, value):
+        """Set the lift off distance in mm.
+
+        @param value The new lift off distance, as float
+        """
+        libratbag.ratbag_profile_set_lod(self._profile, value)
+
+    @property
+    def lods(self):
+        """The list of supported lift off distances"""
+        values = [0.0 for i in range(300)]
+        n = libratbag.ratbag_profile_get_lod_list(self._profile, values)
         return values[:n]
 
     @property
@@ -610,6 +684,7 @@ class RatbagdButton(metaclass=MetaRatbag):
         SPECIAL = libratbag.RATBAG_BUTTON_ACTION_TYPE_SPECIAL
         KEY = libratbag.RATBAG_BUTTON_ACTION_TYPE_KEY
         MACRO = libratbag.RATBAG_BUTTON_ACTION_TYPE_MACRO
+        DPI_LOCK = libratbag.RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK
 
     class ActionSpecial(IntEnum):
         INVALID = libratbag.RATBAG_BUTTON_ACTION_SPECIAL_INVALID
@@ -642,6 +717,12 @@ class RatbagdButton(metaclass=MetaRatbag):
         KEY_PRESS = libratbag.RATBAG_MACRO_EVENT_KEY_PRESSED
         KEY_RELEASE = libratbag.RATBAG_MACRO_EVENT_KEY_RELEASED
         WAIT = libratbag.RATBAG_MACRO_EVENT_WAIT
+
+    class RepeatMode(IntEnum):
+        ONCE = libratbag.RATBAG_MACRO_REPEAT_ONCE
+        COUNT = libratbag.RATBAG_MACRO_REPEAT_COUNT
+        WHILE_HELD = libratbag.RATBAG_MACRO_REPEAT_WHILE_HELD
+        UNTIL_BUTTON_PRESSED = libratbag.RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED
 
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
@@ -750,7 +831,7 @@ class RatbagdButton(metaclass=MetaRatbag):
     def action_type(self):
         """An enum describing the action type of the button. One of
         ActionType.NONE, ActionType.BUTTON, ActionType.SPECIAL,
-        ActionType.MACRO. This decides which
+        ActionType.MACRO, ActionType.DPI_LOCK. This decides which
         *Mapping property has a value.
         """
         return libratbag.ratbag_button_get_action_type(self._button)
@@ -764,6 +845,7 @@ class RatbagdButton(metaclass=MetaRatbag):
             RatbagdButton.ActionType.SPECIAL,
             RatbagdButton.ActionType.KEY,
             RatbagdButton.ActionType.MACRO,
+            RatbagdButton.ActionType.DPI_LOCK,
         )
 
         return [

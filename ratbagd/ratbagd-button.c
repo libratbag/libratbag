@@ -306,6 +306,59 @@ static int ratbagd_button_set_macro(sd_bus *bus,
 	return 0;
 }
 
+static int ratbagd_button_get_dpi_lock(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       const char *property,
+				       sd_bus_message *reply,
+				       void *userdata,
+				       sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	int x, y;
+
+	x = ratbag_button_get_dpi_lock_x(button->lib_button);
+	y = ratbag_button_get_dpi_lock_y(button->lib_button);
+
+	verify_unsigned_int(x);
+	verify_unsigned_int(y);
+
+	CHECK_CALL(sd_bus_message_append(reply, "(uv)",
+					 RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+					 "(uu)",
+					 (unsigned int)x,
+					 (unsigned int)y));
+
+	return 0;
+}
+
+static int ratbagd_button_set_dpi_lock(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       const char *property,
+				       sd_bus_message *m,
+				       void *userdata,
+				       sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	unsigned int x, y;
+	int r;
+
+	CHECK_CALL(sd_bus_message_read(m, "v", "(uu)", &x, &y));
+
+	r = ratbag_button_set_dpi_lock_xy(button->lib_button, x, y);
+
+	if (r == 0) {
+		sd_bus_emit_properties_changed(bus,
+					       button->path,
+					       RATBAGD_NAME_ROOT ".Button",
+					       "Mapping",
+					       NULL);
+	}
+
+	return 0;
+}
+
 static int ratbagd_button_get_none(sd_bus *bus,
 				   const char *path,
 				   const char *interface,
@@ -383,6 +436,9 @@ static int ratbagd_button_get_mapping(sd_bus *bus,
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 		return ratbagd_button_get_macro(bus, path, interface, property,
 						reply, userdata, error);
+	case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:
+		return ratbagd_button_get_dpi_lock(bus, path, interface, property,
+						    reply, userdata, error);
 	default:
 		return sd_bus_message_append(reply, "(uv)",
 					     RATBAG_BUTTON_ACTION_TYPE_UNKNOWN,
@@ -426,6 +482,10 @@ static int ratbagd_button_set_mapping(sd_bus *bus,
 		CHECK_CALL(ratbagd_button_set_macro(bus, path, interface, property,
 						    m, userdata, error));
 		break;
+	case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:
+		CHECK_CALL(ratbagd_button_set_dpi_lock(bus, path, interface, property,
+						       m, userdata, error));
+		break;
 	default:
 		/* FIXME */
 		return 1;
@@ -451,7 +511,8 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 		RATBAG_BUTTON_ACTION_TYPE_BUTTON,
 		RATBAG_BUTTON_ACTION_TYPE_SPECIAL,
 		RATBAG_BUTTON_ACTION_TYPE_KEY,
-		RATBAG_BUTTON_ACTION_TYPE_MACRO
+		RATBAG_BUTTON_ACTION_TYPE_MACRO,
+		RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK
 	};
 	enum ratbag_button_action_type *t;
 
@@ -471,6 +532,64 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 	return 0;
 }
 
+static int ratbagd_button_get_macro_repeat(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *reply,
+					   void *userdata,
+					   sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	_cleanup_(ratbag_button_macro_unrefp) struct ratbag_button_macro *macro = NULL;
+	unsigned int mode = 0, count = 0;
+
+	if (ratbag_button_get_action_type(button->lib_button) ==
+	    RATBAG_BUTTON_ACTION_TYPE_MACRO) {
+		macro = ratbag_button_get_macro(button->lib_button);
+		if (macro) {
+			mode = ratbag_button_macro_get_repeat_mode(macro);
+			count = ratbag_button_macro_get_repeat_count(macro);
+		}
+	}
+
+	return sd_bus_message_append(reply, "(uu)", mode, count);
+}
+
+static int ratbagd_button_set_macro_repeat(sd_bus *bus,
+					   const char *path,
+					   const char *interface,
+					   const char *property,
+					   sd_bus_message *m,
+					   void *userdata,
+					   sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	_cleanup_(ratbag_button_macro_unrefp) struct ratbag_button_macro *macro = NULL;
+	unsigned int mode, count;
+
+	CHECK_CALL(sd_bus_message_read(m, "(uu)", &mode, &count));
+
+	if (ratbag_button_get_action_type(button->lib_button) !=
+	    RATBAG_BUTTON_ACTION_TYPE_MACRO)
+		return 0;
+
+	macro = ratbag_button_get_macro(button->lib_button);
+	if (!macro)
+		return 0;
+
+	ratbag_button_macro_set_repeat(macro, mode, count);
+	ratbag_button_set_macro(button->lib_button, macro);
+
+	sd_bus_emit_properties_changed(bus,
+				       button->path,
+				       RATBAGD_NAME_ROOT ".Button",
+				       "MacroRepeat",
+				       NULL);
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_button, index), SD_BUS_VTABLE_PROPERTY_CONST),
@@ -479,6 +598,10 @@ const sd_bus_vtable ratbagd_button_vtable[] = {
 				 ratbagd_button_set_mapping,
 				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ActionTypes", "au", ratbagd_button_get_action_types, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_WRITABLE_PROPERTY("MacroRepeat", "(uu)",
+				 ratbagd_button_get_macro_repeat,
+				 ratbagd_button_set_macro_repeat,
+				 0, SD_BUS_VTABLE_UNPRIVILEGED | SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_VTABLE_END,
 };
 

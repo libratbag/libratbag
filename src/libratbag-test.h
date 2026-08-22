@@ -45,7 +45,13 @@ struct ratbag_test_button {
 		int key;
 		enum ratbag_button_action_special special;
 		struct ratbag_test_macro_event macro[24];
+		struct {
+			unsigned int x;
+			unsigned int y;
+		} dpi_lock;
 	};
+	enum ratbag_macro_repeat_mode macro_repeat_mode;
+	unsigned int macro_repeat_count;
 };
 
 struct ratbag_test_resolution {
@@ -83,6 +89,19 @@ struct ratbag_test_profile {
 
 	int hz;
 	unsigned int report_rates[5];
+
+	int angle_snapping;
+	int motion_sync;
+	int ripple_control;
+	int debounce;
+	unsigned int debounces[8];
+	size_t ndebounces;
+	double lod;
+	double lods[8];
+	size_t nlods;
+	int autosleep;
+	unsigned int autosleeps[8];
+	size_t nautosleeps;
 };
 
 struct ratbag_test_device {
@@ -93,6 +112,9 @@ struct ratbag_test_device {
 	struct ratbag_test_profile profiles[RATBAG_TEST_MAX_PROFILES];
 	void (*destroyed)(struct ratbag_device *device, void *data);
 	void *destroyed_data;
+	unsigned int (*handle_event)(struct ratbag_device *device,
+				     const uint8_t *buf, size_t len,
+				     int hidraw_index);
 };
 
 struct ratbag_device* ratbag_device_new_test_device(struct ratbag *ratbag,
