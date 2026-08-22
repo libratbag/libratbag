@@ -1,0 +1,16 @@
+# VortexSeries Ignix F5 (Beken BK3633 MCU)
+# Supported connections: Wired (2220) and 2.4G Wireless Dongle (fa60)
+
+[Device]
+Name=VortexSeries Ignix F5
+DeviceMatch=usb:1d57:2220;usb:1d57:fa60
+Driver=beken
+DeviceType=mouse
+Svg=vortexseries-ignix-f5.svg
+
+[Driver/beken]
+Profiles=1
+Buttons=6
+Leds=0
+DpiRange=50:24000@50
+SensorType=PAW3311
