@@ -1201,13 +1201,17 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 
 	profile->is_active = (profile->index == drv_data->profiles->active_profile_index);
 
-	if (profile->is_active)
-		dpi_index = hidpp20_onboard_profiles_get_current_dpi_index(drv_data->dev);
-
-	if (dpi_index < 0)
-		dpi_index = 0xff;
-
 	p = &drv_data->profiles->profiles[profile->index];
+
+	if (profile->is_active) {
+		dpi_index = hidpp20_onboard_profiles_get_current_dpi_index(drv_data->dev);
+		/* The HID++ command may return a stale value after reboot.
+		 * Prefer the switched_dpi stored in the profile data, which
+		 * is what the device firmware actually uses to set the DPI
+		 * when loading the profile from onboard memory. */
+		if (dpi_index < 0 || dpi_index > 4 || (unsigned int)dpi_index != p->switched_dpi)
+			dpi_index = p->switched_dpi;
+	}
 
 	ratbag_profile_for_each_resolution(profile, res) {
 		struct hidpp20_sensor *sensor;
@@ -1531,6 +1535,19 @@ hidpp20drv_commit(struct ratbag_device *device)
 	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
 		list_for_each(profile, &device->profiles, link)
 			drv_data->profiles->profiles[profile->index].enabled = profile->is_enabled;
+
+		/* Update switched_dpi in the profile data before committing
+		 * so the correct DPI index is persisted to onboard memory.
+		 * The device firmware uses switched_dpi to set the DPI when
+		 * loading the profile after a reboot. */
+		list_for_each(profile, &device->profiles, link) {
+			if (profile->is_active) {
+				ratbag_profile_for_each_resolution(profile, resolution) {
+					if (resolution->is_active)
+						drv_data->profiles->profiles[profile->index].switched_dpi = resolution->index;
+				}
+			}
+		}
 
 		rc = hidpp20_onboard_profiles_commit(drv_data->dev,
 						     drv_data->profiles);
