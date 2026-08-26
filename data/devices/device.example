@@ -77,6 +77,27 @@ DpiRange=100:16000@100
 # Device quirks
 # Quirk=DOUBLE_DPI;STRIX_PROFILE
 
+[Driver/razer]
+# Number of buttons. Reported so they show up in the UI, this driver does
+# not remap them.
+Buttons=6
+
+# The number of DPI stages the device stores, 1 to 5.
+DpiStages=5
+
+# DPI range in the form min:max@step
+# Mutually exclusive with DpiList
+DpiRange=100:30000@100
+
+# The list of available resolutions, separated by semicolons.
+# Mutually exclusive with DpiRange
+# DpiList=400;800;1600;3200
+
+# The transaction id groups request and response and is model specific:
+# 31 (0x1f) for the DeathAdder V3 generation, 255 (0xff) for older Razer
+# mice. Optional, defaults to 31.
+# TransactionId=31
+
 # Replace `FEED` in the group name with firmware version of the device.
 # To find the right value, see the output of ratbagd and search a message like:
 # "ratbag error: Device with firmware version FEED is not supported"
