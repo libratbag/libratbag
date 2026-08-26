@@ -1,0 +1,13 @@
+[Device]
+DeviceMatch=usb:1532:00b2
+DeviceType=mouse
+Driver=razer
+Name=Razer DeathAdder V3
+
+[Driver/razer]
+# reported so they show up in the UI; this driver does not remap them
+Buttons=6
+DpiRange=100:30000@100
+DpiStages=5
+# 31 == 0x1f, verified against the device (firmware v1.2); older Razer mice use 0xff
+TransactionId=31
