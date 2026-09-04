@@ -143,6 +143,21 @@ hidpp20drv_macro_button_from_keycode(unsigned int key)
 	return 1U << (key - BTN_LEFT);
 }
 
+static enum ratbag_macro_event_type
+hidpp20drv_macro_control_to_event(uint8_t type)
+{
+	switch (type) {
+	case HIDPP20_MACRO_WAIT_FOR_RELEASE:
+		return RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE;
+	case HIDPP20_MACRO_REPEAT_WHILE_PRESSED:
+		return RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED;
+	case HIDPP20_MACRO_REPEAT_UNTIL_CANCELED:
+		return RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED;
+	}
+
+	return RATBAG_MACRO_EVENT_NONE;
+}
+
 static unsigned int
 hidpp20drv_read_macro_key_8100(struct ratbag_device *device, union hidpp20_macro_data *macro)
 {
@@ -206,6 +221,13 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 		case HIDPP20_MACRO_BUTTON_UP:
 			type = RATBAG_MACRO_EVENT_KEY_RELEASED;
 			keycode = hidpp20drv_macro_keycode_from_button(macro->button.buttons);
+			break;
+		case HIDPP20_MACRO_WAIT_FOR_RELEASE:
+		case HIDPP20_MACRO_REPEAT_WHILE_PRESSED:
+		case HIDPP20_MACRO_REPEAT_UNTIL_CANCELED:
+			ratbag_button_macro_set_event(m, i++,
+						      hidpp20drv_macro_control_to_event(macro->any.type),
+						      0);
 			break;
 		}
 
@@ -678,6 +700,15 @@ hidpp20drv_build_macro_8100(struct ratbag_button *button,
 		case RATBAG_MACRO_EVENT_WAIT:
 			macro[i].delay.type = HIDPP20_MACRO_DELAY;
 			macro[i].delay.time = event->event.timeout;
+			break;
+		case RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE:
+			macro[i].any.type = HIDPP20_MACRO_WAIT_FOR_RELEASE;
+			break;
+		case RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED:
+			macro[i].any.type = HIDPP20_MACRO_REPEAT_WHILE_PRESSED;
+			break;
+		case RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED:
+			macro[i].any.type = HIDPP20_MACRO_REPEAT_UNTIL_CANCELED;
 			break;
 		default:
 			return -EINVAL;

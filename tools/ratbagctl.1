@@ -153,9 +153,9 @@ Set the button action to the given macro
 .PP
 .B Macro syntax:
 .HP 8
-A macro is a series of key events or waiting periods. Keys must be specified
-in linux/input-event-codes.h key names, and may be mouse buttons (BTN_LEFT
-and friends) as well as keys.
+A macro is a series of key events, waiting periods and control events. Keys
+must be specified in linux/input-event-codes.h key names, and may be mouse
+buttons (BTN_LEFT and friends) as well as keys.
 .RS
 .TP 8
 .B KEY_A
@@ -169,7 +169,36 @@ Release 'a'
 .TP 8
 .B t300
 Wait 300ms
+.TP 8
+.B wait\-for\-release
+Wait until the button this macro is bound to is released
+.TP 8
+.B repeat\-while\-pressed
+Restart the macro while the button it is bound to is held, and end it once the
+button is released. May be abbreviated to
+.BR repeat .
+.TP 8
+.B repeat\-until\-canceled
+Restart the macro indefinitely. See the warning below
 .RE
+.PP
+The control events are not supported by every device.
+.PP
+.B repeat\-while\-pressed
+ends the macro when the button is released, so it is always the last event to
+run: anything placed after it is stored on the device but never executed. It
+also restarts from the very first event, so a macro cannot have a prologue
+that runs only once. A macro can therefore loop while its button is held, or
+run one thing on press and another on release using
+.BR wait\-for\-release ,
+but not both.
+.PP
+.B Warning:
+the protocol has no instruction that stops a running macro, and no known
+device offers a way to cancel
+.BR repeat\-until\-canceled .
+Once one starts it keeps going until the button is bound to something else,
+which may mean unplugging the device first to regain control of the machine.
 .SH LED Commands
 LED commands work on the given profile, or on the active profile if none is
 given.

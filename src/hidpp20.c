@@ -2323,6 +2323,25 @@ hidpp20_onboard_profiles_macro_usable_size(uint16_t sector_size)
 }
 
 /**
+ * Size on the wire of a macro entry. The control commands carry no operand and
+ * take a single byte; everything else uses the full three byte entry.
+ */
+static uint8_t
+hidpp20_macro_entry_size(uint8_t type)
+{
+	switch (type) {
+	case HIDPP20_MACRO_NOOP:
+	case HIDPP20_MACRO_WAIT_FOR_RELEASE:
+	case HIDPP20_MACRO_REPEAT_WHILE_PRESSED:
+	case HIDPP20_MACRO_REPEAT_UNTIL_CANCELED:
+	case HIDPP20_MACRO_END:
+		return 1;
+	default:
+		return sizeof(union hidpp20_macro_data);
+	}
+}
+
+/**
  * Reads one macro from memory and advances index to the start of the next one
  */
 static int
@@ -2352,11 +2371,11 @@ hidpp20_onboard_profiles_macro_next(struct hidpp20_device *device,
 	case HIDPP20_MACRO_BUTTON_DOWN:
 	case HIDPP20_MACRO_BUTTON_UP:
 	case HIDPP20_MACRO_JUMP:
-		step = sizeof(union hidpp20_macro_data);
-		rc = -EAGAIN;
-		break;
 	case HIDPP20_MACRO_NOOP:
-		step = 1;
+	case HIDPP20_MACRO_WAIT_FOR_RELEASE:
+	case HIDPP20_MACRO_REPEAT_WHILE_PRESSED:
+	case HIDPP20_MACRO_REPEAT_UNTIL_CANCELED:
+		step = hidpp20_macro_entry_size(macro->any.type);
 		rc = -EAGAIN;
 		break;
 	case HIDPP20_MACRO_END:
@@ -3043,17 +3062,19 @@ hidpp20_onboard_profiles_macro_capacity(const struct hidpp20_profiles *profiles_
 
 /**
  * Number of bytes a macro takes up on the device: three per opcode plus the
- * single byte END marker. @a macro must be END terminated.
+ * single byte END marker. A macro must be END terminated.
  */
 static unsigned int
 hidpp20_onboard_profiles_macro_size(const union hidpp20_macro_data *macro)
 {
 	int op_count = 0;
+	int size = 0;
 	while(macro[op_count].any.type != HIDPP20_MACRO_END) {
+		size += hidpp20_macro_entry_size(macro[op_count].any.type);
 		op_count++;
 	}
 	// Last opcode for stop takes only 1 byte
-	return op_count * sizeof(union hidpp20_macro_data) + 1;
+	return size + 1;
 }
 
 int
@@ -3128,8 +3149,8 @@ hidpp20_onboard_profiles_serialize_macro(uint8_t *data,
 			break;
 		}
 
-		memcpy(data, &entry, sizeof(entry));
-		data += sizeof(entry);
+		memcpy(data, &entry, hidpp20_macro_entry_size(entry.any.type));
+		data += hidpp20_macro_entry_size(entry.any.type);
 	}
 
 	/* END is a single byte, not a full entry */

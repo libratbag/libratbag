@@ -18,7 +18,7 @@ endif
 # No backwards/forwards guarantee, clients are expected to understand
 # whatever ratbagd speaks or bail out. This should be removed if we ever
 # finish the API and declare it stable.
-ratbagd_api_version = 2
+ratbagd_api_version = 3
 
 # We use libtool-version numbers because it's easier to understand.
 # Before making a release, the libratbag_so_* and liblur_so_*
