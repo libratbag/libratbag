@@ -2312,31 +2312,47 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	return 0;
 }
 
+/**
+ * Number of bytes of a sector usable for macro data. The last two bytes of
+ * every sector hold the CRC.
+ */
+static uint16_t
+hidpp20_onboard_profiles_macro_usable_size(uint16_t sector_size)
+{
+	return sector_size > 2 ? sector_size - 2 : 0;
+}
+
+/**
+ * Reads one macro from memory and advances index to the start of the next one
+ */
 static int
 hidpp20_onboard_profiles_macro_next(struct hidpp20_device *device,
-				    uint8_t memory[32],
+				    uint8_t *memory,
+				    uint16_t sector_size,
 				    uint16_t *index,
 				    union hidpp20_macro_data *macro)
 {
+	uint16_t usable = hidpp20_onboard_profiles_macro_usable_size(sector_size);
+	unsigned int step, avail, remaining;
 	int rc = 0;
-	unsigned int step = 1;
 
-	if (*index >= 32 - sizeof(union hidpp20_macro_data)) {
-		hidpp_log_error(&device->base, "error while parsing macro.\n");
-		return -EFAULT;
-	}
+	/* the last two bytes of a sector hold the CRC, not macro data */
+	if (*index >= usable)
+		return -ENOMEM;
 
-	memcpy(macro, &memory[*index], sizeof(union hidpp20_macro_data));
+	remaining = usable - *index;
+	avail = min(sizeof(union hidpp20_macro_data), remaining);
+	memset(macro, 0, sizeof(*macro));
+	memcpy(macro, &memory[*index], avail);
 
 	switch (macro->any.type) {
 	case HIDPP20_MACRO_DELAY:
-		/* fallthrough */
 	case HIDPP20_MACRO_KEY_PRESS:
-		/* fallthrough */
 	case HIDPP20_MACRO_KEY_RELEASE:
-		/* fallthrough */
+	case HIDPP20_MACRO_BUTTON_DOWN:
+	case HIDPP20_MACRO_BUTTON_UP:
 	case HIDPP20_MACRO_JUMP:
-		step = 3;
+		step = sizeof(union hidpp20_macro_data);
 		rc = -EAGAIN;
 		break;
 	case HIDPP20_MACRO_NOOP:
@@ -2347,11 +2363,11 @@ hidpp20_onboard_profiles_macro_next(struct hidpp20_device *device,
 		return 0;
 	default:
 		hidpp_log_error(&device->base, "unknown tag: 0x%02x\n", macro->any.type);
-		rc = -EFAULT;
+		return -EFAULT;
 	}
 
-	if ((*index + step) & 0xF0)
-		/* the next item will be on the following chunk */
+	/* the entry is split across pages, pick it up on the next one */
+	if (step > avail)
 		return -ENOMEM;
 
 	*index += step;
@@ -2369,6 +2385,7 @@ hidpp20_onboard_profiles_read_macro(struct hidpp20_device *device,
 	union hidpp20_macro_data *macro = NULL;
 	unsigned count = 0;
 	unsigned index = 0;
+	unsigned jumps = 0;
 	uint16_t mem_index = offset;
 	int rc = -ENOMEM;
 
@@ -2389,6 +2406,13 @@ hidpp20_onboard_profiles_read_macro(struct hidpp20_device *device,
 		}
 
 		if (rc == -ENOMEM) {
+			if (page >= profiles->sector_count) {
+				hidpp_log_error(&device->base,
+						"macro runs past the end of the onboard memory\n");
+				rc = -EFAULT;
+				goto out_err;
+			}
+
 			rc = hidpp20_onboard_profiles_read_sector(device,
 								  page,
 								  profiles->sector_size,
@@ -2399,19 +2423,27 @@ hidpp20_onboard_profiles_read_macro(struct hidpp20_device *device,
 
 		rc = hidpp20_onboard_profiles_macro_next(device,
 							 memory,
+							 profiles->sector_size,
 							 &mem_index,
 							 &macro[index]);
 		if (rc == -EFAULT)
 			goto out_err;
 		if (rc == -ENOMEM) {
+			/* nothing was consumed, retry on the next page */
 			mem_index = 0;
 			page++;
 		} else if (macro[index].any.type == HIDPP20_MACRO_JUMP) {
+			if (++jumps > profiles->sector_count) {
+				hidpp_log_error(&device->base,
+						"too many jumps while parsing macro\n");
+				rc = -EFAULT;
+				goto out_err;
+			}
+
 			page = macro[index].jump.page;
-			offset = macro[index].jump.offset;
-			mem_index = offset;
-			/* no need to store the jump in memory */
-			index--;
+			mem_index = macro[index].jump.offset;
+			/* the jump itself is not part of the macro */
+			memset(&macro[index], 0, sizeof(macro[index]));
 			/* force memory fetching */
 			rc = -ENOMEM;
 		} else {
@@ -2419,8 +2451,9 @@ hidpp20_onboard_profiles_read_macro(struct hidpp20_device *device,
 		}
 	} while (rc);
 
+	/* the loop only ends once the terminating END has been stored */
 	*return_macro = macro;
-	return index;
+	return 0;
 
 out_err:
 	free(macro);
@@ -2435,18 +2468,15 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 				     union hidpp20_macro_data **return_macro)
 {
 	union hidpp20_macro_data *m, *macro = NULL;
-	unsigned i, count = 0;
+	unsigned i;
 	int rc;
 
 	rc = hidpp20_onboard_profiles_read_macro(device, profiles, page, offset, &macro);
-	if (rc <= 0)
+	if (rc)
 		return rc;
 
-	count = rc;
-
-	for (i = 0; i < count; i++) {
+	for (i = 0; macro[i].any.type != HIDPP20_MACRO_END; i++) {
 		m = &macro[i];
-		assert(m != NULL);
 		switch (m->any.type) {
 		case HIDPP20_MACRO_DELAY:
 			m->delay.time = hidpp_be_u16_to_cpu(m->delay.time);
@@ -2456,8 +2486,6 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 		case HIDPP20_MACRO_KEY_RELEASE:
 			break;
 		case HIDPP20_MACRO_JUMP:
-			break;
-		case HIDPP20_MACRO_END:
 			break;
 		case HIDPP20_MACRO_NOOP:
 			break;
@@ -2989,6 +3017,209 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 	return 0;
 }
 
+unsigned int
+hidpp20_onboard_profiles_macro_capacity(const struct hidpp20_profiles *profiles_list)
+{
+	uint16_t usable;
+	unsigned int opcodes;
+
+	usable = hidpp20_onboard_profiles_macro_usable_size(profiles_list->sector_size);
+
+	if (usable == 0)
+		return 0;
+
+	/* one byte of the sector is taken up by the on-wire END marker */
+	opcodes = (usable - 1) / sizeof(union hidpp20_macro_data);
+	if (opcodes == 0)
+		return 0;
+
+	/* include the in-memory END entry */
+	return opcodes + 1;
+}
+
+/**
+ * Number of bytes a macro takes up on the device: three per opcode plus the
+ * single byte END marker. @a macro must be END terminated.
+ */
+static unsigned int
+hidpp20_onboard_profiles_macro_size(const union hidpp20_macro_data *macro)
+{
+	int op_count = 0;
+	while(macro[op_count].any.type != HIDPP20_MACRO_END) {
+		op_count++;
+	}
+	// Last opcode for stop takes only 1 byte
+	return op_count * sizeof(union hidpp20_macro_data) + 1;
+}
+
+int
+hidpp20_onboard_profiles_set_macro(struct hidpp20_profiles *profiles_list,
+				   unsigned int profile_index,
+				   unsigned int button_index,
+				   const union hidpp20_macro_data *macro)
+{
+	struct hidpp20_profile *profile;
+	union hidpp20_macro_data *copy;
+	unsigned int opcodes, capacity;
+
+	if (profile_index >= profiles_list->num_profiles)
+		return -EINVAL;
+
+	profile = &profiles_list->profiles[profile_index];
+
+	if (button_index >= ARRAY_LENGTH(profile->macros))
+		return -EINVAL;
+
+	capacity = hidpp20_onboard_profiles_macro_capacity(profiles_list);
+	if (capacity == 0)
+		return -ENOSPC;
+
+	/*
+	 * Stop at the capacity, so that an array missing its END marker is
+	 * rejected instead of read past its end. capacity counts the END.
+	 */
+	for (opcodes = 0; opcodes < capacity; opcodes++) {
+		if (macro[opcodes].any.type == HIDPP20_MACRO_END)
+			break;
+	}
+
+	if (opcodes == 0)
+		return -EINVAL;
+
+	if (opcodes == capacity)
+		return -ENOSPC;
+
+	copy = zalloc((opcodes + 1) * sizeof(*copy));
+	memcpy(copy, macro, opcodes * sizeof(*copy));
+	copy[opcodes].end.type = HIDPP20_MACRO_END;
+
+	free(profile->macros[button_index]);
+	profile->macros[button_index] = copy;
+
+	profile->buttons[button_index].macro.type = HIDPP20_BUTTON_MACRO;
+	/* the onboard address is only assigned on commit */
+	profile->buttons[button_index].macro.page = button_index;
+	profile->buttons[button_index].macro.zero = 0;
+	profile->buttons[button_index].macro.offset = 0;
+
+	return 0;
+}
+
+static void
+hidpp20_onboard_profiles_serialize_macro(uint8_t *data,
+					 const union hidpp20_macro_data *macro)
+{
+	unsigned int i = 0;
+
+	for (i = 0; macro[i].any.type != HIDPP20_MACRO_END; i++) {
+		memcpy(data, &macro[i], sizeof(macro[i]));
+		/* For delay, we need to convert host byte order to device byte order:*/
+		if (macro[i].any.type == HIDPP20_MACRO_DELAY)
+			((union hidpp20_macro_data*)data)->delay.time = hidpp_cpu_to_be_u16(macro[i].delay.time);
+		data += sizeof(macro[i]);
+	}
+
+	/* END is a single byte, not a full entry */
+	*data = HIDPP20_MACRO_END;
+}
+
+/*
+ * Macro data lives in the sectors following the profiles: sector 0 holds the
+ * profile directory and sector N + 1 holds profile N. Macros are packed into
+ * the remaining sectors, never straddling a sector boundary, and the resulting
+ * address is stored in the button binding so that it ends up in the profile
+ * sector written afterwards.
+ */
+static int
+hidpp20_onboard_profiles_write_macros(struct hidpp20_device *device,
+				      struct hidpp20_profiles *profiles_list)
+{
+	uint16_t sector_size = profiles_list->sector_size;
+	uint16_t usable_size;
+	unsigned int sector = profiles_list->num_profiles + 1;
+	unsigned int offset = 0;
+	_cleanup_free_ uint8_t *data = NULL;
+	unsigned int p, b;
+	int rc;
+
+	usable_size = hidpp20_onboard_profiles_macro_usable_size(sector_size);
+
+	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
+	memset(data, HIDPP20_MACRO_END, sector_size);
+
+	for (p = 0; p < profiles_list->num_profiles; p++) {
+		struct hidpp20_profile *profile = &profiles_list->profiles[p];
+
+		for (b = 0; b < profiles_list->num_buttons; b++) {
+			union hidpp20_button_binding *button = &profile->buttons[b];
+			unsigned int size;
+
+			if (button->any.type != HIDPP20_BUTTON_MACRO)
+				continue;
+
+			/*
+			 * We failed to parse this one when reading the device,
+			 * so leave the binding pointing where it already did
+			 * rather than relocating data we do not have.
+			 */
+			if (!profile->macros[b]) {
+				hidpp_log_debug(&device->base,
+						"profile %u button %u: keeping unparsed macro at 0x%02x:0x%02x\n",
+						p, b,
+						button->macro.zero,
+						button->macro.offset);
+				continue;
+			}
+
+			size = hidpp20_onboard_profiles_macro_size(profile->macros[b]);
+
+			if (size > usable_size)
+				return -ENOSPC;
+
+			if (offset + size > usable_size) {
+				rc = hidpp20_onboard_profiles_write_sector(device,
+									   sector,
+									   sector_size,
+									   data,
+									   true);
+				if (rc)
+					return rc;
+
+				memset(data, HIDPP20_MACRO_END, sector_size);
+				sector++;
+				offset = 0;
+			}
+
+			if (sector >= profiles_list->sector_count ||
+			    sector > UINT8_MAX) {
+				hidpp_log_error(&device->base,
+						"out of onboard memory for macros\n");
+				return -ENOSPC;
+			}
+
+			hidpp20_onboard_profiles_serialize_macro(data + offset,
+								 profile->macros[b]);
+
+			button->macro.page = b;
+			button->macro.zero = sector;
+			button->macro.offset = offset;
+
+			offset += size;
+		}
+	}
+
+	/* If we didn't write anything to the current sector, we don't need to write it, we are done: */
+	if (offset == 0)
+		return 0;
+
+	rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size,
+						   data, true);
+	if (rc)
+		hidpp_log_error(&device->base, "failed to write macros\n");
+
+	return rc;
+}
+
 int
 hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
 				struct hidpp20_profiles *profiles_list)
@@ -2997,6 +3228,11 @@ hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
 	unsigned int i;
 	bool enabled_profile = false;
 	int rc;
+
+	/* must happen first, this assigns the macro addresses the profiles use */
+	rc = hidpp20_onboard_profiles_write_macros(device, profiles_list);
+	if (rc < 0)
+		return rc;
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
 		profile = &profiles_list->profiles[i];
