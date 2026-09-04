@@ -870,6 +870,10 @@ union hidpp20_macro_data {
 		uint8_t key;
 	} __attribute__((packed)) key;
 	struct {
+		uint8_t type; /* HIDPP20_MACRO_BUTTON_DOWN or HIDPP20_MACRO_BUTTON_UP */
+		uint16_t buttons; /* bitmask, bit 0 being the left button */
+	} __attribute__((packed)) button;
+	struct {
 		uint8_t type; /* HIDPP20_MACRO_JUMP */
 		uint8_t offset;
 		uint8_t page;

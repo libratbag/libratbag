@@ -114,6 +114,35 @@ hidpp20drv_read_button_1b04(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 }
 
+/*
+ * Mouse buttons are a bitmask in both the button bindings and the macro
+ * opcodes, with bit 0 being the left button. evdev numbers them contiguously
+ * from BTN_LEFT in the same order.
+ */
+#define HIDPP20_MACRO_BUTTON_COUNT 8
+
+static unsigned int
+hidpp20drv_macro_keycode_from_button(uint16_t buttons)
+{
+	unsigned int i;
+
+	for (i = 0; i < HIDPP20_MACRO_BUTTON_COUNT; i++) {
+		if (buttons & (1U << i))
+			return BTN_LEFT + i;
+	}
+
+	return 0;
+}
+
+static uint16_t
+hidpp20drv_macro_button_from_keycode(unsigned int key)
+{
+	if (key < BTN_LEFT || key >= BTN_LEFT + HIDPP20_MACRO_BUTTON_COUNT)
+		return 0;
+
+	return 1U << (key - BTN_LEFT);
+}
+
 static unsigned int
 hidpp20drv_read_macro_key_8100(struct ratbag_device *device, union hidpp20_macro_data *macro)
 {
@@ -152,6 +181,8 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 	m = ratbag_button_macro_new("macro");
 
 	while (macro && macro->any.type != HIDPP20_MACRO_END && i < MAX_MACRO_EVENTS) {
+		enum ratbag_macro_event_type type = RATBAG_MACRO_EVENT_NONE;
+
 		switch (macro->any.type) {
 		case HIDPP20_MACRO_DELAY:
 			ratbag_button_macro_set_event(m,
@@ -161,32 +192,34 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 			delay = true;
 			break;
 		case HIDPP20_MACRO_KEY_PRESS:
+			type = RATBAG_MACRO_EVENT_KEY_PRESSED;
 			keycode = hidpp20drv_read_macro_key_8100(device, macro);
-			if (!delay)
-				ratbag_button_macro_set_event(m,
-							      i++,
-							      RATBAG_MACRO_EVENT_WAIT,
-							      1);
-			ratbag_button_macro_set_event(m,
-						      i++,
-						      RATBAG_MACRO_EVENT_KEY_PRESSED,
-						      keycode);
-			delay = false;
 			break;
 		case HIDPP20_MACRO_KEY_RELEASE:
+			type = RATBAG_MACRO_EVENT_KEY_RELEASED;
 			keycode = hidpp20drv_read_macro_key_8100(device, macro);
+			break;
+		case HIDPP20_MACRO_BUTTON_DOWN:
+			type = RATBAG_MACRO_EVENT_KEY_PRESSED;
+			keycode = hidpp20drv_macro_keycode_from_button(macro->button.buttons);
+			break;
+		case HIDPP20_MACRO_BUTTON_UP:
+			type = RATBAG_MACRO_EVENT_KEY_RELEASED;
+			keycode = hidpp20drv_macro_keycode_from_button(macro->button.buttons);
+			break;
+		}
+
+		if (type != RATBAG_MACRO_EVENT_NONE) {
+			/* libratbag needs the events separated by a delay */
 			if (!delay)
 				ratbag_button_macro_set_event(m,
 							      i++,
 							      RATBAG_MACRO_EVENT_WAIT,
 							      1);
-			ratbag_button_macro_set_event(m,
-						      i++,
-						      RATBAG_MACRO_EVENT_KEY_RELEASED,
-						      keycode);
+			ratbag_button_macro_set_event(m, i++, type, keycode);
 			delay = false;
-			break;
 		}
+
 		macro++;
 	}
 
@@ -565,7 +598,7 @@ hidpp20drv_macro_has_delays(const struct ratbag_button_action *action)
 /**
  * Whether the macro is one the four byte button binding can hold faithfully,
  * that is a single keyboard keystroke with optional modifiers. Several keys,
- * or a delay we would otherwise have to drop, need a real macro.
+ * a delay or mouse buttons require a real macro.
  * This is a convention in libratbag, simple action keys are reported as macros to
  * the upper layers, so this is the moment to interpret them back as action keys to hw
  */
@@ -577,7 +610,11 @@ hidpp20drv_macro_fits_binding(const struct ratbag_button_action *action,
 	if (ratbag_action_keycode_from_macro(action, key, modifiers) != 1)
 		return false;
 
-	return !hidpp20drv_macro_has_delays(action);
+	if (hidpp20drv_macro_has_delays(action))
+		return false;
+
+	/* a mouse button has no keyboard usage to put in the binding */
+	return hidpp20drv_macro_button_from_keycode(*key) == 0;
 }
 
 /**
@@ -600,6 +637,7 @@ hidpp20drv_build_macro_8100(struct ratbag_button *button,
 	for (i = 0; i < max_events; i++) {
 		const struct ratbag_macro_event *event = &action->macro->events[i];
 		uint8_t modifier = 0, code = 0;
+		uint16_t buttons;
 
 		if (event->type == RATBAG_MACRO_EVENT_NONE)
 			break;
@@ -607,6 +645,16 @@ hidpp20drv_build_macro_8100(struct ratbag_button *button,
 		switch (event->type) {
 		case RATBAG_MACRO_EVENT_KEY_PRESSED:
 		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			buttons = hidpp20drv_macro_button_from_keycode(event->event.key);
+			if (buttons) {
+				macro[i].button.type =
+					event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ?
+					HIDPP20_MACRO_BUTTON_DOWN :
+					HIDPP20_MACRO_BUTTON_UP;
+				macro[i].button.buttons = buttons;
+				break;
+			}
+
 			modifier = hidpp20drv_macro_modifier_from_keycode(event->event.key);
 			if (!modifier) {
 				code = ratbag_hidraw_get_keyboard_usage_from_keycode(device,

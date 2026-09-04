@@ -469,16 +469,25 @@ org.freedesktop.ratbag1.Button
         (``u``) denoting the special value to map to.
 
         If the ActionType is *Macro*, the variant is an array of integer
-        tuples (``a(uu)``) where each tuple is ``(type, keycode)`` and the
+        tuples (``a(uu)``) where each tuple is ``(type, value)`` and the
         type is one of the following:
 
-        +---------+--------------------------------------+
-        | Value   | Description                          |
-        +=========+======================================+
-        |   0     | Key release event                    |
-        +---------+--------------------------------------+
-        |   1     | Key press event                      |
-        +---------+--------------------------------------+
+        +---------+-----------------------+--------------------------------------+
+        | Value   | Description           | Meaning of ``value``                 |
+        +=========+=======================+======================================+
+        |   0     | End of the macro      | unused                               |
+        +---------+-----------------------+--------------------------------------+
+        |   1     | Key press event       | keycode                              |
+        +---------+-----------------------+--------------------------------------+
+        |   2     | Key release event     | keycode                              |
+        +---------+-----------------------+--------------------------------------+
+        |   3     | Wait                  | timeout in milliseconds              |
+        +---------+-----------------------+--------------------------------------+
+
+        Keycodes are those of ``linux/input-event-codes.h``, and may name a
+        mouse button (``BTN_*``) as well as a key.
+
+        Clients must ignore macro event types unknown to them.
 
         If the ActionType is *None*, the variant is an unsigned integer
         (``u``) of value 0.

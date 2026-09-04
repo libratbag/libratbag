@@ -2485,6 +2485,10 @@ hidpp20_onboard_profiles_parse_macro(struct hidpp20_device *device,
 			break;
 		case HIDPP20_MACRO_KEY_RELEASE:
 			break;
+		case HIDPP20_MACRO_BUTTON_DOWN:
+		case HIDPP20_MACRO_BUTTON_UP:
+			m->button.buttons = hidpp_be_u16_to_cpu(m->button.buttons);
+			break;
 		case HIDPP20_MACRO_JUMP:
 			break;
 		case HIDPP20_MACRO_NOOP:
@@ -3112,11 +3116,20 @@ hidpp20_onboard_profiles_serialize_macro(uint8_t *data,
 	unsigned int i = 0;
 
 	for (i = 0; macro[i].any.type != HIDPP20_MACRO_END; i++) {
-		memcpy(data, &macro[i], sizeof(macro[i]));
-		/* For delay, we need to convert host byte order to device byte order:*/
-		if (macro[i].any.type == HIDPP20_MACRO_DELAY)
-			((union hidpp20_macro_data*)data)->delay.time = hidpp_cpu_to_be_u16(macro[i].delay.time);
-		data += sizeof(macro[i]);
+		union hidpp20_macro_data entry = macro[i];
+
+		switch (entry.any.type) {
+		case HIDPP20_MACRO_DELAY:
+			entry.delay.time = hidpp_cpu_to_be_u16(entry.delay.time);
+			break;
+		case HIDPP20_MACRO_BUTTON_DOWN:
+		case HIDPP20_MACRO_BUTTON_UP:
+			entry.button.buttons = hidpp_cpu_to_be_u16(entry.button.buttons);
+			break;
+		}
+
+		memcpy(data, &entry, sizeof(entry));
+		data += sizeof(entry);
 	}
 
 	/* END is a single byte, not a full entry */
