@@ -1087,7 +1087,7 @@ hidpp20drv_read_resolution_dpi(struct ratbag_profile *profile)
 				 * the ratbag resolution API only allows a
 				 * common range for each axis. */
 				dpi_min = max(dpi_min, sensor->y.dpi_min);
-				dpi_max = max(dpi_max, sensor->y.dpi_max);
+				dpi_max = min(dpi_max, sensor->y.dpi_max);
 
 				ratbag_resolution_set_resolution(res, sensor->x.dpi, sensor->y.dpi);
 				ratbag_resolution_set_cap(res,
@@ -1237,11 +1237,14 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201)
 		return hidpp20_adjustable_dpi_set_sensor_dpi(drv_data->dev, sensor, dpi_x);
 
-	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202)
+	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202) {
+		uint8_t lod = sensor->lod ? sensor->lod : sensor->default_lod;
+
 		return hidpp20_ext_adjustable_dpi_set_sensor_dpi(drv_data->dev,
 								 sensor,
 								 dpi_x, dpi_y,
-								 sensor->default_lod);
+								 lod);
+	}
 
 	return -ENOTSUP;
 
@@ -1553,47 +1556,49 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 
 	hidpp20drv_read_profile_name_8100(profile);
 
-	ratbag_profile_for_each_resolution(profile, res) {
-		struct hidpp20_sensor *sensor;
+	if (drv_data->sensors && drv_data->num_sensors > 0) {
+		ratbag_profile_for_each_resolution(profile, res) {
+			struct hidpp20_sensor *sensor;
 
-		/* We only look at the first sensor. Multiple
-		 * sensors is too niche to care about right now */
-		sensor = &drv_data->sensors[0];
+			/* We only look at the first sensor. Multiple
+			 * sensors is too niche to care about right now */
+			sensor = &drv_data->sensors[0];
 
-		dpi_x = p->dpi[res->index].x;
-		dpi_y = (sensor->has_y) ? p->dpi[res->index].y : dpi_x;
+			dpi_x = p->dpi[res->index].x;
+			dpi_y = (sensor->has_y) ? p->dpi[res->index].y : dpi_x;
 
-		/* If the resolution is zero dpi it is disabled,
-		 * but internally we set the minimum value */
-		if (dpi_x == 0 || dpi_y == 0) {
-			res->is_disabled = true;
-			dpi_x = sensor->x.dpi_min;
-			dpi_y = (sensor->has_y) ? sensor->y.dpi_min : dpi_x;
-		}
-		ratbag_resolution_set_resolution(res, dpi_x, dpi_y);
+			/* If the resolution is zero dpi it is disabled,
+			 * but internally we set the minimum value */
+			if (dpi_x == 0 || dpi_y == 0) {
+				res->is_disabled = true;
+				dpi_x = sensor->x.dpi_min;
+				dpi_y = (sensor->has_y) ? sensor->y.dpi_min : dpi_x;
+			}
+			ratbag_resolution_set_resolution(res, dpi_x, dpi_y);
 
-		if (profile->is_active &&
-		    res->index == (unsigned int)dpi_index)
-			res->is_active = true;
-		if (res->index == p->default_dpi) {
-			res->is_default = true;
-			if (!profile->is_active || dpi_index < 0 || dpi_index > 4)
+			if (profile->is_active &&
+			    res->index == (unsigned int)dpi_index)
 				res->is_active = true;
-		}
+			if (res->index == p->default_dpi) {
+				res->is_default = true;
+				if (!profile->is_active || dpi_index < 0 || dpi_index > 4)
+					res->is_active = true;
+			}
 
-		uint16_t dpi_min = sensor->x.dpi_min;
-		uint16_t dpi_max = sensor->x.dpi_max;
-		if (sensor->has_y) {
-			/* Limit min/max to the worse case values, as the
-			 * ratbag resolution API only allows a common range
-			 * between both axis. */
-			dpi_min = max(dpi_min, sensor->y.dpi_min);
-			dpi_max = max(dpi_max, sensor->y.dpi_max);
+			uint16_t dpi_min = sensor->x.dpi_min;
+			uint16_t dpi_max = sensor->x.dpi_max;
+			if (sensor->has_y) {
+				/* Limit min/max to the worse case values, as the
+				 * ratbag resolution API only allows a common range
+				 * between both axis. */
+				dpi_min = max(dpi_min, sensor->y.dpi_min);
+				dpi_max = min(dpi_max, sensor->y.dpi_max);
 
-			ratbag_resolution_set_cap(res,
-						  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+				ratbag_resolution_set_cap(res,
+							  RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+			}
+			ratbag_resolution_set_dpi_list_from_range(res, dpi_min, dpi_max);
 		}
-		ratbag_resolution_set_dpi_list_from_range(res, dpi_min, dpi_max);
 	}
 
 	/*
@@ -1607,10 +1612,14 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 		ratbag_profile_set_report_rate_list(profile,
 						    drv_data->report_rates_wireless,
 						    drv_data->num_report_rates_wireless);
-	} else {
+	} else if (drv_data->num_report_rates > 0) {
 		ratbag_profile_set_report_rate_list(profile,
 						    drv_data->report_rates,
 						    drv_data->num_report_rates);
+	} else {
+		unsigned int default_rate = 1000;
+
+		ratbag_profile_set_report_rate_list(profile, &default_rate, 1);
 	}
 
 	if (drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_REPORT_RATE_8061) {
@@ -1670,8 +1679,21 @@ hidpp20drv_init_profile_8100(struct ratbag_device *device)
 	drv_data->num_buttons = drv_data->profiles->num_buttons;
 
 	if (drv_data->capabilities & HIDPP_CAP_SWITCHABLE_RESOLUTION_2201 ||
-	    drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202)
+	    drv_data->capabilities & HIDPP_CAP_ADJUSTABLE_RESOLUTION_2202) {
 		drv_data->num_resolutions = drv_data->profiles->num_modes;
+	} else if (drv_data->profiles->num_modes > 0) {
+		/* Onboard modes without 0x2201/0x2202 (init failed, or the
+		 * device only exposes 0x2202 after a later firmware). Keep
+		 * the profile slot count so DPI is still presented. */
+		drv_data->num_resolutions = drv_data->profiles->num_modes;
+		if (!drv_data->sensors) {
+			drv_data->sensors = zalloc(sizeof(*drv_data->sensors));
+			drv_data->num_sensors = 1;
+			drv_data->sensors[0].x.dpi_min = 100;
+			drv_data->sensors[0].x.dpi_max = 32000;
+			drv_data->sensors[0].x.dpi = 800;
+		}
+	}
 	/* We ignore the profile's num_leds and require
 	* HIDPP_PAGE_COLOR_LED_EFFECTS to succeed instead
 	*/

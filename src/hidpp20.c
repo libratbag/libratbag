@@ -2775,6 +2775,13 @@ hidpp20_onboard_profiles_set_current_profile(struct hidpp20_device *device,
 }
 
 static bool
+hidpp20_onboard_profiles_is_gpx2(uint8_t format_id)
+{
+	return format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2 ||
+	       format_id == HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_GPX2_BHOP;
+}
+
+static bool
 hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 				  struct hidpp20_onboard_profiles_info *info)
 {
@@ -2828,7 +2835,14 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 		return rc;
 
 	onboard_mode = rc;
-	if (onboard_mode != HIDPP20_ONBOARD_MODE) {
+	/*
+	 * GPX2 firmware can reject the user profile directory. Switching
+	 * to onboard mode first leaves the mouse with empty button maps if
+	 * that read later fails. Leave the current mode alone here;
+	 * initialize() selects onboard or host after the directory read.
+	 */
+	if (!hidpp20_onboard_profiles_is_gpx2(info.profile_format_id) &&
+	    onboard_mode != HIDPP20_ONBOARD_MODE) {
 		hidpp_log_raw(&device->base,
 			      "not on the correct mode: %d.\n",
 			      onboard_mode);
@@ -3453,11 +3467,22 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 						  profiles->sector_size,
 						  data);
 
-	if (rc && (device->quirks & HIDPP20_QUIRK_G305)) {
+	if (rc && ((device->quirks & HIDPP20_QUIRK_G305) ||
+		   hidpp20_onboard_profiles_is_gpx2(profiles->format_id))) {
 		/* The G305 has a bug where it throws an ERR_INVALID_ARGUMENT
-		   if the sector has not been written to yet. If this happens
-		   we will read the ROM profiles.*/
+		   if the sector has not been written to yet. GPX2 firmware
+		   can do the same for an unreadable user profile directory.
+		   Fall back to ROM profiles and keep host mode so empty
+		   onboard maps do not disable the physical buttons. */
 		read_userdata = false;
+		if (hidpp20_onboard_profiles_is_gpx2(profiles->format_id)) {
+			rc = hidpp20_onboard_profiles_set_onboard_mode(device,
+								       HIDPP20_HOST_MODE);
+			if (rc < 0)
+				hidpp_log_error(&device->base,
+						"failed to switch to host mode (%d)\n",
+						rc);
+		}
 		goto read_profiles;
 	}
 
@@ -3488,10 +3513,28 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 
 			profiles->profiles[i].enabled = !!d[HIDPP20_PROFILE_DIR_ENABLED];
 		}
+
+		/* User directory is usable; enable onboard mode so writes persist. */
+		if (hidpp20_onboard_profiles_is_gpx2(profiles->format_id)) {
+			rc = hidpp20_onboard_profiles_set_onboard_mode(device,
+								       HIDPP20_ONBOARD_MODE);
+			if (rc < 0)
+				hidpp_log_error(&device->base,
+						"failed to switch to onboard mode (%d)\n",
+						rc);
+		}
 	} else {
 		hidpp_log_debug(&device->base, "Profile directory has an invalid CRC... Reading ROM profiles.\n");
 
 		read_userdata = false;
+		if (hidpp20_onboard_profiles_is_gpx2(profiles->format_id)) {
+			rc = hidpp20_onboard_profiles_set_onboard_mode(device,
+								       HIDPP20_HOST_MODE);
+			if (rc < 0)
+				hidpp_log_error(&device->base,
+						"failed to switch to host mode (%d)\n",
+						rc);
+		}
 	}
 
 read_profiles:
