@@ -1,0 +1,5 @@
+[Device]
+Name=Fury Tanto T4 Wireless
+DeviceMatch=usb:1d57:3005;usb:1d57:3006
+Driver=tanto
+DeviceType=mouse
