@@ -137,7 +137,7 @@ cougar_read_profile(struct ratbag_device *device,
         if (rc < 0)
                 return rc;
 
-        if (rc != sizeof(raw))
+        if (rc < 2052)
                 return -EIO;
 
         if (raw[0] != COUGAR_REPORT_PROFILE ||
