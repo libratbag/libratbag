@@ -1,0 +1,18 @@
+# Delux M800 (2021) wired + 2.4GHz receiver (SinoWealth, sensor PMW3325)
+# Driver: sinowealth + M800DB variant (reports 0x05/0x08, 154-byte config).
+# Reverse-engineered from USBPcap captures, see PROTOCOLO_M800DB.md
+# (in ~/Downloads/mouse).
+[Device]
+Name=Delux M800 2021 wired
+DeviceMatch=usb:258a:002e;usb:258a:002f
+DeviceType=mouse
+Driver=sinowealth
+
+[Driver/sinowealth/devices/2800]
+Buttons=6
+DeviceName=Delux M800 2021 wired
+# Color order confirmed by capture (red=ff0000, blue=0000ff, orange=ff8000).
+LedType=RGB
+# Single profile: cmds 0x11/0x21 return identical data, 0x31 errors.
+Profiles=1
+SensorType=PMW3325
