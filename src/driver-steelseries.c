@@ -76,6 +76,15 @@
 #define STEELSERIES_ID_DPI_PROTOCOL4		0x15
 #define STEELSERIES_ID_REPORT_RATE_PROTOCOL4	0x17
 
+#define STEELSERIES_ID_SAVE_PROTOCOL5		0x11
+#define STEELSERIES_ID_LED_PROTOCOL5		0x21
+#define STEELSERIES_ID_RAINBOW_PROTOCOL5	0x22
+#define STEELSERIES_ID_REPORT_RATE_PROTOCOL5	0x2b
+#define STEELSERIES_ID_DPI_PROTOCOL5		0x2d
+#define STEELSERIES_ID_FIRMWARE_PROTOCOL5	0x90
+#define STEELSERIES_ID_SETTINGS_PROTOCOL5	0xad
+#define STEELSERIES_ID_BATTERY_PROTOCOL5	0x92
+
 #define STEELSERIES_BUTTON_OFF			0x00
 #define STEELSERIES_BUTTON_RES_CYCLE		0x30
 #define STEELSERIES_BUTTON_WHEEL_UP		0x31
@@ -83,6 +92,54 @@
 #define STEELSERIES_BUTTON_KEY			0x10
 #define STEELSERIES_BUTTON_KBD			0x51
 #define STEELSERIES_BUTTON_CONSUMER		0x61
+
+/* TrueMove Air sensor DPI-to-byte lookup table (100-18000 DPI, step 100).
+ * Index 0 = 100 DPI, index 179 = 18000 DPI. */
+static const uint8_t steelseries_truemove_air_dpi_table[] = {
+	0x00, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x09, 0x0a, 0x0b, /*  100-1000 */
+	0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12, 0x13, 0x14, 0x16, 0x17, /* 1100-2000 */
+	0x18, 0x19, 0x1a, 0x1b, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x23, /* 2100-3000 */
+	0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2c, 0x2d, 0x2e, 0x2f, /* 3100-4000 */
+	0x30, 0x32, 0x33, 0x34, 0x35, 0x36, 0x38, 0x39, 0x3a, 0x3b, /* 4100-5000 */
+	0x3c, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x44, 0x45, 0x46, 0x47, /* 5100-6000 */
+	0x48, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x50, 0x51, 0x52, 0x53, /* 6100-7000 */
+	0x54, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5c, 0x5d, 0x5e, 0x5f, /* 7100-8000 */
+	0x60, 0x62, 0x63, 0x64, 0x65, 0x66, 0x68, 0x69, 0x6a, 0x6b, /* 8100-9000 */
+	0x6c, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x74, 0x75, 0x76, 0x77, /* 9100-10000 */
+	0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x80, 0x81, 0x82, 0x83, /* 10100-11000 */
+	0x84, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8c, 0x8d, 0x8e, 0x8f, /* 11100-12000 */
+	0x90, 0x92, 0x93, 0x94, 0x95, 0x96, 0x98, 0x99, 0x9a, 0x9b, /* 12100-13000 */
+	0x9c, 0x9e, 0x9f, 0xa0, 0xa1, 0xa2, 0xa4, 0xa5, 0xa6, 0xa7, /* 13100-14000 */
+	0xa8, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xb0, 0xb1, 0xb2, 0xb3, /* 14100-15000 */
+	0xb4, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, /* 15100-16000 */
+	0xbf, 0xc0, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, /* 16100-17000 */
+	0xcb, 0xcc, 0xcd, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd5, 0xd6, /* 17100-18000 */
+};
+
+static uint8_t
+steelseries_dpi_to_raw_v5(unsigned int dpi)
+{
+	unsigned int index;
+
+	if (dpi < 100)
+		dpi = 100;
+	if (dpi > 18000)
+		dpi = 18000;
+
+	index = (dpi / 100) - 1;
+	return steelseries_truemove_air_dpi_table[index];
+}
+
+static unsigned int
+steelseries_raw_to_dpi_v5(uint8_t raw)
+{
+	for (unsigned int i = 0; i < ARRAY_LENGTH(steelseries_truemove_air_dpi_table); i++) {
+		if (steelseries_truemove_air_dpi_table[i] == raw)
+			return (i + 1) * 100;
+	}
+	/* If not found, approximate */
+	return (unsigned int)raw * 84;
+}
 
 struct steelseries_point {
 	struct list link;
@@ -142,8 +199,17 @@ steelseries_test_hidraw(struct ratbag_device *device)
 			  "it may show up as a duplicate configurable device in libratbag\n");
 	}
 
-	if (device_version > 1)
-		return ratbag_hidraw_has_report(device, STEELSERIES_REPORT_ID_1);
+	if (device_version > 1) {
+		if (ratbag_hidraw_has_report(device, STEELSERIES_REPORT_ID_1))
+			return true;
+
+		/* v5 devices (e.g. Aerox 9) have no numbered report IDs;
+		 * match the vendor control interface by usage page instead. */
+		if (device_version == 5)
+			return ratbag_hidraw_get_usage_page(device, 0) == 0xffc0;
+
+		return false;
+	}
 
 	return true;
 }
@@ -210,6 +276,32 @@ steelseries_get_firmware_version(struct ratbag_device *device, int *major_out, i
 	case 4:
 	default:
 		return -ENOTSUP;
+	case 5: {
+		uint8_t fwbuf[STEELSERIES_REPORT_SIZE] = {0};
+
+		msg.msg.parameters[0] = STEELSERIES_ID_FIRMWARE_PROTOCOL5;
+		msg_len = STEELSERIES_REPORT_SIZE;
+
+		msleep(10);
+		ret = ratbag_hidraw_output_report(device, msg.data, msg_len);
+		if (ret < 0)
+			return ret;
+
+		ret = ratbag_hidraw_read_input_report_index(device, fwbuf, sizeof(fwbuf),
+							    STEELSERIES_INPUT_HIDRAW, NULL);
+		if (ret < 0)
+			return ret;
+
+		/* v5 returns ASCII string like "1.2.4" */
+		for (int i = 0; i < (int)sizeof(fwbuf) - 1; i++) {
+			if (fwbuf[i] == '.') {
+				*major_out = atoi((char *)fwbuf);
+				*minor_out = atoi((char *)&fwbuf[i + 1]);
+				return 0;
+			}
+		}
+		return -EPROTO;
+	}
 	}
 
 	msleep(10);
@@ -254,6 +346,81 @@ steelseries_read_settings(struct ratbag_device *device)
 	case 3:
 		msg.msg.parameters[0] = STEELSERIES_ID_SETTINGS_PROTOCOL3;
 		break;
+	case 5: {
+		/* Read DPI presets: cmd 0xAD -> [num_presets, active, v1, v2, ...] */
+		msg.msg.parameters[0] = STEELSERIES_ID_SETTINGS_PROTOCOL5;
+		msleep(10);
+		ret = ratbag_hidraw_output_report(device, msg.data, STEELSERIES_REPORT_SIZE);
+		if (ret < 0)
+			return ret;
+		ret = ratbag_hidraw_read_input_report_index(device, buf, STEELSERIES_REPORT_SIZE,
+							    STEELSERIES_INPUT_HIDRAW, NULL);
+		if (ret < 0)
+			return ret;
+
+		/* buf[0]=num_presets, buf[1]=active_index, buf[2..]=dpi values */
+		active_resolution = buf[1];
+		ratbag_device_for_each_profile(device, profile) {
+			ratbag_profile_for_each_resolution(profile, resolution) {
+				resolution->is_active = resolution->index == active_resolution;
+				if (resolution->index + 2 < STEELSERIES_REPORT_SIZE) {
+					resolution->dpi_x = steelseries_raw_to_dpi_v5(buf[2 + resolution->index]);
+					resolution->dpi_y = resolution->dpi_x;
+				}
+			}
+		}
+
+		/* Read polling rate: cmd 0x2B -> [rate_code] */
+		memset(buf, 0, sizeof(buf));
+		memset(&msg, 0, sizeof(msg));
+		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE_PROTOCOL5;
+		msleep(10);
+		ret = ratbag_hidraw_output_report(device, msg.data, STEELSERIES_REPORT_SIZE);
+		if (ret < 0)
+			return ret;
+		ret = ratbag_hidraw_read_input_report_index(device, buf, STEELSERIES_REPORT_SIZE,
+							    STEELSERIES_INPUT_HIDRAW, NULL);
+		if (ret < 0)
+			return ret;
+
+		ratbag_device_for_each_profile(device, profile) {
+			switch (buf[1]) {
+			case 0x00: profile->hz = 1000; break;
+			case 0x01: profile->hz = 500; break;
+			case 0x02: profile->hz = 250; break;
+			case 0x03: profile->hz = 125; break;
+			default: profile->hz = 1000; break;
+			}
+		}
+
+		/* Read LED colors: cmd 0xA6-0xA8 -> [enabled, mode, R, G, B] */
+		ratbag_device_for_each_profile(device, profile) {
+			ratbag_profile_for_each_led(profile, led) {
+				memset(buf, 0, sizeof(buf));
+				memset(&msg, 0, sizeof(msg));
+				msg.msg.parameters[0] = 0xa6 + led->index;
+				msleep(10);
+				ret = ratbag_hidraw_output_report(device, msg.data, STEELSERIES_REPORT_SIZE);
+				if (ret < 0)
+					continue;
+				ret = ratbag_hidraw_read_input_report_index(device, buf, STEELSERIES_REPORT_SIZE,
+									   STEELSERIES_INPUT_HIDRAW, NULL);
+				if (ret < 0)
+					continue;
+
+				/* buf[0]=enabled, buf[1]=mode, buf[2]=R, buf[3]=G, buf[4]=B */
+				if (buf[0])
+					led->mode = RATBAG_LED_ON;
+				else
+					led->mode = RATBAG_LED_OFF;
+				led->color.red = buf[2];
+				led->color.green = buf[3];
+				led->color.blue = buf[4];
+			}
+		}
+
+		return 0;
+	}
 	default:
 		return -ENOTSUP;
 	}
@@ -398,9 +565,11 @@ steelseries_probe(struct ratbag_device *device)
 			}
 			ratbag_led_set_mode_capability(led, RATBAG_LED_OFF);
 			ratbag_led_set_mode_capability(led, RATBAG_LED_ON);
-			ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
-			if (device_version >= 2)
-				ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+			if (device_version != 5) {
+				ratbag_led_set_mode_capability(led, RATBAG_LED_BREATHING);
+				if (device_version >= 2)
+					ratbag_led_set_mode_capability(led, RATBAG_LED_CYCLE);
+			}
 		}
 	}
 
@@ -482,6 +651,23 @@ steelseries_write_dpi(struct ratbag_resolution *resolution)
 		msg.msg.parameters[1] = (uint8_t)resolution->index + 1;
 		msg.msg.parameters[2] = (uint8_t)(resolution->dpi_x / (size_t)dpirange->step - 1);
 		break;
+	case 5: {
+		/* v5 writes all DPI presets at once: [0x2D, num_presets, dpi1, dpi2, ...] */
+		struct ratbag_resolution *res;
+		unsigned int count = 0;
+
+		buf_len = STEELSERIES_REPORT_SIZE;
+		msg.msg.parameters[0] = STEELSERIES_ID_DPI_PROTOCOL5;
+
+		ratbag_profile_for_each_resolution(resolution->profile, res)
+			count++;
+
+		msg.msg.parameters[1] = (uint8_t)count;
+		ratbag_profile_for_each_resolution(resolution->profile, res) {
+			msg.msg.parameters[2 + res->index] = steelseries_dpi_to_raw_v5(res->dpi_x);
+		}
+		break;
+	}
 	default:
 		return -ENOTSUP;
 	}
@@ -538,6 +724,24 @@ steelseries_write_report_rate(struct ratbag_profile *profile)
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE_PROTOCOL3;
 		msg.msg.parameters[2] = (uint8_t)1000 / profile->hz;
+		break;
+	case 5:
+		if (profile->hz >= 1000) {
+			profile->hz = 1000;
+			reported_rate = 0x00;
+		} else if (profile->hz >= 375) {
+			profile->hz = 500;
+			reported_rate = 0x01;
+		} else if (profile->hz >= 188) {
+			profile->hz = 250;
+			reported_rate = 0x02;
+		} else {
+			profile->hz = 125;
+			reported_rate = 0x03;
+		}
+		buf_len = STEELSERIES_REPORT_SIZE;
+		msg.msg.parameters[0] = STEELSERIES_ID_REPORT_RATE_PROTOCOL5;
+		msg.msg.parameters[1] = reported_rate;
 		break;
 	default:
 		return -ENOTSUP;
@@ -956,6 +1160,33 @@ steelseries_write_led(struct ratbag_led *led)
 		return steelseries_write_led_v2(led);
 	if (device_version == 3)
 		return steelseries_write_led_v3(led);
+	if (device_version == 5) {
+		/* v5: [0x21, 0x01, zone_id, R, G, B] */
+		union steelseries_message msg = {
+			.msg.report_id = STEELSERIES_REPORT_ID,
+			.msg.parameters = {0},
+		};
+		int ret;
+
+		msg.msg.parameters[0] = STEELSERIES_ID_LED_PROTOCOL5;
+		msg.msg.parameters[1] = 0x01;
+		msg.msg.parameters[2] = (uint8_t)led->index;
+		if (led->mode == RATBAG_LED_OFF) {
+			msg.msg.parameters[3] = 0;
+			msg.msg.parameters[4] = 0;
+			msg.msg.parameters[5] = 0;
+		} else {
+			msg.msg.parameters[3] = led->color.red;
+			msg.msg.parameters[4] = led->color.green;
+			msg.msg.parameters[5] = led->color.blue;
+		}
+
+		msleep(10);
+		ret = ratbag_hidraw_output_report(device, msg.data, STEELSERIES_REPORT_SIZE);
+		if (ret < 0)
+			return ret;
+		return 0;
+	}
 
 	return -ENOTSUP;
 }
@@ -981,6 +1212,9 @@ steelseries_write_save(struct ratbag_device *device)
 	} else if (device_version == 3 || device_version == 4) {
 		buf_len = STEELSERIES_REPORT_SIZE;
 		msg.msg.parameters[0] = STEELSERIES_ID_SAVE_PROTOCOL3;
+	} else if (device_version == 5) {
+		buf_len = STEELSERIES_REPORT_SIZE;
+		msg.msg.parameters[0] = STEELSERIES_ID_SAVE_PROTOCOL5;
 	} else {
 		return -ENOTSUP;
 	}
