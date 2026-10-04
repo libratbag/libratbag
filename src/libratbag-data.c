@@ -57,6 +57,7 @@ enum driver {
 	GSKILL,
 	LOGITECH_G300,
 	LOGITECH_G600,
+	RAZER,
 	STEELSERIES,
 	ASUS,
 	SINOWEALTH,
@@ -85,6 +86,14 @@ struct data_hidpp10 {
 
 struct data_sinowealth {
 	struct list supported_devices;
+};
+
+struct data_razer {
+	int transaction_id;
+	int button_count;
+	int dpi_stage_count;
+	struct dpi_list *dpi_list;
+	struct dpi_range *dpi_range;
 };
 
 struct data_steelseries {
@@ -122,6 +131,7 @@ struct ratbag_device_data {
 		struct data_hidpp20 hidpp20;
 		struct data_hidpp10 hidpp10;
 		struct data_sinowealth sinowealth;
+		struct data_razer razer;
 		struct data_steelseries steelseries;
 		struct data_asus asus;
 	};
@@ -308,6 +318,51 @@ init_data_sinowealth(struct ratbag *ratbag,
 		}
 
 		list_insert(&data->sinowealth.supported_devices, &device->link);
+	}
+}
+
+static void
+init_data_razer(struct ratbag *ratbag,
+		GKeyFile *keyfile,
+		struct ratbag_device_data *data)
+{
+	const char *group = "Driver/razer";
+	GError *error = NULL;
+	_cleanup_(freep) char *dpi_range = NULL;
+	int num;
+
+	data->razer.transaction_id = -1;
+	data->razer.button_count = -1;
+	data->razer.dpi_stage_count = -1;
+	data->razer.dpi_list = NULL;
+	data->razer.dpi_range = NULL;
+
+	/*
+	 * The transaction id groups request and response and is model
+	 * specific; newer devices use 0x1f, older ones 0xff.
+	 */
+	num = g_key_file_get_integer(keyfile, group, "TransactionId", &error);
+	if (!error && num > 0 && num <= 0xff)
+		data->razer.transaction_id = num;
+	g_clear_error(&error);
+
+	num = g_key_file_get_integer(keyfile, group, "Buttons", &error);
+	if (!error && num >= 0)
+		data->razer.button_count = num;
+	g_clear_error(&error);
+
+	num = g_key_file_get_integer(keyfile, group, "DpiStages", &error);
+	if (!error && num > 0)
+		data->razer.dpi_stage_count = num;
+	g_clear_error(&error);
+
+	dpi_range = g_key_file_get_string(keyfile, group, "DpiRange", NULL);
+	if (dpi_range) {
+		data->razer.dpi_range = dpi_range_from_string(dpi_range);
+	} else {
+		dpi_range = g_key_file_get_string(keyfile, group, "DpiList", NULL);
+		if (dpi_range)
+			data->razer.dpi_list = dpi_list_from_string(dpi_range);
 	}
 }
 
@@ -508,6 +563,7 @@ static const struct driver_map {
 	{ GSKILL, "gskill", NULL },
 	{ LOGITECH_G300, "logitech_g300", NULL},
 	{ LOGITECH_G600, "logitech_g600", NULL},
+	{ RAZER, "razer", init_data_razer },
 	{ STEELSERIES, "steelseries", init_data_steelseries },
 	{ ASUS, "asus", init_data_asus },
 	{ SINOWEALTH, "sinowealth", init_data_sinowealth },
@@ -562,6 +618,10 @@ ratbag_device_data_destroy(struct ratbag_device_data *data)
 
 		break;
 	}
+	case RAZER:
+		dpi_list_free(data->razer.dpi_list);
+		free(data->razer.dpi_range);
+		break;
 	case STEELSERIES:
 		dpi_list_free(data->steelseries.dpi_list);
 		free(data->steelseries.dpi_range);
@@ -1059,4 +1119,46 @@ ratbag_device_data_asus_get_quirks(const struct ratbag_device_data *data)
 {
 	assert(data->drivertype == ASUS);
 	return data->asus.quirks;
+}
+
+/* Razer */
+
+int
+ratbag_device_data_razer_get_transaction_id(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == RAZER);
+
+	return data->razer.transaction_id;
+}
+
+int
+ratbag_device_data_razer_get_button_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == RAZER);
+
+	return data->razer.button_count;
+}
+
+int
+ratbag_device_data_razer_get_dpi_stage_count(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == RAZER);
+
+	return data->razer.dpi_stage_count;
+}
+
+struct dpi_list *
+ratbag_device_data_razer_get_dpi_list(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == RAZER);
+
+	return data->razer.dpi_list;
+}
+
+struct dpi_range *
+ratbag_device_data_razer_get_dpi_range(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == RAZER);
+
+	return data->razer.dpi_range;
 }

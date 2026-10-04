@@ -103,6 +103,32 @@ ratbag_device_data_hidpp20_get_quirks(const struct ratbag_device_data *data);
 const struct list *
 ratbag_device_data_sinowealth_get_supported_devices(const struct ratbag_device_data *data);
 
+/* Razer */
+
+/**
+ * @return The transaction id or -1 if not set
+ */
+int
+ratbag_device_data_razer_get_transaction_id(const struct ratbag_device_data *data);
+
+/**
+ * @return The button count or -1 if not set
+ */
+int
+ratbag_device_data_razer_get_button_count(const struct ratbag_device_data *data);
+
+/**
+ * @return The number of onboard DPI stages or -1 if not set
+ */
+int
+ratbag_device_data_razer_get_dpi_stage_count(const struct ratbag_device_data *data);
+
+struct dpi_list *
+ratbag_device_data_razer_get_dpi_list(const struct ratbag_device_data *data);
+
+struct dpi_range *
+ratbag_device_data_razer_get_dpi_range(const struct ratbag_device_data *data);
+
 /* SteelSeries */
 
 /**
