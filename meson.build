@@ -185,6 +185,8 @@ src_libratbag = [
 	'src/driver-steelseries.h',
 	'src/driver-sinowealth.c',
 	'src/driver-sinowealth.h',
+	'src/driver-hitscan.c',
+	'src/driver-hitscan.h',
 	'src/driver-sinowealth-nubwo.c',
 	'src/driver-marsgaming/driver-marsgaming.c',
 	'src/driver-marsgaming/marsgaming-buttons.c',
