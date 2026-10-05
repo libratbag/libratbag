@@ -1160,8 +1160,12 @@ hidpp20drv_read_color_leds(struct ratbag_device *device)
 
 	if(drv_data->capabilities & HIDPP_CAP_COLOR_LED_EFFECTS_8070)
 		return hidpp20drv_read_color_leds_8070(drv_data);
-	else if (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071)
+	else if (drv_data->capabilities & HIDPP_CAP_RGB_EFFECTS_8071) {
+		/* G502 X Plus does not terminate RGB 0x8071 enumeration. */
+		if (drv_data->dev->quirks & HIDPP20_QUIRK_G502X_PLUS)
+			return 0;
 		return hidpp20drv_read_color_leds_8071(drv_data);
+	}
 
 	return 0;
 }
