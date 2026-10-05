@@ -583,6 +583,7 @@ ratbag_led_set_mode_capability(struct ratbag_led *led,
 }
 
 /* list of all supported drivers */
+extern struct ratbag_driver beken_driver;
 extern struct ratbag_driver etekcity_driver;
 extern struct ratbag_driver hidpp20_driver;
 extern struct ratbag_driver hidpp10_driver;
