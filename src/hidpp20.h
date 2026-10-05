@@ -618,6 +618,12 @@ enum hidpp20_color_led_zone_effect {
 /* modifiers */
 #define HIDPP20_MODIFIER_KEY_CTRL			0x01
 #define HIDPP20_MODIFIER_KEY_SHIFT			0x02
+#define HIDPP20_MODIFIER_KEY_ALT			0x04
+#define HIDPP20_MODIFIER_KEY_GUI			0x08
+#define HIDPP20_MODIFIER_KEY_RIGHT_CTRL			0x10
+#define HIDPP20_MODIFIER_KEY_RIGHT_SHIFT		0x20
+#define HIDPP20_MODIFIER_KEY_RIGHT_ALT			0x40
+#define HIDPP20_MODIFIER_KEY_RIGHT_GUI			0x80
 
 #define HIDPP20_DPI_COUNT				5
 #define HIDPP20_LED_COUNT				2
@@ -864,6 +870,10 @@ union hidpp20_macro_data {
 		uint8_t key;
 	} __attribute__((packed)) key;
 	struct {
+		uint8_t type; /* HIDPP20_MACRO_BUTTON_DOWN or HIDPP20_MACRO_BUTTON_UP */
+		uint16_t buttons; /* bitmask, bit 0 being the left button */
+	} __attribute__((packed)) button;
+	struct {
 		uint8_t type; /* HIDPP20_MACRO_JUMP */
 		uint8_t offset;
 		uint8_t page;
@@ -886,6 +896,7 @@ struct hidpp20_profile {
 	unsigned current_dpi;
 	uint16_t dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
+	/* each macro is terminated by a HIDPP20_MACRO_END entry */
 	union hidpp20_macro_data *macros[32];
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
 	struct hidpp20_led alt_leds[HIDPP20_LED_COUNT];
@@ -991,6 +1002,28 @@ hidpp20_onboard_profiles_set_current_dpi_index(struct hidpp20_device *device,
 int
 hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
 				struct hidpp20_profiles *profiles_list);
+
+/**
+ * Maximum number of hidpp20_macro_data entries that fit in a single sector,
+ * including the terminating HIDPP20_MACRO_END(which only takes 1 byte).
+ */
+unsigned int
+hidpp20_onboard_profiles_macro_capacity(const struct hidpp20_profiles *profiles_list);
+
+/**
+ * Bind a button to a macro, an array of macro opcodes with the delays in host
+ * byte order, terminated by a HIDPP20_MACRO_END entry. The array may be at
+ * most hidpp20_onboard_profiles_macro_capacity() entries long, END included.
+ * The entries are copied, and the onboard address of the macro is only assigned
+ * when the profiles are committed.
+ *
+ * returns 0 or a negative error.
+ */
+int
+hidpp20_onboard_profiles_set_macro(struct hidpp20_profiles *profiles_list,
+				   unsigned int profile_index,
+				   unsigned int button_index,
+				   const union hidpp20_macro_data *macro);
 
 enum ratbag_button_action_special
 hidpp20_onboard_profiles_get_special(uint8_t code);

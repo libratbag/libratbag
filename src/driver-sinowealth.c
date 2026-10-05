@@ -1659,6 +1659,13 @@ sinowealth_update_macro_events_from_action(
 			prev_mouse_macro_event->delay = (uint8_t)*timeout;
 			break;
 		}
+		case RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE:
+		case RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED:
+		case RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED:
+			log_error(device->ratbag,
+				  "Macro for button %u: this device does not support repeating macros\n",
+				  button->index);
+			return -ENOTSUP;
 		case RATBAG_MACRO_EVENT_NONE:
 			/* Handled separately above. */
 			break;

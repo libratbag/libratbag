@@ -523,6 +523,12 @@ roccat_write_macro(struct ratbag_button *button,
 		case RATBAG_MACRO_EVENT_WAIT:
 			macro->keys[--count].time = action->macro->events[i].event.timeout;
 			break;
+		case RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE:
+		case RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED:
+		case RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED:
+			log_error(device->ratbag,
+				  "This device does not support repeating macros\n");
+			return -ENOTSUP;
 		case RATBAG_MACRO_EVENT_INVALID:
 		case RATBAG_MACRO_EVENT_NONE:
 			/* should not happen */

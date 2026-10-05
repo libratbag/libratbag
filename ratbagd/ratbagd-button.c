@@ -239,6 +239,11 @@ static int ratbagd_button_get_macro(sd_bus *bus,
 		case RATBAG_MACRO_EVENT_WAIT:
 			value = ratbag_button_macro_get_event_timeout(macro, idx);
 			break;
+		case RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE:
+		case RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED:
+		case RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED:
+			value = 0;
+			break;
 		default:
 			abort();
 		}
