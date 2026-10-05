@@ -1,0 +1,33 @@
+ARG UBUNTU_VERSION=26.04
+FROM ubuntu:${UBUNTU_VERSION}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        check \
+        gcc \
+        g++ \
+        git \
+        libevdev-dev \
+        libglib2.0-dev \
+        libjson-glib-dev \
+        libsystemd-dev \
+        libudev-dev \
+        libunistring-dev \
+        meson \
+        ninja-build \
+        pkg-config \
+        python3 \
+        python3-dev \
+        python3-evdev \
+        python3-gi \
+        python3-pip \
+        swig \
+        systemd-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+CMD ["bash"]

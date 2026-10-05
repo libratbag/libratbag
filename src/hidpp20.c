@@ -1971,11 +1971,14 @@ hidpp20_onboard_profiles_write_end(struct hidpp20_device *device,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_WRITE_END,
 	};
 
-	rc = hidpp20_request_command(device, &msg);
-	if (rc)
-		return rc;
+	rc = hidpp20_request_command_allow_error(device, &msg, true);
+	/* Some devices commit the write but report a hardware error here. */
+	if (rc == HIDPP20_ERR_HARDWARE_ERROR)
+		return 0;
+	if (rc > 0)
+		return -EPROTO;
 
-	return 0;
+	return rc;
 }
 
 static int
@@ -2314,14 +2317,15 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 
 static int
 hidpp20_onboard_profiles_macro_next(struct hidpp20_device *device,
-				    uint8_t memory[32],
+				    uint8_t *memory,
+				    uint16_t sector_size,
 				    uint16_t *index,
 				    union hidpp20_macro_data *macro)
 {
 	int rc = 0;
 	unsigned int step = 1;
 
-	if (*index >= 32 - sizeof(union hidpp20_macro_data)) {
+	if (*index >= sector_size - sizeof(union hidpp20_macro_data)) {
 		hidpp_log_error(&device->base, "error while parsing macro.\n");
 		return -EFAULT;
 	}
@@ -2350,7 +2354,7 @@ hidpp20_onboard_profiles_macro_next(struct hidpp20_device *device,
 		rc = -EFAULT;
 	}
 
-	if ((*index + step) & 0xF0)
+	if (*index + step > (unsigned int)sector_size - 1)
 		/* the next item will be on the following chunk */
 		return -ENOMEM;
 
@@ -2399,6 +2403,7 @@ hidpp20_onboard_profiles_read_macro(struct hidpp20_device *device,
 
 		rc = hidpp20_onboard_profiles_macro_next(device,
 							 memory,
+							 profiles->sector_size,
 							 &mem_index,
 							 &macro[index]);
 		if (rc == -EFAULT)
@@ -2550,6 +2555,302 @@ hidpp20_onboard_profiles_write_dict(struct hidpp20_device *device,
 		hidpp_log_error(&device->base, "failed to write profile dictionary\n");
 
 	return rc;
+}
+
+static union hidpp20_macro_data
+hidpp20_onboard_profiles_macro_data_to_device(union hidpp20_macro_data macro)
+{
+	if (macro.any.type == HIDPP20_MACRO_DELAY)
+		macro.delay.time = hidpp_cpu_to_be_u16(macro.delay.time);
+
+	return macro;
+}
+
+static int
+hidpp20_onboard_profiles_write_macro_sector(struct hidpp20_device *device,
+					    struct hidpp20_profiles *profiles,
+					    uint16_t sector,
+					    uint8_t *data)
+{
+	int rc;
+
+	hidpp_log_buf_raw(&device->base, "macro: ", data, 16);
+
+	rc = hidpp20_onboard_profiles_write_sector(device,
+						   sector,
+						   profiles->sector_size,
+						   data,
+						   false);
+	if (rc)
+		hidpp_log_error(&device->base,
+				"failed to write macro sector 0x%04x\n",
+				sector);
+
+	return rc;
+}
+
+static int
+hidpp20_onboard_profiles_write_macro(struct hidpp20_device *device,
+				     struct hidpp20_profiles *profiles,
+				     struct hidpp20_profile *profile,
+				     unsigned int button_index,
+				     uint16_t sector)
+{
+	_cleanup_free_ uint8_t *data = NULL;
+	union hidpp20_macro_data *macro = profile->macros[button_index];
+	uint16_t current_sector = sector;
+	uint8_t offset = 0;
+	uint8_t macro_area;
+	int rc;
+
+	if (!macro)
+		return -EINVAL;
+
+	if (current_sector >= profiles->sector_count)
+		return -ENOSPC;
+
+	profile->buttons[button_index].macro.zero = current_sector;
+	profile->buttons[button_index].macro.offset = 0;
+
+	data = hidpp20_onboard_profiles_allocate_sector(profiles);
+	if (!data)
+		return -ENOMEM;
+
+	memset(data, 0xff, profiles->sector_size);
+	macro_area = profiles->sector_size;
+
+	while (macro->any.type != HIDPP20_MACRO_END) {
+		union hidpp20_macro_data stored;
+
+		if (offset + 2 * sizeof(*macro) > macro_area) {
+			union hidpp20_macro_data jump = {
+				.jump.type = HIDPP20_MACRO_JUMP,
+				.jump.offset = 0,
+				.jump.page = current_sector + 1,
+			};
+
+			if (current_sector + 1 >= profiles->sector_count)
+				return -ENOSPC;
+
+			memcpy(data + offset, &jump, sizeof(jump));
+
+			rc = hidpp20_onboard_profiles_write_macro_sector(device,
+									 profiles,
+									 current_sector,
+									 data);
+			if (rc)
+				return rc;
+
+			current_sector++;
+			offset = 0;
+			memset(data, 0xff, profiles->sector_size);
+		}
+
+		stored = hidpp20_onboard_profiles_macro_data_to_device(*macro);
+		memcpy(data + offset, &stored, sizeof(stored));
+		offset += sizeof(stored);
+		macro++;
+	}
+
+	memcpy(data + offset, macro, sizeof(*macro));
+
+	rc = hidpp20_onboard_profiles_write_macro_sector(device,
+							 profiles,
+							 current_sector,
+							 data);
+	if (rc)
+		return rc;
+
+	return 0;
+}
+
+static unsigned int
+hidpp20_onboard_profiles_macro_sector_count(union hidpp20_macro_data *macro,
+					    uint16_t sector_size,
+					    uint8_t offset)
+{
+	unsigned int records = 0;
+	unsigned int sectors = 1;
+	unsigned int macro_area = sector_size;
+
+	while (macro && macro->any.type != HIDPP20_MACRO_END) {
+		records++;
+		macro++;
+	}
+
+	while (records > ((macro_area - offset) / sizeof(union hidpp20_macro_data)) - 1) {
+		records -= ((macro_area - offset) / sizeof(union hidpp20_macro_data)) - 1;
+		offset = 0;
+		sectors++;
+	}
+
+	return sectors;
+}
+
+static void
+hidpp20_onboard_profiles_mark_macro_used(struct hidpp20_profile *profile,
+					 unsigned int button_index,
+					 uint16_t sector_size,
+					 bool used[UINT8_MAX + 1])
+{
+	uint8_t sector = profile->buttons[button_index].macro.zero;
+	unsigned int count;
+	unsigned int i;
+
+	if (!profile->macros[button_index])
+		return;
+
+	count = hidpp20_onboard_profiles_macro_sector_count(
+		profile->macros[button_index],
+		sector_size,
+		profile->buttons[button_index].macro.offset);
+
+	for (i = 0; i < count && sector + i <= UINT8_MAX; i++)
+		used[sector + i] = true;
+}
+
+static int
+hidpp20_onboard_profiles_is_empty_sector(struct hidpp20_device *device,
+					 struct hidpp20_profiles *profiles,
+					 uint16_t sector)
+{
+	_cleanup_free_ uint8_t *data = NULL;
+	unsigned int i;
+	int rc;
+
+	data = hidpp20_onboard_profiles_allocate_sector(profiles);
+	if (!data)
+		return -ENOMEM;
+
+	rc = hidpp20_onboard_profiles_read_sector(device,
+						  sector,
+						  profiles->sector_size,
+						  data);
+	if (rc)
+		return rc;
+
+	for (i = 0; i < (unsigned int)profiles->sector_size - 1; i++) {
+		if (data[i] != 0xff)
+			return 0;
+	}
+
+	return data[profiles->sector_size - 1] == 0xff ||
+	       data[profiles->sector_size - 1] == 0x00;
+}
+
+static int
+hidpp20_onboard_profiles_find_free_macro_sectors(struct hidpp20_device *device,
+						 struct hidpp20_profiles *profiles,
+						 bool used[UINT8_MAX + 1],
+						 unsigned int count)
+{
+	uint16_t sector;
+	unsigned int i;
+
+	for (sector = profiles->num_profiles + 1; sector < profiles->sector_count; sector++) {
+		if (sector + count > profiles->sector_count)
+			return -ENOSPC;
+
+		for (i = 0; i < count; i++) {
+			if (used[sector + i])
+				break;
+		}
+
+		if (i == count)
+			return sector;
+	}
+
+	return -ENOSPC;
+}
+
+static int
+hidpp20_onboard_profiles_write_macros(struct hidpp20_device *device,
+				      struct hidpp20_profiles *profiles_list)
+{
+	struct hidpp20_profile *profile;
+	bool used[UINT8_MAX + 1] = {0};
+	unsigned int p, b, i;
+	int rc;
+
+	for (p = 0; p <= profiles_list->num_profiles && p <= UINT8_MAX; p++)
+		used[p] = true;
+
+	for (p = 0; p < profiles_list->num_profiles; p++) {
+		profile = &profiles_list->profiles[p];
+
+		for (b = 0; b < profiles_list->num_buttons; b++) {
+			if (profile->buttons[b].any.type != HIDPP20_BUTTON_MACRO)
+				continue;
+
+			if (profile->dirty_macros & (1U << b))
+				continue;
+
+			hidpp20_onboard_profiles_mark_macro_used(profile,
+								 b,
+								 profiles_list->sector_size,
+								 used);
+		}
+	}
+
+	for (p = 0; p < profiles_list->num_profiles; p++) {
+		profile = &profiles_list->profiles[p];
+
+		for (b = 0; b < profiles_list->num_buttons; b++) {
+			unsigned int count;
+			uint8_t sector;
+
+			if (!(profile->dirty_macros & (1U << b)))
+				continue;
+
+			if (profile->buttons[b].any.type != HIDPP20_BUTTON_MACRO)
+				continue;
+
+			if (!profile->macros[b])
+				return -EINVAL;
+
+			count = hidpp20_onboard_profiles_macro_sector_count(profile->macros[b],
+									    profiles_list->sector_size,
+									    0);
+			sector = profile->buttons[b].macro.zero;
+
+			rc = -ENOSPC;
+			if (sector > profiles_list->num_profiles &&
+			    sector + count <= profiles_list->sector_count) {
+				for (i = 0; i < count; i++) {
+					if (used[sector + i])
+						break;
+				}
+				if (i == count)
+					rc = sector;
+			}
+
+			if (rc < 0)
+				rc = hidpp20_onboard_profiles_find_free_macro_sectors(device,
+										      profiles_list,
+										      used,
+										      count);
+			if (rc < 0)
+				return rc;
+
+			rc = hidpp20_onboard_profiles_write_macro(device,
+								  profiles_list,
+								  profile,
+								  b,
+								  rc);
+			if (rc)
+				return rc;
+
+			hidpp20_onboard_profiles_mark_macro_used(profile,
+								 b,
+								 profiles_list->sector_size,
+								 used);
+		}
+	}
+
+	for (p = 0; p < profiles_list->num_profiles; p++)
+		profiles_list->profiles[p].dirty_macros = 0;
+
+	return 0;
 }
 
 static void
@@ -2997,6 +3298,10 @@ hidpp20_onboard_profiles_commit(struct hidpp20_device *device,
 	unsigned int i;
 	bool enabled_profile = false;
 	int rc;
+
+	rc = hidpp20_onboard_profiles_write_macros(device, profiles_list);
+	if (rc < 0)
+		return rc;
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
 		profile = &profiles_list->profiles[i];

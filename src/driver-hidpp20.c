@@ -81,6 +81,10 @@ struct hidpp20drv_data {
 	unsigned int num_leds;
 };
 
+static int
+hidpp20drv_update_macro_8100(struct ratbag_button *button,
+			     struct hidpp20_profile *profile);
+
 static void
 hidpp20drv_read_button_1b04(struct ratbag_button *button)
 {
@@ -523,6 +527,10 @@ hidpp20drv_update_button_1b04(struct ratbag_button *button)
 	return rc;
 }
 
+static void
+hidpp20drv_clear_macro_8100(struct ratbag_button *button,
+			    struct hidpp20_profile *profile);
+
 static int
 hidpp20drv_update_button_8100(struct ratbag_button *button)
 {
@@ -530,8 +538,6 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
 	struct ratbag_button_action *action = &button->action;
-	unsigned int modifiers, key;
-	int rc;
 	uint8_t code, type, subtype;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
@@ -541,39 +547,15 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 
 	switch (action->type) {
 	case RATBAG_BUTTON_ACTION_TYPE_BUTTON:
+		hidpp20drv_clear_macro_8100(button, profile);
 		profile->buttons[button->index].button.type = HIDPP20_BUTTON_HID_TYPE;
 		profile->buttons[button->index].button.subtype = HIDPP20_BUTTON_HID_TYPE_MOUSE;
 		profile->buttons[button->index].button.buttons = action->action.button;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
-		type = HIDPP20_BUTTON_HID_TYPE;
-		subtype = HIDPP20_BUTTON_HID_TYPE_KEYBOARD;
-		rc = ratbag_action_keycode_from_macro(action,
-						      &key,
-						      &modifiers);
-		if (rc < 0) {
-			log_error(device->ratbag,
-				  "Error while writing macro for button %d\n",
-				  button->index);
-		}
-
-		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
-		if (code == 0) {
-			subtype = HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL;
-			code = ratbag_hidraw_get_consumer_usage_from_keycode(device, key);
-			if (code == 0)
-				return -EINVAL;
-		}
-		profile->buttons[button->index].subany.type = type;
-		profile->buttons[button->index].subany.subtype = subtype;
-		if (subtype == HIDPP20_BUTTON_HID_TYPE_KEYBOARD) {
-			profile->buttons[button->index].keyboard_keys.key = code;
-			profile->buttons[button->index].keyboard_keys.modifier_flags = modifiers;
-		} else {
-			profile->buttons[button->index].consumer_control.consumer_control = code;
-		}
-		break;
+		return hidpp20drv_update_macro_8100(button, profile);
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
+		hidpp20drv_clear_macro_8100(button, profile);
 		type = HIDPP20_BUTTON_HID_TYPE;
 		subtype = HIDPP20_BUTTON_HID_TYPE_KEYBOARD;
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key);
@@ -593,6 +575,7 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		}
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
+		hidpp20drv_clear_macro_8100(button, profile);
 		code = hidpp20_onboard_profiles_get_code_from_special(action->action.special);
 		if (code == 0)
 			return -EINVAL;
@@ -600,7 +583,9 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		profile->buttons[button->index].special.special = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_NONE:
-		profile->buttons[button->index].disabled.type = HIDPP20_BUTTON_HID_TYPE_NOOP;
+		hidpp20drv_clear_macro_8100(button, profile);
+		profile->buttons[button->index].subany.type = HIDPP20_BUTTON_HID_TYPE;
+		profile->buttons[button->index].subany.subtype = HIDPP20_BUTTON_HID_TYPE_NOOP;
 		break;
 	default:
 		return -ENOTSUP;
@@ -1070,6 +1055,115 @@ hidpp20drv_update_report_rate(struct ratbag_profile *profile, int hz)
 	}
 
 	return -ENOTSUP;
+}
+
+static uint8_t
+hidpp20drv_macro_modifier_from_keycode(unsigned int key)
+{
+	switch (key) {
+	case KEY_LEFTCTRL: return 0x01;
+	case KEY_LEFTSHIFT: return 0x02;
+	case KEY_LEFTALT: return 0x04;
+	case KEY_LEFTMETA: return 0x08;
+	case KEY_RIGHTCTRL: return 0x10;
+	case KEY_RIGHTSHIFT: return 0x20;
+	case KEY_RIGHTALT: return 0x40;
+	case KEY_RIGHTMETA: return 0x80;
+	default: return 0x00;
+	}
+}
+
+static int
+hidpp20drv_update_macro_8100(struct ratbag_button *button,
+			     struct hidpp20_profile *profile)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct ratbag_macro *macro = button->action.macro;
+	union hidpp20_macro_data *data;
+	uint8_t sector = 0;
+	unsigned int i, index;
+
+	if (!macro)
+		return -EINVAL;
+
+	if (profile->buttons[button->index].any.type == HIDPP20_BUTTON_MACRO)
+		sector = profile->buttons[button->index].macro.zero;
+
+	data = zalloc((MAX_MACRO_EVENTS + 1) * sizeof(*data));
+	if (!data)
+		return -ENOMEM;
+
+	index = 0;
+	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
+		struct ratbag_macro_event *event = &macro->events[i];
+		uint8_t modifier;
+		uint8_t key;
+
+		switch (event->type) {
+		case RATBAG_MACRO_EVENT_NONE:
+			goto out;
+		case RATBAG_MACRO_EVENT_INVALID:
+			free(data);
+			return -EINVAL;
+		case RATBAG_MACRO_EVENT_WAIT:
+			if (event->event.timeout > UINT16_MAX) {
+				free(data);
+				return -EINVAL;
+			}
+
+			data[index].delay.type = HIDPP20_MACRO_DELAY;
+			data[index].delay.time = event->event.timeout;
+			index++;
+			break;
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			modifier = hidpp20drv_macro_modifier_from_keycode(event->event.key);
+			key = 0;
+
+			if (!modifier) {
+				key = ratbag_hidraw_get_keyboard_usage_from_keycode(device,
+										    event->event.key);
+				if (key == 0) {
+					free(data);
+					return -EINVAL;
+				}
+			}
+
+			data[index].key.type = event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ?
+					       HIDPP20_MACRO_KEY_PRESS :
+					       HIDPP20_MACRO_KEY_RELEASE;
+			data[index].key.modifier = modifier;
+			data[index].key.key = key;
+			index++;
+			break;
+		default:
+			free(data);
+			return -EINVAL;
+		}
+	}
+
+out:
+	data[index].end.type = HIDPP20_MACRO_END;
+
+	free(profile->macros[button->index]);
+	profile->macros[button->index] = data;
+
+	profile->buttons[button->index].macro.type = HIDPP20_BUTTON_MACRO;
+	profile->buttons[button->index].macro.page = button->index;
+	profile->buttons[button->index].macro.zero = sector;
+	profile->buttons[button->index].macro.offset = 0;
+	profile->dirty_macros |= 1U << button->index;
+
+	return 0;
+}
+
+static void
+hidpp20drv_clear_macro_8100(struct ratbag_button *button,
+			    struct hidpp20_profile *profile)
+{
+	free(profile->macros[button->index]);
+	profile->macros[button->index] = NULL;
+	profile->dirty_macros &= ~(1U << button->index);
 }
 
 static int
