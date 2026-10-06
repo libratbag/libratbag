@@ -1,0 +1,14 @@
+[Device]
+Name=Rapoo Rapoo Gaming Device
+# 1225=Dongle, 4425=wired
+DeviceMatch=usb:24ae:1225;usb:24ae:4425
+DeviceType=mouse
+Driver=rapoo
+
+[Driver/rapoo]
+DeviceName=Rapoo VT0Pro 4K
+Profiles=1
+
+#         0    1    2    3    4    5     6
+DpiList=500;1000;1500;2000;3000;8000;19000
+
