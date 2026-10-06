@@ -1693,3 +1693,41 @@ ratbag_hidraw_read_input_report_index(const struct ratbag_device *device, uint8_
 
 	return -ETIMEDOUT;
 }
+
+int
+ratbag_hidraw_clear_read_buffer(const struct ratbag_device *device)
+{
+	return ratbag_hidraw_clear_read_buffer_index(device, 0);
+}
+
+int
+ratbag_hidraw_clear_read_buffer_index(const struct ratbag_device *device, int hidrawno)
+{
+	int rc, nfds;
+	struct pollfd fds;
+	uint8_t tmp_buf[HID_MAX_BUFFER_SIZE];
+
+	assert(hidrawno >= 0 && hidrawno < MAX_HIDRAW);
+
+	if (device->hidraw[hidrawno].fd < 0)
+		return -EINVAL;
+
+	fds.fd = device->hidraw[hidrawno].fd;
+	fds.events = POLLIN;
+
+	while (1) {
+		nfds = poll(&fds, 1, 0);
+
+		if (nfds < 0)
+			return -errno;
+		if (nfds > 0) {
+			rc = (int)read(device->hidraw[hidrawno].fd, tmp_buf, ARRAY_LENGTH(tmp_buf));
+
+			if (rc < 0)
+				return -errno;
+		}
+		else {
+			return 0;
+		}
+	}
+}
