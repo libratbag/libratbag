@@ -570,6 +570,7 @@ ratbag_create_context(const struct ratbag_interface *interface,
 	ratbag_register_driver(ratbag, &hidpp20_driver);
 	ratbag_register_driver(ratbag, &hidpp10_driver);
 	ratbag_register_driver(ratbag, &logitech_g300_driver);
+	ratbag_register_driver(ratbag, &microsoft_driver);
 	ratbag_register_driver(ratbag, &logitech_g600_driver);
 	ratbag_register_driver(ratbag, &marsgaming_driver);
 	ratbag_register_driver(ratbag, &roccat_driver);

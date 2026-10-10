@@ -63,6 +63,7 @@ enum driver {
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
 	MARSGAMING,
+	MICROSOFT,
 };
 
 struct data_hidpp20 {
@@ -514,6 +515,7 @@ static const struct driver_map {
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
 	{ MARSGAMING, "marsgaming", NULL },
+	{ MICROSOFT, "microsoft_pro_intellimouse", NULL },
 };
 
 const char *

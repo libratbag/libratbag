@@ -587,6 +587,7 @@ extern struct ratbag_driver etekcity_driver;
 extern struct ratbag_driver hidpp20_driver;
 extern struct ratbag_driver hidpp10_driver;
 extern struct ratbag_driver logitech_g300_driver;
+extern struct ratbag_driver microsoft_driver;
 extern struct ratbag_driver logitech_g600_driver;
 extern struct ratbag_driver marsgaming_driver;
 extern struct ratbag_driver roccat_driver;

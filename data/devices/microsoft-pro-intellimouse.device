@@ -1,0 +1,5 @@
+[Device]
+Name=Microsoft Pro IntelliMouse
+DeviceMatch=usb:045e:082a
+Driver=microsoft_pro_intellimouse
+DeviceType=mouse
