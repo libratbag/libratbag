@@ -1,0 +1,12 @@
+[Device]
+Name=ASUSTeK TUF GAMING M3 GEN II
+DeviceMatch=usb:0b05:1a9b
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=3
+Buttons=8
+Leds=1
+Dpis=4
+DpiRange=100:8000@100
