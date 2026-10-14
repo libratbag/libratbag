@@ -274,6 +274,7 @@ action_type_lookup(const char *string)
 		{ "special", RATBAG_BUTTON_ACTION_TYPE_SPECIAL},
 		{ "key", RATBAG_BUTTON_ACTION_TYPE_KEY},
 		{ "macro", RATBAG_BUTTON_ACTION_TYPE_MACRO},
+		{ "dpi-lock", RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK},
 		{ "unknown", RATBAG_BUTTON_ACTION_TYPE_UNKNOWN},
 	};
 
@@ -367,6 +368,31 @@ static void parse_button_member(JsonObject *obj, const gchar *name,
 			const gchar *v = json_array_get_string_element(a, s);
 			button->macro[s] = parse_macro(v);
 		}
+	} else if (streq(name, "macro_repeat_mode")) {
+		const gchar *v = json_object_get_string_member(obj, name);
+		if (streq(v, "once"))
+			button->macro_repeat_mode = RATBAG_MACRO_REPEAT_ONCE;
+		else if (streq(v, "count"))
+			button->macro_repeat_mode = RATBAG_MACRO_REPEAT_COUNT;
+		else if (streq(v, "while-held"))
+			button->macro_repeat_mode = RATBAG_MACRO_REPEAT_WHILE_HELD;
+		else if (streq(v, "until-button-pressed"))
+			button->macro_repeat_mode = RATBAG_MACRO_REPEAT_UNTIL_BUTTON_PRESSED;
+		else
+			parser_error("macro_repeat_mode");
+		log_verbose("json:    macro_repeat_mode: %s\n", v);
+	} else if (streq(name, "macro_repeat_count")) {
+		gint v = json_object_get_int_member(obj, name);
+		button->macro_repeat_count = v;
+		log_verbose("json:    macro_repeat_count: %d\n", v);
+	} else if (streq(name, "dpi_lock")) {
+		JsonArray *a = json_object_get_array_member(obj, name);
+
+		assert(json_array_get_length(a) == 2);
+		button->dpi_lock.x = json_array_get_int_element(a, 0);
+		button->dpi_lock.y = json_array_get_int_element(a, 1);
+		log_verbose("json:    dpi_lock: %dx%d\n",
+			    button->dpi_lock.x, button->dpi_lock.y);
 	} else {
 		log_error("json: unknown button key '%s'\n", name);
 		parse_error = -EINVAL;

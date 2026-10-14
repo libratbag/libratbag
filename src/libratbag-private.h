@@ -178,6 +178,43 @@ struct ratbag_driver {
 	int (*probe)(struct ratbag_device *device);
 
 	/**
+	 * Optional callback to lazily load a profile's current values
+	 * from the device. Called via ratbag_profile_load() the first
+	 * time a profile's data is accessed and the profile has not
+	 * been loaded yet (profile->loaded is false).
+	 *
+	 * Drivers that set this callback may skip populating non-active
+	 * profiles during probe() and instead defer the device reads
+	 * until the profile is actually requested. For profiles that
+	 * are fully populated during probe() (e.g. the active profile),
+	 * the driver must set profile->loaded to true so that
+	 * ratbag_profile_load() does not invoke read_profile again.
+	 *
+	 * Drivers that do not set this callback are unaffected.
+	 *
+	 * probe() must still set up all profiles with structural and
+	 * capability data that does not require reading from the
+	 * device in the profile's context:
+	 *  - resolution DPI ranges (ratbag_resolution_set_dpi_list_from_range)
+	 *  - resolution capabilities (RATBAG_RESOLUTION_CAP_*)
+	 *  - report rate lists (ratbag_profile_set_report_rate_list)
+	 *  - debounce lists
+	 *  - profile capabilities (RATBAG_PROFILE_CAP_*)
+	 *  - LED color depth and supported modes
+	 *  - is_active, is_enabled flags
+	 *
+	 * read_profile() then populates the current values:
+	 *  - active DPI / resolution values
+	 *  - current report rate, angle snapping, debounce
+	 *  - button mappings and macros
+	 *  - LED colors, brightness, effect duration, mode
+	 *  - profile name
+	 *
+	 * If NULL, all profile data must be populated during probe().
+	 */
+	int (*read_profile)(struct ratbag_profile *profile);
+
+	/**
 	 * Callback called right before the struct ratbag_device is
 	 * unref-ed.
 	 *
@@ -197,6 +234,43 @@ struct ratbag_driver {
 	 * writing back profiles and buttons that haven't actually changed.
 	 */
 	int (*commit)(struct ratbag_device *device);
+
+	/**
+	 * Callback called when the driver should instruct the hardware to
+	 * perform a factory reset, restoring all settings to their defaults.
+	 *
+	 * Drivers that do not support hardware reset should leave this NULL.
+	 * The library will return RATBAG_ERROR_CAPABILITY if this is called
+	 * on a device whose driver does not implement reset.
+	 */
+	int (*reset)(struct ratbag_device *device);
+
+	/**
+	 * Handle an unsolicited HID input report from the device.
+	 *
+	 * Called when the hidraw fd becomes readable and raw data has been
+	 * read. The driver should parse the report and update internal
+	 * state (profiles, resolutions, etc.) accordingly.
+	 *
+	 * Drivers that do not support event monitoring should leave this
+	 * NULL. When NULL, no hidraw fds are monitored for this device.
+	 *
+	 * Note: Drivers that set this callback must not use
+	 * ratbag_hidraw_read_input_report() on the monitored hidraw fd,
+	 * as the event loop already reads from it. Using both would
+	 * cause one side to consume data intended for the other.
+	 *
+	 * @param device The ratbag device
+	 * @param buf The raw HID input report data
+	 * @param len The length of buf in bytes
+	 * @param hidraw_index Which hidraw fd the data came from (0 or 1)
+	 *
+	 * @return Bitmask of enum ratbag_event_type indicating what changed,
+	 *         or RATBAG_EVENT_NONE if the report was not relevant
+	 */
+	unsigned int (*handle_event)(struct ratbag_device *device,
+				     const uint8_t *buf, size_t len,
+				     int hidraw_index);
 
 	/**
 	 * Called to mark a previously written profile as active.
@@ -270,10 +344,26 @@ struct ratbag_profile {
 	int angle_snapping;
 	bool angle_snapping_dirty;
 
+	int motion_sync;
+	bool motion_sync_dirty;
+
+	int ripple_control;
+	bool ripple_control_dirty;
+
 	int debounce;	/**< debounce time in ms */
 	bool debounce_dirty;
-	unsigned int debounces[8];	/**< debounce times available */
+	unsigned int *debounces;	/**< debounce times available */
 	size_t ndebounces;		/**< number of entries in debounces */
+
+	double lod;		/**< lift off distance in mm */
+	bool lod_dirty;
+	double *lods;		/**< lift off distances available */
+	size_t nlods;		/**< number of entries in lods */
+
+	int autosleep;		/**< autosleep timeout in seconds */
+	bool autosleep_dirty;
+	unsigned int *autosleeps;	/**< autosleep timeouts available */
+	size_t nautosleeps;		/**< number of entries in autosleeps */
 
 	unsigned int num_resolutions;
 
@@ -281,6 +371,7 @@ struct ratbag_profile {
 	bool is_active_dirty;
 
 	bool is_enabled;
+	bool loaded;      /**< profile data has been read from device */
 	bool dirty;       /**< profile changed since last commit */
 	unsigned long capabilities[NLONGS(MAX_CAP)];
 };
@@ -313,6 +404,12 @@ struct ratbag_profile {
 #define BUTTON_ACTION_MACRO \
  { .type = RATBAG_BUTTON_ACTION_TYPE_MACRO, \
 	/* FIXME: add the macro keys */ }
+#define BUTTON_ACTION_DPI_LOCK(dpi_) \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK, \
+	.action.dpi_lock = { .x = (dpi_), .y = (dpi_) } }
+#define BUTTON_ACTION_DPI_LOCK_XY(x_, y_) \
+ { .type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK, \
+	.action.dpi_lock = { .x = (x_), .y = (y_) } }
 
 struct ratbag_macro_event {
 	enum ratbag_macro_event_type type;
@@ -327,6 +424,8 @@ struct ratbag_macro {
 	char *name;
 	char *group;
 	struct ratbag_macro_event events[MAX_MACRO_EVENTS];
+	enum ratbag_macro_repeat_mode repeat_mode;
+	unsigned int repeat_count;
 };
 
 struct ratbag_button_macro {
@@ -349,6 +448,10 @@ struct ratbag_button_action {
 		unsigned int button; /* action_type == button */
 		enum ratbag_button_action_special special; /* action_type == special */
 		unsigned int key; /* action_type == key */
+		struct { /* action_type == dpi_lock */
+			unsigned int x;
+			unsigned int y;
+		} dpi_lock;
 	} action;
 	struct ratbag_macro *macro; /* dynamically allocated, so kept aside */
 };
@@ -450,6 +553,9 @@ ratbag_button_action_match(const struct ratbag_button_action *action,
 	case RATBAG_BUTTON_ACTION_TYPE_MACRO:
 		/* TODO: check if events match. */
 		return 1;
+	case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:
+		return match->action.dpi_lock.x == action->action.dpi_lock.x &&
+		       match->action.dpi_lock.y == action->action.dpi_lock.y;
 	default:
 		break;
 	}
@@ -552,15 +658,41 @@ ratbag_profile_set_debounce_list(struct ratbag_profile *profile,
 				 const unsigned int *values,
 				 size_t nvalues)
 {
-	assert(nvalues <= ARRAY_LENGTH(profile->debounces));
-	_Static_assert(sizeof(*values) == sizeof(*profile->debounces), "Mismatching size");
+	for (size_t i = 1; i < nvalues; i++)
+		assert(values[i] > values[i - 1]);
 
-	for (size_t i = 0; i < nvalues; i++) {
-		profile->debounces[i] = values[i];
-		if (i > 0)
-			assert(values[i] > values[i - 1]);
-	}
+	free(profile->debounces);
+	profile->debounces = zalloc(nvalues * sizeof(*profile->debounces));
+	memcpy(profile->debounces, values, nvalues * sizeof(*values));
 	profile->ndebounces = nvalues;
+}
+
+static inline void
+ratbag_profile_set_lod_list(struct ratbag_profile *profile,
+			    const double *values,
+			    size_t nvalues)
+{
+	for (size_t i = 1; i < nvalues; i++)
+		assert(values[i] > values[i - 1]);
+
+	free(profile->lods);
+	profile->lods = zalloc(nvalues * sizeof(*profile->lods));
+	memcpy(profile->lods, values, nvalues * sizeof(*values));
+	profile->nlods = nvalues;
+}
+
+static inline void
+ratbag_profile_set_autosleep_list(struct ratbag_profile *profile,
+				  const unsigned int *values,
+				  size_t nvalues)
+{
+	for (size_t i = 1; i < nvalues; i++)
+		assert(values[i] > values[i - 1]);
+
+	free(profile->autosleeps);
+	profile->autosleeps = zalloc(nvalues * sizeof(*profile->autosleeps));
+	memcpy(profile->autosleeps, values, nvalues * sizeof(*values));
+	profile->nautosleeps = nvalues;
 }
 
 static inline void

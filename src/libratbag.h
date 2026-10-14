@@ -515,6 +515,64 @@ ratbag_device_commit(struct ratbag_device *device);
 /**
  * @ingroup device
  *
+ * Instruct the device to perform a factory reset, restoring all
+ * settings to their hardware defaults.
+ *
+ * Not all devices support hardware reset. If the device's driver
+ * does not implement reset, RATBAG_ERROR_CAPABILITY is returned.
+ *
+ * @param device A previously initialized ratbag device
+ * @return RATBAG_SUCCESS on success or an error code otherwise
+ */
+enum ratbag_error_code
+ratbag_device_reset(struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Returns whether the device supports asynchronous event monitoring.
+ * A device supports it if its driver implements the handle_event callback.
+ *
+ * @param device A previously initialized ratbag device
+ * @return true if the device supports event monitoring
+ */
+bool
+ratbag_device_has_event_support(struct ratbag_device *device);
+
+/**
+ * @ingroup device
+ *
+ * Returns the hidraw file descriptor for the given index, or -1 if not
+ * open or the index is out of range. The caller must NOT close this fd.
+ *
+ * @param device A previously initialized ratbag device
+ * @param index The hidraw index (0 or 1)
+ * @return The file descriptor, or -1
+ */
+int
+ratbag_device_get_hidraw_fd(struct ratbag_device *device, unsigned int index);
+
+/**
+ * @ingroup device
+ *
+ * Dispatch a raw HID input report to the device's driver for event
+ * handling. The driver parses the report, updates internal state, and
+ * returns a bitmask indicating what changed.
+ *
+ * @param device A previously initialized ratbag device
+ * @param buf The raw report data
+ * @param len Length of buf in bytes
+ * @param hidraw_index Which hidraw fd the data was read from
+ * @return Bitmask of enum ratbag_event_type, or RATBAG_EVENT_NONE
+ */
+unsigned int
+ratbag_device_dispatch_event(struct ratbag_device *device,
+			     const uint8_t *buf, size_t len,
+			     int hidraw_index);
+
+/**
+ * @ingroup device
+ *
  * Return the number of profiles supported by this device.
  *
  * Note that the number of profiles available may be different to the number
@@ -691,6 +749,27 @@ ratbag_device_get_profile(struct ratbag_device *device, unsigned int index);
 /**
  * @ingroup profile
  *
+ * Ensure the profile's data has been loaded from the device.
+ *
+ * For drivers that support lazy profile loading, this triggers the
+ * actual device read the first time it is called. Subsequent calls
+ * are no-ops. For drivers that do not support lazy loading this
+ * function always returns success immediately.
+ *
+ * Callers should invoke this before reading any profile properties
+ * (resolutions, buttons, report rate, etc.) if the profile may not
+ * have been loaded during probe.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return 0 on success or a negative errno on failure
+ */
+int
+ratbag_profile_load(struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
  * Check if the given profile is the currently active one. Note that some
  * devices allow switching profiles with hardware buttons thus making the
  * use of this function racy.
@@ -817,6 +896,68 @@ ratbag_profile_get_angle_snapping(const struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
+ * Set the motion sync option for the profile.
+ *
+ * A value of 0 disables the mode.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Motion sync value
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_motion_sync(struct ratbag_profile *profile,
+			       int value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the motion sync option for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Motion sync value
+ */
+int
+ratbag_profile_get_motion_sync(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Set the ripple control option for the profile.
+ *
+ * A value of 0 disables the mode.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Ripple control value
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_ripple_control(struct ratbag_profile *profile,
+				  int value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the ripple control option for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Ripple control value
+ */
+int
+ratbag_profile_get_ripple_control(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
  * Set the debounce time in ms for the profile.
  *
  * If the profile mode is the currently active profile,
@@ -866,6 +1007,112 @@ size_t
 ratbag_profile_get_debounce_list(const struct ratbag_profile *profile,
 				 unsigned int *debounces,
 				 size_t ndebounces);
+
+/**
+ * @ingroup profile
+ *
+ * Set the lift off distance in mm for the profile.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Lift off distance in mm
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_lod(struct ratbag_profile *profile,
+		       double value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the lift off distance in mm for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Lift off distance for this profile in mm
+ */
+double
+ratbag_profile_get_lod(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Get the number of lift off distances in mm available for this profile.
+ * The list of lift off distances is sorted in ascending order but may be
+ * filtered by libratbag and does not necessarily reflect all values supported
+ * by the physical device.
+ *
+ * This function writes at most nlods values but returns the number of
+ * lift off distances available on this profile. In other words, if it returns
+ * a number larger than nlods, call it again with an array the size of the
+ * return value.
+ *
+ * @param[out] lods Set to the supported lift off distances in ascending order
+ * @param[in] nlods The number of elements
+ *
+ * @return The number of valid items in values. If the returned value
+ * is larger than nlods, the list was truncated.
+ */
+size_t
+ratbag_profile_get_lod_list(const struct ratbag_profile *profile,
+			    double *lods,
+			    size_t nlods);
+
+/**
+ * @ingroup profile
+ *
+ * Set the autosleep timeout in seconds for the profile.
+ *
+ * If the profile mode is the currently active profile,
+ * the change takes effect immediately.
+ *
+ * @param profile A previously initialized ratbag profile
+ * @param value Autosleep timeout in seconds
+ *
+ * @return zero on success or an error code on failure
+ */
+enum ratbag_error_code
+ratbag_profile_set_autosleep(struct ratbag_profile *profile,
+			     int value);
+
+/**
+ * @ingroup profile
+ *
+ * Get the autosleep timeout in seconds for the profile.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return Autosleep timeout for this profile in seconds
+ */
+int
+ratbag_profile_get_autosleep(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Get the number of autosleep timeouts in seconds available for this profile.
+ * The list of autosleep timeouts is sorted in ascending order but may be
+ * filtered by libratbag and does not necessarily reflect all values supported
+ * by the physical device.
+ *
+ * This function writes at most nautosleeps values but returns the number of
+ * autosleep timeouts available on this profile. In other words, if it returns
+ * a number larger than nautosleeps, call it again with an array the size of
+ * the return value.
+ *
+ * @param[out] autosleeps Set to the supported autosleep timeouts in ascending order
+ * @param[in] nautosleeps The number of elements
+ *
+ * @return The number of valid items in values. If the returned value
+ * is larger than nautosleeps, the list was truncated.
+ */
+size_t
+ratbag_profile_get_autosleep_list(const struct ratbag_profile *profile,
+				  unsigned int *autosleeps,
+				  size_t nautosleeps);
 
 /**
  * @ingroup profile
@@ -1491,6 +1738,77 @@ ratbag_led_set_brightness(struct ratbag_led *led, unsigned int brightness);
 /**
  * @ingroup button
  *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns the DPI lock target value for the X axis.
+ * If X and Y are the same, this is the uniform DPI lock value.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns -1.
+ *
+ * @return The DPI lock target X value, or -1 on error.
+ */
+int
+ratbag_button_get_dpi_lock(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns the DPI lock target value for the X axis.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns -1.
+ *
+ * @return The DPI lock target X value, or -1 on error.
+ */
+int
+ratbag_button_get_dpi_lock_x(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * If a button's action is @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns the DPI lock target value for the Y axis.
+ *
+ * If the button's action type is not @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK,
+ * this function returns -1.
+ *
+ * @return The DPI lock target Y value, or -1 on error.
+ */
+int
+ratbag_button_get_dpi_lock_y(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * Set the DPI lock target to a uniform value for both axes.
+ *
+ * @param button A previously initialized ratbag button
+ * @param dpi The DPI value to lock to while the button is held.
+ * @return 0 on success or an error code otherwise. On success, the button's
+ * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK.
+ */
+enum ratbag_error_code
+ratbag_button_set_dpi_lock(struct ratbag_button *button, unsigned int dpi);
+
+/**
+ * @ingroup button
+ *
+ * Set the DPI lock target with independent X and Y values.
+ *
+ * @param button A previously initialized ratbag button
+ * @param x The DPI value for the X axis.
+ * @param y The DPI value for the Y axis.
+ * @return 0 on success or an error code otherwise. On success, the button's
+ * action is set to @ref RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK.
+ */
+enum ratbag_error_code
+ratbag_button_set_dpi_lock_xy(struct ratbag_button *button,
+			      unsigned int x, unsigned int y);
+
+/**
+ * @ingroup button
+ *
  * This function sets the special function assigned to this button.
  *
  * @param button A previously initialized ratbag button
@@ -1693,6 +2011,48 @@ ratbag_button_macro_set_event(struct ratbag_button_macro *macro,
 			      unsigned int index,
 			      enum ratbag_macro_event_type type,
 			      unsigned int data);
+
+/**
+ * @ingroup button
+ *
+ * Return the repeat mode of this macro.
+ *
+ * @param macro A previously initialized ratbag button macro
+ *
+ * @return The repeat mode
+ */
+enum ratbag_macro_repeat_mode
+ratbag_button_macro_get_repeat_mode(const struct ratbag_button_macro *macro);
+
+/**
+ * @ingroup button
+ *
+ * Return the repeat count of this macro. Only meaningful when the
+ * repeat mode is @ref RATBAG_MACRO_REPEAT_COUNT.
+ *
+ * @param macro A previously initialized ratbag button macro
+ *
+ * @return The repeat count
+ */
+unsigned int
+ratbag_button_macro_get_repeat_count(const struct ratbag_button_macro *macro);
+
+/**
+ * @ingroup button
+ *
+ * Set the repeat mode and count for this macro.
+ *
+ * The count is only used when mode is @ref RATBAG_MACRO_REPEAT_COUNT
+ * and is ignored for other modes.
+ *
+ * @param macro A previously initialized ratbag button macro
+ * @param mode The repeat mode
+ * @param count The repeat count (for RATBAG_MACRO_REPEAT_COUNT)
+ */
+void
+ratbag_button_macro_set_repeat(struct ratbag_button_macro *macro,
+			       enum ratbag_macro_repeat_mode mode,
+			       unsigned int count);
 
 /**
  * @ingroup button

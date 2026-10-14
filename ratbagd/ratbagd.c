@@ -233,6 +233,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 		}
 
 		ratbagd_device_link(device);
+		ratbagd_device_start_event_monitoring(device);
 		(void) sd_bus_emit_properties_changed(ctx->bus,
 						      RATBAGD_OBJ_ROOT,
 						      RATBAGD_NAME_ROOT ".Manager",
