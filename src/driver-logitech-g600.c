@@ -237,7 +237,7 @@ logitech_g600_set_current_resolution(struct ratbag_device *device, unsigned int 
 	ret = ratbag_hidraw_raw_request(device, buf[0], buf, sizeof(buf),
 			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 
-	return ret == sizeof(buf) ? 0 : ret;
+	return ret == sizeof(buf) ? 0 : (ret < 0 ? ret : -EIO);
 }
 
 static int
@@ -254,7 +254,7 @@ logitech_g600_set_active_profile(struct ratbag_device *device, unsigned int inde
 			HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
 
 	if (ret != sizeof(buf))
-		return ret;
+		return ret < 0 ? ret : -EIO;
 
 	/* Update the active resolution. After profile change the default is used. */
 	list_for_each(profile, &device->profiles, link) {
@@ -291,7 +291,13 @@ logitech_g600_read_button(struct ratbag_button *button)
 
 	pdata = &drv_data->profile_data[profile->index];
 	profile_report = &pdata->report;
-	button_report = &profile_report->buttons[button->index];
+	/* Keep historical G-shift indices: slot 20 contains the LED color. */
+	if (button->index == 20)
+		return;
+	if (button->index < 20)
+		button_report = &profile_report->buttons[button->index];
+	else
+		button_report = &profile_report->g_shift_buttons[button->index - 21];
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
@@ -366,6 +372,7 @@ logitech_g600_read_profile(struct ratbag_profile *profile)
 	struct logitech_g600_profile_report *report;
 	struct ratbag_resolution *resolution;
 	unsigned int report_rates[] = { 125, 142, 166, 200, 250, 333, 500, 1000 };
+	unsigned int dpis[(LOGITECH_G600_DPI_MAX - LOGITECH_G600_DPI_MIN) / 50 + 1];
 	uint8_t report_id;
 	int rc;
 	struct ratbag_button *button;
@@ -402,15 +409,21 @@ logitech_g600_read_profile(struct ratbag_profile *profile)
 					    ARRAY_LENGTH(report_rates));
 	profile->hz = 1000 / (report->frequency + 1);
 
+	for (unsigned int i = 0; i < ARRAY_LENGTH(dpis); i++)
+		dpis[i] = LOGITECH_G600_DPI_MIN + i * 50;
+
 	ratbag_profile_for_each_resolution(profile, resolution) {
 		resolution->dpi_x = report->dpi[resolution->index] * 50;
 		resolution->dpi_y = report->dpi[resolution->index] * 50;
+		resolution->is_disabled = report->dpi[resolution->index] == 0;
+		ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
+		if (resolution->is_disabled)
+			resolution->dpi_x = resolution->dpi_y = LOGITECH_G600_DPI_MIN;
 		resolution->is_default = report->dpi_default - 1U == resolution->index;
 		resolution->is_active = resolution->is_default;
 
-		ratbag_resolution_set_dpi_list_from_range(resolution,
-							  LOGITECH_G600_DPI_MIN,
-							  LOGITECH_G600_DPI_MAX);
+		/* The G600 supports 50-DPI steps throughout its full range. */
+		ratbag_resolution_set_dpi_list(resolution, dpis, ARRAY_LENGTH(dpis));
 	}
 
 	ratbag_profile_for_each_button(profile, button)
@@ -481,6 +494,7 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 	struct logitech_g600_data *drv_data = device->drv_data;
 	struct logitech_g600_profile_data *pdata;
 	struct logitech_g600_profile_report *report;
+	struct logitech_g600_profile_report candidate;
 	struct ratbag_resolution *resolution;
 	struct ratbag_button *button;
 	struct ratbag_led *led;
@@ -489,12 +503,13 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 	int rc, active_resolution = 0;
 
 	pdata = &drv_data->profile_data[profile->index];
-	report = &pdata->report;
+	candidate = pdata->report;
+	report = &candidate;
 
 	report->frequency = (1000 / profile->hz) - 1;
 
 	ratbag_profile_for_each_resolution(profile, resolution) {
-		report->dpi[resolution->index] = resolution->dpi_x / 50;
+		report->dpi[resolution->index] = resolution->is_disabled ? 0 : resolution->dpi_x / 50;
 
 		if (resolution->is_default)
 			report->dpi_default = resolution->index + 1;
@@ -507,7 +522,13 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 		struct ratbag_button_action *action = &button->action;
 		struct logitech_g600_button *raw_button;
 
-		raw_button = &report->buttons[button->index];
+		/* Preserve unmodified and unsupported hardware assignments. */
+		if (!button->dirty || button->index == 20)
+			continue;
+		if (button->index < 20)
+			raw_button = &report->buttons[button->index];
+		else
+			raw_button = &report->g_shift_buttons[button->index - 21];
 
 		raw_button->code = logitech_g600_button_action_to_raw(action);
 		raw_button->modifier = 0x00;
@@ -519,19 +540,24 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 			rc = ratbag_action_keycode_from_macro(action,
 							      &key,
 							      &modifiers);
-			if (rc < 0) {
+			if (rc != 1) {
 				log_error(device->ratbag,
 					  "Error while writing macro for button %d\n",
 					  button->index);
+				return -EINVAL;
 			}
 
 			raw_button->key = ratbag_hidraw_get_keyboard_usage_from_keycode(
 						device, key);
+			if (raw_button->key == 0)
+				return -EINVAL;
 			raw_button->modifier = logitech_g600_modifier_to_raw(modifiers);
 		}
 	}
 
 	list_for_each(led, &profile->leds, link) {
+		if (!led->dirty)
+			continue;
 		report->led_red = led->color.red;
 		report->led_green = led->color.green;
 		report->led_blue = led->color.blue;
@@ -560,11 +586,7 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 			report->led_duration = 0x0f;
 	}
 
-	// For now the default will copy over the main color into the g-shift color
-	// future update may add support to set this via cli command
-	report->g_shift_color[0] = report->led_red;
-	report->g_shift_color[1] = report->led_green;
-	report->g_shift_color[2] = report->led_blue;
+	/* Preserve the independent G-shift color when saving other settings. */
 
 	buf = (uint8_t*)report;
 
@@ -574,11 +596,12 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 				       HID_FEATURE_REPORT,
 				       HID_REQ_SET_REPORT);
 
-	if (rc < (int)sizeof(*report)) {
+	if (rc != (int)sizeof(*report)) {
 		log_error(device->ratbag,
 			  "Error while writing profile: %d\n", rc);
-		return rc;
+		return rc < 0 ? rc : -EIO;
 	}
+	pdata->report = candidate;
 
 	if (profile->is_active) {
 		rc = logitech_g600_set_current_resolution(device, active_resolution);
