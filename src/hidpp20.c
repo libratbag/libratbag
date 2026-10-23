@@ -64,7 +64,9 @@ hidpp20_feature_get_name(uint16_t feature)
 	CASE_RETURN_STRING(HIDPP_PAGE_WIRELESS_DEVICE_STATUS);
 	CASE_RETURN_STRING(HIDPP_PAGE_MOUSE_POINTER_BASIC);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_DPI);
+	CASE_RETURN_STRING(HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
 	CASE_RETURN_STRING(HIDPP_PAGE_ADJUSTABLE_REPORT_RATE);
+	CASE_RETURN_STRING(HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE);
 	CASE_RETURN_STRING(HIDPP_PAGE_COLOR_LED_EFFECTS);
 	CASE_RETURN_STRING(HIDPP_PAGE_RGB_EFFECTS);
 	CASE_RETURN_STRING(HIDPP_PAGE_ONBOARD_PROFILES);
@@ -1688,6 +1690,232 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 }
 
 /* -------------------------------------------------------------------------- */
+/* 0x2202: Extended Adjustable DPI                                            */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_EXTENDED_DPI_GET_SENSOR_COUNT		0x00
+#define CMD_EXTENDED_DPI_GET_SENSOR_INFO		0x10
+#define CMD_EXTENDED_DPI_GET_DPI_LIST		0x20
+#define CMD_EXTENDED_DPI_GET_DPI			0x50
+#define CMD_EXTENDED_DPI_SET_DPI			0x60
+#define HIDPP20_DPI_PAGE_DATA_SIZE		13
+
+static int
+hidpp20_extended_dpi_list(struct hidpp20_device *device, uint8_t feature,
+			 uint8_t sensor, uint8_t axis, uint16_t *values)
+{
+	uint8_t data[256 * HIDPP20_DPI_PAGE_DATA_SIZE];
+	size_t length = 0, count = 0;
+	bool complete = false;
+	int rc;
+
+	/* Each page contains a three-byte header and thirteen bytes of data.
+	 * A uint16_t may therefore straddle two replies.
+	 */
+	for (unsigned page = 0; page < 256; page++) {
+		union hidpp20_message msg = {
+			.msg.report_id = REPORT_ID_SHORT,
+			.msg.device_idx = device->index,
+			.msg.sub_id = feature,
+			.msg.address = CMD_EXTENDED_DPI_GET_DPI_LIST,
+			.msg.parameters = {sensor, axis, page},
+		};
+		rc = hidpp20_request_command(device, &msg);
+		if (rc)
+			return rc;
+		if (msg.msg.parameters[0] != sensor ||
+		    msg.msg.parameters[1] != axis || msg.msg.parameters[2] != page)
+			return -EPROTO;
+		memcpy(data + length, msg.msg.parameters + 3, HIDPP20_DPI_PAGE_DATA_SIZE);
+		length += HIDPP20_DPI_PAGE_DATA_SIZE;
+		if (!data[length - 1] && !data[length - 2]) {
+			complete = true;
+			break;
+		}
+	}
+	if (!complete)
+		return -EPROTO;
+
+	for (size_t pos = 0; pos + 1 < length; pos += 2) {
+		unsigned value = get_unaligned_be_u16(data + pos);
+
+		if (!value)
+			break;
+		if ((value & 0xe000) == 0xe000) {
+			unsigned step = value & 0x1fff;
+			unsigned end;
+
+			if (!count || !step || pos + 3 >= length)
+				return -EPROTO;
+			end = get_unaligned_be_u16(data + pos + 2);
+			if (end <= values[count - 1] || (end - values[count - 1]) % step)
+				return -EPROTO;
+			for (unsigned dpi = values[count - 1] + step; dpi <= end; dpi += step) {
+				if (count == HIDPP20_MAX_DPI_VALUES)
+					return -EOVERFLOW;
+				values[count++] = dpi;
+			}
+			pos += 2;
+		} else {
+			if (count == HIDPP20_MAX_DPI_VALUES)
+				return -EOVERFLOW;
+			if (count && value <= values[count - 1])
+				return -EPROTO;
+			values[count++] = value;
+		}
+	}
+	values[count] = 0;
+	return count ? (int)count : -EPROTO;
+}
+
+int
+hidpp20_extended_adjustable_dpi_get_sensors(struct hidpp20_device *device,
+					  struct hidpp20_sensor **sensors_list)
+{
+	uint8_t feature = hidpp_root_get_feature_idx(device, HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI);
+	struct hidpp20_sensor *sensors;
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.sub_id = feature,
+		.msg.address = CMD_EXTENDED_DPI_GET_SENSOR_COUNT,
+	};
+	int rc, count;
+
+	*sensors_list = NULL;
+	if (!feature)
+		return -ENOTSUP;
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+	count = msg.msg.parameters[0];
+	if (!count)
+		return -ENODEV;
+	sensors = zalloc(count * sizeof(*sensors));
+	for (int i = 0; i < count; i++) {
+		struct hidpp20_sensor *s = &sensors[i];
+		uint16_t y_values[HIDPP20_MAX_DPI_VALUES + 1] = {0};
+
+		s->index = i;
+		msg.msg.address = CMD_EXTENDED_DPI_GET_SENSOR_INFO;
+		memset(msg.msg.parameters, 0, sizeof(msg.msg.parameters));
+		msg.msg.parameters[0] = i;
+		rc = hidpp20_request_command(device, &msg);
+		if (rc)
+			goto error;
+		s->separate_xy = !!(msg.msg.parameters[2] & 1);
+		rc = hidpp20_extended_dpi_list(device, feature, i, 0, s->dpi_list);
+		if (rc < 0)
+			goto error;
+		s->dpi_min = s->dpi_list[0];
+		s->dpi_max = s->dpi_list[rc - 1];
+		if (s->separate_xy) {
+			rc = hidpp20_extended_dpi_list(device, feature, i, 1, y_values);
+			if (rc < 0)
+				goto error;
+			/* libratbag exposes one supported-DPI list for both axes. */
+			if (memcmp(y_values, s->dpi_list, sizeof(y_values))) {
+				rc = -ENOTSUP;
+				goto error;
+			}
+		}
+		msg.msg.address = CMD_EXTENDED_DPI_GET_DPI;
+		memset(msg.msg.parameters, 0, sizeof(msg.msg.parameters));
+		msg.msg.parameters[0] = i;
+		rc = hidpp20_request_command(device, &msg);
+		if (rc)
+			goto error;
+		s->default_dpi = get_unaligned_be_u16(msg.msg.parameters + 3);
+		s->dpi = get_unaligned_be_u16(msg.msg.parameters + 1);
+		if (!s->dpi)
+			s->dpi = s->default_dpi;
+		s->dpi_y = get_unaligned_be_u16(msg.msg.parameters + 5);
+		if (!s->dpi_y)
+			s->dpi_y = get_unaligned_be_u16(msg.msg.parameters + 7);
+		s->lod = msg.msg.parameters[9];
+	}
+	*sensors_list = sensors;
+	return count;
+error:
+	free(sensors);
+	return rc;
+}
+
+int
+hidpp20_extended_adjustable_dpi_set_dpi(struct hidpp20_device *device,
+				      const struct hidpp20_sensor *sensor,
+				      uint16_t dpi_x, uint16_t dpi_y)
+{
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_LONG,
+		.msg.device_idx = device->index,
+		.msg.sub_id = hidpp_root_get_feature_idx(device, HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI),
+		.msg.address = CMD_EXTENDED_DPI_SET_DPI,
+		.msg.parameters = {sensor->index},
+	};
+
+	if (!msg.msg.sub_id)
+		return -ENOTSUP;
+	set_unaligned_be_u16(msg.msg.parameters + 1, dpi_x);
+	set_unaligned_be_u16(msg.msg.parameters + 3, sensor->separate_xy ? dpi_y : 0);
+	msg.msg.parameters[5] = sensor->lod;
+	return hidpp20_request_command(device, &msg);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 0x8061: Extended Adjustable Report Rate                                    */
+/* -------------------------------------------------------------------------- */
+
+#define CMD_EXTENDED_REPORT_RATE_GET_LIST		0x10
+#define CMD_EXTENDED_REPORT_RATE_GET_RATE		0x20
+#define CMD_EXTENDED_REPORT_RATE_SET_RATE		0x30
+
+int
+hidpp20_extended_report_rate_get(struct hidpp20_device *device,
+				uint16_t *rates, uint8_t *rate)
+{
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.sub_id = hidpp_root_get_feature_idx(device, HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE),
+		.msg.address = CMD_EXTENDED_REPORT_RATE_GET_LIST,
+	};
+	int rc;
+
+	if (!msg.msg.sub_id)
+		return -ENOTSUP;
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+	*rates = get_unaligned_be_u16(msg.msg.parameters);
+	msg.msg.address = CMD_EXTENDED_REPORT_RATE_GET_RATE;
+	memset(msg.msg.parameters, 0, sizeof(msg.msg.parameters));
+	rc = hidpp20_request_command(device, &msg);
+	if (rc)
+		return rc;
+	*rate = msg.msg.parameters[0];
+	return *rate <= 6 ? 0 : -EPROTO;
+}
+
+int
+hidpp20_extended_report_rate_set(struct hidpp20_device *device, uint8_t rate)
+{
+	union hidpp20_message msg = {
+		.msg.report_id = REPORT_ID_SHORT,
+		.msg.device_idx = device->index,
+		.msg.sub_id = hidpp_root_get_feature_idx(device, HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE),
+		.msg.address = CMD_EXTENDED_REPORT_RATE_SET_RATE,
+		.msg.parameters = {rate},
+	};
+
+	if (!msg.msg.sub_id)
+		return -ENOTSUP;
+	if (rate > 6)
+		return -EINVAL;
+	return hidpp20_request_command(device, &msg);
+}
+
+/* -------------------------------------------------------------------------- */
 /* 0x8060 - Adjustable Report Rate                                            */
 /* -------------------------------------------------------------------------- */
 
@@ -1813,6 +2041,16 @@ int hidpp20_adjustable_report_rate_set_report_rate(struct hidpp20_device *device
 #define HIDPP20_PROFILE_DIR_END				0xFFFF
 #define HIDPP20_PROFILE_DIR_ENABLED			2
 
+/* Format 7 offsets verified against captured G304 X sectors.
+ * Keep the original sector for fields that are not exposed by libratbag.
+ */
+#define HIDPP20_PROFILE_V7_SECTOR_SIZE		255
+#define HIDPP20_PROFILE_V7_DPI_OFFSET		4
+#define HIDPP20_PROFILE_V7_DPI_STRIDE		5
+#define HIDPP20_PROFILE_V7_POWERSAVE_OFFSET	44
+#define HIDPP20_PROFILE_V7_POWEROFF_OFFSET		46
+#define HIDPP20_PROFILE_V7_BUTTONS_OFFSET		48
+
 union hidpp20_internal_profile {
 	uint8_t data[HIDPP20_PROFILE_SIZE];
 	struct {
@@ -1877,7 +2115,7 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 				     uint16_t sector_size,
 				     uint8_t *data)
 {
-	uint16_t offset;
+	unsigned int offset;
 	uint8_t feature_index;
 	int rc = 0;
 	union hidpp20_message buf;
@@ -1886,6 +2124,9 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 		.msg.device_idx = device->index,
 		.msg.address = CMD_ONBOARD_PROFILES_MEMORY_READ,
 	};
+
+	if (sector_size < 16)
+		return -EINVAL;
 
 	hidpp_log_debug(&device->base, "Reading sector 0x%04x\n", sector);
 
@@ -1903,7 +2144,7 @@ hidpp20_onboard_profiles_read_sector(struct hidpp20_device *device,
 		 * if we try to read past sector_size - 16, so when we are left with
 		 * less than 16 bytes to read we need to read from sector_size - 16
 		 */
-		offset = (sector_size - offset < 16) ? sector_size - 16 : offset;
+		offset = (sector_size - offset < 16) ? sector_size - 16U : offset;
 		set_unaligned_be_u16(&msg.msg.parameters[2], offset);
 		buf = msg;
 		rc = hidpp20_request_command(device, &buf);
@@ -2011,6 +2252,9 @@ hidpp20_onboard_profiles_write_sector(struct hidpp20_device *device,
 	uint16_t crc;
 	int rc, transferred;
 
+	if (sector_size < 16)
+		return -EINVAL;
+
 	feature_index = hidpp_root_get_feature_idx(device,
 						   HIDPP_PAGE_ONBOARD_PROFILES);
 	if (feature_index == 0)
@@ -2030,10 +2274,13 @@ hidpp20_onboard_profiles_write_sector(struct hidpp20_device *device,
 		return rc;
 
 	for (transferred = 0; transferred < sector_size; transferred += 16) {
-		rc = hidpp20_onboard_profiles_write_data(device, data, feature_index);
+		uint8_t chunk[16];
+		/* The last report is still 16 bytes for a 255-byte sector. */
+		memset(chunk, 0xff, sizeof(chunk));
+		memcpy(chunk, data + transferred, min(16, sector_size - transferred));
+		rc = hidpp20_onboard_profiles_write_data(device, chunk, feature_index);
 		if (rc)
 			return rc;
-		data += 16;
 	}
 
 	rc = hidpp20_onboard_profiles_write_end(device, feature_index);
@@ -2225,10 +2472,18 @@ hidpp20_onboard_profiles_validate(struct hidpp20_device *device,
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G303) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G900) &&
 	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G915) &&
-	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X)) {
+	    (info->profile_format_id != HIDPP20_ONBOARD_PROFILES_PROFILE_TYPE_G502X) &&
+	    (info->profile_format_id != HIDPP20_PROFILE_FORMAT_V7)) {
 		hidpp_log_error(&device->base,
 				"Profile layout not supported: 0x%02x.\n",
 				info->profile_format_id);
+		return false;
+	}
+
+	if (info->profile_format_id == HIDPP20_PROFILE_FORMAT_V7 &&
+	    (info->sector_size != HIDPP20_PROFILE_V7_SECTOR_SIZE || info->button_count > 16 ||
+	     !info->profile_count || info->profile_count > 16)) {
+		hidpp_log_error(&device->base, "Unsupported format-7 profile dimensions.\n");
 		return false;
 	}
 
@@ -2279,18 +2534,20 @@ hidpp20_onboard_profiles_allocate(struct hidpp20_device *device,
 	active_profile_index = rc;
 
 	/* Apply quirk for devices that return 1-indexed profile */
-	if ((device->quirks & HIDPP20_QUIRK_INDEX_OFFSET) && active_profile_index > 0)
+	if (((device->quirks & HIDPP20_QUIRK_INDEX_OFFSET) ||
+	     info.profile_format_id == HIDPP20_PROFILE_FORMAT_V7) && active_profile_index > 0)
 		active_profile_index--;
 
 	profiles = zalloc(sizeof(struct hidpp20_profiles));
 	profiles->profiles = zalloc(info.profile_count * sizeof(struct hidpp20_profile));
+	profiles->profile_format = info.profile_format_id;
 	profiles->sector_size = info.sector_size;
 	profiles->sector_count = info.sector_count;
 	profiles->num_profiles = info.profile_count;
 	profiles->num_rom_profiles = info.profile_count_oob;
 	profiles->num_buttons = min(info.button_count, 16);
 	profiles->num_modes = HIDPP20_DPI_COUNT;
-	profiles->num_leds = HIDPP20_LED_COUNT;
+	profiles->num_leds = info.profile_format_id == HIDPP20_PROFILE_FORMAT_V7 ? 0 : HIDPP20_LED_COUNT;
 	profiles->has_g_shift = (info.mechanical_layout & 0x03) == 0x02;
 	profiles->has_dpi_shift = ((info.mechanical_layout & 0x0c) >> 2) == 0x02;
 	profiles->active_profile_index = active_profile_index;
@@ -2499,12 +2756,14 @@ hidpp20_onboard_profiles_destroy(struct hidpp20_profiles *profiles_list)
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
 		profile = &profiles_list->profiles[i];
+		free(profile->raw_data);
 
 		ARRAY_FOR_EACH(profile->macros, macro) {
 			free(*macro);
 		}
 	}
 
+	free(profiles_list->raw_directory);
 	free(profiles_list->profiles);
 	free(profiles_list);
 }
@@ -2517,23 +2776,37 @@ hidpp20_onboard_profiles_write_dict(struct hidpp20_device *device,
 	uint16_t sector_size = profiles_list->sector_size;
 	_cleanup_free_ uint8_t *data = NULL;
 	int rc;
+	bool v7 = profiles_list->profile_format == HIDPP20_PROFILE_FORMAT_V7;
 
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
+
+	if (v7) {
+		memset(data, 0xff, sector_size);
+		if (profiles_list->raw_directory)
+			memcpy(data, profiles_list->raw_directory, sector_size);
+	}
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
 		data[buffer_index++] = 0x00;
 		data[buffer_index++] = i + 1;
 		data[buffer_index++] = !!profiles_list->profiles[i].enabled;
-		data[buffer_index++] = 0x00;
+		if (v7)
+			buffer_index++;
+		else
+			data[buffer_index++] = 0x00;
 	}
 
 	data[buffer_index++] = 0xFF;
 	data[buffer_index++] = 0xFF;
 
-	data[buffer_index++] = 0x00;
-	data[buffer_index++] = 0x00;
+	data[buffer_index++] = v7 ? 0xff : 0x00;
+	data[buffer_index++] = v7 ? 0xff : 0x00;
 
-	memset(data + buffer_index, 0xff, sector_size - buffer_index);
+	if (!v7)
+		memset(data + buffer_index, 0xff, sector_size - buffer_index);
+	if (v7 && profiles_list->raw_directory &&
+	    !memcmp(data, profiles_list->raw_directory, sector_size - 2))
+		return 0;
 
 	hidpp_log_buf_raw(&device->base,
 			   "dictionary: ",
@@ -2549,6 +2822,11 @@ hidpp20_onboard_profiles_write_dict(struct hidpp20_device *device,
 	if (rc)
 		hidpp_log_error(&device->base, "failed to write profile dictionary\n");
 
+	if (!rc && v7) {
+		if (!profiles_list->raw_directory)
+			profiles_list->raw_directory = zalloc(sector_size);
+		memcpy(profiles_list->raw_directory, data, sector_size);
+	}
 	return rc;
 }
 
@@ -2565,7 +2843,7 @@ hidpp20_buttons_to_cpu(struct hidpp20_device *device,
 		union hidpp20_button_binding *b = &buttons[i];
 		union hidpp20_button_binding *button = &profile->buttons[i];
 
-		button->any.type = b->any.type;
+		memcpy(button, b, sizeof(*button));
 
 		switch (b->any.type) {
 		case HIDPP20_BUTTON_HID_TYPE:
@@ -2607,7 +2885,7 @@ hidpp20_buttons_to_cpu(struct hidpp20_device *device,
 		case HIDPP20_BUTTON_DISABLED:
 			break;
 		default:
-			memcpy(b, button, sizeof(*b));
+			/* Unknown bindings are retained verbatim. */
 			break;
 		}
 	}
@@ -2624,7 +2902,7 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 		union hidpp20_button_binding *button = &buttons[i];
 		union hidpp20_button_binding *b = &profile->buttons[i];
 
-		button->any.type = b->any.type;
+		memcpy(button, b, sizeof(*button));
 
 		switch (b->any.type) {
 		case HIDPP20_BUTTON_HID_TYPE:
@@ -2658,7 +2936,7 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 			button->macro.zero = 0;
 			break;
 		default:
-			memcpy(b, button, sizeof(*b));
+			/* Unknown bindings are retained verbatim. */
 			break;
 		}
 	}
@@ -2743,6 +3021,29 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 		}
 	}
 
+	if (profiles_list->profile_format == HIDPP20_PROFILE_FORMAT_V7) {
+		if (data[0] > 6 || data[1] >= HIDPP20_DPI_COUNT)
+			return -EPROTO;
+		profile->report_rate = 125U << data[0];
+		profile->default_dpi = data[1];
+		profile->switched_dpi = data[2];
+		profile->powersave_timeout = get_unaligned_le_u16(data + HIDPP20_PROFILE_V7_POWERSAVE_OFFSET);
+		profile->poweroff_timeout = get_unaligned_le_u16(data + HIDPP20_PROFILE_V7_POWEROFF_OFFSET);
+		for (i = 0; i < HIDPP20_DPI_COUNT; i++) {
+			uint8_t *dpi = data + HIDPP20_PROFILE_V7_DPI_OFFSET + HIDPP20_PROFILE_V7_DPI_STRIDE * i;
+
+			profile->dpi[i] = get_unaligned_le_u16(dpi);
+			profile->dpi_y[i] = get_unaligned_le_u16(dpi + 2);
+		}
+		hidpp20_buttons_to_cpu(device, profiles_list, profile,
+				      (union hidpp20_button_binding *)(data + HIDPP20_PROFILE_V7_BUTTONS_OFFSET),
+				      profiles_list->num_buttons);
+		free(profile->raw_data);
+		profile->raw_data = data;
+		data = NULL;
+		return 0;
+	}
+
 	profile->report_rate = 1000 / max(1, pdata->profile.report_rate);
 	profile->default_dpi = pdata->profile.default_dpi;
 	profile->switched_dpi = pdata->profile.switched_dpi;
@@ -2817,6 +3118,11 @@ hidpp20_onboard_profiles_initialize(struct hidpp20_device *device,
 							     profiles->sector_size,
 							     data);
 	if (crc_valid) {
+		if (profiles->profile_format == HIDPP20_PROFILE_FORMAT_V7) {
+			free(profiles->raw_directory);
+			profiles->raw_directory = zalloc(profiles->sector_size);
+			memcpy(profiles->raw_directory, data, profiles->sector_size);
+		}
 		for (i = 0; i < profiles->num_profiles; i++) {
 			uint8_t *d = data + 4 * i;
 
@@ -2943,6 +3249,41 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
 	pdata = (union hidpp20_internal_profile *)data;
+
+	if (profiles_list->profile_format == HIDPP20_PROFILE_FORMAT_V7) {
+		unsigned rate;
+
+		if (!profile->raw_data)
+			return -EINVAL;
+		for (rate = 0; rate <= 6; rate++)
+			if ((125U << rate) == profile->report_rate)
+				break;
+		if (rate > 6 || profile->default_dpi >= HIDPP20_DPI_COUNT)
+			return -EINVAL;
+		memcpy(data, profile->raw_data, sector_size);
+		data[0] = rate;
+		data[1] = profile->default_dpi;
+		data[2] = profile->switched_dpi;
+		for (i = 0; i < HIDPP20_DPI_COUNT; i++) {
+			uint8_t *dpi = data + HIDPP20_PROFILE_V7_DPI_OFFSET + HIDPP20_PROFILE_V7_DPI_STRIDE * i;
+
+			set_unaligned_le_u16(dpi, profile->dpi[i]);
+			set_unaligned_le_u16(dpi + 2, profile->dpi_y[i]);
+		}
+		hidpp20_buttons_from_cpu(profile,
+					(union hidpp20_button_binding *)(data + HIDPP20_PROFILE_V7_BUTTONS_OFFSET),
+					profiles_list->num_buttons);
+		/* A ROM fallback must be copied to flash even when unmodified. */
+		if (profile->address == sector &&
+		    !memcmp(data, profile->raw_data, sector_size - 2))
+			return 0;
+		rc = hidpp20_onboard_profiles_write_sector(device, sector, sector_size, data, true);
+		if (!rc) {
+			memcpy(profile->raw_data, data, sector_size);
+			profile->address = sector;
+		}
+		return rc;
+	}
 
 	memset(data, 0xff, profiles_list->sector_size);
 

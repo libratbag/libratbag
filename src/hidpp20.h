@@ -393,6 +393,8 @@ int hidpp20_mousepointer_get_mousepointer_info(struct hidpp20_device *device,
 /* -------------------------------------------------------------------------- */
 
 #define HIDPP_PAGE_ADJUSTABLE_DPI			0x2201
+#define HIDPP_PAGE_EXTENDED_ADJUSTABLE_DPI		0x2202
+#define HIDPP20_MAX_DPI_VALUES				1024
 
 /**
  * either dpi_steps is not null or the values are stored in the null terminated
@@ -405,8 +407,20 @@ struct hidpp20_sensor {
 	uint16_t dpi_max;
 	uint16_t dpi_steps;
 	uint16_t default_dpi;
-	uint16_t dpi_list[LONG_MESSAGE_LENGTH / 2 + 1];
+	uint16_t dpi_list[HIDPP20_MAX_DPI_VALUES + 1];
+	uint16_t dpi_y;
+	uint8_t separate_xy;
+	uint8_t lod;
 };
+
+/* Like 0x2201, but preserves the complete DPI lists and separate X/Y values.
+ * Returns the sensor count or a negative errno; the caller frees the list.
+ */
+int hidpp20_extended_adjustable_dpi_get_sensors(struct hidpp20_device *device,
+					      struct hidpp20_sensor **sensors_list);
+int hidpp20_extended_adjustable_dpi_set_dpi(struct hidpp20_device *device,
+					  const struct hidpp20_sensor *sensor,
+					  uint16_t dpi_x, uint16_t dpi_y);
 
 /**
  * allocates a list of sensors that has to be freed by the caller.
@@ -428,6 +442,12 @@ int hidpp20_adjustable_dpi_set_sensor_dpi(struct hidpp20_device *device,
 /* -------------------------------------------------------------------------- */
 
 #define HIDPP_PAGE_ADJUSTABLE_REPORT_RATE		0x8060
+#define HIDPP_PAGE_EXTENDED_ADJUSTABLE_REPORT_RATE	0x8061
+
+/* Rates are encoded as 0 = 125 Hz, ..., 6 = 8000 Hz. */
+int hidpp20_extended_report_rate_get(struct hidpp20_device *device,
+				   uint16_t *rates, uint8_t *rate);
+int hidpp20_extended_report_rate_set(struct hidpp20_device *device, uint8_t rate);
 
 /**
  * set the bitmap_ms to the supported report rates. Bits enabled reflect a
@@ -874,6 +894,8 @@ union hidpp20_macro_data {
 } __attribute__((packed));
 _Static_assert(sizeof(union hidpp20_macro_data) == 3, "Invalid size");
 
+#define HIDPP20_PROFILE_FORMAT_V7				0x07
+
 struct hidpp20_profile {
 	uint16_t address;
 	uint8_t enabled;
@@ -885,6 +907,9 @@ struct hidpp20_profile {
 	unsigned switched_dpi;
 	unsigned current_dpi;
 	uint16_t dpi[HIDPP20_DPI_COUNT];
+	uint16_t dpi_y[HIDPP20_DPI_COUNT];
+	/* Keep unexposed format-7 fields, including LOD and alternate buttons. */
+	uint8_t *raw_data;
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
@@ -907,6 +932,8 @@ struct hidpp20_onboard_profiles_info {
 _Static_assert(sizeof(struct hidpp20_onboard_profiles_info) == 16, "Invalid size");
 
 struct hidpp20_profiles {
+	uint8_t profile_format;
+	uint8_t *raw_directory;
 	uint8_t num_profiles;
 	uint8_t num_rom_profiles;
 	uint8_t num_buttons;
