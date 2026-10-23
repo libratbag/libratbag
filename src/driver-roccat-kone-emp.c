@@ -979,6 +979,8 @@ roccat_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_button(profile, button)
 		roccat_read_button(button);
 
+	/* Set up button layers: 11 normal buttons + 11 Easy-Shift buttons */
+	ratbag_profile_set_button_layers_simple(profile, 2);
 	
 	log_debug(device->ratbag, "profile: %d %s:%d\n",
 		settings->profile,

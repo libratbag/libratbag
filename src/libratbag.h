@@ -888,6 +888,35 @@ ratbag_profile_get_num_resolutions(const struct ratbag_profile *profile);
 /**
  * @ingroup profile
  *
+ * Returns the number of button layers for this profile. Devices without
+ * layer support or devices that don't support @ref
+ * RATBAG_PROFILE_CAP_BUTTON_LAYERS return 1. Devices with a shift layer
+ * (e.g., G-Shift, Easy-Shift) return 2.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return The number of button layers (1 = normal only, 2 = has shift layer)
+ */
+unsigned int
+ratbag_profile_get_num_button_layers(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
+ * Returns the number of physical buttons per layer for this profile.
+ * This value is only meaningful for devices that support @ref
+ * RATBAG_PROFILE_CAP_BUTTON_LAYERS.
+ *
+ * @param profile A previously initialized ratbag profile
+ *
+ * @return The number of physical buttons per layer
+ */
+unsigned int
+ratbag_profile_get_num_buttons_per_layer(const struct ratbag_profile *profile);
+
+/**
+ * @ingroup profile
+ *
  * Return the resolution in DPI and the report rate in Hz for the resolution
  * mode identified by the given index. The index must be between 0 and
  * ratbag_profile_get_num_resolution_modes().
@@ -1236,6 +1265,35 @@ ratbag_button_set_user_data(struct ratbag_button *button, void *userdata);
  */
 void*
 ratbag_button_get_user_data(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * Returns the layer index (0 or 1) for a given button. This is only
+ * meaningful for devices that support @ref RATBAG_PROFILE_CAP_BUTTON_LAYERS.
+ * Layer 0 is the normal layer, layer 1 is the shifted layer (e.g., G-Shift,
+ * Easy-Shift).
+ *
+ * @param button A previously initialized ratbag button
+ *
+ * @return The layer index (0 for normal, 1 for shifted)
+ */
+unsigned int
+ratbag_button_get_layer(const struct ratbag_button *button);
+
+/**
+ * @ingroup button
+ *
+ * Returns the within-layer index for a given button. This is the button's
+ * index within its layer, useful for mapping to SVG elements. On devices
+ * without @ref RATBAG_PROFILE_CAP_BUTTON_LAYERS this is the button index.
+ *
+ * @param button A previously initialized ratbag button
+ *
+ * @return The within-layer index
+ */
+unsigned int
+ratbag_button_get_layer_index(const struct ratbag_button *button);
 
 /**
  * @ingroup button

@@ -428,6 +428,44 @@ ratbagd_profile_get_name(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_get_num_button_layers(sd_bus *bus,
+				      const char *path,
+				      const char *interface,
+				      const char *property,
+				      sd_bus_message *reply,
+				      void *userdata,
+				      sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	unsigned int num_layers;
+
+	num_layers = ratbag_profile_get_num_button_layers(lib_profile);
+	CHECK_CALL(sd_bus_message_append(reply, "u", num_layers));
+
+	return 0;
+}
+
+static int
+ratbagd_profile_get_num_buttons_per_layer(sd_bus *bus,
+					  const char *path,
+					  const char *interface,
+					  const char *property,
+					  sd_bus_message *reply,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	unsigned int num_buttons_per_layer;
+
+	num_buttons_per_layer = ratbag_profile_get_num_buttons_per_layer(lib_profile);
+	CHECK_CALL(sd_bus_message_append(reply, "u", num_buttons_per_layer));
+
+	return 0;
+}
+
+static int
 ratbagd_profile_get_capabilities(sd_bus *bus,
 				 const char *path,
 				 const char *interface,
@@ -442,6 +480,7 @@ ratbagd_profile_get_capabilities(sd_bus *bus,
 	enum ratbag_profile_capability caps[] = {
 		RATBAG_PROFILE_CAP_SET_DEFAULT,
 		RATBAG_PROFILE_CAP_DISABLE,
+		RATBAG_PROFILE_CAP_BUTTON_LAYERS,
 	};
 	size_t i;
 
@@ -690,6 +729,8 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_profile, index), SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Capabilities", "au", ratbagd_profile_get_capabilities, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("NumButtonLayers", "u", ratbagd_profile_get_num_button_layers, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("NumButtonsPerLayer", "u", ratbagd_profile_get_num_buttons_per_layer, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Resolutions", "ao", ratbagd_profile_get_resolutions, 0, 0),
 	SD_BUS_PROPERTY("Buttons", "ao", ratbagd_profile_get_buttons, 0, 0),
 	SD_BUS_PROPERTY("Leds", "ao", ratbagd_profile_get_leds, 0, 0),

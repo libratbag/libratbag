@@ -291,7 +291,19 @@ logitech_g600_read_button(struct ratbag_button *button)
 
 	pdata = &drv_data->profile_data[profile->index];
 	profile_report = &pdata->report;
-	button_report = &profile_report->buttons[button->index];
+
+	/* Button 20 is the color buffer slot - should not be read */
+	if (button->index == 20) {
+		log_debug(device->ratbag,
+			  "Skipping color buffer slot (button 20)\n");
+		return;
+	}
+
+	/* Buttons 0-19: normal layer, 21-40: G-shift layer */
+	if (button->index >= 21 && button->index <= 40)
+		button_report = &profile_report->g_shift_buttons[button->index - 21];
+	else
+		button_report = &profile_report->buttons[button->index];
 
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_NONE);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_BUTTON);
@@ -419,6 +431,33 @@ logitech_g600_read_profile(struct ratbag_profile *profile)
 	ratbag_profile_for_each_led(profile, led)
 		logitech_g600_read_led(led);
 
+	/* Set up sparse button layer map: 20 normal + 20 G-shift, with button 20 as color buffer */
+	{
+		struct ratbag_button_layer_entry layer_map[40];
+		unsigned int map_idx = 0;
+		unsigned int i;
+
+		/* Layer 0: buttons 0-19 */
+		for (i = 0; i < 20; i++) {
+			layer_map[map_idx].global_index = i;
+			layer_map[map_idx].layer = 0;
+			layer_map[map_idx].layer_index = i;
+			map_idx++;
+		}
+
+		/* Button 20 is the color buffer slot - leave it unmapped */
+
+		/* Layer 1: buttons 21-40 are G-shift layer */
+		for (i = 21; i <= 40; i++) {
+			layer_map[map_idx].global_index = i;
+			layer_map[map_idx].layer = 1;
+			layer_map[map_idx].layer_index = i - 21;
+			map_idx++;
+		}
+
+		ratbag_profile_set_button_layer_map(profile, 2, 20, layer_map, map_idx);
+	}
+
 	log_debug(device->ratbag, "Unknown data in profile %d\n", profile->index);
 	log_buf_debug(device->ratbag,  "  profile->unknown1:   ",
 		      report->unknown1, 5);
@@ -507,7 +546,18 @@ logitech_g600_write_profile(struct ratbag_profile *profile)
 		struct ratbag_button_action *action = &button->action;
 		struct logitech_g600_button *raw_button;
 
-		raw_button = &report->buttons[button->index];
+		/* Button 20 is the color buffer slot - should not be written */
+		if (button->index == 20) {
+			log_debug(device->ratbag,
+				  "Skipping color buffer slot (button 20)\n");
+			continue;
+		}
+
+		/* Buttons 0-19: normal layer, 21-40: G-shift layer */
+		if (button->index >= 21 && button->index <= 40)
+			raw_button = &report->g_shift_buttons[button->index - 21];
+		else
+			raw_button = &report->buttons[button->index];
 
 		raw_button->code = logitech_g600_button_action_to_raw(action);
 		raw_button->modifier = 0x00;

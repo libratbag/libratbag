@@ -471,9 +471,45 @@ static int ratbagd_button_get_action_types(sd_bus *bus,
 	return 0;
 }
 
+static int ratbagd_button_get_layer(sd_bus *bus,
+				    const char *path,
+				    const char *interface,
+				    const char *property,
+				    sd_bus_message *reply,
+				    void *userdata,
+				    sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	unsigned int layer;
+
+	layer = ratbag_button_get_layer(button->lib_button);
+	CHECK_CALL(sd_bus_message_append(reply, "u", layer));
+
+	return 0;
+}
+
+static int ratbagd_button_get_layer_index(sd_bus *bus,
+					  const char *path,
+					  const char *interface,
+					  const char *property,
+					  sd_bus_message *reply,
+					  void *userdata,
+					  sd_bus_error *error)
+{
+	struct ratbagd_button *button = userdata;
+	unsigned int layer_index;
+
+	layer_index = ratbag_button_get_layer_index(button->lib_button);
+	CHECK_CALL(sd_bus_message_append(reply, "u", layer_index));
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_button_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_PROPERTY("Index", "u", NULL, offsetof(struct ratbagd_button, index), SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("Layer", "u", ratbagd_button_get_layer, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+	SD_BUS_PROPERTY("LayerIndex", "u", ratbagd_button_get_layer_index, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_WRITABLE_PROPERTY("Mapping", "(uv)",
 				 ratbagd_button_get_mapping,
 				 ratbagd_button_set_mapping,
