@@ -1,0 +1,5 @@
+[Device]
+Name=Holtek Generic Mouse (a09f)
+DeviceMatch=usb:04d9:a09f
+DeviceType=mouse
+Driver=holtek_a09f
