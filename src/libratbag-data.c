@@ -61,6 +61,7 @@ enum driver {
 	ASUS,
 	SINOWEALTH,
 	SINOWEALTH_NUBWO,
+	HOLTEK_A09F,
 	OPENINPUT,
 	MARSGAMING,
 };
@@ -512,6 +513,7 @@ static const struct driver_map {
 	{ ASUS, "asus", init_data_asus },
 	{ SINOWEALTH, "sinowealth", init_data_sinowealth },
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
+	{ HOLTEK_A09F, "holtek_a09f", NULL },
 	{ OPENINPUT, "openinput", NULL },
 	{ MARSGAMING, "marsgaming", NULL },
 };
