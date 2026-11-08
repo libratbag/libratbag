@@ -414,6 +414,7 @@ asus_driver_load_profiles(struct ratbag_device *device)
 	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
 	unsigned int current_profile_id = 0;
+	unsigned int active_profile_id;
 
 	/* get current profile id */
 	rc = asus_get_profile_data(device, &profile_data);
@@ -424,6 +425,10 @@ asus_driver_load_profiles(struct ratbag_device *device)
 		current_profile_id = profile_data.profile_id;
 		log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
 	}
+
+	/* the device does not stay on current_profile_id: every switch below moves
+	 * it, so keep track of where it actually is */
+	active_profile_id = current_profile_id;
 
 	log_debug(
 		device->ratbag, "Primary version %02X.%02X.%02X\n",
@@ -438,15 +443,15 @@ asus_driver_load_profiles(struct ratbag_device *device)
 
 	/* read ratbag profiles */
 	ratbag_device_for_each_profile(device, profile) {
-		if (profile->index == current_profile_id) {  /* profile is already selected */
-			profile->is_active = true;
-		} else {  /* switch profile */
-			profile->is_active = false;
+		profile->is_active = profile->index == current_profile_id;
 
+		/* switch profile if the device is not on it already */
+		if (profile->index != active_profile_id) {
 			log_debug(device->ratbag, "Switching to profile %d\n", profile->index);
 			rc = asus_set_profile(device, profile->index);
 			if (rc)
 				return rc;
+			active_profile_id = profile->index;
 		}
 
 		rc = asus_driver_load_profile(device, profile, profile_data.dpi_preset);
@@ -472,6 +477,7 @@ asus_driver_save_profiles(struct ratbag_device *device)
 	struct asus_profile_data profile_data;
 	struct ratbag_profile *profile;
 	unsigned int current_profile_id = 0;
+	unsigned int active_profile_id;
 
 	/* get current profile id */
 	if (device->num_profiles > 1) {
@@ -482,6 +488,7 @@ asus_driver_save_profiles(struct ratbag_device *device)
 		current_profile_id = profile_data.profile_id;
 		log_debug(device->ratbag, "Initial profile is %d\n", current_profile_id);
 	}
+	active_profile_id = current_profile_id;
 
 	ratbag_device_for_each_profile(device, profile) {
 		if (!profile->dirty)
@@ -489,12 +496,13 @@ asus_driver_save_profiles(struct ratbag_device *device)
 
 		log_debug(device->ratbag, "Profile %d changed\n", profile->index);
 
-		/* switch profile */
-		if (profile->index != current_profile_id) {
+		/* switch profile if the device is not on it already */
+		if (profile->index != active_profile_id) {
 			log_debug(device->ratbag, "Switching to profile %d\n", profile->index);
 			rc = asus_set_profile(device, profile->index);
 			if (rc)
 				return rc;
+			active_profile_id = profile->index;
 		}
 
 		rc = asus_driver_save_profile(device, profile);
