@@ -80,6 +80,32 @@ static const uint8_t ASUS_JOYSTICK_CODES[] = { 0xd0, 0xd1, 0xd2, 0xd3, 0xd7, 0xd
 static const unsigned int ASUS_POLLING_RATES[] = { 125, 250, 500, 1000 };
 static const unsigned int ASUS_DEBOUNCE_TIMES[] = { 4, 8, 12, 16, 20, 24, 28, 32 };
 
+/* Translate a device-provided index into a polling rate. Devices are known to
+ * send out-of-range indexes, so never index these arrays directly. */
+static unsigned int
+asus_polling_rate(struct ratbag_device *device, unsigned int index)
+{
+	if (index >= ARRAY_LENGTH(ASUS_POLLING_RATES)) {
+		log_debug(device->ratbag, "Ignoring invalid polling rate index %u\n",
+			  index);
+		return 0;
+	}
+
+	return ASUS_POLLING_RATES[index];
+}
+
+static unsigned int
+asus_debounce_time(struct ratbag_device *device, unsigned int index)
+{
+	if (index >= ARRAY_LENGTH(ASUS_DEBOUNCE_TIMES)) {
+		log_debug(device->ratbag, "Ignoring invalid debounce index %u\n",
+			  index);
+		return 0;
+	}
+
+	return ASUS_DEBOUNCE_TIMES[index];
+}
+
 /* search for ASUS button by ratbag types */
 const struct asus_button *
 asus_find_button_by_action(struct ratbag_button_action action, bool is_joystick)
@@ -356,8 +382,8 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 			if (quirks & ASUS_QUIRK_DOUBLE_DPI)
 				data->data2.dpi[i] *= 2;
 		}
-		data->data2.rate = ASUS_POLLING_RATES[data->data2.rate];
-		data->data2.response = ASUS_DEBOUNCE_TIMES[data->data2.response];
+		data->data2.rate = asus_polling_rate(device, data->data2.rate);
+		data->data2.response = asus_debounce_time(device, data->data2.response);
 		break;
 
 	case 4:  /* 4 DPI presets */
@@ -393,8 +419,8 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 						       (data->raw[5 + i * 2] << 8);
 					data->data4.dpi[i] = dpi * 50 + 50;
 				}
-				data->data4.rate = ASUS_POLLING_RATES[data->raw[12] & 0x07];
-				data->data4.response = ASUS_DEBOUNCE_TIMES[data->raw[14]];
+				data->data4.rate = asus_polling_rate(device, data->raw[12] & 0x07);
+				data->data4.response = asus_debounce_time(device, data->raw[14]);
 				data->data4.snapping = data->raw[16];
 			} else {
 				for (i = 0; i < dpi_count; i++) {
@@ -402,8 +428,8 @@ asus_get_resolution_data(struct ratbag_device *device, union asus_resolution_dat
 					if (quirks & ASUS_QUIRK_DOUBLE_DPI)
 						data->data4.dpi[i] *= 2;
 				}
-				data->data4.rate = ASUS_POLLING_RATES[data->data4.rate];
-				data->data4.response = ASUS_DEBOUNCE_TIMES[data->data4.response];
+				data->data4.rate = asus_polling_rate(device, data->data4.rate);
+				data->data4.response = asus_debounce_time(device, data->data4.response);
 			}
 		}
 		break;
