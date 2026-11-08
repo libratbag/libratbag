@@ -11,3 +11,4 @@ Leds=1
 Dpis=4
 Wireless=1
 DpiRange=100:36000@50
+Quirks=SETTINGS_V2;LED_V2;SEPARATE_XY_DPI
