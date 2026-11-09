@@ -76,7 +76,7 @@ def check_dpi_range_str(string: str):
     steps = float(m.group(3))
 
     assert min >= 0 and min <= 400
-    assert max >= 2000 and max <= 36000
+    assert max >= 2000 and max <= 42000
     assert steps > 0 and steps <= 100
 
     if int(steps) == steps:
