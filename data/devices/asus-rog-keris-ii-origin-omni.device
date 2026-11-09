@@ -1,0 +1,20 @@
+[Device]
+Name=ASUS ROG Keris II Origin
+DeviceMatch=usb:0b05:1c0e
+DeviceType=mouse
+Driver=asus
+
+# This device enumerates as usb 0b05:1c0e behind the ASUS Omni receiver
+# (0b05:1ace). The usb id is resolved during probe: the receiver is
+# identified first (asus-rog-omni-receiver.device) and the serial number
+# signature prefix (OmniSignature) is matched against this file.
+# Wired, the mouse is handled by asus-rog-keris-ii-origin.device.
+[Driver/asus]
+Profiles=5
+Buttons=8
+Leds=3
+Dpis=4
+Wireless=1
+DpiRange=100:42000@50
+Quirks=OMNI_RECEIVER;SEPARATE_XY_DPI;LED_V2;SETTINGS_V2
+OmniSignature=02
