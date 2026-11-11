@@ -562,6 +562,9 @@ asus_driver_probe(struct ratbag_device *device)
 			return -ENODEV;
 		}
 
+        /* D-Bus Model is derived from device->ids, so update it to report
+         * the resolved mouse's ID instead of the shared receiver ID. */
+		device->ids = id;
 		ratbag_device_data_unref(device->data);
 		device->data = data;
 		device->devicetype = ratbag_device_data_get_device_type(device->data);
