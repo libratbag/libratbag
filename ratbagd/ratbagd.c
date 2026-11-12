@@ -777,11 +777,25 @@ void ratbagd_schedule_task(struct ratbagd *ctx,
 			   ratbagd_callback_t callback,
 			   void *userdata)
 {
-	struct ratbagd_callback *cb = zalloc(sizeof *cb);
+	struct ratbagd_callback *cb;
 	sd_event_source *source;
+	int r;
+
+	cb = zalloc(sizeof *cb);
+	if (!cb) {
+		/* out of memory: run the task right now so that whatever
+		 * reference userdata holds gets released */
+		callback(userdata);
+		return;
+	}
 
 	cb->callback = callback;
 	cb->userdata = userdata;
 
-	sd_event_add_defer(ctx->event, &source, ratbagd_callback_handler, cb);
+	r = sd_event_add_defer(ctx->event, &source, ratbagd_callback_handler, cb);
+	if (r < 0) {
+		log_error("Cannot schedule task: %s\n", strerror(-r));
+		free(cb);
+		callback(userdata);
+	}
 }
