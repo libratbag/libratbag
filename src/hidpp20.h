@@ -865,14 +865,14 @@ union hidpp20_macro_data {
 	} __attribute__((packed)) key;
 	struct {
 		uint8_t type; /* HIDPP20_MACRO_JUMP */
-		uint8_t offset;
-		uint8_t page;
+		uint16_t page; /* big endian, as on the device */
+		uint16_t offset; /* big endian, as on the device */
 	} __attribute__((packed)) jump;
 	struct {
 		uint8_t type; /* HIDPP20_MACRO_END */
 	} __attribute__((packed)) end;
 } __attribute__((packed));
-_Static_assert(sizeof(union hidpp20_macro_data) == 3, "Invalid size");
+_Static_assert(sizeof(union hidpp20_macro_data) == 5, "Invalid size");
 
 /* on-device name field is 48 bytes (24 UTF-16 code units); as UTF-8 this
  * needs at most 3 bytes per BMP character plus the terminator */
@@ -893,6 +893,7 @@ struct hidpp20_profile {
 	uint16_t dpi[HIDPP20_DPI_COUNT];
 	union hidpp20_button_binding buttons[32];
 	union hidpp20_macro_data *macros[32];
+	bool macro_dirty[32]; /* macros[i] was changed and must be written to flash */
 	struct hidpp20_led leds[HIDPP20_LED_COUNT];
 	struct hidpp20_led alt_leds[HIDPP20_LED_COUNT];
 };
@@ -926,6 +927,8 @@ struct hidpp20_profiles {
 	uint16_t sector_size;
 	uint8_t active_profile_index;
 	struct hidpp20_profile *profiles;
+	/* sectors some macro was read from, including ones only reached by a jump */
+	bool macro_page_used[256];
 };
 
 /**
