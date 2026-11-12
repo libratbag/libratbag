@@ -1042,7 +1042,9 @@ class RatbagdMacro(GObject.Object):
                         idx += 1
             except IndexError:
                 pass
-            keys.append(self._MACRO_DESCRIPTION[t](v))
+            describe = self._MACRO_DESCRIPTION.get(t)
+            if describe is not None:  # NONE/unknown events have no description
+                keys.append(describe(v))
             idx += 1
         return " ".join(keys)
 
