@@ -600,7 +600,7 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		profile->buttons[button->index].special.special = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_NONE:
-		profile->buttons[button->index].disabled.type = HIDPP20_BUTTON_HID_TYPE_NOOP;
+		profile->buttons[button->index].disabled.type = HIDPP20_BUTTON_DISABLED;
 		break;
 	default:
 		return -ENOTSUP;
@@ -628,7 +628,7 @@ static int
 hidpp20drv_update_led_1300(struct ratbag_led *led, struct hidpp20drv_data *data)
 {
 	const uint16_t led_caps = data->led_infos.leds[led->index].caps;
-	struct hidpp20_led_sw_ctrl_led_state h_led;
+	struct hidpp20_led_sw_ctrl_led_state h_led = { 0 };
 	int rc;
 
 	h_led.index = led->index;
@@ -1013,6 +1013,7 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 			while (sensor->dpi_list[i]) {
 				if (sensor->dpi_list[i] == dpi)
 					break;
+				i++;
 			}
 			if (sensor->dpi_list[i] != dpi)
 				return -EINVAL;

@@ -374,7 +374,7 @@ hidpp20_feature_set_get(struct hidpp20_device *device)
 	uint8_t feature_index, feature_type, feature_version;
 	struct hidpp20_feature *flist;
 	int rc;
-	uint8_t feature_count;
+	unsigned int feature_count;
 	unsigned int i;
 
 	rc = hidpp_root_get_feature(device,
@@ -392,7 +392,7 @@ hidpp20_feature_set_get(struct hidpp20_device *device)
 	/* feature set count does not include the root feature as documented here:
 	 * https://6xq.net/git/lars/lshidpp.git/plain/doc/logitech_hidpp_2.0_specification_draft_2012-06-04.pdf
 	 **/
-	feature_count = ((uint8_t)rc) + 1;
+	feature_count = (unsigned int)rc + 1;
 
 	if (feature_count == 1)
 		return -ENOTSUP;
@@ -2030,10 +2030,17 @@ hidpp20_onboard_profiles_write_sector(struct hidpp20_device *device,
 		return rc;
 
 	for (transferred = 0; transferred < sector_size; transferred += 16) {
-		rc = hidpp20_onboard_profiles_write_data(device, data, feature_index);
+		uint8_t chunk[16];
+		unsigned int remaining = sector_size - transferred;
+
+		/* sector sizes are not always a multiple of 16 (the G502 uses
+		 * 255); never read past the caller's buffer and pad with 0xff */
+		memset(chunk, 0xff, sizeof(chunk));
+		memcpy(chunk, data + transferred, remaining < 16 ? remaining : 16);
+
+		rc = hidpp20_onboard_profiles_write_data(device, chunk, feature_index);
 		if (rc)
 			return rc;
-		data += 16;
 	}
 
 	rc = hidpp20_onboard_profiles_write_end(device, feature_index);
@@ -2518,6 +2525,10 @@ hidpp20_onboard_profiles_write_dict(struct hidpp20_device *device,
 	_cleanup_free_ uint8_t *data = NULL;
 	int rc;
 
+	/* 4 bytes per profile, the 0xffff terminator and the CRC-less tail */
+	if (profiles_list->num_profiles * 4 + 4 > sector_size)
+		return -EINVAL;
+
 	data = hidpp20_onboard_profiles_allocate_sector(profiles_list);
 
 	for (i = 0; i < profiles_list->num_profiles; i++) {
@@ -2607,7 +2618,7 @@ hidpp20_buttons_to_cpu(struct hidpp20_device *device,
 		case HIDPP20_BUTTON_DISABLED:
 			break;
 		default:
-			memcpy(b, button, sizeof(*b));
+			memcpy(button, b, sizeof(*b));
 			break;
 		}
 	}
@@ -2658,7 +2669,7 @@ hidpp20_buttons_from_cpu(struct hidpp20_profile *profile,
 			button->macro.zero = 0;
 			break;
 		default:
-			memcpy(b, button, sizeof(*b));
+			memcpy(button, b, sizeof(*b));
 			break;
 		}
 	}
