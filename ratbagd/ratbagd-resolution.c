@@ -84,14 +84,17 @@ static int ratbagd_resolution_set_active(sd_bus_message *m,
 	r = ratbag_resolution_set_active(resolution->lib_resolution);
 	if (r < 0) {
 		sd_bus *bus = sd_bus_message_get_bus(m);
-		r = ratbagd_device_resync(resolution->device, bus);
-		if (r < 0)
-			return r;
+		ratbagd_device_resync(resolution->device, bus);
+		return sd_bus_error_setf(error, SD_BUS_ERROR_FAILED,
+					 "libratbag error %d", r);
 	}
 
 	ratbagd_for_each_resolution_signal(sd_bus_message_get_bus(m),
 					   resolution->profile,
 					   ratbagd_resolution_active_signal_cb);
+
+	ratbagd_profile_notify_dirty(sd_bus_message_get_bus(m),
+				     resolution->profile);
 
 	return sd_bus_reply_method_return(m, "u", 0);
 }
@@ -121,14 +124,17 @@ static int ratbagd_resolution_set_default(sd_bus_message *m,
 	r = ratbag_resolution_set_default(resolution->lib_resolution);
 	if (r < 0) {
 		sd_bus *bus = sd_bus_message_get_bus(m);
-		r = ratbagd_device_resync(resolution->device, bus);
-		if (r < 0)
-			return r;
+		ratbagd_device_resync(resolution->device, bus);
+		return sd_bus_error_setf(error, SD_BUS_ERROR_FAILED,
+					 "libratbag error %d", r);
 	}
 
 	ratbagd_for_each_resolution_signal(sd_bus_message_get_bus(m),
 					   resolution->profile,
 					   ratbagd_resolution_default_signal_cb);
+
+	ratbagd_profile_notify_dirty(sd_bus_message_get_bus(m),
+				     resolution->profile);
 
 	return sd_bus_reply_method_return(m, "u", 0);
 }
@@ -208,6 +214,7 @@ static int ratbagd_resolution_set_disabled(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Resolution",
 					       "IsDisabled",
 					       NULL);
+		ratbagd_profile_notify_dirty(bus, resolution->profile);
 	}
 
 	return 0;
@@ -303,6 +310,7 @@ ratbagd_resolution_set_resolution(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Resolution",
 					       "Resolution",
 					       NULL);
+		ratbagd_profile_notify_dirty(bus, resolution->profile);
 	}
 
 	return 0;

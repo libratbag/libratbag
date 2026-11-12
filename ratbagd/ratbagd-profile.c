@@ -381,16 +381,17 @@ ratbagd_profile_set_name(sd_bus *bus,
 	CHECK_CALL(sd_bus_message_read(m, "s", &name));
 
 	r = ratbag_profile_set_name(profile->lib_profile, name);
+	if (r != 0)
+		return sd_bus_error_setf(error, SD_BUS_ERROR_NOT_SUPPORTED,
+					 "Cannot set profile name (%d)", r);
 
-	if (r == 0) {
-		sd_bus_emit_properties_changed(bus,
-					       profile->path,
-					       RATBAGD_NAME_ROOT ".Profile",
-					       "Name",
-					       NULL);
+	sd_bus_emit_properties_changed(bus,
+				       profile->path,
+				       RATBAGD_NAME_ROOT ".Profile",
+				       "Name",
+				       NULL);
 
-		ratbagd_profile_notify_dirty(bus, profile);
-	}
+	ratbagd_profile_notify_dirty(bus, profile);
 
 	return 0;
 }
