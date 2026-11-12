@@ -34,6 +34,7 @@
 #include "libratbag-util.h"
 
 struct ratbagd_led {
+	struct ratbagd_profile *profile;
 	struct ratbag_led *lib_led;
 	unsigned int index;
 	char *path;
@@ -107,6 +108,7 @@ static int ratbagd_led_set_mode(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Led",
 					       "Mode",
 					       NULL);
+		ratbagd_profile_notify_dirty(bus, led->profile);
 	}
 
 	return 0;
@@ -158,6 +160,7 @@ static int ratbagd_led_set_color(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Led",
 					       "Color",
 					       NULL);
+		ratbagd_profile_notify_dirty(bus, led->profile);
 	}
 
 	return 0;
@@ -208,6 +211,7 @@ static int ratbagd_led_set_effect_duration(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Led",
 					       "EffectDuration",
 					       NULL);
+		ratbagd_profile_notify_dirty(bus, led->profile);
 	}
 
 	return 0;
@@ -258,6 +262,7 @@ static int ratbagd_led_set_brightness(sd_bus *bus,
 					       RATBAGD_NAME_ROOT ".Led",
 					       "Brightness",
 					       NULL);
+		ratbagd_profile_notify_dirty(bus, led->profile);
 	}
 
 	return 0;
@@ -299,6 +304,7 @@ int ratbagd_led_new(struct ratbagd_led **out,
 	assert(lib_led);
 
 	led = zalloc(sizeof(*led));
+	led->profile = profile;
 	led->lib_led = lib_led;
 	led->index = index;
 	led->colordepth = ratbag_led_get_colordepth(lib_led);
