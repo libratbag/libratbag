@@ -2732,6 +2732,104 @@ hidpp20_onboard_profiles_read_led(struct hidpp20_led *led,
 	led->brightness = brightness;
 }
 
+/*
+ * The profile name is stored on the device in a 48 byte field. Logitech's
+ * own software writes UTF-16LE; older libratbag treated it as single bytes.
+ * We accept both on read and keep writing whichever one the device uses.
+ */
+static void
+hidpp20_profile_name_from_raw(struct hidpp20_profile *profile, const uint8_t *raw)
+{
+	size_t i, n = HIDPP20_PROFILE_NAME_RAW_SIZE;
+	char *out = profile->name;
+	bool all_ff = true;
+
+	memset(profile->name, 0, sizeof(profile->name));
+	profile->name_is_ascii = false;
+
+	for (i = 0; i < n; i++) {
+		if (raw[i] != 0xff) {
+			all_ff = false;
+			break;
+		}
+	}
+	if (all_ff)
+		return; /* default (unset) name */
+
+	if (raw[0] != 0 && raw[1] != 0) {
+		/* single byte text */
+		profile->name_is_ascii = true;
+		for (i = 0; i < n && raw[i] != 0 && raw[i] != 0xff; i++)
+			*out++ = (char)raw[i];
+		return;
+	}
+
+	for (i = 0; i + 1 < n; i += 2) {
+		uint32_t c = raw[i] | (raw[i + 1] << 8);
+
+		if (c == 0 || c == 0xffff)
+			break;
+		if (c >= 0xd800 && c <= 0xdfff)
+			c = '?'; /* surrogates are not supported */
+
+		if (c < 0x80) {
+			*out++ = c;
+		} else if (c < 0x800) {
+			*out++ = 0xc0 | (c >> 6);
+			*out++ = 0x80 | (c & 0x3f);
+		} else {
+			*out++ = 0xe0 | (c >> 12);
+			*out++ = 0x80 | ((c >> 6) & 0x3f);
+			*out++ = 0x80 | (c & 0x3f);
+		}
+	}
+}
+
+static void
+hidpp20_profile_name_to_raw(const struct hidpp20_profile *profile, uint8_t *raw)
+{
+	const unsigned char *in = (const unsigned char *)profile->name;
+	size_t n = HIDPP20_PROFILE_NAME_RAW_SIZE;
+	size_t o = 0;
+
+	if (profile->name[0] == '\0') {
+		memset(raw, 0xff, n); /* default name */
+		return;
+	}
+
+	memset(raw, 0, n);
+
+	if (profile->name_is_ascii) {
+		for (; *in && o + 1 < n; in++)
+			raw[o++] = (*in < 0x80) ? *in : '?';
+		return;
+	}
+
+	while (*in && o + 3 < n) {
+		uint32_t c;
+
+		if (*in < 0x80) {
+			c = *in++;
+		} else if ((*in & 0xe0) == 0xc0 && (in[1] & 0xc0) == 0x80) {
+			c = ((in[0] & 0x1f) << 6) | (in[1] & 0x3f);
+			in += 2;
+		} else if ((*in & 0xf0) == 0xe0 && (in[1] & 0xc0) == 0x80 &&
+			   (in[2] & 0xc0) == 0x80) {
+			c = ((in[0] & 0x0f) << 12) | ((in[1] & 0x3f) << 6) | (in[2] & 0x3f);
+			in += 3;
+		} else {
+			/* 4 byte sequence or invalid: not representable */
+			c = '?';
+			in++;
+			while ((*in & 0xc0) == 0x80)
+				in++;
+		}
+		raw[o++] = c & 0xff;
+		raw[o++] = c >> 8;
+	}
+	/* remaining bytes stay 0 which terminates the string */
+}
+
 static int
 hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 				       struct hidpp20_profiles *profiles_list,
@@ -2785,17 +2883,9 @@ hidpp20_onboard_profiles_parse_profile(struct hidpp20_device *device,
 
 	hidpp20_buttons_to_cpu(device, profiles_list, profile, pdata->profile.buttons, profiles_list->num_buttons);
 
-	memcpy(profile->name, pdata->profile.name.txt, sizeof(profile->name));
-	/* force terminating '\0' */
-	profile->name[sizeof(profile->name) - 1] = '\0';
-
-	/* check if we are using the default name or not */
-	for (i = 0; i < sizeof(profile->name); i++) {
-		if (pdata->profile.name.raw[i] != 0xff)
-			break;
-	}
-	if (i == sizeof(profile->name))
-		memset(profile->name, 0, sizeof(profile->name));
+	hidpp20_profile_name_from_raw(profile, pdata->profile.name.raw);
+	hidpp_log_buf_raw(&device->base, "profile name raw: ",
+			  pdata->profile.name.raw, HIDPP20_PROFILE_NAME_RAW_SIZE);
 
 	return 0;
 }
@@ -2989,7 +3079,7 @@ hidpp20_onboard_profiles_write_profile(struct hidpp20_device *device,
 
 	hidpp20_buttons_from_cpu(profile, pdata->profile.buttons, profiles_list->num_buttons);
 
-	memcpy(pdata->profile.name.txt, profile->name, sizeof(profile->name));
+	hidpp20_profile_name_to_raw(profile, pdata->profile.name.raw);
 
 	// Mice like G502X can store custom animations onboard.
 	// ratbag does not support this, so we set it to disable it to ensure

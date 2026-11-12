@@ -874,10 +874,16 @@ union hidpp20_macro_data {
 } __attribute__((packed));
 _Static_assert(sizeof(union hidpp20_macro_data) == 3, "Invalid size");
 
+/* on-device name field is 48 bytes (24 UTF-16 code units); as UTF-8 this
+ * needs at most 3 bytes per BMP character plus the terminator */
+#define HIDPP20_PROFILE_NAME_RAW_SIZE	(16 * 3)
+#define HIDPP20_PROFILE_NAME_MAX	(HIDPP20_PROFILE_NAME_RAW_SIZE / 2 * 3 + 1)
+
 struct hidpp20_profile {
 	uint16_t address;
 	uint8_t enabled;
-	char name[16 * 3];
+	char name[HIDPP20_PROFILE_NAME_MAX]; /* UTF-8 */
+	bool name_is_ascii; /* device stores the name as single bytes */
 	uint16_t powersave_timeout;
 	uint16_t poweroff_timeout;
 	unsigned report_rate;

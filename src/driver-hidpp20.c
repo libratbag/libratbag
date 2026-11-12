@@ -1200,6 +1200,10 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 
 	profile->is_enabled = drv_data->profiles->profiles[profile->index].enabled;
 
+	/* expose the (possibly empty) name so that it can be edited */
+	free(profile->name);
+	profile->name = strdup_safe(drv_data->profiles->profiles[profile->index].name);
+
 	profile->is_active = (profile->index == drv_data->profiles->active_profile_index);
 
 	if (profile->is_active)
@@ -1484,9 +1488,21 @@ hidpp20drv_commit(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	int rc;
 
+	bool any_dirty = false;
+
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
 			continue;
+
+		any_dirty = true;
+
+		if ((drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) &&
+		    profile->name) {
+			struct hidpp20_profile *hp = &drv_data->profiles->profiles[profile->index];
+
+			strncpy(hp->name, profile->name, sizeof(hp->name) - 1);
+			hp->name[sizeof(hp->name) - 1] = '\0';
+		}
 
 		if (profile->rate_dirty) {
 			rc = hidpp20drv_update_report_rate(profile, profile->hz);
@@ -1529,7 +1545,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 		}
 	}
 
-	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+	if ((drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) && any_dirty) {
 		list_for_each(profile, &device->profiles, link)
 			drv_data->profiles->profiles[profile->index].enabled = profile->is_enabled;
 
