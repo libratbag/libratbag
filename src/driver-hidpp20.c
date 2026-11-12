@@ -1385,7 +1385,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 
 		rc = hidpp20_batterylevel_get_battery_level(drv_data->dev, &level, &next_level);
 		if (rc < 0)
-			return rc;
+			return 0; /* battery state is not essential, not a hard failure */
 		status = rc;
 
 		log_debug(ratbag, "device battery level is %d%% (next %d%%), status %d \n",
@@ -1400,7 +1400,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 
 		rc = hidpp20_batteryvoltage_get_battery_voltage(drv_data->dev, &voltage);
 		if (rc < 0)
-			return rc;
+			return 0; /* battery state is not essential, not a hard failure */
 
 		status = rc;
 

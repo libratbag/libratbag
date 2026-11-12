@@ -217,7 +217,19 @@ out_err:
 int
 hidpp20_request_command(struct hidpp20_device *device, union hidpp20_message *msg)
 {
-	int ret = hidpp20_request_command_allow_error(device, msg, false);
+	const union hidpp20_message orig = *msg;
+	int ret;
+	int attempt;
+
+	/* The device may answer ERR_BUSY right after (re)connecting or
+	 * waking up; give it a moment and retry instead of failing. */
+	for (attempt = 0; attempt < 4; attempt++) {
+		*msg = orig;
+		ret = hidpp20_request_command_allow_error(device, msg, false);
+		if (ret != HIDPP20_ERR_BUSY)
+			break;
+		msleep(50 * (attempt + 1));
+	}
 
 	return ret > 0 ? -EPROTO : ret;
 }
