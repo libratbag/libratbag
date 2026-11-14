@@ -24,6 +24,8 @@
 import evdev
 import subprocess
 import sys
+import os
+import json
 import argparse
 import textwrap
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -78,7 +80,7 @@ def find_device(ratbagd: Ratbagd, args: argparse.Namespace) -> RatbagdDevice:
         for device in ratbagd.devices:
             if args.device in device.name:
                 return device
-        print(f"Unable to find device {args.device}")
+        print(f"ERROR: Unable to find device {args.device}")
         sys.exit(1)
     return device
 
@@ -90,12 +92,12 @@ def find_profile(
     try:
         profile = device.profiles[args.profile_n]
     except IndexError:
-        print(f"Invalid profile index {args.profile_n}")
+        print(f"ERROR: Invalid profile index {args.profile_n}")
         sys.exit(1)
     except AttributeError:
         profile = device.active_profile
         if ratbagd is None:
-            print("The device has no active profile")
+            print("ERROR: The device has no active profile")
             sys.exit(1)
     return profile, device
 
@@ -107,12 +109,12 @@ def find_resolution(
     try:
         resolution = profile.resolutions[args.resolution_n]
     except IndexError:
-        print(f"Invalid resolution index {args.resolution_n}")
+        print(f"ERROR: Invalid resolution index {args.resolution_n}")
         sys.exit(1)
     except AttributeError:
         resolution = profile.active_resolution
         if resolution is None:
-            print("The device has no active resolution")
+            print("ERROR: The device has no active resolution")
             sys.exit(1)
     return resolution, profile, device
 
@@ -124,7 +126,7 @@ def find_button(
     try:
         button = profile.buttons[args.button_n]
     except IndexError:
-        print(f"Invalid button index {args.button_n}")
+        print(f"ERROR: Invalid button index {args.button_n}")
         sys.exit(1)
     return button, profile, device
 
@@ -136,7 +138,7 @@ def find_led(
     try:
         led = profile.leds[args.led_n]
     except IndexError:
-        print(f"Invalid LED index {args.led_n}")
+        print(f"ERROR: Invalid LED index {args.led_n}")
         sys.exit(1)
     return led, profile, device
 
@@ -314,6 +316,165 @@ def show_button(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
         f"Button {args.button} on Profile {args.profile} on {device.id} ({device.name})"
     )
     print_button(device, profile, button, 0)
+
+def export_profile(ratbagd: Ratbagd, args: argparse.Namespace, profile: RatbagdProfile) -> None:
+    data = {}
+    data['name'] = bytes(profile.name, 'utf-8', 'ignore').decode('utf-8')
+    data['rate'] = profile.report_rate
+
+    data['resolutions'] = []
+    for resolution in profile.resolutions:
+        if len(resolution.resolution) == 2:
+            dpi = f"{resolution.resolution[0]}x{resolution.resolution[1]}"
+        else:
+            dpi = f"{resolution.resolution[0]}"
+
+        data['resolutions'].append( { "index": resolution.index, "dpi": dpi } )
+
+    data['buttons'] = []
+    for button in profile.buttons:
+        if button.action_type == RatbagdButton.ActionType.BUTTON:
+            action_type = 'button'
+            action = button.mapping
+        elif button.action_type == RatbagdButton.ActionType.SPECIAL:
+            action_type = 'special'
+            action = f"{button_specials_strmap[button.special]}"
+        elif button.action_type == RatbagdButton.ActionType.KEY:
+            action_type = 'key'
+            action = evcode_to_str(button.key)
+        elif button.action_type == RatbagdButton.ActionType.MACRO:
+            action_type = 'macro'
+            escaped_macro = str(button.macro).replace('\u2193', '+').replace('\u2191','-').replace('\u2195', '')
+            action = escaped_macro.split()
+        elif button.action_type == RatbagdButton.ActionType.NONE:
+            action_type = 'none'
+        else:
+            continue # skip unknown buttons
+
+        if action_type == 'none':
+            data['buttons'].append( { "index": button.index, "action_type": action_type } )
+        else:
+            data['buttons'].append(
+                    {
+                        "index": button.index,
+                        "action_type": action_type,
+                        f"{action_type}": action
+                    }
+                )
+
+    data['leds'] = []
+    for led in profile.leds:
+        if led.mode == RatbagdLed.Mode.OFF:
+            data['leds'].append( { "index": led.index, "mode": 'off' } )
+        elif led.mode == RatbagdLed.Mode.ON:
+            data['leds'].append( { "index": led.index, "mode": 'on', "color": f"{led.color[0]:02x}{led.color[1]:02x}{led.color[2]:02x}" } )
+        elif led.mode == RatbagdLed.Mode.CYCLE:
+            data['leds'].append( { "index": led.index, "mode": 'cycle', "duration": led.effect_duration, "brightness": led.brightness} )
+        elif led.mode == RatbagdLed.Mode.BREATHING:
+            data['leds'].append( { "index": led.index, "mode": 'breathing',
+                  "color": f"{led.color[0]:02x}{led.color[1]:02x}{led.color[2]:02x}",
+                  "duration": led.effect_duration, "brightness": led.brightness} )
+
+    with open(args.file, 'w') as f:
+        json.dump(data, f, indent=4)
+
+def import_profile(ratbagd: Ratbagd, args: argparse.Namespace, profile: RatbagdProfile) -> None:
+    with open(args.file) as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Failed to parse '{f.name}' at line {e.lineno}, column {e.colno}")
+            sys.exit(1)
+    if not isinstance(data, dict):
+        print("ERROR: Failed to parse '{f.name}': Expected an object")
+        sys.exit(1)
+
+    profile_keys = data.keys()
+    if 'name' in profile_keys:
+        try:
+            args.name = data['name']
+            func_profile_name_set(ratbagd, args)
+        except RatbagCapabilityError as e:
+            print(f"WARNING: Could not set profile name: `{e}`")
+
+    if 'rate' in profile_keys:
+        args.rate_n = data['rate']
+        func_report_rate_set(ratbagd, args)
+
+    if 'resolutions' in profile_keys:
+        if type(data['resolutions']) is list:
+            for res in data['resolutions']:
+                res_keys = res.keys()
+                if 'index' in res_keys:
+                    args.resolution_n = res['index']
+                    if 'dpi' in res_keys:
+                        args.dpi_n = dpi(res['dpi'])
+                        func_dpi_set(ratbagd, args)
+                else:
+                    print("WARNING: Missing 'index' for resolution. Skipping...")
+        else:
+            print("WARNING: Invalid 'resolutions'. Skipping...")
+
+    if 'buttons' in profile_keys:
+        if type(data['buttons']) is list:
+            for bt in data['buttons']:
+                bt_keys = bt.keys()
+                if 'index' in bt_keys:
+                    args.button_n = bt['index']
+                    if 'action_type' in bt_keys:
+                        if bt['action_type'] == 'none':
+                            func_button_action_set_none(ratbagd, args)
+                        elif bt['action_type'] == 'button':
+                            if 'button' in bt_keys:
+                                args.target_button = bt['button']
+                                func_button_action_set_button(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'button' for button {bt['index']}. Skipping...")
+                        elif bt['action_type'] == 'special':
+                            if 'special' in bt_keys:
+                                args.target_special = bt['special']
+                                func_button_action_set_special(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'special' for button {bt['index']}. Skipping...")
+                        elif bt['action_type'] == 'key':
+                            if 'key' in bt_keys:
+                                args.target_key = bt['key']
+                                func_button_action_set_key(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'key' for button {bt['index']}. Skipping...")
+                        elif bt['action_type'] == 'macro':
+                            if 'macro' in bt_keys:
+                                args.target_macro = bt['macro']
+                                func_button_action_set_macro(ratbagd, args)
+                            else:
+                                print(f"WARNING: Missing 'macro' for button {bt['index']}. Skipping...")
+                    else:
+                        print("WARNING: Missing 'action_type' for button. Skipping...")
+                else:
+                    print("WARNING: Missing 'index' for button. Skipping...")
+        else:
+            print("WARNING: Invalid 'buttons'. Skipping...")
+
+    if 'leds' in profile_keys:
+        if type(data['leds']) is list:
+            for led in data['leds']:
+                led_keys = led.keys()
+                if 'index' in led_keys:
+                    args.led_n = led['index']
+                    if 'mode' in led_keys:
+                        args.mode = led['mode']
+                    if 'color' in led_keys:
+                        args.color = color(led['color'])
+                    if 'duration' in led_keys:
+                        args.duration = led['duration']
+                    if 'brightness' in led_keys:
+                        args.brightness = led['brightness']
+                    func_led_set(ratbagd, args)
+                else:
+                    print("WARNING: Missing 'index' for led. Skipping...")
+        else:
+            print("WARNING: Invalid 'leds'. Skipping...")
+
 
 
 def func_led_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
@@ -551,7 +712,7 @@ def func_resolution_default_get(ratbagd: Ratbagd, args: argparse.Namespace) -> N
             break
 
     if resolution is None:
-        print("The device has no default resolution")
+        print("ERROR: The device has no default resolution")
         sys.exit(1)
 
     print(resolution.index)
@@ -610,11 +771,33 @@ def func_profile_name_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     commit(device, args)
 
 
+def func_profile_export(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    try:
+        export_profile(ratbagd, args, profile)
+    except OSError:
+        print("ERROR: The file/path provided is not valid")
+        sys.exit(1)
+
+
+def func_profile_import(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    profile, device = find_profile(ratbagd, args)
+    if os.path.isfile(args.file) and os.access(args.file, os.R_OK):
+        tmp = args.nocommit
+        args.nocommit = True
+        import_profile(ratbagd, args, profile)
+        args.nocommit = tmp
+        commit(device, args)
+    else:
+        print("ERROR: The file/path provided is not valid")
+        sys.exit(1)
+
+
 def func_profile_active_get(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     device = find_device(ratbagd, args)
     profile = device.active_profile
     if profile is None:
-        print("The device has no active profile")
+        print("ERROR: The device has no active profile")
         sys.exit(1)
     print(profile.index)
 
@@ -623,6 +806,38 @@ def func_profile_active_set(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
     profile, device = find_profile(ratbagd, args)
     profile.set_active()
     commit(device, args)
+
+
+def func_profile_active_export(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    device = find_device(ratbagd, args)
+    profile = device.active_profile
+    if profile is None:
+        print("ERROR: The device has no active profile")
+        sys.exit(1)
+    else:
+        try:
+            export_profile(ratbagd, args, profile)
+        except OSError:
+            print("ERROR: The file/path provided is not valid")
+            sys.exit(1)
+
+
+def func_profile_active_import(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
+    device = find_device(ratbagd, args)
+    profile = device.active_profile
+    if profile is None:
+        print("ERROR: The device has no active profile")
+        sys.exit(1)
+    else:
+        if os.path.isfile(args.file) and os.access(args.file, os.R_OK):
+            tmp = args.nocommit
+            args.nocommit = True
+            import_profile(ratbagd, args, profile)
+            args.nocommit = tmp
+            commit(device, args)
+        else:
+            print("ERROR: The file/path provided is not valid")
+            sys.exit(1)
 
 
 def func_profile_enable(ratbagd: Ratbagd, args: argparse.Namespace) -> None:
@@ -798,6 +1013,34 @@ parser_def: List[RatbagParserSchemaElement] = [
                         ],
                         func: func_profile_active_set,
                     },
+                    {
+                        of_type: command,
+                        name: "export",
+                        help_str: "Export from the active profile to a JSON file",
+                        pos_args: [
+                            {
+                                of_type: argument,
+                                name: "file",
+                                metavar: "/path/to/file.json",
+                                help_str: "The file to export to",
+                            },
+                        ],
+                        func: func_profile_active_export,
+                    },
+                    {
+                        of_type: command,
+                        name: "import",
+                        help_str: "Import from a JSON file to the active profile",
+                        pos_args: [
+                            {
+                                of_type: argument,
+                                name: "file",
+                                metavar: "/path/to/file.json",
+                                help_str: "The file to import",
+                            },
+                        ],
+                        func: func_profile_active_import,
+                    },
                 ],
             },
         ],
@@ -839,6 +1082,34 @@ parser_def: List[RatbagParserSchemaElement] = [
                             func: func_profile_name_set,
                         },
                     ],
+                },
+                {
+                    of_type: command,
+                    name: "export",
+                    help_str: "Export from the profile to a JSON file",
+                    pos_args: [
+                        {
+                            of_type: argument,
+                            name: "file",
+                            metavar: "/path/to/file.json",
+                            help_str: "The file to export to",
+                        },
+                    ],
+                    func: func_profile_export,
+                },
+                {
+                    of_type: command,
+                    name: "import",
+                    help_str: "Import from a JSON file to the profile",
+                    pos_args: [
+                        {
+                            of_type: argument,
+                            name: "file",
+                            metavar: "/path/to/file.json",
+                            help_str: "The file to import",
+                        },
+                    ],
+                    func: func_profile_import,
                 },
                 {
                     of_type: command,
@@ -1600,7 +1871,7 @@ class RatbagParserSet(RatbagParserSwitch):
 
     def _print_help(self, prefix: str) -> None:
         command = prefix + "{COMMAND} ..."
-        print("  {:<36}{}".format(command, self.help if self.help else ""))
+        print("  {:<45}{}".format(command, self.help if self.help else ""))
         for e in self.switch:
             e.print_help(None, " " * len(prefix))
 
@@ -1639,7 +1910,7 @@ class RatbagParserCommand(RatbagParser):
                 command += f" {a.metavar}"
             else:
                 command += " [{}]".format("|".join(a.choices))
-        print("  {:<36}{}".format(command, self.help if self.help else ""))
+        print("  {:<45}{}".format(command, self.help if self.help else ""))
 
 
 class RatbagParserArgument(RatbagParser):
@@ -1700,7 +1971,7 @@ class RatbagParserLink(RatbagParser):
     def _print_help(self, prefix: str) -> None:
         dest = self.get_dest()
         print(
-            "  {:<36}Use {}for '{} Commands'".format(
+            "  {:<45}Use {}for '{} Commands'".format(
                 prefix + self.dest + " ...", prefix, dest.group
             )
         )
