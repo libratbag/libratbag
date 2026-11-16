@@ -37,6 +37,7 @@
 #include "libratbag.h"
 #include "libratbag-util.h"
 #include "libratbag-test.h"
+#include "libratbag-data.h"
 
 static void
 device_destroyed(struct ratbag_device *device, void *data)
@@ -131,6 +132,24 @@ struct ratbag_interface abort_iface = {
 	.open_restricted = open_restricted,
 	.close_restricted = close_restricted,
 };
+
+START_TEST(megaport_device_data)
+{
+	struct ratbag *ratbag = ratbag_create_context(&abort_iface, NULL);
+	const struct input_id id = {
+		.bustype = BUS_USB,
+		.vendor = 0x18f8,
+		.product = 0x0f99,
+	};
+	struct ratbag_device_data *data = ratbag_device_data_new_for_id(ratbag, &id);
+
+	ck_assert_ptr_nonnull(data);
+	ck_assert_str_eq(ratbag_device_data_get_driver(data), "megaport");
+	ck_assert_int_eq(ratbag_device_data_get_device_type(data), TYPE_MOUSE);
+	ratbag_device_data_unref(data);
+	ratbag_unref(ratbag);
+}
+END_TEST
 
 START_TEST(device_init)
 {
@@ -973,6 +992,7 @@ test_context_suite(void)
 	s = suite_create("device");
 	tc = tcase_create("device");
 	tcase_add_test(tc, device_init);
+	tcase_add_test(tc, megaport_device_data);
 	tcase_add_test(tc, device_ref_unref);
 	tcase_add_test(tc, device_free_context_before_device);
 	suite_add_tcase(s, tc);
