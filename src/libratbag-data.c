@@ -188,6 +188,8 @@ hidpp20_quirk_from_string(const char *str)
 		return HIDPP20_QUIRK_G502X_PLUS;
 	if (streq(str, "INDEX_OFFSET"))
 		return HIDPP20_QUIRK_INDEX_OFFSET;
+	if (streq(str, "G733"))
+		return HIDPP20_QUIRK_G733;
 	return HIDPP20_QUIRK_NONE;
 }
 
