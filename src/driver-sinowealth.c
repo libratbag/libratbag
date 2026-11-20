@@ -164,6 +164,7 @@ _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 enum sinowealth_sensor {
 	SINOWEALTH_SENSOR_PMW3360 = 0x06,
 	SINOWEALTH_SENSOR_PMW3212 = 0x08,
+	SINOWEALTH_SENSOR_PAW3325 = 0x0b,
 	SINOWEALTH_SENSOR_PMW3327 = 0x0e,
 	SINOWEALTH_SENSOR_PMW3389 = 0x0f,
 } __attribute__((packed));
@@ -695,6 +696,7 @@ sinowealth_get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 {
 	switch (sensor) {
 	case SINOWEALTH_SENSOR_PMW3327: return 10200;
+	case SINOWEALTH_SENSOR_PAW3325: return 8000;
 	case SINOWEALTH_SENSOR_PMW3212: return 7200;
 	case SINOWEALTH_SENSOR_PMW3360: return 12000;
 	case SINOWEALTH_SENSOR_PMW3389: return 16000;
@@ -712,7 +714,7 @@ sinowealth_raw_to_dpi(struct ratbag_device *device, unsigned int raw)
 	struct sinowealth_data *drv_data = device->drv_data;
 	enum sinowealth_sensor sensor = drv_data->configs[0].sensor_type;
 
-	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360)
+	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360 || sensor == SINOWEALTH_SENSOR_PAW3325)
 		raw += 1;
 
 	unsigned int dpi = raw * 100;
@@ -734,7 +736,7 @@ sinowealth_dpi_to_raw(struct ratbag_device *device, unsigned int dpi)
 
 	uint8_t raw = (uint8_t)(dpi / 100);
 
-	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360)
+	if (sensor == SINOWEALTH_SENSOR_PMW3327 || sensor == SINOWEALTH_SENSOR_PMW3360 || sensor == SINOWEALTH_SENSOR_PAW3325)
 		raw -= 1;
 
 	return raw;
