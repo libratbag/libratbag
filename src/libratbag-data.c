@@ -306,6 +306,7 @@ init_data_sinowealth(struct ratbag *ratbag,
 		} else {
 			device->profile_count = -1;
 		}
+		g_clear_error(&error);
 
 		list_insert(&data->sinowealth.supported_devices, &device->link);
 	}
