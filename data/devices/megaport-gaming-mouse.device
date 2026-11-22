@@ -1,0 +1,6 @@
+# Lighting and DPI share a write-only report; current settings cannot be queried.
+[Device]
+Name=Megaport Gaming Mouse
+DeviceMatch=usb:18f8:0f99
+Driver=megaport
+DeviceType=mouse

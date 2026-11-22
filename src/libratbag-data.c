@@ -62,6 +62,7 @@ enum driver {
 	SINOWEALTH,
 	SINOWEALTH_NUBWO,
 	OPENINPUT,
+	MEGAPORT,
 	MARSGAMING,
 };
 
@@ -515,6 +516,7 @@ static const struct driver_map {
 	{ SINOWEALTH, "sinowealth", init_data_sinowealth },
 	{ SINOWEALTH_NUBWO, "sinowealth_nubwo", NULL},
 	{ OPENINPUT, "openinput", NULL },
+	{ MEGAPORT, "megaport", NULL },
 	{ MARSGAMING, "marsgaming", NULL },
 };
 

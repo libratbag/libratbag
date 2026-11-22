@@ -172,6 +172,7 @@ src_libratbag = [
 	'src/libratbag.h',
 	'src/driver-asus.c',
 	'src/driver-etekcity.c',
+	'src/driver-megaport.c',
 	'src/driver-hidpp20.c',
 	'src/driver-hidpp10.c',
 	'src/driver-logitech-g300.c',
@@ -338,8 +339,16 @@ if enable_tests
 						 dep_libutil],
 				include_directories : include_directories('src'),
 				install : false)
+	test_megaport = executable('test-megaport',
+		['test/test-megaport.c', 'src/driver-megaport.c'],
+		dependencies : [dep_libutil, dep_libevdev, dep_check],
+		include_directories : include_directories('src'),
+		install : false)
+	test('test-megaport', test_megaport)
+
 	test('test-context', test_context)
-	test('test-device', test_device)
+	test('test-device', test_device,
+	     env : ['LIBRATBAG_DATA_DIR=' + libratbag_data_dir_devel])
 	test('test-util', test_util)
 	test('test-iconv-helper', test_iconv_helper)
 
