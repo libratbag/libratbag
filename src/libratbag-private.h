@@ -283,6 +283,10 @@ struct ratbag_profile {
 	bool is_enabled;
 	bool dirty;       /**< profile changed since last commit */
 	unsigned long capabilities[NLONGS(MAX_CAP)];
+
+	/* Button layer support */
+	unsigned int num_button_layers;     /**< 1 = no layers, 2 = has shift layer */
+	unsigned int buttons_per_layer;     /**< physical buttons per layer */
 };
 
 #define ratbag_device_for_each_profile(device_, profile_) \
@@ -362,6 +366,9 @@ struct ratbag_button {
 	struct ratbag_button_action action;
 	uint32_t action_caps;
 	bool dirty; /* changed since last commit to device */
+
+	unsigned int layer;         /**< which layer this button belongs to */
+	unsigned int layer_index;   /**< index within that layer */
 };
 
 void
@@ -430,6 +437,26 @@ ratbag_profile_set_cap(struct ratbag_profile *profile,
 
 	long_set_bit(profile->capabilities, cap);
 }
+
+struct ratbag_button_layer_entry {
+	unsigned int global_index;
+	unsigned int layer;
+	unsigned int layer_index;
+};
+
+/* Called by drivers to declare layer layout.
+ * Drivers with gaps (like G600) pass explicit mappings. */
+void
+ratbag_profile_set_button_layer_map(struct ratbag_profile *profile,
+				    unsigned int num_layers,
+				    unsigned int buttons_per_layer,
+				    const struct ratbag_button_layer_entry *map,
+				    unsigned int map_size);
+
+/* Convenience: buttons [0, N/2) = layer 0, [N/2, N) = layer 1 */
+void
+ratbag_profile_set_button_layers_simple(struct ratbag_profile *profile,
+					unsigned int num_layers);
 
 static inline int
 ratbag_button_action_match(const struct ratbag_button_action *action,

@@ -434,6 +434,7 @@ class RatbagdProfile(_RatbagdDBus):
     CAP_SET_DEFAULT = 101
     CAP_DISABLE = 102
     CAP_WRITE_ONLY = 103
+    CAP_BUTTON_LAYERS = 104
 
     def __init__(self, object_path):
         super().__init__("Profile", object_path)

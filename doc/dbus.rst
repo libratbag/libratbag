@@ -267,6 +267,24 @@ org.freedesktop.ratbag1.Profile
         Provides the object paths of all buttons in this profile, see
         :ref:`button`.
 
+.. attribute:: NumButtonLayers
+
+        :type: u
+        :flags: read-only, constant
+
+        The number of button layers in this profile. 1 if the device has
+        no shift layer, 2 if it has a shift layer (e.g. G-Shift or
+        Easy-Shift) that is active while a shift button is held. See the
+        Layer and LayerIndex properties of :ref:`button`.
+
+.. attribute:: NumButtonsPerLayer
+
+        :type: u
+        :flags: read-only, constant
+
+        The number of physical buttons per layer. Only meaningful if
+        NumButtonLayers is greater than 1.
+
 .. attribute:: Leds
 
         :type: ao
@@ -453,6 +471,24 @@ org.freedesktop.ratbag1.Button
         :flags: read-only, constant
 
         Index of the button
+
+.. attribute:: Layer
+
+        :type: u
+        :flags: read-only, constant
+
+        The button layer this button belongs to, 0 for the normal layer
+        and 1 for the shifted layer. Always 0 on devices without button
+        layers.
+
+.. attribute:: LayerIndex
+
+        :type: u
+        :flags: read-only, constant
+
+        The index of the physical button within its layer. Buttons on
+        different layers with the same LayerIndex are the same physical
+        button. On devices without button layers this equals Index.
 
 .. attribute:: Mapping
 

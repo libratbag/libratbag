@@ -119,6 +119,13 @@ enum ratbag_profile_capability {
 	 * libratbag can be used to query the device as normal.
 	 */
 	RATBAG_PROFILE_CAP_WRITE_ONLY,
+
+	/**
+	 * The profile supports button layers (e.g., G-Shift, Easy-Shift).
+	 * Devices with this capability have multiple layers of button
+	 * mappings, typically activated by holding a shift key.
+	 */
+	RATBAG_PROFILE_CAP_BUTTON_LAYERS,
 };
 
 /**

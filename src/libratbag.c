@@ -723,6 +723,73 @@ ratbag_device_init_profiles(struct ratbag_device *device,
 	return 0;
 }
 
+void
+ratbag_profile_set_button_layer_map(struct ratbag_profile *profile,
+				    unsigned int num_layers,
+				    unsigned int buttons_per_layer,
+				    const struct ratbag_button_layer_entry *map,
+				    unsigned int map_size)
+{
+	struct ratbag_button *button;
+	unsigned int i;
+
+	profile->num_button_layers = num_layers;
+	profile->buttons_per_layer = buttons_per_layer;
+
+	if (num_layers > 1)
+		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_BUTTON_LAYERS);
+
+	/* Buttons missing from the map stay on layer 0 at their own index */
+	list_for_each(button, &profile->buttons, link) {
+		button->layer = 0;
+		button->layer_index = button->index;
+	}
+
+	/* Apply the explicit mapping */
+	for (i = 0; i < map_size; i++) {
+		const struct ratbag_button_layer_entry *entry = &map[i];
+
+		list_for_each(button, &profile->buttons, link) {
+			if (button->index == entry->global_index) {
+				button->layer = entry->layer;
+				button->layer_index = entry->layer_index;
+				break;
+			}
+		}
+	}
+}
+
+void
+ratbag_profile_set_button_layers_simple(struct ratbag_profile *profile,
+					unsigned int num_layers)
+{
+	struct ratbag_button *button;
+	unsigned int total_buttons = 0;
+	unsigned int buttons_per_layer;
+
+	/* Count total buttons */
+	list_for_each(button, &profile->buttons, link) {
+		total_buttons++;
+	}
+
+	if (total_buttons == 0 || num_layers == 0)
+		return;
+
+	buttons_per_layer = total_buttons / num_layers;
+
+	profile->num_button_layers = num_layers;
+	profile->buttons_per_layer = buttons_per_layer;
+
+	if (num_layers > 1)
+		ratbag_profile_set_cap(profile, RATBAG_PROFILE_CAP_BUTTON_LAYERS);
+
+	/* Simple split: buttons [0, N/2) = layer 0, [N/2, N) = layer 1 */
+	list_for_each(button, &profile->buttons, link) {
+		button->layer = button->index / buttons_per_layer;
+		button->layer_index = button->index % buttons_per_layer;
+	}
+}
+
 LIBRATBAG_EXPORT struct ratbag_profile *
 ratbag_profile_ref(struct ratbag_profile *profile)
 {
@@ -923,6 +990,18 @@ LIBRATBAG_EXPORT unsigned int
 ratbag_profile_get_num_resolutions(const struct ratbag_profile *profile)
 {
 	return profile->num_resolutions;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_profile_get_num_button_layers(const struct ratbag_profile *profile)
+{
+	return profile->num_button_layers ? profile->num_button_layers : 1;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_profile_get_num_buttons_per_layer(const struct ratbag_profile *profile)
+{
+	return profile->buttons_per_layer;
 }
 
 LIBRATBAG_EXPORT struct ratbag_resolution *
@@ -1692,6 +1771,21 @@ LIBRATBAG_EXPORT void*
 ratbag_button_get_user_data(const struct ratbag_button *ratbag_button)
 {
 	return ratbag_button->userdata;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_button_get_layer(const struct ratbag_button *button)
+{
+	return button->layer;
+}
+
+LIBRATBAG_EXPORT unsigned int
+ratbag_button_get_layer_index(const struct ratbag_button *button)
+{
+	if (button->profile->num_button_layers <= 1)
+		return button->index;
+
+	return button->layer_index;
 }
 
 LIBRATBAG_EXPORT void*
