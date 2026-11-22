@@ -442,8 +442,13 @@ ratbag_device_new_from_udev_device(struct ratbag *ratbag,
 	if (!device || !device->data)
 		goto out_err;
 
-	if (!ratbag_assign_driver(device, &device->ids, NULL))
+	if (!ratbag_assign_driver(device, &device->ids, NULL)) {
+		/* The device is in our database but talking to it failed.
+		 * This is often transient (asleep, busy), so report it as
+		 * a system error rather than "not a libratbag device". */
+		error = RATBAG_ERROR_SYSTEM;
 		goto out_err;
+	}
 
 	error = RATBAG_SUCCESS;
 

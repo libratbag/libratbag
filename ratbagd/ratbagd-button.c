@@ -40,6 +40,7 @@
 
 struct ratbagd_button {
 	struct ratbagd_device *device;
+	struct ratbagd_profile *profile;
 	struct ratbag_button *lib_button;
 	unsigned int index;
 	char *path;
@@ -82,17 +83,19 @@ static int ratbagd_button_set_button(sd_bus *bus,
 		return r;
 
 	if (map == 0 || map > 30)
-		return 0;
+		return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS,
+					 "Invalid button %u", map);
 
 	r = ratbag_button_set_button(button->lib_button, map);
+	if (r != 0)
+		return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS,
+					 "Cannot map button (%d)", r);
 
-	if (r == 0) {
-		sd_bus_emit_properties_changed(bus,
-					       button->path,
-					       RATBAGD_NAME_ROOT ".Button",
-					       "Mapping",
-					       NULL);
-	}
+	sd_bus_emit_properties_changed(bus,
+				       button->path,
+				       RATBAGD_NAME_ROOT ".Button",
+				       "Mapping",
+				       NULL);
 
 	return 0;
 }
@@ -137,14 +140,15 @@ static int ratbagd_button_set_special(sd_bus *bus,
 	CHECK_CALL(sd_bus_message_read(m, "v", "u", &special));
 
 	r = ratbag_button_set_special(button->lib_button, special);
+	if (r != 0)
+		return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS,
+					 "Cannot set special (%d)", r);
 
-	if (r == 0) {
-		sd_bus_emit_properties_changed(bus,
-					       button->path,
-					       RATBAGD_NAME_ROOT ".Button",
-					       "Mapping",
-					       NULL);
-	}
+	sd_bus_emit_properties_changed(bus,
+				       button->path,
+				       RATBAGD_NAME_ROOT ".Button",
+				       "Mapping",
+				       NULL);
 
 	return 0;
 }
@@ -186,14 +190,15 @@ static int ratbagd_button_set_key(sd_bus *bus,
 	CHECK_CALL(sd_bus_message_read(m, "v", "u", &key));
 
 	r = ratbag_button_set_key(button->lib_button, key);
+	if (r != 0)
+		return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS,
+					 "Cannot set key (%d)", r);
 
-	if (r == 0) {
-		sd_bus_emit_properties_changed(bus,
-					       button->path,
-					       RATBAGD_NAME_ROOT ".Button",
-					       "Mapping",
-					       NULL);
-	}
+	sd_bus_emit_properties_changed(bus,
+				       button->path,
+				       RATBAGD_NAME_ROOT ".Button",
+				       "Mapping",
+				       NULL);
 
 	return 0;
 }
@@ -277,9 +282,9 @@ static int ratbagd_button_set_macro(sd_bus *bus,
 	while ((r = sd_bus_message_read(m, "(uu)", &type, &value)) > 0) {
 		r = ratbag_button_macro_set_event(macro, idx++, type, value);
 		if (r < 0) {
-			r = ratbagd_device_resync(button->device, bus);
-			if (r < 0)
-				return r;
+			ratbagd_device_resync(button->device, bus);
+			return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS,
+						 "Invalid macro event %d (%d)", idx - 1, r);
 		}
 	}
 	if (r < 0)
@@ -290,18 +295,16 @@ static int ratbagd_button_set_macro(sd_bus *bus,
 
 	r = ratbag_button_set_macro(button->lib_button, macro);
 	if (r < 0) {
-		r = ratbagd_device_resync(button->device, bus);
-		if (r < 0)
-			return r;
+		ratbagd_device_resync(button->device, bus);
+		return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS,
+					 "Cannot set macro (%d)", r);
 	}
 
-	if (r == 0) {
-		sd_bus_emit_properties_changed(bus,
-					       button->path,
-					       RATBAGD_NAME_ROOT ".Button",
-					       "Mapping",
-					       NULL);
-	}
+	sd_bus_emit_properties_changed(bus,
+				       button->path,
+				       RATBAGD_NAME_ROOT ".Button",
+				       "Mapping",
+				       NULL);
 
 	return 0;
 }
@@ -338,17 +341,16 @@ static int ratbagd_button_set_none(sd_bus *bus,
 
 	r = ratbag_button_disable(button->lib_button);
 	if (r < 0) {
-		r = ratbagd_device_resync(button->device, bus);
-		if (r < 0)
-			return r;
+		ratbagd_device_resync(button->device, bus);
+		return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS,
+					 "Cannot disable button (%d)", r);
 	}
-	if (r == 0) {
-		sd_bus_emit_properties_changed(bus,
-					       button->path,
-					       RATBAGD_NAME_ROOT ".Button",
-					       "Mapping",
-					       NULL);
-	}
+
+	sd_bus_emit_properties_changed(bus,
+				       button->path,
+				       RATBAGD_NAME_ROOT ".Button",
+				       "Mapping",
+				       NULL);
 
 	return 0;
 }
@@ -433,6 +435,8 @@ static int ratbagd_button_set_mapping(sd_bus *bus,
 
 	CHECK_CALL(sd_bus_message_exit_container(m));
 
+	ratbagd_profile_notify_dirty(bus, ((struct ratbagd_button *)userdata)->profile);
+
 	return 0;
 
 }
@@ -498,6 +502,7 @@ int ratbagd_button_new(struct ratbagd_button **out,
 
 	button = zalloc(sizeof(*button));
 	button->device = device;
+	button->profile = profile;
 	button->lib_button = lib_button;
 	button->index = index;
 
@@ -539,9 +544,6 @@ int ratbagd_button_resync(sd_bus *bus,
 	return sd_bus_emit_properties_changed(bus,
 					      button->path,
 					      RATBAGD_NAME_ROOT ".Button",
-					      "ButtonMapping",
-					      "SpecialMapping",
-					      "Macro",
-					      "ActionType",
+					      "Mapping",
 					      NULL);
 }

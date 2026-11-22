@@ -54,6 +54,10 @@ static int load_test_device(sd_bus_message *m,
 	}
 
 	device = ratbag_device_new_test_device(ctx->lib_ctx, source);
+	if (!device) {
+		log_error("Cannot create test device (built without tests?)\n");
+		return -ENODEV;
+	}
 
 	snprintf(devicename, sizeof(devicename), "testdevice%d", count++);
 	r = ratbagd_device_new(&ratbagd_test_device, ctx, devicename, device);

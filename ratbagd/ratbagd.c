@@ -32,6 +32,7 @@
 #include <libgen.h>
 #include <libratbag.h>
 #include <libudev.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
@@ -175,13 +176,119 @@ static const sd_bus_vtable ratbagd_vtable[] = {
 	SD_BUS_VTABLE_END,
 };
 
-static void ratbagd_process_device(struct ratbagd *ctx,
-				   struct udev_device *udevice)
+#define RATBAGD_MAX_PROBE_RETRIES 360 /* ~1h at 10s: a wireless mouse that is asleep
+				       * does not announce itself when it wakes up */
+
+struct ratbagd_probe_retry {
+	struct ratbagd *ctx;
+	struct udev_device *udevice;
+	unsigned int attempt;
+};
+
+static void ratbagd_try_add_device(struct ratbagd *ctx,
+				   struct udev_device *udevice,
+				   unsigned int attempt);
+
+static int ratbagd_probe_retry_cb(sd_event_source *s, uint64_t usec, void *userdata)
+{
+	struct ratbagd_probe_retry *retry = userdata;
+	const char *devnode = udev_device_get_devnode(retry->udevice);
+
+	/* skip if the node vanished in the meantime; a later udev "add"
+	 * event will start over if the device comes back */
+	if (devnode && access(devnode, F_OK) == 0)
+		ratbagd_try_add_device(retry->ctx, retry->udevice, retry->attempt);
+
+	udev_device_unref(retry->udevice);
+	free(retry);
+	sd_event_source_unref(s);
+
+	return 0;
+}
+
+static void ratbagd_schedule_probe_retry(struct ratbagd *ctx,
+					 struct udev_device *udevice,
+					 unsigned int attempt)
+{
+	struct ratbagd_probe_retry *retry;
+	sd_event_source *source = NULL;
+	uint64_t now;
+	uint64_t delay_us = attempt < 4 ? (1000000ULL << attempt) : 10000000ULL; /* 1s, 2s, 4s, 8s, then 10s */
+
+	retry = zalloc(sizeof(*retry));
+	if (!retry)
+		return;
+
+	retry->ctx = ctx;
+	retry->udevice = udev_device_ref(udevice);
+	retry->attempt = attempt + 1;
+
+	sd_event_now(ctx->event, CLOCK_MONOTONIC, &now);
+	if (sd_event_add_time(ctx->event, &source, CLOCK_MONOTONIC,
+			      now + delay_us, 100000,
+			      ratbagd_probe_retry_cb, retry) < 0) {
+		udev_device_unref(retry->udevice);
+		free(retry);
+		return;
+	}
+
+	sd_event_source_set_enabled(source, SD_EVENT_ONESHOT);
+}
+
+static void ratbagd_try_add_device(struct ratbagd *ctx,
+				   struct udev_device *udevice,
+				   unsigned int attempt)
 {
 	struct ratbag_device *lib_device;
 	struct ratbagd_device *device;
-	const char *sysname;
+	const char *sysname = udev_device_get_sysname(udevice);
+	enum ratbag_error_code error;
 	int r;
+
+	if (ratbagd_device_lookup(ctx, sysname))
+		return; /* already tracked */
+
+	error = ratbag_device_new_from_udev_device(ctx->lib_ctx,
+						   udevice,
+						   &lib_device);
+	if (error != RATBAG_SUCCESS) {
+		/* RATBAG_ERROR_SYSTEM: known device but probing failed.
+		 * This is frequently transient, so try again later. */
+		if (error == RATBAG_ERROR_SYSTEM &&
+		    attempt < RATBAGD_MAX_PROBE_RETRIES) {
+			/* the first attempts are interesting, then it is just noise */
+			if (attempt < 8 || attempt % 30 == 0)
+				log_info("%s: probing failed, retrying (%u/%u)\n",
+					 sysname, attempt + 1,
+					 RATBAGD_MAX_PROBE_RETRIES);
+			ratbagd_schedule_probe_retry(ctx, udevice, attempt);
+		}
+		return; /* unsupported or failed */
+	}
+
+	r = ratbagd_device_new(&device, ctx, sysname, lib_device);
+
+	/* the ratbagd_device takes its own reference, drop ours */
+	ratbag_device_unref(lib_device);
+
+	if (r < 0) {
+		log_error("%s: cannot track device\n", sysname);
+		return;
+	}
+
+	ratbagd_device_link(device);
+	(void) sd_bus_emit_properties_changed(ctx->bus,
+					      RATBAGD_OBJ_ROOT,
+					      RATBAGD_NAME_ROOT ".Manager",
+					      "Devices",
+					      NULL);
+}
+
+static void ratbagd_process_device(struct ratbagd *ctx,
+				   struct udev_device *udevice)
+{
+	struct ratbagd_device *device;
+	const char *sysname;
 
 	/*
 	 * TODO: libratbag should provide some mechanism to allow
@@ -213,31 +320,7 @@ static void ratbagd_process_device(struct ratbagd *ctx,
 	} else if (device) {
 		/* device already known, refresh our view of the device */
 	} else {
-		enum ratbag_error_code error;
-
-		/* device unknown, create new one and link it */
-		error = ratbag_device_new_from_udev_device(ctx->lib_ctx,
-							   udevice,
-							   &lib_device);
-		if (error != RATBAG_SUCCESS)
-			return; /* unsupported device */
-
-		r = ratbagd_device_new(&device, ctx, sysname, lib_device);
-
-		/* the ratbagd_device takes its own reference, drop ours */
-		ratbag_device_unref(lib_device);
-
-		if (r < 0) {
-			log_error("%s: cannot track device\n", sysname);
-			return;
-		}
-
-		ratbagd_device_link(device);
-		(void) sd_bus_emit_properties_changed(ctx->bus,
-						      RATBAGD_OBJ_ROOT,
-						      RATBAGD_NAME_ROOT ".Manager",
-						      "Devices",
-						      NULL);
+		ratbagd_try_add_device(ctx, udevice, 0);
 	}
 }
 
@@ -694,11 +777,25 @@ void ratbagd_schedule_task(struct ratbagd *ctx,
 			   ratbagd_callback_t callback,
 			   void *userdata)
 {
-	struct ratbagd_callback *cb = zalloc(sizeof *cb);
+	struct ratbagd_callback *cb;
 	sd_event_source *source;
+	int r;
+
+	cb = zalloc(sizeof *cb);
+	if (!cb) {
+		/* out of memory: run the task right now so that whatever
+		 * reference userdata holds gets released */
+		callback(userdata);
+		return;
+	}
 
 	cb->callback = callback;
 	cb->userdata = userdata;
 
-	sd_event_add_defer(ctx->event, &source, ratbagd_callback_handler, cb);
+	r = sd_event_add_defer(ctx->event, &source, ratbagd_callback_handler, cb);
+	if (r < 0) {
+		log_error("Cannot schedule task: %s\n", strerror(-r));
+		free(cb);
+		callback(userdata);
+	}
 }
