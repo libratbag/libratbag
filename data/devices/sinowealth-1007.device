@@ -12,6 +12,16 @@ Name=SinoWealth Generic Mouse (1007)
 #LedType=RBG
 #SensorType=A3050
 
+# Official utility: "T-TGM301 Wired Gaming Mouse".
+# MDNUM=6 (2 modes), but the second mode is empty on a fresh mouse and
+# selecting it fails with "Broken pipe", so only one profile is exposed.
+[Driver/sinowealth/devices/2732]
+Buttons=7
+DeviceName=T-Dagger Lieutenant T-TGM301
+LedType=RGB
+Profiles=1
+SensorType=PAW3325
+
 # Configuration size: 123 bytes.
 # https://github.com/libratbag/libratbag/issues/1091
 [Driver/sinowealth/devices/9677]
