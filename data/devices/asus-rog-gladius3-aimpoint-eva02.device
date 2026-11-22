@@ -1,0 +1,13 @@
+[Device]
+Name=ASUS ROG Gladius III AimPoint EVA-02
+DeviceMatch=usb:0b05:1b0a
+DeviceType=mouse
+Driver=asus
+
+[Driver/asus]
+Profiles=5
+Buttons=8
+Leds=1
+Dpis=4
+DpiRange=100:36000@50
+Quirks=SEPARATE_XY_DPI
