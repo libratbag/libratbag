@@ -140,7 +140,6 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 	struct ratbag_button_macro *m;
 	union hidpp20_macro_data *macro;
 	unsigned int i, keycode;
-	bool delay = true;
 
 	macro = profile->macros[binding->macro.page];
 
@@ -158,33 +157,20 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 						      i++,
 						      RATBAG_MACRO_EVENT_WAIT,
 						      macro->delay.time);
-			delay = true;
 			break;
 		case HIDPP20_MACRO_KEY_PRESS:
 			keycode = hidpp20drv_read_macro_key_8100(device, macro);
-			if (!delay)
-				ratbag_button_macro_set_event(m,
-							      i++,
-							      RATBAG_MACRO_EVENT_WAIT,
-							      1);
 			ratbag_button_macro_set_event(m,
 						      i++,
 						      RATBAG_MACRO_EVENT_KEY_PRESSED,
 						      keycode);
-			delay = false;
 			break;
 		case HIDPP20_MACRO_KEY_RELEASE:
 			keycode = hidpp20drv_read_macro_key_8100(device, macro);
-			if (!delay)
-				ratbag_button_macro_set_event(m,
-							      i++,
-							      RATBAG_MACRO_EVENT_WAIT,
-							      1);
 			ratbag_button_macro_set_event(m,
 						      i++,
 						      RATBAG_MACRO_EVENT_KEY_RELEASED,
 						      keycode);
-			delay = false;
 			break;
 		}
 		macro++;
@@ -196,6 +182,24 @@ hidpp20drv_read_macro_8100(struct ratbag_button *button,
 	return 0;
 }
 
+/* the modifier byte of a keyboard binding, one bit per modifier key */
+static unsigned int
+hidpp20drv_modifier_bit_to_keycode(unsigned int bit)
+{
+	switch (bit) {
+	case 0x01: return KEY_LEFTCTRL;
+	case 0x02: return KEY_LEFTSHIFT;
+	case 0x04: return KEY_LEFTALT;
+	case 0x08: return KEY_LEFTMETA;
+	case 0x10: return KEY_RIGHTCTRL;
+	case 0x20: return KEY_RIGHTSHIFT;
+	case 0x40: return KEY_RIGHTALT;
+	case 0x80: return KEY_RIGHTMETA;
+	}
+
+	return KEY_RESERVED;
+}
+
 static void
 hidpp20drv_read_button_8100(struct ratbag_button *button)
 {
@@ -203,6 +207,7 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
 	struct hidpp20_profile *profile;
 	unsigned int modifiers = 0;
+	unsigned int key_usage;
 	int rc;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
@@ -222,9 +227,31 @@ hidpp20drv_read_button_8100(struct ratbag_button *button)
 			break;
 		case HIDPP20_BUTTON_HID_TYPE_KEYBOARD:
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
-			button->action.action.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
-								profile->buttons[button->index].keyboard_keys.key);
 			modifiers = profile->buttons[button->index].keyboard_keys.modifier_flags;
+			key_usage = profile->buttons[button->index].keyboard_keys.key;
+
+			/* the device only honours a modifier key through the
+			 * modifier byte. Older versions of this driver stored
+			 * e.g. Meta as usage 0xe3 in the key byte; read that
+			 * as the modifier it was meant to be and let the next
+			 * commit store it properly. */
+			if (key_usage >= 0xe0 && key_usage <= 0xe7) {
+				modifiers |= 1U << (key_usage - 0xe0);
+				key_usage = 0;
+				profile->buttons[button->index].keyboard_keys.modifier_flags = modifiers;
+				profile->buttons[button->index].keyboard_keys.key = 0;
+			}
+
+			if (key_usage == 0 && modifiers != 0) {
+				/* a modifier on its own is a key press of that modifier */
+				unsigned int bit = modifiers & -modifiers;
+
+				button->action.action.key = hidpp20drv_modifier_bit_to_keycode(bit);
+				modifiers &= ~bit;
+			} else {
+				button->action.action.key = ratbag_hidraw_get_keycode_from_keyboard_usage(device,
+									key_usage);
+			}
 			break;
 		case HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL:
 			button->action.type = RATBAG_BUTTON_ACTION_TYPE_KEY;
@@ -523,6 +550,150 @@ hidpp20drv_update_button_1b04(struct ratbag_button *button)
 	return rc;
 }
 
+/* maps a modifier key to the bit used in the macro step's modifier byte,
+ * the inverse of hidpp20drv_read_macro_key_8100() */
+static uint8_t
+hidpp20drv_macro_modifier_bit(unsigned int keycode)
+{
+	switch (keycode) {
+	case KEY_LEFTCTRL: return 0x01;
+	case KEY_LEFTSHIFT: return 0x02;
+	case KEY_LEFTALT: return 0x04;
+	case KEY_LEFTMETA: return 0x08;
+	case KEY_RIGHTCTRL: return 0x10;
+	case KEY_RIGHTSHIFT: return 0x20;
+	case KEY_RIGHTALT: return 0x40;
+	case KEY_RIGHTMETA: return 0x80;
+	}
+
+	return 0;
+}
+
+/**
+ * Converts a generic macro into onboard macro steps and attaches it to the
+ * button. The data reaches the flash on commit, see
+ * hidpp20_onboard_profiles_write_macros().
+ */
+static int
+hidpp20drv_update_macro_8100(struct ratbag_button *button,
+			     struct hidpp20_profile *profile)
+{
+	struct ratbag_device *device = button->profile->device;
+	struct hidpp20drv_data *drv_data = ratbag_get_drv_data(device);
+	const struct ratbag_macro *macro = button->action.macro;
+	/* one sector minus CRC, 3 bytes per step and 1 for the terminator */
+	unsigned int max_steps = (drv_data->profiles->sector_size - 2 - 1) / 3;
+	union hidpp20_macro_data *steps;
+	unsigned int i, n = 0;
+
+	if (!macro || button->index >= ARRAY_LENGTH(profile->macros))
+		return -EINVAL;
+
+	steps = zalloc((MAX_MACRO_EVENTS + 1) * sizeof(*steps));
+	if (!steps)
+		return -ENOMEM;
+
+	for (i = 0; i < MAX_MACRO_EVENTS; i++) {
+		const struct ratbag_macro_event *ev = &macro->events[i];
+		uint8_t bit, usage;
+
+		if (ev->type == RATBAG_MACRO_EVENT_NONE)
+			break;
+
+		if (n >= max_steps) {
+			log_error(device->ratbag,
+				  "Macro of button %u is too long (max %u steps)\n",
+				  button->index, max_steps);
+			goto err_inval;
+		}
+
+		switch (ev->type) {
+		case RATBAG_MACRO_EVENT_WAIT:
+			steps[n].delay.type = HIDPP20_MACRO_DELAY;
+			steps[n].delay.time = min(ev->event.timeout, 0xFFFFu);
+			break;
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			bit = hidpp20drv_macro_modifier_bit(ev->event.key);
+			usage = 0;
+			if (!bit) {
+				usage = ratbag_hidraw_get_keyboard_usage_from_keycode(device,
+										      ev->event.key);
+				if (usage == 0) {
+					log_error(device->ratbag,
+						  "Key %u cannot be used in an onboard macro\n",
+						  ev->event.key);
+					goto err_inval;
+				}
+			}
+			steps[n].key.type = ev->type == RATBAG_MACRO_EVENT_KEY_PRESSED ?
+					    HIDPP20_MACRO_KEY_PRESS : HIDPP20_MACRO_KEY_RELEASE;
+			steps[n].key.modifier = bit;
+			steps[n].key.key = usage;
+			break;
+		default:
+			goto err_inval;
+		}
+		n++;
+	}
+
+	if (n == 0)
+		goto err_inval;
+
+	/* the device does not release keys when a macro ends, so a key that
+	 * is still down would stay down on the host. Release whatever the
+	 * macro left pressed, in reverse order of pressing. */
+	for (i = n; i-- > 0; ) {
+		union hidpp20_macro_data *press = &steps[i];
+		bool released = false;
+		unsigned int j;
+
+		if (press->any.type != HIDPP20_MACRO_KEY_PRESS)
+			continue;
+
+		for (j = i + 1; j < n; j++) {
+			if (steps[j].any.type == HIDPP20_MACRO_KEY_RELEASE &&
+			    steps[j].key.modifier == press->key.modifier &&
+			    steps[j].key.key == press->key.key) {
+				released = true;
+				break;
+			}
+		}
+		if (released)
+			continue;
+
+		if (n >= max_steps) {
+			log_error(device->ratbag,
+				  "Macro of button %u is too long (max %u steps)\n",
+				  button->index, max_steps);
+			goto err_inval;
+		}
+		steps[n].key.type = HIDPP20_MACRO_KEY_RELEASE;
+		steps[n].key.modifier = press->key.modifier;
+		steps[n].key.key = press->key.key;
+		n++;
+	}
+
+	steps[n].end.type = HIDPP20_MACRO_END;
+
+	free(profile->macros[button->index]);
+	profile->macros[button->index] = steps;
+	profile->macro_dirty[button->index] = true;
+
+	/* the sector gets allocated on commit; page holds the button index
+	 * and zero the real sector, see hidpp20_buttons_to_cpu() */
+	profile->buttons[button->index].macro.type = HIDPP20_BUTTON_MACRO;
+	profile->buttons[button->index].macro.page = button->index;
+	profile->buttons[button->index].macro.zero = 0;
+	profile->buttons[button->index].macro.offset = 0;
+
+	return 0;
+
+err_inval:
+	free(steps);
+	return -EINVAL;
+}
+
 static int
 hidpp20drv_update_button_8100(struct ratbag_button *button)
 {
@@ -551,11 +722,19 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		rc = ratbag_action_keycode_from_macro(action,
 						      &key,
 						      &modifiers);
-		if (rc < 0) {
-			log_error(device->ratbag,
-				  "Error while writing macro for button %d\n",
-				  button->index);
+		if (rc <= 0) {
+			/* not a plain key combination (rc is 0 for a key that
+			 * is never released): store a real macro */
+			rc = hidpp20drv_update_macro_8100(button, profile);
+			if (rc < 0)
+				log_error(device->ratbag,
+					  "Error while writing macro for button %d\n",
+					  button->index);
+			return rc;
 		}
+
+		/* a key combination replaces any macro this button had */
+		profile->macro_dirty[button->index] = false;
 
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, key);
 		if (code == 0) {
@@ -576,6 +755,18 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 	case RATBAG_BUTTON_ACTION_TYPE_KEY:
 		type = HIDPP20_BUTTON_HID_TYPE;
 		subtype = HIDPP20_BUTTON_HID_TYPE_KEYBOARD;
+
+		/* a modifier key goes into the modifier byte, the key byte
+		 * with a modifier usage does nothing on the device */
+		code = hidpp20drv_macro_modifier_bit(action->action.key);
+		if (code) {
+			profile->buttons[button->index].subany.type = type;
+			profile->buttons[button->index].subany.subtype = subtype;
+			profile->buttons[button->index].keyboard_keys.modifier_flags = code;
+			profile->buttons[button->index].keyboard_keys.key = 0;
+			break;
+		}
+
 		code = ratbag_hidraw_get_keyboard_usage_from_keycode(device, action->action.key);
 		if (code == 0) {
 			subtype = HIDPP20_BUTTON_HID_TYPE_CONSUMER_CONTROL;
@@ -600,7 +791,7 @@ hidpp20drv_update_button_8100(struct ratbag_button *button)
 		profile->buttons[button->index].special.special = code;
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_NONE:
-		profile->buttons[button->index].disabled.type = HIDPP20_BUTTON_HID_TYPE_NOOP;
+		profile->buttons[button->index].disabled.type = HIDPP20_BUTTON_DISABLED;
 		break;
 	default:
 		return -ENOTSUP;
@@ -628,7 +819,7 @@ static int
 hidpp20drv_update_led_1300(struct ratbag_led *led, struct hidpp20drv_data *data)
 {
 	const uint16_t led_caps = data->led_infos.leds[led->index].caps;
-	struct hidpp20_led_sw_ctrl_led_state h_led;
+	struct hidpp20_led_sw_ctrl_led_state h_led = { 0 };
 	int rc;
 
 	h_led.index = led->index;
@@ -1013,6 +1204,7 @@ hidpp20drv_update_resolution_dpi(struct ratbag_resolution *resolution,
 			while (sensor->dpi_list[i]) {
 				if (sensor->dpi_list[i] == dpi)
 					break;
+				i++;
 			}
 			if (sensor->dpi_list[i] != dpi)
 				return -EINVAL;
@@ -1199,6 +1391,10 @@ hidpp20drv_read_profile_8100(struct ratbag_profile *profile)
 
 	profile->is_enabled = drv_data->profiles->profiles[profile->index].enabled;
 
+	/* expose the (possibly empty) name so that it can be edited */
+	free(profile->name);
+	profile->name = strdup_safe(drv_data->profiles->profiles[profile->index].name);
+
 	profile->is_active = (profile->index == drv_data->profiles->active_profile_index);
 
 	if (profile->is_active)
@@ -1384,7 +1580,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 
 		rc = hidpp20_batterylevel_get_battery_level(drv_data->dev, &level, &next_level);
 		if (rc < 0)
-			return rc;
+			return 0; /* battery state is not essential, not a hard failure */
 		status = rc;
 
 		log_debug(ratbag, "device battery level is %d%% (next %d%%), status %d \n",
@@ -1399,7 +1595,7 @@ hidpp20drv_init_feature(struct ratbag_device *device, uint16_t feature)
 
 		rc = hidpp20_batteryvoltage_get_battery_voltage(drv_data->dev, &voltage);
 		if (rc < 0)
-			return rc;
+			return 0; /* battery state is not essential, not a hard failure */
 
 		status = rc;
 
@@ -1483,9 +1679,21 @@ hidpp20drv_commit(struct ratbag_device *device)
 	struct ratbag_resolution *resolution;
 	int rc;
 
+	bool any_dirty = false;
+
 	list_for_each(profile, &device->profiles, link) {
 		if (!profile->dirty)
 			continue;
+
+		any_dirty = true;
+
+		if ((drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) &&
+		    profile->name) {
+			struct hidpp20_profile *hp = &drv_data->profiles->profiles[profile->index];
+
+			strncpy(hp->name, profile->name, sizeof(hp->name) - 1);
+			hp->name[sizeof(hp->name) - 1] = '\0';
+		}
 
 		if (profile->rate_dirty) {
 			rc = hidpp20drv_update_report_rate(profile, profile->hz);
@@ -1528,7 +1736,7 @@ hidpp20drv_commit(struct ratbag_device *device)
 		}
 	}
 
-	if (drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) {
+	if ((drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100) && any_dirty) {
 		list_for_each(profile, &device->profiles, link)
 			drv_data->profiles->profiles[profile->index].enabled = profile->is_enabled;
 
