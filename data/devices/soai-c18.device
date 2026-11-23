@@ -1,0 +1,5 @@
+[Device]
+Name=SOAI C18 Gaming Mouse
+DeviceMatch=usb:12c9:2003
+Driver=c18
+DeviceType=mouse
