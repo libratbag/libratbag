@@ -1,0 +1,5 @@
+[Device]
+Name=Lemokey G1 8K
+DeviceMatch=usb:362d:d028
+Driver=lemokey
+DeviceType=mouse
