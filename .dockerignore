@@ -1,0 +1,5 @@
+.git
+builddir*
+_docker-install
+__pycache__
+*.pyc
