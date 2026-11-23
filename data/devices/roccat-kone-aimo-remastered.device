@@ -1,0 +1,5 @@
+[Device]
+Name=Roccat Kone Aimo Remastered
+DeviceMatch=usb:1e7d:2e2c
+DeviceType=mouse
+Driver=roccat-kone-aimo
