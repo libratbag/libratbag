@@ -181,6 +181,7 @@ src_libratbag = [
 	'src/driver-roccat-kone-pure.c',
 	'src/driver-gskill.c',
 	'src/driver-openinput.c',
+	'src/driver-rapoo.c',
 	'src/driver-steelseries.c',
 	'src/driver-steelseries.h',
 	'src/driver-sinowealth.c',

@@ -45,12 +45,12 @@
 /* END OF custom typemap for handling ratbag_resolution_get_dpi_list */
 
 
-/* custom typemap for handling ratbag_resolution_get_report_rate_list */
+/* custom typemap for handling ratbag_profile_get_report_rate_list */
 /* We re-use the ratbag_resolution_get_dpi_list typemap */
 %typemap(in) (unsigned int *rates, size_t nrates) = (unsigned int *resolutions, size_t nres);
 %typemap(argout) (unsigned int *rates, size_t nrates) = (unsigned int *resolutions, size_t nres);
 %typemap(freearg) (unsigned int *rates, size_t nrates) = (unsigned int *resolutions, size_t nres);
-/* END OF custom typemap for handling ratbag_resolution_get_report_rate_list */
+/* END OF custom typemap for handling ratbag_profile_get_report_rate_list */
 
 /* custom typemap for handling lists */
 /* We re-use the ratbag_profile_get_debounce_list typemap */
