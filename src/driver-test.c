@@ -73,12 +73,19 @@ test_read_button(struct ratbag_button *button)
 				break;
 			ratbag_button_macro_set_event(m, idx++, e->type, e->value);
 		}
+		ratbag_button_macro_set_repeat(m, b->macro_repeat_mode,
+					       b->macro_repeat_count);
 		ratbag_button_copy_macro(button, m);
 		ratbag_button_macro_unref(m);
 		break;
 	case RATBAG_BUTTON_ACTION_TYPE_SPECIAL:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_SPECIAL;
 		button->action.action.special = p->buttons[button->index].special;
+		break;
+	case RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK:
+		button->action.type = RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK;
+		button->action.action.dpi_lock.x = p->buttons[button->index].dpi_lock.x;
+		button->action.action.dpi_lock.y = p->buttons[button->index].dpi_lock.y;
 		break;
 	default:
 		button->action.type = RATBAG_BUTTON_ACTION_TYPE_UNKNOWN;
@@ -89,6 +96,7 @@ test_read_button(struct ratbag_button *button)
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_KEY);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_SPECIAL);
 	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_MACRO);
+	ratbag_button_enable_action_type(button, RATBAG_BUTTON_ACTION_TYPE_DPI_LOCK);
 }
 
 static void
@@ -216,6 +224,26 @@ test_read_profile(struct ratbag_profile *profile)
 		profile->name = strdup(p->name);
 	}
 
+	profile->angle_snapping = p->angle_snapping;
+	profile->motion_sync = p->motion_sync;
+	profile->ripple_control = p->ripple_control;
+	profile->debounce = p->debounce;
+	profile->lod = p->lod;
+	profile->autosleep = p->autosleep;
+
+	if (p->ndebounces > 0)
+		ratbag_profile_set_debounce_list(profile,
+						 p->debounces,
+						 p->ndebounces);
+	if (p->nlods > 0)
+		ratbag_profile_set_lod_list(profile,
+					    p->lods,
+					    p->nlods);
+	if (p->nautosleeps > 0)
+		ratbag_profile_set_autosleep_list(profile,
+						  p->autosleeps,
+						  p->nautosleeps);
+
 	for (i = 0; i < ARRAY_LENGTH(p->caps) && p->caps[i]; i++) {
 		ratbag_profile_set_cap(profile, p->caps[i]);
 	}
@@ -265,6 +293,19 @@ test_commit(struct ratbag_device *device)
 	return 0;
 }
 
+static unsigned int
+test_handle_event(struct ratbag_device *device,
+		  const uint8_t *buf, size_t len,
+		  int hidraw_index)
+{
+	struct ratbag_test_device *d = ratbag_get_drv_data(device);
+
+	if (d->handle_event)
+		return d->handle_event(device, buf, len, hidraw_index);
+
+	return RATBAG_EVENT_NONE;
+}
+
 struct ratbag_driver test_driver = {
 	.name = "Test driver",
 	.id = "test_driver",
@@ -273,4 +314,5 @@ struct ratbag_driver test_driver = {
 	.remove = test_remove,
 	.commit = test_commit,
 	.set_active_profile = test_set_active_profile,
+	.handle_event = test_handle_event,
 };
