@@ -1,0 +1,5 @@
+[Device]
+Name=Redragon M913 Impact Elite
+DeviceMatch=usb:25a7:fa07;usb:25a7:fa08
+DeviceType=mouse
+Driver=redragon_m913
