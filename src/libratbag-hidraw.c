@@ -1569,31 +1569,42 @@ ratbag_hidraw_raw_request(struct ratbag_device *device, unsigned char reportnum,
 {
 	uint8_t tmp_buf[HID_MAX_BUFFER_SIZE];
 	int rc;
+	bool is_input;
 
 	if (len < 1 || len > HID_MAX_BUFFER_SIZE || !buf || device->hidraw[0].fd < 0)
 		return -EINVAL;
 
-	if (rtype != HID_FEATURE_REPORT)
+	if (rtype != HID_FEATURE_REPORT && rtype != HID_INPUT_REPORT)
 		return -ENOTSUP;
+
+	is_input = rtype == HID_INPUT_REPORT;
 
 	switch (reqtype) {
 	case HID_REQ_GET_REPORT:
 		memset(tmp_buf, 0, len);
 		tmp_buf[0] = reportnum;
 
-		rc = ioctl(device->hidraw[0].fd, HIDIOCGFEATURE(len), tmp_buf);
+		rc = ioctl(device->hidraw[0].fd,
+			  is_input ? HIDIOCGINPUT(len) : HIDIOCGFEATURE(len),
+			  tmp_buf);
 		if (rc < 0)
 			return -errno;
 
-		log_buf_raw(device->ratbag, "feature get:   ", tmp_buf, (unsigned)rc);
+		log_buf_raw(device->ratbag,
+			   is_input ? "input get:     " : "feature get:   ",
+			   tmp_buf, (unsigned)rc);
 
 		memcpy(buf, tmp_buf, rc);
 		return rc;
 	case HID_REQ_SET_REPORT:
 		buf[0] = reportnum;
 
-		log_buf_raw(device->ratbag, "feature set:   ", buf, len);
-		rc = ioctl(device->hidraw[0].fd, HIDIOCSFEATURE(len), buf);
+		log_buf_raw(device->ratbag,
+			   is_input ? "input set:     " : "feature set:   ",
+			   buf, len);
+		rc = ioctl(device->hidraw[0].fd,
+			  is_input ? HIDIOCSINPUT(len) : HIDIOCSFEATURE(len),
+			  buf);
 		if (rc < 0)
 			return -errno;
 
@@ -1617,6 +1628,22 @@ ratbag_hidraw_set_feature_report(struct ratbag_device *device, unsigned char rep
 {
 	return ratbag_hidraw_raw_request(device, reportnum, buf, len,
 					 HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
+}
+
+int
+ratbag_hidraw_get_input_report(struct ratbag_device *device, unsigned char reportnum,
+			       uint8_t *buf, size_t len)
+{
+	return ratbag_hidraw_raw_request(device, reportnum, buf, len,
+					 HID_INPUT_REPORT, HID_REQ_GET_REPORT);
+}
+
+int
+ratbag_hidraw_set_input_report(struct ratbag_device *device, unsigned char reportnum,
+			       uint8_t *buf, size_t len)
+{
+	return ratbag_hidraw_raw_request(device, reportnum, buf, len,
+					 HID_INPUT_REPORT, HID_REQ_SET_REPORT);
 }
 
 

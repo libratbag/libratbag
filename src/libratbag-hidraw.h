@@ -151,6 +151,46 @@ int ratbag_hidraw_get_feature_report(struct ratbag_device *device, unsigned char
  */
 int ratbag_hidraw_set_feature_report(struct ratbag_device *device, unsigned char reportnum,
 				     uint8_t *buf, size_t len);
+
+/**
+ * Get input report from device.
+ *
+ * This call sends a HID_REQ_GET_REPORT to the device for the given input
+ * report and returns the data in the caller-allocated buffer buf of size
+ * len.
+ *
+ * Some devices only answer a GET_REPORT with report type Input for a given
+ * report ID, even though the request that triggers the response is sent as
+ * a Feature report; use this instead of ratbag_hidraw_get_feature_report()
+ * in that case.
+ *
+ * @param device the ratbag device
+ * @param reportnum report ID
+ * @param buf[out] data returned from device
+ * @param len length of buf
+ *
+ * @return count of data transferred, or a negative errno on error
+ *
+ * Convenience wrapper around ratbag_hidraw_raw_request()
+ */
+int ratbag_hidraw_get_input_report(struct ratbag_device *device, unsigned char reportnum,
+				   uint8_t *buf, size_t len);
+
+/**
+ * Set input report on device.
+ *
+ * @param device the ratbag device
+ * @param reportnum report ID
+ * @param buf[in] data to send to the device
+ * @param len length of buf
+ *
+ * @return count of data transferred, or a negative errno on error
+ *
+ * Convenience wrapper around ratbag_hidraw_raw_request()
+ */
+int ratbag_hidraw_set_input_report(struct ratbag_device *device, unsigned char reportnum,
+				   uint8_t *buf, size_t len);
+
 /**
  * Send output report to device
  *
