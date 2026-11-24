@@ -271,3 +271,24 @@ ratbag_hidraw_get_keycode_from_consumer_usage(const struct ratbag_device *device
 uint16_t
 ratbag_hidraw_get_consumer_usage_from_keycode(const struct ratbag_device *device,
 					      unsigned keycode);
+
+/**
+ * Clears a hidraw read buffer.
+ *
+ * @param device the ratbag device
+ *
+ * @return 0 on success or a negative errno on error
+ */
+int
+ratbag_hidraw_clear_read_buffer(const struct ratbag_device *device);
+
+/**
+ * Clears a hidraw read buffer from a specific hidraw index.
+ *
+ * @param device the ratbag device
+ * @param hidrawno index of hidraw array
+ *
+ * @return 0 on success or a negative errno on error
+ */
+int
+ratbag_hidraw_clear_read_buffer_index(const struct ratbag_device *device, int hidrawno);
