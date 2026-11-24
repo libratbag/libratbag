@@ -32,6 +32,8 @@ enum sinowealth_report_id {
 	SINOWEALTH_REPORT_ID_CONFIG = 0x4,
 	SINOWEALTH_REPORT_ID_CMD = 0x5,
 	SINOWEALTH_REPORT_ID_CONFIG_LONG = 0x6,
+	/* Delux M800DB (258A:002E/002F) uses 0x08 for config+buttons. */
+	SINOWEALTH_REPORT_ID_M800DB = 0x8,
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_report_id) == sizeof(uint8_t), "Invalid size");
 
@@ -57,6 +59,11 @@ enum sinowealth_command_id {
 	 * To reset re-plug the mouse or do a clean reboot.
 	 */
 	SINOWEALTH_CMD_DFU = 0x75,
+	/* Delux M800DB: LED apply/commit (params zero). Replies 05 90 10 01 00.. */
+	SINOWEALTH_CMD_M800DB_LED_COMMIT = 0x90,
+	/* Delux M800DB wireless (002F receiver): forward/activate config traffic.
+	 * Sent with zero params; replies 05 80 01 .. when the mouse is linked. */
+	SINOWEALTH_CMD_M800DB_WIRELESS = 0x80,
 } __attribute__((packed));
 _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid size");
 
@@ -68,6 +75,33 @@ _Static_assert(sizeof(enum sinowealth_command_id) == sizeof(uint8_t), "Invalid s
 #define SINOWEALTH_CONFIG_REPORT_SIZE 520
 #define SINOWEALTH_CONFIG_SIZE_MAX 167
 #define SINOWEALTH_CONFIG_SIZE_MIN 123
+
+/* Delux M800DB (258A:002E/002F, PMW3325) layout.
+ * Offsets in the 520-byte RID 0x08 payload, INCLUDING the report ID byte.
+ * Reverse-engineered from USBPcap captures, see PROTOCOLO_M800DB.md. */
+#define SINOWEALTH_M800DB_CONFIG_SIZE 154
+#define SINOWEALTH_M800DB_OFF_SENSOR 9
+#define SINOWEALTH_M800DB_OFF_RATE 10
+#define SINOWEALTH_M800DB_OFF_DPI_CTL 11
+#define SINOWEALTH_M800DB_OFF_DPI 13
+#define SINOWEALTH_M800DB_NUM_DPI 8
+/* Resolutions exposed to userspace: the 5 real gears (DM=5). Slots 5-7
+ * are always zero on this firmware; count/enable logic still applies
+ * within these 5. */
+#define SINOWEALTH_M800DB_NUM_RESOLUTIONS 5
+#define SINOWEALTH_M800DB_OFF_LED_EFFECT 69
+#define SINOWEALTH_M800DB_OFF_LED_BRIGHTNESS 72
+#define SINOWEALTH_M800DB_OFF_LED_COLOR 73
+#define SINOWEALTH_M800DB_LED_OFF 0x00
+#define SINOWEALTH_M800DB_LED_STEADY 0x02
+/* 0x03 = single-color breathing (proven on-device with led_hunt.py:
+ * only-73/74/75 map to R/G/B, fx sweep showed breathing at 0x03). */
+#define SINOWEALTH_M800DB_LED_BREATHING 0x03
+#define SINOWEALTH_M800DB_LED_NEON 0x05
+#define SINOWEALTH_M800DB_DPI_MIN 100
+#define SINOWEALTH_M800DB_DPI_MAX 10000
+/* Wireless (002F receiver) uses page offset 0x10: 0x21/0x22 config+buttons. */
+#define SINOWEALTH_M800DB_PAGE_WIRELESS_OFFSET 0x10
 
 #define SINOWEALTH_MACRO_SIZE 515
 
@@ -164,6 +198,7 @@ _Static_assert(sizeof(struct sinowealth_color) == 3, "Invalid size");
 enum sinowealth_sensor {
 	SINOWEALTH_SENSOR_PMW3360 = 0x06,
 	SINOWEALTH_SENSOR_PMW3212 = 0x08,
+	SINOWEALTH_SENSOR_PMW3325 = 0x0b,
 	SINOWEALTH_SENSOR_PMW3327 = 0x0e,
 	SINOWEALTH_SENSOR_PMW3389 = 0x0f,
 } __attribute__((packed));
@@ -478,6 +513,10 @@ _Static_assert(sizeof(struct sinowealth_macro_report) == SINOWEALTH_CONFIG_REPOR
 struct sinowealth_data {
 	/* Whether the device uses REPORT_ID_CONFIG or REPORT_ID_CONFIG_LONG. */
 	bool is_long;
+	/* Delux M800DB variant: reports 0x05/0x08, 154-byte config, u16 DPI. */
+	bool is_m800db;
+	/* Delux M800DB wireless receiver (002F): needs CMD 0x80 + page offset. */
+	bool is_wireless;
 	enum sinowealth_led_format led_type;
 	unsigned int button_count;
 	unsigned int config_size;
@@ -486,7 +525,21 @@ struct sinowealth_data {
 	bool button_key_action_instead_of_macro[SINOWEALTH_NUM_BUTTONS_MAX];
 	struct sinowealth_button_report buttons[SINOWEALTH_NUM_PROFILES_MAX];
 	struct sinowealth_config_report configs[SINOWEALTH_NUM_PROFILES_MAX];
+	/* Raw 520-byte RID 0x08 buffers for the M800DB variant. */
+	uint8_t m800db_configs[SINOWEALTH_NUM_PROFILES_MAX][SINOWEALTH_CONFIG_REPORT_SIZE];
 };
+
+/* M800DB uses 8-byte CMD reports (captured: all rid05 payloads are 8B);
+ * classic variants use 6. Must be called after sinowealth_test_hidraw(). */
+#define SINOWEALTH_CMD_SIZE_M800DB 8
+static inline unsigned int
+sinowealth_cmd_size(struct ratbag_device *device)
+{
+	struct sinowealth_data *drv_data = device->drv_data;
+	if (drv_data && drv_data->is_m800db)
+		return SINOWEALTH_CMD_SIZE_M800DB;
+	return SINOWEALTH_CMD_SIZE;
+}
 
 struct sinowealth_button_mapping {
 	struct sinowealth_button_data data;
@@ -698,6 +751,7 @@ sinowealth_get_max_dpi_for_sensor(enum sinowealth_sensor sensor)
 	case SINOWEALTH_SENSOR_PMW3212: return 7200;
 	case SINOWEALTH_SENSOR_PMW3360: return 12000;
 	case SINOWEALTH_SENSOR_PMW3389: return 16000;
+	case SINOWEALTH_SENSOR_PMW3325: return SINOWEALTH_M800DB_DPI_MAX;
 	default: return SINOWEALTH_DPI_FALLBACK;
 	}
 }
@@ -909,6 +963,274 @@ sinowealth_get_config_command(size_t profile_index)
 	return config_command;
 }
 
+/* Delux M800DB (258A:002E/002F, PMW3325) helpers.
+
+ * Wire format documented in PROTOCOLO_M800DB.md (USBPcap captures). */
+
+static uint8_t
+sinowealth_m800db_config_rid(const struct sinowealth_data *drv_data)
+{
+	if (drv_data->is_m800db)
+		return SINOWEALTH_REPORT_ID_M800DB;
+	return drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+}
+
+/* Forward declarations for file-local helpers defined below. */
+static int sinowealth_query_read(struct ratbag_device *device, uint8_t buffer[], unsigned int buffer_length);
+static int sinowealth_query_write(struct ratbag_device *device, uint8_t buffer[], unsigned int buffer_length);
+
+/* Delux M800DB DPI codec. At or below 5000 DPI the sensor-native scale
+ * (raw = DPI/100) is used; above that the firmware uses raw = 39 + DPI/500
+ * (captured: 51->6000, 55->8000, 59->10000). */
+static unsigned int
+sinowealth_m800db_raw_to_dpi(unsigned int raw)
+{
+	if (raw <= 50)
+		return raw * 100;
+	return (raw - 39) * 500;
+}
+
+/* @return Encoded value; caller must reject unrepresentable DPIs
+ * (5500 would collide with raw 50 = 5000 DPI). */
+static unsigned int
+sinowealth_m800db_dpi_to_raw(unsigned int dpi)
+{
+	if (dpi <= 5000)
+		return dpi / 100;
+	return 39 + dpi / 500;
+}
+
+/* Delux M800DB wireless: detect receiver link and activate forwarding.
+ *
+ * Sends CMD 0x80 (zero params); a linked receiver replies 05 80 01 ...
+ * Called while reading and once per commit, like the official software.
+ * A missing/negative reply simply means wired mode, not an error.
+ *
+ * @return 0 on success or a negative errno if the command itself failed.
+ */
+static int
+sinowealth_m800db_wireless_activate(struct ratbag_device *device)
+{
+	struct sinowealth_data *drv_data = device->drv_data;
+	uint8_t cmd[SINOWEALTH_CMD_SIZE_M800DB] = {
+		SINOWEALTH_REPORT_ID_CMD,
+		SINOWEALTH_CMD_M800DB_WIRELESS,
+	};
+	int rc = sinowealth_query_write(device, cmd, sinowealth_cmd_size(device));
+	if (rc < 0)
+		return rc;
+	rc = sinowealth_query_read(device, cmd, sinowealth_cmd_size(device));
+	if (rc < 0) {
+		drv_data->is_wireless = false;
+		return 0;
+	}
+	drv_data->is_wireless = cmd[0] == SINOWEALTH_REPORT_ID_CMD &&
+		cmd[1] == SINOWEALTH_CMD_M800DB_WIRELESS && cmd[2] == 0x01;
+	log_info(device->ratbag, "M800DB wireless link: %s\n",
+		 drv_data->is_wireless ? "yes" : "no");
+	return 0;
+}
+
+/* Delux M800DB: config/buttons page for profile, with wireless offset. */
+static uint8_t
+sinowealth_m800db_config_cmd(const struct sinowealth_data *drv_data, size_t profile_index)
+{
+	const unsigned int off = (drv_data->is_m800db && drv_data->is_wireless) ?
+		SINOWEALTH_M800DB_PAGE_WIRELESS_OFFSET : 0;
+	return sinowealth_get_config_command(profile_index) + off;
+}
+
+static uint8_t
+sinowealth_m800db_buttons_cmd(const struct sinowealth_data *drv_data, size_t profile_index)
+{
+	const unsigned int off = (drv_data->is_m800db && drv_data->is_wireless) ?
+		SINOWEALTH_M800DB_PAGE_WIRELESS_OFFSET : 0;
+	return sinowealth_get_buttons_command(profile_index) + off;
+}
+
+/* Delux M800DB: an all-zero button page is never valid (clicks work
+ * out of the box, and every capture shows the standard layout below).
+ * The wireless page can read back zeros; treat that as a bad read. */
+static bool
+sinowealth_m800db_buttons_are_empty(const struct sinowealth_button_report *buttons)
+{
+	for (unsigned int i = 0; i < 20; ++i) {
+		if (buttons->buttons[i].type != SINOWEALTH_BUTTON_TYPE_NONE)
+			return false;
+	}
+	return true;
+}
+
+/* Delux M800DB factory button layout: 5 mouse buttons, DPI-cycle,
+ * remainder disabled. Matches all captures and wired dumps. */
+static void
+sinowealth_m800db_buttons_default(struct sinowealth_button_report *buttons)
+{
+	static const uint8_t masks[] = { 0x01, 0x02, 0x04, 0x08, 0x10 };
+	unsigned int i;
+
+	for (i = 0; i < 5; ++i) {
+		buttons->buttons[i].type = SINOWEALTH_BUTTON_TYPE_BUTTON;
+		buttons->buttons[i].data[0] = masks[i];
+		buttons->buttons[i].data[1] = 0;
+		buttons->buttons[i].data[2] = 0;
+	}
+	buttons->buttons[5].type = SINOWEALTH_BUTTON_TYPE_SWITCH_DPI;
+	buttons->buttons[5].data[0] = 0;
+	buttons->buttons[5].data[1] = 0;
+	buttons->buttons[5].data[2] = 0;
+	for (i = 6; i < 20; ++i) {
+		buttons->buttons[i].type = SINOWEALTH_BUTTON_TYPE_SPECIAL;
+		buttons->buttons[i].data[0] = 0x01;
+		buttons->buttons[i].data[1] = 0;
+		buttons->buttons[i].data[2] = 0;
+	}
+}
+
+/* Delux M800DB: update profile from raw RID 0x08 config. */
+static void
+sinowealth_m800db_update_profile_from_config(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	uint8_t *cfg = drv_data->m800db_configs[profile->index];
+	struct ratbag_led *led = NULL;
+	struct ratbag_resolution *resolution = NULL;
+
+	profile->hz = sinowealth_raw_to_report_rate(cfg[SINOWEALTH_M800DB_OFF_RATE] & 0x0f);
+
+	const unsigned int count = cfg[SINOWEALTH_M800DB_OFF_DPI_CTL] & 0x0f;
+	const unsigned int active = (cfg[SINOWEALTH_M800DB_OFF_DPI_CTL] >> 4) & 0x0f;
+	unsigned int enabled = 0;
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		if (resolution->index < SINOWEALTH_M800DB_NUM_DPI) {
+			const unsigned int raw =
+				cfg[SINOWEALTH_M800DB_OFF_DPI + 2 * resolution->index] |
+				((unsigned int)cfg[SINOWEALTH_M800DB_OFF_DPI + 2 * resolution->index + 1] << 8);
+			resolution->dpi_x = resolution->dpi_y = sinowealth_m800db_raw_to_dpi(raw);
+		}
+		resolution->is_disabled = resolution->index >= (int)count;
+		if (!resolution->is_disabled) {
+			++enabled;
+			resolution->is_active = enabled == active;
+			resolution->is_default = resolution->is_active;
+		}
+	}
+
+	if (drv_data->led_count == 0)
+		return;
+	led = ratbag_profile_get_led(profile, 0);
+	/* Brightness lives at raw[72]; no per-effect speed in this layout. */
+	led->brightness = cfg[SINOWEALTH_M800DB_OFF_LED_BRIGHTNESS];
+	led->ms = 1000;
+	switch (cfg[SINOWEALTH_M800DB_OFF_LED_EFFECT]) {
+	case SINOWEALTH_M800DB_LED_OFF:
+		led->mode = RATBAG_LED_OFF;
+		break;
+	case SINOWEALTH_M800DB_LED_STEADY:
+		led->mode = RATBAG_LED_ON;
+		led->color.red = cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 0];
+		led->color.green = cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 1];
+		led->color.blue = cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 2];
+		break;
+	case SINOWEALTH_M800DB_LED_BREATHING:
+		led->mode = RATBAG_LED_BREATHING;
+		led->color.red = cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 0];
+		led->color.green = cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 1];
+		led->color.blue = cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 2];
+		break;
+	case SINOWEALTH_M800DB_LED_NEON:
+		led->mode = RATBAG_LED_CYCLE;
+		break;
+	default:
+		log_error(device->ratbag, "Got unknown M800DB LED effect: %d\n",
+			  cfg[SINOWEALTH_M800DB_OFF_LED_EFFECT]);
+		break;
+	}
+	ratbag_led_unref(led);
+}
+
+/* Delux M800DB: update raw RID 0x08 config from profile. */
+static int
+sinowealth_m800db_update_config_from_profile(struct ratbag_profile *profile)
+{
+	struct ratbag_device *device = profile->device;
+	struct sinowealth_data *drv_data = device->drv_data;
+	uint8_t *cfg = drv_data->m800db_configs[profile->index];
+	struct ratbag_led *led = NULL;
+	struct ratbag_resolution *resolution = NULL;
+
+	const uint8_t raw_rate = sinowealth_report_rate_to_raw(profile->hz);
+	if (raw_rate == 0) {
+		log_error(device->ratbag, "Incorrect report rate %u was requested\n", profile->hz);
+		return -EINVAL;
+	}
+	cfg[SINOWEALTH_M800DB_OFF_RATE] =
+		(cfg[SINOWEALTH_M800DB_OFF_RATE] & 0xf0) | (raw_rate & 0x0f);
+
+	unsigned int enabled = 0;
+	unsigned int active = 1;
+	ratbag_profile_for_each_resolution(profile, resolution) {
+		/* Disabled slots are left untouched in hardware; never fail
+		 * the commit over them (stale 0-DPI values exist). */
+		if (resolution->is_disabled)
+			continue;
+		unsigned int dpi = resolution->dpi_x;
+		if (dpi < SINOWEALTH_M800DB_DPI_MIN)
+			dpi = SINOWEALTH_M800DB_DPI_MIN;
+		if (dpi > SINOWEALTH_M800DB_DPI_MAX || dpi % 100 != 0 ||
+		    (dpi > 5000 && (dpi % 500 != 0 || dpi == 5500))) {
+			log_error(device->ratbag, "Incorrect DPI %u was requested\n",
+				  resolution->dpi_x);
+			return -EINVAL;
+		}
+		if (resolution->index < SINOWEALTH_M800DB_NUM_DPI) {
+			const unsigned int raw = sinowealth_m800db_dpi_to_raw(dpi);
+			cfg[SINOWEALTH_M800DB_OFF_DPI + 2 * resolution->index] = raw & 0xff;
+			cfg[SINOWEALTH_M800DB_OFF_DPI + 2 * resolution->index + 1] = (raw >> 8) & 0xff;
+		}
+		++enabled;
+		if (resolution->is_active)
+			active = enabled;
+	}
+	const unsigned int count = enabled ? enabled : 1;
+	if (count > SINOWEALTH_M800DB_NUM_DPI || active < 1 || active > count)
+		return -EINVAL;
+	cfg[SINOWEALTH_M800DB_OFF_DPI_CTL] = ((active & 0x0f) << 4) | (count & 0x0f);
+
+	if (drv_data->led_count == 0)
+		return 0;
+	led = ratbag_profile_get_led(profile, 0);
+	if (led->dirty) {
+		cfg[SINOWEALTH_M800DB_OFF_LED_BRIGHTNESS] = (uint8_t)led->brightness;
+		switch (led->mode) {
+		case RATBAG_LED_OFF:
+			cfg[SINOWEALTH_M800DB_OFF_LED_EFFECT] = SINOWEALTH_M800DB_LED_OFF;
+			break;
+		case RATBAG_LED_ON:
+			cfg[SINOWEALTH_M800DB_OFF_LED_EFFECT] = SINOWEALTH_M800DB_LED_STEADY;
+			cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 0] = (uint8_t)led->color.red;
+			cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 1] = (uint8_t)led->color.green;
+			cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 2] = (uint8_t)led->color.blue;
+			break;
+		case RATBAG_LED_BREATHING:
+			cfg[SINOWEALTH_M800DB_OFF_LED_EFFECT] = SINOWEALTH_M800DB_LED_BREATHING;
+			cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 0] = (uint8_t)led->color.red;
+			cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 1] = (uint8_t)led->color.green;
+			cfg[SINOWEALTH_M800DB_OFF_LED_COLOR + 2] = (uint8_t)led->color.blue;
+			break;
+		case RATBAG_LED_CYCLE:
+			cfg[SINOWEALTH_M800DB_OFF_LED_EFFECT] = SINOWEALTH_M800DB_LED_NEON;
+			break;
+		default:
+			ratbag_led_unref(led);
+			return -EINVAL;
+		}
+	}
+	ratbag_led_unref(led);
+	return 0;
+}
+
 /* Do a read query.
  *
  * After an error assume `buffer` now has garbage data.
@@ -993,9 +1315,9 @@ sinowealth_get_active_profile(struct ratbag_device *device)
 {
 	int rc = 0;
 
-	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
+	uint8_t buf[SINOWEALTH_CMD_SIZE_M800DB] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE };
 
-	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	rc = sinowealth_query_read(device, buf, sinowealth_cmd_size(device));
 	if (rc < 0) {
 		log_error(device->ratbag, "Could not get device's active profile: %s (%d)\n", strerror(-rc), rc);
 		return rc;
@@ -1020,9 +1342,9 @@ sinowealth_set_active_profile(struct ratbag_device *device, unsigned int index)
 
 	int rc = 0;
 
-	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, (uint8_t)index + 1u };
+	uint8_t buf[SINOWEALTH_CMD_SIZE_M800DB] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_PROFILE, (uint8_t)index + 1u };
 
-	rc = sinowealth_query_write(device, buf, sizeof(buf));
+	rc = sinowealth_query_write(device, buf, sinowealth_cmd_size(device));
 	if (rc < 0) {
 		log_error(device->ratbag, "Error while selecting profile: %s (%d)\n", strerror(-rc), rc);
 		return rc;
@@ -1042,9 +1364,9 @@ sinowealth_get_fw_version(struct ratbag_device *device, char out[4])
 {
 	int rc = 0;
 
-	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
+	uint8_t buf[SINOWEALTH_CMD_SIZE_M800DB] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_FIRMWARE_VERSION };
 
-	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	rc = sinowealth_query_read(device, buf, sinowealth_cmd_size(device));
 	if (rc < 0) {
 		log_error(device->ratbag, "Couldn't read firmware version: %s (%d)\n", strerror(-rc), rc);
 		return rc;
@@ -1061,9 +1383,9 @@ sinowealth_get_debounce_time(struct ratbag_device *device)
 {
 	int rc = 0;
 
-	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
+	uint8_t buf[SINOWEALTH_CMD_SIZE_M800DB] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_DEBOUNCE };
 
-	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	rc = sinowealth_query_read(device, buf, sinowealth_cmd_size(device));
 	if (rc < 0) {
 		log_error(device->ratbag, "Could not read debounce time: %s (%d)\n", strerror(-rc), rc);
 		return rc;
@@ -1087,13 +1409,13 @@ sinowealth_set_debounce_time(struct ratbag_device *device, int debounce_time_ms)
 
 	int rc = 0;
 
-	uint8_t buf[SINOWEALTH_CMD_SIZE] = {
+	uint8_t buf[SINOWEALTH_CMD_SIZE_M800DB] = {
 		SINOWEALTH_REPORT_ID_CMD,
 		SINOWEALTH_CMD_DEBOUNCE,
 		debounce_time_ms / 2,
 	};
 
-	rc = sinowealth_query_write(device, buf, sizeof(buf));
+	rc = sinowealth_query_write(device, buf, sinowealth_cmd_size(device));
 	if (rc < 0) {
 		log_error(device->ratbag, "Could not set debounce time: %s (%d)\n",
 			  strerror(-rc), rc);
@@ -1123,9 +1445,9 @@ sinowealth_print_long_lod_and_anglesnapping(struct ratbag_device *device)
 	 * To implement angle snapping toggling here: set last bit of buf[3] to
 	 * 1 or 0 to enable or disable accordingly.
 	 */
-	uint8_t buf[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
+	uint8_t buf[SINOWEALTH_CMD_SIZE_M800DB] = { SINOWEALTH_REPORT_ID_CMD, SINOWEALTH_CMD_LONG_ANGLESNAPPING_AND_LOD };
 
-	rc = sinowealth_query_read(device, buf, sizeof(buf));
+	rc = sinowealth_query_read(device, buf, sinowealth_cmd_size(device));
 	if (rc < 0) {
 		log_error(device->ratbag,
 			  "Could not read lift-off distance and angle snapping values: %s (%d)\n",
@@ -1162,16 +1484,44 @@ sinowealth_query_read_config(struct ratbag_device *device, uint8_t config_cmd, u
 	struct sinowealth_data *drv_data = device->drv_data;
 
 	{
-		uint8_t cmd[SINOWEALTH_CMD_SIZE] = { SINOWEALTH_REPORT_ID_CMD, config_cmd };
-		rc = sinowealth_query_write(device, cmd, sizeof(cmd));
+		uint8_t cmd[SINOWEALTH_CMD_SIZE_M800DB] = { SINOWEALTH_REPORT_ID_CMD, config_cmd };
+		rc = sinowealth_query_write(device, cmd, sinowealth_cmd_size(device));
 		if (rc < 0)
 			return rc;
+		/* Wireless needs radio turnaround between page select and
+		 * GET (official leaves ~30ms); back-to-back STALLs. */
+		if (drv_data->is_m800db && drv_data->is_wireless)
+			msleep(30);
 	}
 
 	{
-		const unsigned char config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+		const unsigned char config_report_id = sinowealth_m800db_config_rid(drv_data);
 
-		rc = ratbag_hidraw_get_feature_report(device, config_report_id, buffer, SINOWEALTH_CONFIG_REPORT_SIZE);
+		/* M800DB: ask the full report (official GETs use wL=520 on
+		 * both transports, reply is short); buttons need the
+		 * exact 88 ask. */
+		unsigned int ask_len = SINOWEALTH_CONFIG_REPORT_SIZE;
+		if (drv_data->is_m800db && reply_len_max == SINOWEALTH_BUTTON_SIZE)
+			ask_len = SINOWEALTH_BUTTON_SIZE;
+
+		rc = ratbag_hidraw_get_feature_report(device, config_report_id, buffer, ask_len);
+		if (rc == -EPIPE && drv_data->is_m800db) {
+			/* Flaky link (e.g. waking 2.4GHz radio): wait, then
+			 * redo the full sequence. On wireless the receiver
+			 * drops out of the linked state on a STALL, so the
+			 * 0x80 handshake must be re-issued, not just the page. */
+			msleep(60);
+			if (drv_data->is_wireless) {
+				rc = sinowealth_m800db_wireless_activate(device);
+				if (rc < 0)
+					return rc;
+			}
+			uint8_t retry[SINOWEALTH_CMD_SIZE_M800DB] = { SINOWEALTH_REPORT_ID_CMD, config_cmd };
+			rc = sinowealth_query_write(device, retry, sinowealth_cmd_size(device));
+			if (rc < 0)
+				return rc;
+			rc = ratbag_hidraw_get_feature_report(device, config_report_id, buffer, ask_len);
+		}
 		if (rc < 0) {
 			log_error(device->ratbag,
 				  "Could not get feature report while reading device configuration data: %s (%d)\n",
@@ -1200,7 +1550,15 @@ sinowealth_read_raw_button_configs(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = device->drv_data;
 
 	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
-		const uint8_t config_command = sinowealth_get_buttons_command(profile_index);
+		if (drv_data->is_m800db && drv_data->is_wireless && profile_index == 0) {
+			rc = sinowealth_m800db_wireless_activate(device);
+			if (rc < 0) {
+				log_error(device->ratbag, "Could not activate M800DB link: %s (%d)\n",
+					  strerror(-rc), rc);
+				return rc;
+			}
+		}
+		const uint8_t config_command = sinowealth_m800db_buttons_cmd(drv_data, profile_index);
 
 		struct sinowealth_button_report *buttons = &drv_data->buttons[profile_index];
 
@@ -1208,6 +1566,16 @@ sinowealth_read_raw_button_configs(struct ratbag_device *device)
 		if (rc < 0) {
 			log_error(device->ratbag, "Could not read button configuration data: %s (%d)\n", strerror(-rc), rc);
 			return rc;
+		}
+
+		if (drv_data->is_m800db && sinowealth_m800db_buttons_are_empty(buttons)) {
+			/* The wireless button page can read back all zeros
+			 * (accepted: length is right). Writing that back
+			 * would brick the clicks, as observed. Fall back to
+			 * the known-good factory layout instead. */
+			log_info(device->ratbag,
+				 "M800DB button page read as all zeros, using default layout\n");
+			sinowealth_m800db_buttons_default(buttons);
 		}
 	};
 
@@ -1226,7 +1594,28 @@ sinowealth_read_raw_configs(struct ratbag_device *device)
 	struct sinowealth_data *drv_data = device->drv_data;
 
 	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
-		const uint8_t config_command = sinowealth_get_config_command(profile_index);
+		if (drv_data->is_m800db && profile_index == 0) {
+			rc = sinowealth_m800db_wireless_activate(device);
+			if (rc < 0) {
+				log_error(device->ratbag, "Could not activate M800DB link: %s (%d)\n",
+					  strerror(-rc), rc);
+				return rc;
+			}
+		}
+		const uint8_t config_command = sinowealth_m800db_config_cmd(drv_data, profile_index);
+
+		if (drv_data->is_m800db) {
+			rc = sinowealth_query_read_config(device, config_command,
+							  drv_data->m800db_configs[profile_index],
+							  SINOWEALTH_M800DB_CONFIG_SIZE - 4,
+							  SINOWEALTH_M800DB_CONFIG_SIZE + 6);
+			if (rc < 0) {
+				log_error(device->ratbag, "Could not read M800DB configuration data: %s (%d)\n",
+					  strerror(-rc), rc);
+				return rc;
+			}
+			continue;
+		}
 
 		struct sinowealth_config_report *config = &drv_data->configs[profile_index];
 
@@ -1254,6 +1643,10 @@ sinowealth_update_profile_from_config(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
+	if (drv_data->is_m800db) {
+		sinowealth_m800db_update_profile_from_config(profile);
+		return;
+	}
 	struct sinowealth_config_report *config = &drv_data->configs[profile->index];
 	struct ratbag_led *led = NULL;
 	struct ratbag_resolution *resolution = NULL;
@@ -1548,6 +1941,12 @@ sinowealth_update_buttons_from_profile(struct ratbag_profile *profile)
 			button_data->macro.mode = SINOWEALTH_BUTTON_MACRO_MODE_REPEAT;
 			button_data->macro.option = 1;
 
+			if (drv_data->is_m800db)
+				log_error(device->ratbag,
+					  "button %d: complex macros are not supported on M800DB (blob format never captured); "
+					  "the button will stay inert until set to a key/button action\n",
+					  button->index);
+
 			break;
 		}
 		default:
@@ -1766,15 +2165,24 @@ sinowealth_init_profile(struct ratbag_device *device)
 	/* If we are not compiled with support with support for this many profiles. */
 	if (rc >= (int)drv_data->profile_count) {
 		const unsigned int PROFILE_TO_USE = 0;
-		log_error(device->ratbag,
-			  "Active profile index is %d, but the maximum in the device file is %d; "
-			  "Will use profile %d instead; "
-			  "Report this to libratbag developers!\n",
-			  rc, drv_data->profile_count - 1,
-			  PROFILE_TO_USE);
-		sinowealth_set_active_profile(device, PROFILE_TO_USE);
-		if (rc < 0)
-			return rc;
+		if (drv_data->is_m800db) {
+			/* Single-profile variant; the 0x02 reply reads back 1
+			 * (no second profile exists: 0x31 errors). Just use 0
+			 * without touching the mouse. */
+			log_debug(device->ratbag,
+				  "M800DB active profile index is %d, using profile %d\n",
+				  rc, PROFILE_TO_USE);
+		} else {
+			log_error(device->ratbag,
+				  "Active profile index is %d, but the maximum in the device file is %d; "
+				  "Will use profile %d instead; "
+				  "Report this to libratbag developers!\n",
+				  rc, drv_data->profile_count - 1,
+				  PROFILE_TO_USE);
+			sinowealth_set_active_profile(device, PROFILE_TO_USE);
+			if (rc < 0)
+				return rc;
+		}
 		rc = (int)PROFILE_TO_USE;
 	}
 	const unsigned int active_profile_index = (unsigned int)rc;
@@ -1799,7 +2207,15 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 	/* LED count. */
 	drv_data->led_count = 0;
-	if (config->rgb_effect == RGB_NOT_SUPPORTED) {
+	if (drv_data->is_m800db) {
+		/* The struct overlay reads the wrong offset for this layout;
+		 * the effect lives at raw[69] (0xff = unsupported). */
+		if (drv_data->m800db_configs[0][SINOWEALTH_M800DB_OFF_LED_EFFECT] == 0xff) {
+			log_debug(device->ratbag, "Device config says LED effects are not supported\n");
+		} else if (drv_data->led_type != SINOWEALTH_LED_TYPE_NONE) {
+			drv_data->led_count += 1;
+		}
+	} else if (config->rgb_effect == RGB_NOT_SUPPORTED) {
 		log_debug(device->ratbag, "Device config says LED effects are not supported\n");
 	} else if (drv_data->led_type != SINOWEALTH_LED_TYPE_NONE) {
 		drv_data->led_count += 1;
@@ -1809,15 +2225,36 @@ sinowealth_init_profile(struct ratbag_device *device)
 	 */
 
 	/* Number of DPIs = all DPIs from min to max (inclusive). */
-	const unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1;
+	unsigned int num_dpis = (sinowealth_get_max_dpi_for_sensor(config->sensor_type) - SINOWEALTH_DPI_MIN) / SINOWEALTH_DPI_STEP + 1;
 
-	ratbag_device_init_profiles(device, drv_data->profile_count, SINOWEALTH_NUM_DPIS, drv_data->button_count, drv_data->led_count);
+	/* M800DB: curated list (100-5000 @100, then @500 skipping the
+	 * unrepresentable 5500 which collides with raw 50 = 5000 DPI). */
+	unsigned int m800db_dpis[(5000 - 100) / 100 + 1 + 9];
+	unsigned int *dpis_ptr = NULL;
+	if (drv_data->is_m800db) {
+		num_dpis = 0;
+		for (unsigned int dpi = 100; dpi <= 5000; dpi += 100)
+			m800db_dpis[num_dpis++] = dpi;
+		for (unsigned int dpi = 6000; dpi <= 10000; dpi += 500)
+			m800db_dpis[num_dpis++] = dpi;
+		dpis_ptr = m800db_dpis;
+	}
+
+	ratbag_device_init_profiles(device, drv_data->profile_count,
+				    drv_data->is_m800db ? SINOWEALTH_M800DB_NUM_RESOLUTIONS : SINOWEALTH_NUM_DPIS,
+				    drv_data->button_count, drv_data->led_count);
 
 	ratbag_device_for_each_profile(device, profile) {
 		profile->is_active = profile->index == active_profile_index;
 	}
 
-	rc = sinowealth_get_debounce_time(device);
+	if (drv_data->is_m800db) {
+		/* CMD 0x1a is not implemented on this firmware; skip the
+		 * query instead of logging errors on every probe. */
+		rc = -ENOTSUP;
+	} else {
+		rc = sinowealth_get_debounce_time(device);
+	}
 	/* Seems like some mice don't support debounce time changing.
 	 *
 	 * Examples:
@@ -1847,6 +2284,8 @@ sinowealth_init_profile(struct ratbag_device *device)
 	for (unsigned int i = 0; i < num_dpis; i++) {
 		dpis[i] = SINOWEALTH_DPI_MIN + i * SINOWEALTH_DPI_STEP;
 	}
+	if (dpis_ptr)
+		memcpy(dpis, dpis_ptr, num_dpis * sizeof(dpis[0]));
 
 	ratbag_device_for_each_profile(device, profile) {
 		ratbag_profile_for_each_button(profile, button) {
@@ -1859,7 +2298,9 @@ sinowealth_init_profile(struct ratbag_device *device)
 
 		ratbag_profile_for_each_resolution(profile, resolution) {
 			ratbag_resolution_set_dpi_list(resolution, dpis, num_dpis);
-			ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+			/* M800DB gears are single 16-bit values (no XY fields). */
+			if (!drv_data->is_m800db)
+				ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
 			ratbag_resolution_set_cap(resolution, RATBAG_RESOLUTION_CAP_DISABLE);
 		}
 
@@ -1885,6 +2326,16 @@ static int
 sinowealth_test_hidraw(struct ratbag_device *device)
 {
 	int rc = 0;
+
+	/* Delux M800DB first: sibling keyboard interfaces expose 0x04,
+	 * which would shadow the mouse interface if checked first. */
+	rc = ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_M800DB);
+	if (rc) {
+		struct sinowealth_data *drv_data = device->drv_data;
+		drv_data->is_m800db = true;
+
+		return rc;
+	}
 
 	/* Only the keyboard interface has this report */
 	rc = ratbag_hidraw_has_report(device, SINOWEALTH_REPORT_ID_CONFIG);
@@ -1913,13 +2364,21 @@ sinowealth_write_buttons(struct ratbag_device *device)
 
 	struct sinowealth_data *drv_data = device->drv_data;
 
-	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
+	if (drv_data->is_m800db && drv_data->is_wireless) {
+		rc = sinowealth_m800db_wireless_activate(device);
+		if (rc < 0) {
+			log_error(device->ratbag, "Could not activate M800DB link: %s (%d)\n",
+				  strerror(-rc), rc);
+			return rc;
+		}
+		msleep(30);
+	}
 
 	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
 		struct sinowealth_button_report *buttons = &drv_data->buttons[profile_index];
 
-		buttons->report_id = config_report_id;
-		buttons->command_id = sinowealth_get_buttons_command(profile_index);
+		buttons->report_id = sinowealth_m800db_config_rid(drv_data);
+		buttons->command_id = sinowealth_m800db_buttons_cmd(drv_data, profile_index);
 		buttons->config_write = SINOWEALTH_BUTTON_SIZE - 8;
 
 		rc = sinowealth_query_write(device, (uint8_t*)buttons, sizeof(*buttons));
@@ -1948,6 +2407,33 @@ sinowealth_write_configs(struct ratbag_device *device)
 	for (size_t profile_index = 0; profile_index < drv_data->profile_count; ++profile_index) {
 		struct sinowealth_config_report *config = &drv_data->configs[profile_index];
 
+		if (drv_data->is_m800db) {
+			uint8_t *raw = drv_data->m800db_configs[profile_index];
+
+			if (profile_index == 0) {
+				rc = sinowealth_m800db_wireless_activate(device);
+				if (rc < 0) {
+					log_error(device->ratbag, "Could not activate M800DB link: %s (%d)\n",
+						  strerror(-rc), rc);
+					return rc;
+				}
+			}
+
+			raw[0] = SINOWEALTH_REPORT_ID_M800DB;
+			raw[1] = sinowealth_m800db_config_cmd(drv_data, profile_index);
+			raw[3] = SINOWEALTH_M800DB_CONFIG_SIZE - 8;
+
+			if (drv_data->is_wireless)
+				msleep(30);
+			rc = sinowealth_query_write(device, raw, SINOWEALTH_CONFIG_REPORT_SIZE);
+			if (rc < 0) {
+				log_error(device->ratbag, "Error while writing M800DB config %zu: %s (%d)\n",
+					  profile_index, strerror(-rc), rc);
+				return rc;
+			}
+			continue;
+		}
+
 		config->report_id = config_report_id;
 		config->command_id = sinowealth_get_config_command(profile_index);
 		config->config_write = (uint8_t)drv_data->config_size - 8;
@@ -1970,6 +2456,12 @@ sinowealth_write_macros(struct ratbag_device *device)
 	struct ratbag_profile *profile = NULL;
 
 	struct sinowealth_data *drv_data = device->drv_data;
+
+	/* M800DB macro blob format was never captured; attempting the
+	 * 520-byte macro report risks EPIPE-aborting the whole commit,
+	 * so skip it. Simple macros were already downgraded to keys. */
+	if (drv_data->is_m800db)
+		return 0;
 
 	const uint8_t config_report_id = drv_data->is_long ? SINOWEALTH_REPORT_ID_CONFIG_LONG : SINOWEALTH_REPORT_ID_CONFIG;
 
@@ -2058,6 +2550,9 @@ sinowealth_update_config_from_profile(struct ratbag_profile *profile)
 {
 	struct ratbag_device *device = profile->device;
 	struct sinowealth_data *drv_data = device->drv_data;
+	if (drv_data->is_m800db) {
+		return sinowealth_m800db_update_config_from_profile(profile);
+	}
 	struct sinowealth_config_report *config = &drv_data->configs[profile->index];
 	struct ratbag_led *led = NULL;
 	struct ratbag_resolution *resolution = NULL;
@@ -2162,6 +2657,21 @@ sinowealth_commit(struct ratbag_device *device)
 	rc = sinowealth_write_macros(device);
 	if (rc)
 		return rc;
+
+	if (device->drv_data && ((struct sinowealth_data *)device->drv_data)->is_m800db) {
+		/* LED apply/commit at end of apply, as the official software
+		 * does (captured 05 90 + reply read on wired and wireless).
+		 * Best-effort: never fail the commit over the refresh. */
+		uint8_t led_commit[SINOWEALTH_CMD_SIZE_M800DB] = {
+			SINOWEALTH_REPORT_ID_CMD,
+			SINOWEALTH_CMD_M800DB_LED_COMMIT,
+		};
+		rc = sinowealth_query_read(device, led_commit, sinowealth_cmd_size(device));
+		if (rc < 0)
+			log_error(device->ratbag,
+				  "M800DB LED commit failed (non-fatal): %s (%d)\n",
+				  strerror(-rc), rc);
+	}
 
 	ratbag_device_for_each_profile(device, profile) {
 		if (profile->debounce_dirty) {
