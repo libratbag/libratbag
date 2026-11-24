@@ -1,0 +1,6 @@
+# Logitech M510
+[Device]
+Name=Logitech M510
+DeviceMatch=usb:046d:4051
+DeviceType=mouse
+Driver=hidpp20
