@@ -195,6 +195,15 @@ button_action_macro_to_str(struct ratbag_button *button)
 		case RATBAG_MACRO_EVENT_WAIT:
 			offset += snprintf(str + offset, sizeof(str) - offset, " %.03f⏱", timeout / 1000.0);
 			break;
+		case RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE:
+			offset += snprintf(str + offset, sizeof(str) - offset, " wait-for-release");
+			break;
+		case RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED:
+			offset += snprintf(str + offset, sizeof(str) - offset, " repeat-while-pressed");
+			break;
+		case RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED:
+			offset += snprintf(str + offset, sizeof(str) - offset, " repeat-until-canceled");
+			break;
 		default:
 			offset += snprintf(str + offset, sizeof(str) - offset, " ###");
 		}

@@ -419,12 +419,26 @@ def func_button_action_set_macro(ratbagd: Ratbagd, args: argparse.Namespace) -> 
 
     macro_keys = args.target_macro
     macro = RatbagdMacro()
+
+    # control events carry no value and stand alone as a token
+    controls = {
+        "WAIT-FOR-RELEASE": RatbagdButton.Macro.WAIT_FOR_RELEASE,
+        "REPEAT-WHILE-PRESSED": RatbagdButton.Macro.REPEAT_WHILE_PRESSED,
+        "REPEAT-UNTIL-CANCELED": RatbagdButton.Macro.REPEAT_UNTIL_CANCELED,
+        # convenience aliases
+        "REPEAT": RatbagdButton.Macro.REPEAT_WHILE_PRESSED,
+        "REPEAT-UNTIL-CANCELLED": RatbagdButton.Macro.REPEAT_UNTIL_CANCELED,
+    }
+
     for s in macro_keys:
         is_press = True
         is_release = True
         is_timeout = False
 
         s = s.upper()
+        if s in controls:
+            macro.append(controls[s], 0)
+            continue
         if s[0] == "T":
             is_timeout = True
             is_press = False

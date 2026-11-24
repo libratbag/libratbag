@@ -277,6 +277,22 @@ enum ratbag_macro_event_type {
 	RATBAG_MACRO_EVENT_KEY_PRESSED,
 	RATBAG_MACRO_EVENT_KEY_RELEASED,
 	RATBAG_MACRO_EVENT_WAIT,
+	/**
+	 * Block until the button bound to the macro is released. Carries no
+	 * value. Not supported by every device.
+	 */
+	RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE,
+	/**
+	 * Restart the macro if the button bound to it is still held, and
+	 * continue past this event otherwise. Carries no value. Not supported
+	 * by every device.
+	 */
+	RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED,
+	/**
+	 * Restart the macro until the button bound to it is pressed again.
+	 * Carries no value. Not supported by every device.
+	 */
+	RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED,
 };
 
 /**

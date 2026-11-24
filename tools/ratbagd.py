@@ -849,6 +849,9 @@ class RatbagdButton(_RatbagdDBus):
         KEY_PRESS = 1
         KEY_RELEASE = 2
         WAIT = 3
+        WAIT_FOR_RELEASE = 4
+        REPEAT_WHILE_PRESSED = 5
+        REPEAT_UNTIL_CANCELED = 6
 
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
@@ -1013,6 +1016,9 @@ class RatbagdMacro(GObject.Object):
         RatbagdButton.Macro.KEY_PRESS: lambda key: f"↓{evcode_to_str(key)}",
         RatbagdButton.Macro.KEY_RELEASE: lambda key: f"↑{evcode_to_str(key)}",
         RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
+        RatbagdButton.Macro.WAIT_FOR_RELEASE: lambda _: "wait-for-release",
+        RatbagdButton.Macro.REPEAT_WHILE_PRESSED: lambda _: "repeat-while-pressed",
+        RatbagdButton.Macro.REPEAT_UNTIL_CANCELED: lambda _: "repeat-until-canceled",
         _MACRO_KEY: lambda key: f"↕{evcode_to_str(key)}",
     }
 

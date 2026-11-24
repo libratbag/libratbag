@@ -483,23 +483,39 @@ etekcity_write_macro(struct ratbag_button *button)
 	buf = (uint8_t*)macro;
 
 	for (i = 0; i < MAX_MACRO_EVENTS && count < ETEKCITY_MAX_MACRO_LENGTH; i++) {
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_INVALID)
-			return -EINVAL; /* should not happen, ever */
+		const struct ratbag_macro_event *event = &action->macro->events[i];
 
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_NONE)
+		if (event->type == RATBAG_MACRO_EVENT_NONE)
 			break;
 
-		/* ignore timeout events */
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_WAIT)
-			continue;
-
-		macro->keys[count].keycode = ratbag_hidraw_get_keyboard_usage_from_keycode(device,
-											   action->macro->events[i].event.key);
-		if (action->macro->events[i].type == RATBAG_MACRO_EVENT_KEY_PRESSED)
-			macro->keys[count].flag = 0x00;
-		else
-			macro->keys[count].flag = 0x80;
-		count++;
+		/*
+		 * Switch rather than a chain of ifs so that an event type this
+		 * device cannot express has to be handled here rather than
+		 * falling through to be written as a keystroke.
+		 */
+		switch (event->type) {
+		case RATBAG_MACRO_EVENT_KEY_PRESSED:
+		case RATBAG_MACRO_EVENT_KEY_RELEASED:
+			macro->keys[count].keycode =
+				ratbag_hidraw_get_keyboard_usage_from_keycode(device,
+									     event->event.key);
+			macro->keys[count].flag =
+				event->type == RATBAG_MACRO_EVENT_KEY_PRESSED ? 0x00 : 0x80;
+			count++;
+			break;
+		case RATBAG_MACRO_EVENT_WAIT:
+			/* ignore timeout events */
+			break;
+		case RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE:
+		case RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED:
+		case RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED:
+			log_error(device->ratbag,
+				  "This device does not support repeating macros\n");
+			return -ENOTSUP;
+		case RATBAG_MACRO_EVENT_INVALID:
+		case RATBAG_MACRO_EVENT_NONE:
+			return -EINVAL; /* should not happen, ever */
+		}
 	}
 
 	macro->reportID = ETEKCITY_REPORT_ID_MACRO;

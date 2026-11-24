@@ -642,6 +642,9 @@ class RatbagdButton(metaclass=MetaRatbag):
         KEY_PRESS = libratbag.RATBAG_MACRO_EVENT_KEY_PRESSED
         KEY_RELEASE = libratbag.RATBAG_MACRO_EVENT_KEY_RELEASED
         WAIT = libratbag.RATBAG_MACRO_EVENT_WAIT
+        WAIT_FOR_RELEASE = libratbag.RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE
+        REPEAT_WHILE_PRESSED = libratbag.RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED
+        REPEAT_UNTIL_CANCELED = libratbag.RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED
 
     """A table mapping a button's index to its usual function as defined by X
     and the common desktop environments."""
@@ -789,6 +792,9 @@ class RatbagdMacro(metaclass=MetaRatbag):
         RatbagdButton.Macro.KEY_PRESS: lambda key: f"↓{evcode_to_str(key)}",
         RatbagdButton.Macro.KEY_RELEASE: lambda key: f"↑{evcode_to_str(key)}",
         RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
+        RatbagdButton.Macro.WAIT_FOR_RELEASE: lambda _: "wait-for-release",
+        RatbagdButton.Macro.REPEAT_WHILE_PRESSED: lambda _: "repeat-while-pressed",
+        RatbagdButton.Macro.REPEAT_UNTIL_CANCELED: lambda _: "repeat-until-canceled",
         _MACRO_KEY: lambda key: f"↕{evcode_to_str(key)}",
     }
 

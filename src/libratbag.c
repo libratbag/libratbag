@@ -1773,6 +1773,10 @@ ratbag_button_macro_set_event(struct ratbag_button_macro *m,
 		macro->events[index].event.timeout = data;
 		break;
 	case RATBAG_MACRO_EVENT_NONE:
+	case RATBAG_MACRO_EVENT_WAIT_FOR_RELEASE:
+	case RATBAG_MACRO_EVENT_REPEAT_WHILE_PRESSED:
+	case RATBAG_MACRO_EVENT_REPEAT_UNTIL_CANCELED:
+		/* these carry no value */
 		macro->events[index].type = type;
 		break;
 	default:

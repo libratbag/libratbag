@@ -469,16 +469,44 @@ org.freedesktop.ratbag1.Button
         (``u``) denoting the special value to map to.
 
         If the ActionType is *Macro*, the variant is an array of integer
-        tuples (``a(uu)``) where each tuple is ``(type, keycode)`` and the
+        tuples (``a(uu)``) where each tuple is ``(type, value)`` and the
         type is one of the following:
 
-        +---------+--------------------------------------+
-        | Value   | Description                          |
-        +=========+======================================+
-        |   0     | Key release event                    |
-        +---------+--------------------------------------+
-        |   1     | Key press event                      |
-        +---------+--------------------------------------+
+        +---------+-----------------------+--------------------------------------+
+        | Value   | Description           | Meaning of ``value``                 |
+        +=========+=======================+======================================+
+        |   0     | End of the macro      | unused                               |
+        +---------+-----------------------+--------------------------------------+
+        |   1     | Key press event       | keycode                              |
+        +---------+-----------------------+--------------------------------------+
+        |   2     | Key release event     | keycode                              |
+        +---------+-----------------------+--------------------------------------+
+        |   3     | Wait                  | timeout in milliseconds              |
+        +---------+-----------------------+--------------------------------------+
+        |   4     | Wait for release      | unused                               |
+        +---------+-----------------------+--------------------------------------+
+        |   5     | Repeat while pressed  | unused                               |
+        +---------+-----------------------+--------------------------------------+
+        |   6     | Repeat until canceled | unused                               |
+        +---------+-----------------------+--------------------------------------+
+
+        Keycodes are those of ``linux/input-event-codes.h``, and may name a
+        mouse button (``BTN_*``) as well as a key.
+
+        Types 4 to 6 control the flow of the macro and are not supported by
+        every device; committing a macro that uses them may fail with
+        ``ActionType`` support otherwise present.
+
+        *Wait for release* blocks until the button bound to the macro is
+        released and then carries on with the following events.
+
+        *Repeat while pressed* restarts the macro from its first event while
+        that button is held, and ends the macro once it is released.
+
+        *Repeat until canceled* loops the macro until canceled. What triggers
+        cancelation is unknown for now.
+
+        Clients must ignore macro event types unknown to them.
 
         If the ActionType is *None*, the variant is an unsigned integer
         (``u``) of value 0.
