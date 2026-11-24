@@ -1,0 +1,5 @@
+[Device]
+Name=COUGAR Dualblader
+DeviceMatch=usb:12cf:0436
+DeviceType=mouse
+Driver=cougar

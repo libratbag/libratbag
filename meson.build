@@ -171,6 +171,7 @@ src_libratbag = [
 	'src/libratbag-enums.h',
 	'src/libratbag.h',
 	'src/driver-asus.c',
+        'src/driver-cougar.c',
 	'src/driver-etekcity.c',
 	'src/driver-hidpp20.c',
 	'src/driver-hidpp10.c',
