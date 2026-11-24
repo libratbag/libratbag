@@ -1,0 +1,5 @@
+[Device]
+Name=Mionix Castor
+DeviceMatch=usb:22d4:1316
+Driver=mionix
+DeviceType=mouse
