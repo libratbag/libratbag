@@ -228,6 +228,45 @@ def check_section_hidpp20(section: configparser.SectionProxy):
         pass
 
 
+def check_section_razer(section: configparser.SectionProxy):
+    permitted_keys = (
+        "Buttons",
+        "DpiList",
+        "DpiRange",
+        "DpiStages",
+        "TransactionId",
+    )
+    for key in section:
+        assert key in permitted_keys
+
+    try:
+        check_dpi_list_str(section["DpiList"])
+        assert "DpiRange" not in section.keys()
+    except KeyError:
+        # No such section - not an error.
+        pass
+
+    try:
+        check_dpi_range_str(section["DpiRange"])
+        assert "DpiList" not in section.keys()
+    except KeyError:
+        # No such section - not an error.
+        pass
+
+    try:
+        # the driver reads five stage records out of one 80 byte payload
+        assert 1 <= int(section["DpiStages"]) <= 5
+    except KeyError:
+        # No such section - not an error.
+        pass
+
+    try:
+        assert 0 < int(section["TransactionId"]) <= 0xFF
+    except KeyError:
+        # No such section - not an error.
+        pass
+
+
 def check_section_steelseries(section: configparser.SectionProxy):
     permitted_keys = (
         "Buttons",
@@ -274,6 +313,10 @@ def check_section_driver(driver: str, section: configparser.SectionProxy):
 
     if driver == "hidpp20":
         check_section_hidpp20(section)
+        return
+
+    if driver == "razer":
+        check_section_razer(section)
         return
 
     if driver == "steelseries":

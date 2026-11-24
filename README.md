@@ -9,7 +9,7 @@ features exposed by these mice and abstracts away hardware-specific and
 kernel-specific quirks.
 
 libratbag currently supports devices from Logitech, Etekcity, GSkill,
-Roccat, Steelseries. See [the device
+Razer, Roccat, Steelseries. See [the device
 files](https://github.com/libratbag/libratbag/tree/master/data/devices) for
 a complete list of supported devices.
 

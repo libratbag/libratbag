@@ -176,6 +176,7 @@ src_libratbag = [
 	'src/driver-hidpp10.c',
 	'src/driver-logitech-g300.c',
 	'src/driver-logitech-g600.c',
+	'src/driver-razer.c',
 	'src/driver-roccat.c',
 	'src/driver-roccat-kone-emp.c',
 	'src/driver-roccat-kone-pure.c',
