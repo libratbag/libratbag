@@ -684,6 +684,7 @@ ratbag_create_profile(struct ratbag_device *device,
 	profile->name = NULL;
 	profile->angle_snapping = -1;
 	profile->debounce = -1;
+	profile->charging_control = -1;
 
 	list_append(&device->profiles, &profile->link);
 	list_init(&profile->buttons);
@@ -868,6 +869,7 @@ ratbag_device_commit(struct ratbag_device *device)
 		profile->angle_snapping_dirty = false;
 		profile->debounce_dirty = false;
 		profile->rate_dirty = false;
+		profile->charging_control_dirty = false;
 
 		list_for_each(button, &profile->buttons, link)
 			button->dirty = false;
@@ -1168,6 +1170,12 @@ ratbag_profile_get_report_rate_list(const struct ratbag_profile *profile,
 	return profile->nrates;
 }
 
+LIBRATBAG_EXPORT int
+ratbag_profile_get_charging_control(const struct ratbag_profile *profile)
+{
+	return profile->charging_control;
+}
+
 LIBRATBAG_EXPORT bool
 ratbag_resolution_is_active(const struct ratbag_resolution *resolution)
 {
@@ -1258,6 +1266,19 @@ ratbag_resolution_set_disabled(struct ratbag_resolution *resolution, bool disabl
 	resolution->is_disabled = disable;
 	resolution->dirty = true;
 	profile->dirty = true;
+
+	return RATBAG_SUCCESS;
+}
+
+LIBRATBAG_EXPORT enum ratbag_error_code
+ratbag_profile_set_charging_control(struct ratbag_profile *profile,
+				    int status)
+{
+	if (profile->charging_control != status) {
+		profile->charging_control = status;
+		profile->charging_control_dirty = true;
+		profile->dirty = true;
+	}
 
 	return RATBAG_SUCCESS;
 }

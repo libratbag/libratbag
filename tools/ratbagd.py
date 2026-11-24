@@ -440,6 +440,7 @@ class RatbagdProfile(_RatbagdDBus):
         self._active = self._get_dbus_property("IsActive")
         self._angle_snapping = self._get_dbus_property("AngleSnapping")
         self._debounce = self._get_dbus_property("Debounce")
+        self._charging_control = self._get_dbus_property("ChargingControl")
         self._dirty = self._get_dbus_property("IsDirty")
         self._disabled = self._get_dbus_property("Disabled")
         self._report_rate = self._get_dbus_property("ReportRate")
@@ -487,6 +488,16 @@ class RatbagdProfile(_RatbagdDBus):
             if debounce != self._debounce:
                 self._debounce = debounce
                 self.notify("debounce")
+
+        try:
+            charging_control = changed_props["ChargingControl"]
+        except KeyError:
+            # Different property changed, skip.
+            pass
+        else:
+            if charging_control != self._charging_control:
+                self._charging_control = charging_control
+                self.notify("charging-control")
 
         try:
             disabled = changed_props["Disabled"]
@@ -642,6 +653,19 @@ class RatbagdProfile(_RatbagdDBus):
             file=sys.stderr,
         )
         return None
+
+    @GObject.Property
+    def charging_control(self):
+        """The charging control option."""
+        return self._charging_control
+
+    @charging_control.setter
+    def charging_control(self, value):
+        """Set the charging control option.
+
+        @param value Charging enabled
+        """
+        self._set_dbus_property("ChargingControl", "i", value)
 
     @GObject.Property
     def buttons(self):

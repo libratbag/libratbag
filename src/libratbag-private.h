@@ -277,6 +277,9 @@ struct ratbag_profile {
 
 	unsigned int num_resolutions;
 
+	int charging_control;	/**< charging enabled */
+	bool charging_control_dirty;
+
 	bool is_active;		/**< profile is the currently active one */
 	bool is_active_dirty;
 

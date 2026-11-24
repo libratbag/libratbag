@@ -577,6 +577,23 @@ ratbagd_profile_get_debounces(sd_bus *bus,
 }
 
 static int
+ratbagd_profile_get_charging_control(sd_bus *bus,
+				     const char *path,
+				     const char *interface,
+				     const char *property,
+				     sd_bus_message *reply,
+				     void *userdata,
+				     sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	struct ratbag_profile *lib_profile = profile->lib_profile;
+	int status;
+
+	status = ratbag_profile_get_charging_control(lib_profile);
+	return sd_bus_message_append(reply, "i", status);
+}
+
+static int
 ratbagd_profile_set_report_rate(sd_bus *bus,
 				const char *path,
 				const char *interface,
@@ -678,6 +695,40 @@ ratbagd_profile_set_debounce(sd_bus *bus,
 	return 0;
 }
 
+static int
+ratbagd_profile_set_charging_control(sd_bus *bus,
+				     const char *path,
+				     const char *interface,
+				     const char *property,
+				     sd_bus_message *m,
+				     void *userdata,
+				     sd_bus_error *error)
+{
+	struct ratbagd_profile *profile = userdata;
+	int status;
+	int r;
+
+	r = sd_bus_message_read(m, "i", &status);
+	if (r < 0)
+		return r;
+
+	if (status < 0)
+		return 0;
+
+	r = ratbag_profile_set_charging_control(profile->lib_profile, status);
+	if (r == 0) {
+		sd_bus_emit_properties_changed(bus,
+					       profile->path,
+					       RATBAGD_NAME_ROOT ".Profile",
+					       "ChargingControl",
+					       NULL);
+
+		ratbagd_profile_notify_dirty(bus, profile);
+	}
+
+	return 0;
+}
+
 const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_WRITABLE_PROPERTY("Name", "s",
@@ -706,6 +757,10 @@ const sd_bus_vtable ratbagd_profile_vtable[] = {
 	SD_BUS_WRITABLE_PROPERTY("Debounce", "i",
 				 ratbagd_profile_get_debounce,
 				 ratbagd_profile_set_debounce, 0,
+				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_WRITABLE_PROPERTY("ChargingControl", "i",
+				 ratbagd_profile_get_charging_control,
+				 ratbagd_profile_set_charging_control, 0,
 				 SD_BUS_VTABLE_UNPRIVILEGED|SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("ReportRates", "au", ratbagd_profile_get_report_rates, 0, SD_BUS_VTABLE_PROPERTY_CONST),
 	SD_BUS_PROPERTY("Debounces", "au", ratbagd_profile_get_debounces, 0, SD_BUS_VTABLE_PROPERTY_CONST),
