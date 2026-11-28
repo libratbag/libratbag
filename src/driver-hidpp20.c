@@ -766,6 +766,7 @@ hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 {
 	struct hidpp20drv_data *drv_data = ratbag_get_drv_data((struct ratbag_device *)device);
 	struct hidpp20_profile *h_profile;
+	unsigned int i;
 	int rc;
 
 	if (!(drv_data->capabilities & HIDPP_CAP_ONBOARD_PROFILES_8100))
@@ -775,7 +776,22 @@ hidpp20drv_set_current_profile(struct ratbag_device *device, unsigned int index)
 		return -EINVAL;
 
 	h_profile = &drv_data->profiles->profiles[index];
-	if (!h_profile->enabled) {
+
+	if (drv_data->profiles->profile_format == HIDPP20_PROFILE_FORMAT_V7) {
+		/* Format 7 firmware (observed on a G305 X SUPERLIGHT)
+		 * acknowledges SetCurrentProfile but silently ignores it
+		 * unless the directory names exactly one enabled profile:
+		 * the target. Normalize the whole list and commit — which
+		 * writes the target sector and the directory — before
+		 * activating. This mirrors the sequence a hardware-verified
+		 * standalone tool needs on the same mouse. */
+		for (i = 0; i < drv_data->num_profiles; i++)
+			drv_data->profiles->profiles[i].enabled = (i == index);
+
+		rc = hidpp20_onboard_profiles_commit(drv_data->dev, drv_data->profiles);
+		if (rc)
+			return rc;
+	} else if (!h_profile->enabled) {
 		h_profile->enabled = 1;
 		rc = hidpp20_onboard_profiles_commit(drv_data->dev, drv_data->profiles);
 		if (rc)
