@@ -2345,7 +2345,7 @@ hidpp20_onboard_profiles_set_onboard_mode(struct hidpp20_device *device,
 int
 hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 {
-	uint8_t feature_index, unknown_0, active_profile_index;
+	uint8_t feature_index, active_profile_index;
 	int rc;
 	union hidpp20_message msg = {
 		.msg.report_id = REPORT_ID_SHORT,
@@ -2364,13 +2364,21 @@ hidpp20_onboard_profiles_get_current_profile(struct hidpp20_device *device)
 	if (rc)
 		return rc;
 
-	unknown_0 = msg.msg.parameters[0];
-	active_profile_index = msg.msg.parameters[1];
+	/* Format-7 firmware (observed on a retail G305 X SUPERLIGHT)
+	 * answers with the active sector in parameters[0] and the high
+	 * byte in parameters[1] (always zero on a five-slot mouse), so
+	 * reading parameters[1] yields a permanently-zero index. Earlier
+	 * generations answer in parameters[1] with parameters[0] as a
+	 * status byte. Trust the nonzero byte for either layout. */
+	if (msg.msg.parameters[0])
+		active_profile_index = msg.msg.parameters[0];
+	else
+		active_profile_index = msg.msg.parameters[1];
 
 	hidpp_log_raw(
 	    &device->base,
-	    "current active profile is index: %d unknown_0: %d\n",
-	    active_profile_index, unknown_0);
+	    "current active profile is index: %d\n",
+	    active_profile_index);
 
 	return active_profile_index;
 }
