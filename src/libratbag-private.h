@@ -219,7 +219,7 @@ struct ratbag_resolution {
 	struct list link;
 	unsigned index;
 
-	unsigned int dpis[300];
+	unsigned int dpis[1024];
 	size_t ndpis;
 
 	unsigned int dpi_x;	/**< x resolution in dpi */

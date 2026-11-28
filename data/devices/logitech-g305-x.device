@@ -1,0 +1,5 @@
+[Device]
+Name=Logitech G305 X SUPERLIGHT
+DeviceMatch=usb:046d:40bb;usb:046d:c0a4
+Driver=hidpp20
+DeviceType=mouse

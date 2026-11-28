@@ -224,17 +224,20 @@ ratbagd_resolution_get_resolutions(sd_bus *bus,
 {
 	struct ratbagd_resolution *resolution = userdata;
 	struct ratbag_resolution *lib_resolution = resolution->lib_resolution;
-	unsigned int dpis[300];
-	unsigned int ndpis = ARRAY_LENGTH(dpis);
+	unsigned int first_dpi;
+	size_t ndpis;
+	_cleanup_free_ unsigned int *dpis = NULL;
 	int r;
 
 	r = sd_bus_message_open_container(reply, 'a', "u");
 	if (r < 0)
 		return r;
 
-	ndpis = ratbag_resolution_get_dpi_list(lib_resolution,
-					       dpis, ndpis);
-	assert(ndpis <= ARRAY_LENGTH(dpis));
+	ndpis = ratbag_resolution_get_dpi_list(lib_resolution, &first_dpi, 1);
+	if (ndpis) {
+		dpis = zalloc(ndpis * sizeof(*dpis));
+		ratbag_resolution_get_dpi_list(lib_resolution, dpis, ndpis);
+	}
 
 	for (unsigned int i = 0; i < ndpis; i++) {
 		verify_unsigned_int(dpis[i]);
